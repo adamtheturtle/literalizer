@@ -67,26 +67,16 @@ lint.select = [ "ALL" ]
 lint.ignore = [
     # Ruff warns that this conflicts with the formatter.
     "COM812",
-    # Allow our chosen docstring line-style - we don't enforce a blank line
-    # after the summary or require the summary on the first line.
+    # Allow our chosen docstring line-style - pydocstringformatter handles formatting
+    # but doesn't enforce D205 (blank line after summary) or D212 (summary on first line).
     "D205",
     "D212",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
 ]
-lint.per-file-ignores."tests/__init__.py" = [
-    # Allow missing docstring in public package.
-    "D104",
-]
 lint.per-file-ignores."tests/test_*.py" = [
-    # Do not require tests to have docstrings.
-    "D103",
     # Do not require tests to have a one-line summary.
     "D205",
-    # Allow long lines in tests.
-    "E501",
-    # Allow magic values in tests.
-    "PLR2004",
     # Allow 'assert' as we use it for tests.
     "S101",
 ]
@@ -99,9 +89,7 @@ lint.pydocstyle.convention = "google"
 
 [tool.pyproject-fmt]
 indent = 4
-# Keep the full version (e.g. "1.2.3") rather than truncating (e.g. "1.2").
 keep_full_version = true
-# Set the maximum Python version to consider when resolving classifiers.
 max_supported_python = "3.14"
 
 [tool.pytest]
@@ -110,7 +98,6 @@ ini_options.log_cli = true
 
 [tool.coverage]
 run.branch = true
-# Exclude blocks that are only run for type checking from coverage.
 report.exclude_also = [
     "if TYPE_CHECKING:",
 ]
