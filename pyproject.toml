@@ -26,6 +26,7 @@ dynamic = [
     "version",
 ]
 optional-dependencies.dev = [
+    "beartype==0.22.9",
     "furo==2025.12.19",
     "hypothesis>=6.0",
     "prek==0.3.5",
