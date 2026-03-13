@@ -270,10 +270,7 @@ def literalize_json(
     """
     data = json.loads(json_string)
     if not isinstance(data, (list, dict)):
-        msg = (
-            f"Expected a JSON array or object, "
-            f"got {type(data).__name__}"
-        )
+        msg = f"Expected a JSON array or object, got {type(data).__name__}"
         raise TypeError(msg)
     return literalize(
         data=data,
