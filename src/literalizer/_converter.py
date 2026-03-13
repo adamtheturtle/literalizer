@@ -311,10 +311,7 @@ def literalize_yaml(
     """
     data = yaml.safe_load(yaml_string)
     if not isinstance(data, (list, dict)):
-        msg = (
-            f"Expected a YAML sequence or mapping,"
-            f" got {type(data).__name__}"
-        )
+        msg = f"Expected a YAML sequence or mapping, got {type(data).__name__}"
         raise TypeError(msg)
     return literalize(
         data=data,

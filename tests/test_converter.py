@@ -444,9 +444,7 @@ def test_literalize_yaml_invalid() -> None:
 
 def test_literalize_yaml_scalar_raises() -> None:
     """literalize_yaml raises TypeError for scalar YAML."""
-    with pytest.raises(
-        TypeError, match="Expected a YAML sequence or mapping"
-    ):
+    with pytest.raises(TypeError, match="Expected a YAML sequence or mapping"):
         literalize_yaml(
             yaml_string="42",
             language=PYTHON,
