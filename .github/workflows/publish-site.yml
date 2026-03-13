@@ -25,3 +25,4 @@ jobs:
           python_version: '3.13'
           sphinx_build_options: -W
           publish: ${{ github.ref_name == 'main' }}
+          enablement: ${{ github.ref_name == 'main' }}
