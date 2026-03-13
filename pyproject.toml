@@ -75,8 +75,6 @@ lint.ignore = [
     "ISC001",
 ]
 lint.per-file-ignores."tests/test_*.py" = [
-    # Do not require tests to have a one-line summary.
-    "D205",
     # Allow 'assert' as we use it for tests.
     "S101",
 ]
