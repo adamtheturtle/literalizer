@@ -32,6 +32,8 @@ dependencies = [
 optional-dependencies.dev = [
     "furo==2025.12.19",
     "hypothesis>=6.0",
+    "mypy[faster-cache]==1.19.1",
+    "mypy-strict-kwargs==2026.1.12",
     "prek==0.3.5",
     "pyproject-fmt==2.18.1",
     "pytest==9.0.2",
@@ -104,3 +106,12 @@ report.exclude_also = [
     "if TYPE_CHECKING:",
 ]
 report.show_missing = true
+
+[tool.mypy]
+strict = true
+files = [ "." ]
+exclude = [ "build" ]
+plugins = [
+    "mypy_strict_kwargs",
+]
+follow_untyped_imports = true
