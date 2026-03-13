@@ -479,7 +479,7 @@ def test_literalize_yaml_datetime() -> None:
 
 
 def test_literalize_date() -> None:
-    """literalize formats datetime.date values as ISO string literals."""
+    """Literalize formats datetime.date values as ISO string literals."""
     result = literalize(
         data=[datetime.date(2024, 1, 15)],
         language=PYTHON,
@@ -490,7 +490,7 @@ def test_literalize_date() -> None:
 
 
 def test_literalize_datetime() -> None:
-    """literalize formats datetime.datetime values as ISO string literals."""
+    """Literalize formats datetime.datetime values as ISO string literals."""
     result = literalize(
         data=[datetime.datetime(2024, 1, 15, 12, 30, 0)],  # noqa: DTZ001
         language=PYTHON,
