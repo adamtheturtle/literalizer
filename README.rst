@@ -27,7 +27,7 @@ Usage examples
 
    from literalizer import JAVASCRIPT, PYTHON, LanguageSpec, literalize
 
-   # Convert a JSON array to Python tuple literal
+   # Convert a Python list to Python literal items
    data = [True, None, "hi", [1, 2]]
    result = literalize(
        data=data,
@@ -35,7 +35,11 @@ Usage examples
        prefix="",
        wrap=False,
    )
-   # result: '(True, None, "hi", (1, 2)),'
+   # result:
+   # True,
+   # None,
+   # "hi",
+   # (1, 2),
 
    # Convert to JavaScript/TypeScript array
    result = literalize(
