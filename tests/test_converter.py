@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import textwrap
 from typing import Any
 
@@ -321,8 +322,6 @@ def test_literalize_json_object() -> None:
 
 def test_literalize_json_invalid() -> None:
     """literalize_json raises on invalid JSON."""
-    import json
-
     with pytest.raises(json.JSONDecodeError):
         literalize_json(
             json_string="not json",
