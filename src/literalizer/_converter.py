@@ -125,7 +125,11 @@ def _format_scalar(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
         return repr(value)
 
     if isinstance(value, str):
-        escaped = value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+        escaped = (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+        )
         return f'"{escaped}"'
 
     msg = f"Unsupported scalar type: {type(value)}"
@@ -139,13 +143,17 @@ def _format_value(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
     """
     if isinstance(value, dict):
         pairs = [
-            f"{_format_value(value=k, spec=spec)}{spec.dict_separator}{_format_value(value=v, spec=spec)}"
+            f"{_format_value(value=k, spec=spec)}{spec.dict_separator}"
+            f"{_format_value(value=v, spec=spec)}"
             for k, v in cast("dict[str, object]", value).items()
         ]
         return "{" + ", ".join(pairs) + "}"
 
     if isinstance(value, list):
-        items = [_format_value(value=v, spec=spec) for v in cast("list[object]", value)]
+        items = [
+            _format_value(value=v, spec=spec)
+            for v in cast("list[object]", value)
+        ]
         joined = ", ".join(items)
         # Single-element tuples need a trailing comma in Python/C#.
         if len(items) == 1 and spec.collection_open == "(":
@@ -162,7 +170,7 @@ def convert_json_to_native_literal(
     prefix: str,
     wrap: bool,
 ) -> str:
-    """Convert parsed JSON data to native language literal text.
+    r"""Convert parsed JSON data to native language literal text.
 
     Each element (or key-value pair) is formatted as a native literal
     for the given language with a trailing comma and the specified prefix.
@@ -176,7 +184,7 @@ def convert_json_to_native_literal(
             (e.g. ``"py"``, ``"ts"``, ``"go"``).  Must be a key in
             :data:`_LANGUAGE_SPECS`.
         prefix: String to prepend to each output line (e.g. ``"        "``
-            for 8-space indent, or ``"\\t\\t"`` for 2-tab indent).
+            for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
     """
@@ -188,7 +196,9 @@ def convert_json_to_native_literal(
         for k, v in cast("dict[str, object]", data).items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
-            lines.append(f"{effective_prefix}{formatted_key}{spec.dict_separator}{formatted_val},")
+            lines.append(
+                f"{effective_prefix}{formatted_key}{spec.dict_separator}{formatted_val},"
+            )
     else:
         for item in data:
             formatted = _format_value(value=item, spec=spec)

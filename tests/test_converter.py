@@ -29,31 +29,41 @@ from literalizer import convert_json_to_native_literal
 )
 def test_language_list(*, language: str, expected: str) -> None:
     data = [[True, None, "hi", [1, 2]]]
-    result = convert_json_to_native_literal(data=data, language=language, prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language=language, prefix="", wrap=False
+    )
     assert result == expected
 
 
 def test_ruby_dict() -> None:
     data = [{"key": None}]
-    result = convert_json_to_native_literal(data=data, language="rb", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="rb", prefix="", wrap=False
+    )
     assert result == '{"key" => nil},'
 
 
 def test_dict_python() -> None:
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
-    result = convert_json_to_native_literal(data=data, language="py", prefix="    ", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="py", prefix="    ", wrap=False
+    )
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
 
 def test_dict_ruby() -> None:
     data = {"user_1": "team_alpha"}
-    result = convert_json_to_native_literal(data=data, language="rb", prefix="  ", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="rb", prefix="  ", wrap=False
+    )
     assert result == '  "user_1" => "team_alpha",'
 
 
 def test_dict_wrap() -> None:
     data = {"a": 1, "b": 2}
-    result = convert_json_to_native_literal(data=data, language="py", prefix="", wrap=True)
+    result = convert_json_to_native_literal(
+        data=data, language="py", prefix="", wrap=True
+    )
     expected = textwrap.dedent("""\
         {
             "a": 1,
@@ -63,17 +73,23 @@ def test_dict_wrap() -> None:
 
 
 def test_dict_empty() -> None:
-    result = convert_json_to_native_literal(data={}, language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data={}, language="py", prefix="", wrap=False
+    )
     assert result == ""
 
 
 def test_dict_empty_with_wrap() -> None:
-    result = convert_json_to_native_literal(data={}, language="py", prefix="", wrap=True)
+    result = convert_json_to_native_literal(
+        data={}, language="py", prefix="", wrap=True
+    )
     assert result == ""
 
 
 def test_integers() -> None:
-    result = convert_json_to_native_literal(data=[42, 0, -7], language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=[42, 0, -7], language="py", prefix="", wrap=False
+    )
     expected = textwrap.dedent("""\
         42,
         0,
@@ -82,7 +98,9 @@ def test_integers() -> None:
 
 
 def test_floats() -> None:
-    result = convert_json_to_native_literal(data=[1000.0, 3.14], language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=[1000.0, 3.14], language="py", prefix="", wrap=False
+    )
     expected = textwrap.dedent("""\
         1000.0,
         3.14,""")
@@ -91,7 +109,9 @@ def test_floats() -> None:
 
 def test_string_escaping() -> None:
     data = ['say "hi"', "a\\b", "line1\nline2"]
-    result = convert_json_to_native_literal(data=data, language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="py", prefix="", wrap=False
+    )
     lines = result.split("\n")
     assert lines[0] == '"say \\"hi\\"",'
     assert lines[1] == '"a\\\\b",'
@@ -100,25 +120,33 @@ def test_string_escaping() -> None:
 
 def test_nested_arrays() -> None:
     data = [[[1, 2], [3, 4]]]
-    result = convert_json_to_native_literal(data=data, language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="py", prefix="", wrap=False
+    )
     assert result == "((1, 2), (3, 4)),"
 
 
 def test_dicts() -> None:
     data = [{"name": "alice", "age": 30}]
-    result = convert_json_to_native_literal(data=data, language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="py", prefix="", wrap=False
+    )
     assert result == '{"name": "alice", "age": 30},'
 
 
 def test_nested_dict_in_list() -> None:
     data = [["a", {"x": 1}]]
-    result = convert_json_to_native_literal(data=data, language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="py", prefix="", wrap=False
+    )
     assert result == '("a", {"x": 1}),'
 
 
 def test_nested_list_in_dict() -> None:
     data = [{"items": [1, 2]}]
-    result = convert_json_to_native_literal(data=data, language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=data, language="py", prefix="", wrap=False
+    )
     assert result == '{"items": (1, 2)},'
 
 
@@ -174,18 +202,24 @@ def test_wrap_with_prefix() -> None:
 
 
 def test_empty_data() -> None:
-    result = convert_json_to_native_literal(data=[], language="py", prefix="", wrap=False)
+    result = convert_json_to_native_literal(
+        data=[], language="py", prefix="", wrap=False
+    )
     assert result == ""
 
 
 def test_empty_data_with_wrap() -> None:
-    result = convert_json_to_native_literal(data=[], language="py", prefix="", wrap=True)
+    result = convert_json_to_native_literal(
+        data=[], language="py", prefix="", wrap=True
+    )
     assert result == ""
 
 
 def test_unknown_language_raises() -> None:
     with pytest.raises(KeyError):
-        convert_json_to_native_literal(data=[True], language="xyz", prefix="", wrap=False)
+        convert_json_to_native_literal(
+            data=[True], language="xyz", prefix="", wrap=False
+        )
 
 
 def test_unsupported_type_raises() -> None:
@@ -246,8 +280,18 @@ def _lists_to_tuples(value: Any) -> Any:  # noqa: ANN401
     return value
 
 
-json_text = st.text(alphabet=st.characters(categories=("L", "M", "N", "P", "S", "Z"), exclude_characters="\x00"))
-json_scalars = st.none() | st.booleans() | st.integers() | st.floats(allow_nan=False, allow_infinity=False) | json_text
+json_text = st.text(
+    alphabet=st.characters(
+        categories=("L", "M", "N", "P", "S", "Z"), exclude_characters="\x00"
+    )
+)
+json_scalars = (
+    st.none()
+    | st.booleans()
+    | st.integers()
+    | st.floats(allow_nan=False, allow_infinity=False)
+    | json_text
+)
 json_values: st.SearchStrategy[Any] = st.recursive(
     json_scalars,
     lambda children: st.lists(children) | st.dictionaries(json_text, children),
