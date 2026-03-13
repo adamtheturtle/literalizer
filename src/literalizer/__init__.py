@@ -13,6 +13,7 @@ from literalizer._converter import (
     Language,
     LanguageSpec,
     literalize,
+    literalize_json,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "Language",
     "LanguageSpec",
     "literalize",
+    "literalize_json",
 ]
