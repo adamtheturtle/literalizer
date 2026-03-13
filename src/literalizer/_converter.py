@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, cast
+from collections.abc import Mapping, Sequence  # noqa: TC003
+from typing import Any, cast
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+from beartype import beartype
 
 
 @dataclasses.dataclass(frozen=True)
@@ -102,6 +102,7 @@ _LANGUAGE_SPECS: dict[str, _LanguageSpec] = {
 }
 
 
+@beartype
 def _resolve_spec(*, language: str) -> _LanguageSpec:
     """Look up the spec for *language*.
 
@@ -110,6 +111,7 @@ def _resolve_spec(*, language: str) -> _LanguageSpec:
     return _LANGUAGE_SPECS[language]
 
 
+@beartype
 def _format_scalar(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
     """Format a scalar JSON value as a native language literal."""
     if value is None:
@@ -136,6 +138,7 @@ def _format_scalar(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
     raise TypeError(msg)
 
 
+@beartype
 def _format_value(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
     """Format any JSON value as a native language literal.
 
@@ -163,6 +166,7 @@ def _format_value(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
     return _format_scalar(value=value, spec=spec)
 
 
+@beartype
 def convert_json_to_native_literal(
     *,
     data: Sequence[Any] | Mapping[str, Any],
