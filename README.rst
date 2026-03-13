@@ -25,13 +25,13 @@ Usage examples
 
    """Examples of using literalizer."""
 
-   from literalizer import literalize
+   from literalizer import JAVASCRIPT, PYTHON, LanguageSpec, literalize
 
    # Convert a JSON array to Python tuple literal
    data = [True, None, "hi", [1, 2]]
    result = literalize(
        data=data,
-       language="py",
+       language=PYTHON,
        prefix="",
        wrap=False,
    )
@@ -40,7 +40,7 @@ Usage examples
    # Convert to JavaScript/TypeScript array
    result = literalize(
        data=data,
-       language="js",
+       language=JAVASCRIPT,
        prefix="    ",
        wrap=True,
    )
@@ -52,7 +52,18 @@ Usage examples
    #     [1, 2],
    # ]
 
-   # Supported languages: py, js, ts, go, rb, cs, cpp, java, kt
+   # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
+   #                      CSHARP, CPP, JAVA, KOTLIN
+
+   # Create a custom language:
+   custom = LanguageSpec(
+       null_literal="nil",
+       true_literal="TRUE",
+       false_literal="FALSE",
+       collection_open="[",
+       collection_close="]",
+       dict_separator=": ",
+   )
 
 Use cases
 ---------

@@ -4,18 +4,41 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Mapping, Sequence  # noqa: TC003
-from typing import Any, cast
+from typing import Any, Protocol, cast, runtime_checkable
 
 from beartype import beartype
 
 
-@dataclasses.dataclass(frozen=True)
-class _LanguageSpec:
-    """Describes how a language formats scalar literals and collections.
+@runtime_checkable
+class Language(Protocol):
+    """Protocol describing how a language formats scalar literals and
+    collections.
 
-    Predefined specs for common languages are available in
-    :data:`_LANGUAGE_SPECS`.  Create custom instances to support
-    additional languages or override defaults.
+    Implement this protocol to add support for additional languages
+    beyond the built-in defaults.
+    """
+
+    @property
+    def null_literal(self) -> str: ...
+    @property
+    def true_literal(self) -> str: ...
+    @property
+    def false_literal(self) -> str: ...
+    @property
+    def collection_open(self) -> str: ...
+    @property
+    def collection_close(self) -> str: ...
+    @property
+    def dict_separator(self) -> str: ...
+
+
+@dataclasses.dataclass(frozen=True)
+class LanguageSpec:
+    """A concrete implementation of :class:`Language`.
+
+    Predefined specs for common languages are available as module-level
+    constants (e.g. :data:`PYTHON`, :data:`JAVASCRIPT`).  Create custom
+    instances to support additional languages or override defaults.
     """
 
     null_literal: str
@@ -26,93 +49,90 @@ class _LanguageSpec:
     dict_separator: str
 
 
-_LANGUAGE_SPECS: dict[str, _LanguageSpec] = {
-    "py": _LanguageSpec(
-        null_literal="None",
-        true_literal="True",
-        false_literal="False",
-        collection_open="(",
-        collection_close=")",
-        dict_separator=": ",
-    ),
-    "cs": _LanguageSpec(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        collection_open="(",
-        collection_close=")",
-        dict_separator=": ",
-    ),
-    "js": _LanguageSpec(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        collection_open="[",
-        collection_close="]",
-        dict_separator=": ",
-    ),
-    "ts": _LanguageSpec(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        collection_open="[",
-        collection_close="]",
-        dict_separator=": ",
-    ),
-    "rb": _LanguageSpec(
-        null_literal="nil",
-        true_literal="true",
-        false_literal="false",
-        collection_open="[",
-        collection_close="]",
-        dict_separator=" => ",
-    ),
-    "go": _LanguageSpec(
-        null_literal="nil",
-        true_literal="true",
-        false_literal="false",
-        collection_open="{",
-        collection_close="}",
-        dict_separator=": ",
-    ),
-    "cpp": _LanguageSpec(
-        null_literal="nullptr",
-        true_literal="true",
-        false_literal="false",
-        collection_open="{",
-        collection_close="}",
-        dict_separator=": ",
-    ),
-    "java": _LanguageSpec(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        collection_open="{",
-        collection_close="}",
-        dict_separator=": ",
-    ),
-    "kt": _LanguageSpec(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        collection_open="listOf(",
-        collection_close=")",
-        dict_separator=": ",
-    ),
-}
+PYTHON = LanguageSpec(
+    null_literal="None",
+    true_literal="True",
+    false_literal="False",
+    collection_open="(",
+    collection_close=")",
+    dict_separator=": ",
+)
+
+CSHARP = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    collection_open="(",
+    collection_close=")",
+    dict_separator=": ",
+)
+
+JAVASCRIPT = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_separator=": ",
+)
+
+TYPESCRIPT = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_separator=": ",
+)
+
+RUBY = LanguageSpec(
+    null_literal="nil",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_separator=" => ",
+)
+
+GO = LanguageSpec(
+    null_literal="nil",
+    true_literal="true",
+    false_literal="false",
+    collection_open="{",
+    collection_close="}",
+    dict_separator=": ",
+)
+
+CPP = LanguageSpec(
+    null_literal="nullptr",
+    true_literal="true",
+    false_literal="false",
+    collection_open="{",
+    collection_close="}",
+    dict_separator=": ",
+)
+
+JAVA = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    collection_open="{",
+    collection_close="}",
+    dict_separator=": ",
+)
+
+KOTLIN = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    collection_open="listOf(",
+    collection_close=")",
+    dict_separator=": ",
+)
 
 
 @beartype
-def _resolve_spec(*, language: str) -> _LanguageSpec:
-    """Look up the spec for *language*.
-
-    Raises :exc:`KeyError` if *language* is not in :data:`_LANGUAGE_SPECS`.
-    """
-    return _LANGUAGE_SPECS[language]
-
-
-@beartype
-def _format_scalar(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
+def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401
     """Format a scalar JSON value as a native language literal."""
     if value is None:
         return spec.null_literal
@@ -139,7 +159,7 @@ def _format_scalar(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
 
 
 @beartype
-def _format_value(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
+def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), and dicts.
@@ -170,7 +190,7 @@ def _format_value(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
 def literalize(
     *,
     data: Sequence[Any] | Mapping[str, Any],
-    language: str,
+    language: Language,
     prefix: str,
     wrap: bool,
 ) -> str:
@@ -184,15 +204,15 @@ def literalize(
             sequences, or mappings with nesting to arbitrary depth.
             Mappings are formatted as one key-value pair per line using
             the language's dict separator.
-        language: File extension identifying the target language
-            (e.g. ``"py"``, ``"ts"``, ``"go"``).  Must be a key in
-            :data:`_LANGUAGE_SPECS`.
+        language: A :class:`Language` instance describing how to format
+            literals.  Use one of the built-in constants
+            (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
         prefix: String to prepend to each output line (e.g. ``"        "``
             for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
     """
-    spec = _resolve_spec(language=language)
+    spec = language
     effective_prefix = prefix if not wrap else (prefix or "    ")
     lines: list[str] = []
 
