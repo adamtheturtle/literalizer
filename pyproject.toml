@@ -54,27 +54,33 @@ packages.find.where = [
 ]
 
 [tool.setuptools_scm]
+# This keeps the start of the version the same as the last release.
+# This is useful for our documentation to include e.g. binary links
+# to the latest released binary.
+#
+# Code to match this is in ``conf.py``.
 version_scheme = "post-release"
 
 [tool.ruff]
 line-length = 79
 lint.select = [ "ALL" ]
 lint.ignore = [
+    # Ruff warns that this conflicts with the formatter.
     "COM812",
+    # Allow our chosen docstring line-style - pydocstringformatter handles formatting
+    # but doesn't enforce D205 (blank line after summary) or D212 (summary on first line).
     "D205",
     "D212",
+    # Ruff warns that this conflicts with the formatter.
     "ISC001",
 ]
-lint.per-file-ignores."tests/__init__.py" = [
-    "D104",
-]
 lint.per-file-ignores."tests/test_*.py" = [
-    "D103",
-    "D205",
-    "E501",
-    "PLR2004",
+    # Allow 'assert' as we use it for tests.
     "S101",
 ]
+# Do not automatically remove commented out code.
+# We comment out code during development, and with VSCode auto-save, this code
+# is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
 lint.mccabe.max-complexity = 12
 lint.pydocstyle.convention = "google"
