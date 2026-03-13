@@ -57,9 +57,7 @@ def test_ruby_dict() -> None:
 def test_dict_python() -> None:
     """Python dict renders key-value pairs with a prefix."""
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
-    result = literalize(
-        data=data, language=PYTHON, prefix="    ", wrap=False
-    )
+    result = literalize(data=data, language=PYTHON, prefix="    ", wrap=False)
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
 
