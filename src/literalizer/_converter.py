@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Mapping, Sequence  # noqa: TC003
 from typing import Any, cast
 
 from beartype import beartype
@@ -168,7 +169,7 @@ def _format_value(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
 @beartype
 def convert_json_to_native_literal(
     *,
-    data: list[Any] | dict[str, Any],
+    data: Sequence[Any] | Mapping[str, Any],
     language: str,
     prefix: str,
     wrap: bool,
