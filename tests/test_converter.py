@@ -10,7 +10,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from literalizer import literalize
+from literalizer import literalize, literalize_json
 
 
 @pytest.mark.parametrize(
@@ -291,6 +291,56 @@ json_values: st.SearchStrategy[Any] = st.recursive(
 )
 json_arrays = st.lists(json_values, max_size=10)
 json_objects = st.dictionaries(json_text, json_values, max_size=10)
+
+
+def test_literalize_json_array() -> None:
+    """literalize_json parses a JSON array string."""
+    json_string = '[["user_1", 1000.0], ["user_2", 2000.0]]'
+    result = literalize_json(
+        json_string=json_string,
+        language="py",
+        prefix="    ",
+        wrap=False,
+    )
+    expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
+    assert result == expected
+
+
+def test_literalize_json_object() -> None:
+    """literalize_json parses a JSON object string."""
+    json_string = '{"a": 1, "b": true}'
+    result = literalize_json(
+        json_string=json_string,
+        language="py",
+        prefix="",
+        wrap=True,
+    )
+    expected = '{\n    "a": 1,\n    "b": True,\n}'
+    assert result == expected
+
+
+def test_literalize_json_invalid() -> None:
+    """literalize_json raises on invalid JSON."""
+    import json
+
+    with pytest.raises(json.JSONDecodeError):
+        literalize_json(
+            json_string="not json",
+            language="py",
+            prefix="",
+            wrap=False,
+        )
+
+
+def test_literalize_json_scalar_raises() -> None:
+    """literalize_json raises TypeError for scalar JSON."""
+    with pytest.raises(TypeError, match="Expected a JSON array or object"):
+        literalize_json(
+            json_string="42",
+            language="py",
+            prefix="",
+            wrap=False,
+        )
 
 
 @given(data=json_arrays)

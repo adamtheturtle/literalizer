@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from typing import Any, cast
 
@@ -217,3 +218,46 @@ def literalize(
         return f"{{\n{body}\n}}"
 
     return f"[\n{body}\n]"
+
+
+@beartype
+def literalize_json(
+    *,
+    json_string: str,
+    language: str,
+    prefix: str,
+    wrap: bool,
+) -> str:
+    r"""Convert a JSON string to native language literal text.
+
+    This is a convenience wrapper around :func:`literalize` that
+    accepts JSON as a string rather than a pre-parsed data structure.
+
+    Args:
+        json_string: A JSON string representing an array or object.
+        language: File extension identifying the target language
+            (e.g. ``"py"``, ``"ts"``, ``"go"``).  Must be a key in
+            :data:`_LANGUAGE_SPECS`.
+        prefix: String to prepend to each output line (e.g. ``"        "``
+            for 8-space indent, or ``"\t\t"`` for 2-tab indent).
+        wrap: If True, wrap the output in delimiters
+            (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
+
+    Raises:
+        json.JSONDecodeError: If *json_string* is not valid JSON.
+        TypeError: If the top-level JSON value is not an array or
+            object.
+    """
+    data = json.loads(json_string)
+    if not isinstance(data, (list, dict)):
+        msg = (
+            f"Expected a JSON array or object, "
+            f"got {type(data).__name__}"
+        )
+        raise TypeError(msg)
+    return literalize(
+        data=data,
+        language=language,
+        prefix=prefix,
+        wrap=wrap,
+    )
