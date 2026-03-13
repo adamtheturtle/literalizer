@@ -326,7 +326,7 @@ json_objects = st.dictionaries(json_text, json_values, max_size=10)
 
 
 def test_literalize_json_array() -> None:
-    """literalize_json parses a JSON array string."""
+    """Literalize_json parses a JSON array string."""
     json_string = '[["user_1", 1000.0], ["user_2", 2000.0]]'
     result = literalize_json(
         json_string=json_string,
@@ -339,7 +339,7 @@ def test_literalize_json_array() -> None:
 
 
 def test_literalize_json_object() -> None:
-    """literalize_json parses a JSON object string."""
+    """Literalize_json parses a JSON object string."""
     json_string = '{"a": 1, "b": true}'
     result = literalize_json(
         json_string=json_string,
@@ -352,7 +352,7 @@ def test_literalize_json_object() -> None:
 
 
 def test_literalize_json_invalid() -> None:
-    """literalize_json raises on invalid JSON."""
+    """Literalize_json raises on invalid JSON."""
     with pytest.raises(json.JSONDecodeError):
         literalize_json(
             json_string="not json",
@@ -363,7 +363,7 @@ def test_literalize_json_invalid() -> None:
 
 
 def test_literalize_json_scalar_raises() -> None:
-    """literalize_json raises TypeError for scalar JSON."""
+    """Literalize_json raises TypeError for scalar JSON."""
     with pytest.raises(TypeError, match="Expected a JSON array or object"):
         literalize_json(
             json_string="42",
@@ -406,7 +406,7 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
 
 
 def test_literalize_yaml_sequence() -> None:
-    """literalize_yaml parses a YAML sequence string."""
+    """Literalize_yaml parses a YAML sequence string."""
     yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -419,7 +419,7 @@ def test_literalize_yaml_sequence() -> None:
 
 
 def test_literalize_yaml_mapping() -> None:
-    """literalize_yaml parses a YAML mapping string."""
+    """Literalize_yaml parses a YAML mapping string."""
     yaml_string = "a: 1\nb: true\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -432,7 +432,7 @@ def test_literalize_yaml_mapping() -> None:
 
 
 def test_literalize_yaml_invalid() -> None:
-    """literalize_yaml raises on invalid YAML."""
+    """Literalize_yaml raises on invalid YAML."""
     with pytest.raises(yaml.YAMLError):
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
@@ -443,7 +443,7 @@ def test_literalize_yaml_invalid() -> None:
 
 
 def test_literalize_yaml_scalar_raises() -> None:
-    """literalize_yaml raises TypeError for scalar YAML."""
+    """Literalize_yaml raises TypeError for scalar YAML."""
     with pytest.raises(TypeError, match="Expected a YAML sequence or mapping"):
         literalize_yaml(
             yaml_string="42",
