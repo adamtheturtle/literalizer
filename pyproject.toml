@@ -29,17 +29,36 @@ dependencies = [
     "beartype==0.22.9",
 ]
 optional-dependencies.dev = [
+    "actionlint-py==1.7.11.24",
+    "check-manifest==0.51",
+    "deptry==0.24.0",
+    "doc8==2.0.0",
+    "doccmd==2026.3.2",
     "furo==2025.12.19",
     "hypothesis>=6.0",
+    "interrogate==1.7.0",
+    "mypy[faster-cache]==1.19.1",
+    "mypy-strict-kwargs==2026.1.12",
     "prek==0.3.5",
+    "pydocstringformatter==0.7.5",
+    "pylint[spelling]==4.0.5",
+    "pylint-per-file-ignores==3.2.0",
     "pyproject-fmt==2.18.1",
+    "pyrefly==0.56.0",
+    "pyright==1.1.408",
+    "pyroma==5.0.1",
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
     "ruff==0.15.6",
     "sphinx==9.1.0",
     "sphinx-copybutton==0.5.2",
+    "sphinx-lint==1.0.2",
     "sphinx-pyproject==0.3.0",
     "sphinx-substitution-extensions==2026.1.12",
+    "ty==0.0.21",
+    "vulture==2.15",
+    "yamlfix==1.19.1",
+    "zizmor==1.23.1",
 ]
 optional-dependencies.release = [
     "check-wheel-contents==0.6.3",
@@ -88,6 +107,90 @@ lint.unfixable = [ "ERA001" ]
 lint.mccabe.max-complexity = 12
 lint.pydocstyle.convention = "google"
 
+[tool.pylint]
+DESIGN.max-complexity = 12
+FORMAT.single-line-if-stmt = false
+MASTER.persistent = true
+MASTER.jobs = 0
+MASTER.load-plugins = [
+    "pylint_per_file_ignores",
+    "pylint.extensions.bad_builtin",
+    "pylint.extensions.comparison_placement",
+    "pylint.extensions.consider_refactoring_into_while_condition",
+    "pylint.extensions.docparams",
+    "pylint.extensions.dunder",
+    "pylint.extensions.eq_without_hash",
+    "pylint.extensions.for_any_all",
+    "pylint.extensions.mccabe",
+    "pylint.extensions.no_self_use",
+    "pylint.extensions.overlapping_exceptions",
+    "pylint.extensions.private_import",
+    "pylint.extensions.redefined_loop_name",
+    "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.typing",
+]
+MASTER.unsafe-load-any-extension = false
+MESSAGES-CONTROL.enable = [
+    "bad-inline-option",
+    "deprecated-pragma",
+    "file-ignored",
+    "spelling",
+    "use-symbolic-message-instead",
+    "useless-suppression",
+]
+MESSAGES-CONTROL.disable = [
+    "too-few-public-methods",
+    "too-many-locals",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-return-statements",
+    "too-many-lines",
+    "locally-disabled",
+    "line-too-long",
+    "unused-import",
+    "ungrouped-imports",
+    "missing-type-doc",
+    "missing-return-type-doc",
+    "duplicate-code",
+    "wrong-import-order",
+]
+MESSAGES-CONTROL.per-file-ignores = [
+    "docs/source/conf.py:invalid-name",
+    "docs/source/doccmd_*.py:invalid-name",
+    "doccmd_README_rst_*.py:invalid-name",
+]
+SPELLING.spelling-dict = "en_US"
+SPELLING.spelling-private-dict-file = "spelling_private_dict.txt"
+SPELLING.spelling-store-unknown-words = "no"
+
+[tool.check-manifest]
+ignore = [
+    ".pre-commit-config.yaml",
+    ".vscode/*.json",
+    "conftest.py",
+    "CHANGELOG.rst",
+    "CODE_OF_CONDUCT.rst",
+    "CONTRIBUTING.rst",
+    "LICENSE",
+    "Makefile",
+    "ci",
+    "ci/**",
+    "docs",
+    "docs/**",
+    ".git_archival.txt",
+    "spelling_private_dict.txt",
+    "tests",
+    "tests/**",
+    "zizmor.yml",
+]
+
+[tool.deptry]
+pep621_dev_dependency_groups = [
+    "dev",
+    "release",
+]
+
 [tool.pyproject-fmt]
 indent = 4
 keep_full_version = true
@@ -103,3 +206,83 @@ report.exclude_also = [
     "if TYPE_CHECKING:",
 ]
 report.show_missing = true
+
+[tool.mypy]
+strict = true
+files = [ "." ]
+exclude = [ "build" ]
+plugins = [ "mypy_strict_kwargs" ]
+follow_untyped_imports = true
+
+[tool.pyrefly]
+errors.non-exhaustive-match = "error"
+
+[tool.pyright]
+enableTypeIgnoreComments = false
+reportUnnecessaryTypeIgnoreComment = true
+typeCheckingMode = "strict"
+
+[tool.ty]
+analysis.respect-type-ignore-comments = false
+terminal.error-on-warning = true
+
+[tool.doc8]
+max_line_length = 2000
+ignore_path = [
+    "./.eggs",
+    "./docs/build",
+    "./docs/build/spelling/output.txt",
+    "./node_modules",
+    "./src/*.egg-info/",
+    "./src/*/_setuptools_scm_version.txt",
+]
+
+[tool.interrogate]
+fail-under = 100
+omit-covered-files = true
+verbose = 2
+
+[tool.pydocstringformatter]
+write = true
+split-summary-body = false
+max-line-length = 75
+linewrap-full-docstring = true
+
+[tool.vulture]
+ignore_names = [
+    "pytest_collect_file",
+    "pytest_collection_modifyitems",
+    "pytest_plugins",
+    "fixture_*",
+    "autoclass_content",
+    "autodoc_member_order",
+    "copybutton_exclude",
+    "extensions",
+    "html_show_copyright",
+    "html_show_sourcelink",
+    "html_show_sphinx",
+    "html_theme",
+    "html_theme_options",
+    "html_title",
+    "htmlhelp_basename",
+    "intersphinx_mapping",
+    "language",
+    "linkcheck_ignore",
+    "linkcheck_retries",
+    "master_doc",
+    "nitpicky",
+    "project_copyright",
+    "pygments_style",
+    "rst_prolog",
+    "source_suffix",
+    "spelling_word_list_filename",
+    "templates_path",
+    "warning_is_error",
+]
+exclude = [
+    ".venv",
+]
+
+[tool.yamlfix]
+section_whitelines = 1
+whitelines = 1
