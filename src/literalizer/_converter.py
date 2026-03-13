@@ -191,7 +191,7 @@ def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
 @beartype
 def literalize(
     *,
-    data: Sequence[Any] | Mapping[str, Any],
+    data: Sequence[Any] | Mapping[str, Any] | int | float | bool | None,
     language: Language,
     prefix: str,
     wrap: bool,
@@ -202,10 +202,12 @@ def literalize(
     for the given language with a trailing comma and the specified prefix.
 
     Args:
-        data: A sequence or mapping.  Sequences may contain scalars,
-            sequences, or mappings with nesting to arbitrary depth.
-            Mappings are formatted as one key-value pair per line using
-            the language's dict separator.
+        data: A scalar, sequence, or mapping.  Scalars (strings,
+            numbers, booleans, ``None``) are formatted as a single
+            literal value.  Sequences may contain scalars, sequences,
+            or mappings with nesting to arbitrary depth.  Mappings are
+            formatted as one key-value pair per line using the
+            language's dict separator.
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
@@ -213,8 +215,14 @@ def literalize(
             for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
+            Ignored for scalar values.
     """
     spec = language
+
+    # Handle scalars (check str before Sequence since str is a Sequence).
+    if isinstance(data, (str, int, float, bool)) or data is None:
+        return f"{prefix}{_format_scalar(value=data, spec=spec)}"
+
     effective_prefix = prefix if not wrap else (prefix or "    ")
     lines: list[str] = []
 
@@ -255,7 +263,8 @@ def literalize_json(
     accepts JSON as a string rather than a pre-parsed data structure.
 
     Args:
-        json_string: A JSON string representing an array or object.
+        json_string: A JSON string representing a scalar, array, or
+            object.
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
@@ -266,13 +275,8 @@ def literalize_json(
 
     Raises:
         json.JSONDecodeError: If *json_string* is not valid JSON.
-        TypeError: If the top-level JSON value is not an array or
-            object.
     """
     data = json.loads(json_string)
-    if not isinstance(data, (list, dict)):
-        msg = f"Expected a JSON array or object, got {type(data).__name__}"
-        raise TypeError(msg)
     return literalize(
         data=data,
         language=language,
@@ -295,7 +299,8 @@ def literalize_yaml(
     accepts YAML as a string rather than a pre-parsed data structure.
 
     Args:
-        yaml_string: A YAML string representing a sequence or mapping.
+        yaml_string: A YAML string representing a scalar, sequence, or
+            mapping.
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
@@ -306,13 +311,8 @@ def literalize_yaml(
 
     Raises:
         yaml.YAMLError: If *yaml_string* is not valid YAML.
-        TypeError: If the top-level YAML value is not a sequence or
-            mapping.
     """
     data = yaml.safe_load(yaml_string)
-    if not isinstance(data, (list, dict)):
-        msg = f"Expected a YAML sequence or mapping, got {type(data).__name__}"
-        raise TypeError(msg)
     return literalize(
         data=data,
         language=language,
