@@ -195,7 +195,7 @@ def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
 @beartype
 def literalize(
     *,
-    data: Sequence[Any] | Mapping[str, Any] | int | float | bool | None,
+    data: Sequence[Any] | Mapping[str, Any] | float | bool | None,
     language: Language,
     prefix: str,
     wrap: bool,
