@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import datetime
 import json
 import textwrap
 from typing import Any
@@ -534,3 +535,49 @@ def test_literalize_yaml_scalar(
         wrap=False,
     )
     assert result == expected
+
+
+def test_literalize_yaml_date() -> None:
+    """literalize_yaml formats date values as ISO string literals."""
+    yaml_string = "- 2024-01-15\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15",'
+
+
+def test_literalize_yaml_datetime() -> None:
+    """literalize_yaml formats datetime values as ISO string literals."""
+    yaml_string = "- 2024-01-15T12:30:00\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15T12:30:00",'
+
+
+def test_literalize_date() -> None:
+    """Literalize formats datetime.date values as ISO string literals."""
+    result = literalize(
+        data=[datetime.date(2024, 1, 15)],
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15",'
+
+
+def test_literalize_datetime() -> None:
+    """Literalize formats datetime.datetime values as ISO string literals."""
+    result = literalize(
+        data=[datetime.datetime(2024, 1, 15, 12, 30, 0)],  # noqa: DTZ001
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15T12:30:00",'
