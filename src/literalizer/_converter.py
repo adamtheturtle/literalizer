@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime
 import json
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from typing import Any, Protocol, cast, runtime_checkable
@@ -155,6 +156,12 @@ def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401
             .replace("\n", "\\n")
         )
         return f'"{escaped}"'
+
+    if isinstance(value, datetime.datetime):
+        return f'"{value.isoformat()}"'
+
+    if isinstance(value, datetime.date):
+        return f'"{value.isoformat()}"'
 
     msg = f"Unsupported scalar type: {type(value)}"
     raise TypeError(msg)
