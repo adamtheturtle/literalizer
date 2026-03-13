@@ -10,7 +10,9 @@ on:
     - cron: 0 1 * * *
   workflow_dispatch: {}
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   build:
@@ -18,7 +20,7 @@ jobs:
       matrix:
         python-version: ['3.13']
         platform: [ubuntu-latest, windows-latest]
-        hook-stage: [pre-commit, pre-push, manual]
+        hook-stage: [pre-commit, pre-push]
 
     runs-on: ${{ matrix.platform }}
 
