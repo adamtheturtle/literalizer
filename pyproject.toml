@@ -99,6 +99,13 @@ max_supported_python = "3.14"
 ini_options.xfail_strict = true
 ini_options.log_cli = true
 
+[tool.coverage]
+run.branch = true
+report.exclude_also = [
+    "if TYPE_CHECKING:",
+]
+report.show_missing = true
+
 [tool.mypy]
 strict = true
 files = [ "." ]
@@ -107,10 +114,3 @@ plugins = [
     "mypy_strict_kwargs",
 ]
 follow_untyped_imports = true
-
-[tool.coverage]
-run.branch = true
-report.exclude_also = [
-    "if TYPE_CHECKING:",
-]
-report.show_missing = true
