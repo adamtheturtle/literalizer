@@ -163,23 +163,23 @@ def _format_value(*, value: Any, spec: _LanguageSpec) -> str:  # noqa: ANN401
     return _format_scalar(value=value, spec=spec)
 
 
-def convert_json_to_native_literal(
+def literalize(
     *,
     data: Sequence[Any] | Mapping[str, Any],
     language: str,
     prefix: str,
     wrap: bool,
 ) -> str:
-    r"""Convert parsed JSON data to native language literal text.
+    r"""Convert data to native language literal text.
 
     Each element (or key-value pair) is formatted as a native literal
     for the given language with a trailing comma and the specified prefix.
 
     Args:
-        data: A JSON array or object.  Arrays may contain scalars,
-            arrays, or dicts with nesting to arbitrary depth.  Objects
-            are formatted as one key-value pair per line using the
-            language's dict separator.
+        data: A sequence or mapping.  Sequences may contain scalars,
+            sequences, or mappings with nesting to arbitrary depth.
+            Mappings are formatted as one key-value pair per line using
+            the language's dict separator.
         language: File extension identifying the target language
             (e.g. ``"py"``, ``"ts"``, ``"go"``).  Must be a key in
             :data:`_LANGUAGE_SPECS`.

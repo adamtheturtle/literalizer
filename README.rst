@@ -25,11 +25,11 @@ Usage examples
 
    """Examples of using literalizer."""
 
-   from literalizer import convert_json_to_native_literal
+   from literalizer import literalize
 
    # Convert a JSON array to Python tuple literal
    data = [True, None, "hi", [1, 2]]
-   result = convert_json_to_native_literal(
+   result = literalize(
        data=data,
        language="py",
        prefix="",
@@ -38,7 +38,7 @@ Usage examples
    # result: '(True, None, "hi", (1, 2)),'
 
    # Convert to JavaScript/TypeScript array
-   result = convert_json_to_native_literal(
+   result = literalize(
        data=data,
        language="js",
        prefix="    ",
