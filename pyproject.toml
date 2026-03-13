@@ -54,34 +54,54 @@ packages.find.where = [
 ]
 
 [tool.setuptools_scm]
+# This keeps the start of the version the same as the last release.
+# This is useful for our documentation to include e.g. binary links
+# to the latest released binary.
+#
+# Code to match this is in ``conf.py``.
 version_scheme = "post-release"
 
 [tool.ruff]
 line-length = 79
 lint.select = [ "ALL" ]
 lint.ignore = [
+    # Ruff warns that this conflicts with the formatter.
     "COM812",
+    # Allow our chosen docstring line-style - we don't enforce a blank line
+    # after the summary or require the summary on the first line.
     "D205",
     "D212",
+    # Ruff warns that this conflicts with the formatter.
     "ISC001",
 ]
 lint.per-file-ignores."tests/__init__.py" = [
+    # Allow missing docstring in public package.
     "D104",
 ]
 lint.per-file-ignores."tests/test_*.py" = [
+    # Do not require tests to have docstrings.
     "D103",
+    # Do not require tests to have a one-line summary.
     "D205",
+    # Allow long lines in tests.
     "E501",
+    # Allow magic values in tests.
     "PLR2004",
+    # Allow 'assert' as we use it for tests.
     "S101",
 ]
+# Do not automatically remove commented out code.
+# We comment out code during development, and with VSCode auto-save, this code
+# is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
 lint.mccabe.max-complexity = 12
 lint.pydocstyle.convention = "google"
 
 [tool.pyproject-fmt]
 indent = 4
+# Keep the full version (e.g. "1.2.3") rather than truncating (e.g. "1.2").
 keep_full_version = true
+# Set the maximum Python version to consider when resolving classifiers.
 max_supported_python = "3.14"
 
 [tool.pytest]
@@ -90,6 +110,7 @@ ini_options.log_cli = true
 
 [tool.coverage]
 run.branch = true
+# Exclude blocks that are only run for type checking from coverage.
 report.exclude_also = [
     "if TYPE_CHECKING:",
 ]
