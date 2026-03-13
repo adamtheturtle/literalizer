@@ -21,17 +21,34 @@ class Language(Protocol):
     """
 
     @property
-    def null_literal(self) -> str: ...
+    def null_literal(self) -> str:
+        """The literal representing null/None."""
+        ...
+
     @property
-    def true_literal(self) -> str: ...
+    def true_literal(self) -> str:
+        """The literal representing true/True."""
+        ...
+
     @property
-    def false_literal(self) -> str: ...
+    def false_literal(self) -> str:
+        """The literal representing false/False."""
+        ...
+
     @property
-    def collection_open(self) -> str: ...
+    def collection_open(self) -> str:
+        """The opening delimiter for collections."""
+        ...
+
     @property
-    def collection_close(self) -> str: ...
+    def collection_close(self) -> str:
+        """The closing delimiter for collections."""
+        ...
+
     @property
-    def dict_separator(self) -> str: ...
+    def dict_separator(self) -> str:
+        """The separator between dict keys and values."""
+        ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -143,7 +160,7 @@ def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401
         return spec.true_literal if value else spec.false_literal
 
     if isinstance(value, int):
-        return str(value)
+        return str(object=value)
 
     if isinstance(value, float):
         return repr(value)
@@ -269,7 +286,7 @@ def literalize_json(
         TypeError: If the top-level JSON value is not an array or
             object.
     """
-    data = json.loads(json_string)
+    data = json.loads(s=json_string)
     if not isinstance(data, (list, dict)):
         msg = f"Expected a JSON array or object, got {type(data).__name__}"
         raise TypeError(msg)
@@ -309,7 +326,7 @@ def literalize_yaml(
         TypeError: If the top-level YAML value is not a sequence or
             mapping.
     """
-    data = yaml.safe_load(yaml_string)
+    data = yaml.safe_load(stream=yaml_string)
     if not isinstance(data, (list, dict)):
         msg = f"Expected a YAML sequence or mapping, got {type(data).__name__}"
         raise TypeError(msg)
