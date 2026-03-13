@@ -30,45 +30,35 @@ from literalizer import literalize
 def test_language_list(*, language: str, expected: str) -> None:
     """Each language produces the correct list literal."""
     data = [[True, None, "hi", [1, 2]]]
-    result = literalize(
-        data=data, language=language, prefix="", wrap=False
-    )
+    result = literalize(data=data, language=language, prefix="", wrap=False)
     assert result == expected
 
 
 def test_ruby_dict() -> None:
     """Ruby dicts use => syntax and nil."""
     data = [{"key": None}]
-    result = literalize(
-        data=data, language="rb", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="rb", prefix="", wrap=False)
     assert result == '{"key" => nil},'
 
 
 def test_dict_python() -> None:
     """Python dict renders key-value pairs with a prefix."""
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
-    result = literalize(
-        data=data, language="py", prefix="    ", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="    ", wrap=False)
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
 
 def test_dict_ruby() -> None:
     """Ruby dict renders with => syntax."""
     data = {"user_1": "team_alpha"}
-    result = literalize(
-        data=data, language="rb", prefix="  ", wrap=False
-    )
+    result = literalize(data=data, language="rb", prefix="  ", wrap=False)
     assert result == '  "user_1" => "team_alpha",'
 
 
 def test_dict_wrap() -> None:
     """Wrapping a dict adds braces and indentation."""
     data = {"a": 1, "b": 2}
-    result = literalize(
-        data=data, language="py", prefix="", wrap=True
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=True)
     expected = textwrap.dedent("""\
         {
             "a": 1,
@@ -79,25 +69,19 @@ def test_dict_wrap() -> None:
 
 def test_dict_empty() -> None:
     """An empty dict produces an empty string."""
-    result = literalize(
-        data={}, language="py", prefix="", wrap=False
-    )
+    result = literalize(data={}, language="py", prefix="", wrap=False)
     assert result == ""
 
 
 def test_dict_empty_with_wrap() -> None:
     """An empty dict with wrap still produces an empty string."""
-    result = literalize(
-        data={}, language="py", prefix="", wrap=True
-    )
+    result = literalize(data={}, language="py", prefix="", wrap=True)
     assert result == ""
 
 
 def test_integers() -> None:
     """Integer values are rendered literally."""
-    result = literalize(
-        data=[42, 0, -7], language="py", prefix="", wrap=False
-    )
+    result = literalize(data=[42, 0, -7], language="py", prefix="", wrap=False)
     expected = textwrap.dedent("""\
         42,
         0,
@@ -119,9 +103,7 @@ def test_floats() -> None:
 def test_string_escaping() -> None:
     """Special characters in strings are properly escaped."""
     data = ['say "hi"', "a\\b", "line1\nline2"]
-    result = literalize(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     lines = result.split("\n")
     assert lines[0] == '"say \\"hi\\"",'
     assert lines[1] == '"a\\\\b",'
@@ -131,36 +113,28 @@ def test_string_escaping() -> None:
 def test_nested_arrays() -> None:
     """Nested arrays are rendered recursively."""
     data = [[[1, 2], [3, 4]]]
-    result = literalize(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == "((1, 2), (3, 4)),"
 
 
 def test_dicts() -> None:
     """Dicts inside a list are rendered inline."""
     data = [{"name": "alice", "age": 30}]
-    result = literalize(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == '{"name": "alice", "age": 30},'
 
 
 def test_nested_dict_in_list() -> None:
     """A dict nested inside a list is rendered inline."""
     data = [["a", {"x": 1}]]
-    result = literalize(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == '("a", {"x": 1}),'
 
 
 def test_nested_list_in_dict() -> None:
     """A list nested inside a dict is rendered inline."""
     data = [{"items": [1, 2]}]
-    result = literalize(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == '{"items": (1, 2)},'
 
 
@@ -221,26 +195,20 @@ def test_wrap_with_prefix() -> None:
 
 def test_empty_data() -> None:
     """An empty list produces an empty string."""
-    result = literalize(
-        data=[], language="py", prefix="", wrap=False
-    )
+    result = literalize(data=[], language="py", prefix="", wrap=False)
     assert result == ""
 
 
 def test_empty_data_with_wrap() -> None:
     """An empty list with wrap still produces an empty string."""
-    result = literalize(
-        data=[], language="py", prefix="", wrap=True
-    )
+    result = literalize(data=[], language="py", prefix="", wrap=True)
     assert result == ""
 
 
 def test_unknown_language_raises() -> None:
     """An unknown language key raises KeyError."""
     with pytest.raises(KeyError):
-        literalize(
-            data=[True], language="xyz", prefix="", wrap=False
-        )
+        literalize(data=[True], language="xyz", prefix="", wrap=False)
 
 
 def test_unsupported_type_raises() -> None:
