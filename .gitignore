@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Unit test / coverage
+.coverage
+.coverage.*
+.pytest_cache/
+.hypothesis/
+
+# Sphinx
+docs/build/
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# uv
+uv.lock
+
+# Editor
+.mypy_cache/

@@ -1,23 +1,96 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
-  "setuptools",
+    "setuptools",
+    "setuptools-scm>=8.1.0",
 ]
 
 [project]
 name = "literalizer"
-version = "0.0.1"
 description = "Convert JSON data structures to native language literal syntax."
+readme = { file = "README.rst", content-type = "text/x-rst" }
+keywords = [ "code-generation", "json", "literal" ]
 license = "MIT"
+authors = [
+    { name = "Adam Dangoor", email = "adamdangoor@gmail.com" },
+]
 requires-python = ">=3.12"
 classifiers = [
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python :: 3.14",
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
+dynamic = [
+    "version",
+]
+optional-dependencies.dev = [
+    "furo==2025.12.19",
+    "hypothesis>=6.0",
+    "prek==0.3.5",
+    "pyproject-fmt==2.18.1",
+    "pytest==9.0.2",
+    "pytest-cov==7.0.0",
+    "ruff==0.15.5",
+    "sphinx==9.1.0",
+    "sphinx-copybutton==0.5.2",
+    "sphinx-pyproject==0.3.0",
+    "sphinx-substitution-extensions==2026.1.12",
+]
+optional-dependencies.release = [
+    "check-wheel-contents==0.6.3",
+]
+urls.Documentation = "https://adamtheturtle.github.io/literalizer/"
+urls.Source = "https://github.com/adamtheturtle/literalizer"
 
 [tool.setuptools]
-packages.find.where = [
-  "src",
+zip-safe = false
+package-data.literalizer = [
+    "py.typed",
 ]
+packages.find.where = [
+    "src",
+]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+
+[tool.ruff]
+line-length = 79
+lint.select = [ "ALL" ]
+lint.ignore = [
+    "COM812",
+    "D205",
+    "D212",
+    "ISC001",
+]
+lint.per-file-ignores."tests/__init__.py" = [
+    "D104",
+]
+lint.per-file-ignores."tests/test_*.py" = [
+    "D103",
+    "D205",
+    "E501",
+    "PLR2004",
+    "S101",
+]
+lint.unfixable = [ "ERA001" ]
+lint.mccabe.max-complexity = 12
+lint.pydocstyle.convention = "google"
+
+[tool.pyproject-fmt]
+indent = 4
+keep_full_version = true
+max_supported_python = "3.14"
+
+[tool.pytest]
+ini_options.xfail_strict = true
+ini_options.log_cli = true
+
+[tool.coverage]
+run.branch = true
+report.exclude_also = [
+    "if TYPE_CHECKING:",
+]
+report.show_missing = true
