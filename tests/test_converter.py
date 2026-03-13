@@ -8,10 +8,9 @@ import textwrap
 from typing import Any
 
 import pytest
+import yaml
 from hypothesis import given
 from hypothesis import strategies as st
-
-import yaml
 
 from literalizer import (
     CPP,

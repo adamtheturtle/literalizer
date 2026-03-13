@@ -8,7 +8,6 @@ from collections.abc import Mapping, Sequence  # noqa: TC003
 from typing import Any, Protocol, cast, runtime_checkable
 
 import yaml
-
 from beartype import beartype
 
 
