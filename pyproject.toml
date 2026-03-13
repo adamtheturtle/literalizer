@@ -27,6 +27,7 @@ dynamic = [
 ]
 dependencies = [
     "beartype==0.22.9",
+    "pyyaml>=6.0",
 ]
 optional-dependencies.dev = [
     "furo==2025.12.19",

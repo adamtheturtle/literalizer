@@ -7,6 +7,8 @@ import json
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from typing import Any, Protocol, cast, runtime_checkable
 
+import yaml
+
 from beartype import beartype
 
 
@@ -271,6 +273,49 @@ def literalize_json(
     data = json.loads(json_string)
     if not isinstance(data, (list, dict)):
         msg = f"Expected a JSON array or object, got {type(data).__name__}"
+        raise TypeError(msg)
+    return literalize(
+        data=data,
+        language=language,
+        prefix=prefix,
+        wrap=wrap,
+    )
+
+
+@beartype
+def literalize_yaml(
+    *,
+    yaml_string: str,
+    language: Language,
+    prefix: str,
+    wrap: bool,
+) -> str:
+    r"""Convert a YAML string to native language literal text.
+
+    This is a convenience wrapper around :func:`literalize` that
+    accepts YAML as a string rather than a pre-parsed data structure.
+
+    Args:
+        yaml_string: A YAML string representing a sequence or mapping.
+        language: A :class:`Language` instance describing how to format
+            literals.  Use one of the built-in constants
+            (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
+        prefix: String to prepend to each output line (e.g. ``"        "``
+            for 8-space indent, or ``"\t\t"`` for 2-tab indent).
+        wrap: If True, wrap the output in delimiters
+            (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
+
+    Raises:
+        yaml.YAMLError: If *yaml_string* is not valid YAML.
+        TypeError: If the top-level YAML value is not a sequence or
+            mapping.
+    """
+    data = yaml.safe_load(yaml_string)
+    if not isinstance(data, (list, dict)):
+        msg = (
+            f"Expected a YAML sequence or mapping,"
+            f" got {type(data).__name__}"
+        )
         raise TypeError(msg)
     return literalize(
         data=data,

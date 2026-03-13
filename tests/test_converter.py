@@ -11,6 +11,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+import yaml
+
 from literalizer import (
     CPP,
     CSHARP,
@@ -25,6 +27,7 @@ from literalizer import (
     LanguageSpec,
     literalize,
     literalize_json,
+    literalize_yaml,
 )
 
 
@@ -401,3 +404,53 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
         return
     parsed = ast.literal_eval(result)
     assert parsed == _lists_to_tuples(data)
+
+
+def test_literalize_yaml_sequence() -> None:
+    """literalize_yaml parses a YAML sequence string."""
+    yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="    ",
+        wrap=False,
+    )
+    expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
+    assert result == expected
+
+
+def test_literalize_yaml_mapping() -> None:
+    """literalize_yaml parses a YAML mapping string."""
+    yaml_string = "a: 1\nb: true\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = '{\n    "a": 1,\n    "b": True,\n}'
+    assert result == expected
+
+
+def test_literalize_yaml_invalid() -> None:
+    """literalize_yaml raises on invalid YAML."""
+    with pytest.raises(yaml.YAMLError):
+        literalize_yaml(
+            yaml_string=":\n  :\n    - ][",
+            language=PYTHON,
+            prefix="",
+            wrap=False,
+        )
+
+
+def test_literalize_yaml_scalar_raises() -> None:
+    """literalize_yaml raises TypeError for scalar YAML."""
+    with pytest.raises(
+        TypeError, match="Expected a YAML sequence or mapping"
+    ):
+        literalize_yaml(
+            yaml_string="42",
+            language=PYTHON,
+            prefix="",
+            wrap=False,
+        )
