@@ -157,10 +157,7 @@ def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401
         )
         return f'"{escaped}"'
 
-    if isinstance(value, datetime.datetime):
-        return f'"{value.isoformat()}"'
-
-    if isinstance(value, datetime.date):
+    if isinstance(value, (datetime.datetime, datetime.date)):
         return f'"{value.isoformat()}"'
 
     msg = f"Unsupported scalar type: {type(value)}"
