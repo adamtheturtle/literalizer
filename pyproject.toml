@@ -76,8 +76,6 @@ lint.ignore = [
     "D212",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
-    # beartype requires type imports to be available at runtime.
-    "TC003",
 ]
 lint.per-file-ignores."tests/test_*.py" = [
     # Allow 'assert' as we use it for tests.
