@@ -240,7 +240,7 @@ def test_empty_data_with_wrap() -> None:
         (None, CPP, "nullptr"),
     ],
 )
-def test_scalar(*, data: Any, language: Language, expected: str) -> None:
+def test_scalar(*, data: Any, language: Language, expected: str) -> None:  # noqa: ANN401
     """Scalar values are formatted as native literals."""
     result = literalize(data=data, language=language, prefix="", wrap=False)
     assert result == expected
@@ -443,7 +443,7 @@ def test_roundtrip_array(data: list[Any]) -> None:
 
 
 @given(data=json_scalars)
-def test_roundtrip_scalar(data: Any) -> None:
+def test_roundtrip_scalar(data: Any) -> None:  # noqa: ANN401
     """Scalar -> Python literal -> ast.literal_eval round-trips."""
     result = literalize(
         data=data,
