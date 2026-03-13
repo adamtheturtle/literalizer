@@ -1,5 +1,5 @@
-"""Convert JSON data structures to native language literal syntax."""
+"""Convert data structures to native language literal syntax."""
 
-from literalizer._converter import convert_json_to_native_literal
+from literalizer._converter import literalize
 
-__all__ = ["convert_json_to_native_literal"]
+__all__ = ["literalize"]

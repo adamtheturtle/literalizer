@@ -10,7 +10,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from literalizer import convert_json_to_native_literal
+from literalizer import literalize
 
 
 @pytest.mark.parametrize(
@@ -30,45 +30,35 @@ from literalizer import convert_json_to_native_literal
 def test_language_list(*, language: str, expected: str) -> None:
     """Each language produces the correct list literal."""
     data = [[True, None, "hi", [1, 2]]]
-    result = convert_json_to_native_literal(
-        data=data, language=language, prefix="", wrap=False
-    )
+    result = literalize(data=data, language=language, prefix="", wrap=False)
     assert result == expected
 
 
 def test_ruby_dict() -> None:
     """Ruby dicts use => syntax and nil."""
     data = [{"key": None}]
-    result = convert_json_to_native_literal(
-        data=data, language="rb", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="rb", prefix="", wrap=False)
     assert result == '{"key" => nil},'
 
 
 def test_dict_python() -> None:
     """Python dict renders key-value pairs with a prefix."""
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
-    result = convert_json_to_native_literal(
-        data=data, language="py", prefix="    ", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="    ", wrap=False)
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
 
 def test_dict_ruby() -> None:
     """Ruby dict renders with => syntax."""
     data = {"user_1": "team_alpha"}
-    result = convert_json_to_native_literal(
-        data=data, language="rb", prefix="  ", wrap=False
-    )
+    result = literalize(data=data, language="rb", prefix="  ", wrap=False)
     assert result == '  "user_1" => "team_alpha",'
 
 
 def test_dict_wrap() -> None:
     """Wrapping a dict adds braces and indentation."""
     data = {"a": 1, "b": 2}
-    result = convert_json_to_native_literal(
-        data=data, language="py", prefix="", wrap=True
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=True)
     expected = textwrap.dedent("""\
         {
             "a": 1,
@@ -79,25 +69,19 @@ def test_dict_wrap() -> None:
 
 def test_dict_empty() -> None:
     """An empty dict produces an empty string."""
-    result = convert_json_to_native_literal(
-        data={}, language="py", prefix="", wrap=False
-    )
+    result = literalize(data={}, language="py", prefix="", wrap=False)
     assert result == ""
 
 
 def test_dict_empty_with_wrap() -> None:
     """An empty dict with wrap still produces an empty string."""
-    result = convert_json_to_native_literal(
-        data={}, language="py", prefix="", wrap=True
-    )
+    result = literalize(data={}, language="py", prefix="", wrap=True)
     assert result == ""
 
 
 def test_integers() -> None:
     """Integer values are rendered literally."""
-    result = convert_json_to_native_literal(
-        data=[42, 0, -7], language="py", prefix="", wrap=False
-    )
+    result = literalize(data=[42, 0, -7], language="py", prefix="", wrap=False)
     expected = textwrap.dedent("""\
         42,
         0,
@@ -107,7 +91,7 @@ def test_integers() -> None:
 
 def test_floats() -> None:
     """Float values are rendered literally."""
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=[1000.0, 3.14], language="py", prefix="", wrap=False
     )
     expected = textwrap.dedent("""\
@@ -119,9 +103,7 @@ def test_floats() -> None:
 def test_string_escaping() -> None:
     """Special characters in strings are properly escaped."""
     data = ['say "hi"', "a\\b", "line1\nline2"]
-    result = convert_json_to_native_literal(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     lines = result.split("\n")
     assert lines[0] == '"say \\"hi\\"",'
     assert lines[1] == '"a\\\\b",'
@@ -131,43 +113,35 @@ def test_string_escaping() -> None:
 def test_nested_arrays() -> None:
     """Nested arrays are rendered recursively."""
     data = [[[1, 2], [3, 4]]]
-    result = convert_json_to_native_literal(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == "((1, 2), (3, 4)),"
 
 
 def test_dicts() -> None:
     """Dicts inside a list are rendered inline."""
     data = [{"name": "alice", "age": 30}]
-    result = convert_json_to_native_literal(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == '{"name": "alice", "age": 30},'
 
 
 def test_nested_dict_in_list() -> None:
     """A dict nested inside a list is rendered inline."""
     data = [["a", {"x": 1}]]
-    result = convert_json_to_native_literal(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == '("a", {"x": 1}),'
 
 
 def test_nested_list_in_dict() -> None:
     """A list nested inside a dict is rendered inline."""
     data = [{"items": [1, 2]}]
-    result = convert_json_to_native_literal(
-        data=data, language="py", prefix="", wrap=False
-    )
+    result = literalize(data=data, language="py", prefix="", wrap=False)
     assert result == '{"items": (1, 2)},'
 
 
 def test_prefix_spaces() -> None:
     """Space-based prefix is prepended to each line."""
     data = [True, False]
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=data,
         language="py",
         prefix="        ",
@@ -179,7 +153,7 @@ def test_prefix_spaces() -> None:
 def test_prefix_tabs() -> None:
     """Tab-based prefix is prepended to each line."""
     data = [True, False]
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=data,
         language="go",
         prefix="\t\t",
@@ -190,7 +164,7 @@ def test_prefix_tabs() -> None:
 
 def test_wrap() -> None:
     """Wrapping adds brackets and indentation."""
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=[True, False],
         language="py",
         prefix="",
@@ -206,7 +180,7 @@ def test_wrap() -> None:
 
 def test_wrap_with_prefix() -> None:
     """Wrapping respects the given prefix."""
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=[["a", 1.0]],
         language="py",
         prefix="    ",
@@ -221,32 +195,26 @@ def test_wrap_with_prefix() -> None:
 
 def test_empty_data() -> None:
     """An empty list produces an empty string."""
-    result = convert_json_to_native_literal(
-        data=[], language="py", prefix="", wrap=False
-    )
+    result = literalize(data=[], language="py", prefix="", wrap=False)
     assert result == ""
 
 
 def test_empty_data_with_wrap() -> None:
     """An empty list with wrap still produces an empty string."""
-    result = convert_json_to_native_literal(
-        data=[], language="py", prefix="", wrap=True
-    )
+    result = literalize(data=[], language="py", prefix="", wrap=True)
     assert result == ""
 
 
 def test_unknown_language_raises() -> None:
     """An unknown language key raises KeyError."""
     with pytest.raises(KeyError):
-        convert_json_to_native_literal(
-            data=[True], language="xyz", prefix="", wrap=False
-        )
+        literalize(data=[True], language="xyz", prefix="", wrap=False)
 
 
 def test_unsupported_type_raises() -> None:
     """An unsupported scalar type raises TypeError."""
     with pytest.raises(TypeError, match="Unsupported scalar type"):
-        convert_json_to_native_literal(
+        literalize(
             data=[object()],
             language="py",
             prefix="",
@@ -262,7 +230,7 @@ def test_part1_sample_python() -> None:
         ["user_1", 1002.0],
         ["user_1", 1003.0],
     ]
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=data,
         language="py",
         prefix="        ",
@@ -280,7 +248,7 @@ def test_part1_sample_python() -> None:
 def test_part2_sample_go() -> None:
     """Realistic test matching part2_sample_input.json structure."""
     data = [["user_1", 49, 1000.0], ["user_9", 10, 1003.0]]
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=data,
         language="go",
         prefix="        ",
@@ -328,7 +296,7 @@ json_objects = st.dictionaries(json_text, json_values, max_size=10)
 @given(data=json_arrays)
 def test_roundtrip_array(data: list[Any]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=data,
         language="py",
         prefix="",
@@ -344,7 +312,7 @@ def test_roundtrip_array(data: list[Any]) -> None:
 @given(data=json_objects)
 def test_roundtrip_dict(data: dict[str, Any]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
-    result = convert_json_to_native_literal(
+    result = literalize(
         data=data,
         language="py",
         prefix="",
