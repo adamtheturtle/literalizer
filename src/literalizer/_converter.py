@@ -7,11 +7,11 @@ import datetime
 import json
 from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 import yaml
 from beartype import BeartypeConf, beartype
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 type _Scalar = (
     str | int | float | bool | None | datetime.date | datetime.datetime
