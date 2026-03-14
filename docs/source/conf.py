@@ -52,6 +52,8 @@ html_theme_options = {
     "source_directory": "docs/source/",
 }
 
+spelling_word_list_filename = "../../spelling_private_dict.txt"
+
 htmlhelp_basename = "literalizerdoc"
 
 rst_prolog = f"""
