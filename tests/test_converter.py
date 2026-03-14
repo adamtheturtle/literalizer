@@ -507,6 +507,159 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
     assert parsed == _lists_to_tuples(value=data)
 
 
+@given(data=json_arrays)
+def test_roundtrip_json_array(data: list[Any]) -> None:
+    """Json.dumps -> literalize_json matches literalize for arrays."""
+    json_string = json.dumps(obj=data)
+    result_via_json = literalize_json(
+        json_string=json_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    result_direct = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    assert result_via_json == result_direct
+
+
+@given(data=json_objects)
+def test_roundtrip_json_object(data: dict[str, Any]) -> None:
+    """Json.dumps -> literalize_json matches literalize for objects."""
+    json_string = json.dumps(obj=data)
+    result_via_json = literalize_json(
+        json_string=json_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    result_direct = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    assert result_via_json == result_direct
+
+
+@given(data=json_scalars)
+def test_roundtrip_json_scalar(data: Any) -> None:  # noqa: ANN401
+    """Json.dumps -> literalize_json matches literalize for scalars."""
+    json_string = json.dumps(obj=data)
+    result_via_json = literalize_json(
+        json_string=json_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    result_direct = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result_via_json == result_direct
+
+
+# YAML safe_load turns certain strings into dates/booleans, so we
+# restrict the text strategy to avoid YAML's implicit type coercion.
+def _yaml_roundtrips_as_str(s: str) -> bool:
+    """Return True if ``s`` survives a YAML dump/load cycle as a
+    string.
+    """
+    loaded = yaml.safe_load(stream=yaml.dump(data=s))
+    return bool(loaded == s)
+
+
+yaml_safe_text = st.text(
+    alphabet=st.characters(
+        categories=("L", "M", "N", "P", "S", "Z"),
+        exclude_characters="\x00",
+    )
+).filter(_yaml_roundtrips_as_str)  # type: ignore[misc]
+
+yaml_scalars = (
+    st.none()
+    | st.booleans()
+    | st.integers()
+    | st.floats(allow_nan=False, allow_infinity=False)
+    | yaml_safe_text
+)
+
+yaml_values: st.SearchStrategy[Any] = st.recursive(
+    base=yaml_scalars,
+    extend=lambda children: (
+        st.lists(elements=children)
+        | st.dictionaries(keys=yaml_safe_text, values=children)
+    ),
+)
+
+yaml_arrays = st.lists(elements=yaml_values, max_size=10)
+yaml_objects = st.dictionaries(
+    keys=yaml_safe_text, values=yaml_values, max_size=10
+)
+
+
+@given(data=yaml_arrays)
+def test_roundtrip_yaml_array(data: list[Any]) -> None:
+    """Yaml.dump -> literalize_yaml matches literalize for arrays."""
+    yaml_string = yaml.dump(data=data, sort_keys=False)
+    result_via_yaml = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    result_direct = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    assert result_via_yaml == result_direct
+
+
+@given(data=yaml_objects)
+def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
+    """Yaml.dump -> literalize_yaml matches literalize for objects."""
+    yaml_string = yaml.dump(data=data, sort_keys=False)
+    result_via_yaml = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    result_direct = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    assert result_via_yaml == result_direct
+
+
+@given(data=yaml_scalars)
+def test_roundtrip_yaml_scalar(data: Any) -> None:  # noqa: ANN401
+    """Yaml.dump -> literalize_yaml matches literalize for scalars."""
+    yaml_string = yaml.dump(data=data, sort_keys=False)
+    result_via_yaml = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    result_direct = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result_via_yaml == result_direct
+
+
 def test_literalize_yaml_sequence() -> None:
     """``literalize_yaml`` parses a YAML sequence string."""
     yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
