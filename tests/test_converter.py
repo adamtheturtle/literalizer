@@ -564,24 +564,11 @@ def test_roundtrip_json_scalar(data: Any) -> None:  # noqa: ANN401
     assert result_via_json == result_direct
 
 
-# YAML safe_load turns certain strings into dates/booleans, so we
-# restrict the text strategy to only strings that survive a YAML
-# dump/load cycle unchanged.  Dates and datetimes are tested as
-# their own types in yaml_scalars below.
-def _yaml_roundtrips_as_str(s: str) -> bool:
-    """Return True if ``s`` survives a YAML dump/load cycle as a
-    string.
-    """
-    loaded = yaml.safe_load(stream=yaml.dump(data=s))
-    return bool(loaded == s)
-
-
-yaml_safe_text = st.text(
-    alphabet=st.characters(
-        categories=("L", "M", "N", "P", "S", "Z"),
-        exclude_characters="\x00",
-    )
-).filter(_yaml_roundtrips_as_str)  # type: ignore[misc]
+# yaml.dump properly quotes strings that YAML would otherwise interpret
+# as dates, booleans, or null, so arbitrary text round-trips through
+# yaml.dump -> yaml.safe_load unchanged.  Dates and datetimes are
+# tested as their own types in yaml_scalars below.
+yaml_safe_text = st.text()
 
 yaml_scalars = (
     st.none()
