@@ -52,12 +52,12 @@ Usage examples
        wrap=True,
    )
    # result:
-   # [  # noqa: ERA001
+   # [
    #     true,
    #     null,
    #     "hi",
    #     [1, 2],  # noqa: ERA001
-   # ]  # noqa: ERA001
+   # ]
 
    # Convert from a JSON string directly
    result = literalize_json(
@@ -67,12 +67,12 @@ Usage examples
        wrap=True,
    )
    # result:
-   # [  # noqa: ERA001
+   # [
    #     True,
    #     None,
    #     "hi",
    #     (1, 2),  # noqa: ERA001
-   # ]  # noqa: ERA001
+   # ]
 
    # Convert from a YAML string directly
    result = literalize_yaml(
@@ -82,12 +82,12 @@ Usage examples
        wrap=True,
    )
    # result:
-   # [  # noqa: ERA001
+   # [
    #     True,
    #     None,
    #     "hi",
    #     (1, 2),  # noqa: ERA001
-   # ]  # noqa: ERA001
+   # ]
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
    #                      CSHARP, CPP, JAVA, KOTLIN
