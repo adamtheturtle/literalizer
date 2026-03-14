@@ -225,6 +225,39 @@ def test_empty_data_with_wrap() -> None:
     assert result == ""
 
 
+@pytest.mark.parametrize(
+    ("data", "language", "expected"),
+    [
+        (42, PYTHON, "42"),
+        (3.14, PYTHON, "3.14"),
+        ("hello", PYTHON, '"hello"'),
+        (True, PYTHON, "True"),
+        (False, PYTHON, "False"),
+        (None, PYTHON, "None"),
+        (True, JAVASCRIPT, "true"),
+        (None, GO, "nil"),
+        (None, RUBY, "nil"),
+        (None, CPP, "nullptr"),
+    ],
+)
+def test_scalar(*, data: Any, language: Language, expected: str) -> None:  # noqa: ANN401
+    """Scalar values are formatted as native literals."""
+    result = literalize(data=data, language=language, prefix="", wrap=False)
+    assert result == expected
+
+
+def test_scalar_with_prefix() -> None:
+    """Scalar values respect the prefix parameter."""
+    result = literalize(data=42, language=PYTHON, prefix="    ", wrap=False)
+    assert result == "    42"
+
+
+def test_scalar_wrap_ignored() -> None:
+    """Wrap is ignored for scalar values."""
+    result = literalize(data=42, language=PYTHON, prefix="", wrap=True)
+    assert result == "42"
+
+
 def test_unsupported_type_raises() -> None:
     """An unsupported scalar type raises TypeError."""
     with pytest.raises(TypeError, match="Unsupported scalar type"):
@@ -324,6 +357,7 @@ json_values: st.SearchStrategy[Any] = st.recursive(
 )
 json_arrays = st.lists(json_values, max_size=10)
 json_objects = st.dictionaries(json_text, json_values, max_size=10)
+json_top_level = json_scalars | json_arrays | json_objects
 
 
 def test_literalize_json_array() -> None:
@@ -363,15 +397,33 @@ def test_literalize_json_invalid() -> None:
         )
 
 
-def test_literalize_json_scalar_raises() -> None:
-    """literalize_json raises TypeError for scalar JSON."""
-    with pytest.raises(TypeError, match="Expected a JSON array or object"):
-        literalize_json(
-            json_string="42",
-            language=PYTHON,
-            prefix="",
-            wrap=False,
-        )
+@pytest.mark.parametrize(
+    ("json_string", "language", "expected"),
+    [
+        ("42", PYTHON, "42"),
+        ("3.14", PYTHON, "3.14"),
+        ('"hello"', PYTHON, '"hello"'),
+        ("true", PYTHON, "True"),
+        ("false", PYTHON, "False"),
+        ("null", PYTHON, "None"),
+        ("true", JAVASCRIPT, "true"),
+        ("null", GO, "nil"),
+    ],
+)
+def test_literalize_json_scalar(
+    *,
+    json_string: str,
+    language: Language,
+    expected: str,
+) -> None:
+    """literalize_json handles scalar JSON values."""
+    result = literalize_json(
+        json_string=json_string,
+        language=language,
+        prefix="",
+        wrap=False,
+    )
+    assert result == expected
 
 
 @given(data=json_arrays)
@@ -388,6 +440,19 @@ def test_roundtrip_array(data: list[Any]) -> None:
         return
     parsed = ast.literal_eval(result)
     assert parsed == [_lists_to_tuples(v) for v in data]
+
+
+@given(data=json_scalars)
+def test_roundtrip_scalar(data: Any) -> None:  # noqa: ANN401
+    """Scalar -> Python literal -> ast.literal_eval round-trips."""
+    result = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    parsed = ast.literal_eval(result)
+    assert parsed == data
 
 
 @given(data=json_objects)
@@ -443,15 +508,33 @@ def test_literalize_yaml_invalid() -> None:
         )
 
 
-def test_literalize_yaml_scalar_raises() -> None:
-    """literalize_yaml raises TypeError for scalar YAML."""
-    with pytest.raises(TypeError, match="Expected a YAML sequence or mapping"):
-        literalize_yaml(
-            yaml_string="42",
-            language=PYTHON,
-            prefix="",
-            wrap=False,
-        )
+@pytest.mark.parametrize(
+    ("yaml_string", "language", "expected"),
+    [
+        ("42", PYTHON, "42"),
+        ("3.14", PYTHON, "3.14"),
+        ("hello", PYTHON, '"hello"'),
+        ("true", PYTHON, "True"),
+        ("false", PYTHON, "False"),
+        ("null", PYTHON, "None"),
+        ("true", JAVASCRIPT, "true"),
+        ("null", GO, "nil"),
+    ],
+)
+def test_literalize_yaml_scalar(
+    *,
+    yaml_string: str,
+    language: Language,
+    expected: str,
+) -> None:
+    """literalize_yaml handles scalar YAML values."""
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=language,
+        prefix="",
+        wrap=False,
+    )
+    assert result == expected
 
 
 def test_literalize_yaml_date() -> None:
