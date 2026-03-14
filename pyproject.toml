@@ -90,6 +90,9 @@ version_scheme = "post-release"
 line-length = 79
 lint.select = [ "ALL" ]
 lint.ignore = [
+    # Dynamically typed expressions (typing.Any) are used intentionally
+    # in functions that handle arbitrary JSON values.
+    "ANN401",
     # Ruff warns that this conflicts with the formatter.
     "COM812",
     # Allow our chosen docstring line-style - pydocstringformatter handles formatting
@@ -98,6 +101,10 @@ lint.ignore = [
     "D212",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
+    # Too many return statements — _format_scalar dispatches on type.
+    "PLR0911",
+    # Runtime imports from collections.abc are needed by beartype.
+    "TC003",
 ]
 lint.per-file-ignores."doccmd_*.py" = [
     # Allow our chosen docstring line-style - pydocstringformatter handles
@@ -109,6 +116,8 @@ lint.per-file-ignores."doccmd_*.py" = [
     "S101",
 ]
 lint.per-file-ignores."tests/test_*.py" = [
+    # Allow naive datetimes in tests.
+    "DTZ001",
     # Allow 'assert' as we use it for tests.
     "S101",
 ]

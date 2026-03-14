@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
-from collections.abc import Callable, Mapping, Sequence  # noqa: TC003
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Protocol, cast, runtime_checkable
 
 import yaml
@@ -408,7 +408,7 @@ KOTLIN = LanguageSpec(
 
 
 @beartype
-def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401, PLR0911
+def _format_scalar(*, value: Any, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     if value is None:
         return spec.null_literal
@@ -441,7 +441,7 @@ def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401, PLR09
 
 
 @beartype
-def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
+def _format_value(*, value: Any, spec: Language) -> str:
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), and dicts.

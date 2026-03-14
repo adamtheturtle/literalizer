@@ -270,7 +270,7 @@ def test_empty_data_with_wrap() -> None:
         (None, CPP, "nullptr"),
     ],
 )
-def test_scalar(*, data: Any, language: Language, expected: str) -> None:  # noqa: ANN401
+def test_scalar(*, data: Any, language: Language, expected: str) -> None:
     """Scalar values are formatted as native literals."""
     result = literalize(data=data, language=language, prefix="", wrap=False)
     assert result == expected
@@ -479,7 +479,7 @@ def test_roundtrip_array(data: list[Any]) -> None:
 
 
 @given(data=json_scalars)
-def test_roundtrip_scalar(data: Any) -> None:  # noqa: ANN401
+def test_roundtrip_scalar(data: Any) -> None:
     """Scalar -> Python literal -> ast.literal_eval round-trips."""
     result = literalize(
         data=data,
@@ -546,7 +546,7 @@ def test_roundtrip_json_object(data: dict[str, Any]) -> None:
 
 
 @given(data=json_scalars)
-def test_roundtrip_json_scalar(data: Any) -> None:  # noqa: ANN401
+def test_roundtrip_json_scalar(data: Any) -> None:
     """Json.dumps -> literalize_json matches literalize for scalars."""
     json_string = json.dumps(obj=data)
     result_via_json = literalize_json(
@@ -642,7 +642,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 
 
 @given(data=yaml_scalars)
-def test_roundtrip_yaml_scalar(data: Any) -> None:  # noqa: ANN401
+def test_roundtrip_yaml_scalar(data: Any) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
     yaml_string = yaml.dump(data=data, sort_keys=False)
     result_via_yaml = literalize_yaml(
@@ -771,7 +771,7 @@ def test_literalize_datetime() -> None:
     """
     result = literalize(
         data=[
-            datetime.datetime(  # noqa: DTZ001
+            datetime.datetime(
                 year=2024,
                 month=1,
                 day=15,
@@ -788,7 +788,7 @@ def test_literalize_datetime() -> None:
 
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
-_SAMPLE_DATETIME = datetime.datetime(  # noqa: DTZ001
+_SAMPLE_DATETIME = datetime.datetime(
     year=2024,
     month=1,
     day=15,
@@ -796,7 +796,7 @@ _SAMPLE_DATETIME = datetime.datetime(  # noqa: DTZ001
     minute=30,
     second=0,
 )
-_SAMPLE_DATETIME_MICRO = datetime.datetime(  # noqa: DTZ001
+_SAMPLE_DATETIME_MICRO = datetime.datetime(
     year=2024,
     month=1,
     day=15,
@@ -959,7 +959,7 @@ def test_format_datetime_cpp() -> None:
 
 def test_format_datetime_cpp_midnight() -> None:
     """``format_datetime_cpp`` at midnight omits zero time components."""
-    midnight = datetime.datetime(  # noqa: DTZ001
+    midnight = datetime.datetime(
         year=2024,
         month=1,
         day=15,
@@ -977,7 +977,7 @@ def test_format_datetime_cpp_midnight() -> None:
 
 def test_format_datetime_cpp_seconds_and_microseconds() -> None:
     """``format_datetime_cpp`` includes seconds and microseconds."""
-    dt = datetime.datetime(  # noqa: DTZ001
+    dt = datetime.datetime(
         year=2024,
         month=1,
         day=15,
