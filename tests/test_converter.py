@@ -226,8 +226,8 @@ def test_empty_data_with_wrap() -> None:
 
 
 @pytest.mark.parametrize(
-    ("data", "language", "expected"),
-    [
+    argnames=("data", "language", "expected"),
+    argvalues=[
         (42, PYTHON, "42"),
         (3.14, PYTHON, "3.14"),
         ("hello", PYTHON, '"hello"'),
@@ -359,8 +359,6 @@ json_values: st.SearchStrategy[Any] = st.recursive(
 )
 json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
-json_top_level = json_scalars | json_arrays | json_objects
-
 
 def test_literalize_json_array() -> None:
     """Literalize_json parses a JSON array string."""
@@ -453,7 +451,7 @@ def test_roundtrip_scalar(data: Any) -> None:  # noqa: ANN401
         prefix="",
         wrap=False,
     )
-    parsed = ast.literal_eval(result)
+    parsed = ast.literal_eval(node_or_string=result)
     assert parsed == data
 
 

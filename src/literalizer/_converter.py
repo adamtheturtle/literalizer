@@ -26,32 +26,32 @@ class Language(Protocol):
     @property
     def null_literal(self) -> str:
         """The literal representing null/None."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def true_literal(self) -> str:
         """The literal representing true/True."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def false_literal(self) -> str:
         """The literal representing false/False."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def collection_open(self) -> str:
         """The opening delimiter for collections."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def collection_close(self) -> str:
         """The closing delimiter for collections."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def dict_separator(self) -> str:
         """The separator between dict keys and values."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @dataclasses.dataclass(frozen=True)
