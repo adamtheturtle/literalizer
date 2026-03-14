@@ -20,6 +20,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_substitution_extensions",
+    "sphinxcontrib.spelling",
 ]
 
 templates_path = ["_templates"]
@@ -52,6 +53,8 @@ html_theme_options = {
 }
 
 htmlhelp_basename = "literalizerdoc"
+
+spelling_word_list_filename = "../../spelling_private_dict.txt"
 
 rst_prolog = f"""
 .. |project| replace:: {project}

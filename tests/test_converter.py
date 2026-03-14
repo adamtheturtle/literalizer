@@ -32,8 +32,8 @@ from literalizer import (
 
 
 @pytest.mark.parametrize(
-    ("language", "expected"),
-    [
+    argnames=("language", "expected"),
+    argvalues=[
         (PYTHON, '(True, None, "hi", (1, 2)),'),
         (JAVASCRIPT, '[true, null, "hi", [1, 2]],'),
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
@@ -77,11 +77,13 @@ def test_dict_wrap() -> None:
     """Wrapping a dict adds braces and indentation."""
     data = {"a": 1, "b": 2}
     result = literalize(data=data, language=PYTHON, prefix="", wrap=True)
-    expected = textwrap.dedent("""\
+    expected = textwrap.dedent(
+        text="""\
         {
             "a": 1,
             "b": 2,
-        }""")
+        }"""
+    )
     assert result == expected
 
 
@@ -102,10 +104,12 @@ def test_integers() -> None:
     result = literalize(
         data=[42, 0, -7], language=PYTHON, prefix="", wrap=False
     )
-    expected = textwrap.dedent("""\
+    expected = textwrap.dedent(
+        text="""\
         42,
         0,
-        -7,""")
+        -7,"""
+    )
     assert result == expected
 
 
@@ -114,9 +118,11 @@ def test_floats() -> None:
     result = literalize(
         data=[1000.0, 3.14], language=PYTHON, prefix="", wrap=False
     )
-    expected = textwrap.dedent("""\
+    expected = textwrap.dedent(
+        text="""\
         1000.0,
-        3.14,""")
+        3.14,"""
+    )
     assert result == expected
 
 
@@ -124,7 +130,7 @@ def test_string_escaping() -> None:
     """Special characters in strings are properly escaped."""
     data = ['say "hi"', "a\\b", "line1\nline2"]
     result = literalize(data=data, language=PYTHON, prefix="", wrap=False)
-    lines = result.split("\n")
+    lines = result.split(sep="\n")
     assert lines[0] == '"say \\"hi\\"",'
     assert lines[1] == '"a\\\\b",'
     assert lines[2] == '"line1\\nline2",'
@@ -190,11 +196,13 @@ def test_wrap() -> None:
         prefix="",
         wrap=True,
     )
-    expected = textwrap.dedent("""\
+    expected = textwrap.dedent(
+        text="""\
         [
             True,
             False,
-        ]""")
+        ]"""
+    )
     assert result == expected
 
 
@@ -206,10 +214,12 @@ def test_wrap_with_prefix() -> None:
         prefix="    ",
         wrap=True,
     )
-    expected = textwrap.dedent("""\
+    expected = textwrap.dedent(
+        text="""\
         [
             ("a", 1.0),
-        ]""")
+        ]"""
+    )
     assert result == expected
 
 
@@ -226,8 +236,8 @@ def test_empty_data_with_wrap() -> None:
 
 
 @pytest.mark.parametrize(
-    ("data", "language", "expected"),
-    [
+    argnames=("data", "language", "expected"),
+    argvalues=[
         (42, PYTHON, "42"),
         (3.14, PYTHON, "3.14"),
         ("hello", PYTHON, '"hello"'),
@@ -260,7 +270,9 @@ def test_scalar_wrap_ignored() -> None:
 
 def test_unsupported_type_raises() -> None:
     """An unsupported scalar type raises TypeError."""
-    with pytest.raises(TypeError, match="Unsupported scalar type"):
+    with pytest.raises(
+        expected_exception=TypeError, match="Unsupported scalar type"
+    ):
         literalize(
             data=[object()],
             language=PYTHON,
@@ -308,7 +320,7 @@ def test_part1_sample_python() -> None:
         '        ("user_1", 1002.0),',
         '        ("user_1", 1003.0),',
     ]
-    assert result.split("\n") == expected_lines
+    assert result.split(sep="\n") == expected_lines
 
 
 def test_part2_sample_go() -> None:
@@ -320,20 +332,20 @@ def test_part2_sample_go() -> None:
         prefix="        ",
         wrap=False,
     )
-    lines = result.split("\n")
+    lines = result.split(sep="\n")
     assert lines[0] == '        {"user_1", 49, 1000.0},'
     assert lines[1] == '        {"user_9", 10, 1003.0},'
 
 
-def _lists_to_tuples(value: Any) -> Any:  # noqa: ANN401
+def _lists_to_tuples(*, value: Any) -> Any:  # noqa: ANN401
     """Recursively convert lists to tuples to match Python converter
     output.
     """
     if isinstance(value, list):
-        return tuple(_lists_to_tuples(v) for v in value)  # pyright: ignore[reportUnknownVariableType]
+        return tuple(_lists_to_tuples(value=v) for v in value)  # pyright: ignore[reportUnknownVariableType]
     if isinstance(value, dict):
         return {  # pyright: ignore[reportUnknownVariableType]
-            k: _lists_to_tuples(v)
+            k: _lists_to_tuples(value=v)
             for k, v in value.items()  # pyright: ignore[reportUnknownVariableType]
         }
     return value
@@ -352,16 +364,18 @@ json_scalars = (
     | json_text
 )
 json_values: st.SearchStrategy[Any] = st.recursive(
-    json_scalars,
-    lambda children: st.lists(children) | st.dictionaries(json_text, children),
+    base=json_scalars,
+    extend=lambda children: (
+        st.lists(elements=children)
+        | st.dictionaries(keys=json_text, values=children)
+    ),
 )
-json_arrays = st.lists(json_values, max_size=10)
-json_objects = st.dictionaries(json_text, json_values, max_size=10)
-json_top_level = json_scalars | json_arrays | json_objects
+json_arrays = st.lists(elements=json_values, max_size=10)
+json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
 
 
 def test_literalize_json_array() -> None:
-    """literalize_json parses a JSON array string."""
+    """``literalize_json`` parses a JSON array string."""
     json_string = '[["user_1", 1000.0], ["user_2", 2000.0]]'
     result = literalize_json(
         json_string=json_string,
@@ -374,7 +388,7 @@ def test_literalize_json_array() -> None:
 
 
 def test_literalize_json_object() -> None:
-    """literalize_json parses a JSON object string."""
+    """``literalize_json`` parses a JSON object string."""
     json_string = '{"a": 1, "b": true}'
     result = literalize_json(
         json_string=json_string,
@@ -387,8 +401,8 @@ def test_literalize_json_object() -> None:
 
 
 def test_literalize_json_invalid() -> None:
-    """literalize_json raises on invalid JSON."""
-    with pytest.raises(json.JSONDecodeError):
+    """``literalize_json`` raises on invalid JSON."""
+    with pytest.raises(expected_exception=json.JSONDecodeError):
         literalize_json(
             json_string="not json",
             language=PYTHON,
@@ -398,8 +412,8 @@ def test_literalize_json_invalid() -> None:
 
 
 @pytest.mark.parametrize(
-    ("json_string", "language", "expected"),
-    [
+    argnames=("json_string", "language", "expected"),
+    argvalues=[
         ("42", PYTHON, "42"),
         ("3.14", PYTHON, "3.14"),
         ('"hello"', PYTHON, '"hello"'),
@@ -416,7 +430,7 @@ def test_literalize_json_scalar(
     language: Language,
     expected: str,
 ) -> None:
-    """literalize_json handles scalar JSON values."""
+    """``literalize_json`` handles scalar JSON values."""
     result = literalize_json(
         json_string=json_string,
         language=language,
@@ -438,8 +452,8 @@ def test_roundtrip_array(data: list[Any]) -> None:
     if not data:
         assert result == ""
         return
-    parsed = ast.literal_eval(result)
-    assert parsed == [_lists_to_tuples(v) for v in data]
+    parsed = ast.literal_eval(node_or_string=result)
+    assert parsed == [_lists_to_tuples(value=v) for v in data]
 
 
 @given(data=json_scalars)
@@ -451,7 +465,7 @@ def test_roundtrip_scalar(data: Any) -> None:  # noqa: ANN401
         prefix="",
         wrap=False,
     )
-    parsed = ast.literal_eval(result)
+    parsed = ast.literal_eval(node_or_string=result)
     assert parsed == data
 
 
@@ -467,12 +481,12 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
     if not data:
         assert result == ""
         return
-    parsed = ast.literal_eval(result)
-    assert parsed == _lists_to_tuples(data)
+    parsed = ast.literal_eval(node_or_string=result)
+    assert parsed == _lists_to_tuples(value=data)
 
 
 def test_literalize_yaml_sequence() -> None:
-    """literalize_yaml parses a YAML sequence string."""
+    """``literalize_yaml`` parses a YAML sequence string."""
     yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -485,7 +499,7 @@ def test_literalize_yaml_sequence() -> None:
 
 
 def test_literalize_yaml_mapping() -> None:
-    """literalize_yaml parses a YAML mapping string."""
+    """``literalize_yaml`` parses a YAML mapping string."""
     yaml_string = "a: 1\nb: true\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -498,8 +512,8 @@ def test_literalize_yaml_mapping() -> None:
 
 
 def test_literalize_yaml_invalid() -> None:
-    """literalize_yaml raises on invalid YAML."""
-    with pytest.raises(yaml.YAMLError):
+    """``literalize_yaml`` raises on invalid YAML."""
+    with pytest.raises(expected_exception=yaml.YAMLError):
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
@@ -509,8 +523,8 @@ def test_literalize_yaml_invalid() -> None:
 
 
 @pytest.mark.parametrize(
-    ("yaml_string", "language", "expected"),
-    [
+    argnames=("yaml_string", "language", "expected"),
+    argvalues=[
         ("42", PYTHON, "42"),
         ("3.14", PYTHON, "3.14"),
         ("hello", PYTHON, '"hello"'),
@@ -527,7 +541,7 @@ def test_literalize_yaml_scalar(
     language: Language,
     expected: str,
 ) -> None:
-    """literalize_yaml handles scalar YAML values."""
+    """``literalize_yaml`` handles scalar YAML values."""
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=language,
@@ -538,7 +552,7 @@ def test_literalize_yaml_scalar(
 
 
 def test_literalize_yaml_date() -> None:
-    """literalize_yaml formats date values as ISO string literals."""
+    """``literalize_yaml`` formats date values as ISO string literals."""
     yaml_string = "- 2024-01-15\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -550,7 +564,9 @@ def test_literalize_yaml_date() -> None:
 
 
 def test_literalize_yaml_datetime() -> None:
-    """literalize_yaml formats datetime values as ISO string literals."""
+    """``literalize_yaml`` formats datetime values as ISO string
+    literals.
+    """
     yaml_string = "- 2024-01-15T12:30:00\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -562,9 +578,11 @@ def test_literalize_yaml_datetime() -> None:
 
 
 def test_literalize_date() -> None:
-    """Literalize formats datetime.date values as ISO string literals."""
+    """``literalize`` formats datetime.date values as ISO string
+    literals.
+    """
     result = literalize(
-        data=[datetime.date(2024, 1, 15)],
+        data=[datetime.date(year=2024, month=1, day=15)],
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -573,9 +591,20 @@ def test_literalize_date() -> None:
 
 
 def test_literalize_datetime() -> None:
-    """Literalize formats datetime.datetime values as ISO string literals."""
+    """``literalize`` formats datetime.datetime values as ISO string
+    literals.
+    """
     result = literalize(
-        data=[datetime.datetime(2024, 1, 15, 12, 30, 0)],  # noqa: DTZ001
+        data=[
+            datetime.datetime(  # noqa: DTZ001
+                year=2024,
+                month=1,
+                day=15,
+                hour=12,
+                minute=30,
+                second=0,
+            ),
+        ],
         language=PYTHON,
         prefix="",
         wrap=False,

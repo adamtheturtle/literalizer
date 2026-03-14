@@ -11,8 +11,6 @@ from typing import Any, Protocol, cast, runtime_checkable
 import yaml
 from beartype import BeartypeConf, beartype
 
-beartype = beartype(conf=BeartypeConf(is_pep484_tower=True))
-
 
 @runtime_checkable
 class Language(Protocol):
@@ -24,17 +22,34 @@ class Language(Protocol):
     """
 
     @property
-    def null_literal(self) -> str: ...
+    def null_literal(self) -> str:
+        """The literal representing null/None."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
     @property
-    def true_literal(self) -> str: ...
+    def true_literal(self) -> str:
+        """The literal representing true/True."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
     @property
-    def false_literal(self) -> str: ...
+    def false_literal(self) -> str:
+        """The literal representing false/False."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
     @property
-    def collection_open(self) -> str: ...
+    def collection_open(self) -> str:
+        """The opening delimiter for collections."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
     @property
-    def collection_close(self) -> str: ...
+    def collection_close(self) -> str:
+        """The closing delimiter for collections."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
     @property
-    def dict_separator(self) -> str: ...
+    def dict_separator(self) -> str:
+        """The separator between dict keys and values."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @dataclasses.dataclass(frozen=True)
@@ -146,7 +161,7 @@ def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401
         return spec.true_literal if value else spec.false_literal
 
     if isinstance(value, int):
-        return str(value)
+        return str(object=value)
 
     if isinstance(value, float):
         return repr(value)
@@ -194,7 +209,7 @@ def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
     return _format_scalar(value=value, spec=spec)
 
 
-@beartype
+@beartype(conf=BeartypeConf(is_pep484_tower=True))
 def literalize(
     *,
     data: Sequence[Any] | Mapping[str, Any] | float | bool | None,
@@ -282,7 +297,7 @@ def literalize_json(
     Raises:
         json.JSONDecodeError: If *json_string* is not valid JSON.
     """
-    data = json.loads(json_string)
+    data = json.loads(s=json_string)
     return literalize(
         data=data,
         language=language,
@@ -318,7 +333,7 @@ def literalize_yaml(
     Raises:
         yaml.YAMLError: If *yaml_string* is not valid YAML.
     """
-    data = yaml.safe_load(yaml_string)
+    data = yaml.safe_load(stream=yaml_string)
     return literalize(
         data=data,
         language=language,

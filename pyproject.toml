@@ -30,19 +30,38 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 optional-dependencies.dev = [
+    "actionlint-py==1.7.11.24",
+    "check-manifest==0.51",
+    "deptry==0.24.0",
+    "doc8==2.0.0",
+    "doccmd==2026.3.2",
     "furo==2025.12.19",
     "hypothesis>=6.0",
+    "interrogate==1.7.0",
     "mypy[faster-cache]==1.19.1",
     "mypy-strict-kwargs==2026.1.12",
     "prek==0.3.5",
+    "pydocstringformatter==0.7.5",
+    "pylint[spelling]==4.0.5",
+    "pylint-per-file-ignores==3.2.0",
     "pyproject-fmt==2.18.1",
+    "pyrefly==0.56.0",
+    "pyright==1.1.408",
+    "pyroma==5.0.1",
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
     "ruff==0.15.6",
     "sphinx==9.1.0",
     "sphinx-copybutton==0.5.2",
+    "sphinx-lint==1.0.2",
     "sphinx-pyproject==0.3.0",
     "sphinx-substitution-extensions==2026.1.12",
+    "sphinxcontrib-spelling==8.0.2",
+    "ty==0.0.21",
+    "types-pyyaml==6.0.12.20241230",
+    "vulture==2.15",
+    "yamlfix==1.19.1",
+    "zizmor==1.23.1",
 ]
 optional-dependencies.release = [
     "check-wheel-contents==0.6.3",
@@ -80,6 +99,15 @@ lint.ignore = [
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
 ]
+lint.per-file-ignores."doccmd_*.py" = [
+    # Allow our chosen docstring line-style - pydocstringformatter handles
+    # formatting but docstrings in docs may not match this style.
+    "D200",
+    # Allow commented-out example output in documentation code blocks.
+    "ERA001",
+    # Allow asserts in docs.
+    "S101",
+]
 lint.per-file-ignores."tests/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
@@ -90,6 +118,131 @@ lint.per-file-ignores."tests/test_*.py" = [
 lint.unfixable = [ "ERA001" ]
 lint.mccabe.max-complexity = 12
 lint.pydocstyle.convention = "google"
+
+[tool.pylint]
+DESIGN.max-complexity = 12
+# Allow the body of an if to be on the same line as the test if there is no
+# else.
+FORMAT.single-line-if-stmt = false
+# Pickle collected data for later comparisons.
+MASTER.persistent = true
+# Use multiple processes to speed up Pylint.
+MASTER.jobs = 0
+# List of plugins (as comma separated values of python modules names) to load,
+# usually to register additional checkers.
+# See https://chezsoi.org/lucas/blog/pylint-strict-base-configuration.html.
+# We do not use the plugins:
+# - pylint.extensions.code_style
+# - pylint.extensions.magic_value
+# - pylint.extensions.while_used
+# as they seemed to get in the way.
+MASTER.load-plugins = [
+    "pylint_per_file_ignores",
+    "pylint.extensions.bad_builtin",
+    "pylint.extensions.comparison_placement",
+    "pylint.extensions.consider_refactoring_into_while_condition",
+    "pylint.extensions.docparams",
+    "pylint.extensions.dunder",
+    "pylint.extensions.eq_without_hash",
+    "pylint.extensions.for_any_all",
+    "pylint.extensions.mccabe",
+    "pylint.extensions.no_self_use",
+    "pylint.extensions.overlapping_exceptions",
+    "pylint.extensions.private_import",
+    "pylint.extensions.redefined_loop_name",
+    "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.typing",
+]
+# Allow loading of arbitrary C extensions. Extensions are imported into the
+# active Python interpreter and may run arbitrary code.
+MASTER.unsafe-load-any-extension = false
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifier separated by comma (,) or put this option
+# multiple time (only on the command line, not in the configuration file where
+# it should appear only once). See also the "--disable" option for examples.
+MESSAGES-CONTROL.enable = [
+    "bad-inline-option",
+    "deprecated-pragma",
+    "file-ignored",
+    "spelling",
+    "use-symbolic-message-instead",
+    "useless-suppression",
+]
+# Disable the message, report, category or checker with the given id(s). You
+# can either give multiple identifiers separated by comma (,) or put this
+# option multiple times (only on the command line, not in the configuration
+# file where it should appear only once).You can also use "--disable=all" to
+# disable everything first and then reenable specific checks. For example, if
+# you want to run only the similarities checker, you can use "--disable=all
+# --enable=similarities". If you want to run only the classes checker, but have
+# no Warning level messages displayed, use"--disable=all --enable=classes
+# --disable=W"
+MESSAGES-CONTROL.disable = [
+    "too-few-public-methods",
+    "too-many-locals",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-return-statements",
+    "too-many-lines",
+    "locally-disabled",
+    # Let ruff handle long lines
+    "line-too-long",
+    # Let ruff handle unused imports
+    "unused-import",
+    # Let ruff deal with sorting
+    "ungrouped-imports",
+    # We don't need everything to be documented because of mypy
+    "missing-type-doc",
+    "missing-return-type-doc",
+    # Too difficult to please
+    "duplicate-code",
+    # Let ruff handle imports
+    "wrong-import-order",
+]
+# We ignore invalid names because:
+# - We want to use generated module names, which may not be valid, but are never seen.
+# - We want to use global variables in documentation, which may not be uppercase
+MESSAGES-CONTROL.per-file-ignores = [
+    "docs/source/conf.py:invalid-name",
+    "docs/source/doccmd_*.py:invalid-name",
+    "doccmd_README_rst_*.py:invalid-name",
+]
+# Spelling dictionary name. Available dictionaries: none. To make it working
+# install python-enchant package.
+SPELLING.spelling-dict = "en_US"
+# A path to a file that contains private dictionary; one word per line.
+SPELLING.spelling-private-dict-file = "spelling_private_dict.txt"
+# Tells whether to store unknown words to indicated private dictionary in
+# --spelling-private-dict-file option instead of raising a message.
+SPELLING.spelling-store-unknown-words = "no"
+
+[tool.check-manifest]
+ignore = [
+    ".pre-commit-config.yaml",
+    ".vscode/*.json",
+    "conftest.py",
+    "CHANGELOG.rst",
+    "CODE_OF_CONDUCT.rst",
+    "CONTRIBUTING.rst",
+    "LICENSE",
+    "Makefile",
+    "ci",
+    "ci/**",
+    "docs",
+    "docs/**",
+    ".git_archival.txt",
+    "spelling_private_dict.txt",
+    "tests",
+    "tests/**",
+    "zizmor.yml",
+]
+
+[tool.deptry]
+pep621_dev_dependency_groups = [
+    "dev",
+    "release",
+]
 
 [tool.pyproject-fmt]
 indent = 4
@@ -111,7 +264,87 @@ report.show_missing = true
 strict = true
 files = [ "." ]
 exclude = [ "build" ]
-plugins = [
-    "mypy_strict_kwargs",
-]
+plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
+
+[tool.pyrefly]
+errors.non-exhaustive-match = "error"
+
+[tool.pyright]
+enableTypeIgnoreComments = false
+reportUnnecessaryTypeIgnoreComment = true
+typeCheckingMode = "strict"
+
+[tool.ty]
+analysis.respect-type-ignore-comments = false
+terminal.error-on-warning = true
+
+[tool.doc8]
+max_line_length = 2000
+ignore_path = [
+    "./.eggs",
+    "./docs/build",
+    "./docs/build/spelling/output.txt",
+    "./node_modules",
+    "./src/*.egg-info/",
+    "./src/*/_setuptools_scm_version.txt",
+]
+
+[tool.interrogate]
+fail-under = 100
+omit-covered-files = true
+verbose = 2
+
+[tool.pydocstringformatter]
+write = true
+split-summary-body = false
+max-line-length = 75
+linewrap-full-docstring = true
+
+[tool.vulture]
+# Ideally we would limit the paths to the source code where we want to ignore names,
+# but Vulture does not enable this.
+ignore_names = [
+    # pytest configuration
+    "pytest_collect_file",
+    "pytest_collection_modifyitems",
+    "pytest_plugins",
+    # pytest fixtures - we name fixtures like this for this purpose
+    "fixture_*",
+    # Sphinx
+    "autoclass_content",
+    "autodoc_member_order",
+    "copybutton_exclude",
+    "extensions",
+    "html_show_copyright",
+    "html_show_sourcelink",
+    "html_show_sphinx",
+    "html_theme",
+    "html_theme_options",
+    "html_title",
+    "htmlhelp_basename",
+    "intersphinx_mapping",
+    "language",
+    "linkcheck_ignore",
+    "linkcheck_retries",
+    "master_doc",
+    "nitpicky",
+    "project_copyright",
+    "pygments_style",
+    "rst_prolog",
+    "source_suffix",
+    "spelling_word_list_filename",
+    "templates_path",
+    "warning_is_error",
+    # Used in documentation code examples
+    "custom",
+    "result",
+]
+# Duplicate some of .gitignore
+exclude = [
+    ".venv",
+]
+
+[tool.yamlfix]
+section_whitelines = 1
+whitelines = 1
