@@ -575,7 +575,9 @@ def test_literalize_date() -> None:
 
 
 def test_literalize_datetime() -> None:
-    """Literalize formats datetime.datetime values as ISO string literals."""
+    """Literalize formats datetime.datetime values as ISO string
+    literals.
+    """
     result = literalize(
         data=[datetime.datetime(year=2024, month=1, day=15, hour=12, minute=30, second=0)],  # noqa: DTZ001
         language=PYTHON,
