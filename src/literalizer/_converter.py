@@ -312,6 +312,16 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def comment_prefix(self) -> str:
+        """The prefix for single-line comments (e.g. ``"#"`` for
+        Python, ``"//"`` for JavaScript).
+
+        Used by :func:`literalize_yaml` to preserve YAML comments
+        in the target language.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -330,6 +340,7 @@ class LanguageSpec:
     dict_separator: str
     format_date: Callable[[datetime.date], str] = format_date_iso
     format_datetime: Callable[[datetime.datetime], str] = format_datetime_iso
+    comment_prefix: str = "//"
 
 
 PYTHON = LanguageSpec(
@@ -339,6 +350,7 @@ PYTHON = LanguageSpec(
     collection_open="(",
     collection_close=")",
     dict_separator=": ",
+    comment_prefix="#",
 )
 
 CSHARP = LanguageSpec(
@@ -375,6 +387,7 @@ RUBY = LanguageSpec(
     collection_open="[",
     collection_close="]",
     dict_separator=" => ",
+    comment_prefix="#",
 )
 
 GO = LanguageSpec(
@@ -578,6 +591,196 @@ def literalize_json(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class _ElementComments:
+    """Comments associated with a single top-level YAML element."""
+
+    before: tuple[str, ...]
+    inline: str
+
+
+def _find_inline_comment(line: str) -> str:
+    """Return the inline comment text from a YAML line.
+
+    Returns an empty string when no inline comment is present.
+    YAML requires a space before ``#`` for an inline comment.
+    """
+    in_single = False
+    in_double = False
+    for i, char in enumerate(line):
+        if char == "'" and not in_double:
+            in_single = not in_single
+        elif char == '"' and not in_single:
+            in_double = not in_double
+        elif (
+            char == "#"
+            and not in_single
+            and not in_double
+            and i > 0
+            and line[i - 1] == " "
+        ):
+            return line[i + 1 :].strip()
+    return ""
+
+
+def _extract_yaml_comments(
+    *,
+    yaml_string: str,
+    is_sequence: bool,
+) -> tuple[tuple[_ElementComments, ...], tuple[str, ...]]:
+    """Extract top-level comments from a YAML string.
+
+    Returns a tuple of per-element comments (aligned with data
+    elements) and any trailing comments after the last element.
+    """
+    pending: list[str] = []
+    elements: list[_ElementComments] = []
+
+    for line in yaml_string.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped in ("---", "..."):
+            continue
+
+        indent = len(line) - len(line.lstrip())
+
+        if stripped.startswith("#") and indent == 0:
+            pending.append(stripped[1:].strip())
+            continue
+
+        if indent > 0:
+            continue
+
+        is_element = False
+        if is_sequence:
+            is_element = line.startswith("- ") or stripped == "-"
+        else:
+            is_element = True
+
+        if is_element:
+            inline = _find_inline_comment(line)
+            elements.append(
+                _ElementComments(
+                    before=tuple(pending),
+                    inline=inline,
+                ),
+            )
+            pending = []
+
+    return tuple(elements), tuple(pending)
+
+
+def _format_comment(
+    *,
+    text: str,
+    comment_prefix: str,
+    line_prefix: str,
+) -> str:
+    """Format a single comment line."""
+    if text:
+        return f"{line_prefix}{comment_prefix} {text}"
+    return f"{line_prefix}{comment_prefix}"
+
+
+def _literalize_yaml_scalar(
+    *,
+    yaml_string: str,
+    base: str,
+    comment_prefix: str,
+    prefix: str,
+) -> str:
+    """Preserve comments for scalar YAML values."""
+    before_comments: list[str] = []
+    inline = ""
+    for line in yaml_string.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped in ("---", "..."):
+            continue
+        if stripped.startswith("#"):
+            before_comments.append(stripped[1:].strip())
+            continue
+        inline = _find_inline_comment(line)
+        break
+
+    if not before_comments and not inline:
+        return base
+
+    parts = [
+        _format_comment(
+            text=ct,
+            comment_prefix=comment_prefix,
+            line_prefix=prefix,
+        )
+        for ct in before_comments
+    ]
+    if inline:
+        parts.append(f"{base}  {comment_prefix} {inline}")
+    else:
+        parts.append(base)
+    return "\n".join(parts)
+
+
+@dataclasses.dataclass(frozen=True)
+class _YamlCollectionContext:
+    """Context for formatting collection YAML with comments."""
+
+    base: str
+    element_comments: tuple[_ElementComments, ...]
+    trailing: tuple[str, ...]
+    comment_prefix: str
+    prefix: str
+    wrap: bool
+
+
+def _literalize_yaml_collection(ctx: _YamlCollectionContext) -> str:
+    """Preserve comments for collection YAML values."""
+    effective_prefix = ctx.prefix if not ctx.wrap else (ctx.prefix or "    ")
+    all_lines = ctx.base.split("\n")
+
+    if ctx.wrap:
+        header = all_lines[0]
+        footer = all_lines[-1]
+        body_lines = all_lines[1:-1]
+    else:
+        header = None
+        footer = None
+        body_lines = all_lines
+
+    result: list[str] = []
+    for i, body_line in enumerate(body_lines):
+        if i < len(ctx.element_comments):
+            ec = ctx.element_comments[i]
+            result.extend(
+                _format_comment(
+                    text=ct,
+                    comment_prefix=ctx.comment_prefix,
+                    line_prefix=effective_prefix,
+                )
+                for ct in ec.before
+            )
+            if ec.inline:
+                body_line_with_inline = (
+                    f"{body_line}  {ctx.comment_prefix} {ec.inline}"
+                )
+            else:
+                body_line_with_inline = body_line
+        else:
+            body_line_with_inline = body_line
+        result.append(body_line_with_inline)
+
+    result.extend(
+        _format_comment(
+            text=ct,
+            comment_prefix=ctx.comment_prefix,
+            line_prefix=effective_prefix,
+        )
+        for ct in ctx.trailing
+    )
+
+    if ctx.wrap and header is not None and footer is not None:
+        return "\n".join([header, *result, footer])
+    return "\n".join(result)
+
+
 @beartype
 def literalize_yaml(
     *,
@@ -590,6 +793,10 @@ def literalize_yaml(
 
     This is a convenience wrapper around :func:`literalize` that
     accepts YAML as a string rather than a pre-parsed data structure.
+
+    YAML comments are preserved in the output using the target
+    language's comment syntax
+    (:attr:`Language.comment_prefix`).
 
     Args:
         yaml_string: A YAML string representing a scalar, sequence, or
@@ -606,9 +813,44 @@ def literalize_yaml(
         yaml.YAMLError: If *yaml_string* is not valid YAML.
     """
     data = yaml.safe_load(stream=yaml_string)
-    return literalize(
+    base = literalize(
         data=data,
         language=language,
         prefix=prefix,
         wrap=wrap,
     )
+
+    cp = language.comment_prefix
+
+    if not isinstance(data, (list, dict)):
+        return _literalize_yaml_scalar(
+            yaml_string=yaml_string,
+            base=base,
+            comment_prefix=cp,
+            prefix=prefix,
+        )
+
+    if not base:
+        return base
+
+    is_sequence = isinstance(data, list)
+    element_comments, trailing = _extract_yaml_comments(
+        yaml_string=yaml_string,
+        is_sequence=is_sequence,
+    )
+
+    has_comments = (
+        any(ec.before or ec.inline for ec in element_comments) or trailing
+    )
+    if not has_comments:
+        return base
+
+    ctx = _YamlCollectionContext(
+        base=base,
+        element_comments=element_comments,
+        trailing=trailing,
+        comment_prefix=cp,
+        prefix=prefix,
+        wrap=wrap,
+    )
+    return _literalize_yaml_collection(ctx)

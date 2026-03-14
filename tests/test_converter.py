@@ -1059,3 +1059,160 @@ def test_default_format_datetime_is_iso() -> None:
     """The default format_datetime is ISO format."""
     assert PYTHON.format_datetime is format_datetime_iso
     assert JAVA.format_datetime is format_datetime_iso
+
+
+def test_yaml_comment_sequence_before() -> None:
+    """Full-line comments before sequence items are preserved."""
+    yaml_string = "# first\n- a\n# second\n- b\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = '[\n    # first\n    "a",\n    # second\n    "b",\n]'
+    assert result == expected
+
+
+def test_yaml_comment_sequence_inline() -> None:
+    """Inline comments on sequence items are preserved."""
+    yaml_string = "- a  # note a\n- b  # note b\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = '[\n    "a",  # note a\n    "b",  # note b\n]'
+    assert result == expected
+
+
+def test_yaml_comment_mapping() -> None:
+    """Comments in mappings are preserved."""
+    yaml_string = "# comment for a\na: 1  # inline a\n# comment for b\nb: 2\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = (
+        "{\n"
+        "    # comment for a\n"
+        '    "a": 1,  # inline a\n'
+        "    # comment for b\n"
+        '    "b": 2,\n'
+        "}"
+    )
+    assert result == expected
+
+
+def test_yaml_comment_javascript_prefix() -> None:
+    """Comments use the target language's comment prefix."""
+    yaml_string = "# comment\n- a\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVASCRIPT,
+        prefix="",
+        wrap=True,
+    )
+    expected = '[\n    // comment\n    "a",\n]'
+    assert result == expected
+
+
+def test_yaml_comment_trailing() -> None:
+    """Trailing comments after the last element are preserved."""
+    yaml_string = "- a\n# trailing\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = '[\n    "a",\n    # trailing\n]'
+    assert result == expected
+
+
+def test_yaml_comment_no_wrap() -> None:
+    """Comments work with wrap=False."""
+    yaml_string = "# comment\n- a\n- b\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="    ",
+        wrap=False,
+    )
+    expected = '    # comment\n    "a",\n    "b",'
+    assert result == expected
+
+
+def test_yaml_comment_scalar() -> None:
+    """Comments on scalar YAML values are preserved."""
+    yaml_string = "# note\n42\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    expected = "# note\n42"
+    assert result == expected
+
+
+def test_yaml_comment_scalar_inline() -> None:
+    """Inline comments on scalar YAML values are preserved."""
+    yaml_string = "42  # note\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    expected = "42  # note"
+    assert result == expected
+
+
+def test_yaml_no_comments_unchanged() -> None:
+    """YAML without comments produces the same output as before."""
+    yaml_string = "- a\n- b\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = '[\n    "a",\n    "b",\n]'
+    assert result == expected
+
+
+def test_yaml_comment_multiple_before_lines() -> None:
+    """Multiple comment lines before an element are all preserved."""
+    yaml_string = "# line 1\n# line 2\n- a\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = '[\n    # line 1\n    # line 2\n    "a",\n]'
+    assert result == expected
+
+
+def test_comment_prefix_python() -> None:
+    """Python uses # as comment prefix."""
+    assert PYTHON.comment_prefix == "#"
+
+
+def test_comment_prefix_ruby() -> None:
+    """Ruby uses # as comment prefix."""
+    assert RUBY.comment_prefix == "#"
+
+
+def test_comment_prefix_javascript() -> None:
+    """JavaScript uses // as comment prefix."""
+    assert JAVASCRIPT.comment_prefix == "//"
+
+
+def test_comment_prefix_go() -> None:
+    """Go uses // as comment prefix."""
+    assert GO.comment_prefix == "//"
