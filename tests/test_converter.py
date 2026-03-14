@@ -564,10 +564,8 @@ def test_roundtrip_json_scalar(data: Any) -> None:  # noqa: ANN401
     assert result_via_json == result_direct
 
 
-# yaml.dump properly quotes strings that YAML would otherwise interpret
-# as dates, booleans, or null, so arbitrary text round-trips through
-# yaml.dump -> yaml.safe_load unchanged.  Dates and datetimes are
-# tested as their own types in yaml_scalars below.
+# Dates and datetimes are tested as their own types below because
+# yaml.safe_load parses them into date/datetime objects.
 yaml_scalars = (
     st.none()
     | st.booleans()
