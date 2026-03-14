@@ -21,11 +21,18 @@ Usage examples
 
    """Examples of using literalizer."""
 
+   import datetime
+
    from literalizer import (
        JAVA,
        JAVASCRIPT,
        PYTHON,
        LanguageSpec,
+       format_date_java,
+       format_date_python,
+       format_datetime_java_instant,
+       format_datetime_python,
+       format_datetime_ruby,
        literalize,
        literalize_json,
        literalize_yaml,
@@ -102,6 +109,85 @@ Usage examples
        collection_close="]",
        dict_separator=": ",
    )
+
+   # Customize date/datetime formatting with built-in formatters:
+   # Use Python-native date objects instead of ISO strings
+   python_with_dates = LanguageSpec(
+       null_literal="None",
+       true_literal="True",
+       false_literal="False",
+       collection_open="(",
+       collection_close=")",
+       dict_separator=": ",
+       format_date=format_date_python,
+       format_datetime=format_datetime_python,
+   )
+   result = literalize(
+       data=[datetime.date(year=2024, month=1, day=15)],
+       language=python_with_dates,
+       prefix="",
+       wrap=False,
+   )
+   # result: datetime.date(2024, 1, 15),
+
+   # Use Java Instant and LocalDate
+   java_with_dates = LanguageSpec(
+       null_literal="null",
+       true_literal="true",
+       false_literal="false",
+       collection_open="{",
+       collection_close="}",
+       dict_separator=": ",
+       format_date=format_date_java,
+       format_datetime=format_datetime_java_instant,
+   )
+   result = literalize(
+       data=[datetime.date(year=2024, month=1, day=15)],
+       language=java_with_dates,
+       prefix="",
+       wrap=False,
+   )
+   # result: LocalDate.of(2024, 1, 15),
+
+   # Use Ruby Time objects
+   ruby_with_dates = LanguageSpec(
+       null_literal="nil",
+       true_literal="true",
+       false_literal="false",
+       collection_open="[",
+       collection_close="]",
+       dict_separator=" => ",
+       format_datetime=format_datetime_ruby,
+   )
+   result = literalize(
+       data=[
+           datetime.datetime(
+               year=2024,
+               month=1,
+               day=15,
+               hour=12,
+               minute=30,
+               second=0,
+               tzinfo=datetime.UTC,
+           ),
+       ],
+       language=ruby_with_dates,
+       prefix="",
+       wrap=False,
+   )
+   # result: Time.new(2024, 1, 15, 12, 30, 0),
+
+   # Available formatters:
+   # format_date_iso / format_datetime_iso (default — ISO 8601 strings)
+   # format_date_python / format_datetime_python
+   # format_date_java / format_datetime_java_instant / format_datetime_java_zoned
+   # format_date_ruby / format_datetime_ruby
+   # format_date_js / format_datetime_js
+   # format_date_csharp / format_datetime_csharp
+   # format_date_go / format_datetime_go
+   # format_date_kotlin / format_datetime_kotlin
+   # format_date_cpp / format_datetime_cpp
+   # format_datetime_epoch (Unix timestamp)
 
 Use cases
 ---------
