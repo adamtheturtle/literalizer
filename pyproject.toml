@@ -116,9 +116,6 @@ lint.per-file-ignores."tests/test_*.py" = [
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
-lint.flake8-type-checking.runtime-evaluated-decorators = [
-    "beartype.beartype",
-]
 lint.mccabe.max-complexity = 12
 lint.pydocstyle.convention = "google"
 

@@ -5,8 +5,10 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
-from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 import yaml
 from beartype import BeartypeConf, beartype
@@ -465,7 +467,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def literalize(
     *,
-    data: Sequence[Any] | Mapping[str, Any] | float | bool | None,
+    data: list[Any] | dict[str, Any] | str | float | bool | None,
     language: Language,
     prefix: str,
     wrap: bool,
