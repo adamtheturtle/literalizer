@@ -408,40 +408,35 @@ KOTLIN = LanguageSpec(
 
 
 @beartype
-def _format_scalar(*, value: Any, spec: Language) -> str:
+def _format_scalar(*, value: object, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     if value is None:
-        return spec.null_literal
-
-    if isinstance(value, bool):
-        return spec.true_literal if value else spec.false_literal
-
-    if isinstance(value, int):
-        return str(object=value)
-
-    if isinstance(value, float):
-        return repr(value)
-
-    if isinstance(value, str):
+        result = spec.null_literal
+    elif isinstance(value, bool):
+        result = spec.true_literal if value else spec.false_literal
+    elif isinstance(value, int):
+        result = str(object=value)
+    elif isinstance(value, float):
+        result = repr(value)
+    elif isinstance(value, str):
         escaped = (
             value.replace("\\", "\\\\")
             .replace('"', '\\"')
             .replace("\n", "\\n")
         )
-        return f'"{escaped}"'
-
-    if isinstance(value, datetime.datetime):
-        return spec.format_datetime(value)
-
-    if isinstance(value, datetime.date):
-        return spec.format_date(value)
-
-    msg = f"Unsupported scalar type: {type(value)}"
-    raise TypeError(msg)
+        result = f'"{escaped}"'
+    elif isinstance(value, datetime.datetime):
+        result = spec.format_datetime(value)
+    elif isinstance(value, datetime.date):
+        result = spec.format_date(value)
+    else:
+        msg = f"Unsupported scalar type: {type(value)}"
+        raise TypeError(msg)
+    return result
 
 
 @beartype
-def _format_value(*, value: Any, spec: Language) -> str:
+def _format_value(*, value: object, spec: Language) -> str:
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), and dicts.

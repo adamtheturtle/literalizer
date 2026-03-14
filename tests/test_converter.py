@@ -270,7 +270,9 @@ def test_empty_data_with_wrap() -> None:
         (None, CPP, "nullptr"),
     ],
 )
-def test_scalar(*, data: Any, language: Language, expected: str) -> None:
+def test_scalar(
+    *, data: _JSONScalar, language: Language, expected: str
+) -> None:
     """Scalar values are formatted as native literals."""
     result = literalize(data=data, language=language, prefix="", wrap=False)
     assert result == expected
@@ -357,9 +359,9 @@ def test_part2_sample_go() -> None:
     assert lines[1] == '        {"user_9", 10, 1003.0},'
 
 
-type _JSONValue = (
-    str | int | float | bool | None | list[_JSONValue] | dict[str, _JSONValue]
-)
+type _JSONScalar = str | int | float | bool | None
+
+type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
 
 
 def _lists_to_tuples(*, value: _JSONValue) -> object:
@@ -479,7 +481,7 @@ def test_roundtrip_array(data: list[Any]) -> None:
 
 
 @given(data=json_scalars)
-def test_roundtrip_scalar(data: Any) -> None:
+def test_roundtrip_scalar(data: _JSONScalar) -> None:
     """Scalar -> Python literal -> ast.literal_eval round-trips."""
     result = literalize(
         data=data,
@@ -546,7 +548,7 @@ def test_roundtrip_json_object(data: dict[str, Any]) -> None:
 
 
 @given(data=json_scalars)
-def test_roundtrip_json_scalar(data: Any) -> None:
+def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
     """Json.dumps -> literalize_json matches literalize for scalars."""
     json_string = json.dumps(obj=data)
     result_via_json = literalize_json(
@@ -642,7 +644,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 
 
 @given(data=yaml_scalars)
-def test_roundtrip_yaml_scalar(data: Any) -> None:
+def test_roundtrip_yaml_scalar(data: _JSONScalar) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
     yaml_string = yaml.dump(data=data, sort_keys=False)
     result_via_yaml = literalize_yaml(
@@ -771,14 +773,7 @@ def test_literalize_datetime() -> None:
     """
     result = literalize(
         data=[
-            datetime.datetime(
-                year=2024,
-                month=1,
-                day=15,
-                hour=12,
-                minute=30,
-                second=0,
-            ),
+            datetime.datetime.fromisoformat("2024-01-15T12:30:00"),
         ],
         language=PYTHON,
         prefix="",
@@ -788,22 +783,9 @@ def test_literalize_datetime() -> None:
 
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
-_SAMPLE_DATETIME = datetime.datetime(
-    year=2024,
-    month=1,
-    day=15,
-    hour=12,
-    minute=30,
-    second=0,
-)
-_SAMPLE_DATETIME_MICRO = datetime.datetime(
-    year=2024,
-    month=1,
-    day=15,
-    hour=12,
-    minute=30,
-    second=0,
-    microsecond=123456,
+_SAMPLE_DATETIME = datetime.datetime.fromisoformat("2024-01-15T12:30:00")
+_SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
+    "2024-01-15T12:30:00.123456"
 )
 
 
@@ -959,14 +941,7 @@ def test_format_datetime_cpp() -> None:
 
 def test_format_datetime_cpp_midnight() -> None:
     """``format_datetime_cpp`` at midnight omits zero time components."""
-    midnight = datetime.datetime(
-        year=2024,
-        month=1,
-        day=15,
-        hour=0,
-        minute=0,
-        second=0,
-    )
+    midnight = datetime.datetime.fromisoformat("2024-01-15T00:00:00")
     result = format_datetime_cpp(value=midnight)
     assert "std::chrono::sys_days" in result
     assert "hours" not in result
@@ -977,15 +952,7 @@ def test_format_datetime_cpp_midnight() -> None:
 
 def test_format_datetime_cpp_seconds_and_microseconds() -> None:
     """``format_datetime_cpp`` includes seconds and microseconds."""
-    dt = datetime.datetime(
-        year=2024,
-        month=1,
-        day=15,
-        hour=12,
-        minute=30,
-        second=45,
-        microsecond=123456,
-    )
+    dt = datetime.datetime.fromisoformat("2024-01-15T12:30:45.123456")
     result = format_datetime_cpp(value=dt)
     assert "std::chrono::seconds{45}" in result
     assert "std::chrono::microseconds{123456}" in result
