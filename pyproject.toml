@@ -252,6 +252,8 @@ linewrap-full-docstring = true
 
 [tool.vulture]
 ignore_names = [
+    "custom",
+    "result",
     "pytest_collect_file",
     "pytest_collection_modifyitems",
     "pytest_plugins",

@@ -11,7 +11,7 @@ from typing import Any, Protocol, cast, runtime_checkable
 import yaml
 from beartype import BeartypeConf, beartype
 
-beartype = beartype(conf=BeartypeConf(is_pep484_tower=True))
+beartype = beartype(conf=BeartypeConf(is_pep484_tower=True))  # type: ignore[assignment]
 
 
 @runtime_checkable
