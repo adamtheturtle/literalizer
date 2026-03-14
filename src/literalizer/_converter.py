@@ -5,11 +5,18 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
-from collections.abc import Callable, Mapping, Sequence  # noqa: TC003
-from typing import Any, Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
 import yaml
 from beartype import BeartypeConf, beartype
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+type _Scalar = (
+    str | int | float | bool | None | datetime.date | datetime.datetime
+)
+type _Value = _Scalar | list[_Value] | dict[str, _Value]
 
 
 def format_date_iso(value: datetime.date) -> str:
@@ -408,40 +415,32 @@ KOTLIN = LanguageSpec(
 
 
 @beartype
-def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401, PLR0911
+def _format_scalar(*, value: _Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     if value is None:
-        return spec.null_literal
-
-    if isinstance(value, bool):
-        return spec.true_literal if value else spec.false_literal
-
-    if isinstance(value, int):
-        return str(object=value)
-
-    if isinstance(value, float):
-        return repr(value)
-
-    if isinstance(value, str):
+        result = spec.null_literal
+    elif isinstance(value, bool):
+        result = spec.true_literal if value else spec.false_literal
+    elif isinstance(value, int):
+        result = str(object=value)
+    elif isinstance(value, float):
+        result = repr(value)
+    elif isinstance(value, str):
         escaped = (
             value.replace("\\", "\\\\")
             .replace('"', '\\"')
             .replace("\n", "\\n")
         )
-        return f'"{escaped}"'
-
-    if isinstance(value, datetime.datetime):
-        return spec.format_datetime(value)
-
-    if isinstance(value, datetime.date):
-        return spec.format_date(value)
-
-    msg = f"Unsupported scalar type: {type(value)}"
-    raise TypeError(msg)
+        result = f'"{escaped}"'
+    elif isinstance(value, datetime.datetime):
+        result = spec.format_datetime(value)
+    else:
+        result = spec.format_date(value)
+    return result
 
 
 @beartype
-def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
+def _format_value(*, value: _Value, spec: Language) -> str:
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), and dicts.
@@ -450,15 +449,12 @@ def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
         pairs = [
             f"{_format_value(value=k, spec=spec)}{spec.dict_separator}"
             f"{_format_value(value=v, spec=spec)}"
-            for k, v in cast("dict[str, object]", value).items()
+            for k, v in value.items()
         ]
         return "{" + ", ".join(pairs) + "}"
 
     if isinstance(value, list):
-        items = [
-            _format_value(value=v, spec=spec)
-            for v in cast("list[object]", value)
-        ]
+        items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
         # Single-element tuples need a trailing comma in Python/C#.
         if len(items) == 1 and spec.collection_open == "(":
@@ -471,8 +467,9 @@ def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def literalize(
     *,
-    data: Sequence[Any]
-    | Mapping[str, Any]
+    data: list[Any]
+    | dict[str, Any]
+    | str
     | datetime.date
     | float
     | bool
@@ -523,7 +520,7 @@ def literalize(
     lines: list[str] = []
 
     if isinstance(data, dict):
-        for k, v in cast("dict[str, object]", data).items():
+        for k, v in cast("dict[str, _Value]", data).items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             lines.append(
