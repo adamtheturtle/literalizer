@@ -355,7 +355,10 @@ json_scalars = (
 )
 json_values: st.SearchStrategy[Any] = st.recursive(
     base=json_scalars,
-    extend=lambda children: st.lists(elements=children) | st.dictionaries(keys=json_text, values=children),
+    extend=lambda children: (
+        st.lists(elements=children)
+        | st.dictionaries(keys=json_text, values=children)
+    ),
 )
 json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
@@ -577,7 +580,11 @@ def test_literalize_datetime() -> None:
     literals.
     """
     result = literalize(
-        data=[datetime.datetime(year=2024, month=1, day=15, hour=12, minute=30, second=0)],  # noqa: DTZ001
+        data=[
+            datetime.datetime(  # noqa: DTZ001
+                year=2024, month=1, day=15, hour=12, minute=30, second=0,
+            ),
+        ],
         language=PYTHON,
         prefix="",
         wrap=False,

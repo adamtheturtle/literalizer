@@ -20,6 +20,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_substitution_extensions",
+    "sphinxcontrib.spelling",
 ]
 
 templates_path = ["_templates"]
