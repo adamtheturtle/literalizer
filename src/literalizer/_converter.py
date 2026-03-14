@@ -10,6 +10,9 @@ from typing import Any, Protocol, cast, runtime_checkable
 
 import yaml
 from beartype import beartype
+from beartype import BeartypeConf
+
+beartype = beartype(conf=BeartypeConf(is_pep484_tower=True))
 
 
 @runtime_checkable
