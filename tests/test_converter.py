@@ -565,7 +565,9 @@ def test_roundtrip_json_scalar(data: Any) -> None:  # noqa: ANN401
 
 
 # YAML safe_load turns certain strings into dates/booleans, so we
-# restrict the text strategy to avoid YAML's implicit type coercion.
+# restrict the text strategy to only strings that survive a YAML
+# dump/load cycle unchanged.  Dates and datetimes are tested as
+# their own types in yaml_scalars below.
 def _yaml_roundtrips_as_str(s: str) -> bool:
     """Return True if ``s`` survives a YAML dump/load cycle as a
     string.
@@ -587,6 +589,8 @@ yaml_scalars = (
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
     | yaml_safe_text
+    | st.dates()
+    | st.datetimes()
 )
 
 yaml_values: st.SearchStrategy[Any] = st.recursive(
