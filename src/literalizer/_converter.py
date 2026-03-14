@@ -6,7 +6,7 @@ import dataclasses
 import datetime
 import json
 from collections.abc import Callable, Mapping, Sequence
-from typing import Protocol, cast, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 import yaml
 from beartype import BeartypeConf, beartype
@@ -450,15 +450,12 @@ def _format_value(*, value: _Value, spec: Language) -> str:
         pairs = [
             f"{_format_value(value=k, spec=spec)}{spec.dict_separator}"
             f"{_format_value(value=v, spec=spec)}"
-            for k, v in cast("dict[str, _Value]", value).items()
+            for k, v in value.items()
         ]
         return "{" + ", ".join(pairs) + "}"
 
     if isinstance(value, list):
-        items = [
-            _format_value(value=v, spec=spec)
-            for v in cast("list[_Value]", value)
-        ]
+        items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
         # Single-element tuples need a trailing comma in Python/C#.
         if len(items) == 1 and spec.collection_open == "(":
@@ -471,7 +468,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def literalize(
     *,
-    data: Sequence[_Value] | Mapping[str, _Value] | _Scalar,
+    data: Sequence[Any] | Mapping[str, Any] | float | bool | None,
     language: Language,
     prefix: str,
     wrap: bool,
@@ -507,7 +504,7 @@ def literalize(
     lines: list[str] = []
 
     if isinstance(data, dict):
-        for k, v in cast("dict[str, _Value]", data).items():
+        for k, v in cast("dict[str, object]", data).items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             lines.append(
