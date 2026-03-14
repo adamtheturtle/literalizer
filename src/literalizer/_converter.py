@@ -9,8 +9,7 @@ from collections.abc import Mapping, Sequence  # noqa: TC003
 from typing import Any, Protocol, cast, runtime_checkable
 
 import yaml
-from beartype import beartype
-from beartype import BeartypeConf
+from beartype import BeartypeConf, beartype
 
 beartype = beartype(conf=BeartypeConf(is_pep484_tower=True))
 
