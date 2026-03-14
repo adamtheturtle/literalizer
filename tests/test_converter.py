@@ -568,11 +568,8 @@ def _yaml_roundtrips_as_str(s: str) -> bool:
     """Return True if ``s`` survives a YAML dump/load cycle as a
     string.
     """
-    try:
-        loaded = yaml.safe_load(stream=yaml.dump(data=s))
-        return bool(loaded == s)
-    except yaml.YAMLError:
-        return False
+    loaded = yaml.safe_load(stream=yaml.dump(data=s))
+    return bool(loaded == s)
 
 
 yaml_safe_text = st.text(
