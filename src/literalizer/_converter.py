@@ -504,7 +504,7 @@ def literalize(
     lines: list[str] = []
 
     if isinstance(data, dict):
-        for k, v in cast("dict[str, object]", data).items():
+        for k, v in cast("dict[str, _Value]", data).items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             lines.append(
