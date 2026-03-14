@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import datetime
 import json
 import textwrap
 from typing import Any
@@ -224,6 +225,39 @@ def test_empty_data_with_wrap() -> None:
     assert result == ""
 
 
+@pytest.mark.parametrize(
+    ("data", "language", "expected"),
+    [
+        (42, PYTHON, "42"),
+        (3.14, PYTHON, "3.14"),
+        ("hello", PYTHON, '"hello"'),
+        (True, PYTHON, "True"),
+        (False, PYTHON, "False"),
+        (None, PYTHON, "None"),
+        (True, JAVASCRIPT, "true"),
+        (None, GO, "nil"),
+        (None, RUBY, "nil"),
+        (None, CPP, "nullptr"),
+    ],
+)
+def test_scalar(*, data: Any, language: Language, expected: str) -> None:  # noqa: ANN401
+    """Scalar values are formatted as native literals."""
+    result = literalize(data=data, language=language, prefix="", wrap=False)
+    assert result == expected
+
+
+def test_scalar_with_prefix() -> None:
+    """Scalar values respect the prefix parameter."""
+    result = literalize(data=42, language=PYTHON, prefix="    ", wrap=False)
+    assert result == "    42"
+
+
+def test_scalar_wrap_ignored() -> None:
+    """Wrap is ignored for scalar values."""
+    result = literalize(data=42, language=PYTHON, prefix="", wrap=True)
+    assert result == "42"
+
+
 def test_unsupported_type_raises() -> None:
     """An unsupported scalar type raises TypeError."""
     with pytest.raises(
@@ -325,6 +359,7 @@ json_values: st.SearchStrategy[Any] = st.recursive(
 )
 json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
+json_top_level = json_scalars | json_arrays | json_objects
 
 
 def test_literalize_json_array() -> None:
@@ -364,18 +399,33 @@ def test_literalize_json_invalid() -> None:
         )
 
 
-def test_literalize_json_scalar_raises() -> None:
-    """Literalize_json raises TypeError for scalar JSON."""
-    with pytest.raises(
-        expected_exception=TypeError,
-        match="Expected a JSON array or object",
-    ):
-        literalize_json(
-            json_string="42",
-            language=PYTHON,
-            prefix="",
-            wrap=False,
-        )
+@pytest.mark.parametrize(
+    argnames=("json_string", "language", "expected"),
+    argvalues=[
+        ("42", PYTHON, "42"),
+        ("3.14", PYTHON, "3.14"),
+        ('"hello"', PYTHON, '"hello"'),
+        ("true", PYTHON, "True"),
+        ("false", PYTHON, "False"),
+        ("null", PYTHON, "None"),
+        ("true", JAVASCRIPT, "true"),
+        ("null", GO, "nil"),
+    ],
+)
+def test_literalize_json_scalar(
+    *,
+    json_string: str,
+    language: Language,
+    expected: str,
+) -> None:
+    """Literalize_json handles scalar JSON values."""
+    result = literalize_json(
+        json_string=json_string,
+        language=language,
+        prefix="",
+        wrap=False,
+    )
+    assert result == expected
 
 
 @given(data=json_arrays)
@@ -392,6 +442,19 @@ def test_roundtrip_array(data: list[Any]) -> None:
         return
     parsed = ast.literal_eval(node_or_string=result)
     assert parsed == [_lists_to_tuples(value=v) for v in data]
+
+
+@given(data=json_scalars)
+def test_roundtrip_scalar(data: Any) -> None:  # noqa: ANN401
+    """Scalar -> Python literal -> ast.literal_eval round-trips."""
+    result = literalize(
+        data=data,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    parsed = ast.literal_eval(result)
+    assert parsed == data
 
 
 @given(data=json_objects)
@@ -447,15 +510,76 @@ def test_literalize_yaml_invalid() -> None:
         )
 
 
-def test_literalize_yaml_scalar_raises() -> None:
-    """Literalize_yaml raises TypeError for scalar YAML."""
-    with pytest.raises(
-        expected_exception=TypeError,
-        match="Expected a YAML sequence or mapping",
-    ):
-        literalize_yaml(
-            yaml_string="42",
-            language=PYTHON,
-            prefix="",
-            wrap=False,
-        )
+@pytest.mark.parametrize(
+    argnames=("yaml_string", "language", "expected"),
+    argvalues=[
+        ("42", PYTHON, "42"),
+        ("3.14", PYTHON, "3.14"),
+        ("hello", PYTHON, '"hello"'),
+        ("true", PYTHON, "True"),
+        ("false", PYTHON, "False"),
+        ("null", PYTHON, "None"),
+        ("true", JAVASCRIPT, "true"),
+        ("null", GO, "nil"),
+    ],
+)
+def test_literalize_yaml_scalar(
+    *,
+    yaml_string: str,
+    language: Language,
+    expected: str,
+) -> None:
+    """Literalize_yaml handles scalar YAML values."""
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=language,
+        prefix="",
+        wrap=False,
+    )
+    assert result == expected
+
+
+def test_literalize_yaml_date() -> None:
+    """Literalize_yaml formats date values as ISO string literals."""
+    yaml_string = "- 2024-01-15\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15",'
+
+
+def test_literalize_yaml_datetime() -> None:
+    """Literalize_yaml formats datetime values as ISO string literals."""
+    yaml_string = "- 2024-01-15T12:30:00\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15T12:30:00",'
+
+
+def test_literalize_date() -> None:
+    """Literalize formats datetime.date values as ISO string literals."""
+    result = literalize(
+        data=[datetime.date(year=2024, month=1, day=15)],
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15",'
+
+
+def test_literalize_datetime() -> None:
+    """Literalize formats datetime.datetime values as ISO string literals."""
+    result = literalize(
+        data=[datetime.datetime(year=2024, month=1, day=15, hour=12, minute=30, second=0)],  # noqa: DTZ001
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"2024-01-15T12:30:00",'
