@@ -26,6 +26,7 @@ Usage examples
    """Examples of using literalizer."""
 
    from literalizer import (
+       JAVA,
        JAVASCRIPT,
        PYTHON,
        LanguageSpec,
@@ -34,19 +35,19 @@ Usage examples
        literalize_yaml,
    )
 
-   # Convert a Python list to Python literal items
+   # Convert a Python list to Java literal items
    data = [True, None, "hi", [1, 2]]
    result = literalize(
        data=data,
-       language=PYTHON,
+       language=JAVA,
        prefix="",
        wrap=False,
    )
    # result:
-   # True,
-   # None,
+   # true,
+   # null,
    # "hi",
-   # (1, 2),
+   # {1, 2},
 
    # Convert to JavaScript/TypeScript array
    result = literalize(
