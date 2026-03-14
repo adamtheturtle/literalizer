@@ -8,6 +8,7 @@ CPP
 datetime
 datetimes
 dicts
+formatters
 json
 JSONDecodeError
 literalizer
