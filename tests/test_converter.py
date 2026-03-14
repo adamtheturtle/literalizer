@@ -587,6 +587,8 @@ yaml_scalars = (
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
     | yaml_safe_text
+    | st.dates()
+    | st.datetimes()
 )
 
 yaml_values: st.SearchStrategy[Any] = st.recursive(
@@ -641,7 +643,12 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
     assert result_via_yaml == result_direct
 
 
-@given(data=yaml_scalars)
+yaml_non_date_scalars = yaml_scalars.filter(
+    lambda x: not isinstance(x, (datetime.date, datetime.datetime))
+)
+
+
+@given(data=yaml_non_date_scalars)
 def test_roundtrip_yaml_scalar(data: Any) -> None:  # noqa: ANN401
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
     yaml_string = yaml.dump(data=data, sort_keys=False)
