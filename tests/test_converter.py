@@ -870,6 +870,38 @@ class TestFormatDatetimeCpp:
         assert "std::chrono::hours{12}" in result
         assert "std::chrono::minutes{30}" in result
 
+    def test_midnight(self) -> None:
+        """C++ datetime at midnight omits zero time components."""
+        midnight = datetime.datetime(  # noqa: DTZ001
+            year=2024,
+            month=1,
+            day=15,
+            hour=0,
+            minute=0,
+            second=0,
+        )
+        result = format_datetime_cpp(value=midnight)
+        assert "std::chrono::sys_days" in result
+        assert "hours" not in result
+        assert "minutes" not in result
+        assert "seconds" not in result
+        assert "microseconds" not in result
+
+    def test_with_seconds_and_microseconds(self) -> None:
+        """C++ datetime includes seconds and microseconds when set."""
+        dt = datetime.datetime(  # noqa: DTZ001
+            year=2024,
+            month=1,
+            day=15,
+            hour=12,
+            minute=30,
+            second=45,
+            microsecond=123456,
+        )
+        result = format_datetime_cpp(value=dt)
+        assert "std::chrono::seconds{45}" in result
+        assert "std::chrono::microseconds{123456}" in result
+
 
 class TestCustomDateFormatting:
     """Tests for configurable date/datetime formatting via
