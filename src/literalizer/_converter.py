@@ -5,11 +5,251 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
-from collections.abc import Mapping, Sequence  # noqa: TC003
+from collections.abc import Callable, Mapping, Sequence  # noqa: TC003
 from typing import Any, Protocol, cast, runtime_checkable
 
 import yaml
 from beartype import BeartypeConf, beartype
+
+
+def format_date_iso(value: datetime.date) -> str:
+    """Format a date as an ISO 8601 quoted string literal.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``"2024-01-15"``.
+    """
+    return f'"{value.isoformat()}"'
+
+
+def format_datetime_iso(value: datetime.datetime) -> str:
+    """Format a datetime as an ISO 8601 quoted string literal.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
+    ``"2024-01-15T12:30:00"``.
+    """
+    return f'"{value.isoformat()}"'
+
+
+def format_date_python(value: datetime.date) -> str:
+    """Format a date as a Python ``datetime.date(...)`` constructor call.
+
+    Example: ``datetime.date(2024, 1, 15)``.
+    """
+    return f"datetime.date({value.year}, {value.month}, {value.day})"
+
+
+def format_datetime_python(value: datetime.datetime) -> str:
+    """Format a datetime as a Python ``datetime.datetime(...)``
+    constructor call.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30, 0)``.
+    """
+    parts = [
+        value.year,
+        value.month,
+        value.day,
+        value.hour,
+        value.minute,
+        value.second,
+    ]
+    if value.microsecond:
+        parts.append(value.microsecond)
+    args = ", ".join(str(object=p) for p in parts)
+    return f"datetime.datetime({args})"
+
+
+def format_datetime_epoch(value: datetime.datetime) -> str:
+    """Format a datetime as seconds since the Unix epoch.
+
+    Uses :meth:`datetime.datetime.timestamp`, so the result depends on
+    whether the datetime is naive (assumed local time) or aware.
+
+    Example: ``1705312200.0``.
+    """
+    return repr(value.timestamp())
+
+
+def format_date_java(value: datetime.date) -> str:
+    """Format a date as a Java ``LocalDate.of(...)`` call.
+
+    Example: ``LocalDate.of(2024, 1, 15)``.
+    """
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+def format_datetime_java_instant(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``Instant.parse(...)`` call.
+
+    Example: ``Instant.parse("2024-01-15T12:30:00")``.
+    """
+    return f'Instant.parse("{value.isoformat()}")'
+
+
+def format_datetime_java_zoned(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``ZonedDateTime.of(...)`` call.
+
+    Example: ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
+    ZoneId.of("UTC"))``.
+    """
+    tz = value.tzname() or "UTC"
+    nanos = value.microsecond * 1000
+    return (
+        f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f'{nanos}, ZoneId.of("{tz}"))'
+    )
+
+
+def format_date_ruby(value: datetime.date) -> str:
+    """Format a date as a Ruby ``Date.new(...)`` call.
+
+    Example: ``Date.new(2024, 1, 15)``.
+    """
+    return f"Date.new({value.year}, {value.month}, {value.day})"
+
+
+def format_datetime_ruby(value: datetime.datetime) -> str:
+    """Format a datetime as a Ruby ``Time.new(...)`` call.
+
+    Example: ``Time.new(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"Time.new({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+def format_date_js(value: datetime.date) -> str:
+    """Format a date as a JavaScript ``new Date(...)`` call.
+
+    Example: ``new Date("2024-01-15")``.
+    """
+    return f'new Date("{value.isoformat()}")'
+
+
+def format_datetime_js(value: datetime.datetime) -> str:
+    """Format a datetime as a JavaScript ``new Date(...)`` call.
+
+    Example: ``new Date("2024-01-15T12:30:00")``.
+    """
+    return f'new Date("{value.isoformat()}")'
+
+
+def format_date_csharp(value: datetime.date) -> str:
+    """Format a date as a C# ``new DateOnly(...)`` call.
+
+    Example: ``new DateOnly(2024, 1, 15)``.
+    """
+    return f"new DateOnly({value.year}, {value.month}, {value.day})"
+
+
+def format_datetime_csharp(value: datetime.datetime) -> str:
+    """Format a datetime as a C# ``new DateTime(...)`` call.
+
+    Example: ``new DateTime(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"new DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+_GO_MONTHS: dict[int, str] = {
+    1: "time.January",
+    2: "time.February",
+    3: "time.March",
+    4: "time.April",
+    5: "time.May",
+    6: "time.June",
+    7: "time.July",
+    8: "time.August",
+    9: "time.September",
+    10: "time.October",
+    11: "time.November",
+    12: "time.December",
+}
+
+
+def format_date_go(value: datetime.date) -> str:
+    """Format a date as a Go ``time.Date(...)`` call.
+
+    Example: ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
+    time.UTC)``.
+    """
+    month = _GO_MONTHS[value.month]
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, 0, 0, 0, 0, time.UTC)"
+    )
+
+
+def format_datetime_go(value: datetime.datetime) -> str:
+    """Format a datetime as a Go ``time.Date(...)`` call.
+
+    Example: ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
+    time.UTC)``.
+    """
+    month = _GO_MONTHS[value.month]
+    nanos = value.microsecond * 1000
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f"{nanos}, time.UTC)"
+    )
+
+
+def format_date_kotlin(value: datetime.date) -> str:
+    """Format a date as a Kotlin ``LocalDate.of(...)`` call.
+
+    Example: ``LocalDate.of(2024, 1, 15)``.
+    """
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+def format_datetime_kotlin(value: datetime.datetime) -> str:
+    """Format a datetime as a Kotlin ``LocalDateTime.of(...)`` call.
+
+    Example: ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+def format_date_cpp(value: datetime.date) -> str:
+    """Format a date as a C++ chrono year_month_day literal.
+
+    Example:
+    ``std::chrono::year_month_day{std::chrono::year{2024},
+    std::chrono::month{1}, std::chrono::day{15}}``.
+    """
+    return (
+        f"std::chrono::year_month_day{{"
+        f"std::chrono::year{{{value.year}}}, "
+        f"std::chrono::month{{{value.month}}}, "
+        f"std::chrono::day{{{value.day}}}}}"
+    )
+
+
+def format_datetime_cpp(value: datetime.datetime) -> str:
+    """Format a datetime as a C++ chrono time_point construction.
+
+    Uses ``std::chrono::sys_days`` combined with a time-of-day
+    duration.
+
+    Example: ``std::chrono::sys_days{std::chrono::year_month_day{...}}
+    + std::chrono::hours{12} + ...``.
+    """
+    ymd = format_date_cpp(value=value)
+    parts = [f"std::chrono::sys_days{{{ymd}}}"]
+    if value.hour:
+        parts.append(f"std::chrono::hours{{{value.hour}}}")
+    if value.minute:
+        parts.append(f"std::chrono::minutes{{{value.minute}}}")
+    if value.second:
+        parts.append(f"std::chrono::seconds{{{value.second}}}")
+    if value.microsecond:
+        parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
+    return " + ".join(parts)
 
 
 @runtime_checkable
@@ -51,6 +291,20 @@ class Language(Protocol):
         """The separator between dict keys and values."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a :class:`datetime.date` as a string
+        literal.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a :class:`datetime.datetime` as a
+        string literal.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -67,6 +321,8 @@ class LanguageSpec:
     collection_open: str
     collection_close: str
     dict_separator: str
+    format_date: Callable[[datetime.date], str] = format_date_iso
+    format_datetime: Callable[[datetime.datetime], str] = format_datetime_iso
 
 
 PYTHON = LanguageSpec(
@@ -152,7 +408,7 @@ KOTLIN = LanguageSpec(
 
 
 @beartype
-def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401
+def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401, PLR0911
     """Format a scalar JSON value as a native language literal."""
     if value is None:
         return spec.null_literal
@@ -174,8 +430,11 @@ def _format_scalar(*, value: Any, spec: Language) -> str:  # noqa: ANN401
         )
         return f'"{escaped}"'
 
-    if isinstance(value, (datetime.datetime, datetime.date)):
-        return f'"{value.isoformat()}"'
+    if isinstance(value, datetime.datetime):
+        return spec.format_datetime(value)
+
+    if isinstance(value, datetime.date):
+        return spec.format_date(value)
 
     msg = f"Unsupported scalar type: {type(value)}"
     raise TypeError(msg)

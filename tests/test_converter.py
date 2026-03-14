@@ -25,6 +25,26 @@ from literalizer import (
     TYPESCRIPT,
     Language,
     LanguageSpec,
+    format_date_cpp,
+    format_date_csharp,
+    format_date_go,
+    format_date_iso,
+    format_date_java,
+    format_date_js,
+    format_date_kotlin,
+    format_date_python,
+    format_date_ruby,
+    format_datetime_cpp,
+    format_datetime_csharp,
+    format_datetime_epoch,
+    format_datetime_go,
+    format_datetime_iso,
+    format_datetime_java_instant,
+    format_datetime_java_zoned,
+    format_datetime_js,
+    format_datetime_kotlin,
+    format_datetime_python,
+    format_datetime_ruby,
     literalize,
     literalize_json,
     literalize_yaml,
@@ -610,3 +630,324 @@ def test_literalize_datetime() -> None:
         wrap=False,
     )
     assert result == '"2024-01-15T12:30:00",'
+
+
+_SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
+_SAMPLE_DATETIME = datetime.datetime(  # noqa: DTZ001
+    year=2024,
+    month=1,
+    day=15,
+    hour=12,
+    minute=30,
+    second=0,
+)
+_SAMPLE_DATETIME_MICRO = datetime.datetime(  # noqa: DTZ001
+    year=2024,
+    month=1,
+    day=15,
+    hour=12,
+    minute=30,
+    second=0,
+    microsecond=123456,
+)
+
+
+def test_format_date_iso() -> None:
+    """``format_date_iso`` returns a quoted ISO string."""
+    assert format_date_iso(value=_SAMPLE_DATE) == '"2024-01-15"'
+
+
+def test_format_datetime_iso() -> None:
+    """``format_datetime_iso`` returns a quoted ISO string."""
+    assert (
+        format_datetime_iso(value=_SAMPLE_DATETIME) == '"2024-01-15T12:30:00"'
+    )
+
+
+def test_format_date_python() -> None:
+    """``format_date_python`` returns a constructor call."""
+    assert (
+        format_date_python(value=_SAMPLE_DATE) == "datetime.date(2024, 1, 15)"
+    )
+
+
+def test_format_datetime_python() -> None:
+    """``format_datetime_python`` returns a constructor call."""
+    assert (
+        format_datetime_python(value=_SAMPLE_DATETIME)
+        == "datetime.datetime(2024, 1, 15, 12, 30, 0)"
+    )
+
+
+def test_format_datetime_python_microsecond() -> None:
+    """``format_datetime_python`` includes microseconds when set."""
+    assert (
+        format_datetime_python(value=_SAMPLE_DATETIME_MICRO)
+        == "datetime.datetime(2024, 1, 15, 12, 30, 0, 123456)"
+    )
+
+
+def test_format_datetime_epoch() -> None:
+    """``format_datetime_epoch`` returns a numeric timestamp."""
+    result = format_datetime_epoch(value=_SAMPLE_DATETIME)
+    # The exact value depends on local timezone for naive datetimes,
+    # so just check it parses as a float.
+    float(result)
+
+
+def test_format_date_java() -> None:
+    """``format_date_java`` returns a LocalDate.of call."""
+    assert format_date_java(value=_SAMPLE_DATE) == "LocalDate.of(2024, 1, 15)"
+
+
+def test_format_datetime_java_instant() -> None:
+    """``format_datetime_java_instant`` returns an Instant.parse call."""
+    assert (
+        format_datetime_java_instant(value=_SAMPLE_DATETIME)
+        == 'Instant.parse("2024-01-15T12:30:00")'
+    )
+
+
+def test_format_datetime_java_zoned() -> None:
+    """``format_datetime_java_zoned`` returns a ZonedDateTime.of call."""
+    result = format_datetime_java_zoned(value=_SAMPLE_DATETIME)
+    assert result == (
+        'ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("UTC"))'
+    )
+
+
+def test_format_date_ruby() -> None:
+    """``format_date_ruby`` returns a Date.new call."""
+    assert format_date_ruby(value=_SAMPLE_DATE) == "Date.new(2024, 1, 15)"
+
+
+def test_format_datetime_ruby() -> None:
+    """``format_datetime_ruby`` returns a Time.new call."""
+    assert (
+        format_datetime_ruby(value=_SAMPLE_DATETIME)
+        == "Time.new(2024, 1, 15, 12, 30, 0)"
+    )
+
+
+def test_format_date_js() -> None:
+    """``format_date_js`` returns a new Date call."""
+    assert format_date_js(value=_SAMPLE_DATE) == 'new Date("2024-01-15")'
+
+
+def test_format_datetime_js() -> None:
+    """``format_datetime_js`` returns a new Date call."""
+    assert (
+        format_datetime_js(value=_SAMPLE_DATETIME)
+        == 'new Date("2024-01-15T12:30:00")'
+    )
+
+
+def test_format_date_csharp() -> None:
+    """``format_date_csharp`` returns a new DateOnly call."""
+    assert (
+        format_date_csharp(value=_SAMPLE_DATE) == "new DateOnly(2024, 1, 15)"
+    )
+
+
+def test_format_datetime_csharp() -> None:
+    """``format_datetime_csharp`` returns a new DateTime call."""
+    assert (
+        format_datetime_csharp(value=_SAMPLE_DATETIME)
+        == "new DateTime(2024, 1, 15, 12, 30, 0)"
+    )
+
+
+def test_format_date_go() -> None:
+    """``format_date_go`` returns a time.Date call."""
+    assert format_date_go(value=_SAMPLE_DATE) == (
+        "time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)"
+    )
+
+
+def test_format_datetime_go() -> None:
+    """``format_datetime_go`` returns a time.Date call."""
+    assert format_datetime_go(value=_SAMPLE_DATETIME) == (
+        "time.Date(2024, time.January, 15, 12, 30, 0, 0, time.UTC)"
+    )
+
+
+def test_format_date_kotlin() -> None:
+    """``format_date_kotlin`` returns a LocalDate.of call."""
+    assert (
+        format_date_kotlin(value=_SAMPLE_DATE) == "LocalDate.of(2024, 1, 15)"
+    )
+
+
+def test_format_datetime_kotlin() -> None:
+    """``format_datetime_kotlin`` returns a LocalDateTime.of call."""
+    assert (
+        format_datetime_kotlin(value=_SAMPLE_DATETIME)
+        == "LocalDateTime.of(2024, 1, 15, 12, 30, 0)"
+    )
+
+
+def test_format_date_cpp() -> None:
+    """``format_date_cpp`` returns a year_month_day literal."""
+    result = format_date_cpp(value=_SAMPLE_DATE)
+    assert "std::chrono::year{2024}" in result
+    assert "std::chrono::month{1}" in result
+    assert "std::chrono::day{15}" in result
+
+
+def test_format_datetime_cpp() -> None:
+    """``format_datetime_cpp`` returns a sys_days expression."""
+    result = format_datetime_cpp(value=_SAMPLE_DATETIME)
+    assert "std::chrono::sys_days" in result
+    assert "std::chrono::hours{12}" in result
+    assert "std::chrono::minutes{30}" in result
+
+
+def test_format_datetime_cpp_midnight() -> None:
+    """``format_datetime_cpp`` at midnight omits zero time components."""
+    midnight = datetime.datetime(  # noqa: DTZ001
+        year=2024,
+        month=1,
+        day=15,
+        hour=0,
+        minute=0,
+        second=0,
+    )
+    result = format_datetime_cpp(value=midnight)
+    assert "std::chrono::sys_days" in result
+    assert "hours" not in result
+    assert "minutes" not in result
+    assert "seconds" not in result
+    assert "microseconds" not in result
+
+
+def test_format_datetime_cpp_seconds_and_microseconds() -> None:
+    """``format_datetime_cpp`` includes seconds and microseconds."""
+    dt = datetime.datetime(  # noqa: DTZ001
+        year=2024,
+        month=1,
+        day=15,
+        hour=12,
+        minute=30,
+        second=45,
+        microsecond=123456,
+    )
+    result = format_datetime_cpp(value=dt)
+    assert "std::chrono::seconds{45}" in result
+    assert "std::chrono::microseconds{123456}" in result
+
+
+def test_custom_format_date() -> None:
+    """A custom format_date callable is used for date values."""
+    spec = LanguageSpec(
+        null_literal="None",
+        true_literal="True",
+        false_literal="False",
+        collection_open="(",
+        collection_close=")",
+        dict_separator=": ",
+        format_date=format_date_python,
+    )
+    result = literalize(
+        data=[_SAMPLE_DATE],
+        language=spec,
+        prefix="",
+        wrap=False,
+    )
+    assert result == "datetime.date(2024, 1, 15),"
+
+
+def test_custom_format_datetime() -> None:
+    """A custom format_datetime callable is used for datetime values."""
+    spec = LanguageSpec(
+        null_literal="None",
+        true_literal="True",
+        false_literal="False",
+        collection_open="(",
+        collection_close=")",
+        dict_separator=": ",
+        format_datetime=format_datetime_python,
+    )
+    result = literalize(
+        data=[_SAMPLE_DATETIME],
+        language=spec,
+        prefix="",
+        wrap=False,
+    )
+    assert result == "datetime.datetime(2024, 1, 15, 12, 30, 0),"
+
+
+def test_java_native_dates() -> None:
+    """Java language spec with native date formatting."""
+    spec = LanguageSpec(
+        null_literal="null",
+        true_literal="true",
+        false_literal="false",
+        collection_open="{",
+        collection_close="}",
+        dict_separator=": ",
+        format_date=format_date_java,
+        format_datetime=format_datetime_java_instant,
+    )
+    result = literalize(
+        data=[_SAMPLE_DATE, _SAMPLE_DATETIME],
+        language=spec,
+        prefix="",
+        wrap=False,
+    )
+    lines = result.split(sep="\n")
+    assert lines[0] == "LocalDate.of(2024, 1, 15),"
+    assert lines[1] == 'Instant.parse("2024-01-15T12:30:00"),'
+
+
+def test_ruby_native_dates() -> None:
+    """Ruby language spec with native date formatting."""
+    spec = LanguageSpec(
+        null_literal="nil",
+        true_literal="true",
+        false_literal="false",
+        collection_open="[",
+        collection_close="]",
+        dict_separator=" => ",
+        format_date=format_date_ruby,
+        format_datetime=format_datetime_ruby,
+    )
+    result = literalize(
+        data=[_SAMPLE_DATETIME],
+        language=spec,
+        prefix="",
+        wrap=False,
+    )
+    assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
+
+
+def test_yaml_with_custom_date_format() -> None:
+    """YAML dates use the custom formatter from the language spec."""
+    spec = LanguageSpec(
+        null_literal="None",
+        true_literal="True",
+        false_literal="False",
+        collection_open="(",
+        collection_close=")",
+        dict_separator=": ",
+        format_date=format_date_python,
+    )
+    yaml_string = "- 2024-01-15\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=spec,
+        prefix="",
+        wrap=False,
+    )
+    assert result == "datetime.date(2024, 1, 15),"
+
+
+def test_default_format_date_is_iso() -> None:
+    """The default format_date is ISO format."""
+    assert PYTHON.format_date is format_date_iso
+    assert JAVA.format_date is format_date_iso
+
+
+def test_default_format_datetime_is_iso() -> None:
+    """The default format_datetime is ISO format."""
+    assert PYTHON.format_datetime is format_datetime_iso
+    assert JAVA.format_datetime is format_datetime_iso

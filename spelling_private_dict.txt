@@ -2,10 +2,13 @@ Args
 beartype
 booleans
 Changelog
+chrono
 config
 CPP
 datetime
+datetimes
 dicts
+formatters
 json
 JSONDecodeError
 literalizer
