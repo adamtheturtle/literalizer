@@ -6,7 +6,7 @@ import ast
 import datetime
 import json
 import textwrap
-from typing import Any, cast
+from typing import Any
 
 import pytest
 import yaml
@@ -357,18 +357,19 @@ def test_part2_sample_go() -> None:
     assert lines[1] == '        {"user_9", 10, 1003.0},'
 
 
-def _lists_to_tuples(*, value: Any) -> Any:  # noqa: ANN401
+type _JSONValue = (
+    str | int | float | bool | None | list[_JSONValue] | dict[str, _JSONValue]
+)
+
+
+def _lists_to_tuples(*, value: _JSONValue) -> object:
     """Recursively convert lists to tuples to match Python converter
     output.
     """
     if isinstance(value, list):
-        list_value = cast("list[Any]", value)
-        return tuple(_lists_to_tuples(value=v) for v in list_value)
+        return tuple(_lists_to_tuples(value=v) for v in value)
     if isinstance(value, dict):
-        return {
-            k: _lists_to_tuples(value=v)
-            for k, v in cast("dict[Any, Any]", value).items()
-        }
+        return {k: _lists_to_tuples(value=v) for k, v in value.items()}
     return value
 
 
