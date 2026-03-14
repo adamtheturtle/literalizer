@@ -7,6 +7,7 @@ dicts
 json
 JSONDecodeError
 literalizer
+noqa
 pre
 prepended
 pyright
