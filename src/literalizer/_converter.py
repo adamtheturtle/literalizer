@@ -11,10 +11,6 @@ from typing import Any, Protocol, cast, runtime_checkable
 import yaml
 from beartype import BeartypeConf, beartype
 
-_BEARTYPE_TOWER = beartype(
-    conf=BeartypeConf(is_pep484_tower=True),
-)
-
 
 @runtime_checkable
 class Language(Protocol):
@@ -213,7 +209,7 @@ def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
     return _format_scalar(value=value, spec=spec)
 
 
-@_BEARTYPE_TOWER
+@beartype(conf=BeartypeConf(is_pep484_tower=True))
 def literalize(
     *,
     data: Sequence[Any] | Mapping[str, Any] | float | bool | None,
