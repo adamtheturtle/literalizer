@@ -42,7 +42,7 @@ Usage examples
    # True,
    # None,
    # "hi",
-   # (1, 2),  # noqa: ERA001
+   # (1, 2),
 
    # Convert to JavaScript/TypeScript array
    result = literalize(
@@ -56,7 +56,7 @@ Usage examples
    #     true,
    #     null,
    #     "hi",
-   #     [1, 2],  # noqa: ERA001
+   #     [1, 2],
    # ]
 
    # Convert from a JSON string directly
@@ -71,7 +71,7 @@ Usage examples
    #     True,
    #     None,
    #     "hi",
-   #     (1, 2),  # noqa: ERA001
+   #     (1, 2),
    # ]
 
    # Convert from a YAML string directly
@@ -86,7 +86,7 @@ Usage examples
    #     True,
    #     None,
    #     "hi",
-   #     (1, 2),  # noqa: ERA001
+   #     (1, 2),
    # ]
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
