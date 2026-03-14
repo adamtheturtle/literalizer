@@ -6,10 +6,15 @@ import dataclasses
 import datetime
 import json
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Protocol, cast, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 import yaml
 from beartype import BeartypeConf, beartype
+
+type _Scalar = (
+    str | int | float | bool | None | datetime.date | datetime.datetime
+)
+type _Value = _Scalar | list[_Value] | dict[str, _Value]
 
 
 def format_date_iso(value: datetime.date) -> str:
@@ -408,7 +413,7 @@ KOTLIN = LanguageSpec(
 
 
 @beartype
-def _format_scalar(*, value: object, spec: Language) -> str:
+def _format_scalar(*, value: _Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     if value is None:
         result = spec.null_literal
@@ -436,7 +441,7 @@ def _format_scalar(*, value: object, spec: Language) -> str:
 
 
 @beartype
-def _format_value(*, value: object, spec: Language) -> str:
+def _format_value(*, value: _Value, spec: Language) -> str:
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), and dicts.
@@ -445,14 +450,14 @@ def _format_value(*, value: object, spec: Language) -> str:
         pairs = [
             f"{_format_value(value=k, spec=spec)}{spec.dict_separator}"
             f"{_format_value(value=v, spec=spec)}"
-            for k, v in cast("dict[str, object]", value).items()
+            for k, v in cast("dict[str, _Value]", value).items()
         ]
         return "{" + ", ".join(pairs) + "}"
 
     if isinstance(value, list):
         items = [
             _format_value(value=v, spec=spec)
-            for v in cast("list[object]", value)
+            for v in cast("list[_Value]", value)
         ]
         joined = ", ".join(items)
         # Single-element tuples need a trailing comma in Python/C#.
@@ -466,7 +471,7 @@ def _format_value(*, value: object, spec: Language) -> str:
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def literalize(
     *,
-    data: Sequence[Any] | Mapping[str, Any] | float | bool | None,
+    data: Sequence[_Value] | Mapping[str, _Value] | _Scalar,
     language: Language,
     prefix: str,
     wrap: bool,
@@ -502,7 +507,7 @@ def literalize(
     lines: list[str] = []
 
     if isinstance(data, dict):
-        for k, v in cast("dict[str, object]", data).items():
+        for k, v in cast("dict[str, _Value]", data).items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             lines.append(

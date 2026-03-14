@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 import yaml
+from beartype.roar import BeartypeCallHintParamViolation
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -291,9 +292,9 @@ def test_scalar_wrap_ignored() -> None:
 
 
 def test_unsupported_type_raises() -> None:
-    """An unsupported scalar type raises TypeError."""
+    """An unsupported scalar type raises a beartype violation."""
     with pytest.raises(
-        expected_exception=TypeError, match="Unsupported scalar type"
+        expected_exception=BeartypeCallHintParamViolation,
     ):
         literalize(
             data=[object()],
