@@ -25,7 +25,7 @@ Usage examples
 
    """Examples of using literalizer."""
 
-   from literalizer import JAVASCRIPT, PYTHON, LanguageSpec, literalize
+   from literalizer import JAVASCRIPT, PYTHON, LanguageSpec, literalize, literalize_json, literalize_yaml
 
    # Convert a Python list to Python literal items
    data = [True, None, "hi", [1, 2]]
@@ -54,6 +54,36 @@ Usage examples
    #     null,
    #     "hi",
    #     [1, 2],
+   # ]
+
+   # Convert from a JSON string directly
+   result = literalize_json(
+       json_string='[true, null, "hi", [1, 2]]',
+       language=PYTHON,
+       prefix="",
+       wrap=True,
+   )
+   # result:
+   # [
+   #     True,
+   #     None,
+   #     "hi",
+   #     (1, 2),
+   # ]
+
+   # Convert from a YAML string directly
+   result = literalize_yaml(
+       yaml_string="- true\n- null\n- hi\n- [1, 2]",
+       language=PYTHON,
+       prefix="",
+       wrap=True,
+   )
+   # result:
+   # [
+   #     True,
+   #     None,
+   #     "hi",
+   #     (1, 2),
    # ]
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
