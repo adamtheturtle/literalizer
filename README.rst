@@ -25,7 +25,14 @@ Usage examples
 
    """Examples of using literalizer."""
 
-   from literalizer import JAVASCRIPT, PYTHON, LanguageSpec, literalize, literalize_json, literalize_yaml
+   from literalizer import (
+       JAVASCRIPT,
+       PYTHON,
+       LanguageSpec,
+       literalize,
+       literalize_json,
+       literalize_yaml,
+   )
 
    # Convert a Python list to Python literal items
    data = [True, None, "hi", [1, 2]]
