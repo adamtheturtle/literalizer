@@ -77,11 +77,13 @@ def test_dict_wrap() -> None:
     """Wrapping a dict adds braces and indentation."""
     data = {"a": 1, "b": 2}
     result = literalize(data=data, language=PYTHON, prefix="", wrap=True)
-    expected = textwrap.dedent(text="""\
+    expected = textwrap.dedent(
+        text="""\
         {
             "a": 1,
             "b": 2,
-        }""")
+        }"""
+    )
     assert result == expected
 
 
@@ -102,10 +104,12 @@ def test_integers() -> None:
     result = literalize(
         data=[42, 0, -7], language=PYTHON, prefix="", wrap=False
     )
-    expected = textwrap.dedent(text="""\
+    expected = textwrap.dedent(
+        text="""\
         42,
         0,
-        -7,""")
+        -7,"""
+    )
     assert result == expected
 
 
@@ -114,9 +118,11 @@ def test_floats() -> None:
     result = literalize(
         data=[1000.0, 3.14], language=PYTHON, prefix="", wrap=False
     )
-    expected = textwrap.dedent(text="""\
+    expected = textwrap.dedent(
+        text="""\
         1000.0,
-        3.14,""")
+        3.14,"""
+    )
     assert result == expected
 
 
@@ -190,11 +196,13 @@ def test_wrap() -> None:
         prefix="",
         wrap=True,
     )
-    expected = textwrap.dedent(text="""\
+    expected = textwrap.dedent(
+        text="""\
         [
             True,
             False,
-        ]""")
+        ]"""
+    )
     assert result == expected
 
 
@@ -206,10 +214,12 @@ def test_wrap_with_prefix() -> None:
         prefix="    ",
         wrap=True,
     )
-    expected = textwrap.dedent(text="""\
+    expected = textwrap.dedent(
+        text="""\
         [
             ("a", 1.0),
-        ]""")
+        ]"""
+    )
     assert result == expected
 
 
@@ -362,6 +372,7 @@ json_values: st.SearchStrategy[Any] = st.recursive(
 )
 json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
+
 
 def test_literalize_json_array() -> None:
     """``literalize_json`` parses a JSON array string."""
@@ -586,7 +597,12 @@ def test_literalize_datetime() -> None:
     result = literalize(
         data=[
             datetime.datetime(  # noqa: DTZ001
-                year=2024, month=1, day=15, hour=12, minute=30, second=0,
+                year=2024,
+                month=1,
+                day=15,
+                hour=12,
+                minute=30,
+                second=0,
             ),
         ],
         language=PYTHON,
