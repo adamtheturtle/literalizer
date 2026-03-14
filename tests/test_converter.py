@@ -643,12 +643,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
     assert result_via_yaml == result_direct
 
 
-yaml_non_date_scalars = yaml_scalars.filter(
-    condition=lambda x: not isinstance(x, (datetime.date, datetime.datetime))
-)
-
-
-@given(data=yaml_non_date_scalars)
+@given(data=yaml_scalars)
 def test_roundtrip_yaml_scalar(data: Any) -> None:  # noqa: ANN401
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
     yaml_string = yaml.dump(data=data, sort_keys=False)

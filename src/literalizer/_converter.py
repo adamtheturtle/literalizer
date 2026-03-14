@@ -471,7 +471,12 @@ def _format_value(*, value: Any, spec: Language) -> str:  # noqa: ANN401
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def literalize(
     *,
-    data: Sequence[Any] | Mapping[str, Any] | float | bool | None,
+    data: Sequence[Any]
+    | Mapping[str, Any]
+    | datetime.date
+    | float
+    | bool
+    | None,
     language: Language,
     prefix: str,
     wrap: bool,
@@ -483,7 +488,8 @@ def literalize(
 
     Args:
         data: A scalar, sequence, or mapping.  Scalars (strings,
-            numbers, booleans, ``None``) are formatted as a single
+            numbers, booleans, ``None``, :class:`datetime.date`,
+            :class:`datetime.datetime`) are formatted as a single
             literal value.  Sequences may contain scalars, sequences,
             or mappings with nesting to arbitrary depth.  Mappings are
             formatted as one key-value pair per line using the
@@ -499,8 +505,18 @@ def literalize(
     """
     spec = language
 
-    # Handle scalars (check str before Sequence since str is a Sequence).
-    if isinstance(data, (str, int, float, bool)) or data is None:
+    # Handle scalars (check str before Sequence since str is a
+    # Sequence, and datetime before date since datetime subclasses
+    # date).
+    scalar_types = (
+        str,
+        int,
+        float,
+        bool,
+        datetime.datetime,
+        datetime.date,
+    )
+    if isinstance(data, scalar_types) or data is None:
         return f"{prefix}{_format_scalar(value=data, spec=spec)}"
 
     effective_prefix = prefix if not wrap else (prefix or "    ")
