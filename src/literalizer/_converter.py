@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
-from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 import yaml
 from beartype import BeartypeConf, beartype
@@ -520,7 +520,7 @@ def literalize(
     lines: list[str] = []
 
     if isinstance(data, dict):
-        for k, v in cast("dict[str, _Value]", data).items():
+        for k, v in data.items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             lines.append(
