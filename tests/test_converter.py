@@ -567,31 +567,14 @@ def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
     assert result_via_json == result_direct
 
 
-# YAML safe_load turns certain strings into dates/booleans, so we
-# restrict the text strategy to only strings that survive a YAML
-# dump/load cycle unchanged.  Dates and datetimes are tested as
-# their own types in yaml_scalars below.
-def _yaml_roundtrips_as_str(s: str) -> bool:
-    """Return True if ``s`` survives a YAML dump/load cycle as a
-    string.
-    """
-    loaded = yaml.safe_load(stream=yaml.dump(data=s))
-    return bool(loaded == s)
-
-
-yaml_safe_text = st.text(
-    alphabet=st.characters(
-        categories=("L", "M", "N", "P", "S", "Z"),
-        exclude_characters="\x00",
-    )
-).filter(_yaml_roundtrips_as_str)  # type: ignore[misc]
-
+# Dates and datetimes are tested as their own types below because
+# yaml.safe_load parses them into date/datetime objects.
 yaml_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
-    | yaml_safe_text
+    | st.text()
     | st.dates()
     | st.datetimes()
 )
@@ -600,14 +583,12 @@ yaml_values: st.SearchStrategy[Any] = st.recursive(
     base=yaml_scalars,
     extend=lambda children: (
         st.lists(elements=children)
-        | st.dictionaries(keys=yaml_safe_text, values=children)
+        | st.dictionaries(keys=st.text(), values=children)
     ),
 )
 
 yaml_arrays = st.lists(elements=yaml_values, max_size=10)
-yaml_objects = st.dictionaries(
-    keys=yaml_safe_text, values=yaml_values, max_size=10
-)
+yaml_objects = st.dictionaries(keys=st.text(), values=yaml_values, max_size=10)
 
 
 @given(data=yaml_arrays)
