@@ -6,7 +6,7 @@ import ast
 import datetime
 import json
 import textwrap
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -362,11 +362,12 @@ def _lists_to_tuples(*, value: Any) -> Any:  # noqa: ANN401
     output.
     """
     if isinstance(value, list):
-        return tuple(_lists_to_tuples(value=v) for v in value)  # pyright: ignore[reportUnknownVariableType]
+        list_value = cast("list[Any]", value)
+        return tuple(_lists_to_tuples(value=v) for v in list_value)
     if isinstance(value, dict):
-        return {  # pyright: ignore[reportUnknownVariableType]
+        return {
             k: _lists_to_tuples(value=v)
-            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType]
+            for k, v in cast("dict[Any, Any]", value).items()
         }
     return value
 
