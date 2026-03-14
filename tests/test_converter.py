@@ -568,14 +568,12 @@ def test_roundtrip_json_scalar(data: Any) -> None:  # noqa: ANN401
 # as dates, booleans, or null, so arbitrary text round-trips through
 # yaml.dump -> yaml.safe_load unchanged.  Dates and datetimes are
 # tested as their own types in yaml_scalars below.
-yaml_safe_text = st.text()
-
 yaml_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
-    | yaml_safe_text
+    | st.text()
     | st.dates()
     | st.datetimes()
 )
@@ -584,14 +582,12 @@ yaml_values: st.SearchStrategy[Any] = st.recursive(
     base=yaml_scalars,
     extend=lambda children: (
         st.lists(elements=children)
-        | st.dictionaries(keys=yaml_safe_text, values=children)
+        | st.dictionaries(keys=st.text(), values=children)
     ),
 )
 
 yaml_arrays = st.lists(elements=yaml_values, max_size=10)
-yaml_objects = st.dictionaries(
-    keys=yaml_safe_text, values=yaml_values, max_size=10
-)
+yaml_objects = st.dictionaries(keys=st.text(), values=yaml_values, max_size=10)
 
 
 @given(data=yaml_arrays)
