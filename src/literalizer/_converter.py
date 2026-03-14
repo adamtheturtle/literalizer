@@ -432,11 +432,8 @@ def _format_scalar(*, value: _Scalar, spec: Language) -> str:
         result = f'"{escaped}"'
     elif isinstance(value, datetime.datetime):
         result = spec.format_datetime(value)
-    elif isinstance(value, datetime.date):
-        result = spec.format_date(value)
     else:
-        msg = f"Unsupported scalar type: {type(value)}"
-        raise TypeError(msg)
+        result = spec.format_date(value)
     return result
 
 
