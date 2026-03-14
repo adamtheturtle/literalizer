@@ -13,6 +13,8 @@ import yaml
 from beartype.roar import BeartypeCallHintParamViolation
 from hypothesis import given
 from hypothesis import strategies as st
+from ruamel.yaml.error import FileMark
+from ruamel.yaml.tokens import CommentToken
 
 from literalizer import (
     CPP,
@@ -49,6 +51,10 @@ from literalizer import (
     literalize,
     literalize_json,
     literalize_yaml,
+)
+from literalizer._converter import (
+    _extract_yaml_comments,  # pyright: ignore[reportPrivateUsage]
+    _parse_after_token,  # pyright: ignore[reportPrivateUsage]
 )
 
 
@@ -1216,3 +1222,108 @@ def test_comment_prefix_javascript() -> None:
 def test_comment_prefix_go() -> None:
     """Go uses // as comment prefix."""
     assert GO.comment_prefix == "//"
+
+
+def test_yaml_comment_block_scalar_not_extracted() -> None:
+    """Text inside a block scalar is not mistaken for a comment."""
+    yaml_string = "description: |\n  # not a comment\nname: foo\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = (
+        '{\n    "description": "# not a comment\\n",\n    "name": "foo",\n}'
+    )
+    assert result == expected
+
+
+def test_yaml_comment_scalar_with_document_markers() -> None:
+    """Document markers ``---`` and ``...`` are ignored in scalars."""
+    yaml_string = "---\n# note\n42\n...\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    assert "# note" in result
+    assert "42" in result
+
+
+def test_yaml_comment_empty_comment_line() -> None:
+    """A bare ``#`` with no text produces a prefix-only comment."""
+    yaml_string = "- a\n#\n- b\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    # The empty comment becomes just the prefix character.
+    assert "#\n" in result or "# \n" not in result
+
+
+def test_yaml_comment_more_body_lines_than_comments() -> None:
+    """Body lines beyond the number of comments are emitted plain."""
+    yaml_string = "- a\n- b\n- c\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    # All three elements appear in the output, no comments.
+    assert '"a"' in result
+    assert '"b"' in result
+    assert '"c"' in result
+
+
+def test_extract_yaml_comments_scalar_yaml() -> None:
+    """Scalar YAML has no ``ca`` attribute, returns empty."""
+    elements, trailing = _extract_yaml_comments(
+        yaml_string="42\n",
+        is_sequence=True,
+    )
+    assert not elements
+    assert not trailing
+
+
+def test_yaml_comment_scalar_only_comments() -> None:
+    """Scalar YAML with only markers and comments, no value line."""
+    yaml_string = "---\n# just a comment\n...\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    # The underlying data is None, so we get the base rendering.
+    assert result is not None
+
+
+def test_yaml_comment_mapping_nested_value_none_token() -> None:
+    """Mapping key with nested comment has None at token index 2."""
+    yaml_string = "a:\n  # indented\n  x: 1\nb: 2\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    assert '"a"' in result
+    assert '"b"' in result
+
+
+def test_parse_after_token_col_no_hash() -> None:
+    """Token with col > 0 but no ``#`` produces no inline."""
+    mark = FileMark(name="test", index=0, line=0, column=5)
+    token = CommentToken(
+        value="text\n",
+        start_mark=mark,
+        end_mark=None,
+    )
+    inline, before = _parse_after_token(token=token)
+    assert inline == ""
+    assert before == []

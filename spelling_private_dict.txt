@@ -16,6 +16,8 @@ pre
 prepended
 pyright
 pytest
+reportPrivateUsage
 reportUnknownVariableType
+ruamel
 yaml
 YAMLError

@@ -5,13 +5,17 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
+from io import StringIO
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+import ruamel.yaml
 import yaml
 from beartype import BeartypeConf, beartype
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from ruamel.yaml.tokens import CommentToken
 
 type _Scalar = (
     str | int | float | bool | None | datetime.date | datetime.datetime
@@ -599,7 +603,7 @@ class _ElementComments:
     inline: str
 
 
-def _find_inline_comment(line: str) -> str:
+def _find_inline_comment(*, line: str) -> str:
     """Return the inline comment text from a YAML line.
 
     Returns an empty string when no inline comment is present.
@@ -607,7 +611,7 @@ def _find_inline_comment(line: str) -> str:
     """
     in_single = False
     in_double = False
-    for i, char in enumerate(line):
+    for i, char in enumerate(iterable=line):
         if char == "'" and not in_double:
             in_single = not in_single
         elif char == '"' and not in_single:
@@ -623,6 +627,52 @@ def _find_inline_comment(line: str) -> str:
     return ""
 
 
+_ruamel_yaml: Any = ruamel.yaml.YAML()
+
+
+def _token_comment_lines(*, value: str) -> list[str]:
+    r"""Extract comment text lines from a ruamel.yaml token value.
+
+    Token values look like ``"# text\n"`` or
+    ``"# line1\n# line2\n"``.
+    """
+    return [
+        line.strip().lstrip("#").strip()
+        for line in value.split(sep="\n")
+        if line.strip().startswith("#")
+    ]
+
+
+def _parse_after_token(
+    *,
+    token: CommentToken,
+) -> tuple[str, list[str]]:
+    """Parse an after-element comment token.
+
+    Returns ``(inline_comment, before_next_comments)``.
+    The *column* of the token determines whether its first line
+    is an inline comment (column > 0) or a standalone comment.
+    """
+    value: str = token.value
+    col: int = token.column
+    lines = value.split(sep="\n")
+    inline = ""
+    start = 0
+
+    if col > 0 and lines:
+        first = lines[0].strip()
+        if first.startswith("#"):
+            inline = first.lstrip("#").strip()
+        start = 1
+
+    before_next = [
+        line.strip().lstrip("#").strip()
+        for line in lines[start:]
+        if line.strip().startswith("#")
+    ]
+    return inline, before_next
+
+
 def _extract_yaml_comments(
     *,
     yaml_string: str,
@@ -630,43 +680,61 @@ def _extract_yaml_comments(
 ) -> tuple[tuple[_ElementComments, ...], tuple[str, ...]]:
     """Extract top-level comments from a YAML string.
 
+    Uses *ruamel.yaml*'s round-trip loader which preserves
+    comment metadata in :class:`CommentedSeq` /
+    :class:`CommentedMap` objects.
+
     Returns a tuple of per-element comments (aligned with data
     elements) and any trailing comments after the last element.
     """
-    pending: list[str] = []
-    elements: list[_ElementComments] = []
+    ruamel_data = _ruamel_yaml.load(
+        stream=StringIO(initial_value=yaml_string),
+    )
 
-    for line in yaml_string.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped in ("---", "..."):
-            continue
+    if not hasattr(ruamel_data, "ca"):
+        return (), ()
 
-        indent = len(line) - len(line.lstrip())
+    ca = ruamel_data.ca
 
-        if stripped.startswith("#") and indent == 0:
-            pending.append(stripped[1:].strip())
-            continue
-
-        if indent > 0:
-            continue
-
-        is_element = False
-        if is_sequence:
-            is_element = line.startswith("- ") or stripped == "-"
-        else:
-            is_element = True
-
-        if is_element:
-            inline = _find_inline_comment(line)
-            elements.append(
-                _ElementComments(
-                    before=tuple(pending),
-                    inline=inline,
-                ),
+    # Header comments (before the first element).
+    pending_before: list[str] = []
+    if ca.comment and len(ca.comment) > 1 and ca.comment[1]:
+        for token in ca.comment[1]:
+            pending_before.extend(
+                _token_comment_lines(value=token.value),
             )
-            pending = []
 
-    return tuple(elements), tuple(pending)
+    # Sequences store after-element tokens at index 0,
+    # mappings at index 2.
+    token_idx = 0 if is_sequence else 2
+
+    if is_sequence:
+        keys: list[object] = list(range(len(ruamel_data)))
+    else:
+        keys = list(ruamel_data.keys())
+
+    elements: list[_ElementComments] = []
+    for key in keys:
+        before = list(pending_before)
+        inline = ""
+        pending_before = []
+
+        if key in ca.items:
+            token = ca.items[key][token_idx]
+            if token is not None:
+                inline, pending_before = _parse_after_token(
+                    token=token,
+                )
+
+        elements.append(
+            _ElementComments(
+                before=tuple(before),
+                inline=inline,
+            ),
+        )
+
+    trailing = tuple(pending_before)
+    return tuple(elements), trailing
 
 
 def _format_comment(
@@ -693,12 +761,12 @@ def _literalize_yaml_scalar(
     inline = ""
     for line in yaml_string.splitlines():
         stripped = line.strip()
-        if not stripped or stripped in ("---", "..."):
+        if not stripped or stripped in {"---", "..."}:
             continue
         if stripped.startswith("#"):
             before_comments.append(stripped[1:].strip())
             continue
-        inline = _find_inline_comment(line)
+        inline = _find_inline_comment(line=line)
         break
 
     if not before_comments and not inline:
@@ -731,10 +799,13 @@ class _YamlCollectionContext:
     wrap: bool
 
 
-def _literalize_yaml_collection(ctx: _YamlCollectionContext) -> str:
+def _literalize_yaml_collection(
+    *,
+    ctx: _YamlCollectionContext,
+) -> str:
     """Preserve comments for collection YAML values."""
     effective_prefix = ctx.prefix if not ctx.wrap else (ctx.prefix or "    ")
-    all_lines = ctx.base.split("\n")
+    all_lines = ctx.base.split(sep="\n")
 
     if ctx.wrap:
         header = all_lines[0]
@@ -745,27 +816,26 @@ def _literalize_yaml_collection(ctx: _YamlCollectionContext) -> str:
         footer = None
         body_lines = all_lines
 
+    _empty = _ElementComments(before=(), inline="")
+    padded = ctx.element_comments + (_empty,) * (
+        len(body_lines) - len(ctx.element_comments)
+    )
+
     result: list[str] = []
-    for i, body_line in enumerate(body_lines):
-        if i < len(ctx.element_comments):
-            ec = ctx.element_comments[i]
-            result.extend(
-                _format_comment(
-                    text=ct,
-                    comment_prefix=ctx.comment_prefix,
-                    line_prefix=effective_prefix,
-                )
-                for ct in ec.before
+    for body_line, ec in zip(body_lines, padded, strict=True):
+        result.extend(
+            _format_comment(
+                text=ct,
+                comment_prefix=ctx.comment_prefix,
+                line_prefix=effective_prefix,
             )
-            if ec.inline:
-                body_line_with_inline = (
-                    f"{body_line}  {ctx.comment_prefix} {ec.inline}"
-                )
-            else:
-                body_line_with_inline = body_line
+            for ct in ec.before
+        )
+        if ec.inline:
+            output_line = f"{body_line}  {ctx.comment_prefix} {ec.inline}"
         else:
-            body_line_with_inline = body_line
-        result.append(body_line_with_inline)
+            output_line = body_line
+        result.append(output_line)
 
     result.extend(
         _format_comment(
@@ -853,4 +923,4 @@ def literalize_yaml(
         prefix=prefix,
         wrap=wrap,
     )
-    return _literalize_yaml_collection(ctx)
+    return _literalize_yaml_collection(ctx=ctx)
