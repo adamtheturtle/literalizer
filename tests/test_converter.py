@@ -644,7 +644,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 
 
 yaml_non_date_scalars = yaml_scalars.filter(
-    lambda x: not isinstance(x, (datetime.date, datetime.datetime))
+    condition=lambda x: not isinstance(x, (datetime.date, datetime.datetime))
 )
 
 
