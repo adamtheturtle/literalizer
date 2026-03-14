@@ -364,7 +364,7 @@ json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
 
 def test_literalize_json_array() -> None:
-    """`literalize_json` parses a JSON array string."""
+    """``literalize_json`` parses a JSON array string."""
     json_string = '[["user_1", 1000.0], ["user_2", 2000.0]]'
     result = literalize_json(
         json_string=json_string,
@@ -377,7 +377,7 @@ def test_literalize_json_array() -> None:
 
 
 def test_literalize_json_object() -> None:
-    """`literalize_json` parses a JSON object string."""
+    """``literalize_json`` parses a JSON object string."""
     json_string = '{"a": 1, "b": true}'
     result = literalize_json(
         json_string=json_string,
@@ -390,7 +390,7 @@ def test_literalize_json_object() -> None:
 
 
 def test_literalize_json_invalid() -> None:
-    """`literalize_json` raises on invalid JSON."""
+    """``literalize_json`` raises on invalid JSON."""
     with pytest.raises(expected_exception=json.JSONDecodeError):
         literalize_json(
             json_string="not json",
@@ -419,7 +419,7 @@ def test_literalize_json_scalar(
     language: Language,
     expected: str,
 ) -> None:
-    """`literalize_json` handles scalar JSON values."""
+    """``literalize_json`` handles scalar JSON values."""
     result = literalize_json(
         json_string=json_string,
         language=language,
@@ -475,7 +475,7 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
 
 
 def test_literalize_yaml_sequence() -> None:
-    """`literalize_yaml` parses a YAML sequence string."""
+    """``literalize_yaml`` parses a YAML sequence string."""
     yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -488,7 +488,7 @@ def test_literalize_yaml_sequence() -> None:
 
 
 def test_literalize_yaml_mapping() -> None:
-    """`literalize_yaml` parses a YAML mapping string."""
+    """``literalize_yaml`` parses a YAML mapping string."""
     yaml_string = "a: 1\nb: true\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -501,7 +501,7 @@ def test_literalize_yaml_mapping() -> None:
 
 
 def test_literalize_yaml_invalid() -> None:
-    """`literalize_yaml` raises on invalid YAML."""
+    """``literalize_yaml`` raises on invalid YAML."""
     with pytest.raises(expected_exception=yaml.YAMLError):
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
@@ -530,7 +530,7 @@ def test_literalize_yaml_scalar(
     language: Language,
     expected: str,
 ) -> None:
-    """`literalize_yaml` handles scalar YAML values."""
+    """``literalize_yaml`` handles scalar YAML values."""
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=language,
@@ -541,7 +541,7 @@ def test_literalize_yaml_scalar(
 
 
 def test_literalize_yaml_date() -> None:
-    """`literalize_yaml` formats date values as ISO string literals."""
+    """``literalize_yaml`` formats date values as ISO string literals."""
     yaml_string = "- 2024-01-15\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -553,7 +553,7 @@ def test_literalize_yaml_date() -> None:
 
 
 def test_literalize_yaml_datetime() -> None:
-    """`literalize_yaml` formats datetime values as ISO string
+    """``literalize_yaml`` formats datetime values as ISO string
     literals.
     """
     yaml_string = "- 2024-01-15T12:30:00\n"
@@ -567,7 +567,7 @@ def test_literalize_yaml_datetime() -> None:
 
 
 def test_literalize_date() -> None:
-    """`literalize` formats datetime.date values as ISO string
+    """``literalize`` formats datetime.date values as ISO string
     literals.
     """
     result = literalize(
@@ -580,7 +580,7 @@ def test_literalize_date() -> None:
 
 
 def test_literalize_datetime() -> None:
-    """`literalize` formats datetime.datetime values as ISO string
+    """``literalize`` formats datetime.datetime values as ISO string
     literals.
     """
     result = literalize(
