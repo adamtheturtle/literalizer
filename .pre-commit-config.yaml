@@ -31,6 +31,7 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
+    - cpp-golden-syntax-check
     - ruby-syntax-check
     - spelling
     - sphinx-lint
@@ -409,6 +410,17 @@ repos:
         types: [java]
         # Restrict to golden files: the script wraps bare expressions
         # in a class with imports, which only works for these files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: cpp-golden-syntax-check
+        name: C++ golden file syntax check
+        entry: uv run python check_cpp_golden_syntax.py
+        language: python
+        types: [c++]
+        # Restrict to golden files: the script wraps bare initializer lists
+        # in a struct-based wrapper, which only works for these files.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
