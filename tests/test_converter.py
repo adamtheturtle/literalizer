@@ -6,13 +6,15 @@ import ast
 import datetime
 import json
 import textwrap
+from io import StringIO
 from typing import Any
 
 import pytest
-import yaml
 from beartype.roar import BeartypeCallHintParamViolation
 from hypothesis import given
 from hypothesis import strategies as st
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 from literalizer import (
     CPP,
@@ -567,34 +569,51 @@ def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
     assert result_via_json == result_direct
 
 
+def _yaml_dump(data: Any) -> str:  # noqa: ANN401
+    """Dump data to a YAML string using ruamel.yaml safe mode."""
+    ruamel_yaml = YAML(typ="safe")
+    ruamel_yaml.default_flow_style = False
+    # Preserve insertion order
+    ruamel_yaml.sort_base_mapping_type_on_output = False  # type: ignore[assignment] # pyright: ignore[reportAttributeAccessIssue]
+    stream = StringIO()
+    ruamel_yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
+    return stream.getvalue()
+
+
 # Dates and datetimes are tested as their own types below because
-# yaml.safe_load parses them into date/datetime objects.
+# ruamel.yaml safe_load parses them into date/datetime objects.
 yaml_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
-    | st.text()
+    | st.text(
+        alphabet=st.characters(exclude_categories=("Cc", "Cs")),
+    )
     | st.dates()
     | st.datetimes()
+)
+
+yaml_text = st.text(
+    alphabet=st.characters(exclude_categories=("Cc", "Cs")),
 )
 
 yaml_values: st.SearchStrategy[Any] = st.recursive(
     base=yaml_scalars,
     extend=lambda children: (
         st.lists(elements=children)
-        | st.dictionaries(keys=st.text(), values=children)
+        | st.dictionaries(keys=yaml_text, values=children)
     ),
 )
 
 yaml_arrays = st.lists(elements=yaml_values, max_size=10)
-yaml_objects = st.dictionaries(keys=st.text(), values=yaml_values, max_size=10)
+yaml_objects = st.dictionaries(keys=yaml_text, values=yaml_values, max_size=10)
 
 
 @given(data=yaml_arrays)
 def test_roundtrip_yaml_array(data: list[Any]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for arrays."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -613,7 +632,7 @@ def test_roundtrip_yaml_array(data: list[Any]) -> None:
 @given(data=yaml_objects)
 def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for objects."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -632,7 +651,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 @given(data=yaml_scalars)
 def test_roundtrip_yaml_scalar(data: _JSONScalar) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -676,7 +695,7 @@ def test_literalize_yaml_mapping() -> None:
 
 def test_literalize_yaml_invalid() -> None:
     """``literalize_yaml`` raises on invalid YAML."""
-    with pytest.raises(expected_exception=yaml.YAMLError):
+    with pytest.raises(expected_exception=YAMLError):
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,

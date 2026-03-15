@@ -7,8 +7,8 @@ import datetime
 import json
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-import yaml
 from beartype import BeartypeConf, beartype
+from ruamel.yaml import YAML
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -603,9 +603,10 @@ def literalize_yaml(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        yaml.YAMLError: If *yaml_string* is not valid YAML.
+        ruamel.yaml.YAMLError: If *yaml_string* is not valid YAML.
     """
-    data = yaml.safe_load(stream=yaml_string)
+    ruamel_yaml = YAML(typ="safe")
+    data = ruamel_yaml.load(stream=yaml_string)  # pyright: ignore[reportUnknownMemberType]
     return literalize(
         data=data,
         language=language,
