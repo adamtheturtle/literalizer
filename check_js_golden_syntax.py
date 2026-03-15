@@ -9,7 +9,6 @@ from pathlib import Path
 def main() -> None:
     """Check syntax of each given JavaScript file."""
     node_path = shutil.which(cmd="node") or "node"
-    exit_code = 0
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
         # Wrap in void(...) to allow top-level object and array literals.
@@ -26,8 +25,7 @@ def main() -> None:
         if result.returncode != 0:
             msg = f"{filename}: JavaScript syntax error\n{result.stderr}"
             sys.stderr.write(msg)
-            exit_code = 1
-    sys.exit(exit_code)
+            sys.exit(1)
 
 
 if __name__ == "__main__":
