@@ -259,7 +259,7 @@ def _yaml_has_dates(input_path: Path) -> bool:
             return any(_contains_date(v) for v in obj)
         return False
 
-    return _contains_date(data)
+    return _contains_date(data)  # type: ignore[misc]
 
 
 def _discover_cases() -> list[tuple[str, str, str, Path]]:
@@ -273,7 +273,7 @@ def _discover_cases() -> list[tuple[str, str, str, Path]]:
     cases: list[tuple[str, str, str, Path]] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
         input_path = case_dir / "input.yaml"
-        has_dates = _yaml_has_dates(input_path)
+        has_dates = _yaml_has_dates(input_path)  # type: ignore[misc]
         for lang_name, formatter_pairs in _LANGUAGE_FORMATTERS.items():
             pairs = formatter_pairs if has_dates else formatter_pairs[:1]
             cases.extend(
