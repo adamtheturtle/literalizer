@@ -27,7 +27,9 @@ dynamic = [
 ]
 dependencies = [
     "beartype==0.22.9",
-    "ruamel-yaml>=0.19.1",
+    # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
+    # which has a maximum ruamel.yaml version of 0.18.16.
+    "ruamel-yaml>=0.18.16",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.11.24",
