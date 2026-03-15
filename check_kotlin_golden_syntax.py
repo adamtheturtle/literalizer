@@ -1,4 +1,4 @@
-"""Check syntax of Kotlin golden files using kotlinc.
+"""Check syntax of Kotlin golden files using ``kotlinc``.
 
 Golden files use ``[`` / ``]`` for top-level lists (the generic wrap
 format shared by all languages).  We replace these with ``listOf(`` /
@@ -22,7 +22,7 @@ def _transform(*, content: str) -> str:
         # The closing ``]`` is always the last non-whitespace character.
         idx = stripped.rfind("]")
         stripped = stripped[:idx] + ")" + stripped[idx + 1 :]
-    # Empty collections need explicit type parameters for kotlinc.
+    # Empty collections need explicit type parameters for ``kotlinc``.
     return stripped.replace("listOf()", "listOf<Any?>()").replace(
         "mapOf()", "mapOf<String, Any?>()"
     )
