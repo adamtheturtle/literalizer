@@ -335,6 +335,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def single_element_trailing_comma(self) -> bool:
+        """Whether a single-element collection requires a trailing comma
+        to be syntactically unambiguous (e.g. Python tuples).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a
         string literal.
@@ -368,6 +375,7 @@ class LanguageSpec:
     dict_close: str = "}"
     format_dict_entry: Callable[[str, str], str] | None = None
     trailing_comma: bool = True
+    single_element_trailing_comma: bool = False
     format_date: Callable[[datetime.date], str] = format_date_iso
     format_datetime: Callable[[datetime.datetime], str] = format_datetime_iso
     comment_prefix: str = "//"
@@ -381,6 +389,7 @@ PYTHON = LanguageSpec(
     collection_close=")",
     dict_separator=": ",
     comment_prefix="#",
+    single_element_trailing_comma=True,
 )
 
 
@@ -540,12 +549,9 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     if isinstance(value, list):
         items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
-        # Single-element tuples need a trailing comma in Python.
-        if (
-            len(items) == 1
-            and spec.collection_open == "("
-            and spec.trailing_comma
-        ):
+        # Some languages (e.g. Python) require a trailing comma on
+        # single-element collections to avoid syntactic ambiguity.
+        if len(items) == 1 and spec.single_element_trailing_comma:
             joined += ","
         return f"{spec.collection_open}{joined}{spec.collection_close}"
 
