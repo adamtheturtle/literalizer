@@ -365,6 +365,10 @@ type _JSONScalar = str | int | float | bool | None
 
 type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
 
+type _YAMLScalar = _JSONScalar | datetime.date | datetime.datetime
+
+type _YAMLValue = _YAMLScalar | list[_YAMLValue] | dict[str, _YAMLValue]
+
 
 def _lists_to_tuples(*, value: _JSONValue) -> object:
     """Recursively convert lists to tuples to match Python converter
@@ -591,7 +595,7 @@ yaml_scalars = (
     | st.datetimes()
 )
 
-yaml_values: st.SearchStrategy[Any] = st.recursive(
+yaml_values: st.SearchStrategy[_YAMLValue] = st.recursive(
     base=yaml_scalars,
     extend=lambda children: (
         st.lists(elements=children)
@@ -604,7 +608,7 @@ yaml_objects = st.dictionaries(keys=st.text(), values=yaml_values, max_size=10)
 
 
 @given(data=yaml_arrays)
-def test_roundtrip_yaml_array(data: list[Any]) -> None:
+def test_roundtrip_yaml_array(data: list[_YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for arrays."""
     yaml_string = yaml.dump(data=data, sort_keys=False)
     result_via_yaml = literalize_yaml(
@@ -623,7 +627,7 @@ def test_roundtrip_yaml_array(data: list[Any]) -> None:
 
 
 @given(data=yaml_objects)
-def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
+def test_roundtrip_yaml_object(data: dict[str, _YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for objects."""
     yaml_string = yaml.dump(data=data, sort_keys=False)
     result_via_yaml = literalize_yaml(
@@ -642,7 +646,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 
 
 @given(data=yaml_scalars)
-def test_roundtrip_yaml_scalar(data: _JSONScalar) -> None:
+def test_roundtrip_yaml_scalar(data: _YAMLScalar) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
     yaml_string = yaml.dump(data=data, sort_keys=False)
     result_via_yaml = literalize_yaml(
