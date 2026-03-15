@@ -6,14 +6,12 @@ import ast
 import datetime
 import json
 import textwrap
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable  # noqa: TC003
+from typing import Any
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 from literalizer import (
     CPP,
