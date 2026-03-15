@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
+from ruamel.yaml import YAML
 
 import literalizer
 
@@ -244,8 +245,6 @@ def _yaml_has_dates(input_path: Path) -> bool:
     """Return True if the YAML input contains any date or datetime
     values.
     """
-    from ruamel.yaml import YAML  # noqa: PLC0415
-
     yaml = YAML()
     data: object = yaml.load(  # type: ignore[misc]  # pyright: ignore[reportUnknownMemberType]
         input_path
@@ -274,7 +273,7 @@ def _discover_cases() -> list[tuple[str, str, str, Path]]:
     """Return ``(case_name, language, formatter_name, input_path)`` tuples.
 
     For cases with date/datetime values every formatter pair is emitted
-    so that each formatter's output is checked.  For date-free cases only
+    so that each formatter output is checked.  For date-free cases only
     the ``iso`` pair is emitted, since all formatters produce identical
     output when there are no dates to format.
     """
