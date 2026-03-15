@@ -33,5 +33,6 @@ reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
 ruamel
+struct
 yaml
 YAMLError
