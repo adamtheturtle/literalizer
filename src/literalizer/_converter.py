@@ -502,7 +502,7 @@ def literalize(
     """
     spec = language
 
-    # Handle scalars (check str before Sequence since str is a
+    # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
     # date).
     scalar_types = (

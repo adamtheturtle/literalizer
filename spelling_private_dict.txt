@@ -8,9 +8,12 @@ CPP
 datetime
 datetimes
 dicts
+formatter
 formatters
 json
 JSONDecodeError
+subclasses
+literalize
 literalizer
 pre
 prepended
