@@ -10,6 +10,7 @@ datetimes
 dicts
 formatter
 formatters
+gofmt
 json
 JSONDecodeError
 subclasses
