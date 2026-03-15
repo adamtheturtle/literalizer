@@ -387,7 +387,7 @@ repos:
 
       - id: typescript-syntax-check
         name: TypeScript syntax check
-        entry: tsc --noEmit --noResolve --skipLibCheck --isolatedModules
+        entry: tsc --noEmit --noResolve --skipLibCheck --isolatedModules --lib es2015
         language: node
         additional_dependencies: [typescript]
         types: [ts]
