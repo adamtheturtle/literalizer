@@ -6,6 +6,7 @@ import ast
 import datetime
 import json
 import textwrap
+from collections.abc import Callable  # noqa: TC003
 from typing import Any
 
 import pytest
@@ -166,18 +167,11 @@ def test_java_list_wrap_uses_braces() -> None:
     assert result == expected
 
 
-def test_dict_empty() -> None:
-    """An empty dict produces an empty string."""
+@pytest.mark.parametrize(argnames="wrap", argvalues=[False, True])
+def test_dict_empty(wrap: bool) -> None:  # noqa: FBT001
+    """An empty dict produces an empty string regardless of wrap."""
     result = literalize_json(
-        json_string=json.dumps(obj={}), language=PYTHON, prefix="", wrap=False
-    )
-    assert result == ""
-
-
-def test_dict_empty_with_wrap() -> None:
-    """An empty dict with wrap still produces an empty string."""
-    result = literalize_json(
-        json_string=json.dumps(obj={}), language=PYTHON, prefix="", wrap=True
+        json_string=json.dumps(obj={}), language=PYTHON, prefix="", wrap=wrap
     )
     assert result == ""
 
@@ -330,18 +324,11 @@ def test_wrap_with_prefix() -> None:
     assert result == expected
 
 
-def test_empty_data() -> None:
-    """An empty list produces an empty string."""
+@pytest.mark.parametrize(argnames="wrap", argvalues=[False, True])
+def test_empty_data(wrap: bool) -> None:  # noqa: FBT001
+    """An empty list produces an empty string regardless of wrap."""
     result = literalize_json(
-        json_string=json.dumps(obj=[]), language=PYTHON, prefix="", wrap=False
-    )
-    assert result == ""
-
-
-def test_empty_data_with_wrap() -> None:
-    """An empty list with wrap still produces an empty string."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[]), language=PYTHON, prefix="", wrap=True
+        json_string=json.dumps(obj=[]), language=PYTHON, prefix="", wrap=wrap
     )
     assert result == ""
 
@@ -706,39 +693,126 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
 )
 
 
-def test_format_date_iso() -> None:
-    """``format_date_iso`` returns a quoted ISO string."""
-    assert format_date_iso(value=_SAMPLE_DATE) == '"2024-01-15"'
-
-
-def test_format_datetime_iso() -> None:
-    """``format_datetime_iso`` returns a quoted ISO string."""
-    assert (
-        format_datetime_iso(value=_SAMPLE_DATETIME) == '"2024-01-15T12:30:00"'
-    )
-
-
-def test_format_date_python() -> None:
-    """``format_date_python`` returns a constructor call."""
-    assert (
-        format_date_python(value=_SAMPLE_DATE) == "datetime.date(2024, 1, 15)"
-    )
-
-
-def test_format_datetime_python() -> None:
-    """``format_datetime_python`` returns a constructor call."""
-    assert (
-        format_datetime_python(value=_SAMPLE_DATETIME)
-        == "datetime.datetime(2024, 1, 15, 12, 30, 0)"
-    )
-
-
-def test_format_datetime_python_microsecond() -> None:
-    """``format_datetime_python`` includes microseconds when set."""
-    assert (
-        format_datetime_python(value=_SAMPLE_DATETIME_MICRO)
-        == "datetime.datetime(2024, 1, 15, 12, 30, 0, 123456)"
-    )
+@pytest.mark.parametrize(
+    argnames=("func", "value", "expected"),
+    argvalues=[
+        pytest.param(
+            format_date_iso,
+            _SAMPLE_DATE,
+            '"2024-01-15"',
+            id="format_date_iso",
+        ),
+        pytest.param(
+            format_datetime_iso,
+            _SAMPLE_DATETIME,
+            '"2024-01-15T12:30:00"',
+            id="format_datetime_iso",
+        ),
+        pytest.param(
+            format_date_python,
+            _SAMPLE_DATE,
+            "datetime.date(2024, 1, 15)",
+            id="format_date_python",
+        ),
+        pytest.param(
+            format_datetime_python,
+            _SAMPLE_DATETIME,
+            "datetime.datetime(2024, 1, 15, 12, 30, 0)",
+            id="format_datetime_python",
+        ),
+        pytest.param(
+            format_datetime_python,
+            _SAMPLE_DATETIME_MICRO,
+            "datetime.datetime(2024, 1, 15, 12, 30, 0, 123456)",
+            id="format_datetime_python_microsecond",
+        ),
+        pytest.param(
+            format_date_java,
+            _SAMPLE_DATE,
+            "LocalDate.of(2024, 1, 15)",
+            id="format_date_java",
+        ),
+        pytest.param(
+            format_datetime_java_instant,
+            _SAMPLE_DATETIME,
+            'Instant.parse("2024-01-15T12:30:00")',
+            id="format_datetime_java_instant",
+        ),
+        pytest.param(
+            format_datetime_java_zoned,
+            _SAMPLE_DATETIME,
+            'ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("UTC"))',
+            id="format_datetime_java_zoned",
+        ),
+        pytest.param(
+            format_date_ruby,
+            _SAMPLE_DATE,
+            "Date.new(2024, 1, 15)",
+            id="format_date_ruby",
+        ),
+        pytest.param(
+            format_datetime_ruby,
+            _SAMPLE_DATETIME,
+            "Time.new(2024, 1, 15, 12, 30, 0)",
+            id="format_datetime_ruby",
+        ),
+        pytest.param(
+            format_date_js,
+            _SAMPLE_DATE,
+            'new Date("2024-01-15")',
+            id="format_date_js",
+        ),
+        pytest.param(
+            format_datetime_js,
+            _SAMPLE_DATETIME,
+            'new Date("2024-01-15T12:30:00")',
+            id="format_datetime_js",
+        ),
+        pytest.param(
+            format_date_csharp,
+            _SAMPLE_DATE,
+            "new DateOnly(2024, 1, 15)",
+            id="format_date_csharp",
+        ),
+        pytest.param(
+            format_datetime_csharp,
+            _SAMPLE_DATETIME,
+            "new DateTime(2024, 1, 15, 12, 30, 0)",
+            id="format_datetime_csharp",
+        ),
+        pytest.param(
+            format_date_go,
+            _SAMPLE_DATE,
+            "time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)",
+            id="format_date_go",
+        ),
+        pytest.param(
+            format_datetime_go,
+            _SAMPLE_DATETIME,
+            "time.Date(2024, time.January, 15, 12, 30, 0, 0, time.UTC)",
+            id="format_datetime_go",
+        ),
+        pytest.param(
+            format_date_kotlin,
+            _SAMPLE_DATE,
+            "LocalDate.of(2024, 1, 15)",
+            id="format_date_kotlin",
+        ),
+        pytest.param(
+            format_datetime_kotlin,
+            _SAMPLE_DATETIME,
+            "LocalDateTime.of(2024, 1, 15, 12, 30, 0)",
+            id="format_datetime_kotlin",
+        ),
+    ],
+)
+def test_format_date_datetime(
+    func: Callable[..., str],
+    value: datetime.date | datetime.datetime,
+    expected: str,
+) -> None:
+    """Each format function returns the expected string."""
+    assert func(value=value) == expected
 
 
 def test_format_datetime_epoch() -> None:
@@ -747,97 +821,6 @@ def test_format_datetime_epoch() -> None:
     # The exact value depends on local timezone for naive datetimes,
     # so just check it parses as a float.
     float(result)
-
-
-def test_format_date_java() -> None:
-    """``format_date_java`` returns a LocalDate.of call."""
-    assert format_date_java(value=_SAMPLE_DATE) == "LocalDate.of(2024, 1, 15)"
-
-
-def test_format_datetime_java_instant() -> None:
-    """``format_datetime_java_instant`` returns an Instant.parse call."""
-    assert (
-        format_datetime_java_instant(value=_SAMPLE_DATETIME)
-        == 'Instant.parse("2024-01-15T12:30:00")'
-    )
-
-
-def test_format_datetime_java_zoned() -> None:
-    """``format_datetime_java_zoned`` returns a ZonedDateTime.of call."""
-    result = format_datetime_java_zoned(value=_SAMPLE_DATETIME)
-    assert result == (
-        'ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("UTC"))'
-    )
-
-
-def test_format_date_ruby() -> None:
-    """``format_date_ruby`` returns a Date.new call."""
-    assert format_date_ruby(value=_SAMPLE_DATE) == "Date.new(2024, 1, 15)"
-
-
-def test_format_datetime_ruby() -> None:
-    """``format_datetime_ruby`` returns a Time.new call."""
-    assert (
-        format_datetime_ruby(value=_SAMPLE_DATETIME)
-        == "Time.new(2024, 1, 15, 12, 30, 0)"
-    )
-
-
-def test_format_date_js() -> None:
-    """``format_date_js`` returns a new Date call."""
-    assert format_date_js(value=_SAMPLE_DATE) == 'new Date("2024-01-15")'
-
-
-def test_format_datetime_js() -> None:
-    """``format_datetime_js`` returns a new Date call."""
-    assert (
-        format_datetime_js(value=_SAMPLE_DATETIME)
-        == 'new Date("2024-01-15T12:30:00")'
-    )
-
-
-def test_format_date_csharp() -> None:
-    """``format_date_csharp`` returns a new DateOnly call."""
-    assert (
-        format_date_csharp(value=_SAMPLE_DATE) == "new DateOnly(2024, 1, 15)"
-    )
-
-
-def test_format_datetime_csharp() -> None:
-    """``format_datetime_csharp`` returns a new DateTime call."""
-    assert (
-        format_datetime_csharp(value=_SAMPLE_DATETIME)
-        == "new DateTime(2024, 1, 15, 12, 30, 0)"
-    )
-
-
-def test_format_date_go() -> None:
-    """``format_date_go`` returns a time.Date call."""
-    assert format_date_go(value=_SAMPLE_DATE) == (
-        "time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)"
-    )
-
-
-def test_format_datetime_go() -> None:
-    """``format_datetime_go`` returns a time.Date call."""
-    assert format_datetime_go(value=_SAMPLE_DATETIME) == (
-        "time.Date(2024, time.January, 15, 12, 30, 0, 0, time.UTC)"
-    )
-
-
-def test_format_date_kotlin() -> None:
-    """``format_date_kotlin`` returns a LocalDate.of call."""
-    assert (
-        format_date_kotlin(value=_SAMPLE_DATE) == "LocalDate.of(2024, 1, 15)"
-    )
-
-
-def test_format_datetime_kotlin() -> None:
-    """``format_datetime_kotlin`` returns a LocalDateTime.of call."""
-    assert (
-        format_datetime_kotlin(value=_SAMPLE_DATETIME)
-        == "LocalDateTime.of(2024, 1, 15, 12, 30, 0)"
-    )
 
 
 def test_format_date_cpp() -> None:
@@ -1178,24 +1161,18 @@ def test_yaml_comment_multiple_before_lines() -> None:
     assert result == expected
 
 
-def test_comment_prefix_python() -> None:
-    """Python uses # as comment prefix."""
-    assert PYTHON.comment_prefix == "#"
-
-
-def test_comment_prefix_ruby() -> None:
-    """Ruby uses # as comment prefix."""
-    assert RUBY.comment_prefix == "#"
-
-
-def test_comment_prefix_javascript() -> None:
-    """JavaScript uses // as comment prefix."""
-    assert JAVASCRIPT.comment_prefix == "//"
-
-
-def test_comment_prefix_go() -> None:
-    """Go uses // as comment prefix."""
-    assert GO.comment_prefix == "//"
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (PYTHON, "#"),
+        (RUBY, "#"),
+        (JAVASCRIPT, "//"),
+        (GO, "//"),
+    ],
+)
+def test_comment_prefix(language: LanguageSpec, expected: str) -> None:
+    """Each language has the expected comment prefix."""
+    assert language.comment_prefix == expected
 
 
 def test_yaml_comment_escaped_quote_in_value() -> None:
