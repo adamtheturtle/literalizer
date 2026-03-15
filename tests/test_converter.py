@@ -56,7 +56,7 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
         (PYTHON, '(True, None, "hi", (1, 2)),'),
         (JAVASCRIPT, '[true, null, "hi", [1, 2]],'),
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
-        (GO, '{true, nil, "hi", {1, 2}},'),
+        (GO, '[]any{true, nil, "hi", []any{1, 2}},'),
         (CPP, '{true, nullptr, "hi", {1, 2}},'),
         (JAVA, 'new Object[]{true, null, "hi", new Object[]{1, 2}}'),
         (CSHARP, '(true, null, "hi", (1, 2))'),
@@ -439,8 +439,8 @@ def test_part2_sample_go() -> None:
         wrap=False,
     )
     lines = result.split(sep="\n")
-    assert lines[0] == '        {"user_1", 49, 1000.0},'
-    assert lines[1] == '        {"user_9", 10, 1003.0},'
+    assert lines[0] == '        []any{"user_1", 49, 1000.0},'
+    assert lines[1] == '        []any{"user_9", 10, 1003.0},'
 
 
 type _JSONScalar = str | int | float | bool | None
