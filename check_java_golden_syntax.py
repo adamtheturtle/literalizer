@@ -38,11 +38,10 @@ def main() -> None:
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            java_file = Path(tmpdir) / "Check.java"
-            java_file.write_text(data=wrapped, encoding="utf-8")
-            java_file_str: str = str(java_file)
+            java_file_path = f"{tmpdir}/Check.java"
+            Path(java_file_path).write_text(data=wrapped, encoding="utf-8")
             result = subprocess.run(
-                args=[javac_path, java_file_str],
+                args=[javac_path, java_file_path],
                 capture_output=True,
                 text=True,
                 check=False,
