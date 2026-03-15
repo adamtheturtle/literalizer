@@ -364,6 +364,12 @@ PYTHON = LanguageSpec(
     dict_separator=": ",
 )
 
+
+def _format_csharp_dict_entry(key: str, value: str) -> str:
+    """Format a C# dictionary indexer entry."""
+    return f"[{key}] = {value}"
+
+
 CSHARP = LanguageSpec(
     null_literal="null",
     true_literal="true",
@@ -371,6 +377,9 @@ CSHARP = LanguageSpec(
     collection_open="(",
     collection_close=")",
     dict_separator=": ",
+    dict_open="new Dictionary<string, object> {",
+    dict_close="}",
+    format_dict_entry=_format_csharp_dict_entry,
 )
 
 JAVASCRIPT = LanguageSpec(
