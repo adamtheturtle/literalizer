@@ -10,6 +10,7 @@ ci:
     - docs
     - interrogate
     - interrogate-docs
+    - javascript-syntax-check
     - linkcheck
     - mypy
     - mypy-docs
@@ -362,6 +363,17 @@ repos:
         entry: ruby -c
         language: system
         types: [ruby]
+        stages: [pre-commit]
+
+      - id: javascript-syntax-check
+        name: JavaScript syntax check
+        entry: uv run python check_js_golden_syntax.py
+        language: python
+        types: [javascript]
+        # Restrict to golden files: the script wraps content in void(...)
+        # which only works for bare object/array literals, not full JS files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: sphinx-lint
