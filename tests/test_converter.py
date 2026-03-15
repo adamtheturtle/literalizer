@@ -1382,3 +1382,107 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
         }"""
     )
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (PYTHON, "my_var = 42"),
+        (JAVASCRIPT, "const my_var = 42;"),
+        (TYPESCRIPT, "const my_var = 42;"),
+        (GO, "my_var := 42"),
+        (RUBY, "my_var = 42"),
+        (CSHARP, "var my_var = 42;"),
+        (CPP, "auto my_var = 42;"),
+        (JAVA, "var my_var = 42;"),
+        (KOTLIN, "val my_var = 42"),
+    ],
+)
+def test_variable_declaration_json(
+    *, language: Language, expected: str
+) -> None:
+    """Each language produces correct variable declaration syntax."""
+    result = literalize_json(
+        json_string="42",
+        language=language,
+        prefix="",
+        wrap=False,
+        variable_name="my_var",
+    )
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (PYTHON, "my_var = 42"),
+        (JAVASCRIPT, "const my_var = 42;"),
+        (TYPESCRIPT, "const my_var = 42;"),
+        (GO, "my_var := 42"),
+        (RUBY, "my_var = 42"),
+        (CSHARP, "var my_var = 42;"),
+        (CPP, "auto my_var = 42;"),
+        (JAVA, "var my_var = 42;"),
+        (KOTLIN, "val my_var = 42"),
+    ],
+)
+def test_variable_declaration_yaml(
+    *, language: Language, expected: str
+) -> None:
+    """Each language produces correct variable declaration syntax for YAML."""
+    result = literalize_yaml(
+        yaml_string="42\n",
+        language=language,
+        prefix="",
+        wrap=False,
+        variable_name="my_var",
+    )
+    assert result == expected
+
+
+def test_variable_declaration_none_no_wrap() -> None:
+    """Omitting variable_name leaves output unchanged."""
+    result = literalize_json(
+        json_string="[1, 2]",
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+        variable_name=None,
+    )
+    assert result == "(\n    1,\n    2,\n)"
+
+
+def test_variable_declaration_language_no_formatter() -> None:
+    """Language with format_variable_declaration=None ignores
+    variable_name.
+    """
+    custom = LanguageSpec(
+        null_literal="null",
+        true_literal="true",
+        false_literal="false",
+        collection_open="[",
+        collection_close="]",
+        dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=False,
+        single_element_trailing_comma=False,
+        format_date=format_date_iso,
+        format_datetime=format_datetime_iso,
+        empty_collection=None,
+        set_open="{",
+        set_close="}",
+        empty_set=None,
+        format_set_entry=None,
+        comment_prefix="#",
+        format_variable_declaration=None,
+    )
+    result = literalize_json(
+        json_string="[1, 2]",
+        language=custom,
+        prefix="",
+        wrap=True,
+        variable_name="x",
+    )
+    assert result == "[\n    1,\n    2\n]"
