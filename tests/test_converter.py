@@ -587,6 +587,7 @@ def _yaml_dump(data: Any) -> str:  # noqa: ANN401
     # Preserve insertion order
     ruamel_yaml.sort_base_mapping_type_on_output = False  # type: ignore[assignment] # pyright: ignore[reportAttributeAccessIssue]
     stream = StringIO()
+    # https://sourceforge.net/p/ruamel-yaml/tickets/564/
     ruamel_yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
     return stream.getvalue()
 

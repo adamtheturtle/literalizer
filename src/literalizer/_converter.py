@@ -616,6 +616,7 @@ def literalize_yaml(
     """
     ruamel_yaml = YAML(typ="safe")
     try:
+        # https://sourceforge.net/p/ruamel-yaml/tickets/564/
         data = ruamel_yaml.load(stream=yaml_string)  # pyright: ignore[reportUnknownMemberType]
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
