@@ -387,11 +387,11 @@ repos:
 
       - id: typescript-syntax-check
         name: TypeScript syntax check
-        entry: uv run python check_ts_golden_syntax.py
-        language: python
+        entry: bash -c 'for f in "$@"; do node --check --input-type=commonjs < "$f"
+          || exit 1; done' --
+        language: system
         types: [ts]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: java-golden-syntax-check
