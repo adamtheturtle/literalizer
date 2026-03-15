@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 type _Scalar = (
-    str | int | float | bool | None | datetime.date | datetime.datetime
+    str | int | float | bool | None | datetime.date | datetime.datetime | bytes
 )
 type _Value = _Scalar | list[_Value] | dict[str, _Value]
 
@@ -266,6 +266,22 @@ def format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
+def format_bytes_hex(value: bytes) -> str:
+    """Format bytes as a hex string literal.
+
+    Example: ``b"Hello"`` → ``"48656c6c6f"``.
+    """
+    return f'"{value.hex()}"'
+
+
+def format_bytes_python(value: bytes) -> str:
+    """Format bytes as a Python ``bytes`` literal.
+
+    Example: ``b"Hello"`` → ``b'Hello'``.
+    """
+    return repr(value)
+
+
 @runtime_checkable
 class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
@@ -319,6 +335,13 @@ class Language(Protocol):
     def format_dict_entry(self) -> Callable[[str, str], str] | None:
         """Callable that formats a dict entry from a pre-formatted key
         and value string, or ``None`` to use ``dict_separator``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a :class:`bytes` value as a string
+        literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -383,6 +406,7 @@ class LanguageSpec:
     format_dict_entry: Callable[[str, str], str] | None
     trailing_comma: bool
     single_element_trailing_comma: bool
+    format_bytes: Callable[[bytes], str]
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
@@ -401,6 +425,7 @@ PYTHON = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=True,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -425,6 +450,7 @@ CSHARP = LanguageSpec(
     format_dict_entry=_format_csharp_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
@@ -443,6 +469,7 @@ JAVASCRIPT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -461,6 +488,7 @@ TYPESCRIPT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -479,6 +507,7 @@ RUBY = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -497,6 +526,7 @@ GO = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -521,6 +551,7 @@ CPP = LanguageSpec(
     format_dict_entry=_format_cpp_dict_entry,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -545,6 +576,7 @@ JAVA = LanguageSpec(
     format_dict_entry=_format_java_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -563,6 +595,7 @@ KOTLIN = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -588,6 +621,8 @@ def _format_scalar(*, value: _Scalar, spec: Language) -> str:
             .replace("\n", "\\n")
         )
         result = f'"{escaped}"'
+    elif isinstance(value, bytes):
+        result = spec.format_bytes(value)
     elif isinstance(value, datetime.datetime):
         result = spec.format_datetime(value)
     else:
@@ -640,6 +675,7 @@ def _literalize(
     data: list[Any]
     | dict[str, Any]
     | str
+    | bytes
     | datetime.date
     | float
     | bool
@@ -677,6 +713,7 @@ def _literalize(
     # date).
     scalar_types = (
         str,
+        bytes,
         int,
         float,
         bool,
