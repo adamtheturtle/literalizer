@@ -387,8 +387,7 @@ repos:
 
       - id: typescript-syntax-check
         name: TypeScript syntax check
-        entry: bash -c 'for f in "$@"; do node --check --input-type=commonjs < "$f"
-          || exit 1; done' --
+        entry: tsc --noEmit --noResolve --skipLibCheck --isolatedModules
         language: system
         types: [ts]
         files: ^tests/integration/cases/
