@@ -8,9 +8,9 @@ import json
 from io import StringIO
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-import ruamel.yaml
 from beartype import BeartypeConf, beartype
-from ruamel.yaml.error import YAMLError as _RuamelYAMLError
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 from literalizer.exceptions import JSONParseError, YAMLParseError
 
@@ -636,7 +636,7 @@ def _find_inline_comment(*, line: str) -> str:
     return ""
 
 
-_ruamel_yaml: Any = ruamel.yaml.YAML()
+_ruamel_yaml: Any = YAML()
 
 
 def _strip_comment_marker(*, text: str) -> str:
@@ -906,10 +906,11 @@ def literalize_yaml(
     Raises:
         YAMLParseError: If *yaml_string* is not valid YAML.
     """
-    _safe_yaml: Any = ruamel.yaml.YAML(typ="safe")
+    ruamel_yaml = YAML(typ="safe")
     try:
-        data = _safe_yaml.load(stream=yaml_string)
-    except _RuamelYAMLError as exc:
+        # https://sourceforge.net/p/ruamel-yaml/tickets/564/
+        data = ruamel_yaml.load(stream=yaml_string)  # pyright: ignore[reportUnknownMemberType]
+    except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
     base = literalize(

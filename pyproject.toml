@@ -27,7 +27,7 @@ dynamic = [
 ]
 dependencies = [
     "beartype==0.22.9",
-    "ruamel-yaml>=0.18",
+    "ruamel-yaml>=0.19.1",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.11.24",
@@ -50,6 +50,7 @@ optional-dependencies.dev = [
     "pyroma==5.0.1",
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
+    "pytest-regressions==2.7.0",
     "ruff==0.15.6",
     "sphinx==9.1.0",
     "sphinx-copybutton==0.5.2",
@@ -106,6 +107,13 @@ lint.per-file-ignores."doccmd_*.py" = [
     "ERA001",
     # Allow asserts in docs.
     "S101",
+]
+lint.per-file-ignores."tests/integration/cases/**/*.py" = [ "ALL" ]
+lint.per-file-ignores."tests/integration/test_*.py" = [
+    # Allow 'assert' as we use it for tests.
+    "S101",
+    # FileRegressionFixture must be imported at runtime for beartype.
+    "TC002",
 ]
 lint.per-file-ignores."tests/test_*.py" = [
     # Allow 'assert' as we use it for tests.
@@ -254,6 +262,9 @@ ini_options.log_cli = true
 
 [tool.coverage]
 run.branch = true
+run.omit = [
+    "tests/integration/cases/**/*.py",
+]
 report.exclude_also = [
     "if TYPE_CHECKING:",
 ]
@@ -262,15 +273,25 @@ report.show_missing = true
 [tool.mypy]
 strict = true
 files = [ "." ]
-exclude = [ "build" ]
+exclude = [
+    "build",
+    "tests/integration/cases",
+]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
+exclude = [
+    "tests/integration/cases",
+]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
+exclude = [
+    ".venv",
+    "tests/integration/cases",
+]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 
@@ -293,6 +314,9 @@ ignore_path = [
 fail-under = 100
 omit-covered-files = true
 verbose = 2
+exclude = [
+    "tests/integration/cases",
+]
 
 [tool.pydocstringformatter]
 write = true
@@ -341,10 +365,14 @@ ignore_names = [
     # Used in documentation code examples
     "custom",
     "result",
+    # ruamel.yaml configuration attributes
+    "default_flow_style",
+    "sort_base_mapping_type_on_output",
 ]
 # Duplicate some of .gitignore
 exclude = [
     ".venv",
+    "tests/integration/cases",
 ]
 
 [tool.yamlfix]

@@ -4,16 +4,16 @@ from __future__ import annotations
 
 import ast
 import datetime
-import io
 import json
 import textwrap
+from io import StringIO
 from typing import Any
 
 import pytest
-import ruamel.yaml
 from beartype.roar import BeartypeCallHintParamViolation
 from hypothesis import given
 from hypothesis import strategies as st
+from ruamel.yaml import YAML
 
 from literalizer import (
     CPP,
@@ -366,6 +366,10 @@ type _JSONScalar = str | int | float | bool | None
 
 type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
 
+type _YAMLScalar = _JSONScalar | datetime.date | datetime.datetime
+
+type _YAMLValue = _YAMLScalar | list[_YAMLValue] | dict[str, _YAMLValue]
+
 
 def _lists_to_tuples(*, value: _JSONValue) -> object:
     """Recursively convert lists to tuples to match Python converter
@@ -580,56 +584,58 @@ def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
     assert result_via_json == result_direct
 
 
-# Dates and datetimes are tested as their own types below because
-# Exclude Unicode whitespace characters that YAML normalizes on round-trip.
-_yaml_safe_text = st.text(
-    alphabet=st.characters(
-        exclude_categories=("Zl", "Zp", "Cc", "Cs"),
-    ),
-)
+def _yaml_dump(data: _YAMLValue) -> str:
+    """Dump data to a YAML string using ruamel.yaml safe mode."""
+    ruamel_yaml = YAML(typ="safe")
+    ruamel_yaml.default_flow_style = False
+    # Preserve insertion order
+    ruamel_yaml.sort_base_mapping_type_on_output = False  # type: ignore[assignment] # pyright: ignore[reportAttributeAccessIssue]
+    stream = StringIO()
+    # https://sourceforge.net/p/ruamel-yaml/tickets/564/
+    ruamel_yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
+    return stream.getvalue()
 
-# yaml.safe_load parses them into date/datetime objects.
+
+# Dates and datetimes are tested as their own types below because
+# ruamel.yaml safe_load parses them into date/datetime objects.
 yaml_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
-    | _yaml_safe_text
+    | st.text(
+        # Exclude control and surrogate characters which
+        # ruamel.yaml doesn't round-trip cleanly (e.g. U+0085 NEL).
+        # https://sourceforge.net/p/ruamel-yaml/tickets/565/
+        alphabet=st.characters(exclude_categories=("Cc", "Cs")),
+    )
     | st.dates()
     | st.datetimes()
 )
 
-yaml_values: st.SearchStrategy[Any] = st.recursive(
+yaml_text = st.text(
+    # Exclude control and surrogate characters which
+    # ruamel.yaml doesn't round-trip cleanly (e.g. U+0085 NEL).
+    # https://sourceforge.net/p/ruamel-yaml/tickets/565/
+    alphabet=st.characters(exclude_categories=("Cc", "Cs")),
+)
+
+yaml_values: st.SearchStrategy[_YAMLValue] = st.recursive(
     base=yaml_scalars,
     extend=lambda children: (
         st.lists(elements=children)
-        | st.dictionaries(keys=_yaml_safe_text, values=children)
+        | st.dictionaries(keys=yaml_text, values=children)
     ),
 )
 
 yaml_arrays = st.lists(elements=yaml_values, max_size=10)
-yaml_objects = st.dictionaries(
-    keys=_yaml_safe_text,
-    values=yaml_values,
-    max_size=10,
-)
-
-
-def _dump_yaml(*, data: object) -> str:
-    """Dump data to a YAML string using the ruamel.yaml safe dumper."""
-    yaml_dumper: Any = ruamel.yaml.YAML(typ="safe")
-    yaml_dumper.default_flow_style = False
-    yaml_dumper.sort_base_mapping_type_on_output = False
-    stream = io.StringIO()
-    yaml_dumper.dump(data=data, stream=stream)
-    result: str = stream.getvalue()
-    return result
+yaml_objects = st.dictionaries(keys=yaml_text, values=yaml_values, max_size=10)
 
 
 @given(data=yaml_arrays)
-def test_roundtrip_yaml_array(data: list[Any]) -> None:
+def test_roundtrip_yaml_array(data: list[_YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for arrays."""
-    yaml_string = _dump_yaml(data=data)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -646,9 +652,9 @@ def test_roundtrip_yaml_array(data: list[Any]) -> None:
 
 
 @given(data=yaml_objects)
-def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
+def test_roundtrip_yaml_object(data: dict[str, _YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for objects."""
-    yaml_string = _dump_yaml(data=data)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -665,9 +671,9 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 
 
 @given(data=yaml_scalars)
-def test_roundtrip_yaml_scalar(data: _JSONScalar) -> None:
+def test_roundtrip_yaml_scalar(data: _YAMLScalar) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
-    yaml_string = _dump_yaml(data=data)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
