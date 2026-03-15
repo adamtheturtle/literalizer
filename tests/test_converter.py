@@ -604,8 +604,9 @@ yaml_scalars = (
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
     | st.text(
-        # Exclude control and surrogate characters which don't
-        # round-trip cleanly through YAML.
+        # Exclude control and surrogate characters which
+        # ruamel.yaml doesn't round-trip cleanly (e.g. U+0085 NEL).
+        # https://sourceforge.net/p/ruamel-yaml/tickets/565/
         alphabet=st.characters(exclude_categories=("Cc", "Cs")),
     )
     | st.dates()
@@ -613,8 +614,9 @@ yaml_scalars = (
 )
 
 yaml_text = st.text(
-    # Exclude control and surrogate characters which don't
-    # round-trip cleanly through YAML.
+    # Exclude control and surrogate characters which
+    # ruamel.yaml doesn't round-trip cleanly (e.g. U+0085 NEL).
+    # https://sourceforge.net/p/ruamel-yaml/tickets/565/
     alphabet=st.characters(exclude_categories=("Cc", "Cs")),
 )
 
