@@ -11,7 +11,9 @@ from literalizer import CSHARP
 
 
 def _target_framework(dotnet_path: str) -> str:
-    """Return the target framework moniker for the installed dotnet."""
+    """Return the target framework moniker for the installed
+    ``dotnet``.
+    """
     result = subprocess.run(
         args=[dotnet_path, "--version"],
         capture_output=True,
