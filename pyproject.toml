@@ -302,6 +302,7 @@ exclude = [
 [tool.pyright]
 enableTypeIgnoreComments = false
 exclude = [
+    ".venv",
     "tests/integration/empty_list",
     "tests/integration/nested",
     "tests/integration/scalars",
