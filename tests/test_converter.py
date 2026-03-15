@@ -366,6 +366,10 @@ type _JSONScalar = str | int | float | bool | None
 
 type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
 
+type _YAMLScalar = _JSONScalar | datetime.date | datetime.datetime
+
+type _YAMLValue = _YAMLScalar | list[_YAMLValue] | dict[str, _YAMLValue]
+
 
 def _lists_to_tuples(*, value: _JSONValue) -> object:
     """Recursively convert lists to tuples to match Python converter
@@ -580,7 +584,7 @@ def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
     assert result_via_json == result_direct
 
 
-def _yaml_dump(data: Any) -> str:  # noqa: ANN401
+def _yaml_dump(data: _YAMLValue) -> str:
     """Dump data to a YAML string using ruamel.yaml safe mode."""
     ruamel_yaml = YAML(typ="safe")
     ruamel_yaml.default_flow_style = False
@@ -600,6 +604,8 @@ yaml_scalars = (
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
     | st.text(
+        # Exclude control and surrogate characters which don't
+        # round-trip cleanly through YAML.
         alphabet=st.characters(exclude_categories=("Cc", "Cs")),
     )
     | st.dates()
@@ -607,6 +613,8 @@ yaml_scalars = (
 )
 
 yaml_text = st.text(
+    # Exclude control and surrogate characters which don't
+    # round-trip cleanly through YAML.
     alphabet=st.characters(exclude_categories=("Cc", "Cs")),
 )
 
