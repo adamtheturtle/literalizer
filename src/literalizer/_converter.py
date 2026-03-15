@@ -8,7 +8,8 @@ import json
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from beartype import BeartypeConf, beartype
-from ruamel.yaml import YAML, YAMLError
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 from literalizer.exceptions import JSONParseError, YAMLParseError
 
