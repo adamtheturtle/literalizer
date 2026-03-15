@@ -12,17 +12,14 @@ can syntax-check them directly without additional wrapping.
 from __future__ import annotations
 
 import dataclasses
+import datetime  # noqa: TC003
+from collections.abc import Callable  # noqa: TC003
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-
-if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -127,108 +124,108 @@ class _FormatterPair:
 
 _LANGUAGE_FORMATTERS: dict[str, list[_FormatterPair]] = {
     "python": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "python",
             literalizer.format_date_python,
             literalizer.format_datetime_python,
         ),
     ],
     "javascript": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "js",
             literalizer.format_date_js,
             literalizer.format_datetime_js,
         ),
     ],
     "typescript": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "js",
             literalizer.format_date_js,
             literalizer.format_datetime_js,
         ),
     ],
     "ruby": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "ruby",
             literalizer.format_date_ruby,
             literalizer.format_datetime_ruby,
         ),
     ],
     "go": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "go",
             literalizer.format_date_go,
             literalizer.format_datetime_go,
         ),
     ],
     "java": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "java_instant",
             literalizer.format_date_java,
             literalizer.format_datetime_java_instant,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "java_zoned",
             literalizer.format_date_java,
             literalizer.format_datetime_java_zoned,
         ),
     ],
     "kotlin": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "kotlin",
             literalizer.format_date_kotlin,
             literalizer.format_datetime_kotlin,
         ),
     ],
     "csharp": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
         ),
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "csharp",
             literalizer.format_date_csharp,
             literalizer.format_datetime_csharp,
         ),
     ],
     "cpp": [
-        _FormatterPair(
+        _FormatterPair(  # type: ignore[misc]
             "iso",
             literalizer.format_date_iso,
             literalizer.format_datetime_iso,
