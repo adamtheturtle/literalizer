@@ -33,11 +33,9 @@ def _discover_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples."""
     cases: list[tuple[str, str, Path]] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
-        input_path = case_dir / "input.yaml"
-        if not input_path.is_file():
-            continue  # pragma: no cover
         cases.extend(
-            (case_dir.name, lang_name, input_path) for lang_name in _LANGUAGES
+            (case_dir.name, lang_name, case_dir / "input.yaml")
+            for lang_name in _LANGUAGES
         )
     return cases
 
