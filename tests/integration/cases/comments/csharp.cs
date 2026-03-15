@@ -3,5 +3,5 @@ new Dictionary<string, object> {
     ["host"] = "localhost",  // default host
     ["port"] = 8080,
     // Enable debug mode
-    ["debug"] = true,
+    ["debug"] = true
 }

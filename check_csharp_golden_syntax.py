@@ -43,10 +43,6 @@ def main() -> None:
             string=content,
         )
 
-        # C# tuple literals do not allow trailing commas.  Strip any
-        # trailing comma that immediately precedes a closing parenthesis.
-        content = re.sub(pattern=r",(\s*\))", repl=r"\1", string=content)
-
         # Empty collections become (), which is not valid C# syntax,
         # so replace with ValueTuple.Create().
         empty_collection = CSHARP.collection_open + CSHARP.collection_close

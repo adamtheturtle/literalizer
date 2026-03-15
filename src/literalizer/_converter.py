@@ -399,6 +399,7 @@ CSHARP = LanguageSpec(
     dict_open="new Dictionary<string, object> {",
     dict_close="}",
     format_dict_entry=_format_csharp_dict_entry,
+    trailing_comma=False,
 )
 
 JAVASCRIPT = LanguageSpec(
@@ -539,8 +540,12 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     if isinstance(value, list):
         items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
-        # Single-element tuples need a trailing comma in Python/C#.
-        if len(items) == 1 and spec.collection_open == "(":
+        # Single-element tuples need a trailing comma in Python.
+        if (
+            len(items) == 1
+            and spec.collection_open == "("
+            and spec.trailing_comma
+        ):
             joined += ","
         return f"{spec.collection_open}{joined}{spec.collection_close}"
 
