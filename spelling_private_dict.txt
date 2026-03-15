@@ -16,6 +16,7 @@ subclasses
 literalize
 literalizer
 NEL
+pragma
 pre
 prepended
 pyright
