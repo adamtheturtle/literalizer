@@ -27,9 +27,7 @@ def main() -> None:
     dotnet_path = shutil.which(cmd="dotnet") or "dotnet"
     target_framework = _target_framework(dotnet_path=dotnet_path)
     for filename in sys.argv[1:]:
-        content = Path(filename).read_text(encoding="utf-8").strip()
-
-        wrapped = f"using System.Collections.Generic;\nvar x = {content};\n"
+        content = Path(filename).read_text(encoding="utf-8")
 
         csproj = (
             '<Project Sdk="Microsoft.NET.Sdk">\n'
@@ -45,7 +43,7 @@ def main() -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             cs_path = Path(tmpdir) / "Program.cs"
             csproj_path = Path(tmpdir) / "check.csproj"
-            cs_path.write_text(data=wrapped, encoding="utf-8")
+            cs_path.write_text(data=content, encoding="utf-8")
             csproj_path.write_text(data=csproj, encoding="utf-8")
             result = subprocess.run(
                 args=[dotnet_path, "build", str(csproj_path)],  # type: ignore[call-overload]

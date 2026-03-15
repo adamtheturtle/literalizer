@@ -12,8 +12,7 @@ def main() -> None:
     kotlinc_path = shutil.which(cmd="kotlinc") or "kotlinc"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
-        wrapped = f"val x: Any? = {content}\n"
-
+        # kotlinc -script requires a .kts extension.
         with tempfile.NamedTemporaryFile(
             suffix=".kts",
             mode="w",
@@ -21,7 +20,7 @@ def main() -> None:
             delete=True,
             delete_on_close=False,
         ) as tmp:
-            tmp.write(wrapped)
+            tmp.write(content)
             tmp.close()
             result = subprocess.run(
                 args=[kotlinc_path, "-script", tmp.name],

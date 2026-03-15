@@ -11,13 +11,11 @@ def main() -> None:
     node_path = shutil.which(cmd="node") or "node"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
-        # Wrap in void(...) to allow top-level object and array literals.
-        # Without wrapping, `{ "key": value }` is parsed as a block statement,
-        # causing a SyntaxError.
-        wrapped = f"void (\n{content}\n)"
+        # Pipe via stdin with --input-type=commonjs because node does not
+        # natively parse .ts files in all versions.
         result = subprocess.run(
             args=[node_path, "--check", "--input-type=commonjs"],
-            input=wrapped,
+            input=content,
             capture_output=True,
             text=True,
             check=False,

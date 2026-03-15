@@ -1,4 +1,4 @@
-mapOf<String, Any?>(
+val x: Any? = mapOf<String, Any?>(
     // Server configuration
     "host" to "localhost",  // default host
     "port" to 8080,
