@@ -10,6 +10,7 @@ ci:
     - docs
     - interrogate
     - interrogate-docs
+    - go-golden-syntax-check
     - javascript-syntax-check
     - typescript-syntax-check
     - linkcheck
@@ -364,6 +365,17 @@ repos:
         entry: ruby -c
         language: system
         types: [ruby]
+        stages: [pre-commit]
+
+      - id: go-golden-syntax-check
+        name: Go golden file syntax check
+        entry: uv run python check_go_golden_syntax.py
+        language: python
+        types: [go]
+        # Restrict to golden files: the script wraps bare composite literals
+        # in a typed variable declaration, which only works for these files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: javascript-syntax-check

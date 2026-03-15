@@ -243,6 +243,7 @@ ignore = [
     "tests",
     "tests/**",
     "zizmor.yml",
+    "check_go_golden_syntax.py",
     "check_js_golden_syntax.py",
 ]
 
