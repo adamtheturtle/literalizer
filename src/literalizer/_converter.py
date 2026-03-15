@@ -579,21 +579,21 @@ def literalize(
 
     if isinstance(data, dict):
         entries = list(data.items())
-        for i, (k, v) in enumerate(entries):
+        last_idx = len(entries) - 1
+        for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             entry = _build_dict_entry(
                 key_str=formatted_key, val_str=formatted_val, spec=spec
             )
-            is_last = i == len(entries) - 1
-            comma = "" if is_last and not spec.trailing_comma else ","
+            comma = "" if i == last_idx and not spec.trailing_comma else ","
             lines.append(f"{effective_prefix}{entry}{comma}")
     else:
         items = list(data)
-        for i, item in enumerate(items):
+        last_idx = len(items) - 1
+        for i, item in enumerate(iterable=items):
             formatted = _format_value(value=item, spec=spec)
-            is_last = i == len(items) - 1
-            comma = "" if is_last and not spec.trailing_comma else ","
+            comma = "" if i == last_idx and not spec.trailing_comma else ","
             lines.append(f"{effective_prefix}{formatted}{comma}")
 
     body = "\n".join(lines)
