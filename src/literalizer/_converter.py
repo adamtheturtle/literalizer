@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 import ruamel.yaml
 from beartype import BeartypeConf, beartype
+from ruamel.yaml.error import YAMLError as _RuamelYAMLError
+
+from literalizer.exceptions import JSONParseError, YAMLParseError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -518,7 +521,7 @@ def literalize(
     """
     spec = language
 
-    # Handle scalars (check str before Sequence since str is a
+    # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
     # date).
     scalar_types = (
@@ -583,9 +586,15 @@ def literalize_json(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        json.JSONDecodeError: If *json_string* is not valid JSON.
+        JSONParseError: If *json_string* is not valid JSON.
     """
-    data = json.loads(s=json_string)
+    try:
+        data = json.loads(s=json_string)
+    except json.JSONDecodeError as exc:
+        message = (
+            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
+        )
+        raise JSONParseError(message) from exc
     return literalize(
         data=data,
         language=language,
@@ -895,10 +904,14 @@ def literalize_yaml(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        ruamel.yaml.YAMLError: If *yaml_string* is not valid YAML.
+        YAMLParseError: If *yaml_string* is not valid YAML.
     """
     _safe_yaml: Any = ruamel.yaml.YAML(typ="safe")
-    data = _safe_yaml.load(stream=yaml_string)
+    try:
+        data = _safe_yaml.load(stream=yaml_string)
+    except _RuamelYAMLError as exc:
+        message = f"Invalid YAML: {exc}"
+        raise YAMLParseError(message) from exc
     base = literalize(
         data=data,
         language=language,
