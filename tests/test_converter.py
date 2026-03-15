@@ -67,7 +67,7 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 def test_language_list(*, language: Language, expected: str) -> None:
     """Each language produces the correct list literal."""
     result = literalize_json(
-        json_string=json.dumps([[True, None, "hi", [1, 2]]]),
+        json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
         language=language,
         prefix="",
         wrap=False,
@@ -78,7 +78,7 @@ def test_language_list(*, language: Language, expected: str) -> None:
 def test_ruby_dict() -> None:
     """Ruby dicts use => syntax and nil."""
     result = literalize_json(
-        json_string=json.dumps([{"key": None}]),
+        json_string=json.dumps(obj=[{"key": None}]),
         language=RUBY,
         prefix="",
         wrap=False,
@@ -90,7 +90,7 @@ def test_dict_python() -> None:
     """Python dict renders key-value pairs with a prefix."""
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
     result = literalize_json(
-        json_string=json.dumps(data),
+        json_string=json.dumps(obj=data),
         language=PYTHON,
         prefix="    ",
         wrap=False,
@@ -101,7 +101,7 @@ def test_dict_python() -> None:
 def test_dict_ruby() -> None:
     """Ruby dict renders with => syntax."""
     result = literalize_json(
-        json_string=json.dumps({"user_1": "team_alpha"}),
+        json_string=json.dumps(obj={"user_1": "team_alpha"}),
         language=RUBY,
         prefix="  ",
         wrap=False,
@@ -112,7 +112,7 @@ def test_dict_ruby() -> None:
 def test_dict_wrap() -> None:
     """Wrapping a dict adds braces and indentation."""
     result = literalize_json(
-        json_string=json.dumps({"a": 1, "b": 2}),
+        json_string=json.dumps(obj={"a": 1, "b": 2}),
         language=PYTHON,
         prefix="",
         wrap=True,
@@ -132,7 +132,7 @@ def test_java_dict_wrap_no_trailing_comma() -> None:
     closing paren.
     """
     result = literalize_json(
-        json_string=json.dumps({"name": "Alice", "age": 30}),
+        json_string=json.dumps(obj={"name": "Alice", "age": 30}),
         language=JAVA,
         prefix="",
         wrap=True,
@@ -150,7 +150,7 @@ def test_java_dict_wrap_no_trailing_comma() -> None:
 def test_java_list_wrap_uses_braces() -> None:
     """Java wrapped lists use ``new Object[]{…}``."""
     result = literalize_json(
-        json_string=json.dumps([1, "hello", True]),
+        json_string=json.dumps(obj=[1, "hello", True]),
         language=JAVA,
         prefix="",
         wrap=True,
@@ -169,7 +169,7 @@ def test_java_list_wrap_uses_braces() -> None:
 def test_dict_empty() -> None:
     """An empty dict produces an empty string."""
     result = literalize_json(
-        json_string=json.dumps({}), language=PYTHON, prefix="", wrap=False
+        json_string=json.dumps(obj={}), language=PYTHON, prefix="", wrap=False
     )
     assert result == ""
 
@@ -177,7 +177,7 @@ def test_dict_empty() -> None:
 def test_dict_empty_with_wrap() -> None:
     """An empty dict with wrap still produces an empty string."""
     result = literalize_json(
-        json_string=json.dumps({}), language=PYTHON, prefix="", wrap=True
+        json_string=json.dumps(obj={}), language=PYTHON, prefix="", wrap=True
     )
     assert result == ""
 
@@ -185,7 +185,7 @@ def test_dict_empty_with_wrap() -> None:
 def test_integers() -> None:
     """Integer values are rendered literally."""
     result = literalize_json(
-        json_string=json.dumps([42, 0, -7]),
+        json_string=json.dumps(obj=[42, 0, -7]),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -202,7 +202,7 @@ def test_integers() -> None:
 def test_floats() -> None:
     """Float values are rendered literally."""
     result = literalize_json(
-        json_string=json.dumps([1000.0, 3.14]),
+        json_string=json.dumps(obj=[1000.0, 3.14]),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -218,7 +218,7 @@ def test_floats() -> None:
 def test_string_escaping() -> None:
     """Special characters in strings are properly escaped."""
     result = literalize_json(
-        json_string=json.dumps(['say "hi"', "a\\b", "line1\nline2"]),
+        json_string=json.dumps(obj=['say "hi"', "a\\b", "line1\nline2"]),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -232,7 +232,7 @@ def test_string_escaping() -> None:
 def test_nested_arrays() -> None:
     """Nested arrays are rendered recursively."""
     result = literalize_json(
-        json_string=json.dumps([[[1, 2], [3, 4]]]),
+        json_string=json.dumps(obj=[[[1, 2], [3, 4]]]),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -243,7 +243,7 @@ def test_nested_arrays() -> None:
 def test_dicts() -> None:
     """Dicts inside a list are rendered inline."""
     result = literalize_json(
-        json_string=json.dumps([{"name": "alice", "age": 30}]),
+        json_string=json.dumps(obj=[{"name": "alice", "age": 30}]),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -254,7 +254,7 @@ def test_dicts() -> None:
 def test_nested_dict_in_list() -> None:
     """A dict nested inside a list is rendered inline."""
     result = literalize_json(
-        json_string=json.dumps([["a", {"x": 1}]]),
+        json_string=json.dumps(obj=[["a", {"x": 1}]]),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -265,7 +265,7 @@ def test_nested_dict_in_list() -> None:
 def test_nested_list_in_dict() -> None:
     """A list nested inside a dict is rendered inline."""
     result = literalize_json(
-        json_string=json.dumps([{"items": [1, 2]}]),
+        json_string=json.dumps(obj=[{"items": [1, 2]}]),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -276,7 +276,7 @@ def test_nested_list_in_dict() -> None:
 def test_prefix_spaces() -> None:
     """Space-based prefix is prepended to each line."""
     result = literalize_json(
-        json_string=json.dumps([True, False]),
+        json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
         prefix="        ",
         wrap=False,
@@ -287,7 +287,7 @@ def test_prefix_spaces() -> None:
 def test_prefix_tabs() -> None:
     """Tab-based prefix is prepended to each line."""
     result = literalize_json(
-        json_string=json.dumps([True, False]),
+        json_string=json.dumps(obj=[True, False]),
         language=GO,
         prefix="\t\t",
         wrap=False,
@@ -298,7 +298,7 @@ def test_prefix_tabs() -> None:
 def test_wrap() -> None:
     """Wrapping adds brackets and indentation."""
     result = literalize_json(
-        json_string=json.dumps([True, False]),
+        json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
         prefix="",
         wrap=True,
@@ -316,7 +316,7 @@ def test_wrap() -> None:
 def test_wrap_with_prefix() -> None:
     """Wrapping respects the given prefix."""
     result = literalize_json(
-        json_string=json.dumps([["a", 1.0]]),
+        json_string=json.dumps(obj=[["a", 1.0]]),
         language=PYTHON,
         prefix="    ",
         wrap=True,
@@ -333,7 +333,7 @@ def test_wrap_with_prefix() -> None:
 def test_empty_data() -> None:
     """An empty list produces an empty string."""
     result = literalize_json(
-        json_string=json.dumps([]), language=PYTHON, prefix="", wrap=False
+        json_string=json.dumps(obj=[]), language=PYTHON, prefix="", wrap=False
     )
     assert result == ""
 
@@ -341,7 +341,7 @@ def test_empty_data() -> None:
 def test_empty_data_with_wrap() -> None:
     """An empty list with wrap still produces an empty string."""
     result = literalize_json(
-        json_string=json.dumps([]), language=PYTHON, prefix="", wrap=True
+        json_string=json.dumps(obj=[]), language=PYTHON, prefix="", wrap=True
     )
     assert result == ""
 
@@ -398,7 +398,7 @@ def test_custom_language() -> None:
         dict_separator=" -> ",
     )
     result = literalize_json(
-        json_string=json.dumps([True, None, "hi"]),
+        json_string=json.dumps(obj=[True, None, "hi"]),
         language=custom,
         prefix="",
         wrap=False,
@@ -415,7 +415,7 @@ def test_part1_sample_python() -> None:
         ["user_1", 1003.0],
     ]
     result = literalize_json(
-        json_string=json.dumps(data),
+        json_string=json.dumps(obj=data),
         language=PYTHON,
         prefix="        ",
         wrap=False,
@@ -433,7 +433,7 @@ def test_part2_sample_go() -> None:
     """Realistic test matching part2_sample_input.json structure."""
     data = [["user_1", 49, 1000.0], ["user_9", 10, 1003.0]]
     result = literalize_json(
-        json_string=json.dumps(data),
+        json_string=json.dumps(obj=data),
         language=GO,
         prefix="        ",
         wrap=False,
@@ -563,7 +563,7 @@ def test_literalize_json_scalar(
 def test_roundtrip_array(data: list[Any]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
-        json_string=json.dumps(data),
+        json_string=json.dumps(obj=data),
         language=PYTHON,
         prefix="",
         wrap=True,
@@ -579,7 +579,7 @@ def test_roundtrip_array(data: list[Any]) -> None:
 def test_roundtrip_scalar(data: _JSONScalar) -> None:
     """Scalar -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
-        json_string=json.dumps(data),
+        json_string=json.dumps(obj=data),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -592,7 +592,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
 def test_roundtrip_dict(data: dict[str, Any]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
-        json_string=json.dumps(data),
+        json_string=json.dumps(obj=data),
         language=PYTHON,
         prefix="",
         wrap=True,
