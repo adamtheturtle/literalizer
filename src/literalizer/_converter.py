@@ -439,6 +439,12 @@ GO = LanguageSpec(
     dict_open="map[string]any{",
 )
 
+
+def _format_cpp_dict_entry(key: str, value: str) -> str:
+    """Format a C++ dict entry as a brace-enclosed pair."""
+    return f"{{{key}, {value}}}"
+
+
 CPP = LanguageSpec(
     null_literal="nullptr",
     true_literal="true",
@@ -446,6 +452,7 @@ CPP = LanguageSpec(
     collection_open="{",
     collection_close="}",
     dict_separator=": ",
+    format_dict_entry=_format_cpp_dict_entry,
 )
 
 
