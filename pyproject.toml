@@ -27,7 +27,7 @@ dynamic = [
 ]
 dependencies = [
     "beartype==0.22.9",
-    "ruamel-yaml>=0.18",
+    "ruamel-yaml>=0.19.1",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.11.24",
