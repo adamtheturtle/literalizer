@@ -18,14 +18,6 @@ def main() -> None:
         # as expressions.
         content = content.replace("{", "new Object[]{")
 
-        # Top-level lists use [...] wrapping from literalize().
-        # Replace with new Object[]{...} for valid Java.
-        if content.startswith("["):
-            content = "new Object[]{" + content[1:]
-            # Replace last ] with }
-            idx = content.rfind("]")
-            content = content[:idx] + "}" + content[idx + 1 :]
-
         wrapped = (
             "import java.util.Map;\n"
             "public class Check {\n"

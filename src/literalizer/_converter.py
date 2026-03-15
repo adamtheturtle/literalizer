@@ -604,7 +604,7 @@ def literalize(
     if isinstance(data, dict):
         return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
 
-    return f"[\n{body}\n]"
+    return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
 
 
 @beartype
