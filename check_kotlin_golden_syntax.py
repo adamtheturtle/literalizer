@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 
-def _transform(content: str) -> str:
+def _transform(*, content: str) -> str:
     """Replace the generic outer ``[``/``]`` list wrap with
     ``listOf(``/``)``.
     """
@@ -33,7 +33,7 @@ def main() -> None:
     kotlinc_path = shutil.which(cmd="kotlinc") or "kotlinc"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
-        transformed = _transform(content)
+        transformed = _transform(content=content)
         wrapped = f"val x: Any? = {transformed}\n"
 
         with tempfile.NamedTemporaryFile(
