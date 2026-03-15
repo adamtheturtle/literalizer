@@ -335,6 +335,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def single_element_trailing_comma(self) -> bool:
+        """Whether a single-element collection requires a trailing comma
+        to be syntactically unambiguous (e.g. Python tuples).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a
         string literal.
@@ -375,6 +382,7 @@ class LanguageSpec:
     dict_close: str
     format_dict_entry: Callable[[str, str], str] | None
     trailing_comma: bool
+    single_element_trailing_comma: bool
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
@@ -392,6 +400,7 @@ PYTHON = LanguageSpec(
     dict_close="}",
     format_dict_entry=None,
     trailing_comma=True,
+    single_element_trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -414,7 +423,8 @@ CSHARP = LanguageSpec(
     dict_open="new Dictionary<string, object> {",
     dict_close="}",
     format_dict_entry=_format_csharp_dict_entry,
-    trailing_comma=True,
+    trailing_comma=False,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
@@ -432,6 +442,7 @@ JAVASCRIPT = LanguageSpec(
     dict_close="}",
     format_dict_entry=None,
     trailing_comma=True,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -449,6 +460,7 @@ TYPESCRIPT = LanguageSpec(
     dict_close="}",
     format_dict_entry=None,
     trailing_comma=True,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -466,6 +478,7 @@ RUBY = LanguageSpec(
     dict_close="}",
     format_dict_entry=None,
     trailing_comma=True,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -483,6 +496,7 @@ GO = LanguageSpec(
     dict_close="}",
     format_dict_entry=None,
     trailing_comma=True,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -506,6 +520,7 @@ CPP = LanguageSpec(
     dict_close="}",
     format_dict_entry=_format_cpp_dict_entry,
     trailing_comma=True,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -529,6 +544,7 @@ JAVA = LanguageSpec(
     dict_close=")",
     format_dict_entry=_format_java_dict_entry,
     trailing_comma=False,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -546,6 +562,7 @@ KOTLIN = LanguageSpec(
     dict_close=")",
     format_dict_entry=None,
     trailing_comma=True,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -608,8 +625,9 @@ def _format_value(*, value: _Value, spec: Language) -> str:
             return spec.empty_collection
         items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
-        # Single-element tuples need a trailing comma in Python/C#.
-        if len(items) == 1 and spec.collection_open == "(":
+        # Some languages (e.g. Python) require a trailing comma on
+        # single-element collections to avoid syntactic ambiguity.
+        if len(items) == 1 and spec.single_element_trailing_comma:
             joined += ","
         return f"{spec.collection_open}{joined}{spec.collection_close}"
 
