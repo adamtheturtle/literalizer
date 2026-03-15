@@ -11,20 +11,24 @@ def main() -> None:
     gofmt_path = shutil.which(cmd="gofmt") or "gofmt"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8").strip()
-        # Golden files are bare composite literals without type prefix.
         # Wrap in a package-level variable declaration to make valid Go.
         # gofmt accepts elided-type composite literals inside a typed
         # outer literal, so nested {…} elements parse without error.
-        inner = content[1:-1]
-        if content.startswith("{"):
-            wrapped = (
-                f"package main\n\nvar _ = map[string]interface{{}}{{\n"
-                f"{inner}\n}}\n"
-            )
+        if content.startswith("map[string]any{"):
+            # Already a typed composite literal — use it directly.
+            wrapped = f"package main\n\nvar _ = {content}\n"
         else:
-            wrapped = (
-                f"package main\n\nvar _ = []interface{{}}{{\n{inner}\n}}\n"
-            )
+            inner = content[1:-1]
+            if content.startswith("{"):
+                # Bare dict literal — wrap with an outer typed map.
+                wrapped = (
+                    f"package main\n\nvar _ = map[string]interface{{}}{{\n"
+                    f"{inner}\n}}\n"
+                )
+            else:
+                wrapped = (
+                    f"package main\n\nvar _ = []interface{{}}{{\n{inner}\n}}\n"
+                )
         result = subprocess.run(
             args=[gofmt_path, "-e"],
             input=wrapped,
