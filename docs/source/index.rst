@@ -21,8 +21,6 @@ Usage examples
 
    """Examples of using literalizer."""
 
-   import datetime
-
    from literalizer import (
        JAVA,
        JAVASCRIPT,
@@ -33,15 +31,13 @@ Usage examples
        format_datetime_java_instant,
        format_datetime_python,
        format_datetime_ruby,
-       literalize,
        literalize_json,
        literalize_yaml,
    )
 
-   # Convert a Python list to Java literal items
-   data = [True, None, "hi", [1, 2]]
-   result = literalize(
-       data=data,
+   # Convert a JSON array to Java literal items
+   result = literalize_json(
+       json_string='[true, null, "hi", [1, 2]]',
        language=JAVA,
        prefix="",
        wrap=False,
@@ -53,8 +49,8 @@ Usage examples
    # {1, 2},
 
    # Convert to JavaScript/TypeScript array
-   result = literalize(
-       data=data,
+   result = literalize_json(
+       json_string='[true, null, "hi", [1, 2]]',
        language=JAVASCRIPT,
        prefix="    ",
        wrap=True,
@@ -67,7 +63,7 @@ Usage examples
    #     [1, 2],
    # ]
 
-   # Convert from a JSON string directly
+   # Convert a JSON string to Python
    result = literalize_json(
        json_string='[true, null, "hi", [1, 2]]',
        language=PYTHON,
@@ -75,12 +71,12 @@ Usage examples
        wrap=True,
    )
    # result:
-   # [
+   # (
    #     True,
    #     None,
    #     "hi",
    #     (1, 2),
-   # ]
+   # )
 
    # Convert from a YAML string directly
    result = literalize_yaml(
@@ -90,12 +86,12 @@ Usage examples
        wrap=True,
    )
    # result:
-   # [
+   # (
    #     True,
    #     None,
    #     "hi",
    #     (1, 2),
-   # ]
+   # )
 
    # YAML comments are preserved using the target language's comment syntax
    yaml_with_comments = """\
@@ -134,7 +130,7 @@ Usage examples
    )
 
    # Customize date/datetime formatting with built-in formatters:
-   # Use Python-native date objects instead of ISO strings
+   # Use Python-native date objects instead of ISO strings (via YAML)
    python_with_dates = LanguageSpec(
        null_literal="None",
        true_literal="True",
@@ -145,8 +141,8 @@ Usage examples
        format_date=format_date_python,
        format_datetime=format_datetime_python,
    )
-   result = literalize(
-       data=[datetime.date(year=2024, month=1, day=15)],
+   result = literalize_yaml(
+       yaml_string="- 2024-01-15\n",
        language=python_with_dates,
        prefix="",
        wrap=False,
@@ -164,8 +160,8 @@ Usage examples
        format_date=format_date_java,
        format_datetime=format_datetime_java_instant,
    )
-   result = literalize(
-       data=[datetime.date(year=2024, month=1, day=15)],
+   result = literalize_yaml(
+       yaml_string="- 2024-01-15\n",
        language=java_with_dates,
        prefix="",
        wrap=False,
@@ -182,18 +178,8 @@ Usage examples
        dict_separator=" => ",
        format_datetime=format_datetime_ruby,
    )
-   result = literalize(
-       data=[
-           datetime.datetime(
-               year=2024,
-               month=1,
-               day=15,
-               hour=12,
-               minute=30,
-               second=0,
-               tzinfo=datetime.UTC,
-           ),
-       ],
+   result = literalize_yaml(
+       yaml_string="- 2024-01-15T12:30:00\n",
        language=ruby_with_dates,
        prefix="",
        wrap=False,
