@@ -359,7 +359,7 @@ repos:
 
       - id: ruby-syntax-check
         name: Ruby syntax check
-        entry: bash -c 'for f; do ruby -c "$f" || exit 1; done' --
+        entry: ruby -c
         language: system
         types: [ruby]
         stages: [pre-commit]
