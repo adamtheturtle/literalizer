@@ -50,6 +50,7 @@ optional-dependencies.dev = [
     "pyroma==5.0.1",
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
+    "pytest-regressions==2.7.0",
     "ruff==0.15.6",
     "sphinx==9.1.0",
     "sphinx-copybutton==0.5.2",
@@ -107,6 +108,13 @@ lint.per-file-ignores."doccmd_*.py" = [
     "ERA001",
     # Allow asserts in docs.
     "S101",
+]
+lint.per-file-ignores."tests/integration/*/*.py" = [ "ALL" ]
+lint.per-file-ignores."tests/integration/test_*.py" = [
+    # Allow 'assert' as we use it for tests.
+    "S101",
+    # FileRegressionFixture must be imported at runtime for beartype.
+    "TC002",
 ]
 lint.per-file-ignores."tests/test_*.py" = [
     # Allow 'assert' as we use it for tests.
@@ -255,6 +263,13 @@ ini_options.log_cli = true
 
 [tool.coverage]
 run.branch = true
+run.omit = [
+    "tests/integration/empty_list/*.py",
+    "tests/integration/nested/*.py",
+    "tests/integration/scalars/*.py",
+    "tests/integration/simple_dict/*.py",
+    "tests/integration/simple_list/*.py",
+]
 report.exclude_also = [
     "if TYPE_CHECKING:",
 ]
@@ -294,6 +309,13 @@ ignore_path = [
 fail-under = 100
 omit-covered-files = true
 verbose = 2
+exclude = [
+    "tests/integration/empty_list",
+    "tests/integration/nested",
+    "tests/integration/scalars",
+    "tests/integration/simple_dict",
+    "tests/integration/simple_list",
+]
 
 [tool.pydocstringformatter]
 write = true

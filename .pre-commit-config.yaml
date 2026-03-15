@@ -286,6 +286,7 @@ repos:
         entry: uv run --extra=dev -m interrogate
         language: python
         types_or: [python]
+        exclude: ^tests/integration/(?!test_)
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 

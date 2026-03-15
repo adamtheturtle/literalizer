@@ -1,9 +1,8 @@
 """Integration tests that compare literalize_yaml output against golden
 files.
 
-Each subdirectory contains an ``input.yaml`` and one ``<language>.txt`` file
-per supported language.  The test reads the YAML, literalizes it for each
-language, and asserts that the result matches the golden file.
+Each subdirectory contains an ``input.yaml`` and one expected-output file
+per supported language, using the real file extension for that language.
 """
 
 from __future__ import annotations
@@ -11,65 +10,63 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 
 _INTEGRATION_DIR = Path(__file__).parent
 
-_LANGUAGES: dict[str, literalizer.LanguageSpec] = {
-    "python": literalizer.PYTHON,
-    "javascript": literalizer.JAVASCRIPT,
-    "typescript": literalizer.TYPESCRIPT,
-    "kotlin": literalizer.KOTLIN,
-    "ruby": literalizer.RUBY,
-    "go": literalizer.GO,
-    "java": literalizer.JAVA,
-    "csharp": literalizer.CSHARP,
-    "cpp": literalizer.CPP,
+_LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
+    "python": (literalizer.PYTHON, ".py"),
+    "javascript": (literalizer.JAVASCRIPT, ".js"),
+    "typescript": (literalizer.TYPESCRIPT, ".ts"),
+    "kotlin": (literalizer.KOTLIN, ".kt"),
+    "ruby": (literalizer.RUBY, ".rb"),
+    "go": (literalizer.GO, ".go"),
+    "java": (literalizer.JAVA, ".java"),
+    "csharp": (literalizer.CSHARP, ".cs"),
+    "cpp": (literalizer.CPP, ".cpp"),
 }
 
 
-def _discover_cases() -> list[tuple[str, str, Path, Path]]:
-    """Return ``(case_name, language, input_path, expected_path)``
-    tuples.
-    """
-    cases: list[tuple[str, str, Path, Path]] = []
+def _discover_cases() -> list[tuple[str, str, Path]]:
+    """Return ``(case_name, language, input_path)`` tuples."""
+    cases: list[tuple[str, str, Path]] = []
     for case_dir in sorted(_INTEGRATION_DIR.iterdir()):
         input_path = case_dir / "input.yaml"
         if not input_path.is_file():
             continue
-        for lang_name in _LANGUAGES:
-            expected_path = case_dir / f"{lang_name}.txt"
-            if expected_path.is_file():
-                cases.append(
-                    (case_dir.name, lang_name, input_path, expected_path)
-                )
+        cases.extend(
+            (case_dir.name, lang_name, input_path) for lang_name in _LANGUAGES
+        )
     return cases
 
 
+_CASES = _discover_cases()
+
+
 @pytest.mark.parametrize(  # type: ignore[misc]
-    ("case_name", "language", "input_path", "expected_path"),
-    _discover_cases(),
-    ids=[f"{c[0]}/{c[1]}" for c in _discover_cases()],
+    ("_case_name", "language", "input_path"),
+    _CASES,
+    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
 )
 def test_golden_file(
-    case_name: str,
+    _case_name: str,
     language: str,
     input_path: Path,
-    expected_path: Path,
+    file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
+    spec, extension = _LANGUAGES[language]
     yaml_string = input_path.read_text()
-    expected = expected_path.read_text().rstrip("\n")
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=_LANGUAGES[language],
+        language=spec,
         prefix="",
-        wrap=False,
+        wrap=True,
     )
-    if result != expected:
-        msg = (
-            f"Mismatch for {case_name}/{language}:\n"
-            f"Expected:\n{expected}\n\nGot:\n{result}"
-        )
-        raise AssertionError(msg)
+    file_regression.check(
+        contents=result + "\n",
+        extension=extension,
+        basename=str(input_path.parent / language),
+    )
