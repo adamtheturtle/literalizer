@@ -1,0 +1,3 @@
+{
+    "users": listOf({"name": "Bob", "tags": listOf("admin", "user")}, {"name": "Carol", "tags": listOf("guest")}),
+}

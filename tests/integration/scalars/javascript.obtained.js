@@ -1,7 +1,7 @@
 [
     42,
     3.14,
-    True,
-    False,
+    true,
+    false,
     "hello \"world\"",
 ]
