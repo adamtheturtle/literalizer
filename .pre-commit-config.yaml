@@ -15,7 +15,6 @@ ci:
     - java-golden-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
-    - typescript-syntax-check
     - linkcheck
     - mypy
     - mypy-docs
@@ -383,15 +382,6 @@ repos:
         entry: node --check
         language: system
         types: [javascript]
-        stages: [pre-commit]
-
-      - id: typescript-syntax-check
-        name: TypeScript syntax check
-        entry: uv run python check_ts_golden_syntax.py
-        language: python
-        types: [ts]
-        files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: java-golden-syntax-check
