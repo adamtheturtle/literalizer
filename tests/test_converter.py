@@ -1365,6 +1365,33 @@ def test_yaml_comment_scalar_only_comments() -> None:
     assert result == expected
 
 
+def test_omap_nested_in_list() -> None:
+    """An omap nested inside a list exercises _format_value's omap
+    branch.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        ---
+        - !!omap
+          - name: Alice
+          - age: 30
+        """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        (
+            OrderedDict([("name", "Alice"), ("age", 30)]),
+        )""",
+    )
+    assert result == expected
+
+
 def test_yaml_comment_mapping_nested_value_none_token() -> None:
     """Mapping key with nested comment has None at token index 2."""
     yaml_string = "a:\n  # indented\n  x: 1\nb: 2\n"
