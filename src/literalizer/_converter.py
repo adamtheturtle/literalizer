@@ -619,6 +619,28 @@ JAVA = LanguageSpec(
     comment_prefix="//",
 )
 
+SWIFT = LanguageSpec(
+    null_literal="nil",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_separator=": ",
+    dict_open="[",
+    dict_close="]",
+    format_dict_entry=None,
+    trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection="[Any]()",
+    set_open="Set([",
+    set_close="])",
+    empty_set="Set<Any>()",
+    format_set_entry=None,
+    comment_prefix="//",
+)
+
 KOTLIN = LanguageSpec(
     null_literal="null",
     true_literal="true",
