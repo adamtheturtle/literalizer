@@ -19,6 +19,18 @@ type _Scalar = (
 type _Value = _Scalar | list[_Value] | dict[str, _Value]
 
 
+class ParseError(Exception):
+    """Raised when input cannot be parsed into a data structure."""
+
+
+class JSONParseError(ParseError):
+    """Raised when a JSON string cannot be parsed."""
+
+
+class YAMLParseError(ParseError):
+    """Raised when a YAML string cannot be parsed."""
+
+
 def format_date_iso(value: datetime.date) -> str:
     """Format a date as an ISO 8601 quoted string literal.
 
@@ -567,9 +579,15 @@ def literalize_json(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        json.JSONDecodeError: If *json_string* is not valid JSON.
+        JSONParseError: If *json_string* is not valid JSON.
     """
-    data = json.loads(s=json_string)
+    try:
+        data = json.loads(s=json_string)
+    except json.JSONDecodeError as exc:
+        message = (
+            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
+        )
+        raise JSONParseError(message) from exc
     return literalize(
         data=data,
         language=language,
@@ -603,9 +621,13 @@ def literalize_yaml(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        yaml.YAMLError: If *yaml_string* is not valid YAML.
+        YAMLParseError: If *yaml_string* is not valid YAML.
     """
-    data = yaml.safe_load(stream=yaml_string)
+    try:
+        data = yaml.safe_load(stream=yaml_string)
+    except yaml.YAMLError as exc:
+        message = f"Invalid YAML: {exc}"
+        raise YAMLParseError(message) from exc
     return literalize(
         data=data,
         language=language,

@@ -24,8 +24,11 @@ from literalizer import (
     PYTHON,
     RUBY,
     TYPESCRIPT,
+    JSONParseError,
     Language,
     LanguageSpec,
+    ParseError,
+    YAMLParseError,
     format_date_cpp,
     format_date_csharp,
     format_date_go,
@@ -427,7 +430,18 @@ def test_literalize_json_object() -> None:
 
 def test_literalize_json_invalid() -> None:
     """``literalize_json`` raises on invalid JSON."""
-    with pytest.raises(expected_exception=json.JSONDecodeError):
+    with pytest.raises(expected_exception=JSONParseError):
+        literalize_json(
+            json_string="not json",
+            language=PYTHON,
+            prefix="",
+            wrap=False,
+        )
+
+
+def test_literalize_json_invalid_is_parse_error() -> None:
+    """``JSONParseError`` is a subclass of ``ParseError``."""
+    with pytest.raises(expected_exception=ParseError):
         literalize_json(
             json_string="not json",
             language=PYTHON,
@@ -676,7 +690,18 @@ def test_literalize_yaml_mapping() -> None:
 
 def test_literalize_yaml_invalid() -> None:
     """``literalize_yaml`` raises on invalid YAML."""
-    with pytest.raises(expected_exception=yaml.YAMLError):
+    with pytest.raises(expected_exception=YAMLParseError):
+        literalize_yaml(
+            yaml_string=":\n  :\n    - ][",
+            language=PYTHON,
+            prefix="",
+            wrap=False,
+        )
+
+
+def test_literalize_yaml_invalid_is_parse_error() -> None:
+    """``YAMLParseError`` is a subclass of ``ParseError``."""
+    with pytest.raises(expected_exception=ParseError):
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
