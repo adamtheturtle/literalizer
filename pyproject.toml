@@ -27,7 +27,7 @@ dynamic = [
 ]
 dependencies = [
     "beartype==0.22.9",
-    "pyyaml>=6.0",
+    "ruamel-yaml>=0.19.1",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.11.24",
@@ -59,7 +59,6 @@ optional-dependencies.dev = [
     "sphinx-substitution-extensions==2026.1.12",
     "sphinxcontrib-spelling==8.0.2",
     "ty==0.0.21",
-    "types-pyyaml==6.0.12.20241230",
     "vulture==2.15",
     "yamlfix==1.19.1",
     "zizmor==1.23.1",
@@ -363,6 +362,9 @@ ignore_names = [
     # Used in documentation code examples
     "custom",
     "result",
+    # ruamel.yaml configuration attributes
+    "default_flow_style",
+    "sort_base_mapping_type_on_output",
 ]
 # Duplicate some of .gitignore
 exclude = [

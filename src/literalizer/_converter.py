@@ -7,8 +7,9 @@ import datetime
 import json
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-import yaml
 from beartype import BeartypeConf, beartype
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 from literalizer.exceptions import JSONParseError, YAMLParseError
 
@@ -613,9 +614,11 @@ def literalize_yaml(
     Raises:
         YAMLParseError: If *yaml_string* is not valid YAML.
     """
+    ruamel_yaml = YAML(typ="safe")
     try:
-        data = yaml.safe_load(stream=yaml_string)
-    except yaml.YAMLError as exc:
+        # https://sourceforge.net/p/ruamel-yaml/tickets/564/
+        data = ruamel_yaml.load(stream=yaml_string)  # pyright: ignore[reportUnknownMemberType]
+    except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
     return literalize(
