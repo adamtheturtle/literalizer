@@ -68,7 +68,7 @@ def _wrap_cpp(content: str) -> str:
         "};\n"
         "void _check() {\n"
         f"    [[maybe_unused]] _Any _v = {content};\n"
-        "}\n"
+        "}"
     )
 
 
