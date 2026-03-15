@@ -43,9 +43,9 @@ def _discover_cases() -> list[tuple[str, str, Path]]:
 _CASES = _discover_cases()
 
 
-@pytest.mark.parametrize(  # type: ignore[misc]
-    ("_case_name", "language", "input_path"),
-    _CASES,
+@pytest.mark.parametrize(
+    argnames=("_case_name", "language", "input_path"),
+    argvalues=_CASES,
     ids=[f"{c[0]}/{c[1]}" for c in _CASES],
 )
 def test_golden_file(
@@ -66,5 +66,5 @@ def test_golden_file(
     file_regression.check(
         contents=result + "\n",
         extension=extension,
-        basename=str(object=input_path.parent / language),
+        fullpath=input_path.parent / language,
     )
