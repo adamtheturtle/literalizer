@@ -11,6 +11,9 @@ dicts
 formatter
 formatters
 gofmt
+initializer
+initializers
+javac
 json
 JSONDecodeError
 subclasses
@@ -18,6 +21,8 @@ literalize
 literalizer
 localhost
 NEL
+ofEntries
+paren
 pragma
 pre
 prepended
