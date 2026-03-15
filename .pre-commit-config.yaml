@@ -388,7 +388,8 @@ repos:
       - id: typescript-syntax-check
         name: TypeScript syntax check
         entry: tsc --noEmit --noResolve --skipLibCheck --isolatedModules
-        language: system
+        language: node
+        additional_dependencies: [typescript]
         types: [ts]
         files: ^tests/integration/cases/
         stages: [pre-commit]
