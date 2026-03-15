@@ -1,3 +1,3 @@
-{
-    "users": listOf({"name": "Bob", "tags": listOf("admin", "user")}, {"name": "Carol", "tags": listOf("guest")}),
-}
+mapOf(
+    "users" to listOf(mapOf("name" to "Bob", "tags" to listOf("admin", "user")), mapOf("name" to "Carol", "tags" to listOf("guest"))),
+)
