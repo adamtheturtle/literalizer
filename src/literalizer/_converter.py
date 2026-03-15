@@ -414,7 +414,7 @@ def _format_csharp_dict_entry(key: str, value: str) -> str:
 
 
 CSHARP = LanguageSpec(
-    null_literal="null",
+    null_literal="(object?)null",
     true_literal="true",
     false_literal="false",
     collection_open="(",
