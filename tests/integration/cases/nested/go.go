@@ -1,3 +1,3 @@
 map[string]any{
-    "users": {map[string]any{"name": "Bob", "tags": {"admin", "user"}}, map[string]any{"name": "Carol", "tags": {"guest"}}},
+    "users": []any{map[string]any{"name": "Bob", "tags": []any{"admin", "user"}}, map[string]any{"name": "Carol", "tags": []any{"guest"}}},
 }
