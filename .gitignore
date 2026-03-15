@@ -17,6 +17,7 @@ MANIFEST
 .coverage.*
 .pytest_cache/
 .hypothesis/
+*.obtained.*
 
 # Sphinx
 docs/build/
