@@ -29,6 +29,7 @@ prepended
 pyright
 pytest
 reportAttributeAccessIssue
+reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
 ruamel
