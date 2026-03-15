@@ -618,7 +618,7 @@ yaml_text = st.text(
     alphabet=st.characters(exclude_categories=("Cc", "Cs")),
 )
 
-yaml_values: st.SearchStrategy[Any] = st.recursive(
+yaml_values: st.SearchStrategy[_YAMLValue] = st.recursive(
     base=yaml_scalars,
     extend=lambda children: (
         st.lists(elements=children)
@@ -631,7 +631,7 @@ yaml_objects = st.dictionaries(keys=yaml_text, values=yaml_values, max_size=10)
 
 
 @given(data=yaml_arrays)
-def test_roundtrip_yaml_array(data: list[Any]) -> None:
+def test_roundtrip_yaml_array(data: list[_YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for arrays."""
     yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
@@ -650,7 +650,7 @@ def test_roundtrip_yaml_array(data: list[Any]) -> None:
 
 
 @given(data=yaml_objects)
-def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
+def test_roundtrip_yaml_object(data: dict[str, _YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for objects."""
     yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
@@ -669,7 +669,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 
 
 @given(data=yaml_scalars)
-def test_roundtrip_yaml_scalar(data: _JSONScalar) -> None:
+def test_roundtrip_yaml_scalar(data: _YAMLScalar) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
     yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
