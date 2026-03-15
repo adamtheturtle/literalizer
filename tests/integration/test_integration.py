@@ -29,6 +29,11 @@ def _wrap_identity(content: str) -> str:
     return content
 
 
+def _wrap_python(content: str) -> str:
+    """Wrap with a datetime import so date/datetime literals are valid."""
+    return f"import datetime\n{content}"
+
+
 def _wrap_js(content: str) -> str:
     """Wrap in ``void(...)`` so bare object/array literals parse as
     expressions in JavaScript and TypeScript.
@@ -101,7 +106,7 @@ _LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
 }
 
 _WRAPPERS: dict[str, Callable[[str], str]] = {
-    "python": _wrap_identity,
+    "python": _wrap_python,
     "ruby": _wrap_identity,
     "javascript": _wrap_js,
     "typescript": _wrap_js,
