@@ -288,7 +288,7 @@ follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
-exclude = [
+project_excludes = [
     "tests/integration/cases",
 ]
 
