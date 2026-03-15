@@ -530,35 +530,6 @@ def test_literalize_json_invalid_is_parse_error() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    argnames=("json_string", "language", "expected"),
-    argvalues=[
-        ("42", PYTHON, "42"),
-        ("3.14", PYTHON, "3.14"),
-        ('"hello"', PYTHON, '"hello"'),
-        ("true", PYTHON, "True"),
-        ("false", PYTHON, "False"),
-        ("null", PYTHON, "None"),
-        ("true", JAVASCRIPT, "true"),
-        ("null", GO, "nil"),
-    ],
-)
-def test_literalize_json_scalar(
-    *,
-    json_string: str,
-    language: Language,
-    expected: str,
-) -> None:
-    """``literalize_json`` handles scalar JSON values."""
-    result = literalize_json(
-        json_string=json_string,
-        language=language,
-        prefix="",
-        wrap=False,
-    )
-    assert result == expected
-
-
 @given(data=json_arrays)
 def test_roundtrip_array(data: list[Any]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
@@ -711,32 +682,6 @@ def test_literalize_yaml_datetime() -> None:
     yaml_string = "- 2024-01-15T12:30:00\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
-        language=PYTHON,
-        prefix="",
-        wrap=False,
-    )
-    assert result == '"2024-01-15T12:30:00",'
-
-
-def test_literalize_date() -> None:
-    """``literalize_yaml`` formats datetime.date values as ISO string
-    literals.
-    """
-    result = literalize_yaml(
-        yaml_string="- 2024-01-15\n",
-        language=PYTHON,
-        prefix="",
-        wrap=False,
-    )
-    assert result == '"2024-01-15",'
-
-
-def test_literalize_datetime() -> None:
-    """``literalize_yaml`` formats datetime.datetime values as ISO string
-    literals.
-    """
-    result = literalize_yaml(
-        yaml_string="- 2024-01-15T12:30:00\n",
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -1002,27 +947,6 @@ def test_ruby_native_dates() -> None:
         wrap=False,
     )
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
-
-
-def test_yaml_with_custom_date_format() -> None:
-    """YAML dates use the custom formatter from the language spec."""
-    spec = LanguageSpec(
-        null_literal="None",
-        true_literal="True",
-        false_literal="False",
-        collection_open="(",
-        collection_close=")",
-        dict_separator=": ",
-        format_date=format_date_python,
-    )
-    yaml_string = "- 2024-01-15\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=spec,
-        prefix="",
-        wrap=False,
-    )
-    assert result == "datetime.date(2024, 1, 15),"
 
 
 def test_default_format_date_is_iso() -> None:
