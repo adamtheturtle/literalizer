@@ -5,11 +5,13 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import json
+from collections.abc import Iterable  # noqa: TC003
 from io import StringIO
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import YAMLError
 from ruamel.yaml.tokens import CommentToken  # noqa: TC002
 
@@ -750,43 +752,37 @@ class _CollectionComments:
 @beartype
 def _extract_yaml_comments(
     *,
-    yaml_string: str,
+    ruamel_data: CommentedSeq | CommentedMap,
     is_sequence: bool,
 ) -> _CollectionComments:
-    """Extract top-level comments from a YAML collection string.
+    """Extract top-level comments from parsed ruamel.yaml data.
 
     Only works for sequences and mappings — *ruamel.yaml*'s
     round-trip loader preserves comment metadata in
     :class:`CommentedSeq` / :class:`CommentedMap` objects.
     Scalar values do not carry this metadata; use
-    :func:`_literalize_yaml_scalar` for those.
-
-    Returns a tuple of per-element comments (aligned with data
-    elements) and any trailing comments after the last element.
+    :func:`_extract_scalar_comments` for those.
     """
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ruamel_data = YAML().load(  # pyright: ignore[reportUnknownMemberType]
-        stream=StringIO(initial_value=yaml_string),
-    )
-
-    ca = ruamel_data.ca
+    ca = ruamel_data.ca  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
 
     # Header comments (before the first element).
     pending_before: list[str] = []
-    if ca.comment and len(ca.comment) > 1 and ca.comment[1]:
-        for token in ca.comment[1]:
+    if ca.comment and len(ca.comment) > 1 and ca.comment[1]:  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        for header_token in ca.comment[1]:  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            header_value: str = header_token.value  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
             pending_before.extend(
-                _token_comment_lines(value=token.value),
+                _token_comment_lines(value=header_value),  # pyright: ignore[reportUnknownArgumentType]
             )
 
     # Sequences store after-element tokens at index 0,
     # mappings at index 2.
     token_idx = 0 if is_sequence else 2
 
-    if is_sequence:
+    if isinstance(ruamel_data, CommentedSeq):
         keys: list[object] = list(range(len(ruamel_data)))
     else:
-        keys = list(ruamel_data.keys())
+        keys = list(ruamel_data.keys())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
     elements: list[_ElementComments] = []
     for key in keys:
@@ -794,10 +790,10 @@ def _extract_yaml_comments(
         inline = ""
         pending_before = []
 
-        if key in ca.items:
-            token = ca.items[key][token_idx]
-            if token is not None:
-                parsed = _parse_after_token(token=token)
+        if key in ca.items:  # pyright: ignore[reportUnknownMemberType]
+            item_token: CommentToken | None = ca.items[key][token_idx]  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            if item_token is not None:
+                parsed = _parse_after_token(token=item_token)  # pyright: ignore[reportUnknownArgumentType]
                 inline = parsed.inline
                 pending_before = parsed.before_next
 
@@ -838,20 +834,20 @@ class _ScalarComments:
 @beartype
 def _extract_scalar_comments(
     *,
-    yaml_string: str,
+    tokens: Iterable[Any],
 ) -> _ScalarComments:
-    """Extract comments from a scalar YAML string via the scanner.
+    """Extract comments from scanned YAML tokens for a scalar value.
 
     *ruamel.yaml*'s round-trip loader returns plain Python objects
     for scalars with no comment metadata.  The token scanner,
-    however, attaches :class:`CommentToken` objects to the
-    :class:`ScalarToken`, so we use that instead.
+    however, attaches :class:`CommentToken` objects to tokens,
+    so we use that instead.
+
+    *tokens* should come from ``YAML().scan()``.
     """
     before_comments: list[str] = []
     inline = ""
-    stream = StringIO(initial_value=yaml_string)
-    # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    for token in YAML().scan(stream=stream):  # pyright: ignore[reportUnknownMemberType]
+    for token in tokens:
         comment: list[Any] | None = token.comment
         if not comment:
             continue
@@ -872,7 +868,7 @@ def _extract_scalar_comments(
 @beartype
 def _literalize_yaml_scalar(
     *,
-    yaml_string: str,
+    tokens: Iterable[Any],
     base: str,
     comment_prefix: str,
     prefix: str,
@@ -880,11 +876,11 @@ def _literalize_yaml_scalar(
     """Preserve comments for scalar YAML values.
 
     Uses :func:`_extract_scalar_comments` to obtain comments
-    from *ruamel.yaml*'s token scanner.  Collection values use
-    :func:`_extract_yaml_comments` instead.
+    from pre-scanned *ruamel.yaml* tokens.  Collection values
+    use :func:`_extract_yaml_comments` instead.
     """
     scalar_comments = _extract_scalar_comments(
-        yaml_string=yaml_string,
+        tokens=tokens,
     )
 
     if not scalar_comments.before and not scalar_comments.inline:
@@ -1022,8 +1018,11 @@ def literalize_yaml(
     cp = language.comment_prefix
 
     if not isinstance(data, (list, dict)):
+        stream = StringIO(initial_value=yaml_string)
+        # https://sourceforge.net/p/ruamel-yaml/tickets/328/
+        tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
         return _literalize_yaml_scalar(
-            yaml_string=yaml_string,
+            tokens=tokens,
             base=base,
             comment_prefix=cp,
             prefix=prefix,
@@ -1033,8 +1032,12 @@ def literalize_yaml(
         return base
 
     is_sequence = isinstance(data, list)
+    # https://sourceforge.net/p/ruamel-yaml/tickets/328/
+    ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+        stream=StringIO(initial_value=yaml_string),
+    )
     collection_comments = _extract_yaml_comments(
-        yaml_string=yaml_string,
+        ruamel_data=ruamel_data,
         is_sequence=is_sequence,
     )
 
