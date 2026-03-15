@@ -1,4 +1,4 @@
 (
     ValueTuple.Create(),
-    new Dictionary<string, object> {},
+    new Dictionary<string, object> {}
 )

@@ -59,7 +59,7 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
         (GO, '{true, nil, "hi", {1, 2}},'),
         (CPP, '{true, nullptr, "hi", {1, 2}},'),
         (JAVA, 'new Object[]{true, null, "hi", new Object[]{1, 2}}'),
-        (CSHARP, '(true, null, "hi", (1, 2)),'),
+        (CSHARP, '(true, null, "hi", (1, 2))'),
         (RUBY, '[true, nil, "hi", [1, 2]],'),
         (KOTLIN, 'listOf<Any?>(true, null, "hi", listOf<Any?>(1, 2)),'),
     ],
