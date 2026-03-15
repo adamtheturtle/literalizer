@@ -10,7 +10,6 @@ can syntax-check them directly without additional wrapping.
 
 from __future__ import annotations
 
-import textwrap
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -60,18 +59,17 @@ def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
     """
-    cpp_template = f"""\
-#include <initializer_list>
-#include <cstddef>
-struct _Any {{
-    template<class T> _Any(T&&) noexcept {{}}
-    _Any(std::initializer_list<_Any>) noexcept {{}}
-}};
-void _check() {{
-    [[maybe_unused]] _Any _v = {content};
-}}
-"""
-    return textwrap.dedent(cpp_template)
+    return (
+        "#include <initializer_list>\n"
+        "#include <cstddef>\n"
+        "struct _Any {\n"
+        "    template<class T> _Any(T&&) noexcept {}\n"
+        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
+        "};\n"
+        "void _check() {\n"
+        f"    [[maybe_unused]] _Any _v = {content};\n"
+        "}\n"
+    )
 
 
 def _wrap_csharp(content: str) -> str:
