@@ -402,6 +402,7 @@ def test_custom_language() -> None:
         trailing_comma=True,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
+        empty_collection=None,
         comment_prefix="//",
     )
     result = literalize_json(
@@ -942,6 +943,7 @@ def test_custom_format_date() -> None:
         trailing_comma=True,
         format_date=format_date_python,
         format_datetime=format_datetime_iso,
+        empty_collection=None,
         comment_prefix="//",
     )
     result = literalize_yaml(
@@ -968,6 +970,7 @@ def test_custom_format_datetime() -> None:
         trailing_comma=True,
         format_date=format_date_iso,
         format_datetime=format_datetime_python,
+        empty_collection=None,
         comment_prefix="//",
     )
     result = literalize_yaml(
@@ -994,6 +997,7 @@ def test_java_native_dates() -> None:
         trailing_comma=True,
         format_date=format_date_java,
         format_datetime=format_datetime_java_instant,
+        empty_collection=None,
         comment_prefix="//",
     )
     result = literalize_yaml(
@@ -1022,6 +1026,7 @@ def test_ruby_native_dates() -> None:
         trailing_comma=True,
         format_date=format_date_ruby,
         format_datetime=format_datetime_ruby,
+        empty_collection=None,
         comment_prefix="#",
     )
     result = literalize_yaml(
@@ -1048,6 +1053,7 @@ def test_yaml_with_custom_date_format() -> None:
         trailing_comma=True,
         format_date=format_date_python,
         format_datetime=format_datetime_iso,
+        empty_collection=None,
         comment_prefix="//",
     )
     yaml_string = "- 2024-01-15\n"

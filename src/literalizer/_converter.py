@@ -342,6 +342,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def empty_collection(self) -> str | None:
+        """Override for empty list literals, or ``None`` to use
+        ``collection_open + collection_close``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def comment_prefix(self) -> str:
         """The comment prefix for the language (e.g. ``"#"`` or
         ``"//"``).
@@ -370,6 +377,7 @@ class LanguageSpec:
     trailing_comma: bool
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
+    empty_collection: str | None
     comment_prefix: str
 
 
@@ -386,6 +394,7 @@ PYTHON = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="#",
 )
 
@@ -408,6 +417,7 @@ CSHARP = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection="ValueTuple.Create()",
     comment_prefix="//",
 )
 
@@ -424,6 +434,7 @@ JAVASCRIPT = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="//",
 )
 
@@ -440,6 +451,7 @@ TYPESCRIPT = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="//",
 )
 
@@ -456,6 +468,7 @@ RUBY = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="#",
 )
 
@@ -472,6 +485,7 @@ GO = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="//",
 )
 
@@ -494,6 +508,7 @@ CPP = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="//",
 )
 
@@ -516,6 +531,7 @@ JAVA = LanguageSpec(
     trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="//",
 )
 
@@ -532,6 +548,7 @@ KOTLIN = LanguageSpec(
     trailing_comma=True,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
+    empty_collection=None,
     comment_prefix="//",
 )
 
@@ -587,6 +604,8 @@ def _format_value(*, value: _Value, spec: Language) -> str:
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
     if isinstance(value, list):
+        if not value and spec.empty_collection is not None:
+            return spec.empty_collection
         items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
         # Single-element tuples need a trailing comma in Python/C#.

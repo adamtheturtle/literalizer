@@ -111,6 +111,7 @@ Usage examples
        trailing_comma=True,
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
+       empty_collection=None,
        comment_prefix="//",
    )
 

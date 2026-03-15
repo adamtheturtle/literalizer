@@ -47,11 +47,6 @@ def main() -> None:
         # trailing comma that immediately precedes a closing parenthesis.
         content = re.sub(pattern=r",(\s*\))", repl=r"\1", string=content)
 
-        # Empty collections become (), which is not valid C# syntax,
-        # so replace with ValueTuple.Create().
-        empty_collection = CSHARP.collection_open + CSHARP.collection_close
-        content = content.replace(empty_collection, "ValueTuple.Create()")
-
         wrapped = f"using System.Collections.Generic;\nvar x = {content};\n"
 
         csproj = (

@@ -135,6 +135,7 @@ Usage examples
        trailing_comma=True,
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
+       empty_collection=None,
        comment_prefix="//",
    )
 
@@ -153,6 +154,7 @@ Usage examples
        trailing_comma=True,
        format_date=format_date_python,
        format_datetime=format_datetime_python,
+       empty_collection=None,
        comment_prefix="#",
    )
    result = literalize_yaml(
@@ -177,6 +179,7 @@ Usage examples
        trailing_comma=True,
        format_date=format_date_java,
        format_datetime=format_datetime_java_instant,
+       empty_collection=None,
        comment_prefix="//",
    )
    result = literalize_yaml(
@@ -201,6 +204,7 @@ Usage examples
        trailing_comma=True,
        format_date=format_date_iso,
        format_datetime=format_datetime_ruby,
+       empty_collection=None,
        comment_prefix="#",
    )
    result = literalize_yaml(
