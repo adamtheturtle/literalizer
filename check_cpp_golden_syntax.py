@@ -15,17 +15,17 @@ def main() -> None:
         # Wrap content in a struct that accepts any value or nested initializer
         # list, allowing mixed-type and nested brace-init syntax to compile as
         # valid C++.
-        wrapped = textwrap.dedent(f"""\
+        wrapped = textwrap.dedent("""\
             #include <initializer_list>
             #include <cstddef>
-            struct _Any {{
-                template<class T> _Any(T&&) noexcept {{}}
-                _Any(std::initializer_list<_Any>) noexcept {{}}
-            }};
-            void _check() {{
-                [[maybe_unused]] _Any _v = {content};
-            }}
-            """)
+            struct _Any {
+                template<class T> _Any(T&&) noexcept {}
+                _Any(std::initializer_list<_Any>) noexcept {}
+            };
+            void _check() {
+                [[maybe_unused]] _Any _v = CONTENT;
+            }
+            """).replace("CONTENT", content)
         result = subprocess.run(
             args=[
                 clangpp_path,
