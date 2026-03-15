@@ -1,3 +1,3 @@
-mapOf(
-    "users" to listOf(mapOf("name" to "Bob", "tags" to listOf("admin", "user")), mapOf("name" to "Carol", "tags" to listOf("guest"))),
+mapOf<String, Any?>(
+    "users" to listOf<Any?>(mapOf<String, Any?>("name" to "Bob", "tags" to listOf<Any?>("admin", "user")), mapOf<String, Any?>("name" to "Carol", "tags" to listOf<Any?>("guest"))),
 )

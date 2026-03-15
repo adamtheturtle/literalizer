@@ -5,6 +5,7 @@ ci:
   skip:
     - actionlint
     - check-manifest
+    - csharp-golden-syntax-check
     - deptry
     - doc8
     - docs
@@ -31,6 +32,7 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
+    - cpp-golden-syntax-check
     - ruby-syntax-check
     - spelling
     - sphinx-lint
@@ -413,6 +415,17 @@ repos:
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
+      - id: cpp-golden-syntax-check
+        name: C++ golden file syntax check
+        entry: uv run python check_cpp_golden_syntax.py
+        language: python
+        types: [c++]
+        # Restrict to golden files: the script wraps bare initializer lists
+        # in a struct-based wrapper, which only works for these files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
       - id: kotlin-syntax-check
         name: Kotlin golden file syntax check
         entry: uv run python check_kotlin_golden_syntax.py
@@ -420,6 +433,18 @@ repos:
         types: [kotlin]
         # Restrict to golden files: the script wraps the expression in
         # a val declaration before checking with ``kotlinc``.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: csharp-golden-syntax-check
+        name: C# golden file syntax check
+        entry: uv run python check_csharp_golden_syntax.py
+        language: python
+        types: [c#]
+        # Restrict to golden files: the script wraps the expression in
+        # a var declaration and fixes up trailing commas and null types
+        # before checking with ``dotnet build``.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]

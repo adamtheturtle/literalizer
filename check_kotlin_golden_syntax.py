@@ -6,19 +6,12 @@ import sys
 import tempfile
 from pathlib import Path
 
-from literalizer import KOTLIN
-
 
 def main() -> None:
     """Check syntax of each given Kotlin golden file."""
     kotlinc_path = shutil.which(cmd="kotlinc") or "kotlinc"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
-        # Empty collections need explicit type parameters for ``kotlinc``.
-        empty_list = KOTLIN.collection_open + KOTLIN.collection_close
-        empty_dict = KOTLIN.dict_open + KOTLIN.dict_close
-        content = content.replace(empty_list, "listOf<Any?>()")
-        content = content.replace(empty_dict, "mapOf<String, Any?>()")
         wrapped = f"val x: Any? = {content}\n"
 
         with tempfile.NamedTemporaryFile(

@@ -58,10 +58,10 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
         (GO, '{true, nil, "hi", {1, 2}},'),
         (CPP, '{true, nullptr, "hi", {1, 2}},'),
-        (JAVA, '{true, null, "hi", {1, 2}}'),
+        (JAVA, 'new Object[]{true, null, "hi", new Object[]{1, 2}}'),
         (CSHARP, '(true, null, "hi", (1, 2)),'),
         (RUBY, '[true, nil, "hi", [1, 2]],'),
-        (KOTLIN, 'listOf(true, null, "hi", listOf(1, 2)),'),
+        (KOTLIN, 'listOf<Any?>(true, null, "hi", listOf<Any?>(1, 2)),'),
     ],
 )
 def test_language_list(*, language: Language, expected: str) -> None:
@@ -148,7 +148,7 @@ def test_java_dict_wrap_no_trailing_comma() -> None:
 
 
 def test_java_list_wrap_uses_braces() -> None:
-    """Java wrapped lists use curly braces, not square brackets."""
+    """Java wrapped lists use ``new Object[]{…}``."""
     result = literalize_json(
         json_string=json.dumps([1, "hello", True]),
         language=JAVA,
@@ -157,7 +157,7 @@ def test_java_list_wrap_uses_braces() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        {
+        new Object[]{
             1,
             "hello",
             true

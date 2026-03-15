@@ -1,3 +1,3 @@
 {
-    "users": {{"name": "Bob", "tags": {"admin", "user"}}, {"name": "Carol", "tags": {"guest"}}},
+    {"users", {{{"name", "Bob"}, {"tags", {"admin", "user"}}}, {{"name", "Carol"}, {"tags", {"guest"}}}}},
 }
