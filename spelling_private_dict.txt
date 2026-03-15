@@ -15,6 +15,7 @@ JSONDecodeError
 subclasses
 literalize
 literalizer
+localhost
 NEL
 pragma
 pre
