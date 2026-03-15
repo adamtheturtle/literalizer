@@ -471,7 +471,7 @@ def _format_scalar(*, value: _Scalar, spec: Language) -> str:
     return result
 
 
-def _build_dict_entry(key_str: str, val_str: str, spec: Language) -> str:
+def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
     """Format a single dict key-value entry using the language spec."""
     if spec.format_dict_entry is not None:
         return spec.format_dict_entry(key_str, val_str)
@@ -487,9 +487,9 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     if isinstance(value, dict):
         pairs = [
             _build_dict_entry(
-                _format_value(value=k, spec=spec),
-                _format_value(value=v, spec=spec),
-                spec,
+                key_str=_format_value(value=k, spec=spec),
+                val_str=_format_value(value=v, spec=spec),
+                spec=spec,
             )
             for k, v in value.items()
         ]
@@ -565,7 +565,9 @@ def literalize(
         for k, v in data.items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
-            entry = _build_dict_entry(formatted_key, formatted_val, spec)
+            entry = _build_dict_entry(
+                key_str=formatted_key, val_str=formatted_val, spec=spec
+            )
             lines.append(f"{effective_prefix}{entry},")
     else:
         for item in data:
