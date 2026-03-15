@@ -318,16 +318,6 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @property
-    def comment_prefix(self) -> str:
-        """The prefix for single-line comments (e.g. ``"#"`` for
-        Python, ``"//"`` for JavaScript).
-
-        Used by :func:`literalize_yaml` to preserve YAML comments
-        in the target language.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -611,39 +601,6 @@ class _ElementComments:
     inline: str
 
 
-def _find_inline_comment(*, line: str) -> str:
-    """Return the inline comment text from a YAML line.
-
-    This is used only for scalar YAML values, where *ruamel.yaml*'s
-    round-trip loader returns a plain Python object with no comment
-    metadata.  For collections, comment extraction is handled by
-    :func:`_extract_yaml_comments` via *ruamel.yaml*'s ``ca`` API.
-
-    Returns an empty string when no inline comment is present.
-    YAML requires a space before ``#`` for an inline comment.
-    """
-    in_single = False
-    in_double = False
-    for i, char in enumerate(iterable=line):
-        escaped = i > 0 and line[i - 1] == "\\"
-        if char == "'" and not in_double and not escaped:
-            in_single = not in_single
-        elif char == '"' and not in_single and not escaped:
-            in_double = not in_double
-        elif (
-            char == "#"
-            and not in_single
-            and not in_double
-            and i > 0
-            and line[i - 1] == " "
-        ):
-            return line[i + 1 :].strip()
-    return ""
-
-
-_ruamel_yaml: Any = YAML()
-
-
 def _strip_comment_marker(*, text: str) -> str:
     """Strip the leading ``#`` and one optional space from a comment line.
 
@@ -716,7 +673,7 @@ def _extract_yaml_comments(
     Returns a tuple of per-element comments (aligned with data
     elements) and any trailing comments after the last element.
     """
-    ruamel_data = _ruamel_yaml.load(
+    ruamel_data = YAML().load(  # pyright: ignore[reportUnknownMemberType]
         stream=StringIO(initial_value=yaml_string),
     )
 
@@ -775,6 +732,39 @@ def _format_comment(
     return f"{line_prefix}{comment_prefix}"
 
 
+def _extract_scalar_comments(
+    *,
+    yaml_string: str,
+) -> tuple[list[str], str]:
+    """Extract comments from a scalar YAML string via the scanner.
+
+    *ruamel.yaml*'s round-trip loader returns plain Python objects
+    for scalars with no comment metadata.  The token scanner,
+    however, attaches :class:`CommentToken` objects to the
+    :class:`ScalarToken`, so we use that instead.
+
+    Returns ``(before_comments, inline_comment)``.
+    """
+    before_comments: list[str] = []
+    inline = ""
+    for token in YAML().scan(stream=StringIO(initial_value=yaml_string)):  # pyright: ignore[reportUnknownMemberType]
+        comment: list[Any] | None = token.comment
+        if not comment:
+            continue
+        inline_token: CommentToken | None = comment[0]
+        before_tokens: list[CommentToken] = comment[1] or []
+        if inline_token is not None:
+            value: str = inline_token.value
+            inline = _strip_comment_marker(text=value)
+        for bt in before_tokens:
+            bt_value: str = bt.value
+            before_comments.extend(
+                _token_comment_lines(value=bt_value),
+            )
+        break
+    return before_comments, inline
+
+
 def _literalize_yaml_scalar(
     *,
     yaml_string: str,
@@ -784,22 +774,13 @@ def _literalize_yaml_scalar(
 ) -> str:
     """Preserve comments for scalar YAML values.
 
-    Scalars (int, str, bool, etc.) lose comment metadata in
-    *ruamel.yaml*'s round-trip loader, so this function parses
-    the raw YAML text to find comments.  Collection values use
+    Uses :func:`_extract_scalar_comments` to obtain comments
+    from *ruamel.yaml*'s token scanner.  Collection values use
     :func:`_extract_yaml_comments` instead.
     """
-    before_comments: list[str] = []
-    inline = ""
-    for line in yaml_string.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped in {"---", "..."}:
-            continue
-        if stripped.startswith("#"):
-            before_comments.append(_strip_comment_marker(text=stripped))
-            continue
-        inline = _find_inline_comment(line=line)
-        break
+    before_comments, inline = _extract_scalar_comments(
+        yaml_string=yaml_string,
+    )
 
     if not before_comments and not inline:
         return base
@@ -897,8 +878,9 @@ def literalize_yaml(
     accepts YAML as a string rather than a pre-parsed data structure.
 
     YAML comments are preserved in the output using the target
-    language's comment syntax
-    (:attr:`Language.comment_prefix`).
+    language's comment syntax.  The comment prefix is read from the
+    ``comment_prefix`` attribute of *language* (defaulting to
+    ``"#"`` when the attribute is absent).
 
     Args:
         yaml_string: A YAML string representing a scalar, sequence, or
@@ -928,7 +910,7 @@ def literalize_yaml(
         wrap=wrap,
     )
 
-    cp = language.comment_prefix
+    cp: str = getattr(language, "comment_prefix", "#")
 
     if not isinstance(data, (list, dict)):
         return _literalize_yaml_scalar(

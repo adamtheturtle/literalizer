@@ -1122,7 +1122,15 @@ def test_yaml_comment_sequence_before() -> None:
         prefix="",
         wrap=True,
     )
-    expected = '[\n    # first\n    "a",\n    # second\n    "b",\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            # first
+            "a",
+            # second
+            "b",
+        ]"""
+    )
     assert result == expected
 
 
@@ -1135,7 +1143,13 @@ def test_yaml_comment_sequence_inline() -> None:
         prefix="",
         wrap=True,
     )
-    expected = '[\n    "a",  # note a\n    "b",  # note b\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "a",  # note a
+            "b",  # note b
+        ]"""
+    )
     assert result == expected
 
 
@@ -1148,13 +1162,14 @@ def test_yaml_comment_mapping() -> None:
         prefix="",
         wrap=True,
     )
-    expected = (
-        "{\n"
-        "    # comment for a\n"
-        '    "a": 1,  # inline a\n'
-        "    # comment for b\n"
-        '    "b": 2,\n'
-        "}"
+    expected = textwrap.dedent(
+        text="""\
+        {
+            # comment for a
+            "a": 1,  # inline a
+            # comment for b
+            "b": 2,
+        }"""
     )
     assert result == expected
 
@@ -1168,7 +1183,13 @@ def test_yaml_comment_javascript_prefix() -> None:
         prefix="",
         wrap=True,
     )
-    expected = '[\n    // comment\n    "a",\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            // comment
+            "a",
+        ]"""
+    )
     assert result == expected
 
 
@@ -1181,7 +1202,13 @@ def test_yaml_comment_trailing() -> None:
         prefix="",
         wrap=True,
     )
-    expected = '[\n    "a",\n    # trailing\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "a",
+            # trailing
+        ]"""
+    )
     assert result == expected
 
 
@@ -1233,7 +1260,13 @@ def test_yaml_no_comments_unchanged() -> None:
         prefix="",
         wrap=True,
     )
-    expected = '[\n    "a",\n    "b",\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "a",
+            "b",
+        ]"""
+    )
     assert result == expected
 
 
@@ -1246,7 +1279,14 @@ def test_yaml_comment_multiple_before_lines() -> None:
         prefix="",
         wrap=True,
     )
-    expected = '[\n    # line 1\n    # line 2\n    "a",\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            # line 1
+            # line 2
+            "a",
+        ]"""
+    )
     assert result == expected
 
 
@@ -1329,8 +1369,12 @@ def test_yaml_comment_block_scalar_not_extracted() -> None:
         prefix="",
         wrap=True,
     )
-    expected = (
-        '{\n    "description": "# not a comment\\n",\n    "name": "foo",\n}'
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "description": "# not a comment\\n",
+            "name": "foo",
+        }"""
     )
     assert result == expected
 
