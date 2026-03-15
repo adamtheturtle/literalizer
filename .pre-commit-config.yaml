@@ -459,6 +459,14 @@ repos:
         files: ^tests/integration/cases/
         stages: [pre-commit]
 
+      - id: rust-golden-syntax-check
+        name: Rust golden file syntax check
+        entry: rustfmt --edition 2021
+        language: system
+        types: [rust]
+        files: ^tests/integration/cases/
+        stages: [pre-commit]
+
       - id: csharp-golden-syntax-check
         name: C# golden file syntax check
         entry: uv run python check_csharp_golden_syntax.py

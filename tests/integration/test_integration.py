@@ -81,6 +81,17 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+def _wrap_rust(content: str) -> str:
+    """Wrap in a Rust main function with necessary imports."""
+    return (
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        f"    let _ = {content};\n"
+        "}"
+    )
+
+
 @dataclasses.dataclass
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
@@ -135,6 +146,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.CPP,
         extension=".cpp",
         wrap=_wrap_cpp,
+    ),
+    "rust": _LanguageConfig(
+        spec=literalizer.RUST,
+        extension=".rs",
+        wrap=_wrap_rust,
     ),
 }
 

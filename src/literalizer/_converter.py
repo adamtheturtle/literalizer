@@ -266,6 +266,32 @@ def format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
+def format_date_rust(value: datetime.date) -> str:
+    """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call.
+
+    Example: ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
+    """
+    return (
+        f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
+        ".unwrap()"
+    )
+
+
+def format_datetime_rust(value: datetime.datetime) -> str:
+    """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call.
+
+    Example:
+    ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+    NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
+    """
+    date = format_date_rust(value=value)
+    return (
+        f"NaiveDateTime::new({date}, "
+        f"NaiveTime::from_hms_opt("
+        f"{value.hour}, {value.minute}, {value.second}).unwrap())"
+    )
+
+
 def _format_go_set_entry(item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
 
@@ -614,6 +640,34 @@ JAVA = LanguageSpec(
     empty_collection=None,
     set_open="Set.of(",
     set_close=")",
+    empty_set=None,
+    format_set_entry=None,
+    comment_prefix="//",
+)
+
+
+def _format_rust_dict_entry(key: str, value: str) -> str:
+    """Format a Rust HashMap entry as a tuple ``(key, value)``."""
+    return f"({key}, {value})"
+
+
+RUST = LanguageSpec(
+    null_literal="None",
+    true_literal="true",
+    false_literal="false",
+    collection_open="vec![",
+    collection_close="]",
+    dict_separator=": ",
+    dict_open="HashMap::from([",
+    dict_close="])",
+    format_dict_entry=_format_rust_dict_entry,
+    trailing_comma=True,
+    single_element_trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    set_open="HashSet::from([",
+    set_close="])",
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
