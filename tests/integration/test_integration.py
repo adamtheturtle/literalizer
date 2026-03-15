@@ -83,61 +83,59 @@ var x = {content};"""
 
 @dataclasses.dataclass
 class _LanguageConfig:
-    """Language configuration with spec and file extension."""
+    """Language configuration with spec, file extension, and wrapper."""
 
     spec: literalizer.LanguageSpec
     extension: str
+    wrap: Callable[[str], str]
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "python": _LanguageConfig(
         spec=literalizer.PYTHON,
         extension=".py",
+        wrap=_wrap_identity,
     ),
     "javascript": _LanguageConfig(
         spec=literalizer.JAVASCRIPT,
         extension=".js",
+        wrap=_wrap_js,
     ),
     "typescript": _LanguageConfig(
         spec=literalizer.TYPESCRIPT,
         extension=".ts",
+        wrap=_wrap_js,
     ),
     "kotlin": _LanguageConfig(
         spec=literalizer.KOTLIN,
         extension=".kt",
+        wrap=_wrap_kotlin,
     ),
     "ruby": _LanguageConfig(
         spec=literalizer.RUBY,
         extension=".rb",
+        wrap=_wrap_identity,
     ),
     "go": _LanguageConfig(
         spec=literalizer.GO,
         extension=".go",
+        wrap=_wrap_go,
     ),
     "java": _LanguageConfig(
         spec=literalizer.JAVA,
         extension=".java",
+        wrap=_wrap_java,
     ),
     "csharp": _LanguageConfig(
         spec=literalizer.CSHARP,
         extension=".cs",
+        wrap=_wrap_csharp,
     ),
     "cpp": _LanguageConfig(
         spec=literalizer.CPP,
         extension=".cpp",
+        wrap=_wrap_cpp,
     ),
-}
-
-_WRAPPERS: dict[str, Callable[[str], str]] = {
-    "python": _wrap_identity,
-    "ruby": _wrap_identity,
-    "javascript": _wrap_js,
-    "typescript": _wrap_js,
-    "go": _wrap_go,
-    "java": _wrap_java,
-    "kotlin": _wrap_kotlin,
-    "cpp": _wrap_cpp,
-    "csharp": _wrap_csharp,
 }
 
 
@@ -175,7 +173,7 @@ def test_golden_file(
         prefix="",
         wrap=True,
     )
-    wrapped = _WRAPPERS[language](result)
+    wrapped = lang_config.wrap(result)
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.extension,
