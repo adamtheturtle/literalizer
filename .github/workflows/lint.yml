@@ -32,9 +32,6 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
-      - name: Install shfmt
-        run: go install mvdan.cc/sh/v3/cmd/shfmt@latest
-
       - name: Lint
         shell: bash
         run: uv run --extra=dev prek run --all-files --hook-stage ${{ matrix.hook-stage }}
