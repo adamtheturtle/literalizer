@@ -451,7 +451,9 @@ KOTLIN = LanguageSpec(
     false_literal="false",
     collection_open="listOf(",
     collection_close=")",
-    dict_separator=": ",
+    dict_separator=" to ",
+    dict_open="mapOf(",
+    dict_close=")",
 )
 
 

@@ -12,6 +12,7 @@ ci:
     - interrogate-docs
     - go-golden-syntax-check
     - javascript-syntax-check
+    - kotlin-syntax-check
     - typescript-syntax-check
     - linkcheck
     - mypy
@@ -396,6 +397,17 @@ repos:
         types: [ts]
         # Restrict to golden files: the script wraps content in void(...)
         # which only works for bare object/array literals, not full TS files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: kotlin-syntax-check
+        name: Kotlin golden file syntax check
+        entry: uv run python check_kotlin_golden_syntax.py
+        language: python
+        types: [kotlin]
+        # Restrict to golden files: the script transforms dict/list syntax
+        # to valid Kotlin before checking, which only works for these files.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
