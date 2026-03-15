@@ -26,6 +26,7 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
+    - ruby-syntax-check
     - spelling
     - sphinx-lint
     - ty
@@ -354,6 +355,13 @@ repos:
         pass_filenames: false
         types_or: [yaml]
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: ruby-syntax-check
+        name: Ruby syntax check
+        entry: ruby -c
+        language: system
+        types: [ruby]
         stages: [pre-commit]
 
       - id: sphinx-lint
