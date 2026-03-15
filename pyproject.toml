@@ -367,9 +367,6 @@ ignore_names = [
     # Used in documentation code examples
     "custom",
     "result",
-    # ruamel.yaml configuration attributes
-    "default_flow_style",
-    "sort_base_mapping_type_on_output",
 ]
 # Duplicate some of .gitignore
 exclude = [
