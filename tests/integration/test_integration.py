@@ -68,5 +68,5 @@ def test_golden_file(
     file_regression.check(
         contents=result + "\n",
         extension=extension,
-        basename=str(input_path.parent / language),
+        basename=str(object=input_path.parent / language),
     )
