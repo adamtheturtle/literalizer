@@ -11,6 +11,7 @@ ci:
     - interrogate
     - interrogate-docs
     - go-golden-syntax-check
+    - java-golden-syntax-check
     - javascript-syntax-check
     - typescript-syntax-check
     - linkcheck
@@ -396,6 +397,17 @@ repos:
         types: [ts]
         # Restrict to golden files: the script wraps content in void(...)
         # which only works for bare object/array literals, not full TS files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: java-golden-syntax-check
+        name: Java golden file syntax check
+        entry: uv run python check_java_golden_syntax.py
+        language: python
+        types: [java]
+        # Restrict to golden files: the script wraps bare expressions
+        # in a class with imports, which only works for these files.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
