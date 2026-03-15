@@ -422,6 +422,7 @@ GO = LanguageSpec(
     collection_open="{",
     collection_close="}",
     dict_separator=": ",
+    dict_open="map[string]any{",
 )
 
 CPP = LanguageSpec(
