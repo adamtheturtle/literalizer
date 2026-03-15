@@ -1,0 +1,86 @@
+"""Check syntax of C# golden files using ``dotnet build``."""
+
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+from literalizer import CSHARP
+
+
+def _target_framework(dotnet_path: str) -> str:
+    """Return the target framework moniker for the installed dotnet."""
+    result = subprocess.run(
+        args=[dotnet_path, "--version"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    version = result.stdout.strip()
+    major_minor = ".".join(version.split(sep=".")[:2])
+    return f"net{major_minor}"
+
+
+def main() -> None:
+    """Check syntax of each given C# golden file."""
+    dotnet_path = shutil.which(cmd="dotnet") or "dotnet"
+    target_framework = _target_framework(dotnet_path=dotnet_path)
+    for filename in sys.argv[1:]:
+        content = Path(filename).read_text(encoding="utf-8").strip()
+
+        # Replace the null literal with (object?)null so the C# compiler
+        # can infer tuple element types; bare null has no type in C# tuple
+        # literals and causes CS0815.
+        null_literal: str = CSHARP.null_literal
+        null_pattern = rf"\b{null_literal}\b"
+        content = re.sub(
+            pattern=null_pattern,
+            repl="(object?)null",
+            string=content,
+        )
+
+        # C# tuple literals do not allow trailing commas.  Strip any
+        # trailing comma that immediately precedes a closing parenthesis.
+        content = re.sub(pattern=r",(\s*\))", repl=r"\1", string=content)
+
+        # Empty collections become (), which is not valid C# syntax,
+        # so replace with ValueTuple.Create().
+        empty_collection = CSHARP.collection_open + CSHARP.collection_close
+        content = content.replace(empty_collection, "ValueTuple.Create()")
+
+        wrapped = f"using System.Collections.Generic;\nvar x = {content};\n"
+
+        csproj = (
+            '<Project Sdk="Microsoft.NET.Sdk">\n'
+            "  <PropertyGroup>\n"
+            "    <OutputType>Exe</OutputType>\n"
+            f"    <TargetFramework>{target_framework}</TargetFramework>\n"
+            "    <Nullable>disable</Nullable>\n"
+            "    <ImplicitUsings>enable</ImplicitUsings>\n"
+            "  </PropertyGroup>\n"
+            "</Project>\n"
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cs_path = Path(tmpdir) / "Program.cs"
+            csproj_path = Path(tmpdir) / "check.csproj"
+            cs_path.write_text(data=wrapped, encoding="utf-8")
+            csproj_path.write_text(data=csproj, encoding="utf-8")
+            result = subprocess.run(
+                args=[dotnet_path, "build", str(csproj_path)],  # type: ignore[call-overload]
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        if result.returncode != 0:
+            msg = (
+                f"{filename}: C# syntax error\n{result.stderr}{result.stdout}"
+            )
+            sys.stderr.write(msg)
+            sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
