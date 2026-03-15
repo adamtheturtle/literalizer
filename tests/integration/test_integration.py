@@ -247,16 +247,16 @@ def _yaml_has_dates(input_path: Path) -> bool:
     from ruamel.yaml import YAML  # noqa: PLC0415
 
     yaml = YAML()
-    data = yaml.load(input_path)
+    data = yaml.load(input_path)  # type: ignore[misc]
 
     def _contains_date(obj: object) -> bool:
         """Return True if obj or any nested value is a date/datetime."""
         if isinstance(obj, datetime.date):
             return True
         if isinstance(obj, dict):
-            return any(_contains_date(v) for v in obj.values())
+            return any(_contains_date(v) for v in obj.values())  # type: ignore[misc]
         if isinstance(obj, list):
-            return any(_contains_date(v) for v in obj)
+            return any(_contains_date(v) for v in obj)  # type: ignore[misc]
         return False
 
     return _contains_date(data)  # type: ignore[misc]
