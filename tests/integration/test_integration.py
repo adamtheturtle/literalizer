@@ -12,7 +12,7 @@ can syntax-check them directly without additional wrapping.
 from __future__ import annotations
 
 import dataclasses
-import datetime  # noqa: TC003
+import datetime
 from collections.abc import Callable  # noqa: TC003
 from pathlib import Path
 
@@ -240,14 +240,44 @@ _LANGUAGE_FORMATTERS: dict[str, list[_FormatterPair]] = {
 }
 
 
+def _yaml_has_dates(input_path: Path) -> bool:
+    """Return True if the YAML input contains any date or datetime
+    values.
+    """
+    from ruamel.yaml import YAML  # noqa: PLC0415
+
+    yaml = YAML()
+    data = yaml.load(input_path)
+
+    def _contains_date(obj: object) -> bool:
+        """Return True if obj or any nested value is a date/datetime."""
+        if isinstance(obj, datetime.date):
+            return True
+        if isinstance(obj, dict):
+            return any(_contains_date(v) for v in obj.values())
+        if isinstance(obj, list):
+            return any(_contains_date(v) for v in obj)
+        return False
+
+    return _contains_date(data)
+
+
 def _discover_cases() -> list[tuple[str, str, str, Path]]:
-    """Return ``(case_name, language, formatter_name, input_path)`` tuples."""
+    """Return ``(case_name, language, formatter_name, input_path)`` tuples.
+
+    For cases with date/datetime values every formatter pair is emitted
+    so that each formatter's output is checked.  For date-free cases only
+    the ``iso`` pair is emitted, since all formatters produce identical
+    output when there are no dates to format.
+    """
     cases: list[tuple[str, str, str, Path]] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
+        input_path = case_dir / "input.yaml"
+        has_dates = _yaml_has_dates(input_path)
         for lang_name, formatter_pairs in _LANGUAGE_FORMATTERS.items():
+            pairs = formatter_pairs if has_dates else formatter_pairs[:1]
             cases.extend(
-                (case_dir.name, lang_name, fp.name, case_dir / "input.yaml")
-                for fp in formatter_pairs
+                (case_dir.name, lang_name, fp.name, input_path) for fp in pairs
             )
     return cases
 
