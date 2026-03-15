@@ -291,7 +291,7 @@ follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
-exclude = [
+project_excludes = [
     "tests/integration/cases",
 ]
 
@@ -307,6 +307,9 @@ typeCheckingMode = "strict"
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
+src.exclude = [
+    "tests/integration/cases",
+]
 
 [tool.doc8]
 max_line_length = 2000
