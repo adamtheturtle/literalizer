@@ -335,6 +335,13 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def comment_prefix(self) -> str:
+        """The comment prefix for the language (e.g. ``"#"`` or
+        ``"//"``).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -959,7 +966,7 @@ def literalize_yaml(
         wrap=wrap,
     )
 
-    cp: str = getattr(language, "comment_prefix", "#")
+    cp = language.comment_prefix
 
     if not isinstance(data, (list, dict)):
         return _literalize_yaml_scalar(
