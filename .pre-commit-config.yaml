@@ -5,6 +5,7 @@ ci:
   skip:
     - actionlint
     - check-manifest
+    - csharp-golden-syntax-check
     - deptry
     - doc8
     - docs
@@ -432,6 +433,18 @@ repos:
         types: [kotlin]
         # Restrict to golden files: the script wraps the expression in
         # a val declaration before checking with ``kotlinc``.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: csharp-golden-syntax-check
+        name: C# golden file syntax check
+        entry: uv run python check_csharp_golden_syntax.py
+        language: python
+        types: [c#]
+        # Restrict to golden files: the script wraps the expression in
+        # a var declaration and fixes up trailing commas and null types
+        # before checking with ``dotnet build``.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
