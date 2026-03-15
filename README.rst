@@ -30,15 +30,13 @@ Usage examples
        JAVASCRIPT,
        PYTHON,
        LanguageSpec,
-       literalize,
        literalize_json,
        literalize_yaml,
    )
 
-   # Convert a Python list to Java literal items
-   data = [True, None, "hi", [1, 2]]
-   result = literalize(
-       data=data,
+   # Convert a JSON array to Java literal items
+   result = literalize_json(
+       json_string='[true, null, "hi", [1, 2]]',
        language=JAVA,
        prefix="",
        wrap=False,
@@ -50,8 +48,8 @@ Usage examples
    # {1, 2},
 
    # Convert to JavaScript/TypeScript array
-   result = literalize(
-       data=data,
+   result = literalize_json(
+       json_string='[true, null, "hi", [1, 2]]',
        language=JAVASCRIPT,
        prefix="    ",
        wrap=True,
@@ -64,7 +62,7 @@ Usage examples
    #     [1, 2],
    # ]
 
-   # Convert from a JSON string directly
+   # Convert a JSON string to Python
    result = literalize_json(
        json_string='[true, null, "hi", [1, 2]]',
        language=PYTHON,
@@ -72,12 +70,12 @@ Usage examples
        wrap=True,
    )
    # result:
-   # [
+   # (
    #     True,
    #     None,
    #     "hi",
    #     (1, 2),
-   # ]
+   # )
 
    # Convert from a YAML string directly
    result = literalize_yaml(
@@ -87,12 +85,12 @@ Usage examples
        wrap=True,
    )
    # result:
-   # [
+   # (
    #     True,
    #     None,
    #     "hi",
    #     (1, 2),
-   # ]
+   # )
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
    #                      CSHARP, CPP, JAVA, KOTLIN

@@ -349,6 +349,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def empty_collection(self) -> str | None:
+        """Override for empty list literals, or ``None`` to use
+        ``collection_open + collection_close``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def comment_prefix(self) -> str:
         """The comment prefix for the language (e.g. ``"#"`` or
         ``"//"``).
@@ -379,6 +386,7 @@ class LanguageSpec:
     format_date: Callable[[datetime.date], str] = format_date_iso
     format_datetime: Callable[[datetime.datetime], str] = format_datetime_iso
     comment_prefix: str = "//"
+    empty_collection: str | None = None
 
 
 PYTHON = LanguageSpec(
@@ -409,6 +417,7 @@ CSHARP = LanguageSpec(
     dict_close="}",
     format_dict_entry=_format_csharp_dict_entry,
     trailing_comma=False,
+    empty_collection="ValueTuple.Create()",
 )
 
 JAVASCRIPT = LanguageSpec(
@@ -547,6 +556,8 @@ def _format_value(*, value: _Value, spec: Language) -> str:
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
     if isinstance(value, list):
+        if not value and spec.empty_collection is not None:
+            return spec.empty_collection
         items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
         # Some languages (e.g. Python) require a trailing comma on
@@ -559,7 +570,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
-def literalize(
+def _literalize(
     *,
     data: list[Any]
     | dict[str, Any]
@@ -653,8 +664,7 @@ def literalize_json(
 ) -> str:
     r"""Convert a JSON string to native language literal text.
 
-    This is a convenience wrapper around :func:`literalize` that
-    accepts JSON as a string rather than a pre-parsed data structure.
+    Convert a JSON string to native language literal text.
 
     Args:
         json_string: A JSON string representing a scalar, array, or
@@ -677,7 +687,7 @@ def literalize_json(
             f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
         raise JSONParseError(message) from exc
-    return literalize(
+    return _literalize(
         data=data,
         language=language,
         prefix=prefix,
@@ -997,9 +1007,6 @@ def literalize_yaml(
 ) -> str:
     r"""Convert a YAML string to native language literal text.
 
-    This is a convenience wrapper around :func:`literalize` that
-    accepts YAML as a string rather than a pre-parsed data structure.
-
     YAML comments are preserved in the output using the target
     language's comment syntax.  The comment prefix is read from the
     ``comment_prefix`` attribute of *language* (defaulting to
@@ -1026,7 +1033,7 @@ def literalize_yaml(
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
-    base = literalize(
+    base = _literalize(
         data=data,
         language=language,
         prefix=prefix,

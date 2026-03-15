@@ -43,11 +43,6 @@ def main() -> None:
             string=content,
         )
 
-        # Empty collections become (), which is not valid C# syntax,
-        # so replace with ValueTuple.Create().
-        empty_collection = CSHARP.collection_open + CSHARP.collection_close
-        content = content.replace(empty_collection, "ValueTuple.Create()")
-
         wrapped = f"using System.Collections.Generic;\nvar x = {content};\n"
 
         csproj = (
