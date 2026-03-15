@@ -302,6 +302,23 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def dict_open(self) -> str:
+        """The opening delimiter for dict literals."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def dict_close(self) -> str:
+        """The closing delimiter for dict literals."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_dict_entry(self) -> Callable[[str, str], str] | None:
+        """Callable that formats a dict entry from a pre-formatted key
+        and value string, or ``None`` to use ``dict_separator``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a :class:`datetime.date` as a string
         literal.
@@ -331,6 +348,9 @@ class LanguageSpec:
     collection_open: str
     collection_close: str
     dict_separator: str
+    dict_open: str = "{"
+    dict_close: str = "}"
+    format_dict_entry: Callable[[str, str], str] | None = None
     format_date: Callable[[datetime.date], str] = format_date_iso
     format_datetime: Callable[[datetime.datetime], str] = format_datetime_iso
 
@@ -398,6 +418,12 @@ CPP = LanguageSpec(
     dict_separator=": ",
 )
 
+
+def _format_java_dict_entry(key: str, value: str) -> str:
+    """Format a Java ``Map.entry(key, value)`` call."""
+    return f"Map.entry({key}, {value})"
+
+
 JAVA = LanguageSpec(
     null_literal="null",
     true_literal="true",
@@ -405,6 +431,9 @@ JAVA = LanguageSpec(
     collection_open="{",
     collection_close="}",
     dict_separator=": ",
+    dict_open="Map.ofEntries(",
+    dict_close=")",
+    format_dict_entry=_format_java_dict_entry,
 )
 
 KOTLIN = LanguageSpec(
@@ -442,6 +471,13 @@ def _format_scalar(*, value: _Scalar, spec: Language) -> str:
     return result
 
 
+def _build_dict_entry(key_str: str, val_str: str, spec: Language) -> str:
+    """Format a single dict key-value entry using the language spec."""
+    if spec.format_dict_entry is not None:
+        return spec.format_dict_entry(key_str, val_str)
+    return f"{key_str}{spec.dict_separator}{val_str}"
+
+
 @beartype
 def _format_value(*, value: _Value, spec: Language) -> str:
     """Format any JSON value as a native language literal.
@@ -450,11 +486,14 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     """
     if isinstance(value, dict):
         pairs = [
-            f"{_format_value(value=k, spec=spec)}{spec.dict_separator}"
-            f"{_format_value(value=v, spec=spec)}"
+            _build_dict_entry(
+                _format_value(value=k, spec=spec),
+                _format_value(value=v, spec=spec),
+                spec,
+            )
             for k, v in value.items()
         ]
-        return "{" + ", ".join(pairs) + "}"
+        return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
     if isinstance(value, list):
         items = [_format_value(value=v, spec=spec) for v in value]
@@ -526,9 +565,8 @@ def literalize(
         for k, v in data.items():
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
-            lines.append(
-                f"{effective_prefix}{formatted_key}{spec.dict_separator}{formatted_val},"
-            )
+            entry = _build_dict_entry(formatted_key, formatted_val, spec)
+            lines.append(f"{effective_prefix}{entry},")
     else:
         for item in data:
             formatted = _format_value(value=item, spec=spec)
@@ -540,7 +578,7 @@ def literalize(
         return body
 
     if isinstance(data, dict):
-        return f"{{\n{body}\n}}"
+        return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
 
     return f"[\n{body}\n]"
 
