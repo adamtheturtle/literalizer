@@ -1,4 +1,4 @@
 [
     {},
-    Map.ofEntries(),
+    Map.ofEntries()
 ]

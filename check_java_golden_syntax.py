@@ -1,6 +1,5 @@
 """Check syntax of Java golden files using javac."""
 
-import re
 import shutil
 import subprocess
 import sys
@@ -26,9 +25,6 @@ def main() -> None:
             # Replace last ] with }
             idx = content.rfind("]")
             content = content[:idx] + "}" + content[idx + 1 :]
-
-        # Remove trailing commas before ) in method calls (Java forbids them).
-        content = re.sub(pattern=r",(\s*\))", repl=r"\1", string=content)
 
         wrapped = (
             "import java.util.Map;\n"

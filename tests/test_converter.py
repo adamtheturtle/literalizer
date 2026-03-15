@@ -62,7 +62,7 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
         (GO, '{true, nil, "hi", {1, 2}},'),
         (CPP, '{true, nullptr, "hi", {1, 2}},'),
-        (JAVA, '{true, null, "hi", {1, 2}},'),
+        (JAVA, '{true, null, "hi", {1, 2}}'),
         (CSHARP, '(true, null, "hi", (1, 2)),'),
         (RUBY, '[true, nil, "hi", [1, 2]],'),
         (KOTLIN, 'listOf(true, null, "hi", listOf(1, 2)),'),
@@ -106,6 +106,22 @@ def test_dict_wrap() -> None:
             "a": 1,
             "b": 2,
         }"""
+    )
+    assert result == expected
+
+
+def test_java_dict_wrap_no_trailing_comma() -> None:
+    """Java Map.ofEntries() must not have a trailing comma before the
+    closing paren.
+    """
+    data = {"name": "Alice", "age": 30}
+    result = literalize(data=data, language=JAVA, prefix="", wrap=True)
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("name", "Alice"),
+            Map.entry("age", 30)
+        )"""
     )
     assert result == expected
 

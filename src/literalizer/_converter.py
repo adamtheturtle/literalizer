@@ -326,6 +326,11 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def trailing_comma(self) -> bool:
+        """Whether to append a trailing comma after the last entry."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a
         string literal.
@@ -351,6 +356,7 @@ class LanguageSpec:
     dict_open: str = "{"
     dict_close: str = "}"
     format_dict_entry: Callable[[str, str], str] | None = None
+    trailing_comma: bool = True
     format_date: Callable[[datetime.date], str] = format_date_iso
     format_datetime: Callable[[datetime.datetime], str] = format_datetime_iso
 
@@ -443,6 +449,7 @@ JAVA = LanguageSpec(
     dict_open="Map.ofEntries(",
     dict_close=")",
     format_dict_entry=_format_java_dict_entry,
+    trailing_comma=False,
 )
 
 KOTLIN = LanguageSpec(
@@ -571,17 +578,23 @@ def literalize(
     lines: list[str] = []
 
     if isinstance(data, dict):
-        for k, v in data.items():
+        entries = list(data.items())
+        for i, (k, v) in enumerate(entries):
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             entry = _build_dict_entry(
                 key_str=formatted_key, val_str=formatted_val, spec=spec
             )
-            lines.append(f"{effective_prefix}{entry},")
+            is_last = i == len(entries) - 1
+            comma = "" if is_last and not spec.trailing_comma else ","
+            lines.append(f"{effective_prefix}{entry}{comma}")
     else:
-        for item in data:
+        items = list(data)
+        for i, item in enumerate(items):
             formatted = _format_value(value=item, spec=spec)
-            lines.append(f"{effective_prefix}{formatted},")
+            is_last = i == len(items) - 1
+            comma = "" if is_last and not spec.trailing_comma else ","
+            lines.append(f"{effective_prefix}{formatted}{comma}")
 
     body = "\n".join(lines)
 
