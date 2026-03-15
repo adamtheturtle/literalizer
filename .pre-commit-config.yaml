@@ -11,6 +11,7 @@ ci:
     - interrogate
     - interrogate-docs
     - javascript-syntax-check
+    - typescript-syntax-check
     - linkcheck
     - mypy
     - mypy-docs
@@ -372,6 +373,17 @@ repos:
         types: [javascript]
         # Restrict to golden files: the script wraps content in void(...)
         # which only works for bare object/array literals, not full JS files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: typescript-syntax-check
+        name: TypeScript syntax check
+        entry: uv run python check_ts_golden_syntax.py
+        language: python
+        types: [ts]
+        # Restrict to golden files: the script wraps content in void(...)
+        # which only works for bare object/array literals, not full TS files.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
