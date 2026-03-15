@@ -9,7 +9,6 @@ from io import StringIO
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 import ruamel.yaml
-import yaml
 from beartype import BeartypeConf, beartype
 
 if TYPE_CHECKING:
@@ -612,9 +611,10 @@ def _find_inline_comment(*, line: str) -> str:
     in_single = False
     in_double = False
     for i, char in enumerate(iterable=line):
-        if char == "'" and not in_double:
+        escaped = i > 0 and line[i - 1] == "\\"
+        if char == "'" and not in_double and not escaped:
             in_single = not in_single
-        elif char == '"' and not in_single:
+        elif char == '"' and not in_single and not escaped:
             in_double = not in_double
         elif (
             char == "#"
@@ -630,6 +630,21 @@ def _find_inline_comment(*, line: str) -> str:
 _ruamel_yaml: Any = ruamel.yaml.YAML()
 
 
+def _strip_comment_marker(*, text: str) -> str:
+    """Strip the leading ``#`` and one optional space from a comment line.
+
+    Only the first ``#`` is removed so that ``## heading`` becomes
+    ``# heading`` rather than ``heading``.
+
+    The caller must ensure *text* starts with ``#`` (after stripping
+    whitespace).
+    """
+    after_hash = text.strip()[1:]
+    if after_hash.startswith(" "):
+        return after_hash[1:]
+    return after_hash
+
+
 def _token_comment_lines(*, value: str) -> list[str]:
     r"""Extract comment text lines from a ruamel.yaml token value.
 
@@ -637,7 +652,7 @@ def _token_comment_lines(*, value: str) -> list[str]:
     ``"# line1\n# line2\n"``.
     """
     return [
-        line.strip().lstrip("#").strip()
+        _strip_comment_marker(text=line)
         for line in value.split(sep="\n")
         if line.strip().startswith("#")
     ]
@@ -661,12 +676,12 @@ def _parse_after_token(
 
     if col > 0 and lines:
         first = lines[0].strip()
-        if first.startswith("#"):
-            inline = first.lstrip("#").strip()
+        if first.startswith("#"):  # pragma: no branch
+            inline = _strip_comment_marker(text=first)
         start = 1
 
     before_next = [
-        line.strip().lstrip("#").strip()
+        _strip_comment_marker(text=line)
         for line in lines[start:]
         if line.strip().startswith("#")
     ]
@@ -691,7 +706,7 @@ def _extract_yaml_comments(
         stream=StringIO(initial_value=yaml_string),
     )
 
-    if not hasattr(ruamel_data, "ca"):
+    if not hasattr(ruamel_data, "ca"):  # pragma: no cover
         return (), ()
 
     ca = ruamel_data.ca
@@ -764,7 +779,7 @@ def _literalize_yaml_scalar(
         if not stripped or stripped in {"---", "..."}:
             continue
         if stripped.startswith("#"):
-            before_comments.append(stripped[1:].strip())
+            before_comments.append(_strip_comment_marker(text=stripped))
             continue
         inline = _find_inline_comment(line=line)
         break
@@ -880,9 +895,10 @@ def literalize_yaml(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        yaml.YAMLError: If *yaml_string* is not valid YAML.
+        ruamel.yaml.YAMLError: If *yaml_string* is not valid YAML.
     """
-    data = yaml.safe_load(stream=yaml_string)
+    _safe_yaml: Any = ruamel.yaml.YAML(typ="safe")
+    data = _safe_yaml.load(stream=yaml_string)
     base = literalize(
         data=data,
         language=language,

@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import ast
 import datetime
+import io
 import json
 import textwrap
 from typing import Any
 
 import pytest
-import yaml
+import ruamel.yaml
 from beartype.roar import BeartypeCallHintParamViolation
 from hypothesis import given
 from hypothesis import strategies as st
-from ruamel.yaml.error import FileMark
-from ruamel.yaml.tokens import CommentToken
+from ruamel.yaml.error import YAMLError
 
 from literalizer import (
     CPP,
@@ -51,10 +51,6 @@ from literalizer import (
     literalize,
     literalize_json,
     literalize_yaml,
-)
-from literalizer._converter import (
-    _extract_yaml_comments,  # pyright: ignore[reportPrivateUsage]
-    _parse_after_token,  # pyright: ignore[reportPrivateUsage]
 )
 
 
@@ -574,13 +570,20 @@ def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
 
 
 # Dates and datetimes are tested as their own types below because
+# Exclude Unicode whitespace characters that YAML normalizes on round-trip.
+_yaml_safe_text = st.text(
+    alphabet=st.characters(
+        exclude_categories=("Zl", "Zp", "Cc", "Cs"),
+    ),
+)
+
 # yaml.safe_load parses them into date/datetime objects.
 yaml_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
     | st.floats(allow_nan=False, allow_infinity=False)
-    | st.text()
+    | _yaml_safe_text
     | st.dates()
     | st.datetimes()
 )
@@ -589,18 +592,33 @@ yaml_values: st.SearchStrategy[Any] = st.recursive(
     base=yaml_scalars,
     extend=lambda children: (
         st.lists(elements=children)
-        | st.dictionaries(keys=st.text(), values=children)
+        | st.dictionaries(keys=_yaml_safe_text, values=children)
     ),
 )
 
 yaml_arrays = st.lists(elements=yaml_values, max_size=10)
-yaml_objects = st.dictionaries(keys=st.text(), values=yaml_values, max_size=10)
+yaml_objects = st.dictionaries(
+    keys=_yaml_safe_text,
+    values=yaml_values,
+    max_size=10,
+)
+
+
+def _dump_yaml(*, data: object) -> str:
+    """Dump data to a YAML string using the ruamel.yaml safe dumper."""
+    yaml_dumper: Any = ruamel.yaml.YAML(typ="safe")
+    yaml_dumper.default_flow_style = False
+    yaml_dumper.sort_base_mapping_type_on_output = False
+    stream = io.StringIO()
+    yaml_dumper.dump(data=data, stream=stream)
+    result: str = stream.getvalue()
+    return result
 
 
 @given(data=yaml_arrays)
 def test_roundtrip_yaml_array(data: list[Any]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for arrays."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _dump_yaml(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -619,7 +637,7 @@ def test_roundtrip_yaml_array(data: list[Any]) -> None:
 @given(data=yaml_objects)
 def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for objects."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _dump_yaml(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -638,7 +656,7 @@ def test_roundtrip_yaml_object(data: dict[str, Any]) -> None:
 @given(data=yaml_scalars)
 def test_roundtrip_yaml_scalar(data: _JSONScalar) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _dump_yaml(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -682,7 +700,7 @@ def test_literalize_yaml_mapping() -> None:
 
 def test_literalize_yaml_invalid() -> None:
     """``literalize_yaml`` raises on invalid YAML."""
-    with pytest.raises(expected_exception=yaml.YAMLError):
+    with pytest.raises(expected_exception=YAMLError):
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
@@ -1224,6 +1242,56 @@ def test_comment_prefix_go() -> None:
     assert GO.comment_prefix == "//"
 
 
+def test_yaml_comment_escaped_quote_in_value() -> None:
+    """Escaped quotes do not end the quoted context."""
+    yaml_string = 'key: "value \\" # not a comment" # real\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "key": "value \\" # not a comment",  # real
+        }"""
+    )
+    assert result == expected
+
+
+def test_yaml_comment_scalar_quoted_with_hash() -> None:
+    """Inline comment after a quoted scalar containing ``#``."""
+    yaml_string = '"hello # world"  # note\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    expected = '"hello # world"  # note'
+    assert result == expected
+
+
+def test_yaml_comment_double_hash() -> None:
+    """Double-hash comments preserve the extra ``#``."""
+    yaml_string = "## section\n- a\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        [
+            # # section
+            "a",
+        ]"""
+    )
+    assert result == expected
+
+
 def test_yaml_comment_block_scalar_not_extracted() -> None:
     """Text inside a block scalar is not mistaken for a comment."""
     yaml_string = "description: |\n  # not a comment\nname: foo\n"
@@ -1248,8 +1316,8 @@ def test_yaml_comment_scalar_with_document_markers() -> None:
         prefix="",
         wrap=True,
     )
-    assert "# note" in result
-    assert "42" in result
+    expected = "# note\n42"
+    assert result == expected
 
 
 def test_yaml_comment_empty_comment_line() -> None:
@@ -1261,8 +1329,15 @@ def test_yaml_comment_empty_comment_line() -> None:
         prefix="",
         wrap=True,
     )
-    # The empty comment becomes just the prefix character.
-    assert "#\n" in result or "# \n" not in result
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "a",
+            #
+            "b",
+        ]"""
+    )
+    assert result == expected
 
 
 def test_yaml_comment_more_body_lines_than_comments() -> None:
@@ -1274,20 +1349,15 @@ def test_yaml_comment_more_body_lines_than_comments() -> None:
         prefix="",
         wrap=True,
     )
-    # All three elements appear in the output, no comments.
-    assert '"a"' in result
-    assert '"b"' in result
-    assert '"c"' in result
-
-
-def test_extract_yaml_comments_scalar_yaml() -> None:
-    """Scalar YAML has no ``ca`` attribute, returns empty."""
-    elements, trailing = _extract_yaml_comments(
-        yaml_string="42\n",
-        is_sequence=True,
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "a",
+            "b",
+            "c",
+        ]"""
     )
-    assert not elements
-    assert not trailing
+    assert result == expected
 
 
 def test_yaml_comment_scalar_only_comments() -> None:
@@ -1299,8 +1369,8 @@ def test_yaml_comment_scalar_only_comments() -> None:
         prefix="",
         wrap=True,
     )
-    # The underlying data is None, so we get the base rendering.
-    assert result is not None
+    expected = "# just a comment\nNone"
+    assert result == expected
 
 
 def test_yaml_comment_mapping_nested_value_none_token() -> None:
@@ -1312,18 +1382,11 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
         prefix="",
         wrap=True,
     )
-    assert '"a"' in result
-    assert '"b"' in result
-
-
-def test_parse_after_token_col_no_hash() -> None:
-    """Token with col > 0 but no ``#`` produces no inline."""
-    mark = FileMark(name="test", index=0, line=0, column=5)
-    token = CommentToken(
-        value="text\n",
-        start_mark=mark,
-        end_mark=None,
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "a": {"x": 1},
+            "b": 2,
+        }"""
     )
-    inline, before = _parse_after_token(token=token)
-    assert inline == ""
-    assert before == []
+    assert result == expected
