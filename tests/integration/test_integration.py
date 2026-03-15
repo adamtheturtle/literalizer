@@ -45,6 +45,7 @@ def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     return f"""\
 import java.util.Map;
+import java.util.Set;
 class Check {{
     Object x = {content};
 }}"""
