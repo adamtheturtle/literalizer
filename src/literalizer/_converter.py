@@ -458,7 +458,7 @@ JAVA = LanguageSpec(
     null_literal="null",
     true_literal="true",
     false_literal="false",
-    collection_open="{",
+    collection_open="new Object[]{",
     collection_close="}",
     dict_separator=": ",
     dict_open="Map.ofEntries(",
@@ -471,10 +471,10 @@ KOTLIN = LanguageSpec(
     null_literal="null",
     true_literal="true",
     false_literal="false",
-    collection_open="listOf(",
+    collection_open="listOf<Any?>(",
     collection_close=")",
     dict_separator=" to ",
-    dict_open="mapOf(",
+    dict_open="mapOf<String, Any?>(",
     dict_close=")",
 )
 
