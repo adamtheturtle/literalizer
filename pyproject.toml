@@ -278,15 +278,36 @@ report.show_missing = true
 [tool.mypy]
 strict = true
 files = [ "." ]
-exclude = [ "build" ]
+exclude = [
+    "build",
+    "tests/integration/empty_list",
+    "tests/integration/nested",
+    "tests/integration/scalars",
+    "tests/integration/simple_dict",
+    "tests/integration/simple_list",
+]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
+exclude = [
+    "tests/integration/empty_list",
+    "tests/integration/nested",
+    "tests/integration/scalars",
+    "tests/integration/simple_dict",
+    "tests/integration/simple_list",
+]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
+exclude = [
+    "tests/integration/empty_list",
+    "tests/integration/nested",
+    "tests/integration/scalars",
+    "tests/integration/simple_dict",
+    "tests/integration/simple_list",
+]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 
@@ -365,6 +386,11 @@ ignore_names = [
 # Duplicate some of .gitignore
 exclude = [
     ".venv",
+    "tests/integration/empty_list",
+    "tests/integration/nested",
+    "tests/integration/scalars",
+    "tests/integration/simple_dict",
+    "tests/integration/simple_list",
 ]
 
 [tool.yamlfix]
