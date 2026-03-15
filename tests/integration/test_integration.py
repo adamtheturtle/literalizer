@@ -2,7 +2,8 @@
 files.
 
 Each subdirectory contains an ``input.yaml`` and one expected-output file
-per supported language, using the real file extension for that language.
+per supported language per supported formatter pair, using the real file
+extension for that language.
 
 Golden files contain syntactically valid programs so that pre-commit hooks
 can syntax-check them directly without additional wrapping.
@@ -10,6 +11,7 @@ can syntax-check them directly without additional wrapping.
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -19,6 +21,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import literalizer
 
 if TYPE_CHECKING:
+    import datetime
     from collections.abc import Callable
 
 _CASES_DIR = Path(__file__).parent / "cases"
@@ -44,6 +47,10 @@ def _wrap_go(content: str) -> str:
 def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     return f"""\
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 class Check {{
     Object x = {content};
@@ -52,7 +59,11 @@ class Check {{
 
 def _wrap_kotlin(content: str) -> str:
     """Wrap in a Kotlin variable assignment."""
-    return f"val x: Any? = {content}"
+    return (
+        "import java.time.LocalDate\n"
+        "import java.time.LocalDateTime\n"
+        f"val x: Any? = {content}"
+    )
 
 
 def _wrap_cpp(content: str) -> str:
@@ -60,6 +71,7 @@ def _wrap_cpp(content: str) -> str:
     initialization.
     """
     return (
+        "#include <chrono>\n"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
         "struct _Any {\n"
@@ -104,14 +116,136 @@ _WRAPPERS: dict[str, Callable[[str], str]] = {
 }
 
 
-def _discover_cases() -> list[tuple[str, str, Path]]:
-    """Return ``(case_name, language, input_path)`` tuples."""
-    cases: list[tuple[str, str, Path]] = []
+@dataclasses.dataclass(frozen=True)
+class _FormatterPair:
+    """A named pair of date and datetime format functions."""
+
+    name: str
+    format_date: Callable[[datetime.date], str]
+    format_datetime: Callable[[datetime.datetime], str]
+
+
+_LANGUAGE_FORMATTERS: dict[str, list[_FormatterPair]] = {
+    "python": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "python",
+            literalizer.format_date_python,
+            literalizer.format_datetime_python,
+        ),
+    ],
+    "javascript": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "js",
+            literalizer.format_date_js,
+            literalizer.format_datetime_js,
+        ),
+    ],
+    "typescript": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "js",
+            literalizer.format_date_js,
+            literalizer.format_datetime_js,
+        ),
+    ],
+    "ruby": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "ruby",
+            literalizer.format_date_ruby,
+            literalizer.format_datetime_ruby,
+        ),
+    ],
+    "go": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "go",
+            literalizer.format_date_go,
+            literalizer.format_datetime_go,
+        ),
+    ],
+    "java": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "java_instant",
+            literalizer.format_date_java,
+            literalizer.format_datetime_java_instant,
+        ),
+        _FormatterPair(
+            "java_zoned",
+            literalizer.format_date_java,
+            literalizer.format_datetime_java_zoned,
+        ),
+    ],
+    "kotlin": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "kotlin",
+            literalizer.format_date_kotlin,
+            literalizer.format_datetime_kotlin,
+        ),
+    ],
+    "csharp": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+        _FormatterPair(
+            "csharp",
+            literalizer.format_date_csharp,
+            literalizer.format_datetime_csharp,
+        ),
+    ],
+    "cpp": [
+        _FormatterPair(
+            "iso",
+            literalizer.format_date_iso,
+            literalizer.format_datetime_iso,
+        ),
+    ],
+}
+
+
+def _discover_cases() -> list[tuple[str, str, str, Path]]:
+    """Return ``(case_name, language, formatter_name, input_path)`` tuples."""
+    cases: list[tuple[str, str, str, Path]] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
-        cases.extend(
-            (case_dir.name, lang_name, case_dir / "input.yaml")
-            for lang_name in _LANGUAGES
-        )
+        for lang_name, formatter_pairs in _LANGUAGE_FORMATTERS.items():
+            cases.extend(
+                (case_dir.name, lang_name, fp.name, case_dir / "input.yaml")
+                for fp in formatter_pairs
+            )
     return cases
 
 
@@ -119,18 +253,26 @@ _CASES = _discover_cases()
 
 
 @pytest.mark.parametrize(
-    argnames=("_case_name", "language", "input_path"),
+    argnames=("_case_name", "language", "formatter_name", "input_path"),
     argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
+    ids=[f"{c[0]}/{c[1]}/{c[2]}" for c in _CASES],
 )
 def test_golden_file(
     _case_name: str,
     language: str,
+    formatter_name: str,
     input_path: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
-    spec, extension = _LANGUAGES[language]
+    base_spec, extension = _LANGUAGES[language]
+    formatters = _LANGUAGE_FORMATTERS[language]
+    formatter_pair = next(fp for fp in formatters if fp.name == formatter_name)
+    spec = dataclasses.replace(
+        base_spec,
+        format_date=formatter_pair.format_date,
+        format_datetime=formatter_pair.format_datetime,
+    )
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
@@ -139,8 +281,9 @@ def test_golden_file(
         wrap=True,
     )
     wrapped = _WRAPPERS[language](result)
+    filename = f"{language}_{formatter_name}{extension}"
     file_regression.check(
         contents=wrapped + "\n",
         extension=extension,
-        fullpath=input_path.parent / (language + extension),
+        fullpath=input_path.parent / filename,
     )
