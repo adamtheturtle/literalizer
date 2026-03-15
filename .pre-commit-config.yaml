@@ -373,24 +373,16 @@ repos:
 
       - id: go-golden-syntax-check
         name: Go golden file syntax check
-        entry: uv run python check_go_golden_syntax.py
-        language: python
+        entry: gofmt -e
+        language: system
         types: [go]
-        # Restrict to golden files: the script wraps bare composite literals
-        # in a typed variable declaration, which only works for these files.
-        files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: javascript-syntax-check
         name: JavaScript syntax check
-        entry: uv run python check_js_golden_syntax.py
-        language: python
+        entry: node --check
+        language: system
         types: [javascript]
-        # Restrict to golden files: the script wraps content in void(...)
-        # which only works for bare object/array literals, not full JS files.
-        files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: typescript-syntax-check
@@ -398,8 +390,6 @@ repos:
         entry: uv run python check_ts_golden_syntax.py
         language: python
         types: [ts]
-        # Restrict to golden files: the script wraps content in void(...)
-        # which only works for bare object/array literals, not full TS files.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
@@ -409,21 +399,15 @@ repos:
         entry: uv run python check_java_golden_syntax.py
         language: python
         types: [java]
-        # Restrict to golden files: the script wraps bare expressions
-        # in a class with imports, which only works for these files.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: cpp-golden-syntax-check
         name: C++ golden file syntax check
-        entry: uv run python check_cpp_golden_syntax.py
-        language: python
+        entry: clang++ -fsyntax-only -std=c++17
+        language: system
         types: [c++]
-        # Restrict to golden files: the script wraps bare initializer lists
-        # in a struct-based wrapper, which only works for these files.
-        files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: kotlin-syntax-check
@@ -431,8 +415,6 @@ repos:
         entry: uv run python check_kotlin_golden_syntax.py
         language: python
         types: [kotlin]
-        # Restrict to golden files: the script wraps the expression in
-        # a val declaration before checking with ``kotlinc``.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
@@ -442,9 +424,6 @@ repos:
         entry: uv run python check_csharp_golden_syntax.py
         language: python
         types: [c#]
-        # Restrict to golden files: the script wraps the expression in
-        # a var declaration and fixes up trailing commas and null types
-        # before checking with ``dotnet build``.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]

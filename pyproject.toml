@@ -245,8 +245,10 @@ ignore = [
     "tests",
     "tests/**",
     "zizmor.yml",
-    "check_go_golden_syntax.py",
-    "check_js_golden_syntax.py",
+    "check_csharp_golden_syntax.py",
+    "check_java_golden_syntax.py",
+    "check_kotlin_golden_syntax.py",
+    "check_ts_golden_syntax.py",
 ]
 
 [tool.deptry]

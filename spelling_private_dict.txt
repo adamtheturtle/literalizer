@@ -3,6 +3,7 @@ beartype
 booleans
 Changelog
 chrono
+commonjs
 config
 CPP
 datetime
@@ -16,10 +17,13 @@ initializers
 javac
 json
 JSONDecodeError
+kotlinc
+kts
 subclasses
 literalize
 literalizer
 localhost
+natively
 NEL
 ofEntries
 paren
@@ -33,6 +37,7 @@ reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
 ruamel
+stdin
 struct
 yaml
 YAMLError

@@ -1,3 +1,4 @@
+void (
 {
     // Server configuration
     "host": "localhost",  // default host
@@ -5,3 +6,4 @@
     // Enable debug mode
     "debug": true,
 }
+)
