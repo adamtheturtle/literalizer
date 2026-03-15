@@ -84,7 +84,7 @@ _LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
     "python": (literalizer.PYTHON, ".py"),
     "javascript": (literalizer.JAVASCRIPT, ".js"),
     "typescript": (literalizer.TYPESCRIPT, ".ts"),
-    "kotlin": (literalizer.KOTLIN, ".kt"),
+    "kotlin": (literalizer.KOTLIN, ".kts"),
     "ruby": (literalizer.RUBY, ".rb"),
     "go": (literalizer.GO, ".go"),
     "java": (literalizer.JAVA, ".java"),
