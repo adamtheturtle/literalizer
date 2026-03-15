@@ -60,17 +60,18 @@ def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
     """
-    return textwrap.dedent(f"""\
-        #include <initializer_list>
-        #include <cstddef>
-        struct _Any {{
-            template<class T> _Any(T&&) noexcept {{}}
-            _Any(std::initializer_list<_Any>) noexcept {{}}
-        }};
-        void _check() {{
-            [[maybe_unused]] _Any _v = {content};
-        }}
-    """)
+    cpp_template = f"""\
+#include <initializer_list>
+#include <cstddef>
+struct _Any {{
+    template<class T> _Any(T&&) noexcept {{}}
+    _Any(std::initializer_list<_Any>) noexcept {{}}
+}};
+void _check() {{
+    [[maybe_unused]] _Any _v = {content};
+}}
+"""
+    return textwrap.dedent(cpp_template)
 
 
 def _wrap_csharp(content: str) -> str:
