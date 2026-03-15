@@ -1,7 +1,7 @@
-{
+Map.ofEntries(
     // Server configuration
-    "host": "localhost",  // default host
-    "port": 8080,
+    Map.entry("host", "localhost"),  // default host
+    Map.entry("port", 8080),
     // Enable debug mode
-    "debug": true,
-}
+    Map.entry("debug", true),
+)
