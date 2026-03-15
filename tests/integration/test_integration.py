@@ -66,5 +66,5 @@ def test_golden_file(
     file_regression.check(
         contents=result + "\n",
         extension=extension,
-        fullpath=input_path.parent / language,
+        fullpath=input_path.parent / (language + extension),
     )
