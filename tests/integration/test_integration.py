@@ -4,12 +4,14 @@ files.
 Each subdirectory contains an ``input.yaml`` and one expected-output file
 per supported language, using the real file extension for that language.
 
-Golden files contain syntactically valid programs so that pre-commit hooks
-can syntax-check them directly without additional wrapping.
+Golden files contain syntactically valid programs. Where a language runtime
+is available, syntax is also checked during the test run.
 """
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -79,6 +81,26 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+def _check_ts_syntax(content: str) -> None:
+    """Check TypeScript content is syntactically valid using ``node``."""
+    node = shutil.which(cmd="node")
+    if node is None:
+        pytest.skip("node not available")
+    result = subprocess.run(
+        args=[node, "--check", "--input-type=commonjs"],
+        input=content,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        pytest.fail(f"TypeScript syntax error:\n{result.stderr}")
+
+
+_SYNTAX_CHECKS: dict[str, Callable[[str], None]] = {
+    "typescript": _check_ts_syntax,
+}
+
 _LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
     "python": (literalizer.PYTHON, ".py"),
     "javascript": (literalizer.JAVASCRIPT, ".js"),
@@ -139,6 +161,9 @@ def test_golden_file(
         wrap=True,
     )
     wrapped = _WRAPPERS[language](result)
+    syntax_check = _SYNTAX_CHECKS.get(language)
+    if syntax_check is not None:
+        syntax_check(wrapped)
     file_regression.check(
         contents=wrapped + "\n",
         extension=extension,
