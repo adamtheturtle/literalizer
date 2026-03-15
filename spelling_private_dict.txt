@@ -19,6 +19,9 @@ pre
 prepended
 pyright
 pytest
+reportAttributeAccessIssue
+reportUnknownMemberType
 reportUnknownVariableType
+ruamel
 yaml
 YAMLError

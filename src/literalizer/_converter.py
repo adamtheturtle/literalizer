@@ -8,7 +8,9 @@ import json
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from beartype import BeartypeConf, beartype
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, YAMLError
+
+from literalizer.exceptions import JSONParseError, YAMLParseError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -567,9 +569,15 @@ def literalize_json(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        json.JSONDecodeError: If *json_string* is not valid JSON.
+        JSONParseError: If *json_string* is not valid JSON.
     """
-    data = json.loads(s=json_string)
+    try:
+        data = json.loads(s=json_string)
+    except json.JSONDecodeError as exc:
+        message = (
+            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
+        )
+        raise JSONParseError(message) from exc
     return literalize(
         data=data,
         language=language,
@@ -603,10 +611,14 @@ def literalize_yaml(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        ruamel.yaml.YAMLError: If *yaml_string* is not valid YAML.
+        YAMLParseError: If *yaml_string* is not valid YAML.
     """
     ruamel_yaml = YAML(typ="safe")
-    data = ruamel_yaml.load(stream=yaml_string)  # pyright: ignore[reportUnknownMemberType]
+    try:
+        data = ruamel_yaml.load(stream=yaml_string)  # pyright: ignore[reportUnknownMemberType]
+    except YAMLError as exc:
+        message = f"Invalid YAML: {exc}"
+        raise YAMLParseError(message) from exc
     return literalize(
         data=data,
         language=language,
