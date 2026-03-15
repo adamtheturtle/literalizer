@@ -96,7 +96,7 @@ repos:
         entry: uv run --extra=dev pydocstringformatter
         language: python
         types_or: [python]
-        exclude: ^tests/integration/(?!test_)
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -246,7 +246,7 @@ repos:
         entry: uv run --extra=dev -m ruff check --fix
         language: python
         types_or: [python]
-        exclude: ^tests/integration/(?!test_)
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -263,7 +263,7 @@ repos:
         entry: uv run --extra=dev -m ruff format
         language: python
         types_or: [python]
-        exclude: ^tests/integration/(?!test_)
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -289,7 +289,7 @@ repos:
         entry: uv run --extra=dev -m interrogate
         language: python
         types_or: [python]
-        exclude: ^tests/integration/(?!test_)
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 

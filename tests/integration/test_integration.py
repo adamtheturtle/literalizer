@@ -14,7 +14,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 
-_INTEGRATION_DIR = Path(__file__).parent
+_CASES_DIR = Path(__file__).parent / "cases"
 
 _LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
     "python": (literalizer.PYTHON, ".py"),
@@ -32,7 +32,7 @@ _LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
 def _discover_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples."""
     cases: list[tuple[str, str, Path]] = []
-    for case_dir in sorted(_INTEGRATION_DIR.iterdir()):
+    for case_dir in sorted(_CASES_DIR.iterdir()):
         input_path = case_dir / "input.yaml"
         if not input_path.is_file():
             continue

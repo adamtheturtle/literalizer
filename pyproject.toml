@@ -109,7 +109,7 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow asserts in docs.
     "S101",
 ]
-lint.per-file-ignores."tests/integration/*/*.py" = [ "ALL" ]
+lint.per-file-ignores."tests/integration/cases/**/*.py" = [ "ALL" ]
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
@@ -264,11 +264,7 @@ ini_options.log_cli = true
 [tool.coverage]
 run.branch = true
 run.omit = [
-    "tests/integration/empty_list/*.py",
-    "tests/integration/nested/*.py",
-    "tests/integration/scalars/*.py",
-    "tests/integration/simple_dict/*.py",
-    "tests/integration/simple_list/*.py",
+    "tests/integration/cases/**/*.py",
 ]
 report.exclude_also = [
     "if TYPE_CHECKING:",
@@ -280,11 +276,7 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
-    "tests/integration/empty_list",
-    "tests/integration/nested",
-    "tests/integration/scalars",
-    "tests/integration/simple_dict",
-    "tests/integration/simple_list",
+    "tests/integration/cases",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
@@ -292,22 +284,14 @@ follow_untyped_imports = true
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
 exclude = [
-    "tests/integration/empty_list",
-    "tests/integration/nested",
-    "tests/integration/scalars",
-    "tests/integration/simple_dict",
-    "tests/integration/simple_list",
+    "tests/integration/cases",
 ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
-    "tests/integration/empty_list",
-    "tests/integration/nested",
-    "tests/integration/scalars",
-    "tests/integration/simple_dict",
-    "tests/integration/simple_list",
+    "tests/integration/cases",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
@@ -332,11 +316,7 @@ fail-under = 100
 omit-covered-files = true
 verbose = 2
 exclude = [
-    "tests/integration/empty_list",
-    "tests/integration/nested",
-    "tests/integration/scalars",
-    "tests/integration/simple_dict",
-    "tests/integration/simple_list",
+    "tests/integration/cases",
 ]
 
 [tool.pydocstringformatter]
@@ -387,11 +367,7 @@ ignore_names = [
 # Duplicate some of .gitignore
 exclude = [
     ".venv",
-    "tests/integration/empty_list",
-    "tests/integration/nested",
-    "tests/integration/scalars",
-    "tests/integration/simple_dict",
-    "tests/integration/simple_list",
+    "tests/integration/cases",
 ]
 
 [tool.yamlfix]
