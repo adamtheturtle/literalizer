@@ -392,6 +392,10 @@ def test_custom_language() -> None:
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
         empty_collection=None,
+        set_open="<",
+        set_close=">",
+        empty_set=None,
+        format_set_entry=None,
         comment_prefix="//",
     )
     result = literalize_json(
@@ -875,6 +879,10 @@ def test_custom_format_date() -> None:
         format_date=format_date_python,
         format_datetime=format_datetime_iso,
         empty_collection=None,
+        set_open="{",
+        set_close="}",
+        empty_set="set()",
+        format_set_entry=None,
         comment_prefix="//",
     )
     result = literalize_yaml(
@@ -903,6 +911,10 @@ def test_custom_format_datetime() -> None:
         format_date=format_date_iso,
         format_datetime=format_datetime_python,
         empty_collection=None,
+        set_open="{",
+        set_close="}",
+        empty_set="set()",
+        format_set_entry=None,
         comment_prefix="//",
     )
     result = literalize_yaml(
@@ -931,6 +943,10 @@ def test_java_native_dates() -> None:
         format_date=format_date_java,
         format_datetime=format_datetime_java_instant,
         empty_collection=None,
+        set_open="Set.of(",
+        set_close=")",
+        empty_set=None,
+        format_set_entry=None,
         comment_prefix="//",
     )
     result = literalize_yaml(
@@ -961,6 +977,10 @@ def test_ruby_native_dates() -> None:
         format_date=format_date_ruby,
         format_datetime=format_datetime_ruby,
         empty_collection=None,
+        set_open="Set.new([",
+        set_close="])",
+        empty_set="Set.new",
+        format_set_entry=None,
         comment_prefix="#",
     )
     result = literalize_yaml(
@@ -970,6 +990,41 @@ def test_ruby_native_dates() -> None:
         wrap=False,
     )
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
+
+
+def test_yaml_set_inline_in_list() -> None:
+    """A !!set nested in a list is formatted inline using set
+    delimiters.
+    """
+    result = literalize_yaml(
+        yaml_string="- !!set\n  ? a\n  ? b\n",
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '{"a", "b"},'
+
+
+def test_yaml_set_inline_with_format_set_entry() -> None:
+    """A !!set nested in a list uses format_set_entry when provided."""
+    result = literalize_yaml(
+        yaml_string="- !!set\n  ? a\n",
+        language=GO,
+        prefix="",
+        wrap=False,
+    )
+    assert result == 'map[any]struct{}{"a": struct{}{}},'
+
+
+def test_yaml_empty_set_inline() -> None:
+    """An empty !!set nested in a list uses empty_set override."""
+    result = literalize_yaml(
+        yaml_string="- !!set {}\n",
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == "set(),"
 
 
 def test_default_format_date_is_iso() -> None:
