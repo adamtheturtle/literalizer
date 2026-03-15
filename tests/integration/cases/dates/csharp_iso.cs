@@ -1,0 +1,5 @@
+using System.Collections.Generic;
+var x = (
+    "2024-01-15",
+    "2024-01-15T12:30:00"
+);
