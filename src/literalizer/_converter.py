@@ -614,6 +614,11 @@ class _ElementComments:
 def _find_inline_comment(*, line: str) -> str:
     """Return the inline comment text from a YAML line.
 
+    This is used only for scalar YAML values, where *ruamel.yaml*'s
+    round-trip loader returns a plain Python object with no comment
+    metadata.  For collections, comment extraction is handled by
+    :func:`_extract_yaml_comments` via *ruamel.yaml*'s ``ca`` API.
+
     Returns an empty string when no inline comment is present.
     YAML requires a space before ``#`` for an inline comment.
     """
@@ -684,9 +689,7 @@ def _parse_after_token(
     start = 0
 
     if col > 0 and lines:
-        first = lines[0].strip()
-        if first.startswith("#"):  # pragma: no branch
-            inline = _strip_comment_marker(text=first)
+        inline = _strip_comment_marker(text=lines[0])
         start = 1
 
     before_next = [
@@ -702,11 +705,13 @@ def _extract_yaml_comments(
     yaml_string: str,
     is_sequence: bool,
 ) -> tuple[tuple[_ElementComments, ...], tuple[str, ...]]:
-    """Extract top-level comments from a YAML string.
+    """Extract top-level comments from a YAML collection string.
 
-    Uses *ruamel.yaml*'s round-trip loader which preserves
-    comment metadata in :class:`CommentedSeq` /
-    :class:`CommentedMap` objects.
+    Only works for sequences and mappings — *ruamel.yaml*'s
+    round-trip loader preserves comment metadata in
+    :class:`CommentedSeq` / :class:`CommentedMap` objects.
+    Scalar values do not carry this metadata; use
+    :func:`_literalize_yaml_scalar` for those.
 
     Returns a tuple of per-element comments (aligned with data
     elements) and any trailing comments after the last element.
@@ -714,9 +719,6 @@ def _extract_yaml_comments(
     ruamel_data = _ruamel_yaml.load(
         stream=StringIO(initial_value=yaml_string),
     )
-
-    if not hasattr(ruamel_data, "ca"):  # pragma: no cover
-        return (), ()
 
     ca = ruamel_data.ca
 
@@ -780,7 +782,13 @@ def _literalize_yaml_scalar(
     comment_prefix: str,
     prefix: str,
 ) -> str:
-    """Preserve comments for scalar YAML values."""
+    """Preserve comments for scalar YAML values.
+
+    Scalars (int, str, bool, etc.) lose comment metadata in
+    *ruamel.yaml*'s round-trip loader, so this function parses
+    the raw YAML text to find comments.  Collection values use
+    :func:`_extract_yaml_comments` instead.
+    """
     before_comments: list[str] = []
     inline = ""
     for line in yaml_string.splitlines():
