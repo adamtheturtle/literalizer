@@ -7,11 +7,12 @@ import datetime
 import json
 from collections.abc import Iterable  # noqa: TC003
 from io import StringIO
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 from ruamel.yaml.tokens import CommentToken  # noqa: TC002
 
@@ -362,6 +363,28 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def omap_open(self) -> str | None:
+        """The opening delimiter for ordered-map literals, or ``None``
+        to fall back to regular dict formatting.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def omap_close(self) -> str | None:
+        """The closing delimiter for ordered-map literals, or ``None``
+        to fall back to regular dict formatting.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_omap_entry(self) -> Callable[[str, str], str] | None:
+        """Callable that formats one ordered-map entry from a
+        pre-formatted key and value string.  Must not be ``None`` when
+        ``omap_open`` is not ``None``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -387,6 +410,14 @@ class LanguageSpec:
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
     comment_prefix: str
+    omap_open: str | None = None
+    omap_close: str | None = None
+    format_omap_entry: Callable[[str, str], str] | None = None
+
+
+def _format_python_omap_entry(key: str, value: str) -> str:
+    """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
+    return f"({key}, {value})"
 
 
 PYTHON = LanguageSpec(
@@ -405,11 +436,19 @@ PYTHON = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="#",
+    omap_open="OrderedDict([",
+    omap_close="])",
+    format_omap_entry=_format_python_omap_entry,
 )
 
 
 def _format_csharp_dict_entry(key: str, value: str) -> str:
     """Format a C# dictionary indexer entry."""
+    return f"[{key}] = {value}"
+
+
+def _format_csharp_omap_entry(key: str, value: str) -> str:
+    """Format a C# ordered-dict entry as an indexer assignment."""
     return f"[{key}] = {value}"
 
 
@@ -429,7 +468,16 @@ CSHARP = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
     comment_prefix="//",
+    omap_open="new Dictionary<string, object> {",
+    omap_close="}",
+    format_omap_entry=_format_csharp_omap_entry,
 )
+
+
+def _format_js_omap_entry(key: str, value: str) -> str:
+    """Format a JavaScript/TypeScript ordered-map entry."""
+    return f"{key}: {value}"
+
 
 JAVASCRIPT = LanguageSpec(
     null_literal="null",
@@ -447,6 +495,9 @@ JAVASCRIPT = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="//",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_js_omap_entry,
 )
 
 TYPESCRIPT = LanguageSpec(
@@ -465,7 +516,16 @@ TYPESCRIPT = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="//",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_js_omap_entry,
 )
+
+
+def _format_ruby_omap_entry(key: str, value: str) -> str:
+    """Format a Ruby ordered-map entry."""
+    return f"{key} => {value}"
+
 
 RUBY = LanguageSpec(
     null_literal="nil",
@@ -483,7 +543,16 @@ RUBY = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="#",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_ruby_omap_entry,
 )
+
+
+def _format_go_omap_entry(key: str, value: str) -> str:
+    """Format a Go ordered-map entry."""
+    return f"{key}: {value}"
+
 
 GO = LanguageSpec(
     null_literal="nil",
@@ -501,7 +570,15 @@ GO = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="//",
+    omap_open="map[string]any{",
+    omap_close="}",
+    format_omap_entry=_format_go_omap_entry,
 )
+
+
+def _format_cpp_omap_entry(key: str, value: str) -> str:
+    """Format a C++ ordered-map entry as a brace-enclosed pair."""
+    return f"{{{key}, {value}}}"
 
 
 def _format_cpp_dict_entry(key: str, value: str) -> str:
@@ -525,11 +602,19 @@ CPP = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="//",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_cpp_omap_entry,
 )
 
 
 def _format_java_dict_entry(key: str, value: str) -> str:
     """Format a Java ``Map.entry(key, value)`` call."""
+    return f"Map.entry({key}, {value})"
+
+
+def _format_java_omap_entry(key: str, value: str) -> str:
+    """Format a Java ordered-map entry as a ``Map.entry(key, value)`` call."""
     return f"Map.entry({key}, {value})"
 
 
@@ -549,7 +634,16 @@ JAVA = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="//",
+    omap_open="Map.ofEntries(",
+    omap_close=")",
+    format_omap_entry=_format_java_omap_entry,
 )
+
+
+def _format_kotlin_omap_entry(key: str, value: str) -> str:
+    """Format a Kotlin ordered-map entry."""
+    return f"{key} to {value}"
+
 
 KOTLIN = LanguageSpec(
     null_literal="null",
@@ -567,6 +661,9 @@ KOTLIN = LanguageSpec(
     format_datetime=format_datetime_iso,
     empty_collection=None,
     comment_prefix="//",
+    omap_open="linkedMapOf<String, Any?>(",
+    omap_close=")",
+    format_omap_entry=_format_kotlin_omap_entry,
 )
 
 
@@ -609,21 +706,33 @@ def _format_value(*, value: _Value, spec: Language) -> str:
 
     Handles scalars, lists (recursively), and dicts.
     """
+    if isinstance(value, ordereddict) and spec.omap_open is not None:
+        assert spec.omap_close is not None  # noqa: S101
+        assert spec.format_omap_entry is not None  # noqa: S101
+        pairs = [
+            spec.format_omap_entry(
+                _format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
+                _format_value(value=v, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
+            )
+            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        ]
+        return spec.omap_open + ", ".join(pairs) + spec.omap_close
+
     if isinstance(value, dict):
         pairs = [
             _build_dict_entry(
-                key_str=_format_value(value=k, spec=spec),
-                val_str=_format_value(value=v, spec=spec),
+                key_str=_format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
+                val_str=_format_value(value=v, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
                 spec=spec,
             )
-            for k, v in value.items()
+            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
         ]
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
     if isinstance(value, list):
         if not value and spec.empty_collection is not None:
             return spec.empty_collection
-        items = [_format_value(value=v, spec=spec) for v in value]
+        items = [_format_value(value=v, spec=spec) for v in value]  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType]
         joined = ", ".join(items)
         # Some languages (e.g. Python) require a trailing comma on
         # single-element collections to avoid syntactic ambiguity.
@@ -689,15 +798,21 @@ def _literalize(
     effective_prefix = prefix if not wrap else (prefix or "    ")
     lines: list[str] = []
 
-    if isinstance(data, dict):
-        entries = list(data.items())
+    is_omap = isinstance(data, ordereddict) and spec.omap_open is not None
+    if is_omap or isinstance(data, dict):
+        dict_data = cast("dict[str, Any]", data)
+        entries = list(dict_data.items())
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
-            entry = _build_dict_entry(
-                key_str=formatted_key, val_str=formatted_val, spec=spec
-            )
+            if is_omap:
+                assert spec.format_omap_entry is not None  # noqa: S101
+                entry = spec.format_omap_entry(formatted_key, formatted_val)
+            else:
+                entry = _build_dict_entry(
+                    key_str=formatted_key, val_str=formatted_val, spec=spec
+                )
             comma = "" if i == last_idx and not spec.trailing_comma else ","
             lines.append(f"{effective_prefix}{entry}{comma}")
     else:
@@ -712,6 +827,11 @@ def _literalize(
 
     if not wrap or not body:
         return body
+
+    if is_omap:
+        assert spec.omap_open is not None  # noqa: S101
+        assert spec.omap_close is not None  # noqa: S101
+        return f"{spec.omap_open}\n{body}\n{spec.omap_close}"
 
     if isinstance(data, dict):
         return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
