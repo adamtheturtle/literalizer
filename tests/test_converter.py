@@ -604,6 +604,17 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
     assert parsed == _lists_to_tuples(value=data)
 
 
+def test_literalize_yaml_empty_sequence() -> None:
+    """An empty YAML sequence produces an empty string."""
+    result = literalize_yaml(
+        yaml_string="[]\n",
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    assert result == ""
+
+
 def test_literalize_yaml_sequence() -> None:
     """``literalize_yaml`` parses a YAML sequence string."""
     yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
