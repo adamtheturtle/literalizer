@@ -15,7 +15,7 @@ def main() -> None:
         # Wrap content in a struct that accepts any value or nested initializer
         # list, allowing mixed-type and nested brace-init syntax to compile as
         # valid C++.
-        wrapped = textwrap.dedent("""\
+        template = """\
             #include <initializer_list>
             #include <cstddef>
             struct _Any {
@@ -25,7 +25,8 @@ def main() -> None:
             void _check() {
                 [[maybe_unused]] _Any _v = CONTENT;
             }
-            """).replace("CONTENT", content)
+            """
+        wrapped = textwrap.dedent(text=template).replace("CONTENT", content)
         result = subprocess.run(
             args=[
                 clangpp_path,
