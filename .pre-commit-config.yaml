@@ -26,12 +26,12 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
+    - ruby-syntax-check
     - spelling
     - sphinx-lint
     - ty
     - ty-docs
     - vulture
-    - ruby-syntax-check
     - vulture-docs
     - yamlfix
     - zizmor
@@ -359,7 +359,7 @@ repos:
 
       - id: ruby-syntax-check
         name: Ruby syntax check
-        entry: ruby -c
+        entry: bash -c 'for f; do ruby -c "$f" || exit 1; done' --
         language: system
         types: [ruby]
         stages: [pre-commit]
