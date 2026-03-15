@@ -1,7 +1,7 @@
-{
+mapOf(
     // Server configuration
-    "host": "localhost",  // default host
-    "port": 8080,
+    "host" to "localhost",  // default host
+    "port" to 8080,
     // Enable debug mode
-    "debug": true,
-}
+    "debug" to true,
+)
