@@ -1114,6 +1114,10 @@ def test_custom_format_bytes() -> None:
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
         empty_collection=None,
+        set_open="{",
+        set_close="}",
+        empty_set="set()",
+        format_set_entry=None,
         comment_prefix="#",
     )
     result = literalize_yaml(
