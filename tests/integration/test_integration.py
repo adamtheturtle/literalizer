@@ -60,7 +60,7 @@ def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
     """
-    return textwrap.dedent("""\
+    return textwrap.dedent(f"""\
         #include <initializer_list>
         #include <cstddef>
         struct _Any {{
@@ -70,7 +70,7 @@ def _wrap_cpp(content: str) -> str:
         void _check() {{
             [[maybe_unused]] _Any _v = {content};
         }}
-    """).format(content=content)
+    """)
 
 
 def _wrap_csharp(content: str) -> str:
