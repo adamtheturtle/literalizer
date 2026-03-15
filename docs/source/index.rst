@@ -97,6 +97,29 @@ Usage examples
    #     (1, 2),
    # ]
 
+   # YAML comments are preserved using the target language's comment syntax
+   yaml_with_comments = """\
+   # Server configuration
+   host: localhost  # default host
+   port: 8080
+   # Enable debug mode for development
+   debug: true
+   """
+   result = literalize_yaml(
+       yaml_string=yaml_with_comments,
+       language=PYTHON,
+       prefix="    ",
+       wrap=True,
+   )
+   # result:
+   # {
+   #     # Server configuration
+   #     "host": "localhost",  # default host
+   #     "port": 8080,
+   #     # Enable debug mode for development
+   #     "debug": True,
+   # }
+
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
    #                      CSHARP, CPP, JAVA, KOTLIN
 

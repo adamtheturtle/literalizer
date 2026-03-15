@@ -19,14 +19,17 @@ JSONDecodeError
 subclasses
 literalize
 literalizer
+localhost
 NEL
 ofEntries
 paren
+pragma
 pre
 prepended
 pyright
 pytest
 reportAttributeAccessIssue
+reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
 ruamel
