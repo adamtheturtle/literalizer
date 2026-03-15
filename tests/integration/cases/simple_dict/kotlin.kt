@@ -1,6 +1,6 @@
-{
-    "name": "Alice",
-    "age": 30,
-    "active": true,
-    "score": null,
-}
+mapOf(
+    "name" to "Alice",
+    "age" to 30,
+    "active" to true,
+    "score" to null,
+)
