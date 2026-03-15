@@ -3,6 +3,7 @@
 import shutil
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 
 
@@ -14,17 +15,17 @@ def main() -> None:
         # Wrap content in a struct that accepts any value or nested initializer
         # list, allowing mixed-type and nested brace-init syntax to compile as
         # valid C++.
-        wrapped = (
-            "#include <initializer_list>\n"
-            "#include <cstddef>\n"
-            "struct _Any {\n"
-            "    template<class T> _Any(T&&) noexcept {}\n"
-            "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-            "};\n"
-            "void _check() {\n"
-            f"    [[maybe_unused]] _Any _v = {content};\n"
-            "}\n"
-        )
+        wrapped = textwrap.dedent(f"""\
+            #include <initializer_list>
+            #include <cstddef>
+            struct _Any {{
+                template<class T> _Any(T&&) noexcept {{}}
+                _Any(std::initializer_list<_Any>) noexcept {{}}
+            }};
+            void _check() {{
+                [[maybe_unused]] _Any _v = {content};
+            }}
+            """)
         result = subprocess.run(
             args=[
                 clangpp_path,
