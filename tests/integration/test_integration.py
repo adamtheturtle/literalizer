@@ -108,7 +108,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "kotlin": _LanguageConfig(
         spec=literalizer.KOTLIN,
-        extension=".kt",
+        extension=".kts",
         wrap=_wrap_kotlin,
     ),
     "ruby": _LanguageConfig(
