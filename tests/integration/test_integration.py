@@ -10,6 +10,7 @@ can syntax-check them directly without additional wrapping.
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -80,16 +81,51 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
-_LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
-    "python": (literalizer.PYTHON, ".py"),
-    "javascript": (literalizer.JAVASCRIPT, ".js"),
-    "typescript": (literalizer.TYPESCRIPT, ".ts"),
-    "kotlin": (literalizer.KOTLIN, ".kt"),
-    "ruby": (literalizer.RUBY, ".rb"),
-    "go": (literalizer.GO, ".go"),
-    "java": (literalizer.JAVA, ".java"),
-    "csharp": (literalizer.CSHARP, ".cs"),
-    "cpp": (literalizer.CPP, ".cpp"),
+@dataclasses.dataclass
+class _LanguageConfig:
+    """Language configuration with spec and file extension."""
+
+    spec: literalizer.LanguageSpec
+    extension: str
+
+
+_LANGUAGES: dict[str, _LanguageConfig] = {
+    "python": _LanguageConfig(
+        spec=literalizer.PYTHON,
+        extension=".py",
+    ),
+    "javascript": _LanguageConfig(
+        spec=literalizer.JAVASCRIPT,
+        extension=".js",
+    ),
+    "typescript": _LanguageConfig(
+        spec=literalizer.TYPESCRIPT,
+        extension=".ts",
+    ),
+    "kotlin": _LanguageConfig(
+        spec=literalizer.KOTLIN,
+        extension=".kt",
+    ),
+    "ruby": _LanguageConfig(
+        spec=literalizer.RUBY,
+        extension=".rb",
+    ),
+    "go": _LanguageConfig(
+        spec=literalizer.GO,
+        extension=".go",
+    ),
+    "java": _LanguageConfig(
+        spec=literalizer.JAVA,
+        extension=".java",
+    ),
+    "csharp": _LanguageConfig(
+        spec=literalizer.CSHARP,
+        extension=".cs",
+    ),
+    "cpp": _LanguageConfig(
+        spec=literalizer.CPP,
+        extension=".cpp",
+    ),
 }
 
 _WRAPPERS: dict[str, Callable[[str], str]] = {
@@ -131,17 +167,17 @@ def test_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
-    spec, extension = _LANGUAGES[language]
+    lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=spec,
+        language=lang_config.spec,
         prefix="",
         wrap=True,
     )
     wrapped = _WRAPPERS[language](result)
     file_regression.check(
         contents=wrapped + "\n",
-        extension=extension,
-        fullpath=input_path.parent / (language + extension),
+        extension=lang_config.extension,
+        fullpath=input_path.parent / (language + lang_config.extension),
     )
