@@ -1,10 +1,27 @@
 """Check syntax of C# golden files using ``dotnet build``."""
 
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+# Environment variables that suppress dotnet's first-time initialization.
+# Without these, dotnet tries to create a shared-memory mutex directory
+# (/tmp/.dotnet/shm/sessionN) during NuGet migration.  In CI environments
+# multiple parallel jobs race to create that directory; the loser gets
+# errno == EEXIST and raises an IOException, causing a false "C# syntax
+# error" even when the source is perfectly valid.
+_DOTNET_ENV: dict[str, str] = {
+    **os.environ,
+    # Skip NuGet migration and telemetry on first run.
+    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+    # Suppress the dotnet welcome/logo banner written to stderr.
+    "DOTNET_NOLOGO": "1",
+    # Skip downloading NuGet XML documentation files.
+    "NUGET_XMLDOC_MODE": "skip",
+}
 
 
 def _target_framework(dotnet_path: str) -> str:
@@ -16,6 +33,7 @@ def _target_framework(dotnet_path: str) -> str:
         capture_output=True,
         text=True,
         check=False,
+        env=_DOTNET_ENV,
     )
     version = result.stdout.strip()
     major_minor = ".".join(version.split(sep=".")[:2])
@@ -50,6 +68,7 @@ def main() -> None:
                 capture_output=True,
                 text=True,
                 check=False,
+                env=_DOTNET_ENV,
             )
         if result.returncode != 0:
             msg = (
