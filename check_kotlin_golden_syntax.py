@@ -41,9 +41,10 @@ def main() -> None:
             mode="w",
             encoding="utf-8",
             delete=True,
+            delete_on_close=False,
         ) as tmp:
             tmp.write(wrapped)
-            tmp.flush()
+            tmp.close()
             result = subprocess.run(
                 args=[kotlinc_path, "-script", tmp.name],
                 capture_output=True,
