@@ -276,7 +276,9 @@ def _format_go_set_entry(item: str) -> str:
 
 
 @runtime_checkable
-class Language(Protocol):
+class Language(  # pylint: disable=too-many-public-methods
+    Protocol,
+):
     """Protocol describing how a language formats scalar literals and
     collections.
 
@@ -773,6 +775,20 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 
 
 @beartype
+def _format_set_value(*, value: set[_Scalar], spec: Language) -> str:
+    """Format a set value as a native language literal."""
+    if not value and spec.empty_set is not None:
+        return spec.empty_set
+    sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+    formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
+    if spec.format_set_entry is not None:
+        entries = [spec.format_set_entry(item) for item in formatted]
+    else:
+        entries = formatted
+    return spec.set_open + ", ".join(entries) + spec.set_close
+
+
+@beartype
 def _format_value(*, value: _Value, spec: Language) -> str:
     """Format any JSON value as a native language literal.
 
@@ -802,15 +818,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
     if isinstance(value, set):
-        if not value and spec.empty_set is not None:
-            return spec.empty_set
-        sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
-        formatted = [_format_value(value=v, spec=spec) for v in sorted_items]
-        if spec.format_set_entry is not None:
-            entries = [spec.format_set_entry(item) for item in formatted]
-        else:
-            entries = formatted
-        return spec.set_open + ", ".join(entries) + spec.set_close
+        return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
         if not value and spec.empty_collection is not None:
@@ -824,6 +832,26 @@ def _format_value(*, value: _Value, spec: Language) -> str:
         return f"{spec.collection_open}{joined}{spec.collection_close}"
 
     return _format_scalar(value=value, spec=spec)
+
+
+@beartype
+def _wrap_body(
+    *,
+    body: str,
+    is_omap: bool,
+    data: list[Any] | dict[str, Any] | set[Any],
+    spec: Language,
+) -> str:
+    """Wrap ``body`` in the language's open/close delimiters."""
+    if is_omap:
+        assert spec.omap_open is not None  # noqa: S101
+        assert spec.omap_close is not None  # noqa: S101
+        return f"{spec.omap_open}\n{body}\n{spec.omap_close}"
+    if isinstance(data, dict):
+        return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
+    if isinstance(data, set):
+        return f"{spec.set_open}\n{body}\n{spec.set_close}"
+    return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
@@ -923,18 +951,7 @@ def _literalize(
     if not wrap or not body:
         return body
 
-    if is_omap:
-        assert spec.omap_open is not None  # noqa: S101
-        assert spec.omap_close is not None  # noqa: S101
-        return f"{spec.omap_open}\n{body}\n{spec.omap_close}"
-
-    if isinstance(data, dict):
-        return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
-
-    if isinstance(data, set):
-        return f"{spec.set_open}\n{body}\n{spec.set_close}"
-
-    return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
+    return _wrap_body(body=body, is_omap=is_omap, data=data, spec=spec)
 
 
 @beartype
