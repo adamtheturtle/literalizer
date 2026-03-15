@@ -583,6 +583,11 @@ def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
     assert result_via_json == result_direct
 
 
+def _yaml_dump(data: _YAMLValue) -> str:
+    """Dump data to a YAML string."""
+    return yaml.dump(data=data, sort_keys=False)
+
+
 # Dates and datetimes are tested as their own types below because
 # yaml.safe_load parses them into date/datetime objects.
 yaml_scalars = (
@@ -610,7 +615,7 @@ yaml_objects = st.dictionaries(keys=st.text(), values=yaml_values, max_size=10)
 @given(data=yaml_arrays)
 def test_roundtrip_yaml_array(data: list[_YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for arrays."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -629,7 +634,7 @@ def test_roundtrip_yaml_array(data: list[_YAMLValue]) -> None:
 @given(data=yaml_objects)
 def test_roundtrip_yaml_object(data: dict[str, _YAMLValue]) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for objects."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
@@ -648,7 +653,7 @@ def test_roundtrip_yaml_object(data: dict[str, _YAMLValue]) -> None:
 @given(data=yaml_scalars)
 def test_roundtrip_yaml_scalar(data: _YAMLScalar) -> None:
     """Yaml.dump -> literalize_yaml matches literalize for scalars."""
-    yaml_string = yaml.dump(data=data, sort_keys=False)
+    yaml_string = _yaml_dump(data=data)
     result_via_yaml = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
