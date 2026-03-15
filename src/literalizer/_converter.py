@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 import yaml
 from beartype import BeartypeConf, beartype
 
+from literalizer.exceptions import JSONParseError, YAMLParseError
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -17,18 +19,6 @@ type _Scalar = (
     str | int | float | bool | None | datetime.date | datetime.datetime
 )
 type _Value = _Scalar | list[_Value] | dict[str, _Value]
-
-
-class ParseError(Exception):
-    """Raised when input cannot be parsed into a data structure."""
-
-
-class JSONParseError(ParseError):
-    """Raised when a JSON string cannot be parsed."""
-
-
-class YAMLParseError(ParseError):
-    """Raised when a YAML string cannot be parsed."""
 
 
 def format_date_iso(value: datetime.date) -> str:

@@ -24,11 +24,8 @@ from literalizer import (
     PYTHON,
     RUBY,
     TYPESCRIPT,
-    JSONParseError,
     Language,
     LanguageSpec,
-    ParseError,
-    YAMLParseError,
     format_date_cpp,
     format_date_csharp,
     format_date_go,
@@ -53,6 +50,7 @@ from literalizer import (
     literalize_json,
     literalize_yaml,
 )
+from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 
 
 @pytest.mark.parametrize(
