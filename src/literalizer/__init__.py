@@ -32,7 +32,6 @@ from literalizer._converter import (
     format_datetime_kotlin,
     format_datetime_python,
     format_datetime_ruby,
-    literalize,
     literalize_json,
     literalize_yaml,
 )
@@ -69,7 +68,6 @@ __all__ = [
     "format_datetime_kotlin",
     "format_datetime_python",
     "format_datetime_ruby",
-    "literalize",
     "literalize_json",
     "literalize_yaml",
 ]

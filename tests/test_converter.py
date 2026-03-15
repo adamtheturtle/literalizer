@@ -6,14 +6,11 @@ import ast
 import datetime
 import json
 import textwrap
-from io import StringIO
 from typing import Any
 
 import pytest
-from beartype.roar import BeartypeCallHintParamViolation
 from hypothesis import given
 from hypothesis import strategies as st
-from ruamel.yaml import YAML
 
 from literalizer import (
     CPP,
@@ -47,7 +44,6 @@ from literalizer import (
     format_datetime_kotlin,
     format_datetime_python,
     format_datetime_ruby,
-    literalize,
     literalize_json,
     literalize_yaml,
 )
@@ -70,36 +66,57 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 )
 def test_language_list(*, language: Language, expected: str) -> None:
     """Each language produces the correct list literal."""
-    data = [[True, None, "hi", [1, 2]]]
-    result = literalize(data=data, language=language, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps([[True, None, "hi", [1, 2]]]),
+        language=language,
+        prefix="",
+        wrap=False,
+    )
     assert result == expected
 
 
 def test_ruby_dict() -> None:
     """Ruby dicts use => syntax and nil."""
-    data = [{"key": None}]
-    result = literalize(data=data, language=RUBY, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps([{"key": None}]),
+        language=RUBY,
+        prefix="",
+        wrap=False,
+    )
     assert result == '{"key" => nil},'
 
 
 def test_dict_python() -> None:
     """Python dict renders key-value pairs with a prefix."""
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
-    result = literalize(data=data, language=PYTHON, prefix="    ", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps(data),
+        language=PYTHON,
+        prefix="    ",
+        wrap=False,
+    )
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
 
 def test_dict_ruby() -> None:
     """Ruby dict renders with => syntax."""
-    data = {"user_1": "team_alpha"}
-    result = literalize(data=data, language=RUBY, prefix="  ", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps({"user_1": "team_alpha"}),
+        language=RUBY,
+        prefix="  ",
+        wrap=False,
+    )
     assert result == '  "user_1" => "team_alpha",'
 
 
 def test_dict_wrap() -> None:
     """Wrapping a dict adds braces and indentation."""
-    data = {"a": 1, "b": 2}
-    result = literalize(data=data, language=PYTHON, prefix="", wrap=True)
+    result = literalize_json(
+        json_string=json.dumps({"a": 1, "b": 2}),
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
     expected = textwrap.dedent(
         text="""\
         {
@@ -114,8 +131,12 @@ def test_java_dict_wrap_no_trailing_comma() -> None:
     """Java Map.ofEntries() must not have a trailing comma before the
     closing paren.
     """
-    data = {"name": "Alice", "age": 30}
-    result = literalize(data=data, language=JAVA, prefix="", wrap=True)
+    result = literalize_json(
+        json_string=json.dumps({"name": "Alice", "age": 30}),
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
     expected = textwrap.dedent(
         text="""\
         Map.ofEntries(
@@ -128,8 +149,12 @@ def test_java_dict_wrap_no_trailing_comma() -> None:
 
 def test_java_list_wrap_uses_braces() -> None:
     """Java wrapped lists use curly braces, not square brackets."""
-    data = [1, "hello", True]
-    result = literalize(data=data, language=JAVA, prefix="", wrap=True)
+    result = literalize_json(
+        json_string=json.dumps([1, "hello", True]),
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
     expected = textwrap.dedent(
         text="""\
         {
@@ -143,20 +168,27 @@ def test_java_list_wrap_uses_braces() -> None:
 
 def test_dict_empty() -> None:
     """An empty dict produces an empty string."""
-    result = literalize(data={}, language=PYTHON, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps({}), language=PYTHON, prefix="", wrap=False
+    )
     assert result == ""
 
 
 def test_dict_empty_with_wrap() -> None:
     """An empty dict with wrap still produces an empty string."""
-    result = literalize(data={}, language=PYTHON, prefix="", wrap=True)
+    result = literalize_json(
+        json_string=json.dumps({}), language=PYTHON, prefix="", wrap=True
+    )
     assert result == ""
 
 
 def test_integers() -> None:
     """Integer values are rendered literally."""
-    result = literalize(
-        data=[42, 0, -7], language=PYTHON, prefix="", wrap=False
+    result = literalize_json(
+        json_string=json.dumps([42, 0, -7]),
+        language=PYTHON,
+        prefix="",
+        wrap=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -169,8 +201,11 @@ def test_integers() -> None:
 
 def test_floats() -> None:
     """Float values are rendered literally."""
-    result = literalize(
-        data=[1000.0, 3.14], language=PYTHON, prefix="", wrap=False
+    result = literalize_json(
+        json_string=json.dumps([1000.0, 3.14]),
+        language=PYTHON,
+        prefix="",
+        wrap=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -182,8 +217,12 @@ def test_floats() -> None:
 
 def test_string_escaping() -> None:
     """Special characters in strings are properly escaped."""
-    data = ['say "hi"', "a\\b", "line1\nline2"]
-    result = literalize(data=data, language=PYTHON, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps(['say "hi"', "a\\b", "line1\nline2"]),
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
     lines = result.split(sep="\n")
     assert lines[0] == '"say \\"hi\\"",'
     assert lines[1] == '"a\\\\b",'
@@ -192,37 +231,52 @@ def test_string_escaping() -> None:
 
 def test_nested_arrays() -> None:
     """Nested arrays are rendered recursively."""
-    data = [[[1, 2], [3, 4]]]
-    result = literalize(data=data, language=PYTHON, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps([[[1, 2], [3, 4]]]),
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
     assert result == "((1, 2), (3, 4)),"
 
 
 def test_dicts() -> None:
     """Dicts inside a list are rendered inline."""
-    data = [{"name": "alice", "age": 30}]
-    result = literalize(data=data, language=PYTHON, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps([{"name": "alice", "age": 30}]),
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
     assert result == '{"name": "alice", "age": 30},'
 
 
 def test_nested_dict_in_list() -> None:
     """A dict nested inside a list is rendered inline."""
-    data = [["a", {"x": 1}]]
-    result = literalize(data=data, language=PYTHON, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps([["a", {"x": 1}]]),
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
     assert result == '("a", {"x": 1}),'
 
 
 def test_nested_list_in_dict() -> None:
     """A list nested inside a dict is rendered inline."""
-    data = [{"items": [1, 2]}]
-    result = literalize(data=data, language=PYTHON, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps([{"items": [1, 2]}]),
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
     assert result == '{"items": (1, 2)},'
 
 
 def test_prefix_spaces() -> None:
     """Space-based prefix is prepended to each line."""
-    data = [True, False]
-    result = literalize(
-        data=data,
+    result = literalize_json(
+        json_string=json.dumps([True, False]),
         language=PYTHON,
         prefix="        ",
         wrap=False,
@@ -232,9 +286,8 @@ def test_prefix_spaces() -> None:
 
 def test_prefix_tabs() -> None:
     """Tab-based prefix is prepended to each line."""
-    data = [True, False]
-    result = literalize(
-        data=data,
+    result = literalize_json(
+        json_string=json.dumps([True, False]),
         language=GO,
         prefix="\t\t",
         wrap=False,
@@ -244,8 +297,8 @@ def test_prefix_tabs() -> None:
 
 def test_wrap() -> None:
     """Wrapping adds brackets and indentation."""
-    result = literalize(
-        data=[True, False],
+    result = literalize_json(
+        json_string=json.dumps([True, False]),
         language=PYTHON,
         prefix="",
         wrap=True,
@@ -262,8 +315,8 @@ def test_wrap() -> None:
 
 def test_wrap_with_prefix() -> None:
     """Wrapping respects the given prefix."""
-    result = literalize(
-        data=[["a", 1.0]],
+    result = literalize_json(
+        json_string=json.dumps([["a", 1.0]]),
         language=PYTHON,
         prefix="    ",
         wrap=True,
@@ -279,62 +332,59 @@ def test_wrap_with_prefix() -> None:
 
 def test_empty_data() -> None:
     """An empty list produces an empty string."""
-    result = literalize(data=[], language=PYTHON, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json.dumps([]), language=PYTHON, prefix="", wrap=False
+    )
     assert result == ""
 
 
 def test_empty_data_with_wrap() -> None:
     """An empty list with wrap still produces an empty string."""
-    result = literalize(data=[], language=PYTHON, prefix="", wrap=True)
+    result = literalize_json(
+        json_string=json.dumps([]), language=PYTHON, prefix="", wrap=True
+    )
     assert result == ""
 
 
 @pytest.mark.parametrize(
-    argnames=("data", "language", "expected"),
+    argnames=("json_string", "language", "expected"),
     argvalues=[
-        (42, PYTHON, "42"),
-        (3.14, PYTHON, "3.14"),
-        ("hello", PYTHON, '"hello"'),
-        (True, PYTHON, "True"),
-        (False, PYTHON, "False"),
-        (None, PYTHON, "None"),
-        (True, JAVASCRIPT, "true"),
-        (None, GO, "nil"),
-        (None, RUBY, "nil"),
-        (None, CPP, "nullptr"),
+        ("42", PYTHON, "42"),
+        ("3.14", PYTHON, "3.14"),
+        ('"hello"', PYTHON, '"hello"'),
+        ("true", PYTHON, "True"),
+        ("false", PYTHON, "False"),
+        ("null", PYTHON, "None"),
+        ("true", JAVASCRIPT, "true"),
+        ("null", GO, "nil"),
+        ("null", RUBY, "nil"),
+        ("null", CPP, "nullptr"),
     ],
 )
 def test_scalar(
-    *, data: _JSONScalar, language: Language, expected: str
+    *, json_string: str, language: Language, expected: str
 ) -> None:
     """Scalar values are formatted as native literals."""
-    result = literalize(data=data, language=language, prefix="", wrap=False)
+    result = literalize_json(
+        json_string=json_string, language=language, prefix="", wrap=False
+    )
     assert result == expected
 
 
 def test_scalar_with_prefix() -> None:
     """Scalar values respect the prefix parameter."""
-    result = literalize(data=42, language=PYTHON, prefix="    ", wrap=False)
+    result = literalize_json(
+        json_string="42", language=PYTHON, prefix="    ", wrap=False
+    )
     assert result == "    42"
 
 
 def test_scalar_wrap_ignored() -> None:
     """Wrap is ignored for scalar values."""
-    result = literalize(data=42, language=PYTHON, prefix="", wrap=True)
+    result = literalize_json(
+        json_string="42", language=PYTHON, prefix="", wrap=True
+    )
     assert result == "42"
-
-
-def test_unsupported_type_raises() -> None:
-    """An unsupported scalar type raises a beartype violation."""
-    with pytest.raises(
-        expected_exception=BeartypeCallHintParamViolation,
-    ):
-        literalize(
-            data=[object()],
-            language=PYTHON,
-            prefix="",
-            wrap=False,
-        )
 
 
 def test_custom_language() -> None:
@@ -347,8 +397,8 @@ def test_custom_language() -> None:
         collection_close=">",
         dict_separator=" -> ",
     )
-    result = literalize(
-        data=[True, None, "hi"],
+    result = literalize_json(
+        json_string=json.dumps([True, None, "hi"]),
         language=custom,
         prefix="",
         wrap=False,
@@ -364,8 +414,8 @@ def test_part1_sample_python() -> None:
         ["user_1", 1002.0],
         ["user_1", 1003.0],
     ]
-    result = literalize(
-        data=data,
+    result = literalize_json(
+        json_string=json.dumps(data),
         language=PYTHON,
         prefix="        ",
         wrap=False,
@@ -382,8 +432,8 @@ def test_part1_sample_python() -> None:
 def test_part2_sample_go() -> None:
     """Realistic test matching part2_sample_input.json structure."""
     data = [["user_1", 49, 1000.0], ["user_9", 10, 1003.0]]
-    result = literalize(
-        data=data,
+    result = literalize_json(
+        json_string=json.dumps(data),
         language=GO,
         prefix="        ",
         wrap=False,
@@ -396,10 +446,6 @@ def test_part2_sample_go() -> None:
 type _JSONScalar = str | int | float | bool | None
 
 type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
-
-type _YAMLScalar = _JSONScalar | datetime.date | datetime.datetime
-
-type _YAMLValue = _YAMLScalar | list[_YAMLValue] | dict[str, _YAMLValue]
 
 
 def _lists_to_tuples(*, value: _JSONValue) -> object:
@@ -516,8 +562,8 @@ def test_literalize_json_scalar(
 @given(data=json_arrays)
 def test_roundtrip_array(data: list[Any]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
-    result = literalize(
-        data=data,
+    result = literalize_json(
+        json_string=json.dumps(data),
         language=PYTHON,
         prefix="",
         wrap=True,
@@ -532,8 +578,8 @@ def test_roundtrip_array(data: list[Any]) -> None:
 @given(data=json_scalars)
 def test_roundtrip_scalar(data: _JSONScalar) -> None:
     """Scalar -> Python literal -> ast.literal_eval round-trips."""
-    result = literalize(
-        data=data,
+    result = literalize_json(
+        json_string=json.dumps(data),
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -545,8 +591,8 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
 @given(data=json_objects)
 def test_roundtrip_dict(data: dict[str, Any]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
-    result = literalize(
-        data=data,
+    result = literalize_json(
+        json_string=json.dumps(data),
         language=PYTHON,
         prefix="",
         wrap=True,
@@ -556,168 +602,6 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
         return
     parsed = ast.literal_eval(node_or_string=result)
     assert parsed == _lists_to_tuples(value=data)
-
-
-@given(data=json_arrays)
-def test_roundtrip_json_array(data: list[Any]) -> None:
-    """Json.dumps -> literalize_json matches literalize for arrays."""
-    json_string = json.dumps(obj=data)
-    result_via_json = literalize_json(
-        json_string=json_string,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    result_direct = literalize(
-        data=data,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    assert result_via_json == result_direct
-
-
-@given(data=json_objects)
-def test_roundtrip_json_object(data: dict[str, Any]) -> None:
-    """Json.dumps -> literalize_json matches literalize for objects."""
-    json_string = json.dumps(obj=data)
-    result_via_json = literalize_json(
-        json_string=json_string,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    result_direct = literalize(
-        data=data,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    assert result_via_json == result_direct
-
-
-@given(data=json_scalars)
-def test_roundtrip_json_scalar(data: _JSONScalar) -> None:
-    """Json.dumps -> literalize_json matches literalize for scalars."""
-    json_string = json.dumps(obj=data)
-    result_via_json = literalize_json(
-        json_string=json_string,
-        language=PYTHON,
-        prefix="",
-        wrap=False,
-    )
-    result_direct = literalize(
-        data=data,
-        language=PYTHON,
-        prefix="",
-        wrap=False,
-    )
-    assert result_via_json == result_direct
-
-
-def _yaml_dump(data: _YAMLValue) -> str:
-    """Dump data to a YAML string using ruamel.yaml safe mode."""
-    ruamel_yaml = YAML(typ="safe")
-    ruamel_yaml.default_flow_style = False
-    # Preserve insertion order
-    ruamel_yaml.sort_base_mapping_type_on_output = False  # type: ignore[assignment] # pyright: ignore[reportAttributeAccessIssue]
-    stream = StringIO()
-    # https://sourceforge.net/p/ruamel-yaml/tickets/564/
-    ruamel_yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
-    return stream.getvalue()
-
-
-# Dates and datetimes are tested as their own types below because
-# ruamel.yaml safe_load parses them into date/datetime objects.
-yaml_scalars = (
-    st.none()
-    | st.booleans()
-    | st.integers()
-    | st.floats(allow_nan=False, allow_infinity=False)
-    | st.text(
-        # Exclude control and surrogate characters which
-        # ruamel.yaml doesn't round-trip cleanly (e.g. U+0085 NEL).
-        # https://sourceforge.net/p/ruamel-yaml/tickets/565/
-        alphabet=st.characters(exclude_categories=("Cc", "Cs")),
-    )
-    | st.dates()
-    | st.datetimes()
-)
-
-yaml_text = st.text(
-    # Exclude control and surrogate characters which
-    # ruamel.yaml doesn't round-trip cleanly (e.g. U+0085 NEL).
-    # https://sourceforge.net/p/ruamel-yaml/tickets/565/
-    alphabet=st.characters(exclude_categories=("Cc", "Cs")),
-)
-
-yaml_values: st.SearchStrategy[_YAMLValue] = st.recursive(
-    base=yaml_scalars,
-    extend=lambda children: (
-        st.lists(elements=children)
-        | st.dictionaries(keys=yaml_text, values=children)
-    ),
-)
-
-yaml_arrays = st.lists(elements=yaml_values, max_size=10)
-yaml_objects = st.dictionaries(keys=yaml_text, values=yaml_values, max_size=10)
-
-
-@given(data=yaml_arrays)
-def test_roundtrip_yaml_array(data: list[_YAMLValue]) -> None:
-    """Yaml.dump -> literalize_yaml matches literalize for arrays."""
-    yaml_string = _yaml_dump(data=data)
-    result_via_yaml = literalize_yaml(
-        yaml_string=yaml_string,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    result_direct = literalize(
-        data=data,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    assert result_via_yaml == result_direct
-
-
-@given(data=yaml_objects)
-def test_roundtrip_yaml_object(data: dict[str, _YAMLValue]) -> None:
-    """Yaml.dump -> literalize_yaml matches literalize for objects."""
-    yaml_string = _yaml_dump(data=data)
-    result_via_yaml = literalize_yaml(
-        yaml_string=yaml_string,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    result_direct = literalize(
-        data=data,
-        language=PYTHON,
-        prefix="",
-        wrap=True,
-    )
-    assert result_via_yaml == result_direct
-
-
-@given(data=yaml_scalars)
-def test_roundtrip_yaml_scalar(data: _YAMLScalar) -> None:
-    """Yaml.dump -> literalize_yaml matches literalize for scalars."""
-    yaml_string = _yaml_dump(data=data)
-    result_via_yaml = literalize_yaml(
-        yaml_string=yaml_string,
-        language=PYTHON,
-        prefix="",
-        wrap=False,
-    )
-    result_direct = literalize(
-        data=data,
-        language=PYTHON,
-        prefix="",
-        wrap=False,
-    )
-    assert result_via_yaml == result_direct
 
 
 def test_literalize_yaml_sequence() -> None:
@@ -824,11 +708,11 @@ def test_literalize_yaml_datetime() -> None:
 
 
 def test_literalize_date() -> None:
-    """``literalize`` formats datetime.date values as ISO string
+    """``literalize_yaml`` formats datetime.date values as ISO string
     literals.
     """
-    result = literalize(
-        data=[datetime.date(year=2024, month=1, day=15)],
+    result = literalize_yaml(
+        yaml_string="- 2024-01-15\n",
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -837,13 +721,11 @@ def test_literalize_date() -> None:
 
 
 def test_literalize_datetime() -> None:
-    """``literalize`` formats datetime.datetime values as ISO string
+    """``literalize_yaml`` formats datetime.datetime values as ISO string
     literals.
     """
-    result = literalize(
-        data=[
-            datetime.datetime.fromisoformat("2024-01-15T12:30:00"),
-        ],
+    result = literalize_yaml(
+        yaml_string="- 2024-01-15T12:30:00\n",
         language=PYTHON,
         prefix="",
         wrap=False,
@@ -1038,8 +920,8 @@ def test_custom_format_date() -> None:
         dict_separator=": ",
         format_date=format_date_python,
     )
-    result = literalize(
-        data=[_SAMPLE_DATE],
+    result = literalize_yaml(
+        yaml_string="- 2024-01-15\n",
         language=spec,
         prefix="",
         wrap=False,
@@ -1058,8 +940,8 @@ def test_custom_format_datetime() -> None:
         dict_separator=": ",
         format_datetime=format_datetime_python,
     )
-    result = literalize(
-        data=[_SAMPLE_DATETIME],
+    result = literalize_yaml(
+        yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
         prefix="",
         wrap=False,
@@ -1079,8 +961,8 @@ def test_java_native_dates() -> None:
         format_date=format_date_java,
         format_datetime=format_datetime_java_instant,
     )
-    result = literalize(
-        data=[_SAMPLE_DATE, _SAMPLE_DATETIME],
+    result = literalize_yaml(
+        yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
         language=spec,
         prefix="",
         wrap=False,
@@ -1102,8 +984,8 @@ def test_ruby_native_dates() -> None:
         format_date=format_date_ruby,
         format_datetime=format_datetime_ruby,
     )
-    result = literalize(
-        data=[_SAMPLE_DATETIME],
+    result = literalize_yaml(
+        yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
         prefix="",
         wrap=False,
