@@ -992,6 +992,41 @@ def test_ruby_native_dates() -> None:
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
 
 
+def test_yaml_set_inline_in_list() -> None:
+    """A !!set nested in a list is formatted inline using set
+    delimiters.
+    """
+    result = literalize_yaml(
+        yaml_string="- !!set\n  ? a\n  ? b\n",
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '{"a", "b"},'
+
+
+def test_yaml_set_inline_with_format_set_entry() -> None:
+    """A !!set nested in a list uses format_set_entry when provided."""
+    result = literalize_yaml(
+        yaml_string="- !!set\n  ? a\n",
+        language=GO,
+        prefix="",
+        wrap=False,
+    )
+    assert result == 'map[any]struct{}{"a": struct{}{}},'
+
+
+def test_yaml_empty_set_inline() -> None:
+    """An empty !!set nested in a list uses empty_set override."""
+    result = literalize_yaml(
+        yaml_string="- !!set {}\n",
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == "set(),"
+
+
 def test_default_format_date_is_iso() -> None:
     """The default format_date is ISO format."""
     assert PYTHON.format_date is format_date_iso
