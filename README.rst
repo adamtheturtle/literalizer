@@ -115,6 +115,10 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
        empty_collection=None,
+       set_open="[",
+       set_close="]",
+       empty_set=None,
+       format_set_entry=None,
        comment_prefix="//",
    )
 

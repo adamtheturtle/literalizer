@@ -10,6 +10,7 @@ can syntax-check them directly without additional wrapping.
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -45,6 +46,7 @@ def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     return f"""\
 import java.util.Map;
+import java.util.Set;
 class Check {{
     Object x = {content};
 }}"""
@@ -79,28 +81,61 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
-_LANGUAGES: dict[str, tuple[literalizer.LanguageSpec, str]] = {
-    "python": (literalizer.PYTHON, ".py"),
-    "javascript": (literalizer.JAVASCRIPT, ".js"),
-    "typescript": (literalizer.TYPESCRIPT, ".ts"),
-    "kotlin": (literalizer.KOTLIN, ".kt"),
-    "ruby": (literalizer.RUBY, ".rb"),
-    "go": (literalizer.GO, ".go"),
-    "java": (literalizer.JAVA, ".java"),
-    "csharp": (literalizer.CSHARP, ".cs"),
-    "cpp": (literalizer.CPP, ".cpp"),
-}
+@dataclasses.dataclass
+class _LanguageConfig:
+    """Language configuration with spec, file extension, and wrapper."""
 
-_WRAPPERS: dict[str, Callable[[str], str]] = {
-    "python": _wrap_identity,
-    "ruby": _wrap_identity,
-    "javascript": _wrap_js,
-    "typescript": _wrap_js,
-    "go": _wrap_go,
-    "java": _wrap_java,
-    "kotlin": _wrap_kotlin,
-    "cpp": _wrap_cpp,
-    "csharp": _wrap_csharp,
+    spec: literalizer.LanguageSpec
+    extension: str
+    wrap: Callable[[str], str]
+
+
+_LANGUAGES: dict[str, _LanguageConfig] = {
+    "python": _LanguageConfig(
+        spec=literalizer.PYTHON,
+        extension=".py",
+        wrap=_wrap_identity,
+    ),
+    "javascript": _LanguageConfig(
+        spec=literalizer.JAVASCRIPT,
+        extension=".js",
+        wrap=_wrap_js,
+    ),
+    "typescript": _LanguageConfig(
+        spec=literalizer.TYPESCRIPT,
+        extension=".ts",
+        wrap=_wrap_js,
+    ),
+    "kotlin": _LanguageConfig(
+        spec=literalizer.KOTLIN,
+        extension=".kts",
+        wrap=_wrap_kotlin,
+    ),
+    "ruby": _LanguageConfig(
+        spec=literalizer.RUBY,
+        extension=".rb",
+        wrap=_wrap_identity,
+    ),
+    "go": _LanguageConfig(
+        spec=literalizer.GO,
+        extension=".go",
+        wrap=_wrap_go,
+    ),
+    "java": _LanguageConfig(
+        spec=literalizer.JAVA,
+        extension=".java",
+        wrap=_wrap_java,
+    ),
+    "csharp": _LanguageConfig(
+        spec=literalizer.CSHARP,
+        extension=".cs",
+        wrap=_wrap_csharp,
+    ),
+    "cpp": _LanguageConfig(
+        spec=literalizer.CPP,
+        extension=".cpp",
+        wrap=_wrap_cpp,
+    ),
 }
 
 
@@ -130,17 +165,17 @@ def test_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
-    spec, extension = _LANGUAGES[language]
+    lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=spec,
+        language=lang_config.spec,
         prefix="",
         wrap=True,
     )
-    wrapped = _WRAPPERS[language](result)
+    wrapped = lang_config.wrap(result)
     file_regression.check(
         contents=wrapped + "\n",
-        extension=extension,
-        fullpath=input_path.parent / (language + extension),
+        extension=lang_config.extension,
+        fullpath=input_path.parent / (language + lang_config.extension),
     )

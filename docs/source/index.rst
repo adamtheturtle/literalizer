@@ -139,6 +139,10 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
        empty_collection=None,
+       set_open="[",
+       set_close="]",
+       empty_set=None,
+       format_set_entry=None,
        comment_prefix="//",
    )
 
@@ -160,6 +164,10 @@ Usage examples
        format_date=format_date_python,
        format_datetime=format_datetime_python,
        empty_collection=None,
+       set_open="{",
+       set_close="}",
+       empty_set="set()",
+       format_set_entry=None,
        comment_prefix="#",
    )
    result = literalize_yaml(
@@ -187,6 +195,10 @@ Usage examples
        format_date=format_date_java,
        format_datetime=format_datetime_java_instant,
        empty_collection=None,
+       set_open="Set.of(",
+       set_close=")",
+       empty_set=None,
+       format_set_entry=None,
        comment_prefix="//",
    )
    result = literalize_yaml(
@@ -214,6 +226,10 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_ruby,
        empty_collection=None,
+       set_open="Set.new([",
+       set_close="])",
+       empty_set="Set.new",
+       format_set_entry=None,
        comment_prefix="#",
    )
    result = literalize_yaml(

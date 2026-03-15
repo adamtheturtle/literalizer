@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 type _Scalar = (
     str | int | float | bool | None | datetime.date | datetime.datetime | bytes
 )
-type _Value = _Scalar | list[_Value] | dict[str, _Value]
+type _Value = _Scalar | list[_Value] | dict[str, _Value] | set[_Scalar]
 
 
 def format_date_iso(value: datetime.date) -> str:
@@ -282,6 +282,14 @@ def format_bytes_python(value: bytes) -> str:
     return repr(value)
 
 
+def _format_go_set_entry(item: str) -> str:
+    """Format a Go set entry as a map entry with empty struct value.
+
+    Example: ``"apple"`` → ``"apple": struct{}{}``.
+    """
+    return f"{item}: struct{{}}{{}}"
+
+
 @runtime_checkable
 class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
@@ -379,6 +387,30 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def set_open(self) -> str:
+        """The opening delimiter for set literals."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def set_close(self) -> str:
+        """The closing delimiter for set literals."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def empty_set(self) -> str | None:
+        """Override for empty set literals, or ``None`` to use
+        ``set_open + set_close``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_set_entry(self) -> Callable[[str], str] | None:
+        """Callable that formats a set entry from a pre-formatted item
+        string, or ``None`` to use the item directly.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def comment_prefix(self) -> str:
         """The comment prefix for the language (e.g. ``"#"`` or
         ``"//"``).
@@ -410,6 +442,10 @@ class LanguageSpec:
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
+    set_open: str
+    set_close: str
+    empty_set: str | None
+    format_set_entry: Callable[[str], str] | None
     comment_prefix: str
 
 
@@ -429,6 +465,10 @@ PYTHON = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="{",
+    set_close="}",
+    empty_set="set()",
+    format_set_entry=None,
     comment_prefix="#",
 )
 
@@ -454,6 +494,10 @@ CSHARP = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
+    set_open="new HashSet<object> {",
+    set_close="}",
+    empty_set="new HashSet<object>()",
+    format_set_entry=None,
     comment_prefix="//",
 )
 
@@ -473,6 +517,10 @@ JAVASCRIPT = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="new Set([",
+    set_close="])",
+    empty_set="new Set()",
+    format_set_entry=None,
     comment_prefix="//",
 )
 
@@ -492,6 +540,10 @@ TYPESCRIPT = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="new Set([",
+    set_close="])",
+    empty_set="new Set()",
+    format_set_entry=None,
     comment_prefix="//",
 )
 
@@ -511,6 +563,10 @@ RUBY = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="Set.new([",
+    set_close="])",
+    empty_set="Set.new",
+    format_set_entry=None,
     comment_prefix="#",
 )
 
@@ -530,6 +586,10 @@ GO = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="map[any]struct{}{",
+    set_close="}",
+    empty_set=None,
+    format_set_entry=_format_go_set_entry,
     comment_prefix="//",
 )
 
@@ -555,6 +615,10 @@ CPP = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="{",
+    set_close="}",
+    empty_set=None,
+    format_set_entry=None,
     comment_prefix="//",
 )
 
@@ -580,6 +644,10 @@ JAVA = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="Set.of(",
+    set_close=")",
+    empty_set=None,
+    format_set_entry=None,
     comment_prefix="//",
 )
 
@@ -599,6 +667,10 @@ KOTLIN = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    set_open="setOf<Any?>(",
+    set_close=")",
+    empty_set=None,
+    format_set_entry=None,
     comment_prefix="//",
 )
 
@@ -642,7 +714,7 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 def _format_value(*, value: _Value, spec: Language) -> str:
     """Format any JSON value as a native language literal.
 
-    Handles scalars, lists (recursively), and dicts.
+    Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, dict):
         pairs = [
@@ -654,6 +726,17 @@ def _format_value(*, value: _Value, spec: Language) -> str:
             for k, v in value.items()
         ]
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
+
+    if isinstance(value, set):
+        if not value and spec.empty_set is not None:
+            return spec.empty_set
+        sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+        formatted = [_format_value(value=v, spec=spec) for v in sorted_items]
+        if spec.format_set_entry is not None:
+            entries = [spec.format_set_entry(item) for item in formatted]
+        else:
+            entries = formatted
+        return spec.set_open + ", ".join(entries) + spec.set_close
 
     if isinstance(value, list):
         if not value and spec.empty_collection is not None:
@@ -674,6 +757,7 @@ def _literalize(
     *,
     data: list[Any]
     | dict[str, Any]
+    | set[Any]
     | str
     | bytes
     | datetime.date
@@ -737,6 +821,17 @@ def _literalize(
             )
             comma = "" if i == last_idx and not spec.trailing_comma else ","
             lines.append(f"{effective_prefix}{entry}{comma}")
+    elif isinstance(data, set):
+        sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
+        last_idx = len(sorted_items) - 1
+        for i, item in enumerate(iterable=sorted_items):
+            formatted = _format_value(value=item, spec=spec)
+            if spec.format_set_entry is not None:
+                entry = spec.format_set_entry(formatted)
+            else:
+                entry = formatted
+            comma = "" if i == last_idx and not spec.trailing_comma else ","
+            lines.append(f"{effective_prefix}{entry}{comma}")
     else:
         items = list(data)
         last_idx = len(items) - 1
@@ -752,6 +847,9 @@ def _literalize(
 
     if isinstance(data, dict):
         return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
+
+    if isinstance(data, set):
+        return f"{spec.set_open}\n{body}\n{spec.set_close}"
 
     return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
 
@@ -1143,6 +1241,9 @@ def literalize_yaml(
     )
 
     cp = language.comment_prefix
+
+    if isinstance(data, set):
+        return base
 
     if not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
