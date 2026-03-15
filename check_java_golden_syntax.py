@@ -28,7 +28,7 @@ def main() -> None:
             content = content[:idx] + "}" + content[idx + 1 :]
 
         # Remove trailing commas before ) in method calls (Java forbids them).
-        content = re.sub(r",(\s*\))", r"\1", content)
+        content = re.sub(pattern=r",(\s*\))", repl=r"\1", string=content)
 
         wrapped = (
             "import java.util.Map;\n"
@@ -40,8 +40,9 @@ def main() -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             java_file = Path(tmpdir) / "Check.java"
             java_file.write_text(data=wrapped, encoding="utf-8")
+            java_file_str: str = str(java_file)
             result = subprocess.run(
-                args=[javac_path, str(java_file)],
+                args=[javac_path, java_file_str],
                 capture_output=True,
                 text=True,
                 check=False,
