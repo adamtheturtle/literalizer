@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from literalizer import GO
+
 
 def main() -> None:
     """Check syntax of each given Go golden file."""
@@ -14,7 +16,7 @@ def main() -> None:
         # Wrap in a package-level variable declaration to make valid Go.
         # gofmt accepts elided-type composite literals inside a typed
         # outer literal, so nested {…} elements parse without error.
-        if content.startswith("map[string]any{"):
+        if content.startswith(GO.dict_open):
             # Already a typed composite literal — use it directly.
             wrapped = f"package main\n\nvar _ = {content}\n"
         else:

@@ -6,6 +6,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from literalizer import JAVA
+
 
 def main() -> None:
     """Check syntax of each given Java golden file."""
@@ -13,10 +15,12 @@ def main() -> None:
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8").strip()
 
-        # Every { in golden files is a collection open (array initializer).
+        # Every collection open in golden files is an array initializer.
         # Java requires "new Object[]" before bare array initializers used
         # as expressions.
-        content = content.replace("{", "new Object[]{")
+        content = content.replace(
+            JAVA.collection_open, f"new Object[]{JAVA.collection_open}"
+        )
 
         wrapped = (
             "import java.util.Map;\n"
