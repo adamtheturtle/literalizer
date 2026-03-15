@@ -26,8 +26,10 @@ Usage examples
        JAVASCRIPT,
        PYTHON,
        LanguageSpec,
+       format_date_iso,
        format_date_java,
        format_date_python,
+       format_datetime_iso,
        format_datetime_java_instant,
        format_datetime_python,
        format_datetime_ruby,
@@ -127,6 +129,13 @@ Usage examples
        collection_open="[",
        collection_close="]",
        dict_separator=": ",
+       dict_open="{",
+       dict_close="}",
+       format_dict_entry=None,
+       trailing_comma=True,
+       format_date=format_date_iso,
+       format_datetime=format_datetime_iso,
+       comment_prefix="//",
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -138,8 +147,13 @@ Usage examples
        collection_open="(",
        collection_close=")",
        dict_separator=": ",
+       dict_open="{",
+       dict_close="}",
+       format_dict_entry=None,
+       trailing_comma=True,
        format_date=format_date_python,
        format_datetime=format_datetime_python,
+       comment_prefix="#",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -157,8 +171,13 @@ Usage examples
        collection_open="{",
        collection_close="}",
        dict_separator=": ",
+       dict_open="{",
+       dict_close="}",
+       format_dict_entry=None,
+       trailing_comma=True,
        format_date=format_date_java,
        format_datetime=format_datetime_java_instant,
+       comment_prefix="//",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -176,7 +195,13 @@ Usage examples
        collection_open="[",
        collection_close="]",
        dict_separator=" => ",
+       dict_open="{",
+       dict_close="}",
+       format_dict_entry=None,
+       trailing_comma=True,
+       format_date=format_date_iso,
        format_datetime=format_datetime_ruby,
+       comment_prefix="#",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",

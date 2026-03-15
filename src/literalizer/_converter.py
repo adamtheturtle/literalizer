@@ -364,13 +364,13 @@ class LanguageSpec:
     collection_open: str
     collection_close: str
     dict_separator: str
-    dict_open: str = "{"
-    dict_close: str = "}"
-    format_dict_entry: Callable[[str, str], str] | None = None
-    trailing_comma: bool = True
-    format_date: Callable[[datetime.date], str] = format_date_iso
-    format_datetime: Callable[[datetime.datetime], str] = format_datetime_iso
-    comment_prefix: str = "//"
+    dict_open: str
+    dict_close: str
+    format_dict_entry: Callable[[str, str], str] | None
+    trailing_comma: bool
+    format_date: Callable[[datetime.date], str]
+    format_datetime: Callable[[datetime.datetime], str]
+    comment_prefix: str
 
 
 PYTHON = LanguageSpec(
@@ -380,6 +380,12 @@ PYTHON = LanguageSpec(
     collection_open="(",
     collection_close=")",
     dict_separator=": ",
+    dict_open="{",
+    dict_close="}",
+    format_dict_entry=None,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
     comment_prefix="#",
 )
 
@@ -399,6 +405,10 @@ CSHARP = LanguageSpec(
     dict_open="new Dictionary<string, object> {",
     dict_close="}",
     format_dict_entry=_format_csharp_dict_entry,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    comment_prefix="//",
 )
 
 JAVASCRIPT = LanguageSpec(
@@ -408,6 +418,13 @@ JAVASCRIPT = LanguageSpec(
     collection_open="[",
     collection_close="]",
     dict_separator=": ",
+    dict_open="{",
+    dict_close="}",
+    format_dict_entry=None,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    comment_prefix="//",
 )
 
 TYPESCRIPT = LanguageSpec(
@@ -417,6 +434,13 @@ TYPESCRIPT = LanguageSpec(
     collection_open="[",
     collection_close="]",
     dict_separator=": ",
+    dict_open="{",
+    dict_close="}",
+    format_dict_entry=None,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    comment_prefix="//",
 )
 
 RUBY = LanguageSpec(
@@ -426,6 +450,12 @@ RUBY = LanguageSpec(
     collection_open="[",
     collection_close="]",
     dict_separator=" => ",
+    dict_open="{",
+    dict_close="}",
+    format_dict_entry=None,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
     comment_prefix="#",
 )
 
@@ -437,6 +467,12 @@ GO = LanguageSpec(
     collection_close="}",
     dict_separator=": ",
     dict_open="map[string]any{",
+    dict_close="}",
+    format_dict_entry=None,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    comment_prefix="//",
 )
 
 
@@ -452,7 +488,13 @@ CPP = LanguageSpec(
     collection_open="{",
     collection_close="}",
     dict_separator=": ",
+    dict_open="{",
+    dict_close="}",
     format_dict_entry=_format_cpp_dict_entry,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    comment_prefix="//",
 )
 
 
@@ -472,6 +514,9 @@ JAVA = LanguageSpec(
     dict_close=")",
     format_dict_entry=_format_java_dict_entry,
     trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    comment_prefix="//",
 )
 
 KOTLIN = LanguageSpec(
@@ -483,6 +528,11 @@ KOTLIN = LanguageSpec(
     dict_separator=" to ",
     dict_open="mapOf<String, Any?>(",
     dict_close=")",
+    format_dict_entry=None,
+    trailing_comma=True,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    comment_prefix="//",
 )
 
 

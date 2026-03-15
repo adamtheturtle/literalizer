@@ -30,6 +30,8 @@ Usage examples
        JAVASCRIPT,
        PYTHON,
        LanguageSpec,
+       format_date_iso,
+       format_datetime_iso,
        literalize_json,
        literalize_yaml,
    )
@@ -103,6 +105,13 @@ Usage examples
        collection_open="[",
        collection_close="]",
        dict_separator=": ",
+       dict_open="{",
+       dict_close="}",
+       format_dict_entry=None,
+       trailing_comma=True,
+       format_date=format_date_iso,
+       format_datetime=format_datetime_iso,
+       comment_prefix="//",
    )
 
 Use cases

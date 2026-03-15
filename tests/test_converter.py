@@ -396,6 +396,13 @@ def test_custom_language() -> None:
         collection_open="<",
         collection_close=">",
         dict_separator=" -> ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
+        format_date=format_date_iso,
+        format_datetime=format_datetime_iso,
+        comment_prefix="//",
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -929,7 +936,13 @@ def test_custom_format_date() -> None:
         collection_open="(",
         collection_close=")",
         dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
         format_date=format_date_python,
+        format_datetime=format_datetime_iso,
+        comment_prefix="//",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -949,7 +962,13 @@ def test_custom_format_datetime() -> None:
         collection_open="(",
         collection_close=")",
         dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
+        format_date=format_date_iso,
         format_datetime=format_datetime_python,
+        comment_prefix="//",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -969,8 +988,13 @@ def test_java_native_dates() -> None:
         collection_open="{",
         collection_close="}",
         dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
         format_date=format_date_java,
         format_datetime=format_datetime_java_instant,
+        comment_prefix="//",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -992,8 +1016,13 @@ def test_ruby_native_dates() -> None:
         collection_open="[",
         collection_close="]",
         dict_separator=" => ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
         format_date=format_date_ruby,
         format_datetime=format_datetime_ruby,
+        comment_prefix="#",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1013,7 +1042,13 @@ def test_yaml_with_custom_date_format() -> None:
         collection_open="(",
         collection_close=")",
         dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
         format_date=format_date_python,
+        format_datetime=format_datetime_iso,
+        comment_prefix="//",
     )
     yaml_string = "- 2024-01-15\n"
     result = literalize_yaml(
