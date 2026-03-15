@@ -739,12 +739,20 @@ def _parse_after_token(
     return _ParsedAfterToken(inline=inline, before_next=before_next)
 
 
+@dataclasses.dataclass(frozen=True)
+class _CollectionComments:
+    """Comments extracted from a YAML collection string."""
+
+    elements: tuple[_ElementComments, ...]
+    trailing: tuple[str, ...]
+
+
 @beartype
 def _extract_yaml_comments(
     *,
     yaml_string: str,
     is_sequence: bool,
-) -> tuple[tuple[_ElementComments, ...], tuple[str, ...]]:
+) -> _CollectionComments:
     """Extract top-level comments from a YAML collection string.
 
     Only works for sequences and mappings — *ruamel.yaml*'s
@@ -800,8 +808,10 @@ def _extract_yaml_comments(
             ),
         )
 
-    trailing = tuple(pending_before)
-    return tuple(elements), trailing
+    return _CollectionComments(
+        elements=tuple(elements),
+        trailing=tuple(pending_before),
+    )
 
 
 @beartype
@@ -1023,7 +1033,7 @@ def literalize_yaml(
         return base
 
     is_sequence = isinstance(data, list)
-    element_comments, trailing = _extract_yaml_comments(
+    collection_comments = _extract_yaml_comments(
         yaml_string=yaml_string,
         is_sequence=is_sequence,
     )
@@ -1031,17 +1041,17 @@ def literalize_yaml(
     has_comments = (
         any(
             element_comment.before or element_comment.inline
-            for element_comment in element_comments
+            for element_comment in collection_comments.elements
         )
-        or trailing
+        or collection_comments.trailing
     )
     if not has_comments:
         return base
 
     ctx = _YamlCollectionContext(
         base=base,
-        element_comments=element_comments,
-        trailing=trailing,
+        element_comments=collection_comments.elements,
+        trailing=collection_comments.trailing,
         comment_prefix=cp,
         prefix=prefix,
         wrap=wrap,
