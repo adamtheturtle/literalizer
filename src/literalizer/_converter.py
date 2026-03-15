@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 import yaml
 from beartype import BeartypeConf, beartype
 
+from literalizer.exceptions import JSONParseError, YAMLParseError
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -567,9 +569,15 @@ def literalize_json(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        json.JSONDecodeError: If *json_string* is not valid JSON.
+        JSONParseError: If *json_string* is not valid JSON.
     """
-    data = json.loads(s=json_string)
+    try:
+        data = json.loads(s=json_string)
+    except json.JSONDecodeError as exc:
+        message = (
+            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
+        )
+        raise JSONParseError(message) from exc
     return literalize(
         data=data,
         language=language,
@@ -603,9 +611,13 @@ def literalize_yaml(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
 
     Raises:
-        yaml.YAMLError: If *yaml_string* is not valid YAML.
+        YAMLParseError: If *yaml_string* is not valid YAML.
     """
-    data = yaml.safe_load(stream=yaml_string)
+    try:
+        data = yaml.safe_load(stream=yaml_string)
+    except yaml.YAMLError as exc:
+        message = f"Invalid YAML: {exc}"
+        raise YAMLParseError(message) from exc
     return literalize(
         data=data,
         language=language,
