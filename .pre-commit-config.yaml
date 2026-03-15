@@ -11,6 +11,7 @@ ci:
     - interrogate
     - interrogate-docs
     - go-golden-syntax-check
+    - java-golden-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
     - typescript-syntax-check
@@ -401,13 +402,24 @@ repos:
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
+      - id: java-golden-syntax-check
+        name: Java golden file syntax check
+        entry: uv run python check_java_golden_syntax.py
+        language: python
+        types: [java]
+        # Restrict to golden files: the script wraps bare expressions
+        # in a class with imports, which only works for these files.
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
       - id: kotlin-syntax-check
         name: Kotlin golden file syntax check
         entry: uv run python check_kotlin_golden_syntax.py
         language: python
         types: [kotlin]
-        # Restrict to golden files: the script transforms dict/list syntax
-        # to valid Kotlin before checking, which only works for these files.
+        # Restrict to golden files: the script wraps the expression in
+        # a val declaration before checking with ``kotlinc``.
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]

@@ -11,12 +11,17 @@ dicts
 formatter
 formatters
 gofmt
+initializer
+initializers
+javac
 json
 JSONDecodeError
 subclasses
 literalize
 literalizer
 NEL
+ofEntries
+paren
 pre
 prepended
 pyright

@@ -62,7 +62,7 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
         (GO, '{true, nil, "hi", {1, 2}},'),
         (CPP, '{true, nullptr, "hi", {1, 2}},'),
-        (JAVA, '{true, null, "hi", {1, 2}},'),
+        (JAVA, '{true, null, "hi", {1, 2}}'),
         (CSHARP, '(true, null, "hi", (1, 2)),'),
         (RUBY, '[true, nil, "hi", [1, 2]],'),
         (KOTLIN, 'listOf(true, null, "hi", listOf(1, 2)),'),
@@ -105,6 +105,37 @@ def test_dict_wrap() -> None:
         {
             "a": 1,
             "b": 2,
+        }"""
+    )
+    assert result == expected
+
+
+def test_java_dict_wrap_no_trailing_comma() -> None:
+    """Java Map.ofEntries() must not have a trailing comma before the
+    closing paren.
+    """
+    data = {"name": "Alice", "age": 30}
+    result = literalize(data=data, language=JAVA, prefix="", wrap=True)
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("name", "Alice"),
+            Map.entry("age", 30)
+        )"""
+    )
+    assert result == expected
+
+
+def test_java_list_wrap_uses_braces() -> None:
+    """Java wrapped lists use curly braces, not square brackets."""
+    data = [1, "hello", True]
+    result = literalize(data=data, language=JAVA, prefix="", wrap=True)
+    expected = textwrap.dedent(
+        text="""\
+        {
+            1,
+            "hello",
+            true
         }"""
     )
     assert result == expected
@@ -221,10 +252,10 @@ def test_wrap() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        [
+        (
             True,
             False,
-        ]"""
+        )"""
     )
     assert result == expected
 
@@ -239,9 +270,9 @@ def test_wrap_with_prefix() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        [
+        (
             ("a", 1.0),
-        ]"""
+        )"""
     )
     assert result == expected
 
@@ -495,7 +526,7 @@ def test_roundtrip_array(data: list[Any]) -> None:
         assert result == ""
         return
     parsed = ast.literal_eval(node_or_string=result)
-    assert parsed == [_lists_to_tuples(value=v) for v in data]
+    assert parsed == tuple(_lists_to_tuples(value=v) for v in data)
 
 
 @given(data=json_scalars)
