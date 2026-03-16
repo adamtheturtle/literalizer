@@ -489,7 +489,7 @@ json_scalars = (
 json_values: st.SearchStrategy[Any] = st.recursive(
     base=json_scalars,
     extend=lambda children: (
-        # max_size prevents unbounded nesting that causes test timeouts
+        # ``max_size`` prevents unbounded nesting that causes test timeouts
         st.lists(elements=children, max_size=5)
         | st.dictionaries(keys=json_text, values=children, max_size=5)
     ),
