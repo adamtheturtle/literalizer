@@ -1528,7 +1528,7 @@ def _literalize_yaml_collection(
     effective_prefix = ctx.prefix if not ctx.wrap else (ctx.prefix or "    ")
     all_lines = ctx.base.split(sep="\n")
 
-    if ctx.wrap:
+    if ctx.wrap and len(all_lines) > 1:
         header = all_lines[0]
         footer = all_lines[-1]
         body_lines = all_lines[1:-1]

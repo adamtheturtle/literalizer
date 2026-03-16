@@ -214,6 +214,20 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
     assert "null" not in result
 
 
+def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
+    """All-null Java YAML dict with trailing comments does not duplicate
+    delimiters.
+    """
+    yaml_string = "a: null\nb: null\n# trailing\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert result.count("Map.ofEntries()") == 1
+
+
 def test_java_list_wrap_uses_braces() -> None:
     """Java wrapped lists use ``new Object[]{…}``."""
     result = literalize_json(
