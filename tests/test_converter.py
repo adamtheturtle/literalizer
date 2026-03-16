@@ -53,6 +53,13 @@ from literalizer import (
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 
 
+def _format_test_omap_entry(key: str, value: str) -> str:
+    """Format an omap entry for use in custom LanguageSpec test
+    fixtures.
+    """
+    return f"{key}: {value}"
+
+
 @pytest.mark.parametrize(
     argnames=("language", "expected"),
     argvalues=[
@@ -431,6 +438,9 @@ def test_custom_language() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
     )
@@ -933,6 +943,9 @@ def test_custom_format_date() -> None:
         empty_set="set()",
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
     )
@@ -968,6 +981,9 @@ def test_custom_format_datetime() -> None:
         empty_set="set()",
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
     )
@@ -1003,6 +1019,9 @@ def test_java_native_dates() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
     )
@@ -1040,6 +1059,9 @@ def test_ruby_native_dates() -> None:
         empty_set="Set.new",
         format_set_entry=None,
         comment_prefix="#",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
     )
@@ -1425,6 +1447,86 @@ def test_yaml_comment_scalar_only_comments() -> None:
     assert result == expected
 
 
+def test_omap_nested_in_list() -> None:
+    """An omap nested inside a list exercises _format_value's omap
+    branch.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        ---
+        - !!omap
+          - name: Alice
+          - age: 30
+        """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        (
+            OrderedDict([("name", "Alice"), ("age", 30)]),
+        )""",
+    )
+    assert result == expected
+
+
+def test_omap_custom_language_spec() -> None:
+    """An omap with a custom LanguageSpec calls format_omap_entry."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        !!omap
+        - name: Alice
+        - age: 30
+        """,
+    )
+    custom = LanguageSpec(
+        null_literal="null",
+        true_literal="true",
+        false_literal="false",
+        collection_open="[",
+        collection_close="]",
+        dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
+        single_element_trailing_comma=False,
+        format_date=format_date_iso,
+        format_datetime=format_datetime_iso,
+        empty_collection=None,
+        empty_dict=None,
+        set_open="[",
+        set_close="]",
+        empty_set=None,
+        format_set_entry=None,
+        comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
+        multiline_close_indent="",
+        skip_null_dict_values=False,
+        format_variable_declaration=None,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=custom,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "name": "Alice",
+            "age": 30,
+        }""",
+    )
+    assert result == expected
+
+
 def test_yaml_comment_mapping_nested_value_none_token() -> None:
     """Mapping key with nested comment has None at token index 2."""
     yaml_string = "a:\n  # indented\n  x: 1\nb: 2\n"
@@ -1537,6 +1639,9 @@ def test_variable_declaration_language_no_formatter() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="#",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
         format_variable_declaration=None,

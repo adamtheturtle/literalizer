@@ -121,6 +121,13 @@ Usage examples
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
    #                      CSHARP, CPP, JAVA, KOTLIN, HASKELL, SWIFT, PHP
 
+
+   # Helper used in custom LanguageSpec examples below.
+   def _omap_entry(key: str, value: str) -> str:
+       """Format an ordered-map entry."""
+       return f"{key}: {value}"
+
+
    # Create a custom language:
    custom = LanguageSpec(
        null_literal="nil",
@@ -143,7 +150,11 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
+       skip_null_dict_values=False,
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -169,7 +180,11 @@ Usage examples
        empty_set="set()",
        format_set_entry=None,
        comment_prefix="#",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
+       skip_null_dict_values=False,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -201,7 +216,11 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
+       skip_null_dict_values=False,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -233,7 +252,11 @@ Usage examples
        empty_set="Set.new",
        format_set_entry=None,
        comment_prefix="#",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
+       skip_null_dict_values=False,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",
