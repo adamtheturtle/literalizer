@@ -34,6 +34,7 @@ ci:
     - ruff-format-fix-docs
     - cpp-golden-syntax-check
     - swift-syntax-check
+    - php-syntax-check
     - ruby-syntax-check
     - shellcheck
     - shellcheck-docs
@@ -476,6 +477,13 @@ repos:
         types: [c#]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: php-syntax-check
+        name: PHP syntax check
+        entry: php -l
+        language: system
+        types: [php]
         stages: [pre-commit]
 
       - id: sphinx-lint
