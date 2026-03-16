@@ -448,17 +448,16 @@ repos:
 
       - id: cpp-golden-syntax-check
         name: C++ golden file syntax check
-        entry: clang++ -fsyntax-only -std=c++17
+        entry: clang++ -fsyntax-only -std=c++20
         language: system
         types: [c++]
         stages: [pre-commit]
 
       - id: kotlin-syntax-check
         name: Kotlin golden file syntax check
-        entry: kotlinc -script
+        entry: bash -c 'for f; do kotlinc -script "$f" || exit 1; done' --
         language: system
-        types: [kotlin]
-        files: ^tests/integration/cases/
+        files: ^tests/integration/cases/.*\.kts$
         stages: [pre-commit]
 
       - id: rust-golden-syntax-check
