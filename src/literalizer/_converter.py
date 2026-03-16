@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 type _Scalar = (
-    str | int | float | bool | None | datetime.date | datetime.datetime
+    str | int | float | bool | None | datetime.date | datetime.datetime | bytes
 )
 type _Value = _Scalar | list[_Value] | dict[str, _Value] | set[_Scalar]
 
@@ -287,6 +287,57 @@ def format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
+def format_bytes_hex(value: bytes) -> str:
+    """Format bytes as a hex string literal.
+
+    Example: ``b"Hello"`` → ``"48656c6c6f"``.
+    """
+    return f'"{value.hex()}"'
+
+
+def format_bytes_python(value: bytes) -> str:
+    """Format bytes as a Python ``bytes`` literal.
+
+    Example: ``b"Hello"`` → ``b'Hello'``.
+    """
+    return repr(value)
+
+
+@beartype
+def format_date_rust(value: datetime.date) -> str:
+    """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call.
+
+    Example: ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
+    """
+    return (
+        f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
+        ".unwrap()"
+    )
+
+
+@beartype
+def format_datetime_rust(value: datetime.datetime) -> str:
+    """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call.
+
+    Example:
+    ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+    NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
+    """
+    date = format_date_rust(value=value)
+    if value.microsecond:
+        time_call = (
+            f"NaiveTime::from_hms_micro_opt("
+            f"{value.hour}, {value.minute}, {value.second}, "
+            f"{value.microsecond}).unwrap()"
+        )
+    else:
+        time_call = (
+            f"NaiveTime::from_hms_opt("
+            f"{value.hour}, {value.minute}, {value.second}).unwrap()"
+        )
+    return f"NaiveDateTime::new({date}, {time_call})"
+
+
 @beartype
 def format_date_php(value: datetime.date) -> str:
     """Format a date as a PHP ``new DateTime(...)`` call.
@@ -443,6 +494,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a :class:`bytes` value as a string
+        literal.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a :class:`datetime.date` as a string
         literal.
@@ -568,6 +626,7 @@ class LanguageSpec:
     format_dict_entry: Callable[[str, str], str] | None
     trailing_comma: bool
     single_element_trailing_comma: bool
+    format_bytes: Callable[[bytes], str]
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
@@ -601,6 +660,7 @@ PYTHON = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=True,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -641,6 +701,7 @@ CSHARP = LanguageSpec(
     format_dict_entry=_format_csharp_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
@@ -675,6 +736,7 @@ JAVASCRIPT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -703,6 +765,7 @@ TYPESCRIPT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -737,6 +800,7 @@ RUBY = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -771,6 +835,7 @@ GO = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -811,6 +876,7 @@ CPP = LanguageSpec(
     format_dict_entry=_format_cpp_dict_entry,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -851,6 +917,7 @@ JAVA = LanguageSpec(
     format_dict_entry=_format_java_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -885,6 +952,7 @@ SWIFT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="[Any]()",
@@ -899,6 +967,45 @@ SWIFT = LanguageSpec(
     format_omap_entry=_format_swift_omap_entry,
     multiline_close_indent="",
     format_variable_declaration=None,
+)
+
+
+@beartype
+def _format_rust_dict_entry(key: str, value: str) -> str:
+    """Format a Rust HashMap entry as a tuple ``(key, value)``."""
+    return f"({key}, {value})"
+
+
+def _format_rust_omap_entry(key: str, value: str) -> str:
+    """Format a Rust ordered-map entry as a tuple ``(key, value)``."""
+    return f"({key}, {value})"
+
+
+RUST = LanguageSpec(
+    null_literal="None",
+    true_literal="true",
+    false_literal="false",
+    collection_open="vec![",
+    collection_close="]",
+    dict_separator=": ",
+    dict_open="HashMap::from([",
+    dict_close="])",
+    format_dict_entry=_format_rust_dict_entry,
+    trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="HashSet::from([",
+    set_close="])",
+    empty_set=None,
+    format_set_entry=None,
+    comment_prefix="//",
+    omap_open="HashMap::from([",
+    omap_close="])",
+    format_omap_entry=_format_rust_omap_entry,
+    multiline_close_indent="",
 )
 
 
@@ -919,6 +1026,7 @@ KOTLIN = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -953,6 +1061,7 @@ PHP = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_php,
     format_datetime=format_datetime_php,
     empty_collection=None,
@@ -993,6 +1102,7 @@ HASKELL = LanguageSpec(
     format_dict_entry=_format_haskell_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -1028,6 +1138,8 @@ def _format_scalar(*, value: _Scalar, spec: Language) -> str:
             .replace("\n", "\\n")
         )
         result = f'"{escaped}"'
+    elif isinstance(value, bytes):
+        result = spec.format_bytes(value)
     elif isinstance(value, datetime.datetime):
         result = spec.format_datetime(value)
     else:
@@ -1129,6 +1241,7 @@ def _literalize(
     | dict[str, Any]
     | set[Any]
     | str
+    | bytes
     | datetime.date
     | float
     | bool
@@ -1166,6 +1279,7 @@ def _literalize(
     # date).
     scalar_types = (
         str,
+        bytes,
         int,
         float,
         bool,

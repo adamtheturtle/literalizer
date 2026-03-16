@@ -2,7 +2,7 @@
 =========
 
 |project| converts JSON data structures to native language literal syntax
-(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Haskell, Swift, PHP).
+(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Rust, Haskell, Swift, PHP).
 
 Installation
 ------------
@@ -26,6 +26,7 @@ Usage examples
        JAVASCRIPT,
        PYTHON,
        LanguageSpec,
+       format_bytes_hex,
        format_date_iso,
        format_date_java,
        format_date_python,
@@ -119,7 +120,7 @@ Usage examples
    # }
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN, HASKELL, SWIFT, PHP
+   #                      CSHARP, CPP, JAVA, KOTLIN, RUST, HASKELL, SWIFT, PHP
 
 
    # Helper used in custom LanguageSpec examples below.
@@ -141,6 +142,7 @@ Usage examples
        format_dict_entry=None,
        trailing_comma=True,
        single_element_trailing_comma=False,
+       format_bytes=format_bytes_hex,
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
        empty_collection=None,
@@ -171,6 +173,7 @@ Usage examples
        format_dict_entry=None,
        trailing_comma=True,
        single_element_trailing_comma=False,
+       format_bytes=format_bytes_hex,
        format_date=format_date_python,
        format_datetime=format_datetime_python,
        empty_collection=None,
@@ -207,6 +210,7 @@ Usage examples
        format_dict_entry=None,
        trailing_comma=True,
        single_element_trailing_comma=False,
+       format_bytes=format_bytes_hex,
        format_date=format_date_java,
        format_datetime=format_datetime_java_instant,
        empty_collection=None,
@@ -243,6 +247,7 @@ Usage examples
        format_dict_entry=None,
        trailing_comma=True,
        single_element_trailing_comma=False,
+       format_bytes=format_bytes_hex,
        format_date=format_date_iso,
        format_datetime=format_datetime_ruby,
        empty_collection=None,
@@ -276,6 +281,7 @@ Usage examples
    # format_date_go / format_datetime_go
    # format_date_kotlin / format_datetime_kotlin
    # format_date_cpp / format_datetime_cpp
+   # format_date_rust / format_datetime_rust
    # format_date_php / format_datetime_php
    # format_datetime_epoch (Unix timestamp)
 
