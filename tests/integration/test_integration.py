@@ -87,6 +87,18 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+def _wrap_rust(content: str) -> str:
+    """Wrap in a Rust main function with necessary imports."""
+    indented = content.replace("\n", "\n    ")
+    return (
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        f"    let _ = {indented};\n"
+        "}"
+    )
+
+
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a custom Val ADT that accepts mixed
     types.
@@ -135,6 +147,19 @@ def _wrap_java_varname(content: str) -> str:
         "    public static void check() {\n"
         f"{content}\n"
         "    }\n"
+        "}"
+    )
+
+
+def _wrap_rust_chrono(content: str) -> str:
+    """Wrap in a Rust main function with chrono imports."""
+    indented = content.replace("\n", "\n    ")
+    return (
+        "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        f"    let _ = {indented};\n"
         "}"
     )
 
@@ -400,6 +425,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 format_date=literalizer.format_date_cpp,
                 format_datetime=literalizer.format_datetime_cpp,
                 wrap=_wrap_cpp_chrono,
+            ),
+        ),
+    ),
+    "rust": _LanguageConfig(
+        spec=literalizer.RUST,
+        extension=".rs",
+        wrap=_wrap_rust,
+        date_variants=(
+            _DateVariant(
+                name="rust_native",
+                format_date=literalizer.format_date_rust,
+                format_datetime=literalizer.format_datetime_rust,
+                wrap=_wrap_rust_chrono,
             ),
         ),
     ),
