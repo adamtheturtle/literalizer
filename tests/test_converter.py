@@ -33,6 +33,7 @@ from literalizer import (
     format_date_java,
     format_date_js,
     format_date_kotlin,
+    format_date_php,
     format_date_python,
     format_date_ruby,
     format_date_rust,
@@ -45,6 +46,7 @@ from literalizer import (
     format_datetime_java_zoned,
     format_datetime_js,
     format_datetime_kotlin,
+    format_datetime_php,
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
@@ -825,6 +827,18 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
             "NaiveTime::from_hms_opt(12, 30, 0).unwrap())",
             id="format_datetime_rust",
+        ),
+        pytest.param(
+            format_date_php,
+            _SAMPLE_DATE,
+            'new DateTime("2024-01-15")',
+            id="format_date_php",
+        ),
+        pytest.param(
+            format_datetime_php,
+            _SAMPLE_DATETIME,
+            'new DateTime("2024-01-15T12:30:00")',
+            id="format_datetime_php",
         ),
     ],
 )

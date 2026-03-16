@@ -292,6 +292,22 @@ def format_datetime_rust(value: datetime.datetime) -> str:
     )
 
 
+def format_date_php(value: datetime.date) -> str:
+    """Format a date as a PHP ``new DateTime(...)`` call.
+
+    Example: ``new DateTime("2024-01-15")``.
+    """
+    return f'new DateTime("{value.isoformat()}")'
+
+
+def format_datetime_php(value: datetime.datetime) -> str:
+    """Format a datetime as a PHP ``new DateTime(...)`` call.
+
+    Example: ``new DateTime("2024-01-15T12:30:00")``.
+    """
+    return f'new DateTime("{value.isoformat()}")'
+
+
 def _format_go_set_entry(item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
 
@@ -690,6 +706,28 @@ KOTLIN = LanguageSpec(
     empty_collection=None,
     set_open="setOf<Any?>(",
     set_close=")",
+    empty_set=None,
+    format_set_entry=None,
+    comment_prefix="//",
+)
+
+PHP = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_separator=" => ",
+    dict_open="[",
+    dict_close="]",
+    format_dict_entry=None,
+    trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_date=format_date_php,
+    format_datetime=format_datetime_php,
+    empty_collection=None,
+    set_open="[",
+    set_close="]",
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
