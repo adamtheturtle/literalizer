@@ -454,7 +454,7 @@ class LanguageSpec:
     empty_set: str | None
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
-    multiline_close_indent: str = ""
+    multiline_close_indent: str
 
 
 PYTHON = LanguageSpec(
@@ -477,6 +477,7 @@ PYTHON = LanguageSpec(
     empty_set="set()",
     format_set_entry=None,
     comment_prefix="#",
+    multiline_close_indent="",
 )
 
 
@@ -505,6 +506,7 @@ CSHARP = LanguageSpec(
     empty_set="new HashSet<object>()",
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 JAVASCRIPT = LanguageSpec(
@@ -527,6 +529,7 @@ JAVASCRIPT = LanguageSpec(
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 TYPESCRIPT = LanguageSpec(
@@ -549,6 +552,7 @@ TYPESCRIPT = LanguageSpec(
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 RUBY = LanguageSpec(
@@ -571,6 +575,7 @@ RUBY = LanguageSpec(
     empty_set="Set.new",
     format_set_entry=None,
     comment_prefix="#",
+    multiline_close_indent="",
 )
 
 GO = LanguageSpec(
@@ -593,6 +598,7 @@ GO = LanguageSpec(
     empty_set=None,
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 
@@ -621,6 +627,7 @@ CPP = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 
@@ -649,6 +656,7 @@ JAVA = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 KOTLIN = LanguageSpec(
@@ -671,6 +679,7 @@ KOTLIN = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 PHP = LanguageSpec(
@@ -693,6 +702,7 @@ PHP = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 HASKELL = LanguageSpec(
