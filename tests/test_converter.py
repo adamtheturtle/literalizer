@@ -419,6 +419,7 @@ def test_custom_language() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        format_variable_declaration=None,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -977,6 +978,7 @@ def test_custom_format_date() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        format_variable_declaration=None,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -1015,6 +1017,7 @@ def test_custom_format_datetime() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        format_variable_declaration=None,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1053,6 +1056,7 @@ def test_java_native_dates() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        format_variable_declaration=None,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1093,6 +1097,7 @@ def test_ruby_native_dates() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        format_variable_declaration=None,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1228,6 +1233,7 @@ def test_custom_format_bytes() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        format_variable_declaration=None,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",

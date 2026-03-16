@@ -12,20 +12,24 @@ def _target_framework(dotnet_path: str) -> str:
     """Return the target framework moniker for the installed
     ``dotnet``.
     """
-    env = os.environ.copy()
-    env.update(
-        {
-            "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
-            "DOTNET_NOLOGO": "1",
-        }
-    )
-    result = subprocess.run(
-        args=[dotnet_path, "--version"],
-        capture_output=True,
-        text=True,
-        check=False,
-        env=env,
-    )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dotnet_tmp = Path(tmpdir) / "tmp"
+        dotnet_tmp.mkdir()
+        env = os.environ.copy()
+        env.update(
+            {
+                "TMPDIR": dotnet_tmp.as_posix(),
+                "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+                "DOTNET_NOLOGO": "1",
+            }
+        )
+        result = subprocess.run(
+            args=[dotnet_path, "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
     version = result.stdout.strip()
     major_minor = ".".join(version.split(sep=".")[:2])
     return f"net{major_minor}"
