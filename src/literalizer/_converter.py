@@ -534,8 +534,8 @@ class LanguageSpec:
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
     multiline_close_indent: str
+    skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str] | None = None
-    skip_null_dict_values: bool = False
 
 
 PYTHON = LanguageSpec(
@@ -560,6 +560,7 @@ PYTHON = LanguageSpec(
     format_set_entry=None,
     comment_prefix="#",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_python,
 )
 
@@ -591,6 +592,7 @@ CSHARP = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
 )
 
@@ -616,6 +618,7 @@ JAVASCRIPT = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -641,6 +644,7 @@ TYPESCRIPT = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -666,6 +670,7 @@ RUBY = LanguageSpec(
     format_set_entry=None,
     comment_prefix="#",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_ruby,
 )
 
@@ -691,6 +696,7 @@ GO = LanguageSpec(
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_go,
 )
 
@@ -722,6 +728,7 @@ CPP = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_cpp,
 )
 
@@ -779,6 +786,7 @@ SWIFT = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
 )
 
 KOTLIN = LanguageSpec(
@@ -803,6 +811,7 @@ KOTLIN = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_kotlin,
 )
 
@@ -828,6 +837,7 @@ PHP = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    skip_null_dict_values=False,
 )
 
 
@@ -858,6 +868,7 @@ HASKELL = LanguageSpec(
     format_set_entry=None,
     comment_prefix="--",
     multiline_close_indent="    ",
+    skip_null_dict_values=False,
 )
 
 
