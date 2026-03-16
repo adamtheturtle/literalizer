@@ -381,7 +381,7 @@ def format_variable_declaration_kotlin(name: str, value: str) -> str:
 
 
 @runtime_checkable
-class Language(Protocol):
+class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Protocol describing how a language formats scalar literals and
     collections.
 
