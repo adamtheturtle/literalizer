@@ -25,17 +25,13 @@ Usage examples
 
    """Examples of using literalizer."""
 
-   from literalizer import (
-       JAVA,
-       JAVASCRIPT,
-       PYTHON,
-       LanguageSpec,
+   from literalizer import LanguageSpec, literalize_json, literalize_yaml
+   from literalizer.formatters import (
        format_bytes_hex,
        format_date_iso,
        format_datetime_iso,
-       literalize_json,
-       literalize_yaml,
    )
+   from literalizer.languages import JAVA, JAVASCRIPT, PYTHON
 
    # Convert a JSON array to Java literal items
    result = literalize_json(
