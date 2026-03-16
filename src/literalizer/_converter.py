@@ -529,7 +529,7 @@ class LanguageSpec:
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
     multiline_close_indent: str
-    format_variable_declaration: Callable[[str, str], str] | None = None
+    format_variable_declaration: Callable[[str, str], str] | None
 
 
 PYTHON = LanguageSpec(
@@ -772,6 +772,7 @@ SWIFT = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    format_variable_declaration=None,
 )
 
 KOTLIN = LanguageSpec(
@@ -821,6 +822,7 @@ PHP = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     multiline_close_indent="",
+    format_variable_declaration=None,
 )
 
 
@@ -851,6 +853,7 @@ HASKELL = LanguageSpec(
     format_set_entry=None,
     comment_prefix="--",
     multiline_close_indent="    ",
+    format_variable_declaration=None,
 )
 
 
