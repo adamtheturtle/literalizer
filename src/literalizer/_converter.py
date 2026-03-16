@@ -849,11 +849,11 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     if isinstance(value, dict):
         pairs = [
             _build_dict_entry(
-                key_str=_format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
-                val_str=_format_value(value=v, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
+                key_str=_format_value(value=k, spec=spec),
+                val_str=_format_value(value=v, spec=spec),
                 spec=spec,
             )
-            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            for k, v in value.items()
         ]
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
@@ -863,7 +863,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     if isinstance(value, list):
         if not value and spec.empty_collection is not None:
             return spec.empty_collection
-        items = [_format_value(value=v, spec=spec) for v in value]  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType]
+        items = [_format_value(value=v, spec=spec) for v in value]
         joined = ", ".join(items)
         # Some languages (e.g. Python) require a trailing comma on
         # single-element collections to avoid syntactic ambiguity.
