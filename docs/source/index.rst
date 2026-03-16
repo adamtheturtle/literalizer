@@ -142,6 +142,7 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       multiline_close_indent="",
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -166,6 +167,7 @@ Usage examples
        empty_set="set()",
        format_set_entry=None,
        comment_prefix="#",
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -196,6 +198,7 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -226,6 +229,7 @@ Usage examples
        empty_set="Set.new",
        format_set_entry=None,
        comment_prefix="#",
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",

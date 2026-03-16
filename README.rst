@@ -118,6 +118,7 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       multiline_close_indent="",
    )
 
 Use cases
