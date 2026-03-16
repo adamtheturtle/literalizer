@@ -164,6 +164,77 @@ def test_java_dict_wrap_no_trailing_comma() -> None:
     assert result == expected
 
 
+def test_java_dict_skips_null_values() -> None:
+    """Java Map.ofEntries() omits entries with null values."""
+    data = {"name": "Alice", "score": None, "age": 30}
+    result = literalize_json(
+        json_string=json.dumps(obj=data),
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("name", "Alice"),
+            Map.entry("age", 30)
+        )"""
+    )
+    assert result == expected
+
+
+def test_java_dict_skips_null_values_no_wrap() -> None:
+    """Java dict omits null entries even without wrap."""
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": None, "b": 1}),
+        language=JAVA,
+        prefix="",
+        wrap=False,
+    )
+    assert "null" not in result
+    assert 'Map.entry("b", 1)' in result
+
+
+def test_java_dict_all_null_values_wrap() -> None:
+    """Java dict where all values are null produces empty
+    Map.ofEntries().
+    """
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": None, "b": None}),
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert result == "Map.ofEntries()"
+
+
+def test_java_yaml_dict_null_values_with_comments() -> None:
+    """Java YAML dict with null values and comments does not crash."""
+    yaml_string = "# comment\nname: Alice\nscore: null\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert 'Map.entry("name", "Alice")' in result
+    assert "null" not in result
+
+
+def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
+    """All-null Java YAML dict with trailing comments does not duplicate
+    delimiters.
+    """
+    yaml_string = "a: null\nb: null\n# trailing\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert result.count("Map.ofEntries()") == 1
+
+
 def test_java_list_wrap_uses_braces() -> None:
     """Java wrapped lists use ``new Object[]{…}``."""
     result = literalize_json(
@@ -419,6 +490,7 @@ def test_custom_language() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_json(
@@ -978,6 +1050,7 @@ def test_custom_format_date() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_yaml(
@@ -1017,6 +1090,7 @@ def test_custom_format_datetime() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_yaml(
@@ -1056,6 +1130,7 @@ def test_java_native_dates() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_yaml(
@@ -1097,6 +1172,7 @@ def test_ruby_native_dates() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_yaml(
@@ -1233,6 +1309,7 @@ def test_custom_format_bytes() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_yaml(
@@ -1632,6 +1709,7 @@ def test_omap_custom_language_spec() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_yaml(
@@ -1767,6 +1845,7 @@ def test_variable_declaration_language_no_formatter() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        skip_null_dict_values=False,
         format_variable_declaration=None,
     )
     result = literalize_json(

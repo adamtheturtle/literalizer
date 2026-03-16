@@ -131,6 +131,7 @@ Usage examples
        omap_close="}",
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
+       skip_null_dict_values=False,
        format_variable_declaration=None,
    )
 

@@ -605,6 +605,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def skip_null_dict_values(self) -> bool:
+        """Whether to omit dict entries whose value is ``None``."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -640,6 +645,7 @@ class LanguageSpec:
     omap_close: str
     format_omap_entry: Callable[[str, str], str]
     multiline_close_indent: str
+    skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str] | None
 
 
@@ -674,6 +680,7 @@ PYTHON = LanguageSpec(
     omap_close="])",
     format_omap_entry=_format_python_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_python,
 )
 
@@ -715,6 +722,7 @@ CSHARP = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_csharp_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
 )
 
@@ -750,6 +758,7 @@ JAVASCRIPT = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -779,6 +788,7 @@ TYPESCRIPT = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -814,6 +824,7 @@ RUBY = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_ruby_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_ruby,
 )
 
@@ -849,6 +860,7 @@ GO = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_go_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_go,
 )
 
@@ -890,6 +902,7 @@ CPP = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_cpp_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_cpp,
 )
 
@@ -932,6 +945,7 @@ JAVA = LanguageSpec(
     format_omap_entry=_format_java_omap_entry,
     multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
+    skip_null_dict_values=True,
 )
 
 
@@ -966,6 +980,7 @@ SWIFT = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_swift_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=None,
 )
 
@@ -1007,6 +1022,7 @@ RUST = LanguageSpec(
     omap_close="])",
     format_omap_entry=_format_rust_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=None,
 )
 
@@ -1042,6 +1058,7 @@ KOTLIN = LanguageSpec(
     omap_close=")",
     format_omap_entry=_format_kotlin_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_kotlin,
 )
 
@@ -1077,6 +1094,7 @@ PHP = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_php_omap_entry,
     multiline_close_indent="",
+    skip_null_dict_values=False,
     format_variable_declaration=None,
 )
 
@@ -1118,6 +1136,7 @@ HASKELL = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_haskell_omap_entry,
     multiline_close_indent="    ",
+    skip_null_dict_values=False,
     format_variable_declaration=None,
 )
 
@@ -1178,17 +1197,27 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, ordereddict):
+        omap_items = [  # pyright: ignore[reportUnknownVariableType]
+            (k, v)
+            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            if not (spec.skip_null_dict_values and v is None)
+        ]
         pairs = [
             spec.format_omap_entry(
                 _format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
                 _format_value(value=v, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
             )
-            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            for k, v in omap_items  # pyright: ignore[reportUnknownVariableType]
         ]
         return spec.omap_open + ", ".join(pairs) + spec.omap_close
 
     if isinstance(value, dict):
-        if not value and spec.empty_dict is not None:
+        dict_items = {
+            k: v
+            for k, v in value.items()
+            if not (spec.skip_null_dict_values and v is None)
+        }
+        if not dict_items and spec.empty_dict is not None:
             return spec.empty_dict
         pairs = [
             _build_dict_entry(
@@ -1196,7 +1225,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
                 val_str=_format_value(value=v, spec=spec),
                 spec=spec,
             )
-            for k, v in value.items()
+            for k, v in dict_items.items()
         ]
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
@@ -1297,18 +1326,28 @@ def _literalize(
     is_omap = isinstance(data, ordereddict)
     if is_omap or isinstance(data, dict):
         dict_data = cast("dict[str, Any]", data)
-        entries = list(dict_data.items())
+        entries = [
+            (k, v)
+            for k, v in dict_data.items()
+            if not (spec.skip_null_dict_values and v is None)
+        ]
+        if not entries and wrap and dict_data:
+            empty_value: ordereddict | dict[str, Any] = (
+                ordereddict() if is_omap else {}
+            )
+            return _format_value(value=empty_value, spec=spec)
+        assert not is_omap or spec.format_omap_entry is not None  # noqa: S101
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
-            if is_omap:
-                assert spec.format_omap_entry is not None  # noqa: S101
-                entry = spec.format_omap_entry(formatted_key, formatted_val)
-            else:
-                entry = _build_dict_entry(
+            entry = (
+                spec.format_omap_entry(formatted_key, formatted_val)
+                if is_omap
+                else _build_dict_entry(
                     key_str=formatted_key, val_str=formatted_val, spec=spec
                 )
+            )
             comma = "" if i == last_idx and not spec.trailing_comma else ","
             lines.append(f"{effective_prefix}{entry}{comma}")
     elif isinstance(data, set):
@@ -1644,7 +1683,7 @@ def _literalize_yaml_collection(
     effective_prefix = ctx.prefix if not ctx.wrap else (ctx.prefix or "    ")
     all_lines = ctx.base.split(sep="\n")
 
-    if ctx.wrap:
+    if ctx.wrap and len(all_lines) > 1:
         header = all_lines[0]
         footer = all_lines[-1]
         body_lines = all_lines[1:-1]
@@ -1762,6 +1801,23 @@ def literalize_yaml(
             ruamel_data=ruamel_data,
             is_sequence=is_sequence,
         )
+
+        if not is_sequence and language.skip_null_dict_values:
+            assert isinstance(data, dict)  # noqa: S101
+            assert isinstance(ruamel_data, CommentedMap)  # noqa: S101
+            filtered_elements = tuple(
+                ec
+                for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
+                    ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                    collection_comments.elements,
+                    strict=True,
+                )
+                if data[key] is not None
+            )
+            collection_comments = dataclasses.replace(
+                collection_comments,
+                elements=filtered_elements,
+            )
 
         has_comments = (
             any(

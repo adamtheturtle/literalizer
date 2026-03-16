@@ -5,8 +5,7 @@ class Check {
 var my_data = Map.ofEntries(
     Map.entry("name", "Alice"),
     Map.entry("age", 30),
-    Map.entry("active", true),
-    Map.entry("score", null)
+    Map.entry("active", true)
 );
     }
 }
