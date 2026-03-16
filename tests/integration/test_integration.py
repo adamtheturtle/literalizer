@@ -81,6 +81,33 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+def _wrap_haskell(content: str) -> str:
+    """Wrap in a Haskell module with a custom Val ADT that accepts mixed
+    types.
+    """
+    return (
+        "{-# LANGUAGE OverloadedStrings #-}\n"
+        "module Check where\n"
+        "import Data.String (IsString(fromString))\n"
+        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
+        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+        "instance IsString Val where\n"
+        "    fromString = HStr\n"
+        "instance Num Val where\n"
+        "    fromInteger = HInt\n"
+        '    (+) = error "not implemented"\n'
+        '    (*) = error "not implemented"\n'
+        '    abs = error "not implemented"\n'
+        '    signum = error "not implemented"\n'
+        '    negate = error "not implemented"\n'
+        "instance Fractional Val where\n"
+        "    fromRational r = HFloat (fromRational r)\n"
+        '    (/) = error "not implemented"\n'
+        "x :: Val\n"
+        f"x = {content}"
+    )
+
+
 @dataclasses.dataclass
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
@@ -135,6 +162,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.CPP,
         extension=".cpp",
         wrap=_wrap_cpp,
+    ),
+    "haskell": _LanguageConfig(
+        spec=literalizer.HASKELL,
+        extension=".hs",
+        wrap=_wrap_haskell,
     ),
 }
 
