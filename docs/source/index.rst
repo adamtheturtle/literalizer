@@ -2,7 +2,7 @@
 =========
 
 |project| converts JSON data structures to native language literal syntax
-(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin).
+(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Rust, PHP).
 
 Installation
 ------------
@@ -119,7 +119,7 @@ Usage examples
    # }
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN
+   #                      CSHARP, CPP, JAVA, KOTLIN, RUST, PHP
 
    # Create a custom language:
    custom = LanguageSpec(
@@ -245,6 +245,8 @@ Usage examples
    # format_date_go / format_datetime_go
    # format_date_kotlin / format_datetime_kotlin
    # format_date_cpp / format_datetime_cpp
+   # format_date_rust / format_datetime_rust
+   # format_date_php / format_datetime_php
    # format_datetime_epoch (Unix timestamp)
 
 Use cases
