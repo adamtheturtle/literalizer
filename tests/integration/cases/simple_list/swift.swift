@@ -1,4 +1,4 @@
-let x: Any = [
+let x: Any? = [
     1,
     "hello",
     true,

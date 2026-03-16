@@ -77,7 +77,7 @@ def _wrap_cpp(content: str) -> str:
 
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
-    return f"let x: Any = {content}"
+    return f"let x: Any? = {content}"
 
 
 def _wrap_csharp(content: str) -> str:
@@ -85,6 +85,35 @@ def _wrap_csharp(content: str) -> str:
     return f"""\
 using System.Collections.Generic;
 var x = {content};"""
+
+
+def _wrap_haskell(content: str) -> str:
+    """Wrap in a Haskell module with a custom Val ADT that accepts mixed
+    types.
+    """
+    return (
+        "{-# LANGUAGE OverloadedStrings #-}\n"
+        "module Check where\n"
+        "import Data.String (IsString(fromString))\n"
+        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
+        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+        "instance IsString Val where\n"
+        "    fromString = HStr\n"
+        "instance Num Val where\n"
+        "    fromInteger = HInt\n"
+        '    a + b = error "not implemented"\n'
+        '    a * b = error "not implemented"\n'
+        '    abs a = error "not implemented"\n'
+        '    signum a = error "not implemented"\n'
+        "    negate (HInt n) = HInt (negate n)\n"
+        "    negate (HFloat f) = HFloat (negate f)\n"
+        '    negate _ = error "not implemented"\n'
+        "instance Fractional Val where\n"
+        "    fromRational r = HFloat (realToFrac r)\n"
+        '    a / b = error "not implemented"\n'
+        "x :: Val\n"
+        f"x = {content}"
+    )
 
 
 _VARIABLE_NAME = "my_data"
@@ -372,6 +401,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_cpp_chrono,
             ),
         ),
+    ),
+    "haskell": _LanguageConfig(
+        spec=literalizer.HASKELL,
+        extension=".hs",
+        wrap=_wrap_haskell,
     ),
     "php": _LanguageConfig(
         spec=literalizer.PHP,

@@ -7,11 +7,12 @@ import datetime
 import json
 from collections.abc import Iterable  # noqa: TC003
 from io import StringIO
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 from ruamel.yaml.tokens import CommentToken  # noqa: TC002
 
@@ -371,7 +372,7 @@ def format_variable_declaration_kotlin(name: str, value: str) -> str:
 
 
 @runtime_checkable
-class Language(Protocol):
+class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Protocol describing how a language formats scalar literals and
     collections.
 
@@ -505,6 +506,33 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def omap_open(self) -> str:
+        """The opening delimiter for ordered-map literals."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def omap_close(self) -> str:
+        """The closing delimiter for ordered-map literals."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_omap_entry(self) -> Callable[[str, str], str]:
+        """Callable that formats one ordered-map entry from a
+        pre-formatted key and value string.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def multiline_close_indent(self) -> str:
+        """The prefix to prepend to the closing delimiter of multi-line
+        collections, sets, and dicts.  Defaults to ``""`` (closing
+        delimiter at column 0).  Set to ``"    "`` for languages like
+        Haskell where the layout rule requires the closing bracket to
+        be indented.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_variable_declaration(self) -> Callable[[str, str], str] | None:
         """Callable that formats a variable declaration from a name and
         value string, or ``None`` if not supported.
@@ -542,7 +570,16 @@ class LanguageSpec:
     empty_set: str | None
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
+    omap_open: str
+    omap_close: str
+    format_omap_entry: Callable[[str, str], str]
+    multiline_close_indent: str
     format_variable_declaration: Callable[[str, str], str] | None = None
+
+
+def _format_python_omap_entry(key: str, value: str) -> str:
+    """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
+    return f"({key}, {value})"
 
 
 PYTHON = LanguageSpec(
@@ -567,12 +604,21 @@ PYTHON = LanguageSpec(
     empty_set="set()",
     format_set_entry=None,
     comment_prefix="#",
+    omap_open="OrderedDict([",
+    omap_close="])",
+    format_omap_entry=_format_python_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_python,
 )
 
 
 def _format_csharp_dict_entry(key: str, value: str) -> str:
     """Format a C# dictionary indexer entry."""
+    return f"[{key}] = {value}"
+
+
+def _format_csharp_omap_entry(key: str, value: str) -> str:
+    """Format a C# ordered-dict entry as an indexer assignment."""
     return f"[{key}] = {value}"
 
 
@@ -598,8 +644,18 @@ CSHARP = LanguageSpec(
     empty_set="new HashSet<object>()",
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="new Dictionary<string, object> {",
+    omap_close="}",
+    format_omap_entry=_format_csharp_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_csharp,
 )
+
+
+def _format_js_omap_entry(key: str, value: str) -> str:
+    """Format a JavaScript/TypeScript ordered-map entry."""
+    return f"{key}: {value}"
+
 
 JAVASCRIPT = LanguageSpec(
     null_literal="null",
@@ -623,6 +679,10 @@ JAVASCRIPT = LanguageSpec(
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_js_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -648,8 +708,18 @@ TYPESCRIPT = LanguageSpec(
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_js_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_js,
 )
+
+
+def _format_ruby_omap_entry(key: str, value: str) -> str:
+    """Format a Ruby ordered-map entry."""
+    return f"{key} => {value}"
+
 
 RUBY = LanguageSpec(
     null_literal="nil",
@@ -673,8 +743,18 @@ RUBY = LanguageSpec(
     empty_set="Set.new",
     format_set_entry=None,
     comment_prefix="#",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_ruby_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_ruby,
 )
+
+
+def _format_go_omap_entry(key: str, value: str) -> str:
+    """Format a Go ordered-map entry."""
+    return f"{key}: {value}"
+
 
 GO = LanguageSpec(
     null_literal="nil",
@@ -698,8 +778,17 @@ GO = LanguageSpec(
     empty_set=None,
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
+    omap_open="map[string]any{",
+    omap_close="}",
+    format_omap_entry=_format_go_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_go,
 )
+
+
+def _format_cpp_omap_entry(key: str, value: str) -> str:
+    """Format a C++ ordered-map entry as a brace-enclosed pair."""
+    return f"{{{key}, {value}}}"
 
 
 def _format_cpp_dict_entry(key: str, value: str) -> str:
@@ -729,12 +818,21 @@ CPP = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_cpp_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_cpp,
 )
 
 
 def _format_java_dict_entry(key: str, value: str) -> str:
     """Format a Java ``Map.entry(key, value)`` call."""
+    return f"Map.entry({key}, {value})"
+
+
+def _format_java_omap_entry(key: str, value: str) -> str:
+    """Format a Java ordered-map entry as a ``Map.entry(key, value)`` call."""
     return f"Map.entry({key}, {value})"
 
 
@@ -760,8 +858,18 @@ JAVA = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="Map.ofEntries(",
+    omap_close=")",
+    format_omap_entry=_format_java_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
 )
+
+
+def _format_swift_omap_entry(key: str, value: str) -> str:
+    """Format a Swift dictionary entry."""
+    return f"{key}: {value}"
+
 
 SWIFT = LanguageSpec(
     null_literal="nil",
@@ -785,7 +893,17 @@ SWIFT = LanguageSpec(
     empty_set="Set<AnyHashable>()",
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="[",
+    omap_close="]",
+    format_omap_entry=_format_swift_omap_entry,
+    multiline_close_indent="",
 )
+
+
+def _format_kotlin_omap_entry(key: str, value: str) -> str:
+    """Format a Kotlin ordered-map entry."""
+    return f"{key} to {value}"
+
 
 KOTLIN = LanguageSpec(
     null_literal="null",
@@ -809,8 +927,18 @@ KOTLIN = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="linkedMapOf<String, Any?>(",
+    omap_close=")",
+    format_omap_entry=_format_kotlin_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_kotlin,
 )
+
+
+def _format_php_omap_entry(key: str, value: str) -> str:
+    """Format one PHP array entry as a ``key => value`` pair."""
+    return f"{key} => {value}"
+
 
 PHP = LanguageSpec(
     null_literal="null",
@@ -834,6 +962,48 @@ PHP = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="[",
+    omap_close="]",
+    format_omap_entry=_format_php_omap_entry,
+    multiline_close_indent="",
+)
+
+
+def _format_haskell_dict_entry(key: str, value: str) -> str:
+    """Format a Haskell dict entry as a tuple pair."""
+    return f"({key}, {value})"
+
+
+def _format_haskell_omap_entry(key: str, value: str) -> str:
+    """Format a Haskell ordered-map entry as a tuple pair."""
+    return f"({key}, {value})"
+
+
+HASKELL = LanguageSpec(
+    null_literal="HNull",
+    true_literal="HBool True",
+    false_literal="HBool False",
+    collection_open="HList [",
+    collection_close="]",
+    dict_separator=", ",
+    dict_open="HMap [",
+    dict_close="]",
+    format_dict_entry=_format_haskell_dict_entry,
+    trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="HSet [",
+    set_close="]",
+    empty_set=None,
+    format_set_entry=None,
+    comment_prefix="--",
+    omap_open="HMap [",
+    omap_close="]",
+    format_omap_entry=_format_haskell_omap_entry,
+    multiline_close_indent="    ",
 )
 
 
@@ -873,11 +1043,35 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 
 
 @beartype
+def _format_set_value(*, value: set[_Scalar], spec: Language) -> str:
+    """Format a set value as a native language literal."""
+    if not value and spec.empty_set is not None:
+        return spec.empty_set
+    sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+    formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
+    if spec.format_set_entry is not None:
+        entries = [spec.format_set_entry(item) for item in formatted]
+    else:
+        entries = formatted
+    return spec.set_open + ", ".join(entries) + spec.set_close
+
+
+@beartype
 def _format_value(*, value: _Value, spec: Language) -> str:
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), dicts, and sets.
     """
+    if isinstance(value, ordereddict):
+        pairs = [
+            spec.format_omap_entry(
+                _format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
+                _format_value(value=v, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
+            )
+            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        ]
+        return spec.omap_open + ", ".join(pairs) + spec.omap_close
+
     if isinstance(value, dict):
         if not value and spec.empty_dict is not None:
             return spec.empty_dict
@@ -892,15 +1086,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
     if isinstance(value, set):
-        if not value and spec.empty_set is not None:
-            return spec.empty_set
-        sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
-        formatted = [_format_value(value=v, spec=spec) for v in sorted_items]
-        if spec.format_set_entry is not None:
-            entries = [spec.format_set_entry(item) for item in formatted]
-        else:
-            entries = formatted
-        return spec.set_open + ", ".join(entries) + spec.set_close
+        return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
         if not value and spec.empty_collection is not None:
@@ -914,6 +1100,25 @@ def _format_value(*, value: _Value, spec: Language) -> str:
         return f"{spec.collection_open}{joined}{spec.collection_close}"
 
     return _format_scalar(value=value, spec=spec)
+
+
+@beartype
+def _wrap_body(
+    *,
+    body: str,
+    is_omap: bool,
+    data: list[Any] | dict[str, Any] | set[Any],
+    spec: Language,
+) -> str:
+    """Wrap ``body`` in the language's open/close delimiters."""
+    ci = spec.multiline_close_indent
+    if is_omap:
+        return f"{spec.omap_open}\n{body}\n{ci}{spec.omap_close}"
+    if isinstance(data, dict):
+        return f"{spec.dict_open}\n{body}\n{ci}{spec.dict_close}"
+    if isinstance(data, set):
+        return f"{spec.set_open}\n{body}\n{ci}{spec.set_close}"
+    return f"{spec.collection_open}\n{body}\n{ci}{spec.collection_close}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
@@ -974,15 +1179,21 @@ def _literalize(
     effective_prefix = prefix if not wrap else (prefix or "    ")
     lines: list[str] = []
 
-    if isinstance(data, dict):
-        entries = list(data.items())
+    is_omap = isinstance(data, ordereddict)
+    if is_omap or isinstance(data, dict):
+        dict_data = cast("dict[str, Any]", data)
+        entries = list(dict_data.items())
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
-            entry = _build_dict_entry(
-                key_str=formatted_key, val_str=formatted_val, spec=spec
-            )
+            if is_omap:
+                assert spec.format_omap_entry is not None  # noqa: S101
+                entry = spec.format_omap_entry(formatted_key, formatted_val)
+            else:
+                entry = _build_dict_entry(
+                    key_str=formatted_key, val_str=formatted_val, spec=spec
+                )
             comma = "" if i == last_idx and not spec.trailing_comma else ","
             lines.append(f"{effective_prefix}{entry}{comma}")
     elif isinstance(data, set):
@@ -1009,13 +1220,7 @@ def _literalize(
     if not wrap or not body:
         return body
 
-    if isinstance(data, dict):
-        return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
-
-    if isinstance(data, set):
-        return f"{spec.set_open}\n{body}\n{spec.set_close}"
-
-    return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
+    return _wrap_body(body=body, is_omap=is_omap, data=data, spec=spec)
 
 
 @beartype

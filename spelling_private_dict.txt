@@ -1,3 +1,4 @@
+ADT
 Args
 CPP
 Changelog
@@ -15,6 +16,7 @@ dicts
 formatter
 formatters
 fromhex
+ghc
 gofmt
 initializer
 initializers
@@ -28,6 +30,7 @@ localhost
 namespaces
 natively
 ofEntries
+omap
 paren
 pragma
 pre
@@ -43,4 +46,5 @@ stdin
 struct
 subclasses
 swiftc
+whitespace
 yaml

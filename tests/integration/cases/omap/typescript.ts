@@ -1,6 +1,7 @@
-let x: Any? = [
+void (
+{
     "name": "Alice",
     "age": 30,
     "active": true,
-    "score": nil,
-]
+}
+)

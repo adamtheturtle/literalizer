@@ -253,7 +253,9 @@ ignore = [
     "tests/**",
     "zizmor.yml",
     "check_csharp_golden_syntax.py",
+    "check_haskell_golden_syntax.py",
     "check_java_golden_syntax.py",
+    "check_swift_golden_syntax.py",
 ]
 
 [tool.deptry]
@@ -293,7 +295,7 @@ follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
-exclude = [
+project_excludes = [
     "tests/integration/cases",
 ]
 
@@ -309,6 +311,9 @@ typeCheckingMode = "strict"
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
+src.exclude = [
+    "tests/integration/cases",
+]
 
 [tool.doc8]
 max_line_length = 2000
