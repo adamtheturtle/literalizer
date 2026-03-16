@@ -81,6 +81,11 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+def _wrap_php(content: str) -> str:
+    """Wrap in a PHP script variable assignment."""
+    return f"<?php\n$x = {content};"
+
+
 @dataclasses.dataclass
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
@@ -135,6 +140,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.CPP,
         extension=".cpp",
         wrap=_wrap_cpp,
+    ),
+    "php": _LanguageConfig(
+        spec=literalizer.PHP,
+        extension=".php",
+        wrap=_wrap_php,
     ),
 }
 
