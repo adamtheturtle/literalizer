@@ -136,6 +136,7 @@ lint.pylint.max-returns = 7
 
 [tool.pylint]
 DESIGN.max-complexity = 12
+DESIGN.max-public-methods = 22
 # Allow the body of an if to be on the same line as the test if there is no
 # else.
 FORMAT.single-line-if-stmt = false

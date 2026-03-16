@@ -775,6 +775,7 @@ SWIFT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="[Any]()",
