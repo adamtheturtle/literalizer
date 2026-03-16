@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import Any
 
 
 @runtime_checkable
@@ -183,6 +184,18 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """Whether to omit dict entries whose value is ``None``."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def format_collection_open(self) -> Callable[[list[Any]], str] | None:
+        """Callable that returns the collection opener string for a given
+        list of values, or ``None`` to use ``collection_open``.
+
+        When set, the callable receives the raw list values and returns
+        the opening delimiter (e.g. ``"new String[]{"`` for an all-string
+        Java array).  The closing delimiter is always taken from
+        ``collection_close``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -220,3 +233,4 @@ class LanguageSpec:
     multiline_close_indent: str
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str] | None
+    format_collection_open: Callable[[list[Any]], str] | None

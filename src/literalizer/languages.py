@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from beartype import beartype
 
 __all__ = [
@@ -71,6 +73,7 @@ PYTHON = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_python,
+    format_collection_open=None,
 )
 
 
@@ -108,6 +111,7 @@ CSHARP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
+    format_collection_open=None,
 )
 
 
@@ -144,6 +148,7 @@ JAVASCRIPT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
+    format_collection_open=None,
 )
 
 TYPESCRIPT = LanguageSpec(
@@ -174,6 +179,7 @@ TYPESCRIPT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
+    format_collection_open=None,
 )
 
 
@@ -210,6 +216,7 @@ RUBY = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_ruby,
+    format_collection_open=None,
 )
 
 
@@ -255,6 +262,7 @@ GO = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_go,
+    format_collection_open=None,
 )
 
 
@@ -292,6 +300,7 @@ CPP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_cpp,
+    format_collection_open=None,
 )
 
 
@@ -299,6 +308,23 @@ CPP = LanguageSpec(
 def _format_java_dict_entry(key: str, value: str) -> str:
     """Format a Java ``Map.entry(key, value)`` call."""
     return f"Map.entry({key}, {value})"
+
+
+@beartype
+def _format_java_collection_open(values: list[Any]) -> str:
+    """Return a typed Java array opener inferred from element types.
+
+    Returns ``"new String[]{"`` when all elements are strings,
+    ``"new int[]{"`` when all elements are non-boolean integers, and
+    ``"new Object[]{"`` otherwise.
+    """
+    if values and all(isinstance(v, str) for v in values):
+        return "new String[]{"
+    if values and all(
+        isinstance(v, int) and not isinstance(v, bool) for v in values
+    ):
+        return "new int[]{"
+    return "new Object[]{"
 
 
 JAVA = LanguageSpec(
@@ -329,6 +355,7 @@ JAVA = LanguageSpec(
     multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
     skip_null_dict_values=True,
+    format_collection_open=_format_java_collection_open,
 )
 
 
@@ -365,6 +392,7 @@ SWIFT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=None,
+    format_collection_open=None,
 )
 
 
@@ -407,6 +435,7 @@ RUST = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=None,
+    format_collection_open=None,
 )
 
 
@@ -443,6 +472,7 @@ KOTLIN = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_kotlin,
+    format_collection_open=None,
 )
 
 
@@ -479,6 +509,7 @@ PHP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=None,
+    format_collection_open=None,
 )
 
 
@@ -521,4 +552,5 @@ HASKELL = LanguageSpec(
     multiline_close_indent="    ",
     skip_null_dict_values=False,
     format_variable_declaration=None,
+    format_collection_open=None,
 )
