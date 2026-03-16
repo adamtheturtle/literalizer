@@ -1233,6 +1233,7 @@ def test_custom_format_bytes() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        format_variable_declaration=None,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",

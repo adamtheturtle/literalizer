@@ -993,6 +993,7 @@ RUST = LanguageSpec(
     format_dict_entry=_format_rust_dict_entry,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -1006,6 +1007,7 @@ RUST = LanguageSpec(
     omap_close="])",
     format_omap_entry=_format_rust_omap_entry,
     multiline_close_indent="",
+    format_variable_declaration=None,
 )
 
 
