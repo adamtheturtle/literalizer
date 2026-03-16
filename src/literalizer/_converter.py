@@ -1336,7 +1336,6 @@ def _literalize(
                 ordereddict() if is_omap else {}
             )
             return _format_value(value=empty_value, spec=spec)
-        assert not is_omap or spec.format_omap_entry is not None  # noqa: S101
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
