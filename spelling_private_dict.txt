@@ -15,6 +15,7 @@ datetimes
 dicts
 formatter
 formatters
+ghc
 gofmt
 initializer
 initializers
