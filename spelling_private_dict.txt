@@ -10,6 +10,7 @@ booleans
 chrono
 commonjs
 config
+dataclass
 datetime
 datetimes
 dicts
@@ -38,9 +39,11 @@ prepended
 pyright
 pytest
 reportAttributeAccessIssue
+reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
+reportUnusedFunction
 ruamel
 stdin
 struct
