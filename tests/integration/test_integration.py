@@ -264,7 +264,7 @@ class _LanguageConfig:
     spec: literalizer.LanguageSpec
     extension: str
     wrap: Callable[[str], str]
-    date_variants: tuple[_DateVariant, ...] = ()
+    date_variants: tuple[_DateVariant, ...]
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
@@ -388,6 +388,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.SWIFT,
         extension=".swift",
         wrap=_wrap_swift,
+        date_variants=(),
     ),
     "cpp": _LanguageConfig(
         spec=literalizer.CPP,
@@ -406,11 +407,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.HASKELL,
         extension=".hs",
         wrap=_wrap_haskell,
+        date_variants=(),
     ),
     "php": _LanguageConfig(
         spec=literalizer.PHP,
         extension=".php",
         wrap=_wrap_php,
+        date_variants=(),
     ),
 }
 
@@ -420,46 +423,55 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.PYTHON,
         extension=".py",
         wrap=_wrap_identity,
+        date_variants=(),
     ),
     "javascript": _LanguageConfig(
         spec=literalizer.JAVASCRIPT,
         extension=".js",
         wrap=_wrap_identity,
+        date_variants=(),
     ),
     "typescript": _LanguageConfig(
         spec=literalizer.TYPESCRIPT,
         extension=".ts",
         wrap=_wrap_ts_varname,
+        date_variants=(),
     ),
     "kotlin": _LanguageConfig(
         spec=literalizer.KOTLIN,
         extension=".kts",
         wrap=_wrap_identity,
+        date_variants=(),
     ),
     "ruby": _LanguageConfig(
         spec=literalizer.RUBY,
         extension=".rb",
         wrap=_wrap_identity,
+        date_variants=(),
     ),
     "go": _LanguageConfig(
         spec=literalizer.GO,
         extension=".go",
         wrap=_wrap_go_varname,
+        date_variants=(),
     ),
     "java": _LanguageConfig(
         spec=literalizer.JAVA,
         extension=".java",
         wrap=_wrap_java_varname,
+        date_variants=(),
     ),
     "csharp": _LanguageConfig(
         spec=literalizer.CSHARP,
         extension=".cs",
         wrap=_wrap_csharp_varname,
+        date_variants=(),
     ),
     "cpp": _LanguageConfig(
         spec=literalizer.CPP,
         extension=".cpp",
         wrap=_wrap_cpp_varname,
+        date_variants=(),
     ),
 }
 
