@@ -454,7 +454,7 @@ repos:
 
       - id: kotlin-syntax-check
         name: Kotlin golden file syntax check
-        entry: kotlinc -script
+        entry: bash -c 'for f; do kotlinc -script "$f" || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.kts$
         stages: [pre-commit]
