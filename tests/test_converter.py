@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import base64
 import datetime
 import json
 import textwrap
@@ -579,6 +580,36 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
         return
     parsed = ast.literal_eval(node_or_string=result)
     assert parsed == _lists_to_tuples(value=data)
+
+
+@given(data=st.binary())
+def test_roundtrip_bytes_python(data: bytes) -> None:
+    """Format_bytes_python -> ast.literal_eval round-trips."""
+    result = format_bytes_python(value=data)
+    assert ast.literal_eval(node_or_string=result) == data
+
+
+@given(data=st.binary())
+def test_roundtrip_bytes_hex(data: bytes) -> None:
+    """Format_bytes_hex -> bytes.fromhex round-trips."""
+    result = format_bytes_hex(value=data)
+    assert bytes.fromhex(result.strip('"')) == data
+
+
+@given(data=st.binary())
+def test_roundtrip_yaml_binary_python(data: bytes) -> None:
+    """YAML !!binary -> literalize_yaml (Python) -> ast.literal_eval round-
+    trips.
+    """
+    encoded = base64.b64encode(data).decode()
+    yaml_string = f"- !!binary |\n  {encoded}\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert ast.literal_eval(node_or_string=result.rstrip(",")) == data.hex()
 
 
 def test_literalize_yaml_empty_sequence() -> None:
