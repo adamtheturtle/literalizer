@@ -184,7 +184,7 @@ def test_java_list_wrap_uses_braces() -> None:
 
 
 @pytest.mark.parametrize(argnames="wrap", argvalues=[False, True])
-def test_dict_empty(wrap: bool) -> None:  # noqa: FBT001
+def test_dict_empty(*, wrap: bool) -> None:
     """An empty dict produces an empty string regardless of wrap."""
     result = literalize_json(
         json_string=json.dumps(obj={}), language=PYTHON, prefix="", wrap=wrap
@@ -341,7 +341,7 @@ def test_wrap_with_prefix() -> None:
 
 
 @pytest.mark.parametrize(argnames="wrap", argvalues=[False, True])
-def test_empty_data(wrap: bool) -> None:  # noqa: FBT001
+def test_empty_data(*, wrap: bool) -> None:
     """An empty list produces an empty string regardless of wrap."""
     result = literalize_json(
         json_string=json.dumps(obj=[]), language=PYTHON, prefix="", wrap=wrap
