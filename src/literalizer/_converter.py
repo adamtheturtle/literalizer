@@ -415,6 +415,16 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def multiline_close_indent(self) -> str:
+        """The prefix to prepend to the closing delimiter of multi-line
+        collections, sets, and dicts.  Defaults to ``""`` (closing
+        delimiter at column 0).  Set to ``"    "`` for languages like
+        Haskell where the layout rule requires the closing bracket to
+        be indented.
+        """
+        return ""
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -444,6 +454,7 @@ class LanguageSpec:
     empty_set: str | None
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
+    multiline_close_indent: str = ""
 
 
 PYTHON = LanguageSpec(
@@ -704,6 +715,7 @@ HASKELL = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="--",
+    multiline_close_indent="    ",
 )
 
 
@@ -873,13 +885,15 @@ def _literalize(
     if not wrap or not body:
         return body
 
+    ci = spec.multiline_close_indent
+
     if isinstance(data, dict):
-        return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
+        return f"{spec.dict_open}\n{body}\n{ci}{spec.dict_close}"
 
     if isinstance(data, set):
-        return f"{spec.set_open}\n{body}\n{spec.set_close}"
+        return f"{spec.set_open}\n{body}\n{ci}{spec.set_close}"
 
-    return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
+    return f"{spec.collection_open}\n{body}\n{ci}{spec.collection_close}"
 
 
 @beartype
