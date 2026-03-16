@@ -3,7 +3,7 @@
 literalizer
 ===========
 
-``literalizer`` converts JSON data structures to native language literal syntax (Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Swift, PHP).
+``literalizer`` converts JSON data structures to native language literal syntax (Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Haskell, Swift, PHP).
 
 .. contents::
    :local:
@@ -95,7 +95,7 @@ Usage examples
    # )
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN, SWIFT, PHP
+   #                      CSHARP, CPP, JAVA, KOTLIN, HASKELL, SWIFT, PHP
 
 
    # Create a custom language:
@@ -128,6 +128,7 @@ Usage examples
        omap_open="{",
        omap_close="}",
        format_omap_entry=_omap_entry,
+       multiline_close_indent="",
    )
 
 Use cases

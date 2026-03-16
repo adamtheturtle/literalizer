@@ -500,6 +500,16 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def multiline_close_indent(self) -> str:
+        """The prefix to prepend to the closing delimiter of multi-line
+        collections, sets, and dicts.  Defaults to ``""`` (closing
+        delimiter at column 0).  Set to ``"    "`` for languages like
+        Haskell where the layout rule requires the closing bracket to
+        be indented.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_variable_declaration(self) -> Callable[[str, str], str] | None:
         """Callable that formats a variable declaration from a name and
         value string, or ``None`` if not supported.
@@ -539,6 +549,7 @@ class LanguageSpec:
     omap_open: str
     omap_close: str
     format_omap_entry: Callable[[str, str], str]
+    multiline_close_indent: str
     format_variable_declaration: Callable[[str, str], str] | None = None
 
 
@@ -571,6 +582,7 @@ PYTHON = LanguageSpec(
     omap_open="OrderedDict([",
     omap_close="])",
     format_omap_entry=_format_python_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_python,
 )
 
@@ -609,6 +621,7 @@ CSHARP = LanguageSpec(
     omap_open="new Dictionary<string, object> {",
     omap_close="}",
     format_omap_entry=_format_csharp_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_csharp,
 )
 
@@ -642,6 +655,7 @@ JAVASCRIPT = LanguageSpec(
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -669,6 +683,7 @@ TYPESCRIPT = LanguageSpec(
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -702,6 +717,7 @@ RUBY = LanguageSpec(
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_ruby_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_ruby,
 )
 
@@ -735,6 +751,7 @@ GO = LanguageSpec(
     omap_open="map[string]any{",
     omap_close="}",
     format_omap_entry=_format_go_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_go,
 )
 
@@ -773,6 +790,7 @@ CPP = LanguageSpec(
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_cpp_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_cpp,
 )
 
@@ -811,6 +829,7 @@ JAVA = LanguageSpec(
     omap_open="Map.ofEntries(",
     omap_close=")",
     format_omap_entry=_format_java_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
 )
 
@@ -844,6 +863,7 @@ SWIFT = LanguageSpec(
     omap_open="[",
     omap_close="]",
     format_omap_entry=_format_swift_omap_entry,
+    multiline_close_indent="",
 )
 
 
@@ -876,6 +896,7 @@ KOTLIN = LanguageSpec(
     omap_open="linkedMapOf<String, Any?>(",
     omap_close=")",
     format_omap_entry=_format_kotlin_omap_entry,
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_kotlin,
 )
 
@@ -909,6 +930,45 @@ PHP = LanguageSpec(
     omap_open="[",
     omap_close="]",
     format_omap_entry=_format_php_omap_entry,
+    multiline_close_indent="",
+)
+
+
+def _format_haskell_dict_entry(key: str, value: str) -> str:
+    """Format a Haskell dict entry as a tuple pair."""
+    return f"({key}, {value})"
+
+
+def _format_haskell_omap_entry(key: str, value: str) -> str:
+    """Format a Haskell ordered-map entry as a tuple pair."""
+    return f"({key}, {value})"
+
+
+HASKELL = LanguageSpec(
+    null_literal="HNull",
+    true_literal="HBool True",
+    false_literal="HBool False",
+    collection_open="HList [",
+    collection_close="]",
+    dict_separator=", ",
+    dict_open="HMap [",
+    dict_close="]",
+    format_dict_entry=_format_haskell_dict_entry,
+    trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="HSet [",
+    set_close="]",
+    empty_set=None,
+    format_set_entry=None,
+    comment_prefix="--",
+    omap_open="HMap [",
+    omap_close="]",
+    format_omap_entry=_format_haskell_omap_entry,
+    multiline_close_indent="    ",
 )
 
 
@@ -1014,13 +1074,14 @@ def _wrap_body(
     spec: Language,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
+    ci = spec.multiline_close_indent
     if is_omap:
-        return f"{spec.omap_open}\n{body}\n{spec.omap_close}"
+        return f"{spec.omap_open}\n{body}\n{ci}{spec.omap_close}"
     if isinstance(data, dict):
-        return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
+        return f"{spec.dict_open}\n{body}\n{ci}{spec.dict_close}"
     if isinstance(data, set):
-        return f"{spec.set_open}\n{body}\n{spec.set_close}"
-    return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
+        return f"{spec.set_open}\n{body}\n{ci}{spec.set_close}"
+    return f"{spec.collection_open}\n{body}\n{ci}{spec.collection_close}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))

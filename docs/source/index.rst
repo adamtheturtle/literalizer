@@ -2,7 +2,7 @@
 =========
 
 |project| converts JSON data structures to native language literal syntax
-(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Swift, PHP).
+(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Haskell, Swift, PHP).
 
 Installation
 ------------
@@ -119,7 +119,7 @@ Usage examples
    # }
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN, SWIFT, PHP
+   #                      CSHARP, CPP, JAVA, KOTLIN, HASKELL, SWIFT, PHP
 
 
    # Helper used in custom LanguageSpec examples below.
@@ -153,6 +153,7 @@ Usage examples
        omap_open="{",
        omap_close="}",
        format_omap_entry=_omap_entry,
+       multiline_close_indent="",
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -181,6 +182,7 @@ Usage examples
        omap_open="{",
        omap_close="}",
        format_omap_entry=_omap_entry,
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -215,6 +217,7 @@ Usage examples
        omap_open="{",
        omap_close="}",
        format_omap_entry=_omap_entry,
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -249,6 +252,7 @@ Usage examples
        omap_open="{",
        omap_close="}",
        format_omap_entry=_omap_entry,
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",
