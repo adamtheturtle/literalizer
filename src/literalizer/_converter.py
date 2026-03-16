@@ -390,6 +390,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def empty_dict(self) -> str | None:
+        """Override for empty dict literals, or ``None`` to use
+        ``dict_open + dict_close``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def empty_set(self) -> str | None:
         """Override for empty set literals, or ``None`` to use
         ``set_open + set_close``.
@@ -434,6 +441,7 @@ class LanguageSpec:
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
+    empty_dict: str | None
     set_open: str
     set_close: str
     empty_set: str | None
@@ -456,6 +464,7 @@ PYTHON = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="{",
     set_close="}",
     empty_set="set()",
@@ -484,6 +493,7 @@ CSHARP = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
+    empty_dict=None,
     set_open="new HashSet<object> {",
     set_close="}",
     empty_set="new HashSet<object>()",
@@ -506,6 +516,7 @@ JAVASCRIPT = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
@@ -528,6 +539,7 @@ TYPESCRIPT = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
@@ -550,6 +562,7 @@ RUBY = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="Set.new([",
     set_close="])",
     empty_set="Set.new",
@@ -572,6 +585,7 @@ GO = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="map[any]struct{}{",
     set_close="}",
     empty_set=None,
@@ -600,6 +614,7 @@ CPP = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="{",
     set_close="}",
     empty_set=None,
@@ -628,9 +643,33 @@ JAVA = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="Set.of(",
     set_close=")",
     empty_set=None,
+    format_set_entry=None,
+    comment_prefix="//",
+)
+
+SWIFT = LanguageSpec(
+    null_literal="nil",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_separator=": ",
+    dict_open="[",
+    dict_close="]",
+    format_dict_entry=None,
+    trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection="[Any]()",
+    empty_dict="[String: Any]()",
+    set_open="Set([",
+    set_close="])",
+    empty_set="Set<AnyHashable>()",
     format_set_entry=None,
     comment_prefix="//",
 )
@@ -650,6 +689,7 @@ KOTLIN = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="setOf<Any?>(",
     set_close=")",
     empty_set=None,
@@ -672,6 +712,7 @@ PHP = LanguageSpec(
     format_date=format_date_php,
     format_datetime=format_datetime_php,
     empty_collection=None,
+    empty_dict=None,
     set_open="[",
     set_close="]",
     empty_set=None,
@@ -720,6 +761,8 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, dict):
+        if not value and spec.empty_dict is not None:
+            return spec.empty_dict
         pairs = [
             _build_dict_entry(
                 key_str=_format_value(value=k, spec=spec),

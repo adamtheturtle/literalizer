@@ -74,6 +74,11 @@ def _wrap_cpp(content: str) -> str:
     )
 
 
+def _wrap_swift(content: str) -> str:
+    """Wrap in a Swift variable assignment."""
+    return f"let x: Any = {content}"
+
+
 def _wrap_csharp(content: str) -> str:
     """Wrap in C# using statement and variable assignment."""
     return f"""\
@@ -196,6 +201,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.CSHARP,
         extension=".cs",
         wrap=_wrap_csharp,
+    ),
+    "swift": _LanguageConfig(
+        spec=literalizer.SWIFT,
+        extension=".swift",
+        wrap=_wrap_swift,
     ),
     "cpp": _LanguageConfig(
         spec=literalizer.CPP,

@@ -132,6 +132,7 @@ lint.per-file-ignores."tests/test_*.py" = [
 lint.unfixable = [ "ERA001" ]
 lint.mccabe.max-complexity = 12
 lint.pydocstyle.convention = "google"
+lint.pylint.max-returns = 7
 
 [tool.pylint]
 DESIGN.max-complexity = 12
