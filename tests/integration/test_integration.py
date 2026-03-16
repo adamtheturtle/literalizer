@@ -153,7 +153,7 @@ class _DateVariant:
     """A date/datetime formatting variant for a language."""
 
     name: str
-    format_date: Callable[[datetime.date], str] | None
+    format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     wrap: Callable[[str], str]
 
@@ -182,7 +182,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             ),
             _DateVariant(
                 name="python_epoch",
-                format_date=None,
+                format_date=literalizer.format_date_iso,
                 format_datetime=literalizer.format_datetime_epoch,
                 wrap=_wrap_identity,
             ),
@@ -369,17 +369,11 @@ def test_date_format_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test native date format variants against golden files."""
-    if variant.format_date is not None:
-        spec = dataclasses.replace(
-            lang_config.spec,
-            format_date=variant.format_date,
-            format_datetime=variant.format_datetime,
-        )
-    else:
-        spec = dataclasses.replace(
-            lang_config.spec,
-            format_datetime=variant.format_datetime,
-        )
+    spec = dataclasses.replace(
+        lang_config.spec,
+        format_date=variant.format_date,
+        format_datetime=variant.format_datetime,
+    )
     yaml_string = (_DATES_CASE_DIR / "input.yaml").read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
