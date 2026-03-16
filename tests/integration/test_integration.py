@@ -83,11 +83,12 @@ var x = {content};"""
 
 def _wrap_rust(content: str) -> str:
     """Wrap in a Rust main function with necessary imports."""
+    indented = content.replace("\n", "\n    ")
     return (
         "use std::collections::HashMap;\n"
         "use std::collections::HashSet;\n"
         "fn main() {\n"
-        f"    let _ = {content};\n"
+        f"    let _ = {indented};\n"
         "}"
     )
 
