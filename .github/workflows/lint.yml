@@ -27,7 +27,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Swift
-        uses: SwiftyLab/setup-swift@v2
+        uses: SwiftyLab/setup-swift@v1
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
