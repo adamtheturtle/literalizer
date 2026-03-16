@@ -1,4 +1,4 @@
-let x: Any = [
+let x: Any? = [
     "name": "Alice",
     "age": 30,
     "active": true,
