@@ -114,8 +114,8 @@ def _wrap_ts_varname(content: str) -> str:
 
     Adding ``export {}`` turns the file into a module so that ``const``
     declarations are module-scoped rather than global, preventing
-    "Cannot redeclare block-scoped variable" errors when ``tsc`` checks
-    all ``.ts`` files together.
+    duplicate-declaration errors when ``tsc`` checks all ``.ts`` files
+    together.
     """
     return f"{content}\nexport {{}};"
 
