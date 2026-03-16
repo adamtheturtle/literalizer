@@ -691,11 +691,6 @@ def _format_csharp_dict_entry(key: str, value: str) -> str:
     return f"[{key}] = {value}"
 
 
-def _format_csharp_omap_entry(key: str, value: str) -> str:
-    """Format a C# ordered-dict entry as an indexer assignment."""
-    return f"[{key}] = {value}"
-
-
 CSHARP = LanguageSpec(
     null_literal="(object?)null",
     true_literal="true",
@@ -720,7 +715,7 @@ CSHARP = LanguageSpec(
     comment_prefix="//",
     omap_open="new Dictionary<string, object> {",
     omap_close="}",
-    format_omap_entry=_format_csharp_omap_entry,
+    format_omap_entry=_format_csharp_dict_entry,
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
@@ -830,8 +825,8 @@ RUBY = LanguageSpec(
 
 
 def _format_go_omap_entry(key: str, value: str) -> str:
-    """Format a Go ordered-map entry."""
-    return f"{key}: {value}"
+    """Format a Go ordered-map entry as a ``{key, value}`` pair."""
+    return f"{{{key}, {value}}}"
 
 
 GO = LanguageSpec(
@@ -856,18 +851,13 @@ GO = LanguageSpec(
     empty_set=None,
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
-    omap_open="map[string]any{",
+    omap_open="[][2]any{",
     omap_close="}",
     format_omap_entry=_format_go_omap_entry,
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_go,
 )
-
-
-def _format_cpp_omap_entry(key: str, value: str) -> str:
-    """Format a C++ ordered-map entry as a brace-enclosed pair."""
-    return f"{{{key}, {value}}}"
 
 
 @beartype
@@ -900,7 +890,7 @@ CPP = LanguageSpec(
     comment_prefix="//",
     omap_open="{",
     omap_close="}",
-    format_omap_entry=_format_cpp_omap_entry,
+    format_omap_entry=_format_cpp_dict_entry,
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_cpp,
@@ -910,11 +900,6 @@ CPP = LanguageSpec(
 @beartype
 def _format_java_dict_entry(key: str, value: str) -> str:
     """Format a Java ``Map.entry(key, value)`` call."""
-    return f"Map.entry({key}, {value})"
-
-
-def _format_java_omap_entry(key: str, value: str) -> str:
-    """Format a Java ordered-map entry as a ``Map.entry(key, value)`` call."""
     return f"Map.entry({key}, {value})"
 
 
@@ -940,9 +925,9 @@ JAVA = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
-    omap_open="Map.ofEntries(",
-    omap_close=")",
-    format_omap_entry=_format_java_omap_entry,
+    omap_open="new java.util.ArrayList<>(java.util.Arrays.asList(",
+    omap_close="))",
+    format_omap_entry=_format_java_dict_entry,
     multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
     skip_null_dict_values=True,
