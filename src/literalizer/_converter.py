@@ -491,7 +491,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def skip_null_dict_values(self) -> bool:
         """Whether to omit dict entries whose value is ``None``."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @dataclasses.dataclass(frozen=True)
