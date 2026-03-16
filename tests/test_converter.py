@@ -1433,6 +1433,57 @@ def test_omap_nested_in_list() -> None:
     assert result == expected
 
 
+def test_omap_custom_language_spec() -> None:
+    """An omap with a custom LanguageSpec calls format_omap_entry."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        !!omap
+        - name: Alice
+        - age: 30
+        """,
+    )
+    custom = LanguageSpec(
+        null_literal="null",
+        true_literal="true",
+        false_literal="false",
+        collection_open="[",
+        collection_close="]",
+        dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
+        single_element_trailing_comma=False,
+        format_date=format_date_iso,
+        format_datetime=format_datetime_iso,
+        empty_collection=None,
+        empty_dict=None,
+        set_open="[",
+        set_close="]",
+        empty_set=None,
+        format_set_entry=None,
+        comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
+        format_variable_declaration=None,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=custom,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "name": "Alice",
+            "age": 30,
+        }""",
+    )
+    assert result == expected
+
+
 def test_yaml_comment_mapping_nested_value_none_token() -> None:
     """Mapping key with nested comment has None at token index 2."""
     yaml_string = "a:\n  # indented\n  x: 1\nb: 2\n"
