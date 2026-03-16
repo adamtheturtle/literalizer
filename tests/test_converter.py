@@ -404,6 +404,7 @@ def test_custom_language() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="//",
+        multiline_close_indent="",
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -918,6 +919,7 @@ def test_custom_format_date() -> None:
         empty_set="set()",
         format_set_entry=None,
         comment_prefix="//",
+        multiline_close_indent="",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -951,6 +953,7 @@ def test_custom_format_datetime() -> None:
         empty_set="set()",
         format_set_entry=None,
         comment_prefix="//",
+        multiline_close_indent="",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -984,6 +987,7 @@ def test_java_native_dates() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="//",
+        multiline_close_indent="",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1019,6 +1023,7 @@ def test_ruby_native_dates() -> None:
         empty_set="Set.new",
         format_set_entry=None,
         comment_prefix="#",
+        multiline_close_indent="",
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1514,6 +1519,7 @@ def test_variable_declaration_language_no_formatter() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="#",
+        multiline_close_indent="",
         format_variable_declaration=None,
     )
     result = literalize_json(

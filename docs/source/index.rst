@@ -2,7 +2,7 @@
 =========
 
 |project| converts JSON data structures to native language literal syntax
-(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Rust, Swift, PHP).
+(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Rust, Haskell, Swift, PHP).
 
 Installation
 ------------
@@ -119,7 +119,7 @@ Usage examples
    # }
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN, RUST, SWIFT, PHP
+   #                      CSHARP, CPP, JAVA, KOTLIN, RUST, HASKELL, SWIFT, PHP
 
    # Create a custom language:
    custom = LanguageSpec(
@@ -143,6 +143,7 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       multiline_close_indent="",
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -168,6 +169,7 @@ Usage examples
        empty_set="set()",
        format_set_entry=None,
        comment_prefix="#",
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -199,6 +201,7 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -230,6 +233,7 @@ Usage examples
        empty_set="Set.new",
        format_set_entry=None,
        comment_prefix="#",
+       multiline_close_indent="",
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",

@@ -508,6 +508,16 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def multiline_close_indent(self) -> str:
+        """The prefix to prepend to the closing delimiter of multi-line
+        collections, sets, and dicts.  Defaults to ``""`` (closing
+        delimiter at column 0).  Set to ``"    "`` for languages like
+        Haskell where the layout rule requires the closing bracket to
+        be indented.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_variable_declaration(self) -> Callable[[str, str], str] | None:
         """Callable that formats a variable declaration from a name and
         value string, or ``None`` if not supported.
@@ -544,6 +554,7 @@ class LanguageSpec:
     empty_set: str | None
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
+    multiline_close_indent: str
     format_variable_declaration: Callable[[str, str], str] | None = None
 
 
@@ -568,6 +579,7 @@ PYTHON = LanguageSpec(
     empty_set="set()",
     format_set_entry=None,
     comment_prefix="#",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_python,
 )
 
@@ -598,6 +610,7 @@ CSHARP = LanguageSpec(
     empty_set="new HashSet<object>()",
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_csharp,
 )
 
@@ -622,6 +635,7 @@ JAVASCRIPT = LanguageSpec(
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -646,6 +660,7 @@ TYPESCRIPT = LanguageSpec(
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_js,
 )
 
@@ -670,6 +685,7 @@ RUBY = LanguageSpec(
     empty_set="Set.new",
     format_set_entry=None,
     comment_prefix="#",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_ruby,
 )
 
@@ -694,6 +710,7 @@ GO = LanguageSpec(
     empty_set=None,
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_go,
 )
 
@@ -724,6 +741,7 @@ CPP = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_cpp,
 )
 
@@ -754,6 +772,7 @@ JAVA = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
 )
 
@@ -778,6 +797,7 @@ SWIFT = LanguageSpec(
     empty_set="Set<AnyHashable>()",
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 
@@ -807,6 +827,7 @@ RUST = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
 )
 
 KOTLIN = LanguageSpec(
@@ -830,6 +851,7 @@ KOTLIN = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_kotlin,
 )
 
@@ -854,6 +876,37 @@ PHP = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    multiline_close_indent="",
+)
+
+
+def _format_haskell_dict_entry(key: str, value: str) -> str:
+    """Format a Haskell dict entry as a tuple pair."""
+    return f"({key}, {value})"
+
+
+HASKELL = LanguageSpec(
+    null_literal="HNull",
+    true_literal="HBool True",
+    false_literal="HBool False",
+    collection_open="HList [",
+    collection_close="]",
+    dict_separator=", ",
+    dict_open="HMap [",
+    dict_close="]",
+    format_dict_entry=_format_haskell_dict_entry,
+    trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="HSet [",
+    set_close="]",
+    empty_set=None,
+    format_set_entry=None,
+    comment_prefix="--",
+    multiline_close_indent="    ",
 )
 
 
@@ -1025,13 +1078,15 @@ def _literalize(
     if not wrap or not body:
         return body
 
+    ci = spec.multiline_close_indent
+
     if isinstance(data, dict):
-        return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
+        return f"{spec.dict_open}\n{body}\n{ci}{spec.dict_close}"
 
     if isinstance(data, set):
-        return f"{spec.set_open}\n{body}\n{spec.set_close}"
+        return f"{spec.set_open}\n{body}\n{ci}{spec.set_close}"
 
-    return f"{spec.collection_open}\n{body}\n{spec.collection_close}"
+    return f"{spec.collection_open}\n{body}\n{ci}{spec.collection_close}"
 
 
 @beartype
