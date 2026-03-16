@@ -235,6 +235,28 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
     assert result.count("Map.ofEntries()") == 1
 
 
+def test_java_yaml_omap_skips_null_values() -> None:
+    """Java YAML omap nested in a list filters null values."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        ---
+        - !!omap
+          - name: Alice
+          - score: null
+          - age: 30
+        """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert "null" not in result
+    assert 'Map.entry("name", "Alice")' in result
+    assert 'Map.entry("age", 30)' in result
+
+
 def test_java_list_wrap_uses_braces() -> None:
     """Java wrapped lists use ``new Object[]{…}``."""
     result = literalize_json(
