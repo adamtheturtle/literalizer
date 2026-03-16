@@ -18,6 +18,8 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+import literalizer.formatters
+import literalizer.languages
 
 if TYPE_CHECKING:
     import datetime
@@ -294,161 +296,161 @@ class _LanguageConfig:
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "python": _LanguageConfig(
-        spec=literalizer.PYTHON,
+        spec=literalizer.languages.PYTHON,
         extension=".py",
         wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="python_native",
-                format_date=literalizer.format_date_python,
-                format_datetime=literalizer.format_datetime_python,
+                format_date=literalizer.formatters.format_date_python,
+                format_datetime=literalizer.formatters.format_datetime_python,
                 wrap=_wrap_python_datetime,
             ),
             _DateVariant(
                 name="python_epoch",
-                format_date=literalizer.format_date_iso,
-                format_datetime=literalizer.format_datetime_epoch,
+                format_date=literalizer.formatters.format_date_iso,
+                format_datetime=literalizer.formatters.format_datetime_epoch,
                 wrap=_wrap_identity,
             ),
         ),
     ),
     "javascript": _LanguageConfig(
-        spec=literalizer.JAVASCRIPT,
+        spec=literalizer.languages.JAVASCRIPT,
         extension=".js",
         wrap=_wrap_js,
         date_variants=(
             _DateVariant(
                 name="js_native",
-                format_date=literalizer.format_date_js,
-                format_datetime=literalizer.format_datetime_js,
+                format_date=literalizer.formatters.format_date_js,
+                format_datetime=literalizer.formatters.format_datetime_js,
                 wrap=_wrap_js,
             ),
         ),
     ),
     "typescript": _LanguageConfig(
-        spec=literalizer.TYPESCRIPT,
+        spec=literalizer.languages.TYPESCRIPT,
         extension=".ts",
         wrap=_wrap_js,
         date_variants=(
             _DateVariant(
                 name="ts_native",
-                format_date=literalizer.format_date_js,
-                format_datetime=literalizer.format_datetime_js,
+                format_date=literalizer.formatters.format_date_js,
+                format_datetime=literalizer.formatters.format_datetime_js,
                 wrap=_wrap_js,
             ),
         ),
     ),
     "kotlin": _LanguageConfig(
-        spec=literalizer.KOTLIN,
+        spec=literalizer.languages.KOTLIN,
         extension=".kts",
         wrap=_wrap_kotlin,
         date_variants=(
             _DateVariant(
                 name="kotlin_native",
-                format_date=literalizer.format_date_kotlin,
-                format_datetime=literalizer.format_datetime_kotlin,
+                format_date=literalizer.formatters.format_date_kotlin,
+                format_datetime=literalizer.formatters.format_datetime_kotlin,
                 wrap=_wrap_kotlin_time,
             ),
         ),
     ),
     "ruby": _LanguageConfig(
-        spec=literalizer.RUBY,
+        spec=literalizer.languages.RUBY,
         extension=".rb",
         wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="ruby_native",
-                format_date=literalizer.format_date_ruby,
-                format_datetime=literalizer.format_datetime_ruby,
+                format_date=literalizer.formatters.format_date_ruby,
+                format_datetime=literalizer.formatters.format_datetime_ruby,
                 wrap=_wrap_ruby_date,
             ),
         ),
     ),
     "go": _LanguageConfig(
-        spec=literalizer.GO,
+        spec=literalizer.languages.GO,
         extension=".go",
         wrap=_wrap_go,
         date_variants=(
             _DateVariant(
                 name="go_native",
-                format_date=literalizer.format_date_go,
-                format_datetime=literalizer.format_datetime_go,
+                format_date=literalizer.formatters.format_date_go,
+                format_datetime=literalizer.formatters.format_datetime_go,
                 wrap=_wrap_go_time,
             ),
         ),
     ),
     "java": _LanguageConfig(
-        spec=literalizer.JAVA,
+        spec=literalizer.languages.JAVA,
         extension=".java",
         wrap=_wrap_java,
         date_variants=(
             _DateVariant(
                 name="java_instant",
-                format_date=literalizer.format_date_java,
-                format_datetime=literalizer.format_datetime_java_instant,
+                format_date=literalizer.formatters.format_date_java,
+                format_datetime=literalizer.formatters.format_datetime_java_instant,
                 wrap=_wrap_java_time,
             ),
             _DateVariant(
                 name="java_zoned",
-                format_date=literalizer.format_date_java,
-                format_datetime=literalizer.format_datetime_java_zoned,
+                format_date=literalizer.formatters.format_date_java,
+                format_datetime=literalizer.formatters.format_datetime_java_zoned,
                 wrap=_wrap_java_time,
             ),
         ),
     ),
     "csharp": _LanguageConfig(
-        spec=literalizer.CSHARP,
+        spec=literalizer.languages.CSHARP,
         extension=".cs",
         wrap=_wrap_csharp,
         date_variants=(
             _DateVariant(
                 name="csharp_native",
-                format_date=literalizer.format_date_csharp,
-                format_datetime=literalizer.format_datetime_csharp,
+                format_date=literalizer.formatters.format_date_csharp,
+                format_datetime=literalizer.formatters.format_datetime_csharp,
                 wrap=_wrap_csharp_date,
             ),
         ),
     ),
     "swift": _LanguageConfig(
-        spec=literalizer.SWIFT,
+        spec=literalizer.languages.SWIFT,
         extension=".swift",
         wrap=_wrap_swift,
         date_variants=(),
     ),
     "cpp": _LanguageConfig(
-        spec=literalizer.CPP,
+        spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp,
         date_variants=(
             _DateVariant(
                 name="cpp_native",
-                format_date=literalizer.format_date_cpp,
-                format_datetime=literalizer.format_datetime_cpp,
+                format_date=literalizer.formatters.format_date_cpp,
+                format_datetime=literalizer.formatters.format_datetime_cpp,
                 wrap=_wrap_cpp_chrono,
             ),
         ),
     ),
     "rust": _LanguageConfig(
-        spec=literalizer.RUST,
+        spec=literalizer.languages.RUST,
         extension=".rs",
         wrap=_wrap_rust,
         date_variants=(
             _DateVariant(
                 name="rust_native",
-                format_date=literalizer.format_date_rust,
-                format_datetime=literalizer.format_datetime_rust,
+                format_date=literalizer.formatters.format_date_rust,
+                format_datetime=literalizer.formatters.format_datetime_rust,
                 wrap=_wrap_rust_chrono,
             ),
         ),
     ),
     "haskell": _LanguageConfig(
-        spec=literalizer.HASKELL,
+        spec=literalizer.languages.HASKELL,
         extension=".hs",
         wrap=_wrap_haskell,
         date_variants=(),
     ),
     "php": _LanguageConfig(
-        spec=literalizer.PHP,
+        spec=literalizer.languages.PHP,
         extension=".php",
         wrap=_wrap_php,
         date_variants=(),
@@ -458,55 +460,55 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 
 _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
     "python": _LanguageConfig(
-        spec=literalizer.PYTHON,
+        spec=literalizer.languages.PYTHON,
         extension=".py",
         wrap=_wrap_identity,
         date_variants=(),
     ),
     "javascript": _LanguageConfig(
-        spec=literalizer.JAVASCRIPT,
+        spec=literalizer.languages.JAVASCRIPT,
         extension=".js",
         wrap=_wrap_identity,
         date_variants=(),
     ),
     "typescript": _LanguageConfig(
-        spec=literalizer.TYPESCRIPT,
+        spec=literalizer.languages.TYPESCRIPT,
         extension=".ts",
         wrap=_wrap_ts_varname,
         date_variants=(),
     ),
     "kotlin": _LanguageConfig(
-        spec=literalizer.KOTLIN,
+        spec=literalizer.languages.KOTLIN,
         extension=".kts",
         wrap=_wrap_identity,
         date_variants=(),
     ),
     "ruby": _LanguageConfig(
-        spec=literalizer.RUBY,
+        spec=literalizer.languages.RUBY,
         extension=".rb",
         wrap=_wrap_identity,
         date_variants=(),
     ),
     "go": _LanguageConfig(
-        spec=literalizer.GO,
+        spec=literalizer.languages.GO,
         extension=".go",
         wrap=_wrap_go_varname,
         date_variants=(),
     ),
     "java": _LanguageConfig(
-        spec=literalizer.JAVA,
+        spec=literalizer.languages.JAVA,
         extension=".java",
         wrap=_wrap_java_varname,
         date_variants=(),
     ),
     "csharp": _LanguageConfig(
-        spec=literalizer.CSHARP,
+        spec=literalizer.languages.CSHARP,
         extension=".cs",
         wrap=_wrap_csharp_varname,
         date_variants=(),
     ),
     "cpp": _LanguageConfig(
-        spec=literalizer.CPP,
+        spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp_varname,
         date_variants=(),

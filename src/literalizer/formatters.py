@@ -1,0 +1,445 @@
+"""Functions for formatting scalars as language-specific literals."""
+
+from __future__ import annotations
+
+import datetime  # noqa: TC003
+
+from beartype import beartype
+
+__all__ = [
+    "format_bytes_hex",
+    "format_bytes_python",
+    "format_date_cpp",
+    "format_date_csharp",
+    "format_date_go",
+    "format_date_iso",
+    "format_date_java",
+    "format_date_js",
+    "format_date_kotlin",
+    "format_date_php",
+    "format_date_python",
+    "format_date_ruby",
+    "format_date_rust",
+    "format_datetime_cpp",
+    "format_datetime_csharp",
+    "format_datetime_epoch",
+    "format_datetime_go",
+    "format_datetime_iso",
+    "format_datetime_java_instant",
+    "format_datetime_java_zoned",
+    "format_datetime_js",
+    "format_datetime_kotlin",
+    "format_datetime_php",
+    "format_datetime_python",
+    "format_datetime_ruby",
+    "format_datetime_rust",
+    "format_variable_declaration_cpp",
+    "format_variable_declaration_csharp",
+    "format_variable_declaration_go",
+    "format_variable_declaration_java",
+    "format_variable_declaration_js",
+    "format_variable_declaration_kotlin",
+    "format_variable_declaration_python",
+    "format_variable_declaration_ruby",
+]
+
+
+@beartype
+def format_date_iso(value: datetime.date) -> str:
+    """Format a date as an ISO 8601 quoted string literal.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``"2024-01-15"``.
+    """
+    return f'"{value.isoformat()}"'
+
+
+@beartype
+def format_datetime_iso(value: datetime.datetime) -> str:
+    """Format a datetime as an ISO 8601 quoted string literal.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
+    ``"2024-01-15T12:30:00"``.
+    """
+    return f'"{value.isoformat()}"'
+
+
+@beartype
+def format_date_python(value: datetime.date) -> str:
+    """Format a date as a Python ``datetime.date(...)`` constructor call.
+
+    Example: ``datetime.date(2024, 1, 15)``.
+    """
+    return f"datetime.date({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def format_datetime_python(value: datetime.datetime) -> str:
+    """Format a datetime as a Python ``datetime.datetime(...)``
+    constructor call.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30, 0)``.
+    """
+    parts = [
+        value.year,
+        value.month,
+        value.day,
+        value.hour,
+        value.minute,
+        value.second,
+    ]
+    if value.microsecond:
+        parts.append(value.microsecond)
+    args = ", ".join(str(object=p) for p in parts)
+    return f"datetime.datetime({args})"
+
+
+@beartype
+def format_datetime_epoch(value: datetime.datetime) -> str:
+    """Format a datetime as seconds since the Unix epoch.
+
+    Uses :meth:`datetime.datetime.timestamp`, so the result depends on
+    whether the datetime is naive (assumed local time) or aware.
+
+    Example: ``1705312200.0``.
+    """
+    return repr(value.timestamp())
+
+
+@beartype
+def format_date_java(value: datetime.date) -> str:
+    """Format a date as a Java ``LocalDate.of(...)`` call.
+
+    Example: ``LocalDate.of(2024, 1, 15)``.
+    """
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def format_datetime_java_instant(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``Instant.parse(...)`` call.
+
+    Example: ``Instant.parse("2024-01-15T12:30:00")``.
+    """
+    return f'Instant.parse("{value.isoformat()}")'
+
+
+@beartype
+def format_datetime_java_zoned(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``ZonedDateTime.of(...)`` call.
+
+    Example: ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
+    ZoneId.of("UTC"))``.
+    """
+    tz = value.tzname() or "UTC"
+    nanos = value.microsecond * 1000
+    return (
+        f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f'{nanos}, ZoneId.of("{tz}"))'
+    )
+
+
+@beartype
+def format_date_ruby(value: datetime.date) -> str:
+    """Format a date as a Ruby ``Date.new(...)`` call.
+
+    Example: ``Date.new(2024, 1, 15)``.
+    """
+    return f"Date.new({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def format_datetime_ruby(value: datetime.datetime) -> str:
+    """Format a datetime as a Ruby ``Time.new(...)`` call.
+
+    Example: ``Time.new(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"Time.new({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+@beartype
+def format_date_js(value: datetime.date) -> str:
+    """Format a date as a JavaScript ``new Date(...)`` call.
+
+    Example: ``new Date("2024-01-15")``.
+    """
+    return f'new Date("{value.isoformat()}")'
+
+
+@beartype
+def format_datetime_js(value: datetime.datetime) -> str:
+    """Format a datetime as a JavaScript ``new Date(...)`` call.
+
+    Example: ``new Date("2024-01-15T12:30:00")``.
+    """
+    return f'new Date("{value.isoformat()}")'
+
+
+@beartype
+def format_date_csharp(value: datetime.date) -> str:
+    """Format a date as a C# ``new DateOnly(...)`` call.
+
+    Example: ``new DateOnly(2024, 1, 15)``.
+    """
+    return f"new DateOnly({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def format_datetime_csharp(value: datetime.datetime) -> str:
+    """Format a datetime as a C# ``new DateTime(...)`` call.
+
+    Example: ``new DateTime(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"new DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+_GO_MONTHS: dict[int, str] = {
+    1: "time.January",
+    2: "time.February",
+    3: "time.March",
+    4: "time.April",
+    5: "time.May",
+    6: "time.June",
+    7: "time.July",
+    8: "time.August",
+    9: "time.September",
+    10: "time.October",
+    11: "time.November",
+    12: "time.December",
+}
+
+
+@beartype
+def format_date_go(value: datetime.date) -> str:
+    """Format a date as a Go ``time.Date(...)`` call.
+
+    Example: ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
+    time.UTC)``.
+    """
+    month = _GO_MONTHS[value.month]
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, 0, 0, 0, 0, time.UTC)"
+    )
+
+
+@beartype
+def format_datetime_go(value: datetime.datetime) -> str:
+    """Format a datetime as a Go ``time.Date(...)`` call.
+
+    Example: ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
+    time.UTC)``.
+    """
+    month = _GO_MONTHS[value.month]
+    nanos = value.microsecond * 1000
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f"{nanos}, time.UTC)"
+    )
+
+
+@beartype
+def format_date_kotlin(value: datetime.date) -> str:
+    """Format a date as a Kotlin ``LocalDate.of(...)`` call.
+
+    Example: ``LocalDate.of(2024, 1, 15)``.
+    """
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def format_datetime_kotlin(value: datetime.datetime) -> str:
+    """Format a datetime as a Kotlin ``LocalDateTime.of(...)`` call.
+
+    Example: ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+@beartype
+def format_date_cpp(value: datetime.date) -> str:
+    """Format a date as a C++ chrono year_month_day literal.
+
+    Example:
+    ``std::chrono::year_month_day{std::chrono::year{2024},
+    std::chrono::month{1}, std::chrono::day{15}}``.
+    """
+    return (
+        f"std::chrono::year_month_day{{"
+        f"std::chrono::year{{{value.year}}}, "
+        f"std::chrono::month{{{value.month}}}, "
+        f"std::chrono::day{{{value.day}}}}}"
+    )
+
+
+@beartype
+def format_datetime_cpp(value: datetime.datetime) -> str:
+    """Format a datetime as a C++ chrono time_point construction.
+
+    Uses ``std::chrono::sys_days`` combined with a time-of-day
+    duration.
+
+    Example: ``std::chrono::sys_days{std::chrono::year_month_day{...}}
+    + std::chrono::hours{12} + ...``.
+    """
+    ymd = format_date_cpp(value=value)
+    parts = [f"std::chrono::sys_days{{{ymd}}}"]
+    if value.hour:
+        parts.append(f"std::chrono::hours{{{value.hour}}}")
+    if value.minute:
+        parts.append(f"std::chrono::minutes{{{value.minute}}}")
+    if value.second:
+        parts.append(f"std::chrono::seconds{{{value.second}}}")
+    if value.microsecond:
+        parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
+    return " + ".join(parts)
+
+
+def format_bytes_hex(value: bytes) -> str:
+    """Format bytes as a hex string literal.
+
+    Example: ``b"Hello"`` → ``"48656c6c6f"``.
+    """
+    return f'"{value.hex()}"'
+
+
+def format_bytes_python(value: bytes) -> str:
+    """Format bytes as a Python ``bytes`` literal.
+
+    Example: ``b"Hello"`` → ``b'Hello'``.
+    """
+    return repr(value)
+
+
+@beartype
+def format_date_rust(value: datetime.date) -> str:
+    """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call.
+
+    Example: ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
+    """
+    return (
+        f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
+        ".unwrap()"
+    )
+
+
+@beartype
+def format_datetime_rust(value: datetime.datetime) -> str:
+    """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call.
+
+    Example:
+    ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+    NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
+    """
+    date = format_date_rust(value=value)
+    if value.microsecond:
+        time_call = (
+            f"NaiveTime::from_hms_micro_opt("
+            f"{value.hour}, {value.minute}, {value.second}, "
+            f"{value.microsecond}).unwrap()"
+        )
+    else:
+        time_call = (
+            f"NaiveTime::from_hms_opt("
+            f"{value.hour}, {value.minute}, {value.second}).unwrap()"
+        )
+    return f"NaiveDateTime::new({date}, {time_call})"
+
+
+@beartype
+def format_date_php(value: datetime.date) -> str:
+    """Format a date as a PHP ``new DateTime(...)`` call.
+
+    Example: ``new DateTime("2024-01-15")``.
+    """
+    return f'new DateTime("{value.isoformat()}")'
+
+
+@beartype
+def format_datetime_php(value: datetime.datetime) -> str:
+    """Format a datetime as a PHP ``new DateTime(...)`` call.
+
+    Example: ``new DateTime("2024-01-15T12:30:00")``.
+    """
+    return f'new DateTime("{value.isoformat()}")'
+
+
+@beartype
+def format_variable_declaration_python(name: str, value: str) -> str:
+    """Format a Python variable declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_declaration_js(name: str, value: str) -> str:
+    """Format a JavaScript/TypeScript ``const`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"const x = [1, 2];"``
+    """
+    return f"const {name} = {value};"
+
+
+@beartype
+def format_variable_declaration_go(name: str, value: str) -> str:
+    """Format a Go short variable declaration.
+
+    Example: ``"x"`` and ``"[]any{1, 2}"`` → ``"x := []any{1, 2}"``.
+    """
+    return f"{name} := {value}"
+
+
+@beartype
+def format_variable_declaration_ruby(name: str, value: str) -> str:
+    """Format a Ruby variable assignment.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_declaration_csharp(name: str, value: str) -> str:
+    """Format a C# ``var`` declaration.
+
+    Example: ``"x"`` and ``"new object[]{1}"`` → ``"var x = new object[]{1};"``
+    """
+    return f"var {name} = {value};"
+
+
+@beartype
+def format_variable_declaration_cpp(name: str, value: str) -> str:
+    """Format a C++ ``auto`` declaration.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"auto x = {1, 2};"``
+    """
+    return f"auto {name} = {value};"
+
+
+@beartype
+def format_variable_declaration_java(name: str, value: str) -> str:
+    """Format a Java ``var`` declaration.
+
+    Example: ``"x"`` and ``"new Object[]{1}"`` → ``"var x = new Object[]{1};"``
+    """
+    return f"var {name} = {value};"
+
+
+@beartype
+def format_variable_declaration_kotlin(name: str, value: str) -> str:
+    """Format a Kotlin ``val`` declaration.
+
+    Example: ``"x"`` and ``"listOf(1, 2)"`` → ``"val x = listOf(1, 2)"``
+    """
+    return f"val {name} = {value}"

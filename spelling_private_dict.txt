@@ -45,6 +45,7 @@ ruamel
 stdin
 struct
 subclasses
+subdirectory
 swiftc
 typeclass
 whitespace
