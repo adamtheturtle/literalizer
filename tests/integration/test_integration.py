@@ -81,6 +81,11 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+def _wrap_php(content: str) -> str:
+    """Wrap in a PHP script variable assignment."""
+    return f"<?php\n$x = {content};"
+
+
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
@@ -169,7 +174,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "kotlin": _LanguageConfig(
         spec=literalizer.KOTLIN,
-        extension=".kt",
+        extension=".kts",
         wrap=_wrap_kotlin,
     ),
     "ruby": _LanguageConfig(
@@ -196,6 +201,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.CPP,
         extension=".cpp",
         wrap=_wrap_cpp,
+    ),
+    "php": _LanguageConfig(
+        spec=literalizer.PHP,
+        extension=".php",
+        wrap=_wrap_php,
     ),
 }
 
@@ -284,7 +294,7 @@ _DATE_FORMAT_LANGUAGES: dict[str, _LanguageConfig] = {
             format_date=literalizer.format_date_kotlin,
             format_datetime=literalizer.format_datetime_kotlin,
         ),
-        extension=".kt",
+        extension=".kts",
         wrap=_wrap_kotlin_time,
     ),
     "ruby_native": _LanguageConfig(

@@ -33,6 +33,7 @@ ci:
     - ruff-format-fix
     - ruff-format-fix-docs
     - cpp-golden-syntax-check
+    - php-syntax-check
     - ruby-syntax-check
     - shellcheck
     - shellcheck-docs
@@ -453,11 +454,10 @@ repos:
 
       - id: kotlin-syntax-check
         name: Kotlin golden file syntax check
-        entry: uv run python check_kotlin_golden_syntax.py
-        language: python
+        entry: kotlinc -script
+        language: system
         types: [kotlin]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: csharp-golden-syntax-check
@@ -467,6 +467,13 @@ repos:
         types: [c#]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: php-syntax-check
+        name: PHP syntax check
+        entry: php -l
+        language: system
+        types: [php]
         stages: [pre-commit]
 
       - id: sphinx-lint
