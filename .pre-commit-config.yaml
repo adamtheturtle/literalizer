@@ -456,8 +456,7 @@ repos:
         name: Kotlin golden file syntax check
         entry: kotlinc -script
         language: system
-        types: [kotlin]
-        files: ^tests/integration/cases/
+        files: ^tests/integration/cases/.*\.kts$
         stages: [pre-commit]
 
       - id: csharp-golden-syntax-check
