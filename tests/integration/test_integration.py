@@ -126,10 +126,12 @@ def _wrap_cpp_varname(content: str) -> str:
     ``auto`` cannot deduce a type for mixed-type braced initializers, so
     the wrapper substitutes the custom ``_Any`` type that accepts any value.
     """
-    content_adapted = content.replace(
-        f"auto {_VARIABLE_NAME} = ",
-        f"_Any {_VARIABLE_NAME} = ",
-        1,
+    old_prefix = f"auto {_VARIABLE_NAME} = "
+    new_prefix = f"_Any {_VARIABLE_NAME} = "
+    content_adapted = (
+        new_prefix + content[len(old_prefix) :]
+        if content.startswith(old_prefix)
+        else content
     )
     return (
         "#include <initializer_list>\n"
