@@ -37,7 +37,7 @@ def _target_framework(dotnet_path: str) -> str:
 
 def main() -> None:
     """Check syntax of each given C# golden file."""
-    dotnet_path = shutil.which(cmd="dotnet") or "dotnet"
+    dotnet_path: str = shutil.which(cmd="dotnet") or "dotnet"
     target_framework = _target_framework(dotnet_path=dotnet_path)
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
@@ -69,7 +69,7 @@ def main() -> None:
                 }
             )
             result = subprocess.run(
-                args=[dotnet_path, "build", str(csproj_path)],  # type: ignore[call-overload]
+                args=[dotnet_path, "build", csproj_path.as_posix()],
                 capture_output=True,
                 text=True,
                 check=False,
