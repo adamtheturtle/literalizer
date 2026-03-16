@@ -34,6 +34,7 @@ ci:
     - ruff-format-fix
     - ruff-format-fix-docs
     - cpp-golden-syntax-check
+    - php-syntax-check
     - ruby-syntax-check
     - shellcheck
     - shellcheck-docs
@@ -475,6 +476,13 @@ repos:
         language: system
         types: [haskell]
         files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: php-syntax-check
+        name: PHP syntax check
+        entry: php -l
+        language: system
+        types: [php]
         stages: [pre-commit]
 
       - id: sphinx-lint
