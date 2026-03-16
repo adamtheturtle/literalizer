@@ -129,6 +129,7 @@ Usage examples
        multiline_close_indent="",
        skip_null_dict_values=False,
        format_variable_declaration=None,
+       format_collection_open=None,
    )
 
 Use cases

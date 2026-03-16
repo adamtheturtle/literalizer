@@ -154,6 +154,7 @@ Usage examples
        multiline_close_indent="",
        skip_null_dict_values=False,
        format_variable_declaration=None,
+       format_collection_open=None,
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -186,6 +187,7 @@ Usage examples
        multiline_close_indent="",
        skip_null_dict_values=False,
        format_variable_declaration=None,
+       format_collection_open=None,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -224,6 +226,7 @@ Usage examples
        multiline_close_indent="",
        skip_null_dict_values=False,
        format_variable_declaration=None,
+       format_collection_open=None,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -262,6 +265,7 @@ Usage examples
        multiline_close_indent="",
        skip_null_dict_values=False,
        format_variable_declaration=None,
+       format_collection_open=None,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",
