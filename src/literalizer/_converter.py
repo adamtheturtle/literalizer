@@ -316,6 +316,70 @@ def _format_go_set_entry(item: str) -> str:
     return f"{item}: struct{{}}{{}}"
 
 
+def format_variable_declaration_python(name: str, value: str) -> str:
+    """Format a Python variable declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
+
+
+def format_variable_declaration_js(name: str, value: str) -> str:
+    """Format a JavaScript/TypeScript ``const`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"const x = [1, 2];"``
+    """
+    return f"const {name} = {value};"
+
+
+def format_variable_declaration_go(name: str, value: str) -> str:
+    """Format a Go short variable declaration.
+
+    Example: ``"x"`` and ``"[]any{1, 2}"`` → ``"x := []any{1, 2}"``.
+    """
+    return f"{name} := {value}"
+
+
+def format_variable_declaration_ruby(name: str, value: str) -> str:
+    """Format a Ruby variable assignment.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
+
+
+def format_variable_declaration_csharp(name: str, value: str) -> str:
+    """Format a C# ``var`` declaration.
+
+    Example: ``"x"`` and ``"new object[]{1}"`` → ``"var x = new object[]{1};"``
+    """
+    return f"var {name} = {value};"
+
+
+def format_variable_declaration_cpp(name: str, value: str) -> str:
+    """Format a C++ ``auto`` declaration.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"auto x = {1, 2};"``
+    """
+    return f"auto {name} = {value};"
+
+
+def format_variable_declaration_java(name: str, value: str) -> str:
+    """Format a Java ``var`` declaration.
+
+    Example: ``"x"`` and ``"new Object[]{1}"`` → ``"var x = new Object[]{1};"``
+    """
+    return f"var {name} = {value};"
+
+
+def format_variable_declaration_kotlin(name: str, value: str) -> str:
+    """Format a Kotlin ``val`` declaration.
+
+    Example: ``"x"`` and ``"listOf(1, 2)"`` → ``"val x = listOf(1, 2)"``
+    """
+    return f"val {name} = {value}"
+
+
 @runtime_checkable
 class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
@@ -416,6 +480,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def empty_dict(self) -> str | None:
+        """Override for empty dict literals, or ``None`` to use
+        ``dict_open + dict_close``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def empty_set(self) -> str | None:
         """Override for empty set literals, or ``None`` to use
         ``set_open + set_close``.
@@ -433,6 +504,13 @@ class Language(Protocol):
     def comment_prefix(self) -> str:
         """The comment prefix for the language (e.g. ``"#"`` or
         ``"//"``).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_variable_declaration(self) -> Callable[[str, str], str] | None:
+        """Callable that formats a variable declaration from a name and
+        value string, or ``None`` if not supported.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -460,11 +538,13 @@ class LanguageSpec:
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
+    empty_dict: str | None
     set_open: str
     set_close: str
     empty_set: str | None
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
+    format_variable_declaration: Callable[[str, str], str] | None = None
 
 
 PYTHON = LanguageSpec(
@@ -482,11 +562,13 @@ PYTHON = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="{",
     set_close="}",
     empty_set="set()",
     format_set_entry=None,
     comment_prefix="#",
+    format_variable_declaration=format_variable_declaration_python,
 )
 
 
@@ -510,11 +592,13 @@ CSHARP = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
+    empty_dict=None,
     set_open="new HashSet<object> {",
     set_close="}",
     empty_set="new HashSet<object>()",
     format_set_entry=None,
     comment_prefix="//",
+    format_variable_declaration=format_variable_declaration_csharp,
 )
 
 JAVASCRIPT = LanguageSpec(
@@ -532,11 +616,13 @@ JAVASCRIPT = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    format_variable_declaration=format_variable_declaration_js,
 )
 
 TYPESCRIPT = LanguageSpec(
@@ -554,11 +640,13 @@ TYPESCRIPT = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
     format_set_entry=None,
     comment_prefix="//",
+    format_variable_declaration=format_variable_declaration_js,
 )
 
 RUBY = LanguageSpec(
@@ -576,11 +664,13 @@ RUBY = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="Set.new([",
     set_close="])",
     empty_set="Set.new",
     format_set_entry=None,
     comment_prefix="#",
+    format_variable_declaration=format_variable_declaration_ruby,
 )
 
 GO = LanguageSpec(
@@ -598,11 +688,13 @@ GO = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="map[any]struct{}{",
     set_close="}",
     empty_set=None,
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
+    format_variable_declaration=format_variable_declaration_go,
 )
 
 
@@ -626,11 +718,13 @@ CPP = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="{",
     set_close="}",
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    format_variable_declaration=format_variable_declaration_cpp,
 )
 
 
@@ -654,9 +748,34 @@ JAVA = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="Set.of(",
     set_close=")",
     empty_set=None,
+    format_set_entry=None,
+    comment_prefix="//",
+    format_variable_declaration=format_variable_declaration_java,
+)
+
+SWIFT = LanguageSpec(
+    null_literal="nil",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_separator=": ",
+    dict_open="[",
+    dict_close="]",
+    format_dict_entry=None,
+    trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection="[Any]()",
+    empty_dict="[String: Any]()",
+    set_open="Set<AnyHashable>([",
+    set_close="])",
+    empty_set="Set<AnyHashable>()",
     format_set_entry=None,
     comment_prefix="//",
 )
@@ -682,6 +801,7 @@ RUST = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="HashSet::from([",
     set_close="])",
     empty_set=None,
@@ -704,11 +824,13 @@ KOTLIN = LanguageSpec(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
+    empty_dict=None,
     set_open="setOf<Any?>(",
     set_close=")",
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    format_variable_declaration=format_variable_declaration_kotlin,
 )
 
 PHP = LanguageSpec(
@@ -726,6 +848,7 @@ PHP = LanguageSpec(
     format_date=format_date_php,
     format_datetime=format_datetime_php,
     empty_collection=None,
+    empty_dict=None,
     set_open="[",
     set_close="]",
     empty_set=None,
@@ -774,6 +897,8 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, dict):
+        if not value and spec.empty_dict is not None:
+            return spec.empty_dict
         pairs = [
             _build_dict_entry(
                 key_str=_format_value(value=k, spec=spec),
@@ -916,6 +1041,7 @@ def literalize_json(
     language: Language,
     prefix: str,
     wrap: bool,
+    variable_name: str | None = None,
 ) -> str:
     r"""Convert a JSON string to native language literal text.
 
@@ -931,6 +1057,9 @@ def literalize_json(
             for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
+        variable_name: If given, wrap the output in a variable
+            declaration using the language's
+            ``format_variable_declaration`` callable.
 
     Raises:
         JSONParseError: If *json_string* is not valid JSON.
@@ -942,12 +1071,16 @@ def literalize_json(
             f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
         raise JSONParseError(message) from exc
-    return _literalize(
+    result = _literalize(
         data=data,
         language=language,
         prefix=prefix,
         wrap=wrap,
     )
+    fmt = language.format_variable_declaration
+    if variable_name is not None and fmt is not None:
+        return fmt(variable_name, result)
+    return result
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1259,6 +1392,7 @@ def literalize_yaml(
     language: Language,
     prefix: str,
     wrap: bool,
+    variable_name: str | None = None,
 ) -> str:
     r"""Convert a YAML string to native language literal text.
 
@@ -1277,6 +1411,9 @@ def literalize_yaml(
             for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
+        variable_name: If given, wrap the output in a variable
+            declaration using the language's
+            ``format_variable_declaration`` callable.
 
     Raises:
         YAMLParseError: If *yaml_string* is not valid YAML.
@@ -1298,48 +1435,51 @@ def literalize_yaml(
     cp = language.comment_prefix
 
     if isinstance(data, set):
-        return base
-
-    if not isinstance(data, (list, dict)):
+        result = base
+    elif not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
-        return _literalize_yaml_scalar(
+        result = _literalize_yaml_scalar(
             tokens=tokens,
             base=base,
             comment_prefix=cp,
             prefix=prefix,
         )
-
-    if not base:
-        return base
-
-    is_sequence = isinstance(data, list)
-    # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
-        stream=StringIO(initial_value=yaml_string),
-    )
-    collection_comments = _extract_yaml_comments(
-        ruamel_data=ruamel_data,
-        is_sequence=is_sequence,
-    )
-
-    has_comments = (
-        any(
-            element_comment.before or element_comment.inline
-            for element_comment in collection_comments.elements
+    elif not base:
+        result = base
+    else:
+        is_sequence = isinstance(data, list)
+        # https://sourceforge.net/p/ruamel-yaml/tickets/328/
+        ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+            stream=StringIO(initial_value=yaml_string),
         )
-        or collection_comments.trailing
-    )
-    if not has_comments:
-        return base
+        collection_comments = _extract_yaml_comments(
+            ruamel_data=ruamel_data,
+            is_sequence=is_sequence,
+        )
 
-    ctx = _YamlCollectionContext(
-        base=base,
-        element_comments=collection_comments.elements,
-        trailing=collection_comments.trailing,
-        comment_prefix=cp,
-        prefix=prefix,
-        wrap=wrap,
-    )
-    return _literalize_yaml_collection(ctx=ctx)
+        has_comments = (
+            any(
+                element_comment.before or element_comment.inline
+                for element_comment in collection_comments.elements
+            )
+            or collection_comments.trailing
+        )
+        if not has_comments:
+            result = base
+        else:
+            ctx = _YamlCollectionContext(
+                base=base,
+                element_comments=collection_comments.elements,
+                trailing=collection_comments.trailing,
+                comment_prefix=cp,
+                prefix=prefix,
+                wrap=wrap,
+            )
+            result = _literalize_yaml_collection(ctx=ctx)
+
+    fmt = language.format_variable_declaration
+    if variable_name is not None and fmt is not None:
+        return fmt(variable_name, result)
+    return result

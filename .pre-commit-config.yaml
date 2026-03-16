@@ -33,6 +33,7 @@ ci:
     - ruff-format-fix
     - ruff-format-fix-docs
     - cpp-golden-syntax-check
+    - swift-syntax-check
     - php-syntax-check
     - ruby-syntax-check
     - rust-golden-syntax-check
@@ -462,9 +463,17 @@ repos:
 
       - id: rust-golden-syntax-check
         name: Rust golden file syntax check
-        entry: rustfmt --edition 2021 --emit stdout
+        entry: rustc --edition 2021 --crate-type lib --emit metadata --out-dir /tmp
         language: system
         types: [rust]
+        files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: swift-syntax-check
+        name: Swift syntax check
+        entry: swiftc -typecheck
+        language: system
+        types: [swift]
         files: ^tests/integration/cases/
         stages: [pre-commit]
 
