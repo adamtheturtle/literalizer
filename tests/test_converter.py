@@ -188,6 +188,32 @@ def test_java_dict_skips_null_values_no_wrap() -> None:
     assert 'Map.entry("b", 1)' in result
 
 
+def test_java_dict_all_null_values_wrap() -> None:
+    """Java dict where all values are null produces empty
+    Map.ofEntries().
+    """
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": None, "b": None}),
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert result == "Map.ofEntries()"
+
+
+def test_java_yaml_dict_null_values_with_comments() -> None:
+    """Java YAML dict with null values and comments does not crash."""
+    yaml_string = "# comment\nname: Alice\nscore: null\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert 'Map.entry("name", "Alice")' in result
+    assert "null" not in result
+
+
 def test_java_list_wrap_uses_braces() -> None:
     """Java wrapped lists use ``new Object[]{…}``."""
     result = literalize_json(

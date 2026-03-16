@@ -1044,12 +1044,17 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, ordereddict):
+        omap_items = [  # pyright: ignore[reportUnknownVariableType]
+            (k, v)
+            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            if not (spec.skip_null_dict_values and v is None)
+        ]
         pairs = [
             spec.format_omap_entry(
                 _format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
                 _format_value(value=v, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
             )
-            for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            for k, v in omap_items  # pyright: ignore[reportUnknownVariableType]
         ]
         return spec.omap_open + ", ".join(pairs) + spec.omap_close
 
@@ -1171,17 +1176,23 @@ def _literalize(
             for k, v in dict_data.items()
             if not (spec.skip_null_dict_values and v is None)
         ]
+        if not entries and wrap:
+            empty_value: ordereddict | dict[str, Any] = (
+                ordereddict() if is_omap else {}
+            )
+            return _format_value(value=empty_value, spec=spec)
+        assert not is_omap or spec.format_omap_entry is not None  # noqa: S101
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
-            if is_omap:
-                assert spec.format_omap_entry is not None  # noqa: S101
-                entry = spec.format_omap_entry(formatted_key, formatted_val)
-            else:
-                entry = _build_dict_entry(
+            entry = (
+                spec.format_omap_entry(formatted_key, formatted_val)
+                if is_omap
+                else _build_dict_entry(
                     key_str=formatted_key, val_str=formatted_val, spec=spec
                 )
+            )
             comma = "" if i == last_idx and not spec.trailing_comma else ","
             lines.append(f"{effective_prefix}{entry}{comma}")
     elif isinstance(data, set):
@@ -1635,6 +1646,23 @@ def literalize_yaml(
             ruamel_data=ruamel_data,
             is_sequence=is_sequence,
         )
+
+        if not is_sequence and language.skip_null_dict_values:
+            assert isinstance(data, dict)  # noqa: S101
+            assert isinstance(ruamel_data, CommentedMap)  # noqa: S101
+            filtered_elements = tuple(
+                ec
+                for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
+                    ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                    collection_comments.elements,
+                    strict=True,
+                )
+                if data[key] is not None
+            )
+            collection_comments = dataclasses.replace(
+                collection_comments,
+                elements=filtered_elements,
+            )
 
         has_comments = (
             any(
