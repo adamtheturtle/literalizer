@@ -1,5 +1,6 @@
 """Check syntax of C# golden files using ``dotnet build``."""
 
+import os
 import shutil
 import subprocess
 import sys
@@ -45,11 +46,16 @@ def main() -> None:
             csproj_path = Path(tmpdir) / "check.csproj"
             cs_path.write_text(data=content, encoding="utf-8")
             csproj_path.write_text(data=csproj, encoding="utf-8")
+            dotnet_tmp = Path(tmpdir) / "tmp"
+            dotnet_tmp.mkdir()
+            env = os.environ.copy()
+            env["TMPDIR"] = dotnet_tmp.as_posix()
             result = subprocess.run(
                 args=[dotnet_path, "build", str(csproj_path)],  # type: ignore[call-overload]
                 capture_output=True,
                 text=True,
                 check=False,
+                env=env,
             )
         if result.returncode != 0:
             msg = (
