@@ -33,6 +33,7 @@ ci:
     - ruff-format-fix
     - ruff-format-fix-docs
     - cpp-golden-syntax-check
+    - swift-syntax-check
     - php-syntax-check
     - ruby-syntax-check
     - shellcheck
@@ -457,6 +458,14 @@ repos:
         entry: bash -c 'for f; do kotlinc -script "$f" || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.kts$
+        stages: [pre-commit]
+
+      - id: swift-syntax-check
+        name: Swift syntax check
+        entry: swiftc -typecheck
+        language: system
+        types: [swift]
+        files: ^tests/integration/cases/
         stages: [pre-commit]
 
       - id: csharp-golden-syntax-check
