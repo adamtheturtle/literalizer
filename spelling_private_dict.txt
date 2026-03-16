@@ -44,5 +44,6 @@ stdin
 struct
 subclasses
 swiftc
+typeclass
 whitespace
 yaml
