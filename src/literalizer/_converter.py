@@ -1176,7 +1176,7 @@ def _literalize(
             for k, v in dict_data.items()
             if not (spec.skip_null_dict_values and v is None)
         ]
-        if not entries and wrap:
+        if not entries and wrap and dict_data:
             empty_value: ordereddict | dict[str, Any] = (
                 ordereddict() if is_omap else {}
             )
