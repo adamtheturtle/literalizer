@@ -113,6 +113,7 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
        empty_collection=None,
+       empty_dict=None,
        set_open="[",
        set_close="]",
        empty_set=None,

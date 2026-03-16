@@ -40,4 +40,5 @@ ruamel
 stdin
 struct
 subclasses
+swiftc
 yaml
