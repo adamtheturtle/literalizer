@@ -191,8 +191,8 @@ def test_java_dict_skips_null_values_no_wrap() -> None:
         prefix="",
         wrap=False,
     )
-    assert "null" not in result
-    assert 'Map.entry("b", 1)' in result
+    expected = 'Map.entry("b", 1)'
+    assert result == expected
 
 
 def test_java_dict_all_null_values_wrap() -> None:
@@ -217,8 +217,14 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         prefix="",
         wrap=True,
     )
-    assert 'Map.entry("name", "Alice")' in result
-    assert "null" not in result
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            // comment
+            Map.entry("name", "Alice")
+        )"""
+    )
+    assert result == expected
 
 
 def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
@@ -232,7 +238,8 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         prefix="",
         wrap=True,
     )
-    assert result.count("Map.ofEntries()") == 1
+    expected = "Map.ofEntries()\n    // trailing"
+    assert result == expected
 
 
 def test_java_yaml_omap_skips_null_values() -> None:
@@ -252,9 +259,13 @@ def test_java_yaml_omap_skips_null_values() -> None:
         prefix="",
         wrap=True,
     )
-    assert "null" not in result
-    assert 'Map.entry("name", "Alice")' in result
-    assert 'Map.entry("age", 30)' in result
+    expected = textwrap.dedent(
+        text="""\
+        new Object[]{
+            Map.ofEntries(Map.entry("name", "Alice"), Map.entry("age", 30))
+        }"""
+    )
+    assert result == expected
 
 
 def test_java_list_wrap_uses_braces() -> None:
