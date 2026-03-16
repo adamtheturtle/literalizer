@@ -16,7 +16,7 @@ def main() -> None:
             swift_path = Path(tmpdir) / "check.swift"
             swift_path.write_text(data=content, encoding="utf-8")
             result = subprocess.run(
-                args=[swiftc_path, "-typecheck", str(swift_path)],
+                args=[swiftc_path, "-typecheck", swift_path],
                 capture_output=True,
                 text=True,
                 check=False,
