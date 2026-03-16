@@ -157,6 +157,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
+       format_variable_declaration=None,
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -188,6 +189,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
+       format_variable_declaration=None,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -225,6 +227,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
+       format_variable_declaration=None,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -262,6 +265,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
+       format_variable_declaration=None,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",
