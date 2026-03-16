@@ -14,6 +14,7 @@ datetimes
 dicts
 formatter
 formatters
+fromhex
 gofmt
 initializer
 initializers
