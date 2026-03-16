@@ -15,10 +15,10 @@ from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 
 from literalizer._comments import (
-    _extract_yaml_comments,  # pyright: ignore[reportPrivateUsage]
-    _literalize_yaml_collection,  # pyright: ignore[reportPrivateUsage]
-    _literalize_yaml_scalar,  # pyright: ignore[reportPrivateUsage]
-    _YamlCollectionContext,  # pyright: ignore[reportPrivateUsage]
+    YamlCollectionContext,
+    extract_yaml_comments,
+    literalize_yaml_collection,
+    literalize_yaml_scalar,
 )
 from literalizer._language import Language  # noqa: TC001
 from literalizer._types import Scalar, Value  # noqa: TC001
@@ -364,7 +364,7 @@ def literalize_yaml(
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
-        result = _literalize_yaml_scalar(
+        result = literalize_yaml_scalar(
             tokens=tokens,
             base=base,
             comment_prefix=cp,
@@ -378,7 +378,7 @@ def literalize_yaml(
         ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
         )
-        collection_comments = _extract_yaml_comments(
+        collection_comments = extract_yaml_comments(
             ruamel_data=ruamel_data,
             is_sequence=is_sequence,
         )
@@ -410,7 +410,7 @@ def literalize_yaml(
         if not has_comments:
             result = base
         else:
-            ctx = _YamlCollectionContext(
+            ctx = YamlCollectionContext(
                 base=base,
                 element_comments=collection_comments.elements,
                 trailing=collection_comments.trailing,
@@ -418,7 +418,7 @@ def literalize_yaml(
                 prefix=prefix,
                 wrap=wrap,
             )
-            result = _literalize_yaml_collection(ctx=ctx)
+            result = literalize_yaml_collection(ctx=ctx)
 
     fmt = language.format_variable_declaration
     if variable_name is not None and fmt is not None:

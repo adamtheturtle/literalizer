@@ -94,7 +94,7 @@ class _CollectionComments:
 
 
 @beartype
-def _extract_yaml_comments(  # pyright: ignore[reportUnusedFunction]
+def extract_yaml_comments(
     *,
     ruamel_data: CommentedSeq | CommentedMap,
     is_sequence: bool,
@@ -210,7 +210,7 @@ def _extract_scalar_comments(
 
 
 @dataclasses.dataclass(frozen=True)
-class _YamlCollectionContext:
+class YamlCollectionContext:
     """Context for formatting collection YAML with comments."""
 
     base: str
@@ -222,7 +222,7 @@ class _YamlCollectionContext:
 
 
 @beartype
-def _literalize_yaml_scalar(  # pyright: ignore[reportUnusedFunction]
+def literalize_yaml_scalar(
     *,
     tokens: Iterable[Any],
     base: str,
@@ -260,9 +260,9 @@ def _literalize_yaml_scalar(  # pyright: ignore[reportUnusedFunction]
 
 
 @beartype
-def _literalize_yaml_collection(  # pyright: ignore[reportUnusedFunction]
+def literalize_yaml_collection(
     *,
-    ctx: _YamlCollectionContext,
+    ctx: YamlCollectionContext,
 ) -> str:
     """Preserve comments for collection YAML values."""
     effective_prefix = ctx.prefix if not ctx.wrap else (ctx.prefix or "    ")

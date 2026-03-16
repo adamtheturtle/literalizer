@@ -1,4 +1,4 @@
-"""Language protocol and concrete LanguageSpec dataclass."""
+"""Language protocol and concrete LanguageSpec data class."""
 
 from __future__ import annotations
 
