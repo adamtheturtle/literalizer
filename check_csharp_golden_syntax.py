@@ -12,11 +12,19 @@ def _target_framework(dotnet_path: str) -> str:
     """Return the target framework moniker for the installed
     ``dotnet``.
     """
+    env = os.environ.copy()
+    env.update(
+        {
+            "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+            "DOTNET_NOLOGO": "1",
+        }
+    )
     result = subprocess.run(
         args=[dotnet_path, "--version"],
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
     version = result.stdout.strip()
     major_minor = ".".join(version.split(sep=".")[:2])
@@ -50,6 +58,12 @@ def main() -> None:
             dotnet_tmp.mkdir()
             env = os.environ.copy()
             env["TMPDIR"] = dotnet_tmp.as_posix()
+            env.update(
+                {
+                    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+                    "DOTNET_NOLOGO": "1",
+                }
+            )
             result = subprocess.run(
                 args=[dotnet_path, "build", str(csproj_path)],  # type: ignore[call-overload]
                 capture_output=True,
