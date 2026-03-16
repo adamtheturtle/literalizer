@@ -462,7 +462,7 @@ repos:
 
       - id: swift-syntax-check
         name: Swift syntax check
-        entry: swiftc -typecheck
+        entry: bash -c 'for f; do swiftc -typecheck "$f" || exit 1; done' --
         language: system
         types: [swift]
         files: ^tests/integration/cases/
