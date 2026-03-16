@@ -99,7 +99,9 @@ def _wrap_haskell(content: str) -> str:
         '    a * b = error "not implemented"\n'
         '    abs a = error "not implemented"\n'
         '    signum a = error "not implemented"\n'
-        '    negate a = error "not implemented"\n'
+        "    negate (HInt n) = HInt (negate n)\n"
+        "    negate (HFloat f) = HFloat (negate f)\n"
+        '    negate _ = error "not implemented"\n'
         "instance Fractional Val where\n"
         "    fromRational r = HFloat (realToFrac r)\n"
         '    a / b = error "not implemented"\n'

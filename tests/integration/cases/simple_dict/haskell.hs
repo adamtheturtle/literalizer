@@ -10,7 +10,9 @@ instance Num Val where
     a * b = error "not implemented"
     abs a = error "not implemented"
     signum a = error "not implemented"
-    negate a = error "not implemented"
+    negate (HInt n) = HInt (negate n)
+    negate (HFloat f) = HFloat (negate f)
+    negate _ = error "not implemented"
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"

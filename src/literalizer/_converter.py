@@ -282,11 +282,6 @@ def format_datetime_php(value: datetime.datetime) -> str:
     return f'new DateTime("{value.isoformat()}")'
 
 
-def _format_haskell_dict_entry(key: str, value: str) -> str:
-    """Format a Haskell dict entry as a tuple pair."""
-    return f"({key}, {value})"
-
-
 def _format_go_set_entry(item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
 
@@ -704,6 +699,12 @@ PHP = LanguageSpec(
     comment_prefix="//",
     multiline_close_indent="",
 )
+
+
+def _format_haskell_dict_entry(key: str, value: str) -> str:
+    """Format a Haskell dict entry as a tuple pair."""
+    return f"({key}, {value})"
+
 
 HASKELL = LanguageSpec(
     null_literal="HNull",
