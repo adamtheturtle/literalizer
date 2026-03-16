@@ -150,6 +150,37 @@ def test_java_dict_wrap_no_trailing_comma() -> None:
     assert result == expected
 
 
+def test_java_dict_skips_null_values() -> None:
+    """Java Map.ofEntries() omits entries with null values."""
+    data = {"name": "Alice", "score": None, "age": 30}
+    result = literalize_json(
+        json_string=json.dumps(obj=data),
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("name", "Alice"),
+            Map.entry("age", 30)
+        )"""
+    )
+    assert result == expected
+
+
+def test_java_dict_skips_null_values_no_wrap() -> None:
+    """Java dict omits null entries even without wrap."""
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": None, "b": 1}),
+        language=JAVA,
+        prefix="",
+        wrap=False,
+    )
+    assert "null" not in result
+    assert 'Map.entry("b", 1)' in result
+
+
 def test_java_list_wrap_uses_braces() -> None:
     """Java wrapped lists use ``new Object[]{…}``."""
     result = literalize_json(

@@ -488,6 +488,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def skip_null_dict_values(self) -> bool:
+        """Whether to omit dict entries whose value is ``None``."""
+        ...
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -519,6 +524,7 @@ class LanguageSpec:
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
     format_variable_declaration: Callable[[str, str], str] | None = None
+    skip_null_dict_values: bool = False
 
 
 PYTHON = LanguageSpec(
@@ -729,6 +735,7 @@ JAVA = LanguageSpec(
     format_set_entry=None,
     comment_prefix="//",
     format_variable_declaration=format_variable_declaration_java,
+    skip_null_dict_values=True,
 )
 
 SWIFT = LanguageSpec(
@@ -842,7 +849,12 @@ def _format_value(*, value: _Value, spec: Language) -> str:
     Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, dict):
-        if not value and spec.empty_dict is not None:
+        dict_items = {
+            k: v
+            for k, v in value.items()
+            if not (spec.skip_null_dict_values and v is None)
+        }
+        if not dict_items and spec.empty_dict is not None:
             return spec.empty_dict
         pairs = [
             _build_dict_entry(
@@ -850,7 +862,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
                 val_str=_format_value(value=v, spec=spec),
                 spec=spec,
             )
-            for k, v in value.items()
+            for k, v in dict_items.items()
         ]
         return spec.dict_open + ", ".join(pairs) + spec.dict_close
 
@@ -936,7 +948,11 @@ def _literalize(
     lines: list[str] = []
 
     if isinstance(data, dict):
-        entries = list(data.items())
+        entries = [
+            (k, v)
+            for k, v in data.items()
+            if not (spec.skip_null_dict_values and v is None)
+        ]
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
