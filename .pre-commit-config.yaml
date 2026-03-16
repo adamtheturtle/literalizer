@@ -12,6 +12,7 @@ ci:
     - interrogate
     - interrogate-docs
     - go-golden-syntax-check
+    - haskell-golden-syntax-check
     - java-golden-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
@@ -464,6 +465,15 @@ repos:
         entry: uv run python check_csharp_golden_syntax.py
         language: python
         types: [c#]
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: haskell-golden-syntax-check
+        name: Haskell golden file syntax check
+        entry: uv run python check_haskell_golden_syntax.py
+        language: python
+        types: [haskell]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
