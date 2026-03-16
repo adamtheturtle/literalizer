@@ -129,6 +129,7 @@ Usage examples
        omap_close="}",
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
+       format_variable_declaration=None,
    )
 
 Use cases
