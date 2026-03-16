@@ -35,6 +35,7 @@ ci:
     - cpp-golden-syntax-check
     - php-syntax-check
     - ruby-syntax-check
+    - rust-golden-syntax-check
     - shellcheck
     - shellcheck-docs
     - shfmt
@@ -457,6 +458,14 @@ repos:
         entry: bash -c 'for f; do kotlinc -script "$f" || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.kts$
+        stages: [pre-commit]
+
+      - id: rust-golden-syntax-check
+        name: Rust golden file syntax check
+        entry: rustc --edition 2021 --crate-type lib --emit metadata --out-dir /tmp
+        language: system
+        types: [rust]
+        files: ^tests/integration/cases/
         stages: [pre-commit]
 
       - id: csharp-golden-syntax-check

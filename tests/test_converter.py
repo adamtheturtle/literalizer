@@ -22,6 +22,7 @@ from literalizer import (
     KOTLIN,
     PYTHON,
     RUBY,
+    RUST,
     TYPESCRIPT,
     Language,
     LanguageSpec,
@@ -35,6 +36,7 @@ from literalizer import (
     format_date_php,
     format_date_python,
     format_date_ruby,
+    format_date_rust,
     format_datetime_cpp,
     format_datetime_csharp,
     format_datetime_epoch,
@@ -47,6 +49,7 @@ from literalizer import (
     format_datetime_php,
     format_datetime_python,
     format_datetime_ruby,
+    format_datetime_rust,
     literalize_json,
     literalize_yaml,
 )
@@ -65,6 +68,7 @@ from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
         (CSHARP, '(true, (object?)null, "hi", (1, 2))'),
         (RUBY, '[true, nil, "hi", [1, 2]],'),
         (KOTLIN, 'listOf<Any?>(true, null, "hi", listOf<Any?>(1, 2)),'),
+        (RUST, 'vec![true, None, "hi", vec![1, 2]],'),
     ],
 )
 def test_language_list(*, language: Language, expected: str) -> None:
@@ -809,6 +813,20 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             _SAMPLE_DATETIME,
             "LocalDateTime.of(2024, 1, 15, 12, 30, 0)",
             id="format_datetime_kotlin",
+        ),
+        pytest.param(
+            format_date_rust,
+            _SAMPLE_DATE,
+            "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()",
+            id="format_date_rust",
+        ),
+        pytest.param(
+            format_datetime_rust,
+            _SAMPLE_DATETIME,
+            "NaiveDateTime::new("
+            "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
+            "NaiveTime::from_hms_opt(12, 30, 0).unwrap())",
+            id="format_datetime_rust",
         ),
         pytest.param(
             format_date_php,
