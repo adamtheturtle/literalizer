@@ -1513,7 +1513,6 @@ def test_variable_declaration_language_no_formatter() -> None:
         set_close="}",
         empty_set=None,
         format_set_entry=None,
-        empty_dict=None,
         comment_prefix="#",
         format_variable_declaration=None,
     )
