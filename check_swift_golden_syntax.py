@@ -7,9 +7,7 @@ import sys
 
 def main() -> None:
     """Check syntax of each given Swift golden file."""
-    swiftc_path = shutil.which(cmd="swiftc")
-    if swiftc_path is None:
-        return
+    swiftc_path = shutil.which(cmd="swiftc") or "swiftc"
     for filename in sys.argv[1:]:
         result = subprocess.run(
             args=[swiftc_path, "-typecheck", filename],
