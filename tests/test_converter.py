@@ -1197,6 +1197,10 @@ def test_custom_format_bytes() -> None:
         empty_set="set()",
         format_set_entry=None,
         comment_prefix="#",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
+        multiline_close_indent="",
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
@@ -1581,6 +1585,7 @@ def test_omap_custom_language_spec() -> None:
         format_dict_entry=None,
         trailing_comma=True,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
         empty_collection=None,

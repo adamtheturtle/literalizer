@@ -991,6 +991,7 @@ HASKELL = LanguageSpec(
     format_dict_entry=_format_haskell_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
