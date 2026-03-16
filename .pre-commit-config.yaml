@@ -463,7 +463,7 @@ repos:
 
       - id: rust-golden-syntax-check
         name: Rust golden file syntax check
-        entry: rustfmt --edition 2021
+        entry: rustfmt --check --edition 2021
         language: system
         types: [rust]
         files: ^tests/integration/cases/
