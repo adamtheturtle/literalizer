@@ -33,6 +33,7 @@ ci:
     - ruff-format-fix
     - ruff-format-fix-docs
     - cpp-golden-syntax-check
+    - php-syntax-check
     - ruby-syntax-check
     - shellcheck
     - shellcheck-docs
