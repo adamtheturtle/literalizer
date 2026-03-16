@@ -601,7 +601,7 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
     """YAML !!binary -> literalize_yaml (Python) -> ast.literal_eval round-
     trips.
     """
-    encoded = base64.b64encode(data).decode()
+    encoded = base64.b64encode(s=data).decode()
     yaml_string = f"- !!binary |\n  {encoded}\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
