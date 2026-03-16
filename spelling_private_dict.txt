@@ -29,6 +29,7 @@ localhost
 namespaces
 natively
 ofEntries
+omap
 paren
 pragma
 pre
