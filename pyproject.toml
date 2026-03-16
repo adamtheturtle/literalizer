@@ -254,6 +254,7 @@ ignore = [
     "check_csharp_golden_syntax.py",
     "check_haskell_golden_syntax.py",
     "check_java_golden_syntax.py",
+    "check_swift_golden_syntax.py",
 ]
 
 [tool.deptry]

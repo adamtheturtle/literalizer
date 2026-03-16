@@ -77,7 +77,7 @@ def _wrap_cpp(content: str) -> str:
 
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
-    return f"let x: Any = {content}"
+    return f"let x: Any? = {content}"
 
 
 def _wrap_csharp(content: str) -> str:
