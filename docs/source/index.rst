@@ -2,7 +2,7 @@
 =========
 
 |project| converts JSON data structures to native language literal syntax
-(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin).
+(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Swift, PHP).
 
 Installation
 ------------
@@ -120,7 +120,7 @@ Usage examples
    # }
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN
+   #                      CSHARP, CPP, JAVA, KOTLIN, SWIFT, PHP
 
    # Create a custom language:
    custom = LanguageSpec(
@@ -139,6 +139,7 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
        empty_collection=None,
+       empty_dict=None,
        set_open="[",
        set_close="]",
        empty_set=None,
@@ -164,6 +165,7 @@ Usage examples
        format_date=format_date_python,
        format_datetime=format_datetime_python,
        empty_collection=None,
+       empty_dict=None,
        set_open="{",
        set_close="}",
        empty_set="set()",
@@ -195,6 +197,7 @@ Usage examples
        format_date=format_date_java,
        format_datetime=format_datetime_java_instant,
        empty_collection=None,
+       empty_dict=None,
        set_open="Set.of(",
        set_close=")",
        empty_set=None,
@@ -226,6 +229,7 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_ruby,
        empty_collection=None,
+       empty_dict=None,
        set_open="Set.new([",
        set_close="])",
        empty_set="Set.new",
@@ -250,6 +254,7 @@ Usage examples
    # format_date_go / format_datetime_go
    # format_date_kotlin / format_datetime_kotlin
    # format_date_cpp / format_datetime_cpp
+   # format_date_php / format_datetime_php
    # format_datetime_epoch (Unix timestamp)
 
 Use cases

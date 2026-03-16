@@ -3,7 +3,7 @@
 literalizer
 ===========
 
-``literalizer`` converts JSON data structures to native language literal syntax (Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin).
+``literalizer`` converts JSON data structures to native language literal syntax (Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Swift, PHP).
 
 .. contents::
    :local:
@@ -96,7 +96,7 @@ Usage examples
    # )
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN
+   #                      CSHARP, CPP, JAVA, KOTLIN, SWIFT, PHP
 
    # Create a custom language:
    custom = LanguageSpec(
@@ -115,6 +115,7 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
        empty_collection=None,
+       empty_dict=None,
        set_open="[",
        set_close="]",
        empty_set=None,
