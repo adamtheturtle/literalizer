@@ -26,6 +26,7 @@ kts
 literalize
 literalizer
 localhost
+namespaces
 natively
 ofEntries
 paren
