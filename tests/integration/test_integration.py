@@ -93,6 +93,19 @@ def _wrap_rust(content: str) -> str:
     )
 
 
+def _wrap_rust_chrono(content: str) -> str:
+    """Wrap in a Rust main function with chrono imports."""
+    indented = content.replace("\n", "\n    ")
+    return (
+        "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        f"    let _ = {indented};\n"
+        "}"
+    )
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -358,6 +371,15 @@ _DATE_FORMAT_LANGUAGES: dict[str, _LanguageConfig] = {
         ),
         extension=".go",
         wrap=_wrap_go_time,
+    ),
+    "rust_native": _LanguageConfig(
+        spec=dataclasses.replace(
+            literalizer.RUST,
+            format_date=literalizer.format_date_rust,
+            format_datetime=literalizer.format_datetime_rust,
+        ),
+        extension=".rs",
+        wrap=_wrap_rust_chrono,
     ),
     "cpp_native": _LanguageConfig(
         spec=dataclasses.replace(
