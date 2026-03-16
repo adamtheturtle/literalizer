@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import base64
 import datetime
 import json
 import textwrap
@@ -26,6 +27,8 @@ from literalizer import (
     TYPESCRIPT,
     Language,
     LanguageSpec,
+    format_bytes_hex,
+    format_bytes_python,
     format_date_cpp,
     format_date_csharp,
     format_date_go,
@@ -402,6 +405,7 @@ def test_custom_language() -> None:
         format_dict_entry=None,
         trailing_comma=True,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
         empty_collection=None,
@@ -593,6 +597,36 @@ def test_roundtrip_dict(data: dict[str, Any]) -> None:
         return
     parsed = ast.literal_eval(node_or_string=result)
     assert parsed == _lists_to_tuples(value=data)
+
+
+@given(data=st.binary())
+def test_roundtrip_bytes_python(data: bytes) -> None:
+    """Format_bytes_python -> ast.literal_eval round-trips."""
+    result = format_bytes_python(value=data)
+    assert ast.literal_eval(node_or_string=result) == data
+
+
+@given(data=st.binary())
+def test_roundtrip_bytes_hex(data: bytes) -> None:
+    """Format_bytes_hex -> bytes.fromhex round-trips."""
+    result = format_bytes_hex(value=data)
+    assert bytes.fromhex(result.strip('"')) == data
+
+
+@given(data=st.binary())
+def test_roundtrip_yaml_binary_python(data: bytes) -> None:
+    """YAML !!binary -> literalize_yaml (Python) -> ast.literal_eval round-
+    trips.
+    """
+    encoded = base64.b64encode(s=data).decode()
+    yaml_string = f"- !!binary |\n  {encoded}\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert ast.literal_eval(node_or_string=result.rstrip(",")) == data.hex()
 
 
 def test_literalize_yaml_empty_sequence() -> None:
@@ -929,6 +963,7 @@ def test_custom_format_date() -> None:
         format_dict_entry=None,
         trailing_comma=True,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_python,
         format_datetime=format_datetime_iso,
         empty_collection=None,
@@ -966,6 +1001,7 @@ def test_custom_format_datetime() -> None:
         format_dict_entry=None,
         trailing_comma=True,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_python,
         empty_collection=None,
@@ -1003,6 +1039,7 @@ def test_java_native_dates() -> None:
         format_dict_entry=None,
         trailing_comma=True,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_java,
         format_datetime=format_datetime_java_instant,
         empty_collection=None,
@@ -1042,6 +1079,7 @@ def test_ruby_native_dates() -> None:
         format_dict_entry=None,
         trailing_comma=True,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_ruby,
         format_datetime=format_datetime_ruby,
         empty_collection=None,
@@ -1110,6 +1148,94 @@ def test_default_format_datetime_is_iso() -> None:
     """The default format_datetime is ISO format."""
     assert PYTHON.format_datetime is format_datetime_iso
     assert JAVA.format_datetime is format_datetime_iso
+
+
+@pytest.mark.parametrize(
+    argnames=("func", "value", "expected"),
+    argvalues=[
+        pytest.param(
+            format_bytes_hex,
+            b"Hello",
+            '"48656c6c6f"',
+            id="format_bytes_hex",
+        ),
+        pytest.param(
+            format_bytes_hex,
+            b"",
+            '""',
+            id="format_bytes_hex_empty",
+        ),
+        pytest.param(
+            format_bytes_python,
+            b"Hello",
+            "b'Hello'",
+            id="format_bytes_python",
+        ),
+        pytest.param(
+            format_bytes_python,
+            b"\x00\x01\x02",
+            "b'\\x00\\x01\\x02'",
+            id="format_bytes_python_non_printable",
+        ),
+    ],
+)
+def test_format_bytes(
+    func: Callable[..., str],
+    value: bytes,
+    expected: str,
+) -> None:
+    """Each bytes format function returns the expected string."""
+    assert func(value=value) == expected
+
+
+def test_literalize_yaml_binary() -> None:
+    """``literalize_yaml`` formats !!binary values as hex strings."""
+    yaml_string = "- !!binary |\n    SGVsbG8=\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        prefix="",
+        wrap=False,
+    )
+    assert result == '"48656c6c6f",'
+
+
+def test_custom_format_bytes() -> None:
+    """A custom format_bytes callable is used for bytes values."""
+    spec = LanguageSpec(
+        null_literal="None",
+        true_literal="True",
+        false_literal="False",
+        collection_open="(",
+        collection_close=")",
+        dict_separator=": ",
+        dict_open="{",
+        dict_close="}",
+        format_dict_entry=None,
+        trailing_comma=True,
+        single_element_trailing_comma=False,
+        format_bytes=format_bytes_python,
+        format_date=format_date_iso,
+        format_datetime=format_datetime_iso,
+        empty_collection=None,
+        empty_dict=None,
+        set_open="{",
+        set_close="}",
+        empty_set="set()",
+        format_set_entry=None,
+        comment_prefix="#",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
+        multiline_close_indent="",
+    )
+    result = literalize_yaml(
+        yaml_string="- !!binary |\n    SGVsbG8=\n",
+        language=spec,
+        prefix="",
+        wrap=False,
+    )
+    assert result == "b'Hello',"
 
 
 def test_yaml_comment_sequence_before() -> None:
@@ -1486,6 +1612,7 @@ def test_omap_custom_language_spec() -> None:
         format_dict_entry=None,
         trailing_comma=True,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
         empty_collection=None,
@@ -1620,6 +1747,7 @@ def test_variable_declaration_language_no_formatter() -> None:
         format_dict_entry=None,
         trailing_comma=False,
         single_element_trailing_comma=False,
+        format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
         empty_collection=None,
