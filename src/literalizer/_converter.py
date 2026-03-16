@@ -308,11 +308,18 @@ def format_datetime_rust(value: datetime.datetime) -> str:
     NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
     """
     date = format_date_rust(value=value)
-    return (
-        f"NaiveDateTime::new({date}, "
-        f"NaiveTime::from_hms_opt("
-        f"{value.hour}, {value.minute}, {value.second}).unwrap())"
-    )
+    if value.microsecond:
+        time_call = (
+            f"NaiveTime::from_hms_micro_opt("
+            f"{value.hour}, {value.minute}, {value.second}, "
+            f"{value.microsecond}).unwrap()"
+        )
+    else:
+        time_call = (
+            f"NaiveTime::from_hms_opt("
+            f"{value.hour}, {value.minute}, {value.second}).unwrap()"
+        )
+    return f"NaiveDateTime::new({date}, {time_call})"
 
 
 @beartype
@@ -951,7 +958,7 @@ RUST = LanguageSpec(
     dict_close="])",
     format_dict_entry=_format_rust_dict_entry,
     trailing_comma=True,
-    single_element_trailing_comma=True,
+    single_element_trailing_comma=False,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,

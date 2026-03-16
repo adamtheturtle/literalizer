@@ -842,6 +842,14 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_rust",
         ),
         pytest.param(
+            format_datetime_rust,
+            datetime.datetime.fromisoformat("2024-01-15T12:30:00.123456"),
+            "NaiveDateTime::new("
+            "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
+            "NaiveTime::from_hms_micro_opt(12, 30, 0, 123456).unwrap())",
+            id="format_datetime_rust_microsecond",
+        ),
+        pytest.param(
             format_date_php,
             _SAMPLE_DATE,
             'new DateTime("2024-01-15")',
