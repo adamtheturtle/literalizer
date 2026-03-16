@@ -463,7 +463,8 @@ repos:
 
       - id: rust-golden-syntax-check
         name: Rust golden file syntax check
-        entry: rustc --edition 2021 --crate-type lib --emit metadata --out-dir /tmp
+        entry: bash -c 'for f; do rustfmt --edition 2021 --emit stdout "$f" > /dev/null
+          || exit 1; done' --
         language: system
         types: [rust]
         files: ^tests/integration/cases/
