@@ -22,11 +22,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 type _Scalar = (
-    str | int | float | bool | None | datetime.date | datetime.datetime
+    str | int | float | bool | None | datetime.date | datetime.datetime | bytes
 )
 type _Value = _Scalar | list[_Value] | dict[str, _Value] | set[_Scalar]
 
 
+@beartype
 def format_date_iso(value: datetime.date) -> str:
     """Format a date as an ISO 8601 quoted string literal.
 
@@ -35,6 +36,7 @@ def format_date_iso(value: datetime.date) -> str:
     return f'"{value.isoformat()}"'
 
 
+@beartype
 def format_datetime_iso(value: datetime.datetime) -> str:
     """Format a datetime as an ISO 8601 quoted string literal.
 
@@ -44,6 +46,7 @@ def format_datetime_iso(value: datetime.datetime) -> str:
     return f'"{value.isoformat()}"'
 
 
+@beartype
 def format_date_python(value: datetime.date) -> str:
     """Format a date as a Python ``datetime.date(...)`` constructor call.
 
@@ -52,6 +55,7 @@ def format_date_python(value: datetime.date) -> str:
     return f"datetime.date({value.year}, {value.month}, {value.day})"
 
 
+@beartype
 def format_datetime_python(value: datetime.datetime) -> str:
     """Format a datetime as a Python ``datetime.datetime(...)``
     constructor call.
@@ -72,6 +76,7 @@ def format_datetime_python(value: datetime.datetime) -> str:
     return f"datetime.datetime({args})"
 
 
+@beartype
 def format_datetime_epoch(value: datetime.datetime) -> str:
     """Format a datetime as seconds since the Unix epoch.
 
@@ -83,6 +88,7 @@ def format_datetime_epoch(value: datetime.datetime) -> str:
     return repr(value.timestamp())
 
 
+@beartype
 def format_date_java(value: datetime.date) -> str:
     """Format a date as a Java ``LocalDate.of(...)`` call.
 
@@ -91,6 +97,7 @@ def format_date_java(value: datetime.date) -> str:
     return f"LocalDate.of({value.year}, {value.month}, {value.day})"
 
 
+@beartype
 def format_datetime_java_instant(value: datetime.datetime) -> str:
     """Format a datetime as a Java ``Instant.parse(...)`` call.
 
@@ -99,6 +106,7 @@ def format_datetime_java_instant(value: datetime.datetime) -> str:
     return f'Instant.parse("{value.isoformat()}")'
 
 
+@beartype
 def format_datetime_java_zoned(value: datetime.datetime) -> str:
     """Format a datetime as a Java ``ZonedDateTime.of(...)`` call.
 
@@ -114,6 +122,7 @@ def format_datetime_java_zoned(value: datetime.datetime) -> str:
     )
 
 
+@beartype
 def format_date_ruby(value: datetime.date) -> str:
     """Format a date as a Ruby ``Date.new(...)`` call.
 
@@ -122,6 +131,7 @@ def format_date_ruby(value: datetime.date) -> str:
     return f"Date.new({value.year}, {value.month}, {value.day})"
 
 
+@beartype
 def format_datetime_ruby(value: datetime.datetime) -> str:
     """Format a datetime as a Ruby ``Time.new(...)`` call.
 
@@ -133,6 +143,7 @@ def format_datetime_ruby(value: datetime.datetime) -> str:
     )
 
 
+@beartype
 def format_date_js(value: datetime.date) -> str:
     """Format a date as a JavaScript ``new Date(...)`` call.
 
@@ -141,6 +152,7 @@ def format_date_js(value: datetime.date) -> str:
     return f'new Date("{value.isoformat()}")'
 
 
+@beartype
 def format_datetime_js(value: datetime.datetime) -> str:
     """Format a datetime as a JavaScript ``new Date(...)`` call.
 
@@ -149,6 +161,7 @@ def format_datetime_js(value: datetime.datetime) -> str:
     return f'new Date("{value.isoformat()}")'
 
 
+@beartype
 def format_date_csharp(value: datetime.date) -> str:
     """Format a date as a C# ``new DateOnly(...)`` call.
 
@@ -157,6 +170,7 @@ def format_date_csharp(value: datetime.date) -> str:
     return f"new DateOnly({value.year}, {value.month}, {value.day})"
 
 
+@beartype
 def format_datetime_csharp(value: datetime.datetime) -> str:
     """Format a datetime as a C# ``new DateTime(...)`` call.
 
@@ -184,6 +198,7 @@ _GO_MONTHS: dict[int, str] = {
 }
 
 
+@beartype
 def format_date_go(value: datetime.date) -> str:
     """Format a date as a Go ``time.Date(...)`` call.
 
@@ -196,6 +211,7 @@ def format_date_go(value: datetime.date) -> str:
     )
 
 
+@beartype
 def format_datetime_go(value: datetime.datetime) -> str:
     """Format a datetime as a Go ``time.Date(...)`` call.
 
@@ -211,6 +227,7 @@ def format_datetime_go(value: datetime.datetime) -> str:
     )
 
 
+@beartype
 def format_date_kotlin(value: datetime.date) -> str:
     """Format a date as a Kotlin ``LocalDate.of(...)`` call.
 
@@ -219,6 +236,7 @@ def format_date_kotlin(value: datetime.date) -> str:
     return f"LocalDate.of({value.year}, {value.month}, {value.day})"
 
 
+@beartype
 def format_datetime_kotlin(value: datetime.datetime) -> str:
     """Format a datetime as a Kotlin ``LocalDateTime.of(...)`` call.
 
@@ -230,6 +248,7 @@ def format_datetime_kotlin(value: datetime.datetime) -> str:
     )
 
 
+@beartype
 def format_date_cpp(value: datetime.date) -> str:
     """Format a date as a C++ chrono year_month_day literal.
 
@@ -245,6 +264,7 @@ def format_date_cpp(value: datetime.date) -> str:
     )
 
 
+@beartype
 def format_datetime_cpp(value: datetime.datetime) -> str:
     """Format a datetime as a C++ chrono time_point construction.
 
@@ -267,6 +287,58 @@ def format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
+def format_bytes_hex(value: bytes) -> str:
+    """Format bytes as a hex string literal.
+
+    Example: ``b"Hello"`` → ``"48656c6c6f"``.
+    """
+    return f'"{value.hex()}"'
+
+
+def format_bytes_python(value: bytes) -> str:
+    """Format bytes as a Python ``bytes`` literal.
+
+    Example: ``b"Hello"`` → ``b'Hello'``.
+    """
+    return repr(value)
+
+
+@beartype
+def format_date_rust(value: datetime.date) -> str:
+    """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call.
+
+    Example: ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
+    """
+    return (
+        f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
+        ".unwrap()"
+    )
+
+
+@beartype
+def format_datetime_rust(value: datetime.datetime) -> str:
+    """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call.
+
+    Example:
+    ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+    NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
+    """
+    date = format_date_rust(value=value)
+    if value.microsecond:
+        time_call = (
+            f"NaiveTime::from_hms_micro_opt("
+            f"{value.hour}, {value.minute}, {value.second}, "
+            f"{value.microsecond}).unwrap()"
+        )
+    else:
+        time_call = (
+            f"NaiveTime::from_hms_opt("
+            f"{value.hour}, {value.minute}, {value.second}).unwrap()"
+        )
+    return f"NaiveDateTime::new({date}, {time_call})"
+
+
+@beartype
 def format_date_php(value: datetime.date) -> str:
     """Format a date as a PHP ``new DateTime(...)`` call.
 
@@ -275,6 +347,7 @@ def format_date_php(value: datetime.date) -> str:
     return f'new DateTime("{value.isoformat()}")'
 
 
+@beartype
 def format_datetime_php(value: datetime.datetime) -> str:
     """Format a datetime as a PHP ``new DateTime(...)`` call.
 
@@ -283,6 +356,7 @@ def format_datetime_php(value: datetime.datetime) -> str:
     return f'new DateTime("{value.isoformat()}")'
 
 
+@beartype
 def _format_go_set_entry(item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
 
@@ -291,6 +365,7 @@ def _format_go_set_entry(item: str) -> str:
     return f"{item}: struct{{}}{{}}"
 
 
+@beartype
 def format_variable_declaration_python(name: str, value: str) -> str:
     """Format a Python variable declaration.
 
@@ -299,6 +374,7 @@ def format_variable_declaration_python(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 def format_variable_declaration_js(name: str, value: str) -> str:
     """Format a JavaScript/TypeScript ``const`` declaration.
 
@@ -307,6 +383,7 @@ def format_variable_declaration_js(name: str, value: str) -> str:
     return f"const {name} = {value};"
 
 
+@beartype
 def format_variable_declaration_go(name: str, value: str) -> str:
     """Format a Go short variable declaration.
 
@@ -315,6 +392,7 @@ def format_variable_declaration_go(name: str, value: str) -> str:
     return f"{name} := {value}"
 
 
+@beartype
 def format_variable_declaration_ruby(name: str, value: str) -> str:
     """Format a Ruby variable assignment.
 
@@ -323,6 +401,7 @@ def format_variable_declaration_ruby(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 def format_variable_declaration_csharp(name: str, value: str) -> str:
     """Format a C# ``var`` declaration.
 
@@ -331,6 +410,7 @@ def format_variable_declaration_csharp(name: str, value: str) -> str:
     return f"var {name} = {value};"
 
 
+@beartype
 def format_variable_declaration_cpp(name: str, value: str) -> str:
     """Format a C++ ``auto`` declaration.
 
@@ -339,6 +419,7 @@ def format_variable_declaration_cpp(name: str, value: str) -> str:
     return f"auto {name} = {value};"
 
 
+@beartype
 def format_variable_declaration_java(name: str, value: str) -> str:
     """Format a Java ``var`` declaration.
 
@@ -347,6 +428,7 @@ def format_variable_declaration_java(name: str, value: str) -> str:
     return f"var {name} = {value};"
 
 
+@beartype
 def format_variable_declaration_kotlin(name: str, value: str) -> str:
     """Format a Kotlin ``val`` declaration.
 
@@ -408,6 +490,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     def format_dict_entry(self) -> Callable[[str, str], str] | None:
         """Callable that formats a dict entry from a pre-formatted key
         and value string, or ``None`` to use ``dict_separator``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a :class:`bytes` value as a string
+        literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -542,6 +631,7 @@ class LanguageSpec:
     format_dict_entry: Callable[[str, str], str] | None
     trailing_comma: bool
     single_element_trailing_comma: bool
+    format_bytes: Callable[[bytes], str]
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
     empty_collection: str | None
@@ -576,6 +666,7 @@ PYTHON = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=True,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -594,6 +685,7 @@ PYTHON = LanguageSpec(
 )
 
 
+@beartype
 def _format_csharp_dict_entry(key: str, value: str) -> str:
     """Format a C# dictionary indexer entry."""
     return f"[{key}] = {value}"
@@ -616,6 +708,7 @@ CSHARP = LanguageSpec(
     format_dict_entry=_format_csharp_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="ValueTuple.Create()",
@@ -651,6 +744,7 @@ JAVASCRIPT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -680,6 +774,7 @@ TYPESCRIPT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -715,6 +810,7 @@ RUBY = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -750,6 +846,7 @@ GO = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -773,6 +870,7 @@ def _format_cpp_omap_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
+@beartype
 def _format_cpp_dict_entry(key: str, value: str) -> str:
     """Format a C++ dict entry as a brace-enclosed pair."""
     return f"{{{key}, {value}}}"
@@ -790,6 +888,7 @@ CPP = LanguageSpec(
     format_dict_entry=_format_cpp_dict_entry,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -808,6 +907,7 @@ CPP = LanguageSpec(
 )
 
 
+@beartype
 def _format_java_dict_entry(key: str, value: str) -> str:
     """Format a Java ``Map.entry(key, value)`` call."""
     return f"Map.entry({key}, {value})"
@@ -830,6 +930,7 @@ JAVA = LanguageSpec(
     format_dict_entry=_format_java_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -865,6 +966,7 @@ SWIFT = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection="[Any]()",
@@ -879,6 +981,45 @@ SWIFT = LanguageSpec(
     format_omap_entry=_format_swift_omap_entry,
     multiline_close_indent="",
     skip_null_dict_values=False,
+)
+
+
+@beartype
+def _format_rust_dict_entry(key: str, value: str) -> str:
+    """Format a Rust HashMap entry as a tuple ``(key, value)``."""
+    return f"({key}, {value})"
+
+
+def _format_rust_omap_entry(key: str, value: str) -> str:
+    """Format a Rust ordered-map entry as a tuple ``(key, value)``."""
+    return f"({key}, {value})"
+
+
+RUST = LanguageSpec(
+    null_literal="None",
+    true_literal="true",
+    false_literal="false",
+    collection_open="vec![",
+    collection_close="]",
+    dict_separator=": ",
+    dict_open="HashMap::from([",
+    dict_close="])",
+    format_dict_entry=_format_rust_dict_entry,
+    trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="HashSet::from([",
+    set_close="])",
+    empty_set=None,
+    format_set_entry=None,
+    comment_prefix="//",
+    omap_open="HashMap::from([",
+    omap_close="])",
+    format_omap_entry=_format_rust_omap_entry,
+    multiline_close_indent="",
 )
 
 
@@ -899,6 +1040,7 @@ KOTLIN = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -934,6 +1076,7 @@ PHP = LanguageSpec(
     format_dict_entry=None,
     trailing_comma=True,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_php,
     format_datetime=format_datetime_php,
     empty_collection=None,
@@ -951,6 +1094,7 @@ PHP = LanguageSpec(
 )
 
 
+@beartype
 def _format_haskell_dict_entry(key: str, value: str) -> str:
     """Format a Haskell dict entry as a tuple pair."""
     return f"({key}, {value})"
@@ -973,6 +1117,7 @@ HASKELL = LanguageSpec(
     format_dict_entry=_format_haskell_dict_entry,
     trailing_comma=False,
     single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_collection=None,
@@ -1008,6 +1153,8 @@ def _format_scalar(*, value: _Scalar, spec: Language) -> str:
             .replace("\n", "\\n")
         )
         result = f'"{escaped}"'
+    elif isinstance(value, bytes):
+        result = spec.format_bytes(value)
     elif isinstance(value, datetime.datetime):
         result = spec.format_datetime(value)
     else:
@@ -1119,6 +1266,7 @@ def _literalize(
     | dict[str, Any]
     | set[Any]
     | str
+    | bytes
     | datetime.date
     | float
     | bool
@@ -1156,6 +1304,7 @@ def _literalize(
     # date).
     scalar_types = (
         str,
+        bytes,
         int,
         float,
         bool,
