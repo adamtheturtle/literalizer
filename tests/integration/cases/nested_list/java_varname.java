@@ -4,9 +4,9 @@ class Check {
     public static void check() {
 var my_data = new Object[]{
     true,
-    null,
     "hi",
-    new Object[]{1, 2}
+    new Object[]{1, 2},
+    null
 };
     }
 }

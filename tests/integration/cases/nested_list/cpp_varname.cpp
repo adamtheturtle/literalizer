@@ -7,8 +7,8 @@ struct _Any {
 void _check() {
 _Any my_data = {
     true,
-    nullptr,
     "hi",
     {1, 2},
+    nullptr,
 };
 }

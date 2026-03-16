@@ -7,8 +7,8 @@ struct _Any {
 void _check() {
     [[maybe_unused]] _Any _v = {
     true,
-    nullptr,
     "hi",
     {1, 2},
+    nullptr,
 };
 }

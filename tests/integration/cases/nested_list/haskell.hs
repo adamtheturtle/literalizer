@@ -19,7 +19,7 @@ instance Fractional Val where
 x :: Val
 x = HList [
     HBool True,
-    HNull,
     "hi",
-    HList [1, 2]
+    HList [1, 2],
+    HNull
     ]
