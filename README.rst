@@ -97,7 +97,13 @@ Usage examples
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
    #                      CSHARP, CPP, JAVA, KOTLIN, RUST, HASKELL, SWIFT, PHP
 
+
    # Create a custom language:
+   def _omap_entry(key: str, value: str) -> str:
+       """Format an ordered-map entry."""
+       return f"{key}: {value}"
+
+
    custom = LanguageSpec(
        null_literal="nil",
        true_literal="TRUE",
@@ -119,6 +125,9 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
    )
 

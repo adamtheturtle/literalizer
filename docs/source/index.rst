@@ -121,6 +121,13 @@ Usage examples
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
    #                      CSHARP, CPP, JAVA, KOTLIN, RUST, HASKELL, SWIFT, PHP
 
+
+   # Helper used in custom LanguageSpec examples below.
+   def _omap_entry(key: str, value: str) -> str:
+       """Format an ordered-map entry."""
+       return f"{key}: {value}"
+
+
    # Create a custom language:
    custom = LanguageSpec(
        null_literal="nil",
@@ -143,6 +150,9 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
    )
 
@@ -169,6 +179,9 @@ Usage examples
        empty_set="set()",
        format_set_entry=None,
        comment_prefix="#",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
    )
    result = literalize_yaml(
@@ -201,6 +214,9 @@ Usage examples
        empty_set=None,
        format_set_entry=None,
        comment_prefix="//",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
    )
    result = literalize_yaml(
@@ -233,6 +249,9 @@ Usage examples
        empty_set="Set.new",
        format_set_entry=None,
        comment_prefix="#",
+       omap_open="{",
+       omap_close="}",
+       format_omap_entry=_omap_entry,
        multiline_close_indent="",
    )
    result = literalize_yaml(
