@@ -461,11 +461,12 @@ repos:
         stages: [pre-commit]
 
       - id: swift-syntax-check
-        name: Swift syntax check
-        entry: bash -c 'for f; do swiftc -typecheck "$f" || exit 1; done' --
-        language: system
+        name: Swift golden file syntax check
+        entry: uv run python check_swift_golden_syntax.py
+        language: python
         types: [swift]
         files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: csharp-golden-syntax-check
