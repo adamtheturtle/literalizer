@@ -259,12 +259,11 @@ def test_java_yaml_omap_skips_null_values() -> None:
         prefix="",
         wrap=True,
     )
-    expected = textwrap.dedent(
-        text="""\
-        new Object[]{
-            Map.ofEntries(Map.entry("name", "Alice"), Map.entry("age", 30))
-        }"""
+    omap_inline = (
+        "new java.util.ArrayList<>(java.util.Arrays.asList("
+        'Map.entry("name", "Alice"), Map.entry("age", 30)))'
     )
+    expected = f"new Object[]{{\n    {omap_inline}\n}}"
     assert result == expected
 
 
