@@ -81,6 +81,71 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+_VARIABLE_NAME = "my_data"
+
+
+def _wrap_go_varname(content: str) -> str:
+    """Wrap a Go short variable declaration in a main function."""
+    return (
+        f"package main\n\nfunc main() {{\n{content}\n_ = {_VARIABLE_NAME}\n}}"
+    )
+
+
+def _wrap_java_varname(content: str) -> str:
+    """Wrap a Java var declaration in a static method."""
+    return (
+        "import java.util.Map;\n"
+        "import java.util.Set;\n"
+        "class Check {\n"
+        "    public static void check() {\n"
+        f"{content}\n"
+        "    }\n"
+        "}"
+    )
+
+
+def _wrap_csharp_varname(content: str) -> str:
+    """Wrap a C# top-level variable declaration with required imports."""
+    return f"using System.Collections.Generic;\n{content}"
+
+
+def _wrap_ts_varname(content: str) -> str:
+    """Wrap a TypeScript variable declaration as a module.
+
+    Adding ``export {}`` turns the file into a module so that ``const``
+    declarations are module-scoped rather than global, preventing
+    duplicate-declaration errors when ``tsc`` checks all ``.ts`` files
+    together.
+    """
+    return f"{content}\nexport {{}};"
+
+
+def _wrap_cpp_varname(content: str) -> str:
+    """Wrap a C++ variable declaration for mixed-type initializer lists.
+
+    ``auto`` cannot deduce a type for mixed-type braced initializers, so
+    the wrapper substitutes the custom ``_Any`` type that accepts any value.
+    """
+    old_prefix = f"auto {_VARIABLE_NAME} = "
+    new_prefix = f"_Any {_VARIABLE_NAME} = "
+    content_adapted = (
+        new_prefix + content[len(old_prefix) :]
+        if content.startswith(old_prefix)
+        else content
+    )
+    return (
+        "#include <initializer_list>\n"
+        "#include <cstddef>\n"
+        "struct _Any {\n"
+        "    template<class T> _Any(T&&) noexcept {}\n"
+        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
+        "};\n"
+        "void _check() {\n"
+        f"{content_adapted}\n"
+        "}"
+    )
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -210,6 +275,55 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 }
 
 
+_LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
+    "python": _LanguageConfig(
+        spec=literalizer.PYTHON,
+        extension=".py",
+        wrap=_wrap_identity,
+    ),
+    "javascript": _LanguageConfig(
+        spec=literalizer.JAVASCRIPT,
+        extension=".js",
+        wrap=_wrap_identity,
+    ),
+    "typescript": _LanguageConfig(
+        spec=literalizer.TYPESCRIPT,
+        extension=".ts",
+        wrap=_wrap_ts_varname,
+    ),
+    "kotlin": _LanguageConfig(
+        spec=literalizer.KOTLIN,
+        extension=".kts",
+        wrap=_wrap_identity,
+    ),
+    "ruby": _LanguageConfig(
+        spec=literalizer.RUBY,
+        extension=".rb",
+        wrap=_wrap_identity,
+    ),
+    "go": _LanguageConfig(
+        spec=literalizer.GO,
+        extension=".go",
+        wrap=_wrap_go_varname,
+    ),
+    "java": _LanguageConfig(
+        spec=literalizer.JAVA,
+        extension=".java",
+        wrap=_wrap_java_varname,
+    ),
+    "csharp": _LanguageConfig(
+        spec=literalizer.CSHARP,
+        extension=".cs",
+        wrap=_wrap_csharp_varname,
+    ),
+    "cpp": _LanguageConfig(
+        spec=literalizer.CPP,
+        extension=".cpp",
+        wrap=_wrap_cpp_varname,
+    ),
+}
+
+
 def _discover_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples."""
     cases: list[tuple[str, str, Path]] = []
@@ -222,6 +336,23 @@ def _discover_cases() -> list[tuple[str, str, Path]]:
 
 
 _CASES = _discover_cases()
+
+
+def _discover_varname_cases() -> list[tuple[str, str, Path]]:
+    """Return ``(case_name, language, input_path)`` tuples for variable-
+    name
+    tests.
+    """
+    cases: list[tuple[str, str, Path]] = []
+    for case_dir in sorted(_CASES_DIR.iterdir()):
+        cases.extend(
+            (case_dir.name, lang_name, case_dir / "input.yaml")
+            for lang_name in _LANGUAGES_WITH_VARNAME
+        )
+    return cases
+
+
+_VARNAME_CASES = _discover_varname_cases()
 
 
 @pytest.mark.parametrize(
@@ -249,6 +380,38 @@ def test_golden_file(
         contents=wrapped + "\n",
         extension=lang_config.extension,
         fullpath=input_path.parent / (language + lang_config.extension),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=("_case_name", "language", "input_path"),
+    argvalues=_VARNAME_CASES,
+    ids=[f"{c[0]}/{c[1]}" for c in _VARNAME_CASES],
+)
+def test_golden_file_with_variable_name(
+    _case_name: str,
+    language: str,
+    input_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test that literalize_yaml with variable_name matches golden
+    file.
+    """
+    lang_config = _LANGUAGES_WITH_VARNAME[language]
+    yaml_string = input_path.read_text()
+    result = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=lang_config.spec,
+        prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+    )
+    wrapped = lang_config.wrap(result)
+    file_regression.check(
+        contents=wrapped + "\n",
+        extension=lang_config.extension,
+        fullpath=input_path.parent
+        / (language + "_varname" + lang_config.extension),
     )
 
 
