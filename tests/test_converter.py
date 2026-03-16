@@ -53,6 +53,13 @@ from literalizer import (
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 
 
+def _format_test_omap_entry(key: str, value: str) -> str:
+    """Format an omap entry for use in custom LanguageSpec test
+    fixtures.
+    """
+    return f"{key}: {value}"
+
+
 @pytest.mark.parametrize(
     argnames=("language", "expected"),
     argvalues=[
@@ -399,6 +406,9 @@ def test_custom_language() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -898,6 +908,9 @@ def test_custom_format_date() -> None:
         empty_set="set()",
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -930,6 +943,9 @@ def test_custom_format_datetime() -> None:
         empty_set="set()",
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -962,6 +978,9 @@ def test_java_native_dates() -> None:
         empty_set=None,
         format_set_entry=None,
         comment_prefix="//",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -996,6 +1015,9 @@ def test_ruby_native_dates() -> None:
         empty_set="Set.new",
         format_set_entry=None,
         comment_prefix="#",
+        omap_open="{",
+        omap_close="}",
+        format_omap_entry=_format_test_omap_entry,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",

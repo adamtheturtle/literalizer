@@ -414,24 +414,19 @@ class Language(  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def omap_open(self) -> str | None:
-        """The opening delimiter for ordered-map literals, or ``None``
-        to fall back to regular dict formatting.
-        """
+    def omap_open(self) -> str:
+        """The opening delimiter for ordered-map literals."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def omap_close(self) -> str | None:
-        """The closing delimiter for ordered-map literals, or ``None``
-        to fall back to regular dict formatting.
-        """
+    def omap_close(self) -> str:
+        """The closing delimiter for ordered-map literals."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_omap_entry(self) -> Callable[[str, str], str] | None:
+    def format_omap_entry(self) -> Callable[[str, str], str]:
         """Callable that formats one ordered-map entry from a
-        pre-formatted key and value string.  Must not be ``None`` when
-        ``omap_open`` is not ``None``.
+        pre-formatted key and value string.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -464,9 +459,9 @@ class LanguageSpec:
     empty_set: str | None
     format_set_entry: Callable[[str], str] | None
     comment_prefix: str
-    omap_open: str | None = None
-    omap_close: str | None = None
-    format_omap_entry: Callable[[str, str], str] | None = None
+    omap_open: str
+    omap_close: str
+    format_omap_entry: Callable[[str, str], str]
 
 
 def _format_python_omap_entry(key: str, value: str) -> str:
@@ -756,6 +751,12 @@ KOTLIN = LanguageSpec(
     format_omap_entry=_format_kotlin_omap_entry,
 )
 
+
+def _format_php_omap_entry(key: str, value: str) -> str:
+    """Format one PHP array entry as a ``key => value`` pair."""
+    return f"{key} => {value}"
+
+
 PHP = LanguageSpec(
     null_literal="null",
     true_literal="true",
@@ -776,6 +777,9 @@ PHP = LanguageSpec(
     empty_set=None,
     format_set_entry=None,
     comment_prefix="//",
+    omap_open="[",
+    omap_close="]",
+    format_omap_entry=_format_php_omap_entry,
 )
 
 
@@ -832,9 +836,7 @@ def _format_value(*, value: _Value, spec: Language) -> str:
 
     Handles scalars, lists (recursively), dicts, and sets.
     """
-    if isinstance(value, ordereddict) and spec.omap_open is not None:
-        assert spec.omap_close is not None  # noqa: S101
-        assert spec.format_omap_entry is not None  # noqa: S101
+    if isinstance(value, ordereddict):
         pairs = [
             spec.format_omap_entry(
                 _format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
@@ -882,8 +884,6 @@ def _wrap_body(
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
     if is_omap:
-        assert spec.omap_open is not None  # noqa: S101
-        assert spec.omap_close is not None  # noqa: S101
         return f"{spec.omap_open}\n{body}\n{spec.omap_close}"
     if isinstance(data, dict):
         return f"{spec.dict_open}\n{body}\n{spec.dict_close}"
@@ -948,7 +948,7 @@ def _literalize(
     effective_prefix = prefix if not wrap else (prefix or "    ")
     lines: list[str] = []
 
-    is_omap = isinstance(data, ordereddict) and spec.omap_open is not None
+    is_omap = isinstance(data, ordereddict)
     if is_omap or isinstance(data, dict):
         dict_data = cast("dict[str, Any]", data)
         entries = list(dict_data.items())
