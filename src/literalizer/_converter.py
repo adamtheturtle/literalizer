@@ -418,7 +418,7 @@ class Language(Protocol):
         Haskell where the layout rule requires the closing bracket to
         be indented.
         """
-        return ""
+        return ""  # pragma: no cover
 
 
 @dataclasses.dataclass(frozen=True)
