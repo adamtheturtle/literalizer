@@ -463,7 +463,7 @@ repos:
 
       - id: swift-syntax-check
         name: Swift syntax check
-        entry: swiftc -typecheck
+        entry: uv run python check_swift_golden_syntax.py
         language: system
         types: [swift]
         files: ^tests/integration/cases/
