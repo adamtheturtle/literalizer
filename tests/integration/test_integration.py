@@ -95,14 +95,14 @@ def _wrap_haskell(content: str) -> str:
         "    fromString = HStr\n"
         "instance Num Val where\n"
         "    fromInteger = HInt\n"
-        '    (+) = error "not implemented"\n'
-        '    (*) = error "not implemented"\n'
-        '    abs = error "not implemented"\n'
-        '    signum = error "not implemented"\n'
-        '    negate = error "not implemented"\n'
+        '    a + b = error "not implemented"\n'
+        '    a * b = error "not implemented"\n'
+        '    abs a = error "not implemented"\n'
+        '    signum a = error "not implemented"\n'
+        '    negate a = error "not implemented"\n'
         "instance Fractional Val where\n"
-        "    fromRational r = HFloat (fromRational r)\n"
-        '    (/) = error "not implemented"\n'
+        "    fromRational r = HFloat (realToFrac r)\n"
+        '    a / b = error "not implemented"\n'
         "x :: Val\n"
         f"x = {content}"
     )

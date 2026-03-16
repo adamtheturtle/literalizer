@@ -6,14 +6,14 @@ instance IsString Val where
     fromString = HStr
 instance Num Val where
     fromInteger = HInt
-    (+) = error "not implemented"
-    (*) = error "not implemented"
-    abs = error "not implemented"
-    signum = error "not implemented"
-    negate = error "not implemented"
+    a + b = error "not implemented"
+    a * b = error "not implemented"
+    abs a = error "not implemented"
+    signum a = error "not implemented"
+    negate a = error "not implemented"
 instance Fractional Val where
-    fromRational r = HFloat (fromRational r)
-    (/) = error "not implemented"
+    fromRational r = HFloat (realToFrac r)
+    a / b = error "not implemented"
 x :: Val
 x = HSet [
     "apple",
