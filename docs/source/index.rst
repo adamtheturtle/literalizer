@@ -2,7 +2,7 @@
 =========
 
 |project| converts JSON data structures to native language literal syntax
-(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Haskell, PHP).
+(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Haskell, Swift, PHP).
 
 Installation
 ------------
@@ -119,7 +119,7 @@ Usage examples
    # }
 
    # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN, HASKELL, PHP
+   #                      CSHARP, CPP, JAVA, KOTLIN, HASKELL, SWIFT, PHP
 
    # Create a custom language:
    custom = LanguageSpec(
@@ -137,6 +137,7 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_iso,
        empty_collection=None,
+       empty_dict=None,
        set_open="[",
        set_close="]",
        empty_set=None,
@@ -162,6 +163,7 @@ Usage examples
        format_date=format_date_python,
        format_datetime=format_datetime_python,
        empty_collection=None,
+       empty_dict=None,
        set_open="{",
        set_close="}",
        empty_set="set()",
@@ -193,6 +195,7 @@ Usage examples
        format_date=format_date_java,
        format_datetime=format_datetime_java_instant,
        empty_collection=None,
+       empty_dict=None,
        set_open="Set.of(",
        set_close=")",
        empty_set=None,
@@ -224,6 +227,7 @@ Usage examples
        format_date=format_date_iso,
        format_datetime=format_datetime_ruby,
        empty_collection=None,
+       empty_dict=None,
        set_open="Set.new([",
        set_close="])",
        empty_set="Set.new",
