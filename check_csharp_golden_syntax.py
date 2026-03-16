@@ -49,7 +49,7 @@ def main() -> None:
             dotnet_tmp = Path(tmpdir) / "tmp"
             dotnet_tmp.mkdir()
             env = os.environ.copy()
-            env["TMPDIR"] = os.fspath(dotnet_tmp)
+            env["TMPDIR"] = dotnet_tmp.as_posix()
             result = subprocess.run(
                 args=[dotnet_path, "build", str(csproj_path)],  # type: ignore[call-overload]
                 capture_output=True,
