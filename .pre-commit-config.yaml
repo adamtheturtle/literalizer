@@ -42,6 +42,7 @@ ci:
     - php-syntax-check
     - ruby-syntax-check
     - rust-golden-syntax-check
+    - scala-golden-syntax-check
     - shellcheck
     - shellcheck-docs
     - shfmt
@@ -507,6 +508,14 @@ repos:
         entry: clj-kondo --lint
         language: system
         files: ^tests/integration/cases/.*\.clj$
+        stages: [pre-commit]
+
+      - id: scala-golden-syntax-check
+        name: Scala golden file syntax check
+        entry: uv run python check_scala_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.scala$
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: dart-syntax-check
