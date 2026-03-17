@@ -49,6 +49,7 @@ from literalizer.formatters import (
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
+    format_variable_assignment_python,
     format_variable_declaration_python,
     passthrough_set_entry,
 )
@@ -556,6 +557,7 @@ def test_custom_language() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
+        format_variable_assignment=format_variable_assignment_python,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -1116,6 +1118,7 @@ def test_custom_format_date() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
+        format_variable_assignment=format_variable_assignment_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -1156,6 +1159,7 @@ def test_custom_format_datetime() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
+        format_variable_assignment=format_variable_assignment_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1196,6 +1200,7 @@ def test_java_native_dates() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
+        format_variable_assignment=format_variable_assignment_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1238,6 +1243,7 @@ def test_ruby_native_dates() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
+        format_variable_assignment=format_variable_assignment_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1375,6 +1381,7 @@ def test_custom_format_bytes() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
+        format_variable_assignment=format_variable_assignment_python,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
@@ -1775,6 +1782,7 @@ def test_omap_custom_language_spec() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
+        format_variable_assignment=format_variable_assignment_python,
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -1885,3 +1893,73 @@ def test_variable_declaration_none_no_wrap() -> None:
         variable_name=None,
     )
     assert result == "(\n    1,\n    2,\n)"
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (PYTHON, "my_var = 42"),
+        (JAVASCRIPT, "my_var = 42;"),
+        (TYPESCRIPT, "my_var = 42;"),
+        (GO, "my_var = 42"),
+        (RUBY, "my_var = 42"),
+        (CSHARP, "my_var = 42;"),
+        (CPP, "my_var = 42;"),
+        (JAVA, "my_var = 42;"),
+        (KOTLIN, "my_var = 42"),
+        (SWIFT, "my_var = 42"),
+        (RUST, "my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
+    ],
+)
+def test_existing_variable_assignment_json(
+    *, language: Language, expected: str
+) -> None:
+    """Each language produces correct existing-variable assignment
+    syntax.
+    """
+    result = literalize_json(
+        json_string="42",
+        language=language,
+        prefix="",
+        wrap=False,
+        variable_name="my_var",
+        new_variable=False,
+    )
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (PYTHON, "my_var = 42"),
+        (JAVASCRIPT, "my_var = 42;"),
+        (TYPESCRIPT, "my_var = 42;"),
+        (GO, "my_var = 42"),
+        (RUBY, "my_var = 42"),
+        (CSHARP, "my_var = 42;"),
+        (CPP, "my_var = 42;"),
+        (JAVA, "my_var = 42;"),
+        (KOTLIN, "my_var = 42"),
+        (SWIFT, "my_var = 42"),
+        (RUST, "my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
+    ],
+)
+def test_existing_variable_assignment_yaml(
+    *, language: Language, expected: str
+) -> None:
+    """Each language produces correct existing-variable assignment syntax
+    for YAML.
+    """
+    result = literalize_yaml(
+        yaml_string="42\n",
+        language=language,
+        prefix="",
+        wrap=False,
+        variable_name="my_var",
+        new_variable=False,
+    )
+    assert result == expected

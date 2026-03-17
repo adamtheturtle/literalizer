@@ -20,6 +20,7 @@ __all__ = [
     "format_date_iso",
     "format_date_java",
     "format_date_js",
+    "format_date_julia",
     "format_date_kotlin",
     "format_date_php",
     "format_date_python",
@@ -33,17 +34,31 @@ __all__ = [
     "format_datetime_java_instant",
     "format_datetime_java_zoned",
     "format_datetime_js",
+    "format_datetime_julia",
     "format_datetime_kotlin",
     "format_datetime_php",
     "format_datetime_python",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_assignment_cpp",
+    "format_variable_assignment_csharp",
+    "format_variable_assignment_go",
+    "format_variable_assignment_haskell",
+    "format_variable_assignment_java",
+    "format_variable_assignment_js",
+    "format_variable_assignment_kotlin",
+    "format_variable_assignment_php",
+    "format_variable_assignment_python",
+    "format_variable_assignment_ruby",
+    "format_variable_assignment_rust",
+    "format_variable_assignment_swift",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
     "format_variable_declaration_go",
     "format_variable_declaration_haskell",
     "format_variable_declaration_java",
     "format_variable_declaration_js",
+    "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
@@ -487,6 +502,148 @@ def format_variable_declaration_php(name: str, value: str) -> str:
 @beartype
 def format_variable_declaration_haskell(name: str, value: str) -> str:
     """Format a Haskell variable binding.
+
+    Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_declaration_julia(name: str, value: str) -> str:
+    """Format a Julia variable assignment.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_date_julia(value: datetime.date) -> str:
+    """Format a date as a Julia ``Date(...)`` constructor call.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``Date(2024, 1, 15)``.
+    """
+    return f"Date({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def format_datetime_julia(value: datetime.datetime) -> str:
+    """Format a datetime as a Julia ``DateTime(...)`` constructor call.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30, 0)`` →
+    ``DateTime(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+@beartype
+def format_variable_assignment_python(name: str, value: str) -> str:
+    """Format a Python variable assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_js(name: str, value: str) -> str:
+    """Format a JavaScript/TypeScript assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2];"``
+    """
+    return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_go(name: str, value: str) -> str:
+    """Format a Go assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[]any{1, 2}"`` → ``"x = []any{1, 2}"``.
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_ruby(name: str, value: str) -> str:
+    """Format a Ruby assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_csharp(name: str, value: str) -> str:
+    """Format a C# assignment to an existing variable.
+
+    Example: ``"x"`` and ``"new object[]{1}"`` → ``"x = new object[]{1};"``
+    """
+    return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_cpp(name: str, value: str) -> str:
+    """Format a C++ assignment to an existing variable.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"x = {1, 2};"``
+    """
+    return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_java(name: str, value: str) -> str:
+    """Format a Java assignment to an existing variable.
+
+    Example: ``"x"`` and ``"new Object[]{1}"`` → ``"x = new Object[]{1};"``
+    """
+    return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_kotlin(name: str, value: str) -> str:
+    """Format a Kotlin assignment to an existing variable.
+
+    Example: ``"x"`` and ``"listOf(1, 2)"`` → ``"x = listOf(1, 2)"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_swift(name: str, value: str) -> str:
+    """Format a Swift assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_rust(name: str, value: str) -> str:
+    """Format a Rust assignment to an existing variable.
+
+    Example: ``"x"`` and ``"vec![1, 2]"`` → ``"x = vec![1, 2];"``
+    """
+    return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_php(name: str, value: str) -> str:
+    """Format a PHP assignment to an existing variable.
+
+    The ``$`` sigil is prepended automatically.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
+    """
+    return f"${name} = {value};"
+
+
+@beartype
+def format_variable_assignment_haskell(name: str, value: str) -> str:
+    """Format a Haskell variable binding (same syntax for new and
+    existing).
 
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """

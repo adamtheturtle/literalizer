@@ -276,6 +276,7 @@ def literalize_json(
     prefix: str,
     wrap: bool,
     variable_name: str | None = None,
+    new_variable: bool = True,
 ) -> str:
     r"""Convert a JSON string to native language literal text.
 
@@ -293,7 +294,13 @@ def literalize_json(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
             declaration using the language's
-            ``format_variable_declaration`` callable.
+            ``format_variable_declaration`` or
+            ``format_variable_assignment`` callable.
+        new_variable: If ``True`` (the default), use
+            ``format_variable_declaration`` (e.g. ``const x =`` in
+            JavaScript).  If ``False``, use
+            ``format_variable_assignment`` (e.g. ``x =``).  Only
+            relevant when *variable_name* is given.
 
     Raises:
         JSONParseError: If *json_string* is not valid JSON.
@@ -312,7 +319,12 @@ def literalize_json(
         wrap=wrap,
     )
     if variable_name is not None:
-        return language.format_variable_declaration(variable_name, result)
+        formatter = (
+            language.format_variable_declaration
+            if new_variable
+            else language.format_variable_assignment
+        )
+        return formatter(variable_name, result)
     return result
 
 
@@ -324,6 +336,7 @@ def literalize_yaml(
     prefix: str,
     wrap: bool,
     variable_name: str | None = None,
+    new_variable: bool = True,
 ) -> str:
     r"""Convert a YAML string to native language literal text.
 
@@ -344,7 +357,13 @@ def literalize_yaml(
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
             declaration using the language's
-            ``format_variable_declaration`` callable.
+            ``format_variable_declaration`` or
+            ``format_variable_assignment`` callable.
+        new_variable: If ``True`` (the default), use
+            ``format_variable_declaration`` (e.g. ``const x =`` in
+            JavaScript).  If ``False``, use
+            ``format_variable_assignment`` (e.g. ``x =``).  Only
+            relevant when *variable_name* is given.
 
     Raises:
         YAMLParseError: If *yaml_string* is not valid YAML.
@@ -430,5 +449,10 @@ def literalize_yaml(
             result = literalize_yaml_collection(ctx=ctx)
 
     if variable_name is not None:
-        return language.format_variable_declaration(variable_name, result)
+        formatter = (
+            language.format_variable_declaration
+            if new_variable
+            else language.format_variable_assignment
+        )
+        return formatter(variable_name, result)
     return result
