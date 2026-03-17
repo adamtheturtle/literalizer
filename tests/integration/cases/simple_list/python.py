@@ -1,6 +1,0 @@
-(
-    1,
-    "hello",
-    True,
-    None,
-)

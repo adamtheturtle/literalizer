@@ -81,7 +81,7 @@ __all__ = [
     "format_variable_declaration_rust",
     "format_variable_declaration_scala",
     "format_variable_declaration_swift",
-    "passthrough_list_entry",
+    "passthrough_sequence_entry",
     "passthrough_set_entry",
     "to_fsharp_val",
 ]
@@ -606,10 +606,10 @@ def to_fsharp_val(value: str) -> str:
 
 
 @beartype
-def passthrough_list_entry(item: str) -> str:
+def passthrough_sequence_entry(item: str) -> str:
     """Return *item* unchanged.
 
-    Use this as ``format_list_entry`` for languages where list entries
+    Use this as ``format_sequence_entry`` for languages where sequence entries
     need no extra formatting.
     """
     return item
