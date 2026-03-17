@@ -12,6 +12,7 @@ __all__ = [
     "HASKELL",
     "JAVA",
     "JAVASCRIPT",
+    "JULIA",
     "KOTLIN",
     "PHP",
     "PYTHON",
@@ -49,6 +50,7 @@ from literalizer.formatters import (
     format_variable_declaration_haskell,
     format_variable_declaration_java,
     format_variable_declaration_js,
+    format_variable_declaration_julia,
     format_variable_declaration_kotlin,
     format_variable_declaration_php,
     format_variable_declaration_python,
@@ -524,6 +526,44 @@ PHP = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_php,
     format_variable_assignment=format_variable_assignment_php,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
+)
+
+
+def _format_julia_omap_entry(key: str, value: str) -> str:
+    """Format a Julia ordered-map entry as a pair arrow expression."""
+    return f"{key} => {value}"
+
+
+JULIA = LanguageSpec(
+    null_literal="nothing",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_open="Dict(",
+    dict_close=")",
+    format_dict_entry=dict_entry_with_separator(separator=" => "),
+    multiline_trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict="Dict()",
+    set_open="Set([",
+    set_close="])",
+    empty_set="Set()",
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="#",
+    omap_open="[",
+    omap_close="]",
+    format_omap_entry=_format_julia_omap_entry,
+    multiline_close_indent="",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_julia,
+    format_variable_assignment=format_variable_declaration_julia,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
