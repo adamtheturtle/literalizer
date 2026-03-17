@@ -49,7 +49,9 @@ __all__ = [
     "format_variable_assignment_csharp",
     "format_variable_assignment_dart",
     "format_variable_assignment_elixir",
+    "format_variable_assignment_fsharp",
     "format_variable_assignment_go",
+    "format_variable_assignment_groovy",
     "format_variable_assignment_haskell",
     "format_variable_assignment_java",
     "format_variable_assignment_js",
@@ -66,7 +68,9 @@ __all__ = [
     "format_variable_declaration_csharp",
     "format_variable_declaration_dart",
     "format_variable_declaration_elixir",
+    "format_variable_declaration_fsharp",
     "format_variable_declaration_go",
+    "format_variable_declaration_groovy",
     "format_variable_declaration_haskell",
     "format_variable_declaration_java",
     "format_variable_declaration_js",
@@ -81,6 +85,7 @@ __all__ = [
     "format_variable_declaration_swift",
     "passthrough_list_entry",
     "passthrough_set_entry",
+    "to_fsharp_val",
 ]
 
 
@@ -551,6 +556,68 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_declaration_fsharp(name: str, value: str) -> str:
+    """Format an F# ``let`` declaration with explicit ``Val`` type.
+
+    Example: ``"x"`` and ``"FList [...]"`` → ``"let x: Val = FList [...]"``
+    """
+    return f"let {name}: Val = {value}"
+
+
+def to_fsharp_val(value: str) -> str:
+    """Wrap a pre-formatted value string in an F# ``Val`` constructor.
+
+    Inspects the string representation to determine the appropriate
+    discriminated-union constructor: ``FStr``, ``FInt``, ``FFloat``,
+    or passes through values that are already ``Val`` expressions
+    (``FNull``, ``FBool``, ``FList``, ``FMap``, ``FSet``).
+    """
+    _val_prefixes = (
+        "FNull",
+        "FBool",
+        "FList",
+        "FMap",
+        "FSet",
+        "FStr",
+        "FInt",
+        "FFloat",
+    )
+    if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"FStr {value}"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"FInt({value}L)" if negative else f"FInt {value}L"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"FFloat({value})" if negative else f"FFloat {value}"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def passthrough_list_entry(item: str) -> str:
+    """Return *item* unchanged.
+
+    Use this as ``format_list_entry`` for languages where list entries
+    need no extra formatting.
+    """
+    return item
+
+
+@beartype
 def format_variable_assignment_clojure(name: str, value: str) -> str:
     """Format a Clojure ``def`` reassignment.
 
@@ -795,6 +862,33 @@ def format_variable_assignment_dart(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
+@beartype
+def format_variable_assignment_fsharp(name: str, value: str) -> str:
+    """Format an F# variable assignment to an existing binding.
+
+    Example: ``"x"`` and ``"FList [1; 2]"`` → ``"let x: Val = FList [1; 2]"``
+    """
+    return f"let {name}: Val = {value}"
+
+
+@beartype
+def format_variable_declaration_groovy(name: str, value: str) -> str:
+    """Format a Groovy ``def`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"def x = [1, 2]"``
+    """
+    return f"def {name} = {value}"
+
+
+@beartype
+def format_variable_assignment_groovy(name: str, value: str) -> str:
+    """Format a Groovy assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value
     with *separator*.
@@ -808,16 +902,6 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
         return f"{key}{separator}{value}"
 
     return _format
-
-
-@beartype
-def passthrough_list_entry(item: str) -> str:
-    """Return *item* unchanged.
-
-    Use this as ``format_list_entry`` for languages where list entries
-    need no extra formatting.
-    """
-    return item
 
 
 @beartype

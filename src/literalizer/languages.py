@@ -10,7 +10,9 @@ __all__ = [
     "CSHARP",
     "DART",
     "ELIXIR",
+    "FSHARP",
     "GO",
+    "GROOVY",
     "HASKELL",
     "JAVA",
     "JAVASCRIPT",
@@ -39,7 +41,9 @@ from literalizer.formatters import (
     format_variable_assignment_csharp,
     format_variable_assignment_dart,
     format_variable_assignment_elixir,
+    format_variable_assignment_fsharp,
     format_variable_assignment_go,
+    format_variable_assignment_groovy,
     format_variable_assignment_haskell,
     format_variable_assignment_java,
     format_variable_assignment_js,
@@ -56,7 +60,9 @@ from literalizer.formatters import (
     format_variable_declaration_csharp,
     format_variable_declaration_dart,
     format_variable_declaration_elixir,
+    format_variable_declaration_fsharp,
     format_variable_declaration_go,
+    format_variable_declaration_groovy,
     format_variable_declaration_haskell,
     format_variable_declaration_java,
     format_variable_declaration_js,
@@ -71,6 +77,7 @@ from literalizer.formatters import (
     format_variable_declaration_swift,
     passthrough_list_entry,
     passthrough_set_entry,
+    to_fsharp_val,
 )
 
 
@@ -701,6 +708,61 @@ HASKELL = LanguageSpec(
 )
 
 
+def _format_fsharp_dict_entry(key: str, value: str) -> str:
+    """Format an F# dict entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {to_fsharp_val(value=value)})"
+
+
+def _format_fsharp_omap_entry(key: str, value: str) -> str:
+    """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {to_fsharp_val(value=value)})"
+
+
+def _format_fsharp_set_entry(item: str) -> str:
+    """Format an F# set entry with the appropriate ``Val`` constructor."""
+    return to_fsharp_val(value=item)
+
+
+def _format_fsharp_list_entry(item: str) -> str:
+    """Format an F# list entry with the appropriate ``Val``
+    constructor.
+    """
+    return to_fsharp_val(value=item)
+
+
+FSHARP = LanguageSpec(
+    null_literal="FNull",
+    true_literal="FBool true",
+    false_literal="FBool false",
+    sequence_open="FList [",
+    sequence_close="]",
+    dict_open="FMap [",
+    dict_close="]",
+    format_dict_entry=_format_fsharp_dict_entry,
+    multiline_trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict=None,
+    set_open="FSet [",
+    set_close="]",
+    empty_set=None,
+    format_set_entry=_format_fsharp_set_entry,
+    comment_prefix="//",
+    omap_open="FMap [",
+    omap_close="]",
+    format_omap_entry=_format_fsharp_omap_entry,
+    multiline_close_indent="",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_fsharp,
+    format_variable_assignment=format_variable_assignment_fsharp,
+    element_separator="; ",
+    format_list_entry=_format_fsharp_list_entry,
+)
+
+
 CLOJURE = LanguageSpec(
     null_literal="nil",
     true_literal="true",
@@ -769,6 +831,39 @@ SCALA = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_scala,
     format_variable_assignment=format_variable_assignment_scala,
+)
+
+
+GROOVY = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    sequence_open="[",
+    sequence_close="]",
+    dict_open="[",
+    dict_close="]",
+    format_dict_entry=dict_entry_with_separator(separator=": "),
+    multiline_trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict="[:]",
+    set_open="[",
+    set_close="] as Set<Object>",
+    empty_set="[] as Set<Object>",
+    format_list_entry=passthrough_list_entry,
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="//",
+    omap_open="[",
+    omap_close="]",
+    format_omap_entry=dict_entry_with_separator(separator=": "),
+    multiline_close_indent="",
+    element_separator=", ",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_groovy,
+    format_variable_assignment=format_variable_assignment_groovy,
 )
 
 
