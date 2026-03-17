@@ -48,6 +48,7 @@ __all__ = [
     "format_variable_assignment_cpp",
     "format_variable_assignment_csharp",
     "format_variable_assignment_dart",
+    "format_variable_assignment_elixir",
     "format_variable_assignment_fsharp",
     "format_variable_assignment_go",
     "format_variable_assignment_haskell",
@@ -65,6 +66,7 @@ __all__ = [
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
     "format_variable_declaration_dart",
+    "format_variable_declaration_elixir",
     "format_variable_declaration_fsharp",
     "format_variable_declaration_go",
     "format_variable_declaration_haskell",
@@ -516,6 +518,15 @@ def format_variable_declaration_php(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_declaration_elixir(name: str, value: str) -> str:
+    """Format an Elixir variable assignment.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
 def format_variable_declaration_clojure(name: str, value: str) -> str:
     """Format a Clojure ``def`` binding.
 
@@ -819,6 +830,15 @@ def format_variable_assignment_php(name: str, value: str) -> str:
     Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
     """
     return f"${name} = {value};"
+
+
+@beartype
+def format_variable_assignment_elixir(name: str, value: str) -> str:
+    """Format an Elixir assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
 
 
 @beartype
