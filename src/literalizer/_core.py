@@ -234,7 +234,8 @@ def _literalize(
                     key_str=formatted_key, val_str=formatted_val, spec=spec
                 )
             )
-            comma = "" if i == last_idx and not spec.trailing_comma else ","
+            add_comma = i < last_idx or spec.multiline_trailing_comma
+            comma = "," if add_comma else ""
             lines.append(f"{effective_prefix}{entry}{comma}")
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
@@ -245,14 +246,16 @@ def _literalize(
                 entry = spec.format_set_entry(formatted)
             else:
                 entry = formatted
-            comma = "" if i == last_idx and not spec.trailing_comma else ","
+            add_comma = i < last_idx or spec.multiline_trailing_comma
+            comma = "," if add_comma else ""
             lines.append(f"{effective_prefix}{entry}{comma}")
     else:
         items = list(data)
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
             formatted = _format_value(value=item, spec=spec)
-            comma = "" if i == last_idx and not spec.trailing_comma else ","
+            add_comma = i < last_idx or spec.multiline_trailing_comma
+            comma = "," if add_comma else ""
             lines.append(f"{effective_prefix}{formatted}{comma}")
 
     body = "\n".join(lines)

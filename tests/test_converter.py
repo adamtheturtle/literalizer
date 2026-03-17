@@ -148,7 +148,7 @@ def test_dict_wrap() -> None:
     assert result == expected
 
 
-def test_java_dict_wrap_no_trailing_comma() -> None:
+def test_java_dict_wrap_no_multiline_trailing_comma() -> None:
     """Java Map.ofEntries() must not have a trailing comma before the
     closing paren.
     """
@@ -510,7 +510,7 @@ def test_custom_language() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=True,
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
@@ -1070,7 +1070,7 @@ def test_custom_format_date() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=True,
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_python,
@@ -1110,7 +1110,7 @@ def test_custom_format_datetime() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=True,
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
@@ -1150,7 +1150,7 @@ def test_java_native_dates() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=True,
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_java,
@@ -1192,7 +1192,7 @@ def test_ruby_native_dates() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=True,
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_ruby,
@@ -1329,7 +1329,7 @@ def test_custom_format_bytes() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=True,
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_python,
         format_date=format_date_iso,
@@ -1729,7 +1729,7 @@ def test_omap_custom_language_spec() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=True,
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
@@ -1865,7 +1865,7 @@ def test_variable_declaration_language_no_formatter() -> None:
         dict_open="{",
         dict_close="}",
         format_dict_entry=None,
-        trailing_comma=False,
+        multiline_trailing_comma=False,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
