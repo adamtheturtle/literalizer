@@ -878,9 +878,7 @@ def format_bytes_erlang(value: bytes) -> str:
 
     Example: ``b'Hello'`` → ``<<72, 101, 108, 108, 111>>``.
     """
-    if not value:
-        return "<<>>"
-    parts = ", ".join(map(str, value))
+    parts = ", ".join(f"{b}" for b in value)
     return f"<<{parts}>>"
 
 
@@ -889,7 +887,7 @@ def format_variable_declaration_erlang(name: str, value: str) -> str:
     """Format an Erlang variable binding.
 
     Erlang variables must start with an uppercase letter, so the first
-    character of *name* is capitalised.
+    character of *name* is capitalized.
 
     Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
     """
@@ -902,7 +900,7 @@ def format_variable_assignment_erlang(name: str, value: str) -> str:
     """Format an Erlang variable binding (same syntax as declaration).
 
     Erlang variables must start with an uppercase letter, so the first
-    character of *name* is capitalised.
+    character of *name* is capitalized.
 
     Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
     """
