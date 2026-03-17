@@ -34,6 +34,7 @@ datetime
 datetimes
 dicts
 elixirc
+erlc
 formatter
 formatters
 fromhex

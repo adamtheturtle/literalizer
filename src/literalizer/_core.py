@@ -121,7 +121,7 @@ def _format_value(*, value: Value, spec: Language) -> str:
         if not value and spec.empty_sequence is not None:
             return spec.empty_sequence
         items = [
-            spec.format_list_entry(_format_value(value=v, spec=spec))
+            spec.format_sequence_entry(_format_value(value=v, spec=spec))
             for v in value
         ]
         joined = spec.element_separator.join(items)
@@ -251,7 +251,7 @@ def _literalize(
         items = list(data)
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
-            formatted = spec.format_list_entry(
+            formatted = spec.format_sequence_entry(
                 _format_value(value=item, spec=spec)
             )
             add_sep = i < last_idx or spec.multiline_trailing_comma
@@ -381,6 +381,7 @@ def literalize_yaml(
     )
 
     cp = language.comment_prefix
+    cs = language.comment_suffix
 
     if isinstance(data, set):
         result = base
@@ -392,6 +393,7 @@ def literalize_yaml(
             tokens=tokens,
             base=base,
             comment_prefix=cp,
+            comment_suffix=cs,
             prefix=prefix,
         )
     elif not base:
@@ -441,6 +443,7 @@ def literalize_yaml(
                 element_comments=collection_comments.elements,
                 trailing=collection_comments.trailing,
                 comment_prefix=cp,
+                comment_suffix=cs,
                 prefix=prefix,
                 wrap=wrap,
             )
