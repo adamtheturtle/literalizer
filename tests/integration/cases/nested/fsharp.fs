@@ -1,0 +1,15 @@
+module Check
+
+type Val =
+    | FNull
+    | FBool of bool
+    | FInt of int64
+    | FFloat of float
+    | FStr of string
+    | FList of Val list
+    | FMap of (string * Val) list
+    | FSet of Val list
+
+let x: Val = FMap [
+    ("users", FList [FMap [("name", FStr "Bob"); ("tags", FList [FStr "admin"; FStr "user"])]; FMap [("name", FStr "Carol"); ("tags", FList [FStr "guest"])]])
+]

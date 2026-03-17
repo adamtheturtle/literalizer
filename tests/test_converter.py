@@ -50,10 +50,12 @@ from literalizer.formatters import (
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
+    format_variable_assignment_fsharp,
     format_variable_assignment_python,
     format_variable_declaration_python,
     passthrough_list_entry,
     passthrough_set_entry,
+    to_fsharp_val,
 )
 from literalizer.languages import (
     CLOJURE,
@@ -61,6 +63,7 @@ from literalizer.languages import (
     CSHARP,
     DART,
     ELIXIR,
+    FSHARP,
     GO,
     HASKELL,
     JAVA,
@@ -1876,6 +1879,9 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     ELIXIR: _VariableSyntax(
         declaration="my_var = 42", assignment="my_var = 42"
     ),
+    FSHARP: _VariableSyntax(
+        declaration="let my_var: Val = 42", assignment="let my_var: Val = 42"
+    ),
     CLOJURE: _VariableSyntax(
         declaration="(def my_var 42)", assignment="(def my_var 42)"
     ),
@@ -1977,3 +1983,19 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
+
+
+def test_to_fsharp_val_unknown_value() -> None:
+    """``to_fsharp_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_fsharp_val("SomeUnknownValue")  # type: ignore[misc]
+    assert result == "SomeUnknownValue"
+
+
+def test_format_variable_assignment_fsharp() -> None:
+    """``format_variable_assignment_fsharp`` produces a ``let`` binding
+    with an explicit ``Val`` type annotation.
+    """
+    result = format_variable_assignment_fsharp(name="x", value="FList [1; 2]")
+    assert result == "let x: Val = FList [1; 2]"

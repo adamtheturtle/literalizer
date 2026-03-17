@@ -2,6 +2,14 @@ ADT
 Args
 CPP
 Changelog
+FBool
+FFloat
+FInt
+FList
+FMap
+FNull
+FSet
+FStr
 JSONDecodeError
 NEL
 YAMLError
