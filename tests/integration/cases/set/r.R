@@ -1,5 +1,5 @@
 x <- list(
     "apple",
     "banana",
-    "cherry",
+    "cherry"
 )

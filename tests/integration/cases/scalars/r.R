@@ -3,5 +3,5 @@ x <- list(
     3.14,
     TRUE,
     FALSE,
-    "hello \"world\"",
+    "hello \"world\""
 )
