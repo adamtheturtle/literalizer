@@ -2037,7 +2037,7 @@ def test_to_occam_val_float() -> None:
     """``to_occam_val`` wraps float values in the ``lit.float``
     constructor.
     """
-    result = to_occam_val("3.14")
+    result = to_occam_val("3.14")  # type: ignore[misc]
     assert result == "MOBILE LIT(lit.float; 3.14(REAL32))"
 
 
