@@ -60,6 +60,7 @@ __all__ = [
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
     "format_variable_assignment_ocaml",
+    "format_variable_assignment_occam",
     "format_variable_assignment_perl",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
@@ -84,6 +85,7 @@ __all__ = [
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
     "format_variable_declaration_ocaml",
+    "format_variable_declaration_occam",
     "format_variable_declaration_perl",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
@@ -97,6 +99,7 @@ __all__ = [
     "to_ada_val",
     "to_fsharp_val",
     "to_ocaml_val",
+    "to_occam_val",
 ]
 
 
@@ -1041,6 +1044,40 @@ def to_ada_val(value: str) -> str:
     return value
 
 
+def to_occam_val(value: str) -> str:
+    """Wrap a pre-formatted value string in an occam-pi ``MOBILE LIT``
+    constructor.
+
+    Inspects the string representation to determine the appropriate
+    variant constructor: ``lit.str``, ``lit.int``, ``lit.float``, or
+    passes through values that are already ``MOBILE LIT(...)``
+    expressions.
+    """
+    if value.startswith("MOBILE LIT("):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"MOBILE LIT(lit.str; MOBILE []BYTE {value})"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"MOBILE LIT(lit.int; {value})"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"MOBILE LIT(lit.float; {value}(REAL32))"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
 @beartype
 def format_variable_declaration_ada(name: str, value: str) -> str:
     """Format an Ada object declaration.
@@ -1059,6 +1096,27 @@ def format_variable_assignment_ada(name: str, value: str) -> str:
     ``"x := AList'(AInt (1));"``
     """
     return f"{name} := {to_ada_val(value=value)};"
+
+
+@beartype
+def format_variable_declaration_occam(name: str, value: str) -> str:
+    """Format an occam-pi ``VAL`` abbreviation for a ``MOBILE LIT``.
+
+    Example: ``"x"`` and ``"MOBILE LIT(lit.int; 42)"`` →
+    ``"VAL MOBILE LIT x IS MOBILE LIT(lit.int; 42):"``
+    """
+    return f"VAL MOBILE LIT {name} IS {value}:"
+
+
+@beartype
+def format_variable_assignment_occam(name: str, value: str) -> str:
+    """Format an occam-pi assignment to an existing ``MOBILE LIT``
+    variable.
+
+    Example: ``"x"`` and ``"MOBILE LIT(lit.int; 42)"`` →
+    ``"x := MOBILE LIT(lit.int; 42)"``
+    """
+    return f"{name} := {value}"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
