@@ -61,6 +61,7 @@ __all__ = [
     "format_variable_declaration_python",
     "format_variable_declaration_ruby",
     "format_variable_declaration_rust",
+    "format_variable_declaration_scala",
     "format_variable_declaration_swift",
     "passthrough_set_entry",
 ]
@@ -494,6 +495,15 @@ def format_variable_declaration_php(name: str, value: str) -> str:
     Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
     """
     return f"${name} = {value};"
+
+
+@beartype
+def format_variable_declaration_scala(name: str, value: str) -> str:
+    """Format a Scala ``val`` declaration.
+
+    Example: ``"x"`` and ``"List(1, 2)"`` → ``"val x = List(1, 2)"``
+    """
+    return f"val {name} = {value}"
 
 
 @beartype

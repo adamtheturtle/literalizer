@@ -38,6 +38,7 @@ ci:
     - php-syntax-check
     - ruby-syntax-check
     - rust-golden-syntax-check
+    - scala-golden-syntax-check
     - shellcheck
     - shellcheck-docs
     - shfmt
@@ -496,6 +497,13 @@ repos:
         types: [haskell]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: scala-golden-syntax-check
+        name: Scala golden file syntax check
+        entry: bash -c 'for f; do scalac "$f" || exit 1; done' --
+        language: system
+        files: ^tests/integration/cases/.*\.scala$
         stages: [pre-commit]
 
       - id: php-syntax-check

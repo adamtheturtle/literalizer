@@ -208,6 +208,16 @@ def _wrap_cpp_varname(content: str) -> str:
     )
 
 
+def _wrap_scala(content: str) -> str:
+    """Wrap in a Scala object with a typed variable assignment."""
+    return f"object Check {{\nval x: Any = {content}\n}}"
+
+
+def _wrap_scala_varname(content: str) -> str:
+    """Wrap a Scala variable declaration in an object."""
+    return f"object Check {{\n{content}\n}}"
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -455,6 +465,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_php,
         date_variants=(),
     ),
+    "scala": _LanguageConfig(
+        spec=literalizer.languages.SCALA,
+        extension=".scala",
+        wrap=_wrap_scala,
+        date_variants=(),
+    ),
 }
 
 
@@ -511,6 +527,12 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp_varname,
+        date_variants=(),
+    ),
+    "scala": _LanguageConfig(
+        spec=literalizer.languages.SCALA,
+        extension=".scala",
+        wrap=_wrap_scala_varname,
         date_variants=(),
     ),
 }
