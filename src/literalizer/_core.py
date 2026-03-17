@@ -58,9 +58,7 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
 @beartype
 def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
     """Format a single dict key-value entry using the language spec."""
-    if spec.format_dict_entry is not None:
-        return spec.format_dict_entry(key_str, val_str)
-    return f"{key_str}{spec.dict_separator}{val_str}"
+    return spec.format_dict_entry(key_str, val_str)
 
 
 @beartype
@@ -70,10 +68,7 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
         return spec.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
-    if spec.format_set_entry is not None:
-        entries = [spec.format_set_entry(item) for item in formatted]
-    else:
-        entries = formatted
+    entries = [spec.format_set_entry(item) for item in formatted]
     return spec.set_open + ", ".join(entries) + spec.set_close
 
 
@@ -242,10 +237,7 @@ def _literalize(
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
             formatted = _format_value(value=item, spec=spec)
-            if spec.format_set_entry is not None:
-                entry = spec.format_set_entry(formatted)
-            else:
-                entry = formatted
+            entry = spec.format_set_entry(formatted)
             add_comma = i < last_idx or spec.multiline_trailing_comma
             comma = "," if add_comma else ""
             lines.append(f"{effective_prefix}{entry}{comma}")
