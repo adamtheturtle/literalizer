@@ -11,7 +11,6 @@ can syntax-check them directly without additional wrapping.
 from __future__ import annotations
 
 import dataclasses
-import shutil
 import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -134,11 +133,8 @@ def _wrap_haskell(content: str) -> str:
 
 def _check_ts_syntax(content: str) -> None:
     """Check TypeScript content is syntactically valid using ``node``."""
-    node = shutil.which(cmd="node")
-    if node is None:
-        return
     result = subprocess.run(
-        args=[node, "--check", "--input-type=commonjs"],
+        args=["node", "--check", "--input-type=commonjs"],
         input=content,
         capture_output=True,
         text=True,
