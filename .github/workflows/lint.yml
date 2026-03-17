@@ -29,6 +29,8 @@ jobs:
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
       - uses: olafurpg/setup-scala@v14
+        with:
+          java-version: adopt@1.17
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
