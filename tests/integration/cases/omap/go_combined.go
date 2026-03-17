@@ -1,0 +1,10 @@
+my_data := [][2]any{
+    {"name", "Alice"},
+    {"age", 30},
+    {"active", true},
+}
+my_data = [][2]any{
+    {"name", "Alice"},
+    {"age", 30},
+    {"active", true},
+}

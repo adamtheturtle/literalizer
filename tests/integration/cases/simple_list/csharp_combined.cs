@@ -1,0 +1,12 @@
+var my_data = (
+    1,
+    "hello",
+    true,
+    (object?)null
+);
+my_data = (
+    1,
+    "hello",
+    true,
+    (object?)null
+);

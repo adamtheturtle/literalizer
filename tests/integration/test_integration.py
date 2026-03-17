@@ -353,8 +353,10 @@ class _LanguageConfig:
     spec: literalizer.LanguageSpec
     extension: str
     wrap: Callable[[str], str]
-    varname_wrap: Callable[[str], str]
     date_variants: tuple[_DateVariant, ...]
+    varname_wrap: Callable[[str], str] = dataclasses.field(
+        default=_wrap_identity
+    )
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
@@ -636,6 +638,48 @@ def test_golden_file_with_variable_name(
         extension=lang_config.extension,
         fullpath=input_path.parent
         / (language + "_varname" + lang_config.extension),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=("_case_name", "language", "input_path"),
+    argvalues=_CASES,
+    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
+)
+def test_golden_file_combined_variable_forms(
+    _case_name: str,
+    language: str,
+    input_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test that literalize_yaml with new_variable=True (declaration) and
+    new_variable=False (assignment to existing variable) produce expected
+    golden output, combined in one file to show the difference in syntax.
+    """
+    lang_config = _LANGUAGES[language]
+    yaml_string = input_path.read_text()
+    declaration = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=lang_config.spec,
+        prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=True,
+    )
+    assignment = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=lang_config.spec,
+        prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=False,
+    )
+    combined = declaration + "\n" + assignment
+    file_regression.check(
+        contents=combined + "\n",
+        extension=lang_config.extension,
+        fullpath=input_path.parent
+        / (language + "_combined" + lang_config.extension),
     )
 
 

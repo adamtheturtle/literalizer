@@ -422,6 +422,7 @@ repos:
         entry: gofmt -e
         language: system
         types: [go]
+        exclude: _combined\.go$
         stages: [pre-commit]
 
       - id: javascript-syntax-check
@@ -438,6 +439,7 @@ repos:
         additional_dependencies: [typescript]
         types: [ts]
         files: ^tests/integration/cases/
+        exclude: _combined\.ts$
         stages: [pre-commit]
 
       - id: java-golden-syntax-check
@@ -446,6 +448,7 @@ repos:
         language: python
         types: [java]
         files: ^tests/integration/cases/
+        exclude: _combined\.java$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -454,6 +457,7 @@ repos:
         entry: clang++ -fsyntax-only -std=c++20
         language: system
         types: [c++]
+        exclude: _combined\.cpp$
         stages: [pre-commit]
 
       - id: kotlin-syntax-check
@@ -461,6 +465,7 @@ repos:
         entry: bash -c 'for f; do kotlinc -script "$f" || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.kts$
+        exclude: _combined\.kts$
         stages: [pre-commit]
 
       - id: rust-golden-syntax-check
@@ -470,6 +475,7 @@ repos:
         language: system
         types: [rust]
         files: ^tests/integration/cases/
+        exclude: _combined\.rs$
         stages: [pre-commit]
 
       - id: swift-syntax-check
@@ -478,6 +484,7 @@ repos:
         language: python
         types: [swift]
         files: ^tests/integration/cases/
+        exclude: _combined\.swift$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -487,6 +494,7 @@ repos:
         language: python
         types: [c#]
         files: ^tests/integration/cases/
+        exclude: _combined\.cs$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -496,6 +504,7 @@ repos:
         language: python
         types: [haskell]
         files: ^tests/integration/cases/
+        exclude: _combined\.hs$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -505,6 +514,7 @@ repos:
         language: python
         types: [julia]
         files: ^tests/integration/cases/
+        exclude: _combined\.jl$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -513,6 +523,7 @@ repos:
         entry: php -l
         language: system
         types: [php]
+        exclude: _combined\.php$
         stages: [pre-commit]
 
       - id: sphinx-lint
