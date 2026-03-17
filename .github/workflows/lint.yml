@@ -44,6 +44,8 @@ jobs:
         uses: wtfjoke/setup-groovy@v2
         with:
           groovy-version: 4.x
+      - name: Install clj-kondo
+        uses: clj-kondo/setup-clj-kondo@v2
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -62,7 +64,6 @@ jobs:
           --verbose
         env:
           UV_PYTHON: ${{ matrix.python-version }}
-          SKIP: clojure-syntax-check
 
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
