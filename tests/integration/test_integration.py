@@ -315,6 +315,11 @@ def _wrap_elixir_varname(content: str) -> str:
     )
 
 
+def _wrap_groovy(content: str) -> str:
+    """Wrap in a Groovy variable assignment."""
+    return f"def x = {content}"
+
+
 def _wrap_r(content: str) -> str:
     """Wrap in an R variable assignment."""
     return f"x <- {content}"
@@ -777,6 +782,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_fsharp,
         varname_wrap=_wrap_fsharp_varname,
         combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
+        date_variants=(),
+    ),
+    "groovy": _LanguageConfig(
+        spec=literalizer.languages.GROOVY,
+        extension=".groovy",
+        wrap=_wrap_groovy,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
     "scala": _LanguageConfig(
