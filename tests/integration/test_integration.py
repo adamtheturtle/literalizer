@@ -101,6 +101,32 @@ def _wrap_rust(content: str) -> str:
     )
 
 
+_FSHARP_VAL_TYPE = (
+    "type Val =\n"
+    "    | FNull\n"
+    "    | FBool of bool\n"
+    "    | FInt of int64\n"
+    "    | FFloat of float\n"
+    "    | FStr of string\n"
+    "    | FList of Val list\n"
+    "    | FMap of (string * Val) list\n"
+    "    | FSet of Val list\n"
+)
+
+
+def _wrap_fsharp(content: str) -> str:
+    """Wrap in an F# module with a custom Val discriminated union."""
+    return (
+        "module Check\n"
+        "\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {content}"
+    )
+
+
+def _wrap_fsharp_varname(content: str) -> str:
+    """Wrap a F# ``let`` declaration with the Val type definition."""
+    return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
+
+
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a custom Val ADT that accepts mixed
     types.
@@ -455,6 +481,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_php,
         date_variants=(),
     ),
+    "fsharp": _LanguageConfig(
+        spec=literalizer.languages.FSHARP,
+        extension=".fs",
+        wrap=_wrap_fsharp,
+        date_variants=(),
+    ),
 }
 
 
@@ -511,6 +543,12 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp_varname,
+        date_variants=(),
+    ),
+    "fsharp": _LanguageConfig(
+        spec=literalizer.languages.FSHARP,
+        extension=".fs",
+        wrap=_wrap_fsharp_varname,
         date_variants=(),
     ),
 }

@@ -6,6 +6,7 @@ ci:
     - actionlint
     - check-manifest
     - csharp-golden-syntax-check
+    - fsharp-golden-syntax-check
     - deptry
     - doc8
     - docs
@@ -486,6 +487,14 @@ repos:
         language: python
         types: [c#]
         files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: fsharp-golden-syntax-check
+        name: F# golden file syntax check
+        entry: uv run python check_fsharp_golden_syntax.py
+        language: python
+        files: \.(fs|fsi)$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 

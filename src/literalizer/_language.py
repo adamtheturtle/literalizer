@@ -181,6 +181,22 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """Whether to omit dict entries whose value is ``None``."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def element_separator(self) -> str:
+        """The separator between collection elements (e.g. ``","`` or
+        ``";"``).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_list_entry(self) -> Callable[[str], str]:
+        """Callable that formats a list entry from a pre-formatted item
+        string.  Use
+        :func:`~literalizer.formatters.passthrough_list_entry` when no
+        transformation is needed.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass(frozen=True)
 class LanguageSpec:
@@ -217,3 +233,5 @@ class LanguageSpec:
     multiline_close_indent: str
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
+    element_separator: str
+    format_list_entry: Callable[[str], str]

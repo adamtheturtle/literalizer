@@ -7,6 +7,7 @@ from beartype import beartype
 __all__ = [
     "CPP",
     "CSHARP",
+    "FSHARP",
     "GO",
     "HASKELL",
     "JAVA",
@@ -30,6 +31,7 @@ from literalizer.formatters import (
     format_datetime_php,
     format_variable_declaration_cpp,
     format_variable_declaration_csharp,
+    format_variable_declaration_fsharp,
     format_variable_declaration_go,
     format_variable_declaration_haskell,
     format_variable_declaration_java,
@@ -40,7 +42,9 @@ from literalizer.formatters import (
     format_variable_declaration_ruby,
     format_variable_declaration_rust,
     format_variable_declaration_swift,
+    passthrough_list_entry,
     passthrough_set_entry,
+    to_fsharp_val,
 )
 
 
@@ -76,6 +80,8 @@ PYTHON = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_python,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -112,6 +118,8 @@ CSHARP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -147,6 +155,8 @@ JAVASCRIPT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 TYPESCRIPT = LanguageSpec(
@@ -176,6 +186,8 @@ TYPESCRIPT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -211,6 +223,8 @@ RUBY = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_ruby,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -255,6 +269,8 @@ GO = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_go,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -291,6 +307,8 @@ CPP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_cpp,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -327,6 +345,8 @@ JAVA = LanguageSpec(
     multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
     skip_null_dict_values=True,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -362,6 +382,8 @@ SWIFT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_swift,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -403,6 +425,8 @@ RUST = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_rust,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -438,6 +462,8 @@ KOTLIN = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_kotlin,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -473,6 +499,8 @@ PHP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_php,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
 
 
@@ -514,4 +542,63 @@ HASKELL = LanguageSpec(
     multiline_close_indent="    ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_haskell,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
+)
+
+
+@beartype
+def _format_fsharp_dict_entry(key: str, value: str) -> str:
+    """Format an F# dict entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {to_fsharp_val(value)})"
+
+
+def _format_fsharp_omap_entry(key: str, value: str) -> str:
+    """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {to_fsharp_val(value)})"
+
+
+@beartype
+def _format_fsharp_set_entry(item: str) -> str:
+    """Format an F# set entry with the appropriate ``Val`` constructor."""
+    return to_fsharp_val(item)
+
+
+@beartype
+def _format_fsharp_list_entry(item: str) -> str:
+    """Format an F# list entry with the appropriate ``Val``
+    constructor.
+    """
+    return to_fsharp_val(item)
+
+
+FSHARP = LanguageSpec(
+    null_literal="FNull",
+    true_literal="FBool true",
+    false_literal="FBool false",
+    collection_open="FList [",
+    collection_close="]",
+    dict_open="FMap [",
+    dict_close="]",
+    format_dict_entry=_format_fsharp_dict_entry,
+    multiline_trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="FSet [",
+    set_close="]",
+    empty_set=None,
+    format_set_entry=_format_fsharp_set_entry,
+    comment_prefix="//",
+    omap_open="FMap [",
+    omap_close="]",
+    format_omap_entry=_format_fsharp_omap_entry,
+    multiline_close_indent="",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_fsharp,
+    element_separator=";",
+    format_list_entry=_format_fsharp_list_entry,
 )
