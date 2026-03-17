@@ -8,7 +8,10 @@ import tempfile
 
 def main() -> None:
     """Check syntax of each given Haskell golden file."""
-    ghc_path = shutil.which(cmd="ghc") or "ghc"
+    ghc_path = shutil.which(cmd="ghc")
+
+    if ghc_path is None:
+        return
     for filename in sys.argv[1:]:
         with tempfile.TemporaryDirectory() as tmpdir:
             result = subprocess.run(

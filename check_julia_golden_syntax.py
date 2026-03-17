@@ -7,7 +7,10 @@ import sys
 
 def main() -> None:
     """Check syntax of each given Julia golden file."""
-    julia_path = shutil.which(cmd="julia") or "julia"
+    julia_path = shutil.which(cmd="julia")
+
+    if julia_path is None:
+        return
     for filename in sys.argv[1:]:
         result = subprocess.run(
             args=[

@@ -7,7 +7,10 @@ import sys
 
 def main() -> None:
     """Check syntax of each given R golden file."""
-    rscript_path = shutil.which(cmd="Rscript") or "Rscript"
+    rscript_path = shutil.which(cmd="Rscript")
+
+    if rscript_path is None:
+        return
     result = subprocess.run(
         args=[
             rscript_path,

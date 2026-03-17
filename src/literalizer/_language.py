@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Any
+
+    from literalizer._types import Value
 
 
 @runtime_checkable
@@ -207,7 +208,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_collection_open(self) -> Callable[[list[Any]], str] | None:
+    def format_collection_open(self) -> Callable[[list[Value]], str] | None:
         """Callable that returns the collection opener string for a given
         list of values, or ``None`` to use ``collection_open``.
 
@@ -256,5 +257,5 @@ class LanguageSpec:
     element_separator: str
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
-    format_collection_open: Callable[[list[Any]], str] | None
+    format_collection_open: Callable[[list[Value]], str] | None
     format_variable_assignment: Callable[[str, str], str]

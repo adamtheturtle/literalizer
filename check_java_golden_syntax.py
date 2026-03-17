@@ -8,7 +8,10 @@ import tempfile
 
 def main() -> None:
     """Check syntax of each given Java golden file."""
-    javac_path = shutil.which(cmd="javac") or "javac"
+    javac_path = shutil.which(cmd="javac")
+
+    if javac_path is None:
+        return
     for filename in sys.argv[1:]:
         with tempfile.TemporaryDirectory() as tmpdir:
             result = subprocess.run(

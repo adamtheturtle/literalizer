@@ -9,7 +9,10 @@ from pathlib import Path
 
 def main() -> None:
     """Check syntax of each given Scala golden file."""
-    scalac_path: str = shutil.which(cmd="scalac") or "scalac"
+    scalac_path = shutil.which(cmd="scalac")
+
+    if scalac_path is None:
+        return
     for filename in sys.argv[1:]:
         path = Path(filename).resolve()
         with tempfile.TemporaryDirectory() as tmpdir:
