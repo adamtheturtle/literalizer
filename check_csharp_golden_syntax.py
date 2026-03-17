@@ -19,6 +19,7 @@ def _target_framework(dotnet_path: str) -> str:
         env.update(
             {
                 "TMPDIR": dotnet_tmp.as_posix(),
+                "HOME": dotnet_tmp.as_posix(),
                 "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
                 "DOTNET_NOLOGO": "1",
             }
@@ -61,9 +62,10 @@ def main() -> None:
             dotnet_tmp = Path(tmpdir) / "tmp"
             dotnet_tmp.mkdir()
             env = os.environ.copy()
-            env["TMPDIR"] = dotnet_tmp.as_posix()
             env.update(
                 {
+                    "TMPDIR": dotnet_tmp.as_posix(),
+                    "HOME": dotnet_tmp.as_posix(),
                     "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
                     "DOTNET_NOLOGO": "1",
                 }
