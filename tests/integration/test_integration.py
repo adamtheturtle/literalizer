@@ -437,6 +437,59 @@ def _wrap_r(content: str) -> str:
     return f"x <- {content}"
 
 
+_C_PREAMBLE = (
+    "#include <stdbool.h>\n"
+    "#include <stddef.h>\n"
+    "typedef struct _CVal _CVal;\n"
+    "typedef struct _CKV _CKV;\n"
+    "struct _CVal {\n"
+    "    union {\n"
+    "        _Bool b;\n"
+    "        long long i;\n"
+    "        double f;\n"
+    "        const char *s;\n"
+    "        const _CVal *a;\n"
+    "        const _CKV *m;\n"
+    "    };\n"
+    "};\n"
+    "struct _CKV { const char *k; _CVal v; };\n"
+)
+
+
+def _wrap_c(content: str) -> str:
+    """Wrap in a C function with the _CVal/_CKV type definitions."""
+    return (
+        _C_PREAMBLE
+        + "void _check(void) {\n"
+        + f"    _CVal _v = {content};\n"
+        + "    (void)_v;\n"
+        + "}"
+    )
+
+
+def _wrap_c_varname(content: str) -> str:
+    """Wrap a C _CVal declaration in a function with type definitions."""
+    return (
+        _C_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{content}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
+def _wrap_c_combined(declaration: str, assignment: str) -> str:
+    """Wrap C declaration and assignment together in one function."""
+    return (
+        _C_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{declaration}\n"
+        + f"{assignment}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
 def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
@@ -656,6 +709,14 @@ class _LanguageConfig:
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
+    "c": _LanguageConfig(
+        spec=literalizer.languages.C,
+        extension=".c",
+        wrap=_wrap_c,
+        varname_wrap=_wrap_c_varname,
+        combined_wrap=_wrap_c_combined,
+        date_variants=(),
+    ),
     "clojure": _LanguageConfig(
         spec=literalizer.languages.CLOJURE,
         extension=".clj",
