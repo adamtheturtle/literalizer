@@ -13,6 +13,7 @@ ci:
     - interrogate-docs
     - go-golden-syntax-check
     - haskell-golden-syntax-check
+    - julia-golden-syntax-check
     - java-golden-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
@@ -504,6 +505,15 @@ repos:
         entry: bash -c 'for f; do scalac "$f" || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.scala$
+        stages: [pre-commit]
+
+      - id: julia-golden-syntax-check
+        name: Julia golden file syntax check
+        entry: uv run python check_julia_golden_syntax.py
+        language: python
+        types: [julia]
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: php-syntax-check
