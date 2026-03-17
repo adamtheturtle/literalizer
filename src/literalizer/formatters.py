@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "dict_entry_with_separator",
+    "format_bytes_erlang",
     "format_bytes_hex",
     "format_bytes_python",
     "format_date_cpp",
@@ -50,6 +51,7 @@ __all__ = [
     "format_variable_assignment_csharp",
     "format_variable_assignment_dart",
     "format_variable_assignment_elixir",
+    "format_variable_assignment_erlang",
     "format_variable_assignment_fsharp",
     "format_variable_assignment_go",
     "format_variable_assignment_groovy",
@@ -58,6 +60,7 @@ __all__ = [
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
     "format_variable_assignment_ocaml",
+    "format_variable_assignment_perl",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
     "format_variable_assignment_r",
@@ -71,6 +74,7 @@ __all__ = [
     "format_variable_declaration_csharp",
     "format_variable_declaration_dart",
     "format_variable_declaration_elixir",
+    "format_variable_declaration_erlang",
     "format_variable_declaration_fsharp",
     "format_variable_declaration_go",
     "format_variable_declaration_groovy",
@@ -80,6 +84,7 @@ __all__ = [
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
     "format_variable_declaration_ocaml",
+    "format_variable_declaration_perl",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
     "format_variable_declaration_r",
@@ -87,7 +92,7 @@ __all__ = [
     "format_variable_declaration_rust",
     "format_variable_declaration_scala",
     "format_variable_declaration_swift",
-    "passthrough_list_entry",
+    "passthrough_sequence_entry",
     "passthrough_set_entry",
     "to_c_val",
     "to_fsharp_val",
@@ -614,10 +619,10 @@ def to_fsharp_val(value: str) -> str:
 
 
 @beartype
-def passthrough_list_entry(item: str) -> str:
+def passthrough_sequence_entry(item: str) -> str:
     """Return *item* unchanged.
 
-    Use this as ``format_list_entry`` for languages where list entries
+    Use this as ``format_sequence_entry`` for languages where sequence entries
     need no extra formatting.
     """
     return item
@@ -896,6 +901,42 @@ def format_variable_assignment_groovy(name: str, value: str) -> str:
 
 
 @beartype
+def format_bytes_erlang(value: bytes) -> str:
+    """Format bytes as an Erlang binary literal.
+
+    Example: ``b'Hello'`` → ``<<72, 101, 108, 108, 111>>``.
+    """
+    parts = ", ".join(f"{b}" for b in value)
+    return f"<<{parts}>>"
+
+
+@beartype
+def format_variable_declaration_erlang(name: str, value: str) -> str:
+    """Format an Erlang variable binding.
+
+    Erlang variables must start with an uppercase letter, so the first
+    character of *name* is capitalized.
+
+    Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
+    """
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
+
+
+@beartype
+def format_variable_assignment_erlang(name: str, value: str) -> str:
+    """Format an Erlang variable binding (same syntax as declaration).
+
+    Erlang variables must start with an uppercase letter, so the first
+    character of *name* is capitalized.
+
+    Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
+    """
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
+
+
+@beartype
 def format_variable_declaration_ocaml(name: str, value: str) -> str:
     """Format an OCaml ``let`` declaration with explicit ``val_t`` type.
 
@@ -1032,3 +1073,21 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
+
+
+@beartype
+def format_variable_declaration_perl(name: str, value: str) -> str:
+    """Format a Perl ``my`` variable declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"my $x = [1, 2];"``
+    """
+    return f"my ${name} = {value};"
+
+
+@beartype
+def format_variable_assignment_perl(name: str, value: str) -> str:
+    """Format a Perl assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
+    """
+    return f"${name} = {value};"
