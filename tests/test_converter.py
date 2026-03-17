@@ -48,6 +48,7 @@ from literalizer.formatters import (
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
+    format_variable_declaration_python,
 )
 from literalizer.languages import (
     CPP,
@@ -71,13 +72,6 @@ def _format_test_omap_entry(key: str, value: str) -> str:
     fixtures.
     """
     return f"{key}: {value}"
-
-
-def _format_test_variable_declaration(name: str, value: str) -> str:
-    """Format a variable declaration for use in custom LanguageSpec test
-    fixtures.
-    """
-    return f"{name} = {value}"
 
 
 @pytest.mark.parametrize(
@@ -537,7 +531,7 @@ def test_custom_language() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=_format_test_variable_declaration,
+        format_variable_declaration=format_variable_declaration_python,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -1097,7 +1091,7 @@ def test_custom_format_date() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=_format_test_variable_declaration,
+        format_variable_declaration=format_variable_declaration_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -1137,7 +1131,7 @@ def test_custom_format_datetime() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=_format_test_variable_declaration,
+        format_variable_declaration=format_variable_declaration_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1177,7 +1171,7 @@ def test_java_native_dates() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=_format_test_variable_declaration,
+        format_variable_declaration=format_variable_declaration_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1219,7 +1213,7 @@ def test_ruby_native_dates() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=_format_test_variable_declaration,
+        format_variable_declaration=format_variable_declaration_python,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1356,7 +1350,7 @@ def test_custom_format_bytes() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=_format_test_variable_declaration,
+        format_variable_declaration=format_variable_declaration_python,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
@@ -1756,7 +1750,7 @@ def test_omap_custom_language_spec() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=_format_test_variable_declaration,
+        format_variable_declaration=format_variable_declaration_python,
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
