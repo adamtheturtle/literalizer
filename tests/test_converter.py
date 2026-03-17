@@ -55,6 +55,7 @@ from literalizer.formatters import (
     format_variable_declaration_python,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    to_ada_val,
     to_fsharp_val,
     to_ocaml_val,
 )
@@ -2022,6 +2023,14 @@ def test_format_variable_assignment_fsharp() -> None:
     """
     result = format_variable_assignment_fsharp(name="x", value="FList [1; 2]")
     assert result == "let x: Val = FList [1; 2]"
+
+
+def test_to_ada_val_unknown_value() -> None:
+    """``to_ada_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_ada_val("SomeUnknownValue")  # type: ignore[misc]
+    assert result == "SomeUnknownValue"
 
 
 def test_to_ocaml_val_unknown_value() -> None:

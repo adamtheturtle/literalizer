@@ -14,8 +14,8 @@ def main() -> None:
         src = Path(filename)
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_src = Path(tmpdir) / "check.adb"
-            content: str = src.read_text()
-            tmp_src.write_text(data=content)
+            content: str = src.read_text(encoding="utf-8")
+            tmp_src.write_text(data=content, encoding="utf-8")
             try:
                 result = subprocess.run(
                     args=[gnatmake_path, "-gnats", "check.adb"],
