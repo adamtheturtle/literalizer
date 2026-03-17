@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "dict_entry_with_separator",
+    "format_bytes_erlang",
     "format_bytes_hex",
     "format_bytes_python",
     "format_date_cpp",
@@ -49,6 +50,7 @@ __all__ = [
     "format_variable_assignment_csharp",
     "format_variable_assignment_dart",
     "format_variable_assignment_elixir",
+    "format_variable_assignment_erlang",
     "format_variable_assignment_fsharp",
     "format_variable_assignment_go",
     "format_variable_assignment_haskell",
@@ -67,6 +69,7 @@ __all__ = [
     "format_variable_declaration_csharp",
     "format_variable_declaration_dart",
     "format_variable_declaration_elixir",
+    "format_variable_declaration_erlang",
     "format_variable_declaration_fsharp",
     "format_variable_declaration_go",
     "format_variable_declaration_haskell",
@@ -867,6 +870,43 @@ def format_variable_assignment_fsharp(name: str, value: str) -> str:
     Example: ``"x"`` and ``"FList [1; 2]"`` → ``"let x: Val = FList [1; 2]"``
     """
     return f"let {name}: Val = {value}"
+
+
+@beartype
+def format_bytes_erlang(value: bytes) -> str:
+    """Format bytes as an Erlang binary literal.
+
+    Example: ``b'Hello'`` → ``<<72, 101, 108, 108, 111>>``.
+    """
+    if not value:
+        return "<<>>"
+    return "<<" + ", ".join(str(b) for b in value) + ">>"
+
+
+@beartype
+def format_variable_declaration_erlang(name: str, value: str) -> str:
+    """Format an Erlang variable binding.
+
+    Erlang variables must start with an uppercase letter, so the first
+    character of *name* is capitalised.
+
+    Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
+    """
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
+
+
+@beartype
+def format_variable_assignment_erlang(name: str, value: str) -> str:
+    """Format an Erlang variable binding (same syntax as declaration).
+
+    Erlang variables must start with an uppercase letter, so the first
+    character of *name* is capitalised.
+
+    Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
+    """
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
