@@ -329,6 +329,11 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
     )
 
 
+def _wrap_perl(content: str) -> str:
+    """Wrap in a Perl variable assignment."""
+    return f"my $x = {content};"
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -348,6 +353,27 @@ def _wrap_elixir_varname(content: str) -> str:
         f"    _ = {_VARIABLE_NAME}\n"
         f"  end\n"
         f"end"
+    )
+
+
+def _wrap_erlang(content: str) -> str:
+    """Wrap in an Erlang module function."""
+    return f"-module(check).\n-export([x/0]).\nx() ->\n    {content}."
+
+
+def _wrap_erlang_varname(content: str) -> str:
+    """Wrap an Erlang variable binding in a module function.
+
+    The variable is referenced at the end of the function body so that
+    Erlang does not warn about an unused variable.
+    """
+    erlang_varname = _VARIABLE_NAME[0].upper() + _VARIABLE_NAME[1:]
+    return (
+        f"-module(check).\n"
+        f"-export([x/0]).\n"
+        f"x() ->\n"
+        f"    {content},\n"
+        f"    {erlang_varname}."
     )
 
 
@@ -796,6 +822,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             ),
         ),
     ),
+    "perl": _LanguageConfig(
+        spec=literalizer.languages.PERL,
+        extension=".pl",
+        wrap=_wrap_perl,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
     "php": _LanguageConfig(
         spec=literalizer.languages.PHP,
         extension=".php",
@@ -810,6 +844,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_elixir,
         varname_wrap=_wrap_elixir_varname,
         combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
+        date_variants=(),
+    ),
+    "erlang": _LanguageConfig(
+        spec=literalizer.languages.ERLANG,
+        extension=".erl",
+        wrap=_wrap_erlang,
+        varname_wrap=_wrap_erlang_varname,
+        combined_wrap=lambda d, _a: _wrap_erlang_varname(content=d),
         date_variants=(),
     ),
     "fsharp": _LanguageConfig(

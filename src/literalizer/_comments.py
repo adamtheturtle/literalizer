@@ -245,7 +245,7 @@ def literalize_yaml_scalar(
     if not scalar_comments.before and not scalar_comments.inline:
         return base
 
-    parts = [
+    parts: list[str] = [
         _format_comment(
             text=comment_text,
             comment_prefix=comment_prefix,
