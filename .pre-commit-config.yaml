@@ -4,6 +4,7 @@ fail_fast: true
 ci:
   skip:
     - actionlint
+    - r-syntax-check
     - check-manifest
     - csharp-golden-syntax-check
     - deptry
@@ -503,6 +504,14 @@ repos:
         entry: php -l
         language: system
         types: [php]
+        stages: [pre-commit]
+
+      - id: r-syntax-check
+        name: R golden file syntax check
+        entry: Rscript -e "for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)"
+        language: system
+        types: [r]
+        files: ^tests/integration/cases/
         stages: [pre-commit]
 
       - id: sphinx-lint

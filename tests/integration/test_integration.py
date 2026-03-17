@@ -213,6 +213,11 @@ def _wrap_php(content: str) -> str:
     return f"<?php\n$x = {content};"
 
 
+def _wrap_r(content: str) -> str:
+    """Wrap in an R variable assignment."""
+    return f"x <- {content}"
+
+
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
@@ -455,6 +460,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_php,
         date_variants=(),
     ),
+    "r": _LanguageConfig(
+        spec=literalizer.languages.R,
+        extension=".R",
+        wrap=_wrap_r,
+        date_variants=(
+            _DateVariant(
+                name="r_native",
+                format_date=literalizer.formatters.format_date_r,
+                format_datetime=literalizer.formatters.format_datetime_r,
+                wrap=_wrap_r,
+            ),
+        ),
+    ),
 }
 
 
@@ -511,6 +529,12 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp_varname,
+        date_variants=(),
+    ),
+    "r": _LanguageConfig(
+        spec=literalizer.languages.R,
+        extension=".R",
+        wrap=_wrap_identity,
         date_variants=(),
     ),
 }

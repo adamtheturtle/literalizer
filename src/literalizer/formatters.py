@@ -23,6 +23,7 @@ __all__ = [
     "format_date_kotlin",
     "format_date_php",
     "format_date_python",
+    "format_date_r",
     "format_date_ruby",
     "format_date_rust",
     "format_datetime_cpp",
@@ -36,6 +37,7 @@ __all__ = [
     "format_datetime_kotlin",
     "format_datetime_php",
     "format_datetime_python",
+    "format_datetime_r",
     "format_datetime_ruby",
     "format_datetime_rust",
     "format_variable_declaration_cpp",
@@ -47,6 +49,7 @@ __all__ = [
     "format_variable_declaration_kotlin",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
+    "format_variable_declaration_r",
     "format_variable_declaration_ruby",
     "format_variable_declaration_rust",
     "format_variable_declaration_swift",
@@ -491,6 +494,37 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """
     return f"{name} = {value}"
+
+
+@beartype
+def format_date_r(value: datetime.date) -> str:
+    """Format a date as an R ``as.Date(...)`` call.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``as.Date("2024-01-15")``.
+    """
+    return f'as.Date("{value.isoformat()}")'
+
+
+@beartype
+def format_datetime_r(value: datetime.datetime) -> str:
+    """Format a datetime as an R ``as.POSIXct(...)`` call.
+
+    The ISO 8601 offset in the string is used for parsing, so no
+    separate ``tz`` argument is needed.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
+    ``as.POSIXct("2024-01-15T12:30:00")``.
+    """
+    return f'as.POSIXct("{value.isoformat()}")'
+
+
+@beartype
+def format_variable_declaration_r(name: str, value: str) -> str:
+    """Format an R variable assignment using ``<-``.
+
+    Example: ``"x"`` and ``"list(1, 2)"`` → ``"x <- list(1, 2)"``
+    """
+    return f"{name} <- {value}"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
