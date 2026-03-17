@@ -34,8 +34,7 @@ __all__ = [
     "R",
 ]
 
-from literalizer._language import Language
-from literalizer.formatters import (
+from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_erlang,
     format_bytes_hex,
@@ -101,6 +100,7 @@ from literalizer.formatters import (
     to_ocaml_val,
     to_occam_val,
 )
+from literalizer._language import Language
 
 
 def _format_python_omap_entry(key: str, value: str) -> str:

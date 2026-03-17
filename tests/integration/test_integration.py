@@ -22,7 +22,7 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-import literalizer.formatters
+import literalizer._formatters as literalizer_formatters
 import literalizer.languages
 
 if TYPE_CHECKING:
@@ -734,14 +734,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="python_native",
-                format_date=literalizer.formatters.format_date_python,
-                format_datetime=literalizer.formatters.format_datetime_python,
+                format_date=literalizer_formatters.format_date_python,
+                format_datetime=literalizer_formatters.format_datetime_python,
                 wrap=_wrap_python_datetime,
             ),
             _DateVariant(
                 name="python_epoch",
-                format_date=literalizer.formatters.format_date_iso,
-                format_datetime=literalizer.formatters.format_datetime_epoch,
+                format_date=literalizer_formatters.format_date_iso,
+                format_datetime=literalizer_formatters.format_datetime_epoch,
                 wrap=_wrap_identity,
             ),
         ),
@@ -755,8 +755,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="js_native",
-                format_date=literalizer.formatters.format_date_js,
-                format_datetime=literalizer.formatters.format_datetime_js,
+                format_date=literalizer_formatters.format_date_js,
+                format_datetime=literalizer_formatters.format_datetime_js,
                 wrap=_wrap_js,
             ),
         ),
@@ -770,8 +770,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="ts_native",
-                format_date=literalizer.formatters.format_date_js,
-                format_datetime=literalizer.formatters.format_datetime_js,
+                format_date=literalizer_formatters.format_date_js,
+                format_datetime=literalizer_formatters.format_datetime_js,
                 wrap=_wrap_js,
             ),
         ),
@@ -785,8 +785,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="kotlin_native",
-                format_date=literalizer.formatters.format_date_kotlin,
-                format_datetime=literalizer.formatters.format_datetime_kotlin,
+                format_date=literalizer_formatters.format_date_kotlin,
+                format_datetime=literalizer_formatters.format_datetime_kotlin,
                 wrap=_wrap_kotlin_time,
             ),
         ),
@@ -800,8 +800,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="ruby_native",
-                format_date=literalizer.formatters.format_date_ruby,
-                format_datetime=literalizer.formatters.format_datetime_ruby,
+                format_date=literalizer_formatters.format_date_ruby,
+                format_datetime=literalizer_formatters.format_datetime_ruby,
                 wrap=_wrap_ruby_date,
             ),
         ),
@@ -815,8 +815,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="go_native",
-                format_date=literalizer.formatters.format_date_go,
-                format_datetime=literalizer.formatters.format_datetime_go,
+                format_date=literalizer_formatters.format_date_go,
+                format_datetime=literalizer_formatters.format_datetime_go,
                 wrap=_wrap_go_time,
             ),
         ),
@@ -830,14 +830,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="java_instant",
-                format_date=literalizer.formatters.format_date_java,
-                format_datetime=literalizer.formatters.format_datetime_java_instant,
+                format_date=literalizer_formatters.format_date_java,
+                format_datetime=literalizer_formatters.format_datetime_java_instant,
                 wrap=_wrap_java_time,
             ),
             _DateVariant(
                 name="java_zoned",
-                format_date=literalizer.formatters.format_date_java,
-                format_datetime=literalizer.formatters.format_datetime_java_zoned,
+                format_date=literalizer_formatters.format_date_java,
+                format_datetime=literalizer_formatters.format_datetime_java_zoned,
                 wrap=_wrap_java_time,
             ),
         ),
@@ -851,8 +851,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="csharp_native",
-                format_date=literalizer.formatters.format_date_csharp,
-                format_datetime=literalizer.formatters.format_datetime_csharp,
+                format_date=literalizer_formatters.format_date_csharp,
+                format_datetime=literalizer_formatters.format_datetime_csharp,
                 wrap=_wrap_csharp_date,
             ),
         ),
@@ -866,8 +866,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="dart_native",
-                format_date=literalizer.formatters.format_date_dart,
-                format_datetime=literalizer.formatters.format_datetime_dart,
+                format_date=literalizer_formatters.format_date_dart,
+                format_datetime=literalizer_formatters.format_datetime_dart,
                 wrap=_wrap_dart,
             ),
         ),
@@ -889,8 +889,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="cpp_native",
-                format_date=literalizer.formatters.format_date_cpp,
-                format_datetime=literalizer.formatters.format_datetime_cpp,
+                format_date=literalizer_formatters.format_date_cpp,
+                format_datetime=literalizer_formatters.format_datetime_cpp,
                 wrap=_wrap_cpp_chrono,
             ),
         ),
@@ -904,8 +904,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="rust_native",
-                format_date=literalizer.formatters.format_date_rust,
-                format_datetime=literalizer.formatters.format_datetime_rust,
+                format_date=literalizer_formatters.format_date_rust,
+                format_datetime=literalizer_formatters.format_datetime_rust,
                 wrap=_wrap_rust_chrono,
             ),
         ),
@@ -927,8 +927,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="julia_native",
-                format_date=literalizer.formatters.format_date_julia,
-                format_datetime=literalizer.formatters.format_datetime_julia,
+                format_date=literalizer_formatters.format_date_julia,
+                format_datetime=literalizer_formatters.format_datetime_julia,
                 wrap=_wrap_julia_dates,
             ),
         ),
@@ -1022,8 +1022,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="r_native",
-                format_date=literalizer.formatters.format_date_r,
-                format_datetime=literalizer.formatters.format_datetime_r,
+                format_date=literalizer_formatters.format_date_r,
+                format_datetime=literalizer_formatters.format_datetime_r,
                 wrap=_wrap_r,
             ),
         ),
