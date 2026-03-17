@@ -634,6 +634,7 @@ ELIXIR = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_elixir_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_elixir,
     format_variable_assignment=format_variable_assignment_elixir,
