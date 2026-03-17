@@ -1791,24 +1791,37 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
     assert result == expected
 
 
+# Maps each language to (declaration_expected, assignment_expected) for a
+# scalar integer. Both _DECLARATION_PARAMS and _ASSIGNMENT_PARAMS are derived
+# from this single source of truth so that adding a language to one
+# automatically adds it to the other.
+_VARIABLE_SYNTAX: dict[Language, tuple[str, str]] = {
+    PYTHON: ("my_var = 42", "my_var = 42"),
+    JAVASCRIPT: ("const my_var = 42;", "my_var = 42;"),
+    TYPESCRIPT: ("const my_var = 42;", "my_var = 42;"),
+    GO: ("my_var := 42", "my_var = 42"),
+    RUBY: ("my_var = 42", "my_var = 42"),
+    CSHARP: ("var my_var = 42;", "my_var = 42;"),
+    CPP: ("auto my_var = 42;", "my_var = 42;"),
+    JAVA: ("var my_var = 42;", "my_var = 42;"),
+    KOTLIN: ("val my_var = 42", "my_var = 42"),
+    SWIFT: ("let my_var = 42", "my_var = 42"),
+    RUST: ("let my_var = 42;", "my_var = 42;"),
+    PHP: ("$my_var = 42;", "$my_var = 42;"),
+    HASKELL: ("my_var = 42", "my_var = 42"),
+    DART: ("final my_var = 42;", "my_var = 42;"),
+}
+
+_DECLARATION_PARAMS = [
+    (lang, decl) for lang, (decl, _) in _VARIABLE_SYNTAX.items()
+]
+_ASSIGNMENT_PARAMS = [
+    (lang, assign) for lang, (_, assign) in _VARIABLE_SYNTAX.items()
+]
+
+
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "const my_var = 42;"),
-        (TYPESCRIPT, "const my_var = 42;"),
-        (GO, "my_var := 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "var my_var = 42;"),
-        (CPP, "auto my_var = 42;"),
-        (JAVA, "var my_var = 42;"),
-        (KOTLIN, "val my_var = 42"),
-        (SWIFT, "let my_var = 42"),
-        (RUST, "let my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-        (DART, "final my_var = 42;"),
-    ],
+    argnames=("language", "expected"), argvalues=_DECLARATION_PARAMS
 )
 def test_variable_declaration_json(
     *, language: Language, expected: str
@@ -1825,23 +1838,7 @@ def test_variable_declaration_json(
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "const my_var = 42;"),
-        (TYPESCRIPT, "const my_var = 42;"),
-        (GO, "my_var := 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "var my_var = 42;"),
-        (CPP, "auto my_var = 42;"),
-        (JAVA, "var my_var = 42;"),
-        (KOTLIN, "val my_var = 42"),
-        (SWIFT, "let my_var = 42"),
-        (RUST, "let my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-        (DART, "final my_var = 42;"),
-    ],
+    argnames=("language", "expected"), argvalues=_DECLARATION_PARAMS
 )
 def test_variable_declaration_yaml(
     *, language: Language, expected: str
@@ -1870,23 +1867,7 @@ def test_variable_declaration_none_no_wrap() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "my_var = 42;"),
-        (TYPESCRIPT, "my_var = 42;"),
-        (GO, "my_var = 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "my_var = 42;"),
-        (CPP, "my_var = 42;"),
-        (JAVA, "my_var = 42;"),
-        (KOTLIN, "my_var = 42"),
-        (SWIFT, "my_var = 42"),
-        (RUST, "my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-        (DART, "my_var = 42;"),
-    ],
+    argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
 )
 def test_existing_variable_assignment_json(
     *, language: Language, expected: str
@@ -1906,23 +1887,7 @@ def test_existing_variable_assignment_json(
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "my_var = 42;"),
-        (TYPESCRIPT, "my_var = 42;"),
-        (GO, "my_var = 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "my_var = 42;"),
-        (CPP, "my_var = 42;"),
-        (JAVA, "my_var = 42;"),
-        (KOTLIN, "my_var = 42"),
-        (SWIFT, "my_var = 42"),
-        (RUST, "my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-        (DART, "my_var = 42;"),
-    ],
+    argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
 )
 def test_existing_variable_assignment_yaml(
     *, language: Language, expected: str
