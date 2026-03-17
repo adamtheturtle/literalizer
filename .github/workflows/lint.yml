@@ -27,7 +27,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Swift
-        if: runner.os == 'Linux'
         uses: compnerd/gha-setup-swift@v0.2.3
         with:
           branch: swift-6.2.3-release
