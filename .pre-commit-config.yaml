@@ -17,6 +17,7 @@ ci:
     - interrogate
     - interrogate-docs
     - go-golden-syntax-check
+    - groovy-syntax-check
     - haskell-golden-syntax-check
     - julia-golden-syntax-check
     - lua-syntax-check
@@ -429,6 +430,14 @@ repos:
         entry: gofmt -e
         language: system
         types: [go]
+        stages: [pre-commit]
+
+      - id: groovy-syntax-check
+        name: Groovy golden file syntax check
+        entry: uv run python check_groovy_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.groovy$
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: javascript-syntax-check
