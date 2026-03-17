@@ -11,7 +11,7 @@ def main() -> None:
     """Check syntax of each given Elixir golden file."""
     elixirc_path = shutil.which(cmd="elixirc")
     if not elixirc_path:
-        # elixirc not found, skip check (it's in ci.skip for this reason)
+        # elixirc not installed; skip.
         return
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
