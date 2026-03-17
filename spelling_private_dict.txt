@@ -64,6 +64,7 @@ pyright
 pytest
 regen
 reportAttributeAccessIssue
+reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
