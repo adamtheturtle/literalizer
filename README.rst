@@ -101,6 +101,11 @@ Usage examples
        return f"{key}: {value}"
 
 
+   def _var_decl(name: str, value: str) -> str:
+       """Format a variable declaration."""
+       return f"{name} = {value}"
+
+
    custom = LanguageSpec(
        null_literal="nil",
        true_literal="TRUE",
@@ -128,7 +133,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
-       format_variable_declaration=None,
+       format_variable_declaration=_var_decl,
    )
 
 Use cases

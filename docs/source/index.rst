@@ -119,10 +119,15 @@ Usage examples
    #                      CSHARP, CPP, JAVA, KOTLIN, RUST, HASKELL, SWIFT, PHP
 
 
-   # Helper used in custom LanguageSpec examples below.
+   # Helpers used in custom LanguageSpec examples below.
    def _omap_entry(key: str, value: str) -> str:
        """Format an ordered-map entry."""
        return f"{key}: {value}"
+
+
+   def _var_decl(name: str, value: str) -> str:
+       """Format a variable declaration."""
+       return f"{name} = {value}"
 
 
    # Create a custom language:
@@ -153,7 +158,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
-       format_variable_declaration=None,
+       format_variable_declaration=_var_decl,
    )
 
    # Customize date/datetime formatting with built-in formatters:
@@ -185,7 +190,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
-       format_variable_declaration=None,
+       format_variable_declaration=_var_decl,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -223,7 +228,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
-       format_variable_declaration=None,
+       format_variable_declaration=_var_decl,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15\n",
@@ -261,7 +266,7 @@ Usage examples
        format_omap_entry=_omap_entry,
        multiline_close_indent="",
        skip_null_dict_values=False,
-       format_variable_declaration=None,
+       format_variable_declaration=_var_decl,
    )
    result = literalize_yaml(
        yaml_string="- 2024-01-15T12:30:00\n",

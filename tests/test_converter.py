@@ -53,12 +53,15 @@ from literalizer.languages import (
     CPP,
     CSHARP,
     GO,
+    HASKELL,
     JAVA,
     JAVASCRIPT,
     KOTLIN,
+    PHP,
     PYTHON,
     RUBY,
     RUST,
+    SWIFT,
     TYPESCRIPT,
 )
 
@@ -68,6 +71,13 @@ def _format_test_omap_entry(key: str, value: str) -> str:
     fixtures.
     """
     return f"{key}: {value}"
+
+
+def _format_test_variable_declaration(name: str, value: str) -> str:
+    """Format a variable declaration for use in custom LanguageSpec test
+    fixtures.
+    """
+    return f"{name} = {value}"
 
 
 @pytest.mark.parametrize(
@@ -527,7 +537,7 @@ def test_custom_language() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=_format_test_variable_declaration,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -1087,7 +1097,7 @@ def test_custom_format_date() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=_format_test_variable_declaration,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -1127,7 +1137,7 @@ def test_custom_format_datetime() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=_format_test_variable_declaration,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1167,7 +1177,7 @@ def test_java_native_dates() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=_format_test_variable_declaration,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1209,7 +1219,7 @@ def test_ruby_native_dates() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=_format_test_variable_declaration,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1346,7 +1356,7 @@ def test_custom_format_bytes() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=_format_test_variable_declaration,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
@@ -1746,7 +1756,7 @@ def test_omap_custom_language_spec() -> None:
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=_format_test_variable_declaration,
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -1795,6 +1805,10 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
         (CPP, "auto my_var = 42;"),
         (JAVA, "var my_var = 42;"),
         (KOTLIN, "val my_var = 42"),
+        (SWIFT, "let my_var = 42"),
+        (RUST, "let my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
     ],
 )
 def test_variable_declaration_json(
@@ -1823,6 +1837,10 @@ def test_variable_declaration_json(
         (CPP, "auto my_var = 42;"),
         (JAVA, "var my_var = 42;"),
         (KOTLIN, "val my_var = 42"),
+        (SWIFT, "let my_var = 42"),
+        (RUST, "let my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
     ],
 )
 def test_variable_declaration_yaml(
@@ -1849,46 +1867,3 @@ def test_variable_declaration_none_no_wrap() -> None:
         variable_name=None,
     )
     assert result == "(\n    1,\n    2,\n)"
-
-
-def test_variable_declaration_language_no_formatter() -> None:
-    """Language with format_variable_declaration=None ignores
-    variable_name.
-    """
-    custom = LanguageSpec(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        collection_open="[",
-        collection_close="]",
-        dict_separator=": ",
-        dict_open="{",
-        dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=False,
-        single_element_trailing_comma=False,
-        format_bytes=format_bytes_hex,
-        format_date=format_date_iso,
-        format_datetime=format_datetime_iso,
-        empty_collection=None,
-        empty_dict=None,
-        set_open="{",
-        set_close="}",
-        empty_set=None,
-        format_set_entry=None,
-        comment_prefix="#",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
-        multiline_close_indent="",
-        skip_null_dict_values=False,
-        format_variable_declaration=None,
-    )
-    result = literalize_json(
-        json_string="[1, 2]",
-        language=custom,
-        prefix="",
-        wrap=True,
-        variable_name="x",
-    )
-    assert result == "[\n    1,\n    2\n]"
