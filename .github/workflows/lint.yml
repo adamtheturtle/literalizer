@@ -31,7 +31,7 @@ jobs:
         with:
           elixir-version: '1.18'
           otp-version: '27'
-      - uses: coursier/setup-action@v1
+      - uses: coursier/setup-action@v2
         with:
           apps: scalac
       - name: Install Swift
