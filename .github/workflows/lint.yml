@@ -28,7 +28,6 @@ jobs:
           persist-credentials: false
       - uses: coursier/setup-action@v1
         with:
-          jvm: adopt:17
           apps: scalac
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
