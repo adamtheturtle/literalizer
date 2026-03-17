@@ -560,8 +560,9 @@ repos:
 
       - id: scala-golden-syntax-check
         name: Scala golden file syntax check
-        entry: bash -c 'for f; do tmpdir=$(mktemp -d) && (cd "$tmpdir" && scalac "$(realpath
-          "$f")") || exit 1; done' --
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d) && if [[ -n "${WINDIR:-}" ]];
+          then cmd //c scalac -d "$(cygpath -w "$tmpdir")" "$(cygpath -w "$(realpath
+          "$f")")"; else scalac -d "$tmpdir" "$f"; fi || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.scala$
         stages: [pre-commit]
