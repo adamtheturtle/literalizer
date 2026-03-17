@@ -9,10 +9,7 @@ from pathlib import Path
 
 def main() -> None:
     """Check syntax of each given Erlang golden file."""
-    erlc_path = shutil.which(cmd="erlc")
-    if not erlc_path:
-        # Skip check if erlc is not available
-        return
+    erlc_path = shutil.which(cmd="erlc") or "erlc"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as tmpdir:
