@@ -44,6 +44,7 @@ __all__ = [
     "format_datetime_r",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_assignment_ada",
     "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
     "format_variable_assignment_csharp",
@@ -64,6 +65,7 @@ __all__ = [
     "format_variable_assignment_rust",
     "format_variable_assignment_scala",
     "format_variable_assignment_swift",
+    "format_variable_declaration_ada",
     "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
@@ -87,6 +89,7 @@ __all__ = [
     "format_variable_declaration_swift",
     "passthrough_list_entry",
     "passthrough_set_entry",
+    "to_ada_val",
     "to_fsharp_val",
     "to_ocaml_val",
 ]
@@ -951,6 +954,70 @@ def to_ocaml_val(value: str) -> str:
     if float_result is not None:
         return float_result
     return value
+
+
+def to_ada_val(value: str) -> str:
+    """Wrap a pre-formatted value string in an Ada ``A_Val`` constructor.
+
+    Inspects the string representation to determine the appropriate
+    constructor: ``AStr``, ``AInt``, ``AFloat``, or passes through
+    values that are already ``A_Val`` expressions
+    (``ANull``, ``ABool``, ``AList``, ``AMap``, ``ASet``, ``AEntry``).
+    """
+    _val_prefixes = (
+        "ANull",
+        "ABool",
+        "AInt",
+        "AFloat",
+        "AStr",
+        "AList",
+        "AMap",
+        "ASet",
+        "AEntry",
+    )
+    if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"AStr ({value})"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"AInt ({value})"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"AFloat ({value})"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def format_variable_declaration_ada(name: str, value: str) -> str:
+    """Format an Ada object declaration.
+
+    Example: ``"x"`` and ``"AList'(AInt (1))"`` →
+    ``"x : A_Val := AList'(AInt (1));"``
+    """
+    return f"{name} : A_Val := {to_ada_val(value=value)};"
+
+
+@beartype
+def format_variable_assignment_ada(name: str, value: str) -> str:
+    """Format an Ada assignment statement to an existing variable.
+
+    Example: ``"x"`` and ``"AList'(AInt (1))"`` →
+    ``"x := AList'(AInt (1));"``
+    """
+    return f"{name} := {to_ada_val(value=value)};"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:

@@ -356,6 +356,46 @@ def _wrap_groovy(content: str) -> str:
     return f"def x = {content}"
 
 
+def _wrap_ada(content: str) -> str:
+    """Wrap in an Ada procedure with a local variable assignment."""
+    indented = content.replace("\n", "\n   ")
+    return (
+        "procedure Check is\n"
+        f"   X : Integer := {indented};\n"
+        "begin\n"
+        "   null;\n"
+        "end Check;"
+    )
+
+
+def _wrap_ada_varname(content: str) -> str:
+    """Wrap an Ada object declaration inside a procedure."""
+    indented = "   " + content.replace("\n", "\n   ")
+    return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+
+
+def _wrap_ada_combined(declaration: str, assignment: str) -> str:
+    """Ada: declaration in one nested procedure, assignment in another."""
+    decl_indented = "      " + declaration.replace("\n", "\n      ")
+    assign_indented = "      " + assignment.replace("\n", "\n      ")
+    return (
+        "procedure Check is\n"
+        "   procedure Check_Declaration is\n"
+        f"{decl_indented}\n"
+        "   begin\n"
+        "      null;\n"
+        "   end Check_Declaration;\n"
+        "   procedure Check_Assignment is\n"
+        "   begin\n"
+        f"{assign_indented}\n"
+        "   end Check_Assignment;\n"
+        "begin\n"
+        "   Check_Declaration;\n"
+        "   Check_Assignment;\n"
+        "end Check;"
+    )
+
+
 def _wrap_r(content: str) -> str:
     """Wrap in an R variable assignment."""
     return f"x <- {content}"
@@ -580,6 +620,14 @@ class _LanguageConfig:
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
+    "ada": _LanguageConfig(
+        spec=literalizer.languages.ADA,
+        extension=".adb",
+        wrap=_wrap_ada,
+        varname_wrap=_wrap_ada_varname,
+        combined_wrap=_wrap_ada_combined,
+        date_variants=(),
+    ),
     "clojure": _LanguageConfig(
         spec=literalizer.languages.CLOJURE,
         extension=".clj",

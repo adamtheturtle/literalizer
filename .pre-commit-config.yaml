@@ -4,6 +4,7 @@ fail_fast: true
 ci:
   skip:
     - actionlint
+    - ada-syntax-check
     - r-syntax-check
     - check-manifest
     - clojure-syntax-check
@@ -415,6 +416,14 @@ repos:
         language: python
         pass_filenames: false
         types_or: [yaml]
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: ada-syntax-check
+        name: Ada golden file syntax check
+        entry: uv run python check_ada_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.adb$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
