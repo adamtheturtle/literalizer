@@ -43,7 +43,7 @@ jobs:
       - name: Install Dart
         uses: dart-lang/setup-dart@v1
       - name: Install Groovy
-        uses: wtfjoke/setup-groovy@v2
+        uses: wtfjoke/setup-groovy@v3
         with:
           groovy-version: 4.x
       - name: Install clj-kondo
