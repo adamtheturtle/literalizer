@@ -118,18 +118,18 @@ def _format_value(*, value: Value, spec: Language) -> str:
         return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
-        if not value and spec.empty_collection is not None:
-            return spec.empty_collection
+        if not value and spec.empty_sequence is not None:
+            return spec.empty_sequence
         items = [
             spec.format_list_entry(_format_value(value=v, spec=spec))
             for v in value
         ]
         joined = spec.element_separator.join(items)
         # Some languages (e.g. Python) require a trailing comma on
-        # single-element collections to avoid syntactic ambiguity.
+        # single-element sequences to avoid syntactic ambiguity.
         if len(items) == 1 and spec.single_element_trailing_comma:
             joined += spec.element_separator.strip()
-        return f"{spec.collection_open}{joined}{spec.collection_close}"
+        return f"{spec.sequence_open}{joined}{spec.sequence_close}"
 
     return _format_scalar(value=value, spec=spec)
 
@@ -150,7 +150,7 @@ def _wrap_body(
         return f"{spec.dict_open}\n{body}\n{ci}{spec.dict_close}"
     if isinstance(data, set):
         return f"{spec.set_open}\n{body}\n{ci}{spec.set_close}"
-    return f"{spec.collection_open}\n{body}\n{ci}{spec.collection_close}"
+    return f"{spec.sequence_open}\n{body}\n{ci}{spec.sequence_close}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))

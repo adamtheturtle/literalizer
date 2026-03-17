@@ -4,6 +4,8 @@ Changelog
 Next
 ----
 
+- Added ``format_list_entry`` to the ``Language`` protocol and ``LanguageSpec`` dataclass, mirroring the existing ``format_set_entry`` field. All built-in languages use the new ``passthrough_list_entry`` formatter.
+
 2026.03.17.2
 ------------
 
