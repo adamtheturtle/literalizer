@@ -1965,7 +1965,7 @@ def test_to_fsharp_val_unknown_value() -> None:
     """``to_fsharp_val`` returns the value unchanged when it cannot be
     classified as a string literal, int, or float.
     """
-    result = to_fsharp_val("SomeUnknownValue")
+    result = to_fsharp_val("SomeUnknownValue")  # type: ignore[misc]
     assert result == "SomeUnknownValue"
 
 
