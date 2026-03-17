@@ -258,6 +258,11 @@ def _wrap_elixir_varname(content: str) -> str:
     )
 
 
+def _wrap_r(content: str) -> str:
+    """Wrap in an R variable assignment."""
+    return f"x <- {content}"
+
+
 def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
@@ -695,6 +700,21 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_elixir_varname,
         combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
         date_variants=(),
+    ),
+    "r": _LanguageConfig(
+        spec=literalizer.languages.R,
+        extension=".R",
+        wrap=_wrap_r,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
+        date_variants=(
+            _DateVariant(
+                name="r_native",
+                format_date=literalizer.formatters.format_date_r,
+                format_datetime=literalizer.formatters.format_datetime_r,
+                wrap=_wrap_r,
+            ),
+        ),
     ),
 }
 
