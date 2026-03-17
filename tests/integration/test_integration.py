@@ -117,12 +117,48 @@ _FSHARP_VAL_TYPE = (
     "    | FSet of Val list\n"
 )
 
+_OCAML_VAL_TYPE = (
+    "type val_t =\n"
+    "  | ONull\n"
+    "  | OBool of bool\n"
+    "  | OInt of int\n"
+    "  | OFloat of float\n"
+    "  | OStr of string\n"
+    "  | OList of val_t list\n"
+    "  | OMap of (string * val_t) list\n"
+    "  | OSet of val_t list\n"
+)
+
 
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
     return (
         "module Check\n"
         "\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {content}"
+    )
+
+
+def _wrap_ocaml(content: str) -> str:
+    """Wrap in an OCaml module with a custom val_t variant type."""
+    return (
+        "module Check = struct\n\n"
+        + _OCAML_VAL_TYPE
+        + "\n"
+        + f"let x : val_t = {content}\n\n"
+        + "end"
+    )
+
+
+def _wrap_ocaml_varname(content: str) -> str:
+    """Wrap an OCaml ``let`` declaration with the val_t type
+    definition.
+    """
+    return (
+        "module Check = struct\n\n"
+        + _OCAML_VAL_TYPE
+        + "\n"
+        + content
+        + "\n\nend"
     )
 
 
@@ -313,6 +349,11 @@ def _wrap_elixir_varname(content: str) -> str:
         f"  end\n"
         f"end"
     )
+
+
+def _wrap_groovy(content: str) -> str:
+    """Wrap in a Groovy variable assignment."""
+    return f"def x = {content}"
 
 
 def _wrap_r(content: str) -> str:
@@ -777,6 +818,22 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_fsharp,
         varname_wrap=_wrap_fsharp_varname,
         combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
+        date_variants=(),
+    ),
+    "ocaml": _LanguageConfig(
+        spec=literalizer.languages.OCAML,
+        extension=".ml",
+        wrap=_wrap_ocaml,
+        varname_wrap=_wrap_ocaml_varname,
+        combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
+        date_variants=(),
+    ),
+    "groovy": _LanguageConfig(
+        spec=literalizer.languages.GROOVY,
+        extension=".groovy",
+        wrap=_wrap_groovy,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
     "scala": _LanguageConfig(

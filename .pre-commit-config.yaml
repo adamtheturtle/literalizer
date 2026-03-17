@@ -11,12 +11,14 @@ ci:
     - dart-syntax-check
     - elixir-syntax-check
     - fsharp-golden-syntax-check
+    - ocaml-golden-syntax-check
     - deptry
     - doc8
     - docs
     - interrogate
     - interrogate-docs
     - go-golden-syntax-check
+    - groovy-syntax-check
     - haskell-golden-syntax-check
     - julia-golden-syntax-check
     - java-golden-syntax-check
@@ -430,6 +432,14 @@ repos:
         types: [go]
         stages: [pre-commit]
 
+      - id: groovy-syntax-check
+        name: Groovy golden file syntax check
+        entry: uv run python check_groovy_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.groovy$
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
       - id: javascript-syntax-check
         name: JavaScript syntax check
         entry: node --check
@@ -509,6 +519,15 @@ repos:
         entry: uv run python check_fsharp_golden_syntax.py
         language: python
         files: \.(fs|fsi)$
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: ocaml-golden-syntax-check
+        name: OCaml golden file syntax check
+        entry: uv run python check_ocaml_golden_syntax.py
+        language: python
+        types: [ocaml]
+        files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
