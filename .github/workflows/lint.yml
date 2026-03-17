@@ -40,6 +40,8 @@ jobs:
           cache-snapshot: true
       - name: Install R
         uses: r-lib/actions/setup-r@v2
+        with:
+          windows-path-include-rtools: false
       - name: Install Dart
         uses: dart-lang/setup-dart@v1
       - name: Install Groovy
@@ -53,12 +55,6 @@ jobs:
       - name: Set up MSVC for Lua (Windows only)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Remove Rtools from PATH (Windows only)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'rtools' }) -join ';'
-          "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Install Lua
         uses: leafo/gh-actions-lua@v12
         with:
