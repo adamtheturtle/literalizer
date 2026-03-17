@@ -18,119 +18,38 @@ Requires Python |minimum-python-version|\+.
    pip install literalizer
 
 
-Usage examples
---------------
+Usage
+-----
 
 .. code-block:: python
 
-   """Examples of using literalizer."""
+   """Example of using literalizer."""
 
-   from literalizer import LanguageSpec, literalize_json, literalize_yaml
-   from literalizer.formatters import (
-       dict_entry_with_separator,
-       format_bytes_hex,
-       format_date_iso,
-       format_datetime_iso,
-       passthrough_set_entry,
-   )
-   from literalizer.languages import JAVA, JAVASCRIPT, PYTHON
+   from literalizer import literalize_yaml
+   from literalizer.languages import GO
 
-   # Convert a JSON array to Java literal items
-   result = literalize_json(
-       json_string='[true, null, "hi", [1, 2]]',
-       language=JAVA,
-       prefix="",
-       wrap=False,
-   )
-   # result:
-   # true,
-   # null,
-   # "hi",
-   # {1, 2},
-
-   # Convert to JavaScript/TypeScript array
-   result = literalize_json(
-       json_string='[true, null, "hi", [1, 2]]',
-       language=JAVASCRIPT,
+   # YAML comments are preserved using the target language's comment syntax
+   yaml_config = """\
+   # Server configuration
+   host: localhost  # default host
+   port: 8080
+   # Enable debug mode for development
+   debug: true
+   """
+   result = literalize_yaml(
+       yaml_string=yaml_config,
+       language=GO,
        prefix="    ",
        wrap=True,
    )
    # result:
-   # [
-   #     true,
-   #     null,
-   #     "hi",
-   #     [1, 2],
-   # ]
-
-   # Convert a JSON string to Python
-   result = literalize_json(
-       json_string='[true, null, "hi", [1, 2]]',
-       language=PYTHON,
-       prefix="",
-       wrap=True,
-   )
-   # result:
-   # (
-   #     True,
-   #     None,
-   #     "hi",
-   #     (1, 2),
-   # )
-
-   # Convert from a YAML string directly
-   result = literalize_yaml(
-       yaml_string="- true\n- null\n- hi\n- [1, 2]",
-       language=PYTHON,
-       prefix="",
-       wrap=True,
-   )
-   # result:
-   # (
-   #     True,
-   #     None,
-   #     "hi",
-   #     (1, 2),
-   # )
-
-   # Built-in languages: PYTHON, JAVASCRIPT, TYPESCRIPT, GO, RUBY,
-   #                      CSHARP, CPP, JAVA, KOTLIN, RUST, HASKELL, SWIFT, PHP
-
-
-   # Create a custom language:
-   def _omap_entry(key: str, value: str) -> str:
-       """Format an ordered-map entry."""
-       return f"{key}: {value}"
-
-
-   custom = LanguageSpec(
-       null_literal="nil",
-       true_literal="TRUE",
-       false_literal="FALSE",
-       collection_open="[",
-       collection_close="]",
-       dict_open="{",
-       dict_close="}",
-       format_dict_entry=dict_entry_with_separator(separator=": "),
-       trailing_comma=True,
-       single_element_trailing_comma=False,
-       format_bytes=format_bytes_hex,
-       format_date=format_date_iso,
-       format_datetime=format_datetime_iso,
-       empty_collection=None,
-       empty_dict=None,
-       set_open="[",
-       set_close="]",
-       empty_set=None,
-       format_set_entry=passthrough_set_entry,
-       comment_prefix="//",
-       omap_open="{",
-       omap_close="}",
-       format_omap_entry=_omap_entry,
-       multiline_close_indent="",
-       skip_null_dict_values=False,
-       format_variable_declaration=None,
-   )
+   # map[string]any{
+   #     // Server configuration
+   #     "host": "localhost",  // default host
+   #     "port": 8080,
+   #     // Enable debug mode for development
+   #     "debug": true,
+   # }
 
 Use cases
 ---------
