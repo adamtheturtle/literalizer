@@ -58,6 +58,7 @@ __all__ = [
     "format_variable_assignment_java",
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
+    "format_variable_assignment_lua",
     "format_variable_assignment_ocaml",
     "format_variable_assignment_occam",
     "format_variable_assignment_perl",
@@ -82,6 +83,7 @@ __all__ = [
     "format_variable_declaration_js",
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
+    "format_variable_declaration_lua",
     "format_variable_declaration_ocaml",
     "format_variable_declaration_occam",
     "format_variable_declaration_perl",
@@ -934,6 +936,24 @@ def format_variable_assignment_erlang(name: str, value: str) -> str:
     """
     erlang_name = name[0].upper() + name[1:]
     return f"{erlang_name} = {value}"
+
+
+@beartype
+def format_variable_declaration_lua(name: str, value: str) -> str:
+    """Format a Lua local variable declaration.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"local x = {1, 2}"``.
+    """
+    return f"local {name} = {value}"
+
+
+@beartype
+def format_variable_assignment_lua(name: str, value: str) -> str:
+    """Format a Lua assignment to an existing variable.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"x = {1, 2}"``.
+    """
+    return f"{name} = {value}"
 
 
 @beartype

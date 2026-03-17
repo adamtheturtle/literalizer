@@ -11,6 +11,7 @@ FNull
 FSet
 FStr
 JSONDecodeError
+Lua
 NEL
 OBool
 OCaml
@@ -49,6 +50,7 @@ kts
 literalize
 literalizer
 localhost
+luac
 namespaces
 natively
 ocamlopt

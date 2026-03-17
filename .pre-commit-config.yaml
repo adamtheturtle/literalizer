@@ -23,6 +23,7 @@ ci:
     - groovy-syntax-check
     - haskell-golden-syntax-check
     - julia-golden-syntax-check
+    - lua-syntax-check
     - java-golden-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
@@ -601,6 +602,14 @@ repos:
         entry: perl -c
         language: system
         types: [perl]
+        files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: lua-syntax-check
+        name: Lua golden file syntax check
+        entry: luac -p
+        language: system
+        types: [lua]
         files: ^tests/integration/cases/
         stages: [pre-commit]
 
