@@ -55,6 +55,7 @@ from literalizer.formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     to_ada_val,
+    to_c_val,
     to_fsharp_val,
     to_ocaml_val,
     to_occam_val,
@@ -2060,4 +2061,12 @@ def test_to_occam_val_unknown_value() -> None:
     classified as a string literal, int, or float.
     """
     result = to_occam_val(value="SomeUnknownValue")
+    assert result == "SomeUnknownValue"
+
+
+def test_to_c_val_unknown_value() -> None:
+    """``to_c_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_c_val("SomeUnknownValue")  # type: ignore[misc]
     assert result == "SomeUnknownValue"
