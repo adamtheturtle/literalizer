@@ -49,15 +49,18 @@ from literalizer.formatters import (
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
+    format_variable_assignment_fsharp,
     format_variable_assignment_python,
     format_variable_declaration_python,
     passthrough_list_entry,
     passthrough_set_entry,
+    to_fsharp_val,
 )
 from literalizer.languages import (
     CPP,
     CSHARP,
     DART,
+    FSHARP,
     GO,
     HASKELL,
     JAVA,
@@ -1901,6 +1904,7 @@ def test_variable_declaration_none_no_wrap() -> None:
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
         (DART, "my_var = 42;"),
+        (FSHARP, "let my_var: Val = 42"),
     ],
 )
 def test_existing_variable_assignment_json(
@@ -1937,6 +1941,7 @@ def test_existing_variable_assignment_json(
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
         (DART, "my_var = 42;"),
+        (FSHARP, "let my_var: Val = 42"),
     ],
 )
 def test_existing_variable_assignment_yaml(
@@ -1954,3 +1959,19 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
+
+
+def test_to_fsharp_val_unknown_value() -> None:
+    """``to_fsharp_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_fsharp_val("SomeUnknownValue")
+    assert result == "SomeUnknownValue"
+
+
+def test_format_variable_assignment_fsharp() -> None:
+    """``format_variable_assignment_fsharp`` produces a ``let`` binding
+    with an explicit ``Val`` type annotation.
+    """
+    result = format_variable_assignment_fsharp(name="x", value="FList [1; 2]")
+    assert result == "let x: Val = FList [1; 2]"
