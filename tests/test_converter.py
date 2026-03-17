@@ -2011,7 +2011,7 @@ def test_to_fsharp_val_unknown_value() -> None:
     """``to_fsharp_val`` returns the value unchanged when it cannot be
     classified as a string literal, int, or float.
     """
-    result = to_fsharp_val("SomeUnknownValue")  # type: ignore[misc]
+    result = to_fsharp_val(value="SomeUnknownValue")
     assert result == "SomeUnknownValue"
 
 
@@ -2027,5 +2027,5 @@ def test_to_ocaml_val_unknown_value() -> None:
     """``to_ocaml_val`` returns the value unchanged when it cannot be
     classified as a string literal, int, or float.
     """
-    result = to_ocaml_val("SomeUnknownValue")  # type: ignore[misc]
+    result = to_ocaml_val(value="SomeUnknownValue")
     assert result == "SomeUnknownValue"
