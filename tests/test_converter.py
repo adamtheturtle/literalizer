@@ -601,7 +601,7 @@ def _lists_to_tuples(*, value: _JSONValue) -> object:
 
 # Characters valid in JSON strings: Unicode letters (L), marks (M), numbers
 # (N), punctuation (P), symbols (S), and separators (Z). Control characters
-# (category C) are excluded because JSON forbids unescaped control characters,
+# (category C) are excluded because JSON forbids raw control characters,
 # and ``\x00`` is excluded explicitly because json.dumps refuses null bytes.
 json_text = st.text(
     alphabet=st.characters(
@@ -612,7 +612,7 @@ json_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
-    # NaN and Infinity are excluded because JSON does not support them.
+    # ``nan`` and ``inf`` are excluded because JSON does not support them.
     | st.floats(allow_nan=False, allow_infinity=False)
     | json_text
 )
@@ -708,7 +708,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
 
 # ``st.dictionaries`` internally filters draws to ensure unique keys, which
 # can accumulate enough filtered examples to trigger the ``filter_too_much``
-# health check on unlucky seeds.  The filtering is expected behaviour here,
+# health check on unlucky seeds.  The filtering is expected behavior here,
 # so we suppress the check rather than change the strategy.
 @given(data=json_objects)
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
