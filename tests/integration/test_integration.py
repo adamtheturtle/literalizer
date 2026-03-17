@@ -554,7 +554,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.R,
         extension=".R",
         wrap=_wrap_r,
-        varname_wrap=_wrap_r,
+        varname_wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="r_native",
