@@ -1001,10 +1001,18 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
 
     MATLAB ``struct`` accepts alternating character-vector keys and values.
     Dictionary keys arrive as double-quoted strings; they are converted to
-    single-quoted character vectors as required by ``struct``.
+    single-quoted character vectors as required by ``struct``.  Internal
+    single quotes are doubled to produce valid MATLAB char-vector literals.
+
+    Cell-array values are wrapped in an extra layer of braces so that
+    ``struct`` stores them as a single cell-array field rather than
+    expanding them into a struct array.
     """
     if key.startswith('"') and key.endswith('"'):
-        key = f"'{key[1:-1]}'"
+        inner = key[1:-1].replace("'", "''")
+        key = f"'{inner}'"
+    if value.startswith("{") and value.endswith("}"):
+        value = f"{{{value}}}"
     return f"{key}, {value}"
 
 

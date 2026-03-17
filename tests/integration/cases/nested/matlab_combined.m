@@ -1,6 +1,6 @@
 my_data = struct(
-    'users', {struct('name', "Bob", 'tags', {"admin", "user"}), struct('name', "Carol", 'tags', {"guest"})}
+    'users', {{struct('name', "Bob", 'tags', {{"admin", "user"}}), struct('name', "Carol", 'tags', {{"guest"}})}}
 );
 my_data = struct(
-    'users', {struct('name', "Bob", 'tags', {"admin", "user"}), struct('name', "Carol", 'tags', {"guest"})}
+    'users', {{struct('name', "Bob", 'tags', {{"admin", "user"}}), struct('name', "Carol", 'tags', {{"guest"}})}}
 );
