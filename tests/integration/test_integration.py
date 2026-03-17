@@ -310,7 +310,7 @@ def _wrap_swift_combined(declaration: str, assignment: str) -> str:
     """Swift: let declaration (with type annotation) in a do block,
     then var + assignment in the outer scope.
     """
-    annotated = _wrap_swift_varname(declaration)
+    annotated = _wrap_swift_varname(content=declaration)
     decl_indented = "    " + annotated.replace("\n", "\n    ")
     return (
         f"do {{\n{decl_indented}\n}}\nvar {_VARIABLE_NAME}: Any\n{assignment}"
@@ -513,7 +513,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".go",
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
-        combined_wrap=lambda d, a: _wrap_go_varname(d + "\n" + a),
+        combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="go_native",
@@ -528,7 +528,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".java",
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
-        combined_wrap=lambda d, a: _wrap_java_varname(d + "\n" + a),
+        combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="java_instant",
@@ -549,7 +549,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".cs",
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
-        combined_wrap=lambda d, a: _wrap_csharp_varname(d + "\n" + a),
+        combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="csharp_native",
@@ -572,7 +572,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".cpp",
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
-        combined_wrap=lambda d, a: _wrap_cpp_varname(d + "\n" + a),
+        combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="cpp_native",
@@ -602,7 +602,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".hs",
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
-        combined_wrap=lambda d, _a: _wrap_haskell_varname(d),
+        combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
         date_variants=(),
     ),
     "julia": _LanguageConfig(
@@ -625,7 +625,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".php",
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
-        combined_wrap=lambda d, a: _wrap_php_varname(d + "\n" + a),
+        combined_wrap=lambda d, a: _wrap_php_varname(content=d + "\n" + a),
         date_variants=(),
     ),
 }
