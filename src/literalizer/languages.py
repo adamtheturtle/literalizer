@@ -1,4 +1,4 @@
-"""Built-in language specifications for 14 programming languages."""
+"""Built-in language specifications for common programming languages."""
 
 from __future__ import annotations
 
@@ -12,12 +12,17 @@ __all__ = [
     "CSHARP",
     "DART",
     "ELIXIR",
+    "ERLANG",
+    "FSHARP",
     "GO",
+    "GROOVY",
     "HASKELL",
     "JAVA",
     "JAVASCRIPT",
     "JULIA",
     "KOTLIN",
+    "OCAML",
+    "PERL",
     "PHP",
     "PYTHON",
     "RUBY",
@@ -28,9 +33,10 @@ __all__ = [
     "R",
 ]
 
-from literalizer._language import LanguageSpec
+from literalizer._language import Language
 from literalizer.formatters import (
     dict_entry_with_separator,
+    format_bytes_erlang,
     format_bytes_hex,
     format_date_iso,
     format_date_php,
@@ -41,11 +47,16 @@ from literalizer.formatters import (
     format_variable_assignment_csharp,
     format_variable_assignment_dart,
     format_variable_assignment_elixir,
+    format_variable_assignment_erlang,
+    format_variable_assignment_fsharp,
     format_variable_assignment_go,
+    format_variable_assignment_groovy,
     format_variable_assignment_haskell,
     format_variable_assignment_java,
     format_variable_assignment_js,
     format_variable_assignment_kotlin,
+    format_variable_assignment_ocaml,
+    format_variable_assignment_perl,
     format_variable_assignment_php,
     format_variable_assignment_python,
     format_variable_assignment_r,
@@ -58,12 +69,17 @@ from literalizer.formatters import (
     format_variable_declaration_csharp,
     format_variable_declaration_dart,
     format_variable_declaration_elixir,
+    format_variable_declaration_erlang,
+    format_variable_declaration_fsharp,
     format_variable_declaration_go,
+    format_variable_declaration_groovy,
     format_variable_declaration_haskell,
     format_variable_declaration_java,
     format_variable_declaration_js,
     format_variable_declaration_julia,
     format_variable_declaration_kotlin,
+    format_variable_declaration_ocaml,
+    format_variable_declaration_perl,
     format_variable_declaration_php,
     format_variable_declaration_python,
     format_variable_declaration_r,
@@ -71,8 +87,10 @@ from literalizer.formatters import (
     format_variable_declaration_rust,
     format_variable_declaration_scala,
     format_variable_declaration_swift,
-    passthrough_list_entry,
+    passthrough_sequence_entry,
     passthrough_set_entry,
+    to_fsharp_val,
+    to_ocaml_val,
 )
 
 
@@ -81,7 +99,7 @@ def _format_python_omap_entry(key: str, value: str) -> str:
     return f"({key}, {value})"
 
 
-PYTHON = LanguageSpec(
+PYTHON = Language(
     null_literal="None",
     true_literal="True",
     false_literal="False",
@@ -100,9 +118,10 @@ PYTHON = LanguageSpec(
     set_open="{",
     set_close="}",
     empty_set="set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
+    comment_suffix="",
     omap_open="OrderedDict([",
     omap_close="])",
     format_omap_entry=_format_python_omap_entry,
@@ -121,7 +140,7 @@ def _format_csharp_dict_entry(key: str, value: str) -> str:
     return f"[{key}] = {value}"
 
 
-CSHARP = LanguageSpec(
+CSHARP = Language(
     null_literal="(object?)null",
     true_literal="true",
     false_literal="false",
@@ -140,9 +159,10 @@ CSHARP = LanguageSpec(
     set_open="new HashSet<object> {",
     set_close="}",
     empty_set="new HashSet<object>()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="new Dictionary<string, object> {",
     omap_close="}",
     format_omap_entry=_format_csharp_dict_entry,
@@ -160,7 +180,7 @@ def _format_dart_omap_entry(key: str, value: str) -> str:
     return f"{key}: {value}"
 
 
-DART = LanguageSpec(
+DART = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -179,9 +199,10 @@ DART = LanguageSpec(
     set_open="{",
     set_close="}",
     empty_set="<dynamic>{}",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_dart_omap_entry,
@@ -199,7 +220,7 @@ def _format_js_omap_entry(key: str, value: str) -> str:
     return f"{key}: {value}"
 
 
-JAVASCRIPT = LanguageSpec(
+JAVASCRIPT = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -218,9 +239,10 @@ JAVASCRIPT = LanguageSpec(
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
@@ -232,7 +254,7 @@ JAVASCRIPT = LanguageSpec(
     format_variable_assignment=format_variable_assignment_js,
 )
 
-TYPESCRIPT = LanguageSpec(
+TYPESCRIPT = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -251,9 +273,10 @@ TYPESCRIPT = LanguageSpec(
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
@@ -271,7 +294,7 @@ def _format_ruby_omap_entry(key: str, value: str) -> str:
     return f"{key} => {value}"
 
 
-RUBY = LanguageSpec(
+RUBY = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -290,9 +313,10 @@ RUBY = LanguageSpec(
     set_open="Set.new([",
     set_close="])",
     empty_set="Set.new",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
+    comment_suffix="",
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_ruby_omap_entry,
@@ -319,7 +343,7 @@ def _format_go_omap_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
-GO = LanguageSpec(
+GO = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -338,9 +362,10 @@ GO = LanguageSpec(
     set_open="map[any]struct{}{",
     set_close="}",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="[][2]any{",
     omap_close="}",
     format_omap_entry=_format_go_omap_entry,
@@ -359,7 +384,7 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
-CPP = LanguageSpec(
+CPP = Language(
     null_literal="nullptr",
     true_literal="true",
     false_literal="false",
@@ -378,9 +403,10 @@ CPP = LanguageSpec(
     set_open="{",
     set_close="}",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="{",
     omap_close="}",
     format_omap_entry=_format_cpp_dict_entry,
@@ -416,7 +442,7 @@ def _format_java_collection_open(values: list[Any]) -> str:
     return "new Object[]{"
 
 
-JAVA = LanguageSpec(
+JAVA = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -435,9 +461,10 @@ JAVA = LanguageSpec(
     set_open="Set.of(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="new java.util.ArrayList<>(java.util.Arrays.asList(",
     omap_close="))",
     format_omap_entry=_format_java_dict_entry,
@@ -455,7 +482,7 @@ def _format_swift_omap_entry(key: str, value: str) -> str:
     return f"{key}: {value}"
 
 
-SWIFT = LanguageSpec(
+SWIFT = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -474,9 +501,10 @@ SWIFT = LanguageSpec(
     set_open="Set<AnyHashable>([",
     set_close="])",
     empty_set="Set<AnyHashable>()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="[",
     omap_close="]",
     format_omap_entry=_format_swift_omap_entry,
@@ -500,7 +528,7 @@ def _format_rust_omap_entry(key: str, value: str) -> str:
     return f"({key}, {value})"
 
 
-RUST = LanguageSpec(
+RUST = Language(
     null_literal="None",
     true_literal="true",
     false_literal="false",
@@ -519,9 +547,10 @@ RUST = LanguageSpec(
     set_open="HashSet::from([",
     set_close="])",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="HashMap::from([",
     omap_close="])",
     format_omap_entry=_format_rust_omap_entry,
@@ -539,7 +568,7 @@ def _format_kotlin_omap_entry(key: str, value: str) -> str:
     return f"{key} to {value}"
 
 
-KOTLIN = LanguageSpec(
+KOTLIN = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -558,9 +587,10 @@ KOTLIN = LanguageSpec(
     set_open="setOf<Any?>(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="linkedMapOf<String, Any?>(",
     omap_close=")",
     format_omap_entry=_format_kotlin_omap_entry,
@@ -578,7 +608,7 @@ def _format_php_omap_entry(key: str, value: str) -> str:
     return f"{key} => {value}"
 
 
-PHP = LanguageSpec(
+PHP = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -597,9 +627,10 @@ PHP = LanguageSpec(
     set_open="[",
     set_close="]",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="[",
     omap_close="]",
     format_omap_entry=_format_php_omap_entry,
@@ -612,12 +643,47 @@ PHP = LanguageSpec(
 )
 
 
+PERL = Language(
+    null_literal="undef",
+    true_literal="1",
+    false_literal="0",
+    sequence_open="[",
+    sequence_close="]",
+    dict_open="{",
+    dict_close="}",
+    format_dict_entry=dict_entry_with_separator(separator=" => "),
+    multiline_trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict=None,
+    set_open="[",
+    set_close="]",
+    empty_set=None,
+    format_sequence_entry=passthrough_sequence_entry,
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="#",
+    comment_suffix="",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=dict_entry_with_separator(separator=" => "),
+    multiline_close_indent="",
+    element_separator=", ",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_perl,
+    format_variable_assignment=format_variable_assignment_perl,
+    format_collection_open=None,
+)
+
+
 def _format_julia_omap_entry(key: str, value: str) -> str:
     """Format a Julia ordered-map entry as a pair arrow expression."""
     return f"{key} => {value}"
 
 
-JULIA = LanguageSpec(
+JULIA = Language(
     null_literal="nothing",
     true_literal="true",
     false_literal="false",
@@ -636,9 +702,10 @@ JULIA = LanguageSpec(
     set_open="Set([",
     set_close="])",
     empty_set="Set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
+    comment_suffix="",
     omap_open="[",
     omap_close="]",
     format_omap_entry=_format_julia_omap_entry,
@@ -657,7 +724,7 @@ def _format_elixir_omap_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
-ELIXIR = LanguageSpec(
+ELIXIR = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -676,9 +743,10 @@ ELIXIR = LanguageSpec(
     set_open="MapSet.new([",
     set_close="])",
     empty_set="MapSet.new()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
+    comment_suffix="",
     omap_open="[",
     omap_close="]",
     format_omap_entry=_format_elixir_omap_entry,
@@ -702,7 +770,7 @@ def _format_haskell_omap_entry(key: str, value: str) -> str:
     return f"({key}, {value})"
 
 
-HASKELL = LanguageSpec(
+HASKELL = Language(
     null_literal="HNull",
     true_literal="HBool True",
     false_literal="HBool False",
@@ -721,9 +789,10 @@ HASKELL = LanguageSpec(
     set_open="HSet [",
     set_close="]",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="--",
+    comment_suffix="",
     omap_open="HMap [",
     omap_close="]",
     format_omap_entry=_format_haskell_omap_entry,
@@ -736,7 +805,64 @@ HASKELL = LanguageSpec(
 )
 
 
-CLOJURE = LanguageSpec(
+def _format_fsharp_dict_entry(key: str, value: str) -> str:
+    """Format an F# dict entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {to_fsharp_val(value=value)})"
+
+
+def _format_fsharp_omap_entry(key: str, value: str) -> str:
+    """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {to_fsharp_val(value=value)})"
+
+
+def _format_fsharp_set_entry(item: str) -> str:
+    """Format an F# set entry with the appropriate ``Val`` constructor."""
+    return to_fsharp_val(value=item)
+
+
+def _format_fsharp_sequence_entry(item: str) -> str:
+    """Format an F# sequence entry with the appropriate ``Val``
+    constructor.
+    """
+    return to_fsharp_val(value=item)
+
+
+FSHARP = Language(
+    null_literal="FNull",
+    true_literal="FBool true",
+    false_literal="FBool false",
+    sequence_open="FList [",
+    sequence_close="]",
+    dict_open="FMap [",
+    dict_close="]",
+    format_dict_entry=_format_fsharp_dict_entry,
+    multiline_trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict=None,
+    set_open="FSet [",
+    set_close="]",
+    empty_set=None,
+    format_set_entry=_format_fsharp_set_entry,
+    comment_prefix="//",
+    comment_suffix="",
+    omap_open="FMap [",
+    omap_close="]",
+    format_omap_entry=_format_fsharp_omap_entry,
+    multiline_close_indent="",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_fsharp,
+    format_variable_assignment=format_variable_assignment_fsharp,
+    element_separator="; ",
+    format_sequence_entry=_format_fsharp_sequence_entry,
+    format_collection_open=None,
+)
+
+
+CLOJURE = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -755,9 +881,10 @@ CLOJURE = LanguageSpec(
     set_open="#{",
     set_close="}",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix=";",
+    comment_suffix="",
     omap_open="{",
     omap_close="}",
     format_omap_entry=dict_entry_with_separator(separator=" "),
@@ -775,7 +902,7 @@ def _format_scala_omap_entry(key: str, value: str) -> str:
     return f"{key} -> {value}"
 
 
-SCALA = LanguageSpec(
+SCALA = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -794,9 +921,10 @@ SCALA = LanguageSpec(
     set_open="Set(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
+    comment_suffix="",
     omap_open="scala.collection.immutable.ListMap(",
     omap_close=")",
     format_omap_entry=_format_scala_omap_entry,
@@ -809,12 +937,108 @@ SCALA = LanguageSpec(
 )
 
 
+def _format_ocaml_dict_entry(key: str, value: str) -> str:
+    """Format an OCaml dict entry as a ``(key, OXxx value)`` tuple."""
+    return f"({key}, {to_ocaml_val(value=value)})"
+
+
+def _format_ocaml_omap_entry(key: str, value: str) -> str:
+    """Format an OCaml ordered-map entry as a ``(key, OXxx value)``
+    tuple.
+    """
+    return f"({key}, {to_ocaml_val(value=value)})"
+
+
+def _format_ocaml_set_entry(item: str) -> str:
+    """Format an OCaml set entry with the appropriate ``val_t``
+    constructor.
+    """
+    return to_ocaml_val(value=item)
+
+
+def _format_ocaml_sequence_entry(item: str) -> str:
+    """Format an OCaml list entry with the appropriate ``val_t``
+    constructor.
+    """
+    return to_ocaml_val(value=item)
+
+
+OCAML = Language(
+    null_literal="ONull",
+    true_literal="OBool true",
+    false_literal="OBool false",
+    sequence_open="OList [",
+    sequence_close="]",
+    dict_open="OMap [",
+    dict_close="]",
+    format_dict_entry=_format_ocaml_dict_entry,
+    multiline_trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict=None,
+    set_open="OSet [",
+    set_close="]",
+    empty_set=None,
+    format_set_entry=_format_ocaml_set_entry,
+    comment_prefix="(*",
+    comment_suffix=" *)",
+    omap_open="OMap [",
+    omap_close="]",
+    format_omap_entry=_format_ocaml_omap_entry,
+    multiline_close_indent="",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_ocaml,
+    format_variable_assignment=format_variable_assignment_ocaml,
+    element_separator="; ",
+    format_sequence_entry=_format_ocaml_sequence_entry,
+    format_collection_open=None,
+)
+
+
+GROOVY = Language(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    sequence_open="[",
+    sequence_close="]",
+    dict_open="[",
+    dict_close="]",
+    format_dict_entry=dict_entry_with_separator(separator=": "),
+    multiline_trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict="[:]",
+    set_open="[",
+    set_close="] as Set<Object>",
+    empty_set="[] as Set<Object>",
+    format_sequence_entry=passthrough_sequence_entry,
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="//",
+    comment_suffix="",
+    omap_open="[",
+    omap_close="]",
+    format_omap_entry=dict_entry_with_separator(separator=": "),
+    multiline_close_indent="",
+    element_separator=", ",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_groovy,
+    format_variable_assignment=format_variable_assignment_groovy,
+    format_collection_open=None,
+)
+
+
 def _format_r_omap_entry(key: str, value: str) -> str:
     """Format an R named list entry for an ordered map."""
     return f"{key} = {value}"
 
 
-R = LanguageSpec(
+R = Language(
     null_literal="NULL",
     true_literal="TRUE",
     false_literal="FALSE",
@@ -832,9 +1056,10 @@ R = LanguageSpec(
     set_open="list(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
+    comment_suffix="",
     omap_open="list(",
     omap_close=")",
     format_omap_entry=_format_r_omap_entry,
@@ -844,5 +1069,46 @@ R = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_r,
     format_variable_assignment=format_variable_assignment_r,
+    format_collection_open=None,
+)
+
+
+@beartype
+def _format_erlang_omap_entry(key: str, value: str) -> str:
+    """Format an Erlang ordered-map entry as a ``{key, value}`` tuple."""
+    return f"{{{key}, {value}}}"
+
+
+ERLANG = Language(
+    null_literal="undefined",
+    true_literal="true",
+    false_literal="false",
+    sequence_open="[",
+    sequence_close="]",
+    dict_open="#{",
+    dict_close="}",
+    format_dict_entry=dict_entry_with_separator(separator=" => "),
+    multiline_trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_erlang,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict=None,
+    set_open="sets:from_list([",
+    set_close="])",
+    empty_set="sets:from_list([])",
+    format_sequence_entry=passthrough_sequence_entry,
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="%",
+    comment_suffix="",
+    omap_open="[",
+    omap_close="]",
+    format_omap_entry=_format_erlang_omap_entry,
+    multiline_close_indent="",
+    element_separator=", ",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_erlang,
+    format_variable_assignment=format_variable_assignment_erlang,
     format_collection_open=None,
 )

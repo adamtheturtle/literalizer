@@ -17,7 +17,6 @@ from hypothesis import strategies as st
 
 from literalizer import (
     Language,
-    LanguageSpec,
     literalize_json,
     literalize_yaml,
 )
@@ -50,10 +49,13 @@ from literalizer.formatters import (
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
+    format_variable_assignment_fsharp,
     format_variable_assignment_python,
     format_variable_declaration_python,
-    passthrough_list_entry,
+    passthrough_sequence_entry,
     passthrough_set_entry,
+    to_fsharp_val,
+    to_ocaml_val,
 )
 from literalizer.languages import (
     CLOJURE,
@@ -61,6 +63,7 @@ from literalizer.languages import (
     CSHARP,
     DART,
     ELIXIR,
+    FSHARP,
     GO,
     HASKELL,
     JAVA,
@@ -78,7 +81,7 @@ from literalizer.languages import (
 
 
 def _format_test_omap_entry(key: str, value: str) -> str:
-    """Format an omap entry for use in custom LanguageSpec test
+    """Format an omap entry for use in custom Language test
     fixtures.
     """
     return f"{key}: {value}"
@@ -99,8 +102,8 @@ def _format_test_omap_entry(key: str, value: str) -> str:
         (RUST, 'vec![true, None, "hi", vec![1, 2]],'),
     ],
 )
-def test_language_list(*, language: Language, expected: str) -> None:
-    """Each language produces the correct list literal."""
+def test_language_sequence(*, language: Language, expected: str) -> None:
+    """Each language produces the correct sequence literal."""
     result = literalize_json(
         json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
         language=language,
@@ -285,8 +288,8 @@ def test_java_yaml_omap_skips_null_values() -> None:
     assert result == expected
 
 
-def test_java_list_wrap_uses_braces() -> None:
-    """Java wrapped lists use ``new Object[]{…}``."""
+def test_java_sequence_wrap_uses_braces() -> None:
+    """Java wrapped sequences use ``new Object[]{…}``."""
     result = literalize_json(
         json_string=json.dumps(obj=[1, "hello", True]),
         language=JAVA,
@@ -404,8 +407,8 @@ def test_dicts() -> None:
     assert result == '{"name": "alice", "age": 30},'
 
 
-def test_nested_dict_in_list() -> None:
-    """A dict nested inside a list is rendered inline."""
+def test_nested_dict_in_sequence() -> None:
+    """A dict nested inside a sequence is rendered inline."""
     result = literalize_json(
         json_string=json.dumps(obj=[["a", {"x": 1}]]),
         language=PYTHON,
@@ -415,8 +418,8 @@ def test_nested_dict_in_list() -> None:
     assert result == '("a", {"x": 1}),'
 
 
-def test_nested_list_in_dict() -> None:
-    """A list nested inside a dict is rendered inline."""
+def test_nested_sequence_in_dict() -> None:
+    """A sequence nested inside a dict is rendered inline."""
     result = literalize_json(
         json_string=json.dumps(obj=[{"items": [1, 2]}]),
         language=PYTHON,
@@ -535,8 +538,8 @@ def test_scalar_wrap_ignored() -> None:
 
 
 def test_custom_language() -> None:
-    """A custom LanguageSpec works as a language."""
-    custom = LanguageSpec(
+    """A custom Language works as a language."""
+    custom = Language(
         null_literal="NIL",
         true_literal="YES",
         false_literal="NO",
@@ -555,9 +558,10 @@ def test_custom_language() -> None:
         set_open="<",
         set_close=">",
         empty_set=None,
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1110,7 +1114,7 @@ def test_format_datetime_cpp_seconds_and_microseconds() -> None:
 
 def test_custom_format_date() -> None:
     """A custom format_date callable is used for date values."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="None",
         true_literal="True",
         false_literal="False",
@@ -1129,9 +1133,10 @@ def test_custom_format_date() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1153,7 +1158,7 @@ def test_custom_format_date() -> None:
 
 def test_custom_format_datetime() -> None:
     """A custom format_datetime callable is used for datetime values."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="None",
         true_literal="True",
         false_literal="False",
@@ -1172,9 +1177,10 @@ def test_custom_format_datetime() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1196,7 +1202,7 @@ def test_custom_format_datetime() -> None:
 
 def test_java_native_dates() -> None:
     """Java language spec with native date formatting."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="null",
         true_literal="true",
         false_literal="false",
@@ -1215,9 +1221,10 @@ def test_java_native_dates() -> None:
         set_open="Set.of(",
         set_close=")",
         empty_set=None,
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1241,7 +1248,7 @@ def test_java_native_dates() -> None:
 
 def test_ruby_native_dates() -> None:
     """Ruby language spec with native date formatting."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="nil",
         true_literal="true",
         false_literal="false",
@@ -1260,9 +1267,10 @@ def test_ruby_native_dates() -> None:
         set_open="Set.new([",
         set_close="])",
         empty_set="Set.new",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1282,8 +1290,8 @@ def test_ruby_native_dates() -> None:
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
 
 
-def test_yaml_set_inline_in_list() -> None:
-    """A !!set nested in a list is formatted inline using set
+def test_yaml_set_inline_in_sequence() -> None:
+    """A !!set nested in a sequence is formatted inline using set
     delimiters.
     """
     result = literalize_yaml(
@@ -1381,7 +1389,7 @@ def test_literalize_yaml_binary() -> None:
 
 def test_custom_format_bytes() -> None:
     """A custom format_bytes callable is used for bytes values."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="None",
         true_literal="True",
         false_literal="False",
@@ -1400,9 +1408,10 @@ def test_custom_format_bytes() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1608,9 +1617,23 @@ def test_yaml_comment_multiple_before_lines() -> None:
         (GO, "//"),
     ],
 )
-def test_comment_prefix(language: LanguageSpec, expected: str) -> None:
+def test_comment_prefix(language: Language, expected: str) -> None:
     """Each language has the expected comment prefix."""
     assert language.comment_prefix == expected
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        PYTHON,
+        RUBY,
+        JAVASCRIPT,
+        GO,
+    ],
+)
+def test_comment_suffix(language: Language) -> None:
+    """Each language has an empty comment suffix."""
+    assert language.comment_suffix == ""
 
 
 def test_yaml_comment_escaped_quote_in_value() -> None:
@@ -1748,8 +1771,8 @@ def test_yaml_comment_scalar_only_comments() -> None:
     assert result == expected
 
 
-def test_omap_nested_in_list() -> None:
-    """An omap nested inside a list exercises _format_value's omap
+def test_omap_nested_in_sequence() -> None:
+    """An omap nested inside a sequence exercises _format_value's omap
     branch.
     """
     yaml_string = textwrap.dedent(
@@ -1776,7 +1799,7 @@ def test_omap_nested_in_list() -> None:
 
 
 def test_omap_custom_language_spec() -> None:
-    """An omap with a custom LanguageSpec calls format_omap_entry."""
+    """An omap with a custom Language calls format_omap_entry."""
     yaml_string = textwrap.dedent(
         text="""\
         !!omap
@@ -1784,7 +1807,7 @@ def test_omap_custom_language_spec() -> None:
         - age: 30
         """,
     )
-    custom = LanguageSpec(
+    custom = Language(
         null_literal="null",
         true_literal="true",
         false_literal="false",
@@ -1803,9 +1826,10 @@ def test_omap_custom_language_spec() -> None:
         set_open="[",
         set_close="]",
         empty_set=None,
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1904,6 +1928,10 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     ),
     ELIXIR: _VariableSyntax(
         declaration="my_var = 42", assignment="my_var = 42"
+    ),
+    FSHARP: _VariableSyntax(
+        declaration="let my_var: Val = FInt 42L",
+        assignment="let my_var: Val = FInt 42L",
     ),
     CLOJURE: _VariableSyntax(
         declaration="(def my_var 42)", assignment="(def my_var 42)"
@@ -2006,3 +2034,27 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
+
+
+def test_to_fsharp_val_unknown_value() -> None:
+    """``to_fsharp_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_fsharp_val(value="SomeUnknownValue")
+    assert result == "SomeUnknownValue"
+
+
+def test_format_variable_assignment_fsharp() -> None:
+    """``format_variable_assignment_fsharp`` produces a ``let`` binding
+    with an explicit ``Val`` type annotation.
+    """
+    result = format_variable_assignment_fsharp(name="x", value="FList [1; 2]")
+    assert result == "let x: Val = FList [1; 2]"
+
+
+def test_to_ocaml_val_unknown_value() -> None:
+    """``to_ocaml_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_ocaml_val(value="SomeUnknownValue")
+    assert result == "SomeUnknownValue"

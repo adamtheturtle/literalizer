@@ -105,6 +105,68 @@ def _wrap_rust(content: str) -> str:
     )
 
 
+_FSHARP_VAL_TYPE = (
+    "type Val =\n"
+    "    | FNull\n"
+    "    | FBool of bool\n"
+    "    | FInt of int64\n"
+    "    | FFloat of float\n"
+    "    | FStr of string\n"
+    "    | FList of Val list\n"
+    "    | FMap of (string * Val) list\n"
+    "    | FSet of Val list\n"
+)
+
+_OCAML_VAL_TYPE = (
+    "type val_t =\n"
+    "  | ONull\n"
+    "  | OBool of bool\n"
+    "  | OInt of int\n"
+    "  | OFloat of float\n"
+    "  | OStr of string\n"
+    "  | OList of val_t list\n"
+    "  | OMap of (string * val_t) list\n"
+    "  | OSet of val_t list\n"
+)
+
+
+def _wrap_fsharp(content: str) -> str:
+    """Wrap in an F# module with a custom Val discriminated union."""
+    return (
+        "module Check\n"
+        "\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {content}"
+    )
+
+
+def _wrap_ocaml(content: str) -> str:
+    """Wrap in an OCaml module with a custom val_t variant type."""
+    return (
+        "module Check = struct\n\n"
+        + _OCAML_VAL_TYPE
+        + "\n"
+        + f"let x : val_t = {content}\n\n"
+        + "end"
+    )
+
+
+def _wrap_ocaml_varname(content: str) -> str:
+    """Wrap an OCaml ``let`` declaration with the val_t type
+    definition.
+    """
+    return (
+        "module Check = struct\n\n"
+        + _OCAML_VAL_TYPE
+        + "\n"
+        + content
+        + "\n\nend"
+    )
+
+
+def _wrap_fsharp_varname(content: str) -> str:
+    """Wrap a F# ``let`` declaration with the Val type definition."""
+    return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
+
+
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a custom Val ADT that accepts mixed
     types.
@@ -267,6 +329,11 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
     )
 
 
+def _wrap_perl(content: str) -> str:
+    """Wrap in a Perl variable assignment."""
+    return f"my $x = {content};"
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -287,6 +354,32 @@ def _wrap_elixir_varname(content: str) -> str:
         f"  end\n"
         f"end"
     )
+
+
+def _wrap_erlang(content: str) -> str:
+    """Wrap in an Erlang module function."""
+    return f"-module(check).\n-export([x/0]).\nx() ->\n    {content}."
+
+
+def _wrap_erlang_varname(content: str) -> str:
+    """Wrap an Erlang variable binding in a module function.
+
+    The variable is referenced at the end of the function body so that
+    Erlang does not warn about an unused variable.
+    """
+    erlang_varname = _VARIABLE_NAME[0].upper() + _VARIABLE_NAME[1:]
+    return (
+        f"-module(check).\n"
+        f"-export([x/0]).\n"
+        f"x() ->\n"
+        f"    {content},\n"
+        f"    {erlang_varname}."
+    )
+
+
+def _wrap_groovy(content: str) -> str:
+    """Wrap in a Groovy variable assignment."""
+    return f"def x = {content}"
 
 
 def _wrap_r(content: str) -> str:
@@ -504,7 +597,7 @@ class _DateVariant:
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
 
-    spec: literalizer.LanguageSpec
+    spec: literalizer.Language
     extension: str
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
@@ -729,6 +822,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             ),
         ),
     ),
+    "perl": _LanguageConfig(
+        spec=literalizer.languages.PERL,
+        extension=".pl",
+        wrap=_wrap_perl,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
     "php": _LanguageConfig(
         spec=literalizer.languages.PHP,
         extension=".php",
@@ -743,6 +844,38 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_elixir,
         varname_wrap=_wrap_elixir_varname,
         combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
+        date_variants=(),
+    ),
+    "erlang": _LanguageConfig(
+        spec=literalizer.languages.ERLANG,
+        extension=".erl",
+        wrap=_wrap_erlang,
+        varname_wrap=_wrap_erlang_varname,
+        combined_wrap=lambda d, _a: _wrap_erlang_varname(content=d),
+        date_variants=(),
+    ),
+    "fsharp": _LanguageConfig(
+        spec=literalizer.languages.FSHARP,
+        extension=".fs",
+        wrap=_wrap_fsharp,
+        varname_wrap=_wrap_fsharp_varname,
+        combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
+        date_variants=(),
+    ),
+    "ocaml": _LanguageConfig(
+        spec=literalizer.languages.OCAML,
+        extension=".ml",
+        wrap=_wrap_ocaml,
+        varname_wrap=_wrap_ocaml_varname,
+        combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
+        date_variants=(),
+    ),
+    "groovy": _LanguageConfig(
+        spec=literalizer.languages.GROOVY,
+        extension=".groovy",
+        wrap=_wrap_groovy,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
     "scala": _LanguageConfig(

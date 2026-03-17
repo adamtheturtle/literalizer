@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "dict_entry_with_separator",
+    "format_bytes_erlang",
     "format_bytes_hex",
     "format_bytes_python",
     "format_date_cpp",
@@ -49,11 +50,16 @@ __all__ = [
     "format_variable_assignment_csharp",
     "format_variable_assignment_dart",
     "format_variable_assignment_elixir",
+    "format_variable_assignment_erlang",
+    "format_variable_assignment_fsharp",
     "format_variable_assignment_go",
+    "format_variable_assignment_groovy",
     "format_variable_assignment_haskell",
     "format_variable_assignment_java",
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
+    "format_variable_assignment_ocaml",
+    "format_variable_assignment_perl",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
     "format_variable_assignment_r",
@@ -66,12 +72,17 @@ __all__ = [
     "format_variable_declaration_csharp",
     "format_variable_declaration_dart",
     "format_variable_declaration_elixir",
+    "format_variable_declaration_erlang",
+    "format_variable_declaration_fsharp",
     "format_variable_declaration_go",
+    "format_variable_declaration_groovy",
     "format_variable_declaration_haskell",
     "format_variable_declaration_java",
     "format_variable_declaration_js",
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
+    "format_variable_declaration_ocaml",
+    "format_variable_declaration_perl",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
     "format_variable_declaration_r",
@@ -79,8 +90,10 @@ __all__ = [
     "format_variable_declaration_rust",
     "format_variable_declaration_scala",
     "format_variable_declaration_swift",
-    "passthrough_list_entry",
+    "passthrough_sequence_entry",
     "passthrough_set_entry",
+    "to_fsharp_val",
+    "to_ocaml_val",
 ]
 
 
@@ -551,6 +564,68 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_declaration_fsharp(name: str, value: str) -> str:
+    """Format an F# ``let`` declaration with explicit ``Val`` type.
+
+    Example: ``"x"`` and ``"FList [...]"`` → ``"let x: Val = FList [...]"``
+    """
+    return f"let {name}: Val = {to_fsharp_val(value=value)}"
+
+
+def to_fsharp_val(value: str) -> str:
+    """Wrap a pre-formatted value string in an F# ``Val`` constructor.
+
+    Inspects the string representation to determine the appropriate
+    discriminated-union constructor: ``FStr``, ``FInt``, ``FFloat``,
+    or passes through values that are already ``Val`` expressions
+    (``FNull``, ``FBool``, ``FList``, ``FMap``, ``FSet``).
+    """
+    _val_prefixes = (
+        "FNull",
+        "FBool",
+        "FList",
+        "FMap",
+        "FSet",
+        "FStr",
+        "FInt",
+        "FFloat",
+    )
+    if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"FStr {value}"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"FInt({value}L)" if negative else f"FInt {value}L"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"FFloat({value})" if negative else f"FFloat {value}"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def passthrough_sequence_entry(item: str) -> str:
+    """Return *item* unchanged.
+
+    Use this as ``format_sequence_entry`` for languages where sequence entries
+    need no extra formatting.
+    """
+    return item
+
+
+@beartype
 def format_variable_assignment_clojure(name: str, value: str) -> str:
     """Format a Clojure ``def`` reassignment.
 
@@ -795,6 +870,130 @@ def format_variable_assignment_dart(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
+@beartype
+def format_variable_assignment_fsharp(name: str, value: str) -> str:
+    """Format an F# variable assignment to an existing binding.
+
+    Example: ``"x"`` and ``"FList [1; 2]"`` → ``"let x: Val = FList [1; 2]"``
+    """
+    return f"let {name}: Val = {to_fsharp_val(value=value)}"
+
+
+@beartype
+def format_variable_declaration_groovy(name: str, value: str) -> str:
+    """Format a Groovy ``def`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"def x = [1, 2]"``
+    """
+    return f"def {name} = {value}"
+
+
+@beartype
+def format_variable_assignment_groovy(name: str, value: str) -> str:
+    """Format a Groovy assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_bytes_erlang(value: bytes) -> str:
+    """Format bytes as an Erlang binary literal.
+
+    Example: ``b'Hello'`` → ``<<72, 101, 108, 108, 111>>``.
+    """
+    parts = ", ".join(f"{b}" for b in value)
+    return f"<<{parts}>>"
+
+
+@beartype
+def format_variable_declaration_erlang(name: str, value: str) -> str:
+    """Format an Erlang variable binding.
+
+    Erlang variables must start with an uppercase letter, so the first
+    character of *name* is capitalized.
+
+    Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
+    """
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
+
+
+@beartype
+def format_variable_assignment_erlang(name: str, value: str) -> str:
+    """Format an Erlang variable binding (same syntax as declaration).
+
+    Erlang variables must start with an uppercase letter, so the first
+    character of *name* is capitalized.
+
+    Example: ``"my_data"`` and ``"[1, 2]"`` → ``"My_data = [1, 2]"``
+    """
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
+
+
+@beartype
+def format_variable_declaration_ocaml(name: str, value: str) -> str:
+    """Format an OCaml ``let`` declaration with explicit ``val_t`` type.
+
+    Example: ``"x"`` and ``"OList [...]"`` → ``"let x : val_t = OList [...]"``
+    """
+    return f"let {name} : val_t = {to_ocaml_val(value=value)}"
+
+
+@beartype
+def format_variable_assignment_ocaml(name: str, value: str) -> str:
+    """Format an OCaml ``let`` re-binding with explicit ``val_t`` type.
+
+    Example: ``"x"`` and ``"OList [...]"`` → ``"let x : val_t = OList [...]"``
+    """
+    return format_variable_declaration_ocaml(name=name, value=value)
+
+
+def to_ocaml_val(value: str) -> str:
+    """Wrap a pre-formatted value string in an OCaml ``val_t`` constructor.
+
+    Inspects the string representation to determine the appropriate
+    variant constructor: ``OStr``, ``OInt``, ``OFloat``, or passes through
+    values that are already ``val_t`` expressions
+    (``ONull``, ``OBool``, ``OList``, ``OMap``, ``OSet``).
+    """
+    _val_prefixes = (
+        "ONull",
+        "OBool",
+        "OList",
+        "OMap",
+        "OSet",
+        "OStr",
+        "OInt",
+        "OFloat",
+    )
+    if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"OStr {value}"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"OInt ({value})" if negative else f"OInt {value}"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"OFloat ({value})" if negative else f"OFloat {value}"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value
     with *separator*.
@@ -811,16 +1010,6 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
 
 
 @beartype
-def passthrough_list_entry(item: str) -> str:
-    """Return *item* unchanged.
-
-    Use this as ``format_list_entry`` for languages where list entries
-    need no extra formatting.
-    """
-    return item
-
-
-@beartype
 def passthrough_set_entry(item: str) -> str:
     """Return *item* unchanged.
 
@@ -828,3 +1017,21 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
+
+
+@beartype
+def format_variable_declaration_perl(name: str, value: str) -> str:
+    """Format a Perl ``my`` variable declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"my $x = [1, 2];"``
+    """
+    return f"my ${name} = {value};"
+
+
+@beartype
+def format_variable_assignment_perl(name: str, value: str) -> str:
+    """Format a Perl assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
+    """
+    return f"${name} = {value};"

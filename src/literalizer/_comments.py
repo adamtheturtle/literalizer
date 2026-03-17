@@ -159,12 +159,13 @@ def _format_comment(
     *,
     text: str,
     comment_prefix: str,
+    comment_suffix: str,
     line_prefix: str,
 ) -> str:
     """Format a single comment line."""
     if text:
-        return f"{line_prefix}{comment_prefix} {text}"
-    return f"{line_prefix}{comment_prefix}"
+        return f"{line_prefix}{comment_prefix} {text}{comment_suffix}"
+    return f"{line_prefix}{comment_prefix}{comment_suffix}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -217,6 +218,7 @@ class YamlCollectionContext:
     element_comments: tuple[_ElementComments, ...]
     trailing: tuple[str, ...]
     comment_prefix: str
+    comment_suffix: str
     prefix: str
     wrap: bool
 
@@ -227,6 +229,7 @@ def literalize_yaml_scalar(
     tokens: Iterable[Any],
     base: str,
     comment_prefix: str,
+    comment_suffix: str,
     prefix: str,
 ) -> str:
     """Preserve comments for scalar YAML values.
@@ -242,17 +245,19 @@ def literalize_yaml_scalar(
     if not scalar_comments.before and not scalar_comments.inline:
         return base
 
-    parts = [
+    parts: list[str] = [
         _format_comment(
             text=comment_text,
             comment_prefix=comment_prefix,
+            comment_suffix=comment_suffix,
             line_prefix=prefix,
         )
         for comment_text in scalar_comments.before
     ]
     if scalar_comments.inline:
         parts.append(
-            f"{base}  {comment_prefix} {scalar_comments.inline}",
+            f"{base}  {comment_prefix} {scalar_comments.inline}"
+            f"{comment_suffix}",
         )
     else:
         parts.append(base)
@@ -288,13 +293,17 @@ def literalize_yaml_collection(
             _format_comment(
                 text=comment_text,
                 comment_prefix=ctx.comment_prefix,
+                comment_suffix=ctx.comment_suffix,
                 line_prefix=effective_prefix,
             )
             for comment_text in element_comment.before
         )
         if element_comment.inline:
             inline_text = element_comment.inline
-            output_line = f"{body_line}  {ctx.comment_prefix} {inline_text}"
+            output_line = (
+                f"{body_line}  {ctx.comment_prefix} {inline_text}"
+                f"{ctx.comment_suffix}"
+            )
         else:
             output_line = body_line
         result.append(output_line)
@@ -303,6 +312,7 @@ def literalize_yaml_collection(
         _format_comment(
             text=comment_text,
             comment_prefix=ctx.comment_prefix,
+            comment_suffix=ctx.comment_suffix,
             line_prefix=effective_prefix,
         )
         for comment_text in ctx.trailing
