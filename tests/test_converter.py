@@ -510,7 +510,7 @@ def test_custom_language() -> None:
         collection_close=">",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(" -> "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=" -> "),
         trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
@@ -1069,7 +1069,7 @@ def test_custom_format_date() -> None:
         collection_close=")",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(": "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=": "),
         trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
@@ -1108,7 +1108,7 @@ def test_custom_format_datetime() -> None:
         collection_close=")",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(": "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=": "),
         trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
@@ -1147,7 +1147,7 @@ def test_java_native_dates() -> None:
         collection_close="}",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(": "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=": "),
         trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
@@ -1188,7 +1188,7 @@ def test_ruby_native_dates() -> None:
         collection_close="]",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(" => "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=" => "),
         trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
@@ -1324,7 +1324,7 @@ def test_custom_format_bytes() -> None:
         collection_close=")",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(": "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=": "),
         trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_python,
@@ -1723,7 +1723,7 @@ def test_omap_custom_language_spec() -> None:
         collection_close="]",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(": "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=": "),
         trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
@@ -1858,7 +1858,7 @@ def test_variable_declaration_language_no_formatter() -> None:
         collection_close="]",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=dict_entry_with_separator(": "),  # type: ignore[misc]
+        format_dict_entry=dict_entry_with_separator(separator=": "),
         trailing_comma=False,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
