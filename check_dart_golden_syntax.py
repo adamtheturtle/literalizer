@@ -23,8 +23,9 @@ def main() -> None:
             )
             dart_file = tmpdir_path / "check.dart"
             dart_file.write_text(data=content, encoding="utf-8")
+            dart_file_path = dart_file.as_posix()
             result = subprocess.run(
-                args=[dart_path, "analyze", "--fatal-infos", str(dart_file)],
+                args=[dart_path, "analyze", "--fatal-infos", dart_file_path],
                 capture_output=True,
                 text=True,
                 check=False,
