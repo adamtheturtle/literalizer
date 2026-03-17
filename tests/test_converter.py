@@ -78,6 +78,7 @@ from literalizer.languages import (
     SWIFT,
     TYPESCRIPT,
     R,
+    _format_matlab_dict_entry,
 )
 
 
@@ -2030,3 +2031,15 @@ def test_to_ocaml_val_unknown_value() -> None:
     """
     result = to_ocaml_val("SomeUnknownValue")  # type: ignore[misc]
     assert result == "SomeUnknownValue"
+
+
+def test_matlab_dict_non_quoted_key() -> None:
+    """MATLAB struct entries where the key is not a double-quoted string
+    are
+    passed through unchanged.
+
+    In practice keys are always double-quoted strings, but the defensive
+    branch handles any other pre-formatted key by passing it through as-is.
+    """
+    result = _format_matlab_dict_entry("somekey", "42")
+    assert result == "somekey, 42"
