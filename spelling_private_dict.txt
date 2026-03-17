@@ -44,6 +44,7 @@ initializers
 javac
 json
 kotlinc
+kroc
 kts
 literalize
 literalizer
@@ -53,6 +54,7 @@ namespaces
 natively
 norc
 ocamlopt
+occam
 octave
 ofEntries
 omap
