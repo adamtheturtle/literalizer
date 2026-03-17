@@ -69,6 +69,7 @@ from literalizer.languages import (
     RUST,
     SWIFT,
     TYPESCRIPT,
+    R,
 )
 
 
@@ -1854,6 +1855,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     DART: _VariableSyntax(
         declaration="final my_var = 42;", assignment="my_var = 42;"
     ),
+    R: _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),
 }
 
 _DECLARATION_PARAMS = [
