@@ -6,6 +6,10 @@ per supported language, using the real file extension for that language.
 
 Golden files contain syntactically valid programs so that pre-commit hooks
 can syntax-check them directly without additional wrapping.
+
+To regenerate all golden files after changing output::
+
+    uv run pytest tests/integration/ --regen-all
 """
 
 from __future__ import annotations

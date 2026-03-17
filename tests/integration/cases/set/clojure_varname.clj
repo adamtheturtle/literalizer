@@ -1,5 +1,5 @@
 (def my_data #{
-    "apple",
-    "banana",
+    "apple"
+    "banana"
     "cherry"
 })

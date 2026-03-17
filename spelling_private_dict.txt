@@ -37,6 +37,7 @@ pre
 prepended
 pyright
 pytest
+regen
 reportAttributeAccessIssue
 reportUnknownArgumentType
 reportUnknownMemberType
@@ -50,5 +51,6 @@ subclasses
 subdirectory
 swiftc
 typeclass
+uv
 whitespace
 yaml
