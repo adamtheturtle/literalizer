@@ -1805,20 +1805,44 @@ class _VariableSyntax:
 # from this single source of truth so that adding a language to one
 # automatically adds it to the other.
 _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
-    PYTHON: _VariableSyntax("my_var = 42", "my_var = 42"),
-    JAVASCRIPT: _VariableSyntax("const my_var = 42;", "my_var = 42;"),
-    TYPESCRIPT: _VariableSyntax("const my_var = 42;", "my_var = 42;"),
-    GO: _VariableSyntax("my_var := 42", "my_var = 42"),
-    RUBY: _VariableSyntax("my_var = 42", "my_var = 42"),
-    CSHARP: _VariableSyntax("var my_var = 42;", "my_var = 42;"),
-    CPP: _VariableSyntax("auto my_var = 42;", "my_var = 42;"),
-    JAVA: _VariableSyntax("var my_var = 42;", "my_var = 42;"),
-    KOTLIN: _VariableSyntax("val my_var = 42", "my_var = 42"),
-    SWIFT: _VariableSyntax("let my_var = 42", "my_var = 42"),
-    RUST: _VariableSyntax("let my_var = 42;", "my_var = 42;"),
-    PHP: _VariableSyntax("$my_var = 42;", "$my_var = 42;"),
-    HASKELL: _VariableSyntax("my_var = 42", "my_var = 42"),
-    DART: _VariableSyntax("final my_var = 42;", "my_var = 42;"),
+    PYTHON: _VariableSyntax(
+        declaration="my_var = 42", assignment="my_var = 42"
+    ),
+    JAVASCRIPT: _VariableSyntax(
+        declaration="const my_var = 42;", assignment="my_var = 42;"
+    ),
+    TYPESCRIPT: _VariableSyntax(
+        declaration="const my_var = 42;", assignment="my_var = 42;"
+    ),
+    GO: _VariableSyntax(declaration="my_var := 42", assignment="my_var = 42"),
+    RUBY: _VariableSyntax(declaration="my_var = 42", assignment="my_var = 42"),
+    CSHARP: _VariableSyntax(
+        declaration="var my_var = 42;", assignment="my_var = 42;"
+    ),
+    CPP: _VariableSyntax(
+        declaration="auto my_var = 42;", assignment="my_var = 42;"
+    ),
+    JAVA: _VariableSyntax(
+        declaration="var my_var = 42;", assignment="my_var = 42;"
+    ),
+    KOTLIN: _VariableSyntax(
+        declaration="val my_var = 42", assignment="my_var = 42"
+    ),
+    SWIFT: _VariableSyntax(
+        declaration="let my_var = 42", assignment="my_var = 42"
+    ),
+    RUST: _VariableSyntax(
+        declaration="let my_var = 42;", assignment="my_var = 42;"
+    ),
+    PHP: _VariableSyntax(
+        declaration="$my_var = 42;", assignment="$my_var = 42;"
+    ),
+    HASKELL: _VariableSyntax(
+        declaration="my_var = 42", assignment="my_var = 42"
+    ),
+    DART: _VariableSyntax(
+        declaration="final my_var = 42;", assignment="my_var = 42;"
+    ),
 }
 
 _DECLARATION_PARAMS = [
