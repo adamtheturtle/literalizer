@@ -434,10 +434,10 @@ repos:
 
       - id: groovy-syntax-check
         name: Groovy golden file syntax check
-        entry: uv run python check_groovy_golden_syntax.py
-        language: python
+        entry: bash -c 'tmpdir=$(mktemp -d); for f; do groovyc -d "$tmpdir" "$(realpath
+          "$f")" || exit 1; done' --
+        language: system
         files: ^tests/integration/cases/.*\.groovy$
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: javascript-syntax-check
@@ -458,11 +458,11 @@ repos:
 
       - id: java-golden-syntax-check
         name: Java golden file syntax check
-        entry: uv run python check_java_golden_syntax.py
-        language: python
+        entry: bash -c 'tmpdir=$(mktemp -d); for f; do javac -d "$tmpdir" "$f" ||
+          exit 1; done' --
+        language: system
         types: [java]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: cpp-golden-syntax-check
@@ -490,11 +490,11 @@ repos:
 
       - id: swift-syntax-check
         name: Swift golden file syntax check
-        entry: uv run python check_swift_golden_syntax.py
-        language: python
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d); cp "$f" "$tmpdir/check.swift"
+          && swiftc -typecheck "$tmpdir/check.swift" || exit 1; done' --
+        language: system
         types: [swift]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: csharp-golden-syntax-check
@@ -508,36 +508,37 @@ repos:
 
       - id: elixir-syntax-check
         name: Elixir golden file syntax check
-        entry: uv run python check_elixir_golden_syntax.py
-        language: python
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d); cp "$f" "$tmpdir/check.ex"
+          && (cd "$tmpdir" && elixirc check.ex) || exit 1; done' --
+        language: system
         files: ^tests/integration/cases/.*\.ex$
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: fsharp-golden-syntax-check
         name: F# golden file syntax check
-        entry: uv run python check_fsharp_golden_syntax.py
-        language: python
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d); DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+          DOTNET_NOLOGO=1 TMPDIR="$tmpdir" HOME="$tmpdir" dotnet fsi --nologo --exec
+          "$f" || exit 1; done' --
+        language: system
         files: \.(fs|fsi)$
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: ocaml-golden-syntax-check
         name: OCaml golden file syntax check
-        entry: uv run python check_ocaml_golden_syntax.py
-        language: python
+        entry: bash -c 'command -v ocamlopt > /dev/null || exit 0; tmpdir=$(mktemp
+          -d); for f; do ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1; done' --
+        language: system
         types: [ocaml]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: haskell-golden-syntax-check
         name: Haskell golden file syntax check
-        entry: uv run python check_haskell_golden_syntax.py
-        language: python
+        entry: bash -c 'tmpdir=$(mktemp -d); for f; do ghc -fno-code -outputdir "$tmpdir"
+          "$f" || exit 1; done' --
+        language: system
         types: [haskell]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: clojure-syntax-check
@@ -549,28 +550,30 @@ repos:
 
       - id: scala-golden-syntax-check
         name: Scala golden file syntax check
-        entry: uv run python check_scala_golden_syntax.py
-        language: python
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d) && (cd "$tmpdir" && scalac "$(realpath
+          "$f")") || exit 1; done' --
+        language: system
         files: ^tests/integration/cases/.*\.scala$
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: dart-syntax-check
         name: Dart golden file syntax check
-        entry: uv run python check_dart_golden_syntax.py
-        language: python
+        entry: "bash -c 'for f; do tmpdir=$(mktemp -d); printf \"name: check\\nenvironment:\\\
+          n  sdk: ^3.0.0\\n\" > \"$tmpdir/pubspec.yaml\"; cp \"$f\" \"$tmpdir/check.dart\"\
+          \ && dart analyze --fatal-infos \"$tmpdir/check.dart\" || exit 1; done'\
+          \ --"
+        language: system
         types: [dart]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: julia-golden-syntax-check
         name: Julia golden file syntax check
-        entry: uv run python check_julia_golden_syntax.py
-        language: python
+        entry: bash -c 'for f; do julia --startup-file=no -e "Meta.parseall(read(ARGS[1],
+          String))" -- "$f" || exit 1; done' --
+        language: system
         types: [julia]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: php-syntax-check
@@ -582,11 +585,10 @@ repos:
 
       - id: r-syntax-check
         name: R golden file syntax check
-        entry: uv run python check_r_golden_syntax.py
-        language: python
+        entry: Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
+        language: system
         types: [r]
         files: ^tests/integration/cases/
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: sphinx-lint
