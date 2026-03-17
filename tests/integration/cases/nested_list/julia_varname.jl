@@ -1,6 +1,6 @@
-let my_data: Any = [
+my_data = [
     true,
     "hi",
     [1, 2],
-    nil,
+    nothing,
 ]

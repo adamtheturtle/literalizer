@@ -1,4 +1,4 @@
-let my_data: Any = [
+my_data = [
     42,
     3.14,
     true,

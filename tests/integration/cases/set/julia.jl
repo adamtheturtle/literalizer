@@ -1,4 +1,4 @@
-let my_data: Any = Set<AnyHashable>([
+Set([
     "apple",
     "banana",
     "cherry",
