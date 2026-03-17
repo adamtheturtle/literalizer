@@ -4,14 +4,10 @@ from literalizer._core import (
     literalize_json,
     literalize_yaml,
 )
-from literalizer._language import (
-    Language,
-    LanguageSpec,
-)
+from literalizer._language import Language
 
 __all__ = [
     "Language",
-    "LanguageSpec",
     "literalize_json",
     "literalize_yaml",
 ]

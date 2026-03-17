@@ -650,7 +650,7 @@ class _DateVariant:
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
 
-    spec: literalizer.LanguageSpec
+    spec: literalizer.Language
     extension: str
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
