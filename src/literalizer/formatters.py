@@ -1037,7 +1037,7 @@ def format_variable_declaration_c(name: str, value: str) -> str:
     Example: ``"x"`` and ``"((_CVal){.i = 42})"`` →
     ``"_CVal x = ((_CVal){.i = 42});"``
     """
-    return f"_CVal {name} = {value};"
+    return f"_CVal {name} = {to_c_val(value=value)};"
 
 
 @beartype
@@ -1047,7 +1047,7 @@ def format_variable_assignment_c(name: str, value: str) -> str:
     Example: ``"x"`` and ``"((_CVal){.i = 42})"`` →
     ``"x = ((_CVal){.i = 42});"``
     """
-    return f"{name} = {value};"
+    return f"{name} = {to_c_val(value=value)};"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:

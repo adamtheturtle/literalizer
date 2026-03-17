@@ -431,7 +431,7 @@ def _format_c_set_entry(item: str) -> str:
     return to_c_val(value=item)
 
 
-C = LanguageSpec(
+C = Language(
     null_literal="((_CVal){.s = NULL})",
     true_literal="((_CVal){.b = true})",
     false_literal="((_CVal){.b = false})",
