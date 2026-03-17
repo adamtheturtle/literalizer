@@ -16,6 +16,7 @@ __all__ = [
     "format_bytes_python",
     "format_date_cpp",
     "format_date_csharp",
+    "format_date_dart",
     "format_date_go",
     "format_date_iso",
     "format_date_java",
@@ -27,6 +28,7 @@ __all__ = [
     "format_date_rust",
     "format_datetime_cpp",
     "format_datetime_csharp",
+    "format_datetime_dart",
     "format_datetime_epoch",
     "format_datetime_go",
     "format_datetime_iso",
@@ -40,6 +42,7 @@ __all__ = [
     "format_datetime_rust",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
+    "format_variable_declaration_dart",
     "format_variable_declaration_go",
     "format_variable_declaration_haskell",
     "format_variable_declaration_java",
@@ -491,6 +494,33 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """
     return f"{name} = {value}"
+
+
+@beartype
+def format_date_dart(value: datetime.date) -> str:
+    """Format a date as a Dart ``DateTime.parse(...)`` call.
+
+    Example: ``DateTime.parse("2024-01-15")``.
+    """
+    return f'DateTime.parse("{value.isoformat()}")'
+
+
+@beartype
+def format_datetime_dart(value: datetime.datetime) -> str:
+    """Format a datetime as a Dart ``DateTime.parse(...)`` call.
+
+    Example: ``DateTime.parse("2024-01-15T12:30:00")``.
+    """
+    return f'DateTime.parse("{value.isoformat()}")'
+
+
+@beartype
+def format_variable_declaration_dart(name: str, value: str) -> str:
+    """Format a Dart ``final`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"final x = [1, 2];"``
+    """
+    return f"final {name} = {value};"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:

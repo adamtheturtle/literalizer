@@ -208,6 +208,11 @@ def _wrap_cpp_varname(content: str) -> str:
     )
 
 
+def _wrap_dart(content: str) -> str:
+    """Wrap in a Dart final variable assignment."""
+    return f"final x = {content};"
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -411,6 +416,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             ),
         ),
     ),
+    "dart": _LanguageConfig(
+        spec=literalizer.languages.DART,
+        extension=".dart",
+        wrap=_wrap_dart,
+        date_variants=(
+            _DateVariant(
+                name="dart_native",
+                format_date=literalizer.formatters.format_date_dart,
+                format_datetime=literalizer.formatters.format_datetime_dart,
+                wrap=_wrap_dart,
+            ),
+        ),
+    ),
     "swift": _LanguageConfig(
         spec=literalizer.languages.SWIFT,
         extension=".swift",
@@ -499,6 +517,12 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.JAVA,
         extension=".java",
         wrap=_wrap_java_varname,
+        date_variants=(),
+    ),
+    "dart": _LanguageConfig(
+        spec=literalizer.languages.DART,
+        extension=".dart",
+        wrap=_wrap_identity,
         date_variants=(),
     ),
     "csharp": _LanguageConfig(
