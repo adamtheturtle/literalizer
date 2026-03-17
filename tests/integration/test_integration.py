@@ -518,7 +518,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".clj",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
-        combined_wrap=lambda d, a: d + "\n" + a,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
     "python": _LanguageConfig(
@@ -758,7 +758,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".R",
         wrap=_wrap_r,
         varname_wrap=_wrap_identity,
-        combined_wrap=lambda d, a: d + "\n" + a,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(
             _DateVariant(
                 name="r_native",
