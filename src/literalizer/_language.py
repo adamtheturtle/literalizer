@@ -153,8 +153,8 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
 
     @property
     def comment_suffix(self) -> str:
-        """The comment suffix for the language (e.g. ``""`` for line
-        comments, ``" *)"`` for OCaml block comments).
+        """The comment suffix for the language (e.g. ``""`` or
+        ``" *)"`` for block-comment styles).
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -244,6 +244,7 @@ class LanguageSpec:
     format_sequence_entry: Callable[[str], str]
     format_set_entry: Callable[[str], str]
     comment_prefix: str
+    comment_suffix: str
     omap_open: str
     omap_close: str
     format_omap_entry: Callable[[str, str], str]
@@ -252,4 +253,3 @@ class LanguageSpec:
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
-    comment_suffix: str = ""
