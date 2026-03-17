@@ -14,7 +14,7 @@ def main() -> None:
         path = Path(filename).resolve()
         with tempfile.TemporaryDirectory() as tmpdir:
             result = subprocess.run(
-                args=[scalac_path, str(path)],
+                args=[scalac_path, path.as_posix()],
                 capture_output=True,
                 text=True,
                 check=False,
