@@ -460,6 +460,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".clj",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
         date_variants=(),
     ),
     "python": _LanguageConfig(
