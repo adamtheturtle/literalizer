@@ -978,7 +978,7 @@ LUA = LanguageSpec(
     format_omap_entry=_format_lua_dict_entry,
     multiline_close_indent="",
     element_separator=", ",
-    skip_null_dict_values=False,
+    skip_null_dict_values=True,
     format_variable_declaration=format_variable_declaration_lua,
     format_variable_assignment=format_variable_assignment_lua,
 )

@@ -45,6 +45,7 @@ jobs:
         with:
           groovy-version: 4.x
       - name: Set up MSVC for Lua (Windows only)
+        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install Lua
         uses: leafo/gh-actions-lua@v12
