@@ -55,6 +55,7 @@ from literalizer.formatters import (
     passthrough_set_entry,
 )
 from literalizer.languages import (
+    CLOJURE,
     CPP,
     CSHARP,
     DART,
@@ -1855,6 +1856,9 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     ),
     DART: _VariableSyntax(
         declaration="final my_var = 42;", assignment="my_var = 42;"
+    ),
+    CLOJURE: _VariableSyntax(
+        declaration="(def my_var 42)", assignment="(def my_var 42)"
     ),
     SCALA: _VariableSyntax(
         declaration="val my_var = 42", assignment="my_var = 42"

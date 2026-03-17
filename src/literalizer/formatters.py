@@ -44,6 +44,7 @@ __all__ = [
     "format_datetime_r",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
     "format_variable_assignment_csharp",
     "format_variable_assignment_dart",
@@ -59,6 +60,7 @@ __all__ = [
     "format_variable_assignment_rust",
     "format_variable_assignment_scala",
     "format_variable_assignment_swift",
+    "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
     "format_variable_declaration_dart",
@@ -510,6 +512,15 @@ def format_variable_declaration_php(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_declaration_clojure(name: str, value: str) -> str:
+    """Format a Clojure ``def`` binding.
+
+    Example: ``"my_data"`` and ``"{:a 1}"`` → ``"(def my_data {:a 1})"``
+    """
+    return f"(def {name} {value})"
+
+
+@beartype
 def format_variable_declaration_scala(name: str, value: str) -> str:
     """Format a Scala ``val`` declaration.
 
@@ -525,6 +536,15 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """
     return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_clojure(name: str, value: str) -> str:
+    """Format a Clojure ``def`` reassignment.
+
+    Example: ``"my_data"`` and ``"{:a 1}"`` → ``"(def my_data {:a 1})"``
+    """
+    return f"(def {name} {value})"
 
 
 @beartype

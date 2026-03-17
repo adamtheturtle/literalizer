@@ -487,6 +487,14 @@ class _LanguageConfig:
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
+    "clojure": _LanguageConfig(
+        spec=literalizer.languages.CLOJURE,
+        extension=".clj",
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
+        date_variants=(),
+    ),
     "python": _LanguageConfig(
         spec=literalizer.languages.PYTHON,
         extension=".py",
