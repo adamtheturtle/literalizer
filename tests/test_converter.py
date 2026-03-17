@@ -2037,7 +2037,7 @@ def test_to_occam_val_float() -> None:
     """``to_occam_val`` wraps float values in the ``lit.float``
     constructor.
     """
-    result = to_occam_val("3.14")  # type: ignore[misc]
+    result = to_occam_val(value="3.14")
     assert result == "MOBILE LIT(lit.float; 3.14(REAL32))"
 
 
@@ -2045,5 +2045,5 @@ def test_to_occam_val_unknown_value() -> None:
     """``to_occam_val`` returns the value unchanged when it cannot be
     classified as a string literal, int, or float.
     """
-    result = to_occam_val("SomeUnknownValue")  # type: ignore[misc]
+    result = to_occam_val(value="SomeUnknownValue")
     assert result == "SomeUnknownValue"
