@@ -20,6 +20,7 @@ __all__ = [
     "format_date_iso",
     "format_date_java",
     "format_date_js",
+    "format_date_julia",
     "format_date_kotlin",
     "format_date_php",
     "format_date_python",
@@ -33,6 +34,7 @@ __all__ = [
     "format_datetime_java_instant",
     "format_datetime_java_zoned",
     "format_datetime_js",
+    "format_datetime_julia",
     "format_datetime_kotlin",
     "format_datetime_php",
     "format_datetime_python",
@@ -56,6 +58,7 @@ __all__ = [
     "format_variable_declaration_haskell",
     "format_variable_declaration_java",
     "format_variable_declaration_js",
+    "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
@@ -503,6 +506,37 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """
     return f"{name} = {value}"
+
+
+@beartype
+def format_variable_declaration_julia(name: str, value: str) -> str:
+    """Format a Julia variable assignment.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_date_julia(value: datetime.date) -> str:
+    """Format a date as a Julia ``Date(...)`` constructor call.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``Date(2024, 1, 15)``.
+    """
+    return f"Date({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def format_datetime_julia(value: datetime.datetime) -> str:
+    """Format a datetime as a Julia ``DateTime(...)`` constructor call.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30, 0)`` →
+    ``DateTime(2024, 1, 15, 12, 30, 0)``.
+    """
+    return (
+        f"DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
 
 
 @beartype
