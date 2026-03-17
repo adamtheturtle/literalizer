@@ -528,6 +528,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.JULIA,
         extension=".jl",
         wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="julia_native",
@@ -542,12 +543,6 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".php",
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
-        date_variants=(),
-    ),
-    "julia": _LanguageConfig(
-        spec=literalizer.languages.JULIA,
-        extension=".jl",
-        wrap=_wrap_identity,
         date_variants=(),
     ),
 }
