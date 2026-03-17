@@ -58,6 +58,7 @@ __all__ = [
     "format_variable_assignment_java",
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
+    "format_variable_assignment_matlab",
     "format_variable_assignment_ocaml",
     "format_variable_assignment_perl",
     "format_variable_assignment_php",
@@ -81,6 +82,7 @@ __all__ = [
     "format_variable_declaration_js",
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
+    "format_variable_declaration_matlab",
     "format_variable_declaration_ocaml",
     "format_variable_declaration_perl",
     "format_variable_declaration_php",
@@ -992,6 +994,27 @@ def to_ocaml_val(value: str) -> str:
     if float_result is not None:
         return float_result
     return value
+
+
+@beartype
+def format_variable_declaration_matlab(name: str, value: str) -> str:
+    """Format a MATLAB variable assignment used as a declaration.
+
+    MATLAB has no separate declaration syntax; assignment serves both
+    purposes.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"x = {1, 2};"``
+    """
+    return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_matlab(name: str, value: str) -> str:
+    """Format a MATLAB assignment to an existing variable.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"x = {1, 2};"``
+    """
+    return f"{name} = {value};"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:

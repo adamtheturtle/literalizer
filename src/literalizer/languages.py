@@ -19,6 +19,7 @@ __all__ = [
     "JAVASCRIPT",
     "JULIA",
     "KOTLIN",
+    "MATLAB",
     "OCAML",
     "PERL",
     "PHP",
@@ -53,6 +54,7 @@ from literalizer.formatters import (
     format_variable_assignment_java,
     format_variable_assignment_js,
     format_variable_assignment_kotlin,
+    format_variable_assignment_matlab,
     format_variable_assignment_ocaml,
     format_variable_assignment_perl,
     format_variable_assignment_php,
@@ -76,6 +78,7 @@ from literalizer.formatters import (
     format_variable_declaration_js,
     format_variable_declaration_julia,
     format_variable_declaration_kotlin,
+    format_variable_declaration_matlab,
     format_variable_declaration_ocaml,
     format_variable_declaration_perl,
     format_variable_declaration_php,
@@ -992,6 +995,19 @@ GROOVY = LanguageSpec(
 )
 
 
+@beartype
+def _format_matlab_dict_entry(key: str, value: str) -> str:
+    """Format a MATLAB ``struct`` field as a ``'key', value`` pair.
+
+    MATLAB ``struct`` accepts alternating character-vector keys and values.
+    Dictionary keys arrive as double-quoted strings; they are converted to
+    single-quoted character vectors as required by ``struct``.
+    """
+    if key.startswith('"') and key.endswith('"'):
+        key = f"'{key[1:-1]}'"
+    return f"{key}, {value}"
+
+
 def _format_r_omap_entry(key: str, value: str) -> str:
     """Format an R named list entry for an ordered map."""
     return f"{key} = {value}"
@@ -1068,4 +1084,38 @@ ERLANG = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_erlang,
     format_variable_assignment=format_variable_assignment_erlang,
+)
+
+
+MATLAB = LanguageSpec(
+    null_literal="[]",
+    true_literal="true",
+    false_literal="false",
+    sequence_open="{",
+    sequence_close="}",
+    dict_open="struct(",
+    dict_close=")",
+    format_dict_entry=_format_matlab_dict_entry,
+    multiline_trailing_comma=False,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence="{}",
+    empty_dict="struct()",
+    set_open="{",
+    set_close="}",
+    empty_set="{}",
+    format_sequence_entry=passthrough_sequence_entry,
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="%",
+    comment_suffix="",
+    omap_open="struct(",
+    omap_close=")",
+    format_omap_entry=_format_matlab_dict_entry,
+    multiline_close_indent="",
+    element_separator=", ",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_matlab,
+    format_variable_assignment=format_variable_assignment_matlab,
 )

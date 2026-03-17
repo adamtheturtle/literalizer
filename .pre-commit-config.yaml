@@ -5,6 +5,7 @@ ci:
   skip:
     - actionlint
     - r-syntax-check
+    - matlab-syntax-check
     - check-manifest
     - clojure-syntax-check
     - csharp-golden-syntax-check
@@ -607,6 +608,14 @@ repos:
         language: system
         types: [r]
         files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: matlab-syntax-check
+        name: MATLAB golden file syntax check
+        entry: uv run python check_matlab_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.m$
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: sphinx-lint

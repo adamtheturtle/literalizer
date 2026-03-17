@@ -387,6 +387,11 @@ def _wrap_r(content: str) -> str:
     return f"x <- {content}"
 
 
+def _wrap_matlab(content: str) -> str:
+    """Wrap in a MATLAB/Octave variable assignment."""
+    return f"x = {content};"
+
+
 def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
@@ -900,6 +905,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_r,
             ),
         ),
+    ),
+    "matlab": _LanguageConfig(
+        spec=literalizer.languages.MATLAB,
+        extension=".m",
+        wrap=_wrap_matlab,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
     ),
 }
 

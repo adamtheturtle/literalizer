@@ -48,9 +48,12 @@ kts
 literalize
 literalizer
 localhost
+matlab
 namespaces
 natively
+norc
 ocamlopt
+octave
 ofEntries
 omap
 paren
