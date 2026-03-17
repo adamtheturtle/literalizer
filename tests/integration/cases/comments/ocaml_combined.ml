@@ -11,10 +11,10 @@ type val_t =
   | OSet of val_t list
 
 let my_data : val_t = OMap [
-    (* Server configuration
-    ("host", OStr "localhost");  (* default host
+    (* Server configuration *)
+    ("host", OStr "localhost");  (* default host *)
     ("port", OInt 8080);
-    (* Enable debug mode
+    (* Enable debug mode *)
     ("debug", OBool true)
 ]
 
