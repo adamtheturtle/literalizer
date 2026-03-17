@@ -702,6 +702,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".fs",
         wrap=_wrap_fsharp,
         varname_wrap=_wrap_fsharp_varname,
+        combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
         date_variants=(),
     ),
 }
