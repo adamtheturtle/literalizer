@@ -52,6 +52,9 @@ jobs:
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: latest
+      - name: Install GNAT (Ada)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y gnat
       - name: Set up MSVC for Lua (Windows only)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
