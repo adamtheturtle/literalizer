@@ -1,3 +1,7 @@
+import java.util.Map;
+import java.util.Set;
+class Check {
+    public static void check() {
 var my_data = Map.ofEntries(
     // Server configuration
     Map.entry("host", "localhost"),  // default host
@@ -12,3 +16,5 @@ my_data = Map.ofEntries(
     // Enable debug mode
     Map.entry("debug", true)
 );
+    }
+}

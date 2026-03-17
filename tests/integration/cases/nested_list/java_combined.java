@@ -1,3 +1,7 @@
+import java.util.Map;
+import java.util.Set;
+class Check {
+    public static void check() {
 var my_data = new Object[]{
     true,
     "hi",
@@ -10,3 +14,5 @@ my_data = new Object[]{
     new Object[]{1, 2},
     null
 };
+    }
+}

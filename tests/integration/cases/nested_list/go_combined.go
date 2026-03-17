@@ -1,3 +1,6 @@
+package main
+
+func main() {
 my_data := []any{
     true,
     "hi",
@@ -9,4 +12,6 @@ my_data = []any{
     "hi",
     []any{1, 2},
     nil,
+}
+_ = my_data
 }

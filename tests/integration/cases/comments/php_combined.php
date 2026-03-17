@@ -1,3 +1,4 @@
+<?php
 $my_data = [
     // Server configuration
     "host" => "localhost",  // default host

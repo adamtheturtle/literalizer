@@ -1,3 +1,4 @@
+<?php
 $my_data = [
     "apple",
     "banana",

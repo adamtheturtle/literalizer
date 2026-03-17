@@ -1,3 +1,4 @@
+void (function() {
 const my_data = {
     // Server configuration
     "host": "localhost",  // default host
@@ -5,6 +6,8 @@ const my_data = {
     // Enable debug mode
     "debug": true,
 };
+})();
+var my_data;
 my_data = {
     // Server configuration
     "host": "localhost",  // default host
@@ -12,3 +15,4 @@ my_data = {
     // Enable debug mode
     "debug": true,
 };
+export {};

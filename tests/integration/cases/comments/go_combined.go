@@ -1,3 +1,6 @@
+package main
+
+func main() {
 my_data := map[string]any{
     // Server configuration
     "host": "localhost",  // default host
@@ -11,4 +14,6 @@ my_data = map[string]any{
     "port": 8080,
     // Enable debug mode
     "debug": true,
+}
+_ = my_data
 }

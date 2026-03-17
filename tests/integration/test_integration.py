@@ -270,6 +270,74 @@ def _wrap_swift_varname(content: str) -> str:
     return prefix + ": Any =" + content[len(prefix) + 2 :]
 
 
+def _wrap_js_combined(declaration: str, assignment: str) -> str:
+    """Wrap JS declaration in an IIFE to scope the const, then assign
+    to an outer var.
+    """
+    return (
+        f"void (function() {{\n{declaration}\n}})();\n"
+        f"var {_VARIABLE_NAME};\n"
+        f"{assignment}"
+    )
+
+
+def _wrap_ts_combined(declaration: str, assignment: str) -> str:
+    """TypeScript combined: same as JS but as a module with export."""
+    return (
+        f"void (function() {{\n{declaration}\n}})();\n"
+        f"var {_VARIABLE_NAME};\n"
+        f"{assignment}\n"
+        f"export {{}};"
+    )
+
+
+def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
+    """Kotlin: val declaration in one fun, var + assignment in another."""
+    decl_indented = "    " + declaration.replace("\n", "\n    ")
+    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    return (
+        f"fun _declaration() {{\n"
+        f"{decl_indented}\n"
+        f"}}\n"
+        f"fun _assignment() {{\n"
+        f"    var {_VARIABLE_NAME}: Any? = null\n"
+        f"{assign_indented}\n"
+        f"}}"
+    )
+
+
+def _wrap_swift_combined(declaration: str, assignment: str) -> str:
+    """Swift: let declaration (with type annotation) in a do block,
+    then var + assignment in the outer scope.
+    """
+    annotated = _wrap_swift_varname(declaration)
+    decl_indented = "    " + annotated.replace("\n", "\n    ")
+    return (
+        f"do {{\n{decl_indented}\n}}\nvar {_VARIABLE_NAME}: Any\n{assignment}"
+    )
+
+
+def _wrap_rust_combined(declaration: str, assignment: str) -> str:
+    """Rust: let declaration in an inner block, then a deferred-init
+    let + assignment in the outer scope.
+    """
+    decl_indented = "        " + declaration.replace("\n", "\n        ")
+    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    return (
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        "    {\n"
+        f"{decl_indented}\n"
+        f"        let _ = {_VARIABLE_NAME};\n"
+        "    }\n"
+        f"    let {_VARIABLE_NAME};\n"
+        f"{assign_indented}\n"
+        f"    let _ = {_VARIABLE_NAME};\n"
+        "}"
+    )
+
+
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
@@ -354,6 +422,7 @@ class _LanguageConfig:
     extension: str
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
+    combined_wrap: Callable[[str, str], str]
     date_variants: tuple[_DateVariant, ...]
 
 
@@ -363,6 +432,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".py",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
         date_variants=(
             _DateVariant(
                 name="python_native",
@@ -383,6 +453,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".js",
         wrap=_wrap_js,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_js_combined,
         date_variants=(
             _DateVariant(
                 name="js_native",
@@ -397,6 +468,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".ts",
         wrap=_wrap_js,
         varname_wrap=_wrap_ts_varname,
+        combined_wrap=_wrap_ts_combined,
         date_variants=(
             _DateVariant(
                 name="ts_native",
@@ -411,6 +483,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".kts",
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_kotlin_combined,
         date_variants=(
             _DateVariant(
                 name="kotlin_native",
@@ -425,6 +498,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".rb",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
         date_variants=(
             _DateVariant(
                 name="ruby_native",
@@ -439,6 +513,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".go",
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
+        combined_wrap=lambda d, a: _wrap_go_varname(d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="go_native",
@@ -453,6 +528,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".java",
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
+        combined_wrap=lambda d, a: _wrap_java_varname(d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="java_instant",
@@ -473,6 +549,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".cs",
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
+        combined_wrap=lambda d, a: _wrap_csharp_varname(d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="csharp_native",
@@ -487,6 +564,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".swift",
         wrap=_wrap_swift,
         varname_wrap=_wrap_swift_varname,
+        combined_wrap=_wrap_swift_combined,
         date_variants=(),
     ),
     "cpp": _LanguageConfig(
@@ -494,6 +572,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".cpp",
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
+        combined_wrap=lambda d, a: _wrap_cpp_varname(d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="cpp_native",
@@ -508,6 +587,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".rs",
         wrap=_wrap_rust,
         varname_wrap=_wrap_rust_varname,
+        combined_wrap=_wrap_rust_combined,
         date_variants=(
             _DateVariant(
                 name="rust_native",
@@ -522,6 +602,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".hs",
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
+        combined_wrap=lambda d, _a: _wrap_haskell_varname(d),
         date_variants=(),
     ),
     "julia": _LanguageConfig(
@@ -529,6 +610,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".jl",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
         date_variants=(
             _DateVariant(
                 name="julia_native",
@@ -543,6 +625,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".php",
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
+        combined_wrap=lambda d, a: _wrap_php_varname(d + "\n" + a),
         date_variants=(),
     ),
 }
@@ -672,7 +755,7 @@ def test_golden_file_combined_variable_forms(
         variable_name=_VARIABLE_NAME,
         new_variable=False,
     )
-    combined = declaration + "\n" + assignment
+    combined = lang_config.combined_wrap(declaration, assignment)
     file_regression.check(
         contents=combined + "\n",
         extension=lang_config.extension,
