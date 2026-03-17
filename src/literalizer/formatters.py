@@ -55,6 +55,7 @@ __all__ = [
     "format_variable_assignment_java",
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
+    "format_variable_assignment_lua",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
     "format_variable_assignment_r",
@@ -74,6 +75,7 @@ __all__ = [
     "format_variable_declaration_js",
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
+    "format_variable_declaration_lua",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
     "format_variable_declaration_r",
@@ -867,6 +869,24 @@ def format_variable_assignment_fsharp(name: str, value: str) -> str:
     Example: ``"x"`` and ``"FList [1; 2]"`` → ``"let x: Val = FList [1; 2]"``
     """
     return f"let {name}: Val = {to_fsharp_val(value=value)}"
+
+
+@beartype
+def format_variable_declaration_lua(name: str, value: str) -> str:
+    """Format a Lua local variable declaration.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"local x = {1, 2}"``.
+    """
+    return f"local {name} = {value}"
+
+
+@beartype
+def format_variable_assignment_lua(name: str, value: str) -> str:
+    """Format a Lua assignment to an existing variable.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"x = {1, 2}"``.
+    """
+    return f"{name} = {value}"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:

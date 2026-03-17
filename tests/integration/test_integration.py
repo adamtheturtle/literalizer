@@ -315,6 +315,11 @@ def _wrap_elixir_varname(content: str) -> str:
     )
 
 
+def _wrap_lua(content: str) -> str:
+    """Wrap a Lua table constructor in a local variable assignment."""
+    return f"local _ = {content}"
+
+
 def _wrap_r(content: str) -> str:
     """Wrap in an R variable assignment."""
     return f"x <- {content}"
@@ -754,6 +759,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_julia_dates,
             ),
         ),
+    ),
+    "lua": _LanguageConfig(
+        spec=literalizer.languages.LUA,
+        extension=".lua",
+        wrap=_wrap_lua,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
     ),
     "php": _LanguageConfig(
         spec=literalizer.languages.PHP,
