@@ -26,9 +26,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: olafurpg/setup-scala@v14
+      - uses: coursier/setup-action@v1
         with:
-          java-version: openjdk@1.17.0
+          jvm: adopt:17
+          apps: scalac
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
       - name: Install Dart
