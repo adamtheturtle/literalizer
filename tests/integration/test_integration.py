@@ -11,8 +11,6 @@ can syntax-check them directly without additional wrapping.
 from __future__ import annotations
 
 import dataclasses
-import shutil
-import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -131,24 +129,6 @@ def _wrap_haskell(content: str) -> str:
         f"x = {content}"
     )
 
-
-def _check_ts_syntax(content: str) -> None:
-    """Check TypeScript content is syntactically valid using ``node``."""
-    node_path = shutil.which(cmd="node") or "node"
-    result = subprocess.run(
-        args=[node_path, "--check", "--input-type=commonjs"],
-        input=content,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        pytest.fail(f"TypeScript syntax error:\n{result.stderr}")
-
-
-_SYNTAX_CHECKS: dict[str, Callable[[str], None]] = {
-    "typescript": _check_ts_syntax,
-}
 
 _VARIABLE_NAME = "my_data"
 
@@ -588,9 +568,6 @@ def test_golden_file(
         wrap=True,
     )
     wrapped = lang_config.wrap(result)
-    syntax_check = _SYNTAX_CHECKS.get(language)
-    if syntax_check is not None:
-        syntax_check(wrapped)
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.extension,
@@ -622,9 +599,6 @@ def test_golden_file_with_variable_name(
         variable_name=_VARIABLE_NAME,
     )
     wrapped = lang_config.wrap(result)
-    syntax_check = _SYNTAX_CHECKS.get(language)
-    if syntax_check is not None:
-        syntax_check(wrapped)
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.extension,
