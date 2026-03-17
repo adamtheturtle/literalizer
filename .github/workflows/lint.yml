@@ -27,8 +27,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Swift
-        if: runner.os != 'Windows'
-        uses: SwiftyLab/setup-swift@v1
+        uses: compnerd/gha-setup-swift@v0.2.3
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
