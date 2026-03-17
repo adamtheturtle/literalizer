@@ -38,6 +38,7 @@ __all__ = [
     "format_datetime_python",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
     "format_variable_declaration_go",
@@ -482,6 +483,15 @@ def format_variable_declaration_php(name: str, value: str) -> str:
     Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
     """
     return f"${name} = {value};"
+
+
+@beartype
+def format_variable_declaration_clojure(name: str, value: str) -> str:
+    """Format a Clojure ``def`` binding.
+
+    Example: ``"my_data"`` and ``"{:a 1}"`` → ``"(def my_data {:a 1})"``
+    """
+    return f"(def {name} {value})"
 
 
 @beartype

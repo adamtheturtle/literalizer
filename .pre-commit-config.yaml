@@ -5,6 +5,7 @@ ci:
   skip:
     - actionlint
     - check-manifest
+    - clojure-syntax-check
     - csharp-golden-syntax-check
     - deptry
     - doc8
@@ -496,6 +497,13 @@ repos:
         types: [haskell]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: clojure-syntax-check
+        name: Clojure syntax check
+        entry: bash check_clojure_golden_syntax.sh
+        language: system
+        files: ^tests/integration/cases/.*\.clj$
         stages: [pre-commit]
 
       - id: php-syntax-check
