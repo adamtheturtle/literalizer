@@ -6,11 +6,11 @@ import dataclasses
 import datetime
 import json
 from io import StringIO
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 
@@ -23,6 +23,9 @@ from literalizer._comments import (
 from literalizer._language import Language  # noqa: TC001
 from literalizer._types import Scalar, Value  # noqa: TC001
 from literalizer.exceptions import JSONParseError, YAMLParseError
+
+if TYPE_CHECKING:
+    from ruamel.yaml.comments import CommentedSeq
 
 
 @beartype
@@ -81,17 +84,17 @@ def _format_value(*, value: Value, spec: Language) -> str:
     Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, ordereddict):
-        omap_items = [  # pyright: ignore[reportUnknownVariableType]
+        omap_items: list[tuple[str, Value]] = [
             (k, v)
             for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
             if not (spec.skip_null_dict_values and v is None)
         ]
         pairs = [
             spec.format_omap_entry(
-                _format_value(value=k, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
-                _format_value(value=v, spec=spec),  # pyright: ignore[reportUnknownArgumentType]
+                _format_value(value=k, spec=spec),
+                _format_value(value=v, spec=spec),
             )
-            for k, v in omap_items  # pyright: ignore[reportUnknownVariableType]
+            for k, v in omap_items
         ]
         return spec.omap_open + ", ".join(pairs) + spec.omap_close
 
@@ -393,9 +396,11 @@ def literalize_yaml(
             is_sequence=is_sequence,
         )
 
-        if not is_sequence and language.skip_null_dict_values:
-            assert isinstance(data, dict)  # noqa: S101
-            assert isinstance(ruamel_data, CommentedMap)  # noqa: S101
+        if (
+            not is_sequence
+            and language.skip_null_dict_values
+            and isinstance(ruamel_data, CommentedMap)
+        ):
             filtered_elements = tuple(
                 ec
                 for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
