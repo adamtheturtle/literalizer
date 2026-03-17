@@ -1,6 +1,6 @@
 (def my_data {
-    "name" "Alice",
-    "age" 30,
-    "active" true,
+    "name" "Alice"
+    "age" 30
+    "active" true
     "score" nil
 })

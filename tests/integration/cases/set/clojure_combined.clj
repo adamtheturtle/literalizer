@@ -1,10 +1,10 @@
 (def my_data #{
-    "apple",
-    "banana",
+    "apple"
+    "banana"
     "cherry"
 })
 (def my_data #{
-    "apple",
-    "banana",
+    "apple"
+    "banana"
     "cherry"
 })

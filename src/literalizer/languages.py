@@ -105,10 +105,10 @@ PYTHON = LanguageSpec(
     omap_close="])",
     format_omap_entry=_format_python_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_python,
     format_variable_assignment=format_variable_assignment_python,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -144,10 +144,10 @@ CSHARP = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_csharp_dict_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
     format_variable_assignment=format_variable_assignment_csharp,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -182,10 +182,10 @@ DART = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_dart_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_dart,
     format_variable_assignment=format_variable_assignment_dart,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -220,10 +220,10 @@ JAVASCRIPT = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
     format_variable_assignment=format_variable_assignment_js,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -252,10 +252,10 @@ TYPESCRIPT = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_js_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
     format_variable_assignment=format_variable_assignment_js,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -290,10 +290,10 @@ RUBY = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_ruby_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_ruby,
     format_variable_assignment=format_variable_assignment_ruby,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -337,10 +337,10 @@ GO = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_go_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_go,
     format_variable_assignment=format_variable_assignment_go,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -376,10 +376,10 @@ CPP = LanguageSpec(
     omap_close="}",
     format_omap_entry=_format_cpp_dict_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_cpp,
     format_variable_assignment=format_variable_assignment_cpp,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -415,10 +415,10 @@ JAVA = LanguageSpec(
     omap_close="))",
     format_omap_entry=_format_java_dict_entry,
     multiline_close_indent="",
+    element_separator=", ",
     format_variable_declaration=format_variable_declaration_java,
     format_variable_assignment=format_variable_assignment_java,
     skip_null_dict_values=True,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -453,10 +453,10 @@ SWIFT = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_swift_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_swift,
     format_variable_assignment=format_variable_assignment_swift,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -497,10 +497,10 @@ RUST = LanguageSpec(
     omap_close="])",
     format_omap_entry=_format_rust_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_rust,
     format_variable_assignment=format_variable_assignment_rust,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -535,10 +535,10 @@ KOTLIN = LanguageSpec(
     omap_close=")",
     format_omap_entry=_format_kotlin_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_kotlin,
     format_variable_assignment=format_variable_assignment_kotlin,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -573,10 +573,10 @@ PHP = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_php_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_php,
     format_variable_assignment=format_variable_assignment_php,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -611,10 +611,10 @@ JULIA = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_julia_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_julia,
     format_variable_assignment=format_variable_declaration_julia,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -655,10 +655,10 @@ HASKELL = LanguageSpec(
     omap_close="]",
     format_omap_entry=_format_haskell_omap_entry,
     multiline_close_indent="    ",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_haskell,
     format_variable_assignment=format_variable_assignment_haskell,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -713,7 +713,7 @@ FSHARP = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_fsharp,
     format_variable_assignment=format_variable_assignment_fsharp,
-    element_separator=";",
+    element_separator="; ",
     format_list_entry=_format_fsharp_list_entry,
 )
 
@@ -743,10 +743,10 @@ CLOJURE = LanguageSpec(
     omap_close="}",
     format_omap_entry=dict_entry_with_separator(separator=" "),
     multiline_close_indent="",
+    element_separator=" ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_clojure,
     format_variable_assignment=format_variable_assignment_clojure,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -781,10 +781,10 @@ SCALA = LanguageSpec(
     omap_close=")",
     format_omap_entry=_format_scala_omap_entry,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_scala,
     format_variable_assignment=format_variable_assignment_scala,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
 
@@ -819,9 +819,9 @@ R = LanguageSpec(
     format_omap_entry=_format_r_omap_entry,
     multiline_trailing_comma=False,
     multiline_close_indent="",
+    element_separator=", ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_r,
     format_variable_assignment=format_variable_assignment_r,
-    element_separator=",",
     format_list_entry=passthrough_list_entry,
 )

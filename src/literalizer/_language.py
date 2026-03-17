@@ -184,15 +184,17 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def skip_null_dict_values(self) -> bool:
-        """Whether to omit dict entries whose value is ``None``."""
+    def element_separator(self) -> str:
+        """The separator placed between elements in inline collections
+        (e.g. ``", "`` for most languages, ``" "`` for Clojure).
+        The stripped form is used as the per-element suffix in
+        multi-line collections.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def element_separator(self) -> str:
-        """The separator between collection elements (e.g. ``","`` or
-        ``";"``).
-        """
+    def skip_null_dict_values(self) -> bool:
+        """Whether to omit dict entries whose value is ``None``."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
@@ -238,8 +240,8 @@ class LanguageSpec:
     omap_close: str
     format_omap_entry: Callable[[str, str], str]
     multiline_close_indent: str
+    element_separator: str
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
-    element_separator: str
     format_list_entry: Callable[[str], str]

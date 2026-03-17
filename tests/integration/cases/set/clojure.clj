@@ -1,5 +1,5 @@
 #{
-    "apple",
-    "banana",
+    "apple"
+    "banana"
     "cherry"
 }

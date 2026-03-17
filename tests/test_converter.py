@@ -541,10 +541,10 @@ def test_custom_language() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_variable_assignment=format_variable_assignment_python,
-        element_separator=",",
         format_list_entry=passthrough_list_entry,
     )
     result = literalize_json(
@@ -1114,10 +1114,10 @@ def test_custom_format_date() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_variable_assignment=format_variable_assignment_python,
-        element_separator=",",
         format_list_entry=passthrough_list_entry,
     )
     result = literalize_yaml(
@@ -1156,10 +1156,10 @@ def test_custom_format_datetime() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_variable_assignment=format_variable_assignment_python,
-        element_separator=",",
         format_list_entry=passthrough_list_entry,
     )
     result = literalize_yaml(
@@ -1198,10 +1198,10 @@ def test_java_native_dates() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_variable_assignment=format_variable_assignment_python,
-        element_separator=",",
         format_list_entry=passthrough_list_entry,
     )
     result = literalize_yaml(
@@ -1242,10 +1242,10 @@ def test_ruby_native_dates() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_variable_assignment=format_variable_assignment_python,
-        element_separator=",",
         format_list_entry=passthrough_list_entry,
     )
     result = literalize_yaml(
@@ -1381,10 +1381,10 @@ def test_custom_format_bytes() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_variable_assignment=format_variable_assignment_python,
-        element_separator=",",
         format_list_entry=passthrough_list_entry,
     )
     result = literalize_yaml(
@@ -1783,10 +1783,10 @@ def test_omap_custom_language_spec() -> None:
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_variable_assignment=format_variable_assignment_python,
-        element_separator=",",
         format_list_entry=passthrough_list_entry,
     )
     result = literalize_yaml(
