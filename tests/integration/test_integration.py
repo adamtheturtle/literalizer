@@ -520,8 +520,12 @@ def _wrap_js_bothvars(content: str) -> str:
     """Wrap combined new-var + assignment, replacing ``const`` with ``let``
     so that the assignment is valid (``const`` cannot be reassigned).
     """
-    return content.replace(
-        f"const {_VARIABLE_NAME} = ", f"let {_VARIABLE_NAME} = ", 1
+    old_prefix = f"const {_VARIABLE_NAME} = "
+    new_prefix = f"let {_VARIABLE_NAME} = "
+    return (
+        new_prefix + content[len(old_prefix) :]
+        if content.startswith(old_prefix)
+        else content
     )
 
 
@@ -531,8 +535,12 @@ def _wrap_ts_bothvars(content: str) -> str:
     Replaces ``const`` with ``let`` and adds ``export {}`` to make the
     file a module.
     """
-    content = content.replace(
-        f"const {_VARIABLE_NAME} = ", f"let {_VARIABLE_NAME} = ", 1
+    old_prefix = f"const {_VARIABLE_NAME} = "
+    new_prefix = f"let {_VARIABLE_NAME} = "
+    content = (
+        new_prefix + content[len(old_prefix) :]
+        if content.startswith(old_prefix)
+        else content
     )
     return f"{content}\nexport {{}};"
 
@@ -542,8 +550,12 @@ def _wrap_kotlin_bothvars(content: str) -> str:
 
     Replaces ``val`` with ``var`` so that reassignment is valid.
     """
-    return content.replace(
-        f"val {_VARIABLE_NAME} = ", f"var {_VARIABLE_NAME} = ", 1
+    old_prefix = f"val {_VARIABLE_NAME} = "
+    new_prefix = f"var {_VARIABLE_NAME} = "
+    return (
+        new_prefix + content[len(old_prefix) :]
+        if content.startswith(old_prefix)
+        else content
     )
 
 
@@ -556,7 +568,11 @@ def _wrap_cpp_bothvars(content: str) -> str:
     """
     old_prefix = f"auto {_VARIABLE_NAME} = "
     new_prefix = f"_Any {_VARIABLE_NAME} = "
-    content_adapted = content.replace(old_prefix, new_prefix, 1)
+    content_adapted = (
+        new_prefix + content[len(old_prefix) :]
+        if content.startswith(old_prefix)
+        else content
+    )
     return (
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
