@@ -12,7 +12,7 @@ from collections.abc import Callable  # noqa: TC003
 from typing import Any
 
 import pytest
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from literalizer import (
@@ -73,6 +73,7 @@ from literalizer.languages import (
     RUST,
     SWIFT,
     TYPESCRIPT,
+    R,
 )
 
 
@@ -606,6 +607,10 @@ def _lists_to_tuples(*, value: _JSONValue) -> object:
     return value
 
 
+# Characters valid in JSON strings: Unicode letters (L), marks (M), numbers
+# (N), punctuation (P), symbols (S), and separators (Z). Control characters
+# (category C) are excluded because JSON forbids raw control characters,
+# and ``\x00`` is excluded explicitly because json.dumps refuses null bytes.
 json_text = st.text(
     alphabet=st.characters(
         categories=("L", "M", "N", "P", "S", "Z"), exclude_characters="\x00"
@@ -615,17 +620,19 @@ json_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
+    # ``nan`` and ``inf`` are excluded because JSON does not support them.
     | st.floats(allow_nan=False, allow_infinity=False)
     | json_text
 )
 json_values: st.SearchStrategy[Any] = st.recursive(
     base=json_scalars,
     extend=lambda children: (
-        # ``max_size`` prevents unbounded nesting that causes test timeouts
+        # ``max_size`` prevents unbounded nesting that causes test timeouts.
         st.lists(elements=children, max_size=5)
         | st.dictionaries(keys=json_text, values=children, max_size=5)
     ),
 )
+# ``max_size`` prevents very large inputs that would slow down tests.
 json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
 
@@ -707,7 +714,12 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
     assert parsed == data
 
 
+# ``st.dictionaries`` internally filters draws to ensure unique keys, which
+# can accumulate enough filtered examples to trigger the ``filter_too_much``
+# health check on unlucky seeds.  The filtering is expected behavior here,
+# so we suppress the check rather than change the strategy.
 @given(data=json_objects)
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_roundtrip_dict(data: dict[str, Any]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
@@ -1864,6 +1876,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     FSHARP: _VariableSyntax(
         declaration="let my_var: Val = 42", assignment="let my_var: Val = 42"
     ),
+    R: _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),
 }
 
 _DECLARATION_PARAMS = [

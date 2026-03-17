@@ -21,6 +21,7 @@ __all__ = [
     "RUST",
     "SWIFT",
     "TYPESCRIPT",
+    "R",
 ]
 
 from literalizer._language import LanguageSpec
@@ -42,6 +43,7 @@ from literalizer.formatters import (
     format_variable_assignment_kotlin,
     format_variable_assignment_php,
     format_variable_assignment_python,
+    format_variable_assignment_r,
     format_variable_assignment_ruby,
     format_variable_assignment_rust,
     format_variable_assignment_swift,
@@ -57,6 +59,7 @@ from literalizer.formatters import (
     format_variable_declaration_kotlin,
     format_variable_declaration_php,
     format_variable_declaration_python,
+    format_variable_declaration_r,
     format_variable_declaration_ruby,
     format_variable_declaration_rust,
     format_variable_declaration_swift,
@@ -706,4 +709,42 @@ FSHARP = LanguageSpec(
     format_variable_assignment=format_variable_assignment_fsharp,
     element_separator=";",
     format_list_entry=_format_fsharp_list_entry,
+)
+
+
+def _format_r_omap_entry(key: str, value: str) -> str:
+    """Format an R named list entry for an ordered map."""
+    return f"{key} = {value}"
+
+
+R = LanguageSpec(
+    null_literal="NULL",
+    true_literal="TRUE",
+    false_literal="FALSE",
+    collection_open="list(",
+    collection_close=")",
+    dict_open="list(",
+    dict_close=")",
+    format_dict_entry=dict_entry_with_separator(separator=" = "),
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="list(",
+    set_close=")",
+    empty_set=None,
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="#",
+    omap_open="list(",
+    omap_close=")",
+    format_omap_entry=_format_r_omap_entry,
+    multiline_trailing_comma=False,
+    multiline_close_indent="",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_r,
+    format_variable_assignment=format_variable_assignment_r,
+    element_separator=",",
+    format_list_entry=passthrough_list_entry,
 )
