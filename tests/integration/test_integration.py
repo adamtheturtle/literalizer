@@ -516,6 +516,118 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
 }
 
 
+def _wrap_js_bothvars(content: str) -> str:
+    """Wrap combined new-var + assignment, replacing ``const`` with ``let``
+    so that the assignment is valid (``const`` cannot be reassigned).
+    """
+    return content.replace(
+        f"const {_VARIABLE_NAME} = ", f"let {_VARIABLE_NAME} = ", 1
+    )
+
+
+def _wrap_ts_bothvars(content: str) -> str:
+    """Wrap combined new-var + assignment for TypeScript.
+
+    Replaces ``const`` with ``let`` and adds ``export {}`` to make the
+    file a module.
+    """
+    content = content.replace(
+        f"const {_VARIABLE_NAME} = ", f"let {_VARIABLE_NAME} = ", 1
+    )
+    return f"{content}\nexport {{}};"
+
+
+def _wrap_kotlin_bothvars(content: str) -> str:
+    """Wrap combined new-var + assignment for Kotlin.
+
+    Replaces ``val`` with ``var`` so that reassignment is valid.
+    """
+    return content.replace(
+        f"val {_VARIABLE_NAME} = ", f"var {_VARIABLE_NAME} = ", 1
+    )
+
+
+def _wrap_cpp_bothvars(content: str) -> str:
+    """Wrap combined C++ new-var + assignment.
+
+    Replaces the first ``auto my_data = `` with ``_Any my_data = `` to
+    handle mixed-type initializer lists, leaving the plain assignment
+    line unchanged.
+    """
+    old_prefix = f"auto {_VARIABLE_NAME} = "
+    new_prefix = f"_Any {_VARIABLE_NAME} = "
+    content_adapted = content.replace(old_prefix, new_prefix, 1)
+    return (
+        "#include <initializer_list>\n"
+        "#include <cstddef>\n"
+        "struct _Any {\n"
+        "    template<class T> _Any(T&&) noexcept {}\n"
+        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
+        "};\n"
+        "void _check() {\n"
+        f"{content_adapted}\n"
+        "}"
+    )
+
+
+_LANGUAGES_WITH_BOTHVARS: dict[str, _LanguageConfig] = {
+    "python": _LanguageConfig(
+        spec=literalizer.languages.PYTHON,
+        extension=".py",
+        wrap=_wrap_identity,
+        date_variants=(),
+    ),
+    "javascript": _LanguageConfig(
+        spec=literalizer.languages.JAVASCRIPT,
+        extension=".js",
+        wrap=_wrap_js_bothvars,
+        date_variants=(),
+    ),
+    "typescript": _LanguageConfig(
+        spec=literalizer.languages.TYPESCRIPT,
+        extension=".ts",
+        wrap=_wrap_ts_bothvars,
+        date_variants=(),
+    ),
+    "kotlin": _LanguageConfig(
+        spec=literalizer.languages.KOTLIN,
+        extension=".kts",
+        wrap=_wrap_kotlin_bothvars,
+        date_variants=(),
+    ),
+    "ruby": _LanguageConfig(
+        spec=literalizer.languages.RUBY,
+        extension=".rb",
+        wrap=_wrap_identity,
+        date_variants=(),
+    ),
+    "go": _LanguageConfig(
+        spec=literalizer.languages.GO,
+        extension=".go",
+        wrap=_wrap_go_varname,
+        date_variants=(),
+    ),
+    "java": _LanguageConfig(
+        spec=literalizer.languages.JAVA,
+        extension=".java",
+        wrap=_wrap_java_varname,
+        date_variants=(),
+    ),
+    "csharp": _LanguageConfig(
+        spec=literalizer.languages.CSHARP,
+        extension=".cs",
+        wrap=_wrap_csharp_varname,
+        date_variants=(),
+    ),
+    "cpp": _LanguageConfig(
+        spec=literalizer.languages.CPP,
+        extension=".cpp",
+        wrap=_wrap_cpp_bothvars,
+        date_variants=(),
+    ),
+}
+
+
 def _discover_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples."""
     cases: list[tuple[str, str, Path]] = []
@@ -545,6 +657,22 @@ def _discover_varname_cases() -> list[tuple[str, str, Path]]:
 
 
 _VARNAME_CASES = _discover_varname_cases()
+
+
+def _discover_bothvars_cases() -> list[tuple[str, str, Path]]:
+    """Return ``(case_name, language, input_path)`` tuples for combined
+    new-var + existing-var tests.
+    """
+    cases: list[tuple[str, str, Path]] = []
+    for case_dir in sorted(_CASES_DIR.iterdir()):
+        cases.extend(
+            (case_dir.name, lang_name, case_dir / "input.yaml")
+            for lang_name in _LANGUAGES_WITH_BOTHVARS
+        )
+    return cases
+
+
+_BOTHVARS_CASES = _discover_bothvars_cases()
 
 
 @pytest.mark.parametrize(
@@ -604,6 +732,53 @@ def test_golden_file_with_variable_name(
         extension=lang_config.extension,
         fullpath=input_path.parent
         / (language + "_varname" + lang_config.extension),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=("_case_name", "language", "input_path"),
+    argvalues=_BOTHVARS_CASES,
+    ids=[f"{c[0]}/{c[1]}" for c in _BOTHVARS_CASES],
+)
+def test_golden_file_with_both_var_forms(
+    _case_name: str,
+    language: str,
+    input_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test golden file combining new-variable declaration and existing-
+    variable assignment.
+
+    The file shows both ``new_variable=True`` (e.g. ``const x = …``) and
+    ``new_variable=False`` (e.g. ``x = …``) output separated by a blank
+    line so that differences between the two forms are visible at a
+    glance.
+    """
+    lang_config = _LANGUAGES_WITH_BOTHVARS[language]
+    yaml_string = input_path.read_text()
+    decl = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=lang_config.spec,
+        prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=True,
+    )
+    assign = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=lang_config.spec,
+        prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=False,
+    )
+    combined = f"{decl}\n{assign}"
+    wrapped = lang_config.wrap(combined)
+    file_regression.check(
+        contents=wrapped + "\n",
+        extension=lang_config.extension,
+        fullpath=input_path.parent
+        / (language + "_bothvars" + lang_config.extension),
     )
 
 
