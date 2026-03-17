@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import base64
+import dataclasses
 import datetime
 import json
 import textwrap
@@ -1791,32 +1792,40 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
     assert result == expected
 
 
-# Maps each language to (declaration_expected, assignment_expected) for a
+@dataclasses.dataclass(frozen=True)
+class _VariableSyntax:
+    """Expected output for variable declaration and assignment."""
+
+    declaration: str
+    assignment: str
+
+
+# Maps each language to its declaration and assignment expected output for a
 # scalar integer. Both _DECLARATION_PARAMS and _ASSIGNMENT_PARAMS are derived
 # from this single source of truth so that adding a language to one
 # automatically adds it to the other.
-_VARIABLE_SYNTAX: dict[Language, tuple[str, str]] = {
-    PYTHON: ("my_var = 42", "my_var = 42"),
-    JAVASCRIPT: ("const my_var = 42;", "my_var = 42;"),
-    TYPESCRIPT: ("const my_var = 42;", "my_var = 42;"),
-    GO: ("my_var := 42", "my_var = 42"),
-    RUBY: ("my_var = 42", "my_var = 42"),
-    CSHARP: ("var my_var = 42;", "my_var = 42;"),
-    CPP: ("auto my_var = 42;", "my_var = 42;"),
-    JAVA: ("var my_var = 42;", "my_var = 42;"),
-    KOTLIN: ("val my_var = 42", "my_var = 42"),
-    SWIFT: ("let my_var = 42", "my_var = 42"),
-    RUST: ("let my_var = 42;", "my_var = 42;"),
-    PHP: ("$my_var = 42;", "$my_var = 42;"),
-    HASKELL: ("my_var = 42", "my_var = 42"),
-    DART: ("final my_var = 42;", "my_var = 42;"),
+_VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
+    PYTHON: _VariableSyntax("my_var = 42", "my_var = 42"),
+    JAVASCRIPT: _VariableSyntax("const my_var = 42;", "my_var = 42;"),
+    TYPESCRIPT: _VariableSyntax("const my_var = 42;", "my_var = 42;"),
+    GO: _VariableSyntax("my_var := 42", "my_var = 42"),
+    RUBY: _VariableSyntax("my_var = 42", "my_var = 42"),
+    CSHARP: _VariableSyntax("var my_var = 42;", "my_var = 42;"),
+    CPP: _VariableSyntax("auto my_var = 42;", "my_var = 42;"),
+    JAVA: _VariableSyntax("var my_var = 42;", "my_var = 42;"),
+    KOTLIN: _VariableSyntax("val my_var = 42", "my_var = 42"),
+    SWIFT: _VariableSyntax("let my_var = 42", "my_var = 42"),
+    RUST: _VariableSyntax("let my_var = 42;", "my_var = 42;"),
+    PHP: _VariableSyntax("$my_var = 42;", "$my_var = 42;"),
+    HASKELL: _VariableSyntax("my_var = 42", "my_var = 42"),
+    DART: _VariableSyntax("final my_var = 42;", "my_var = 42;"),
 }
 
 _DECLARATION_PARAMS = [
-    (lang, decl) for lang, (decl, _) in _VARIABLE_SYNTAX.items()
+    (lang, syntax.declaration) for lang, syntax in _VARIABLE_SYNTAX.items()
 ]
 _ASSIGNMENT_PARAMS = [
-    (lang, assign) for lang, (_, assign) in _VARIABLE_SYNTAX.items()
+    (lang, syntax.assignment) for lang, syntax in _VARIABLE_SYNTAX.items()
 ]
 
 
