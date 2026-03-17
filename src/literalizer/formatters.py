@@ -49,6 +49,7 @@ __all__ = [
     "format_variable_assignment_kotlin",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
+    "format_variable_assignment_r",
     "format_variable_assignment_ruby",
     "format_variable_assignment_rust",
     "format_variable_assignment_swift",
@@ -533,6 +534,15 @@ def format_datetime_r(value: datetime.datetime) -> str:
 @beartype
 def format_variable_declaration_r(name: str, value: str) -> str:
     """Format an R variable assignment using ``<-``.
+
+    Example: ``"x"`` and ``"list(1, 2)"`` → ``"x <- list(1, 2)"``
+    """
+    return f"{name} <- {value}"
+
+
+@beartype
+def format_variable_assignment_r(name: str, value: str) -> str:
+    """Format an R assignment to an existing variable using ``<-``.
 
     Example: ``"x"`` and ``"list(1, 2)"`` → ``"x <- list(1, 2)"``
     """

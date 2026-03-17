@@ -38,6 +38,7 @@ from literalizer.formatters import (
     format_variable_assignment_kotlin,
     format_variable_assignment_php,
     format_variable_assignment_python,
+    format_variable_assignment_r,
     format_variable_assignment_ruby,
     format_variable_assignment_rust,
     format_variable_assignment_swift,
@@ -576,4 +577,5 @@ R = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_r,
+    format_variable_assignment=format_variable_assignment_r,
 )
