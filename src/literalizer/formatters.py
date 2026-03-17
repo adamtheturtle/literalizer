@@ -55,6 +55,7 @@ __all__ = [
     "format_variable_assignment_java",
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
+    "format_variable_assignment_ocaml",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
     "format_variable_assignment_r",
@@ -74,6 +75,7 @@ __all__ = [
     "format_variable_declaration_js",
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
+    "format_variable_declaration_ocaml",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
     "format_variable_declaration_r",
@@ -84,6 +86,7 @@ __all__ = [
     "passthrough_list_entry",
     "passthrough_set_entry",
     "to_fsharp_val",
+    "to_ocaml_val",
 ]
 
 
@@ -867,6 +870,67 @@ def format_variable_assignment_fsharp(name: str, value: str) -> str:
     Example: ``"x"`` and ``"FList [1; 2]"`` → ``"let x: Val = FList [1; 2]"``
     """
     return f"let {name}: Val = {value}"
+
+
+@beartype
+def format_variable_declaration_ocaml(name: str, value: str) -> str:
+    """Format an OCaml ``let`` declaration with explicit ``val_t`` type.
+
+    Example: ``"x"`` and ``"OList [...]"`` → ``"let x : val_t = OList [...]"``
+    """
+    return f"let {name} : val_t = {value}"
+
+
+@beartype
+def format_variable_assignment_ocaml(name: str, value: str) -> str:
+    """Format an OCaml ``let`` re-binding with explicit ``val_t`` type.
+
+    Example: ``"x"`` and ``"OList [...]"`` → ``"let x : val_t = OList [...]"``
+    """
+    return f"let {name} : val_t = {value}"
+
+
+def to_ocaml_val(value: str) -> str:
+    """Wrap a pre-formatted value string in an OCaml ``val_t`` constructor.
+
+    Inspects the string representation to determine the appropriate
+    variant constructor: ``OStr``, ``OInt``, ``OFloat``, or passes through
+    values that are already ``val_t`` expressions
+    (``ONull``, ``OBool``, ``OList``, ``OMap``, ``OSet``).
+    """
+    _val_prefixes = (
+        "ONull",
+        "OBool",
+        "OList",
+        "OMap",
+        "OSet",
+        "OStr",
+        "OInt",
+        "OFloat",
+    )
+    if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"OStr {value}"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"OInt ({value})" if negative else f"OInt {value}"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"OFloat ({value})" if negative else f"OFloat {value}"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
