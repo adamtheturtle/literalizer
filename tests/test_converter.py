@@ -2035,7 +2035,7 @@ def test_to_ada_val_unknown_value() -> None:
 
 def test_to_ada_val_string_with_embedded_quote() -> None:
     """``to_ada_val`` uses Ada doubled-quote escaping, not backslash."""
-    result = to_ada_val('"hello \\"world\\""')
+    result = to_ada_val('"hello \\"world\\""')  # type: ignore[misc]
     assert result == 'AStr ("hello ""world""")'
 
 
