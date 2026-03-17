@@ -329,6 +329,11 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
     )
 
 
+def _wrap_perl(content: str) -> str:
+    """Wrap in a Perl variable assignment."""
+    return f"my $x = {content};"
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -816,6 +821,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_julia_dates,
             ),
         ),
+    ),
+    "perl": _LanguageConfig(
+        spec=literalizer.languages.PERL,
+        extension=".pl",
+        wrap=_wrap_perl,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
     ),
     "php": _LanguageConfig(
         spec=literalizer.languages.PHP,
