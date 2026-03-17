@@ -219,7 +219,9 @@ def _wrap_scala_varname(content: str) -> str:
 
 
 def _wrap_scala_combined(declaration: str, assignment: str) -> str:
-    """Scala: val declaration in one object, var + assignment in another."""
+    """Scala: val declaration in one object, var + assignment in
+    another.
+    """
     decl_indented = "  " + declaration.replace("\n", "\n  ")
     assign_indented = "  " + assignment.replace("\n", "\n  ")
     return (
@@ -264,6 +266,11 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
+
+
+def _wrap_r(content: str) -> str:
+    """Wrap in an R variable assignment."""
+    return f"x <- {content}"
 
 
 def _wrap_rust_varname(content: str) -> str:
@@ -703,6 +710,21 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_scala_varname,
         combined_wrap=_wrap_scala_combined,
         date_variants=(),
+    ),
+    "r": _LanguageConfig(
+        spec=literalizer.languages.R,
+        extension=".R",
+        wrap=_wrap_r,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
+        date_variants=(
+            _DateVariant(
+                name="r_native",
+                format_date=literalizer.formatters.format_date_r,
+                format_datetime=literalizer.formatters.format_datetime_r,
+                wrap=_wrap_r,
+            ),
+        ),
     ),
 }
 
