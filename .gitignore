@@ -33,4 +33,3 @@ uv.lock
 
 # Editor
 .mypy_cache/
-.mypy_cache_docs/

@@ -167,12 +167,10 @@ repos:
         additional_dependencies: [uv==0.9.5]
 
       # We do not use --example-workers 0 due to https://github.com/python/mypy/issues/18283
-      # We use a separate cache dir to avoid Windows file locking conflicts with the mypy hook
       - id: mypy-docs
         name: mypy-docs
         stages: [pre-push]
-        entry: uv run --extra=dev doccmd --no-write-to-file --language=python --command="mypy
-          --cache-dir=.mypy_cache_docs"
+        entry: uv run --extra=dev doccmd --no-write-to-file --language=python --command="mypy"
         language: python
         types_or: [markdown, rst]
         additional_dependencies: [uv==0.9.5]
