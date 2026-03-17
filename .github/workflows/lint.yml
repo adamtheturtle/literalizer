@@ -58,6 +58,7 @@ jobs:
           --verbose
         env:
           UV_PYTHON: ${{ matrix.python-version }}
+          SKIP: clojure-syntax-check
 
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()

@@ -6,6 +6,7 @@ ci:
     - actionlint
     - r-syntax-check
     - check-manifest
+    - clojure-syntax-check
     - csharp-golden-syntax-check
     - dart-syntax-check
     - elixir-syntax-check
@@ -509,6 +510,13 @@ repos:
         types: [haskell]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: clojure-syntax-check
+        name: Clojure syntax check
+        entry: clj-kondo --lint
+        language: system
+        files: ^tests/integration/cases/.*\.clj$
         stages: [pre-commit]
 
       - id: scala-golden-syntax-check
