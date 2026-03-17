@@ -1,4 +1,4 @@
-"""Check syntax of R golden files using Rscript."""
+"""Check syntax of R golden files using ``Rscript``."""
 
 import shutil
 import subprocess
@@ -6,9 +6,7 @@ import sys
 
 
 def main() -> None:
-    """Check syntax of each given R golden file, skipping if Rscript is
-    absent.
-    """
+    """Check syntax of each given R golden file."""
     rscript_path = shutil.which(cmd="Rscript") or "Rscript"
     result = subprocess.run(
         args=[
