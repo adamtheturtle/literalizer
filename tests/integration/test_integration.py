@@ -208,6 +208,33 @@ def _wrap_cpp_varname(content: str) -> str:
     )
 
 
+def _wrap_scala(content: str) -> str:
+    """Wrap in a Scala object with a typed variable assignment."""
+    return f"object Check {{\nval x: Any = {content}\n}}"
+
+
+def _wrap_scala_varname(content: str) -> str:
+    """Wrap a Scala variable declaration in an object."""
+    return f"object Check {{\n{content}\n}}"
+
+
+def _wrap_scala_combined(declaration: str, assignment: str) -> str:
+    """Scala: val declaration in one object, var + assignment in
+    another.
+    """
+    decl_indented = "  " + declaration.replace("\n", "\n  ")
+    assign_indented = "  " + assignment.replace("\n", "\n  ")
+    return (
+        f"object Declaration {{\n"
+        f"{decl_indented}\n"
+        f"}}\n"
+        f"object Assignment {{\n"
+        f"  var {_VARIABLE_NAME}: Any = null\n"
+        f"{assign_indented}\n"
+        f"}}"
+    )
+
+
 def _wrap_dart(content: str) -> str:
     """Wrap in a Dart final variable assignment."""
     return f"final x = {content};"
@@ -674,6 +701,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
         combined_wrap=lambda d, a: _wrap_php_varname(content=d + "\n" + a),
+        date_variants=(),
+    ),
+    "scala": _LanguageConfig(
+        spec=literalizer.languages.SCALA,
+        extension=".scala",
+        wrap=_wrap_scala,
+        varname_wrap=_wrap_scala_varname,
+        combined_wrap=_wrap_scala_combined,
         date_variants=(),
     ),
     "r": _LanguageConfig(

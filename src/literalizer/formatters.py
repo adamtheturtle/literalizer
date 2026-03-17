@@ -57,6 +57,7 @@ __all__ = [
     "format_variable_assignment_r",
     "format_variable_assignment_ruby",
     "format_variable_assignment_rust",
+    "format_variable_assignment_scala",
     "format_variable_assignment_swift",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
@@ -72,6 +73,7 @@ __all__ = [
     "format_variable_declaration_r",
     "format_variable_declaration_ruby",
     "format_variable_declaration_rust",
+    "format_variable_declaration_scala",
     "format_variable_declaration_swift",
     "passthrough_set_entry",
 ]
@@ -508,6 +510,15 @@ def format_variable_declaration_php(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_declaration_scala(name: str, value: str) -> str:
+    """Format a Scala ``val`` declaration.
+
+    Example: ``"x"`` and ``"List(1, 2)"`` → ``"val x = List(1, 2)"``
+    """
+    return f"val {name} = {value}"
+
+
+@beartype
 def format_variable_declaration_haskell(name: str, value: str) -> str:
     """Format a Haskell variable binding.
 
@@ -702,6 +713,15 @@ def format_variable_assignment_rust(name: str, value: str) -> str:
     Example: ``"x"`` and ``"vec![1, 2]"`` → ``"x = vec![1, 2];"``
     """
     return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_scala(name: str, value: str) -> str:
+    """Format a Scala assignment to an existing variable.
+
+    Example: ``"x"`` and ``"List(1, 2)"`` → ``"x = List(1, 2)"``
+    """
+    return f"{name} = {value}"
 
 
 @beartype
