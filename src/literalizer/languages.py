@@ -31,11 +31,15 @@ from literalizer.formatters import (
     format_variable_declaration_cpp,
     format_variable_declaration_csharp,
     format_variable_declaration_go,
+    format_variable_declaration_haskell,
     format_variable_declaration_java,
     format_variable_declaration_js,
     format_variable_declaration_kotlin,
+    format_variable_declaration_php,
     format_variable_declaration_python,
     format_variable_declaration_ruby,
+    format_variable_declaration_rust,
+    format_variable_declaration_swift,
     passthrough_set_entry,
 )
 
@@ -357,7 +361,7 @@ SWIFT = LanguageSpec(
     format_omap_entry=_format_swift_omap_entry,
     multiline_close_indent="",
     skip_null_dict_values=False,
-    format_variable_declaration=None,
+    format_variable_declaration=format_variable_declaration_swift,
 )
 
 
@@ -398,7 +402,7 @@ RUST = LanguageSpec(
     format_omap_entry=_format_rust_omap_entry,
     multiline_close_indent="",
     skip_null_dict_values=False,
-    format_variable_declaration=None,
+    format_variable_declaration=format_variable_declaration_rust,
 )
 
 
@@ -468,7 +472,7 @@ PHP = LanguageSpec(
     format_omap_entry=_format_php_omap_entry,
     multiline_close_indent="",
     skip_null_dict_values=False,
-    format_variable_declaration=None,
+    format_variable_declaration=format_variable_declaration_php,
 )
 
 
@@ -509,5 +513,5 @@ HASKELL = LanguageSpec(
     format_omap_entry=_format_haskell_omap_entry,
     multiline_close_indent="    ",
     skip_null_dict_values=False,
-    format_variable_declaration=None,
+    format_variable_declaration=format_variable_declaration_haskell,
 )

@@ -41,11 +41,15 @@ __all__ = [
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
     "format_variable_declaration_go",
+    "format_variable_declaration_haskell",
     "format_variable_declaration_java",
     "format_variable_declaration_js",
     "format_variable_declaration_kotlin",
+    "format_variable_declaration_php",
     "format_variable_declaration_python",
     "format_variable_declaration_ruby",
+    "format_variable_declaration_rust",
+    "format_variable_declaration_swift",
     "passthrough_set_entry",
 ]
 
@@ -449,6 +453,44 @@ def format_variable_declaration_kotlin(name: str, value: str) -> str:
     Example: ``"x"`` and ``"listOf(1, 2)"`` → ``"val x = listOf(1, 2)"``
     """
     return f"val {name} = {value}"
+
+
+@beartype
+def format_variable_declaration_swift(name: str, value: str) -> str:
+    """Format a Swift ``let`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"let x = [1, 2]"``
+    """
+    return f"let {name} = {value}"
+
+
+@beartype
+def format_variable_declaration_rust(name: str, value: str) -> str:
+    """Format a Rust ``let`` declaration.
+
+    Example: ``"x"`` and ``"vec![1, 2]"`` → ``"let x = vec![1, 2];"``
+    """
+    return f"let {name} = {value};"
+
+
+@beartype
+def format_variable_declaration_php(name: str, value: str) -> str:
+    """Format a PHP variable assignment.
+
+    The ``$`` sigil is prepended automatically.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
+    """
+    return f"${name} = {value};"
+
+
+@beartype
+def format_variable_declaration_haskell(name: str, value: str) -> str:
+    """Format a Haskell variable binding.
+
+    Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
+    """
+    return f"{name} = {value}"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
