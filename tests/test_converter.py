@@ -2041,5 +2041,5 @@ def test_matlab_dict_non_quoted_key() -> None:
     In practice keys are always double-quoted strings, but the defensive
     branch handles any other pre-formatted key by passing it through as-is.
     """
-    result = _format_matlab_dict_entry("somekey", "42")
+    result = _format_matlab_dict_entry("somekey", "42")  # type: ignore[misc]
     assert result == "somekey, 42"
