@@ -171,8 +171,15 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
 
     @property
     def format_variable_declaration(self) -> Callable[[str, str], str]:
-        """Callable that formats a variable declaration from a name and
-        value string.
+        """Callable that formats a new variable declaration from a name
+        and value string.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_variable_assignment(self) -> Callable[[str, str], str]:
+        """Callable that formats an assignment to an existing variable
+        from a name and value string.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -233,5 +240,6 @@ class LanguageSpec:
     multiline_close_indent: str
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
+    format_variable_assignment: Callable[[str, str], str]
     element_separator: str
     format_list_entry: Callable[[str], str]

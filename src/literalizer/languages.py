@@ -29,6 +29,19 @@ from literalizer.formatters import (
     format_date_php,
     format_datetime_iso,
     format_datetime_php,
+    format_variable_assignment_cpp,
+    format_variable_assignment_csharp,
+    format_variable_assignment_fsharp,
+    format_variable_assignment_go,
+    format_variable_assignment_haskell,
+    format_variable_assignment_java,
+    format_variable_assignment_js,
+    format_variable_assignment_kotlin,
+    format_variable_assignment_php,
+    format_variable_assignment_python,
+    format_variable_assignment_ruby,
+    format_variable_assignment_rust,
+    format_variable_assignment_swift,
     format_variable_declaration_cpp,
     format_variable_declaration_csharp,
     format_variable_declaration_fsharp,
@@ -80,6 +93,7 @@ PYTHON = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_python,
+    format_variable_assignment=format_variable_assignment_python,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -118,6 +132,7 @@ CSHARP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
+    format_variable_assignment=format_variable_assignment_csharp,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -155,6 +170,7 @@ JAVASCRIPT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
+    format_variable_assignment=format_variable_assignment_js,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -186,6 +202,7 @@ TYPESCRIPT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_js,
+    format_variable_assignment=format_variable_assignment_js,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -223,6 +240,7 @@ RUBY = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_ruby,
+    format_variable_assignment=format_variable_assignment_ruby,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -269,6 +287,7 @@ GO = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_go,
+    format_variable_assignment=format_variable_assignment_go,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -307,6 +326,7 @@ CPP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_cpp,
+    format_variable_assignment=format_variable_assignment_cpp,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -344,6 +364,7 @@ JAVA = LanguageSpec(
     format_omap_entry=_format_java_dict_entry,
     multiline_close_indent="",
     format_variable_declaration=format_variable_declaration_java,
+    format_variable_assignment=format_variable_assignment_java,
     skip_null_dict_values=True,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
@@ -382,6 +403,7 @@ SWIFT = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_swift,
+    format_variable_assignment=format_variable_assignment_swift,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -425,6 +447,7 @@ RUST = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_rust,
+    format_variable_assignment=format_variable_assignment_rust,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -462,6 +485,7 @@ KOTLIN = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_kotlin,
+    format_variable_assignment=format_variable_assignment_kotlin,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -499,6 +523,7 @@ PHP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_php,
+    format_variable_assignment=format_variable_assignment_php,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -542,6 +567,7 @@ HASKELL = LanguageSpec(
     multiline_close_indent="    ",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_haskell,
+    format_variable_assignment=format_variable_assignment_haskell,
     element_separator=",",
     format_list_entry=passthrough_list_entry,
 )
@@ -596,6 +622,7 @@ FSHARP = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_fsharp,
+    format_variable_assignment=format_variable_assignment_fsharp,
     element_separator=";",
     format_list_entry=_format_fsharp_list_entry,
 )
