@@ -11,6 +11,7 @@ FNull
 FSet
 FStr
 JSONDecodeError
+Lua
 NEL
 YAMLError
 beartype
@@ -38,6 +39,7 @@ kts
 literalize
 literalizer
 localhost
+luac
 namespaces
 natively
 ofEntries
