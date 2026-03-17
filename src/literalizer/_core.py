@@ -381,6 +381,7 @@ def literalize_yaml(
     )
 
     cp = language.comment_prefix
+    cs = language.comment_suffix
 
     if isinstance(data, set):
         result = base
@@ -392,6 +393,7 @@ def literalize_yaml(
             tokens=tokens,
             base=base,
             comment_prefix=cp,
+            comment_suffix=cs,
             prefix=prefix,
         )
     elif not base:
@@ -441,6 +443,7 @@ def literalize_yaml(
                 element_comments=collection_comments.elements,
                 trailing=collection_comments.trailing,
                 comment_prefix=cp,
+                comment_suffix=cs,
                 prefix=prefix,
                 wrap=wrap,
             )

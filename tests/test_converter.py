@@ -540,6 +540,7 @@ def test_custom_language() -> None:
         format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1113,6 +1114,7 @@ def test_custom_format_date() -> None:
         format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1155,6 +1157,7 @@ def test_custom_format_datetime() -> None:
         format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1197,6 +1200,7 @@ def test_java_native_dates() -> None:
         format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1241,6 +1245,7 @@ def test_ruby_native_dates() -> None:
         format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1380,6 +1385,7 @@ def test_custom_format_bytes() -> None:
         format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
@@ -1589,6 +1595,20 @@ def test_comment_prefix(language: LanguageSpec, expected: str) -> None:
     assert language.comment_prefix == expected
 
 
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        PYTHON,
+        RUBY,
+        JAVASCRIPT,
+        GO,
+    ],
+)
+def test_comment_suffix(language: LanguageSpec) -> None:
+    """Each language has an empty comment suffix."""
+    assert language.comment_suffix == ""
+
+
 def test_yaml_comment_escaped_quote_in_value() -> None:
     """Escaped quotes do not end the quoted context."""
     yaml_string = 'key: "value \\" # not a comment" # real\n'
@@ -1782,6 +1802,7 @@ def test_omap_custom_language_spec() -> None:
         format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
+        comment_suffix="",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,

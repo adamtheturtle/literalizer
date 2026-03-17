@@ -151,6 +151,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def comment_suffix(self) -> str:
+        """The comment suffix for the language (e.g. ``""`` or
+        ``" *)"`` for block-comment styles).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def omap_open(self) -> str:
         """The opening delimiter for ordered-map literals."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -236,6 +243,7 @@ class LanguageSpec:
     format_list_entry: Callable[[str], str]
     format_set_entry: Callable[[str], str]
     comment_prefix: str
+    comment_suffix: str
     omap_open: str
     omap_close: str
     format_omap_entry: Callable[[str, str], str]
