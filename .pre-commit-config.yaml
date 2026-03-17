@@ -44,6 +44,7 @@ ci:
     - ruff-format-fix-docs
     - cpp-golden-syntax-check
     - swift-syntax-check
+    - perl-syntax-check
     - php-syntax-check
     - ruby-syntax-check
     - rust-golden-syntax-check
@@ -582,6 +583,14 @@ repos:
           String))" -- "$f" || exit 1; done' --
         language: system
         types: [julia]
+        files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: perl-syntax-check
+        name: Perl golden file syntax check
+        entry: perl -c
+        language: system
+        types: [perl]
         files: ^tests/integration/cases/
         stages: [pre-commit]
 
