@@ -508,10 +508,11 @@ repos:
 
       - id: r-syntax-check
         name: R golden file syntax check
-        entry: Rscript -e "for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)"
-        language: system
+        entry: uv run python check_r_golden_syntax.py
+        language: python
         types: [r]
         files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: sphinx-lint
