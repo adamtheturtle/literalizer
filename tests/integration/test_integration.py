@@ -129,6 +129,21 @@ _OCAML_VAL_TYPE = (
     "  | OSet of val_t list\n"
 )
 
+_OCCAM_LIT_TYPE = (
+    "MOBILE DATA TYPE LIT IS\n"
+    "  CASE\n"
+    "    lit.null\n"
+    "    lit.bool ; BOOL\n"
+    "    lit.int ; INT\n"
+    "    lit.float ; REAL32\n"
+    "    lit.str ; MOBILE []BYTE\n"
+    "    lit.list ; MOBILE []MOBILE LIT\n"
+    "    lit.map ; MOBILE []MOBILE LIT\n"
+    "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
+    "    lit.set ; MOBILE []MOBILE LIT\n"
+    ":"
+)
+
 
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
@@ -159,6 +174,36 @@ def _wrap_ocaml_varname(content: str) -> str:
         + "\n"
         + content
         + "\n\nend"
+    )
+
+
+def _wrap_occam(content: str) -> str:
+    """Wrap in an occam-pi PROC with a custom ``LIT`` mobile data type."""
+    return (
+        _OCCAM_LIT_TYPE
+        + "\n\n"
+        + "PROC check ()\n"
+        + f"  VAL MOBILE LIT x IS {content}:\n"
+        + "  SEQ\n"
+        + "    SKIP\n"
+        + ":"
+    )
+
+
+def _wrap_occam_varname(content: str) -> str:
+    """Wrap an occam-pi ``VAL`` declaration in a PROC with the LIT
+    type.
+    """
+    indented = "  " + content.replace("\n", "\n  ")
+    return (
+        _OCCAM_LIT_TYPE
+        + "\n\n"
+        + "PROC check ()\n"
+        + indented
+        + "\n"
+        + "  SEQ\n"
+        + "    SKIP\n"
+        + ":"
     )
 
 
@@ -881,6 +926,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_ocaml,
         varname_wrap=_wrap_ocaml_varname,
         combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
+        date_variants=(),
+    ),
+    "occam": _LanguageConfig(
+        spec=literalizer.languages.OCCAM,
+        extension=".occ",
+        wrap=_wrap_occam,
+        varname_wrap=_wrap_occam_varname,
+        combined_wrap=lambda d, _a: _wrap_occam_varname(content=d),
         date_variants=(),
     ),
     "groovy": _LanguageConfig(
