@@ -291,6 +291,11 @@ def _wrap_ruby_date(content: str) -> str:
     return f"require 'date'\n{content}"
 
 
+def _wrap_julia_dates(content: str) -> str:
+    """Wrap with ``using Dates`` for native Julia date literals."""
+    return f"using Dates\n{content}"
+
+
 @dataclasses.dataclass
 class _DateVariant:
     """A date/datetime formatting variant for a language."""
@@ -466,6 +471,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_haskell,
         date_variants=(),
     ),
+    "julia": _LanguageConfig(
+        spec=literalizer.languages.JULIA,
+        extension=".jl",
+        wrap=_wrap_identity,
+        date_variants=(
+            _DateVariant(
+                name="julia_native",
+                format_date=literalizer.formatters.format_date_julia,
+                format_datetime=literalizer.formatters.format_datetime_julia,
+                wrap=_wrap_julia_dates,
+            ),
+        ),
+    ),
     "php": _LanguageConfig(
         spec=literalizer.languages.PHP,
         extension=".php",
@@ -540,6 +558,12 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.ELIXIR,
         extension=".ex",
         wrap=_wrap_elixir_varname,
+        date_variants=(),
+    ),
+    "julia": _LanguageConfig(
+        spec=literalizer.languages.JULIA,
+        extension=".jl",
+        wrap=_wrap_identity,
         date_variants=(),
     ),
 }
