@@ -53,6 +53,7 @@ __all__ = [
     "format_variable_assignment_erlang",
     "format_variable_assignment_fsharp",
     "format_variable_assignment_go",
+    "format_variable_assignment_groovy",
     "format_variable_assignment_haskell",
     "format_variable_assignment_java",
     "format_variable_assignment_js",
@@ -72,6 +73,7 @@ __all__ = [
     "format_variable_declaration_erlang",
     "format_variable_declaration_fsharp",
     "format_variable_declaration_go",
+    "format_variable_declaration_groovy",
     "format_variable_declaration_haskell",
     "format_variable_declaration_java",
     "format_variable_declaration_js",
@@ -562,7 +564,7 @@ def format_variable_declaration_fsharp(name: str, value: str) -> str:
 
     Example: ``"x"`` and ``"FList [...]"`` → ``"let x: Val = FList [...]"``
     """
-    return f"let {name}: Val = {value}"
+    return f"let {name}: Val = {to_fsharp_val(value=value)}"
 
 
 def to_fsharp_val(value: str) -> str:
@@ -869,7 +871,25 @@ def format_variable_assignment_fsharp(name: str, value: str) -> str:
 
     Example: ``"x"`` and ``"FList [1; 2]"`` → ``"let x: Val = FList [1; 2]"``
     """
-    return f"let {name}: Val = {value}"
+    return f"let {name}: Val = {to_fsharp_val(value=value)}"
+
+
+@beartype
+def format_variable_declaration_groovy(name: str, value: str) -> str:
+    """Format a Groovy ``def`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"def x = [1, 2]"``
+    """
+    return f"def {name} = {value}"
+
+
+@beartype
+def format_variable_assignment_groovy(name: str, value: str) -> str:
+    """Format a Groovy assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
 
 
 @beartype
