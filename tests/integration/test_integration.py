@@ -213,6 +213,23 @@ def _wrap_php(content: str) -> str:
     return f"<?php\n$x = {content};"
 
 
+def _wrap_elixir(content: str) -> str:
+    """Wrap in an Elixir module function."""
+    return f"defmodule Check do\n  def x do\n    {content}\n  end\nend"
+
+
+def _wrap_elixir_varname(content: str) -> str:
+    """Wrap an Elixir variable assignment in a module function."""
+    return (
+        f"defmodule Check do\n"
+        f"  def x do\n"
+        f"    {content}\n"
+        f"    _ = {_VARIABLE_NAME}\n"
+        f"  end\n"
+        f"end"
+    )
+
+
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
@@ -455,6 +472,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_php,
         date_variants=(),
     ),
+    "elixir": _LanguageConfig(
+        spec=literalizer.languages.ELIXIR,
+        extension=".ex",
+        wrap=_wrap_elixir,
+        date_variants=(),
+    ),
 }
 
 
@@ -511,6 +534,12 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp_varname,
+        date_variants=(),
+    ),
+    "elixir": _LanguageConfig(
+        spec=literalizer.languages.ELIXIR,
+        extension=".ex",
+        wrap=_wrap_elixir_varname,
         date_variants=(),
     ),
 }
