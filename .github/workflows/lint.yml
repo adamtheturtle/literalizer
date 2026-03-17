@@ -30,6 +30,8 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
       - name: Install R
         uses: r-lib/actions/setup-r@v2
+      - name: Install Dart
+        uses: dart-lang/setup-dart@v1
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -38,7 +40,9 @@ jobs:
 
       - name: Initialize .NET runtime
         if: runner.os == 'Linux'
-        run: dotnet --info
+        run: |
+          mkdir -p /tmp/.dotnet/shm
+          dotnet --info
 
       - name: Lint
         shell: bash
