@@ -9,9 +9,7 @@ def main() -> None:
     """Check syntax of each given R golden file, skipping if Rscript is
     absent.
     """
-    rscript_path = shutil.which(cmd="Rscript")
-    if rscript_path is None:
-        sys.exit(0)
+    rscript_path = shutil.which(cmd="Rscript") or "Rscript"
     result = subprocess.run(
         args=[
             rscript_path,
