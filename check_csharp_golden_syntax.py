@@ -7,6 +7,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+_DOTNET_ENV = {
+    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+    "DOTNET_NOLOGO": "1",
+}
+
 
 def _target_framework(dotnet_path: str) -> str:
     """Return the target framework moniker for the installed
@@ -16,13 +21,7 @@ def _target_framework(dotnet_path: str) -> str:
         dotnet_tmp = Path(tmpdir) / "tmp"
         dotnet_tmp.mkdir()
         env = os.environ.copy()
-        env.update(
-            {
-                "TMPDIR": dotnet_tmp.as_posix(),
-                "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
-                "DOTNET_NOLOGO": "1",
-            }
-        )
+        env.update({"TMPDIR": dotnet_tmp.as_posix(), **_DOTNET_ENV})
         result = subprocess.run(
             args=[dotnet_path, "--version"],
             capture_output=True,
@@ -61,13 +60,7 @@ def main() -> None:
             dotnet_tmp = Path(tmpdir) / "tmp"
             dotnet_tmp.mkdir()
             env = os.environ.copy()
-            env["TMPDIR"] = dotnet_tmp.as_posix()
-            env.update(
-                {
-                    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
-                    "DOTNET_NOLOGO": "1",
-                }
-            )
+            env.update({"TMPDIR": dotnet_tmp.as_posix(), **_DOTNET_ENV})
             result = subprocess.run(
                 args=[dotnet_path, "build", csproj_path.as_posix()],
                 capture_output=True,
