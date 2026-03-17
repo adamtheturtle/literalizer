@@ -190,6 +190,7 @@ DART = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_dart,
     format_variable_assignment=format_variable_assignment_dart,
+    format_collection_open=None,
 )
 
 
@@ -686,6 +687,7 @@ ELIXIR = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_elixir,
     format_variable_assignment=format_variable_assignment_elixir,
+    format_collection_open=None,
 )
 
 
@@ -764,6 +766,7 @@ CLOJURE = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_clojure,
     format_variable_assignment=format_variable_assignment_clojure,
+    format_collection_open=None,
 )
 
 
@@ -802,6 +805,7 @@ SCALA = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_scala,
     format_variable_assignment=format_variable_assignment_scala,
+    format_collection_open=None,
 )
 
 
@@ -840,4 +844,5 @@ R = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_r,
     format_variable_assignment=format_variable_assignment_r,
+    format_collection_open=None,
 )
