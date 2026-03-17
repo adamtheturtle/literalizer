@@ -27,9 +27,11 @@ Usage examples
 
    from literalizer import LanguageSpec, literalize_json, literalize_yaml
    from literalizer.formatters import (
+       dict_entry_with_separator,
        format_bytes_hex,
        format_date_iso,
        format_datetime_iso,
+       passthrough_set_entry,
    )
    from literalizer.languages import JAVA, JAVASCRIPT, PYTHON
 
@@ -107,10 +109,9 @@ Usage examples
        false_literal="FALSE",
        collection_open="[",
        collection_close="]",
-       dict_separator=": ",
        dict_open="{",
        dict_close="}",
-       format_dict_entry=None,
+       format_dict_entry=dict_entry_with_separator(separator=": "),
        trailing_comma=True,
        single_element_trailing_comma=False,
        format_bytes=format_bytes_hex,
@@ -121,7 +122,7 @@ Usage examples
        set_open="[",
        set_close="]",
        empty_set=None,
-       format_set_entry=None,
+       format_set_entry=passthrough_set_entry,
        comment_prefix="//",
        omap_open="{",
        omap_close="}",
