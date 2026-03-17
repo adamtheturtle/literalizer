@@ -420,6 +420,15 @@ repos:
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
+      - id: check-case-input-yaml
+        name: Check test case directories have input.yaml
+        entry: bash -c 'missing=; for d in tests/integration/cases/*/; do [ -f "${d}input.yaml"
+          ] || missing="${missing} ${d}"; done; [ -z "$missing" ] || { echo "Missing
+          input.yaml in:${missing}"; exit 1; }'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: ruby-syntax-check
         name: Ruby syntax check
         entry: ruby -c
