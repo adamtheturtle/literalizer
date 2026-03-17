@@ -22,6 +22,7 @@ from literalizer import (
 )
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.formatters import (
+    dict_entry_with_separator,
     format_bytes_hex,
     format_bytes_python,
     format_date_cpp,
@@ -48,17 +49,22 @@ from literalizer.formatters import (
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
+    format_variable_declaration_python,
+    passthrough_set_entry,
 )
 from literalizer.languages import (
     CPP,
     CSHARP,
     GO,
+    HASKELL,
     JAVA,
     JAVASCRIPT,
     KOTLIN,
+    PHP,
     PYTHON,
     RUBY,
     RUST,
+    SWIFT,
     TYPESCRIPT,
 )
 
@@ -148,7 +154,7 @@ def test_dict_wrap() -> None:
     assert result == expected
 
 
-def test_java_dict_wrap_no_trailing_comma() -> None:
+def test_java_dict_wrap_no_multiline_trailing_comma() -> None:
     """Java Map.ofEntries() must not have a trailing comma before the
     closing paren.
     """
@@ -528,11 +534,10 @@ def test_custom_language() -> None:
         false_literal="NO",
         collection_open="<",
         collection_close=">",
-        dict_separator=" -> ",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=True,
+        format_dict_entry=dict_entry_with_separator(separator=" -> "),
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
@@ -542,14 +547,14 @@ def test_custom_language() -> None:
         set_open="<",
         set_close=">",
         empty_set=None,
-        format_set_entry=None,
+        format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
     )
     result = literalize_json(
@@ -1089,11 +1094,10 @@ def test_custom_format_date() -> None:
         false_literal="False",
         collection_open="(",
         collection_close=")",
-        dict_separator=": ",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=True,
+        format_dict_entry=dict_entry_with_separator(separator=": "),
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_python,
@@ -1103,14 +1107,14 @@ def test_custom_format_date() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_set_entry=None,
+        format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
     )
     result = literalize_yaml(
@@ -1130,11 +1134,10 @@ def test_custom_format_datetime() -> None:
         false_literal="False",
         collection_open="(",
         collection_close=")",
-        dict_separator=": ",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=True,
+        format_dict_entry=dict_entry_with_separator(separator=": "),
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
@@ -1144,14 +1147,14 @@ def test_custom_format_datetime() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_set_entry=None,
+        format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
     )
     result = literalize_yaml(
@@ -1171,11 +1174,10 @@ def test_java_native_dates() -> None:
         false_literal="false",
         collection_open="{",
         collection_close="}",
-        dict_separator=": ",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=True,
+        format_dict_entry=dict_entry_with_separator(separator=": "),
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_java,
@@ -1185,14 +1187,14 @@ def test_java_native_dates() -> None:
         set_open="Set.of(",
         set_close=")",
         empty_set=None,
-        format_set_entry=None,
+        format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
     )
     result = literalize_yaml(
@@ -1214,11 +1216,10 @@ def test_ruby_native_dates() -> None:
         false_literal="false",
         collection_open="[",
         collection_close="]",
-        dict_separator=" => ",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=True,
+        format_dict_entry=dict_entry_with_separator(separator=" => "),
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_ruby,
@@ -1228,14 +1229,14 @@ def test_ruby_native_dates() -> None:
         set_open="Set.new([",
         set_close="])",
         empty_set="Set.new",
-        format_set_entry=None,
+        format_set_entry=passthrough_set_entry,
         comment_prefix="#",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
     )
     result = literalize_yaml(
@@ -1352,11 +1353,10 @@ def test_custom_format_bytes() -> None:
         false_literal="False",
         collection_open="(",
         collection_close=")",
-        dict_separator=": ",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=True,
+        format_dict_entry=dict_entry_with_separator(separator=": "),
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_python,
         format_date=format_date_iso,
@@ -1366,14 +1366,14 @@ def test_custom_format_bytes() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_set_entry=None,
+        format_set_entry=passthrough_set_entry,
         comment_prefix="#",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
     )
     result = literalize_yaml(
@@ -1753,11 +1753,10 @@ def test_omap_custom_language_spec() -> None:
         false_literal="false",
         collection_open="[",
         collection_close="]",
-        dict_separator=": ",
         dict_open="{",
         dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=True,
+        format_dict_entry=dict_entry_with_separator(separator=": "),
+        multiline_trailing_comma=True,
         single_element_trailing_comma=False,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
@@ -1767,14 +1766,14 @@ def test_omap_custom_language_spec() -> None:
         set_open="[",
         set_close="]",
         empty_set=None,
-        format_set_entry=None,
+        format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
         skip_null_dict_values=False,
-        format_variable_declaration=None,
+        format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
     )
     result = literalize_yaml(
@@ -1824,6 +1823,10 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
         (CPP, "auto my_var = 42;"),
         (JAVA, "var my_var = 42;"),
         (KOTLIN, "val my_var = 42"),
+        (SWIFT, "let my_var = 42"),
+        (RUST, "let my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
     ],
 )
 def test_variable_declaration_json(
@@ -1852,6 +1855,10 @@ def test_variable_declaration_json(
         (CPP, "auto my_var = 42;"),
         (JAVA, "var my_var = 42;"),
         (KOTLIN, "val my_var = 42"),
+        (SWIFT, "let my_var = 42"),
+        (RUST, "let my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
     ],
 )
 def test_variable_declaration_yaml(
@@ -1878,47 +1885,3 @@ def test_variable_declaration_none_no_wrap() -> None:
         variable_name=None,
     )
     assert result == "(\n    1,\n    2,\n)"
-
-
-def test_variable_declaration_language_no_formatter() -> None:
-    """Language with format_variable_declaration=None ignores
-    variable_name.
-    """
-    custom = LanguageSpec(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        collection_open="[",
-        collection_close="]",
-        dict_separator=": ",
-        dict_open="{",
-        dict_close="}",
-        format_dict_entry=None,
-        trailing_comma=False,
-        single_element_trailing_comma=False,
-        format_bytes=format_bytes_hex,
-        format_date=format_date_iso,
-        format_datetime=format_datetime_iso,
-        empty_collection=None,
-        empty_dict=None,
-        set_open="{",
-        set_close="}",
-        empty_set=None,
-        format_set_entry=None,
-        comment_prefix="#",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
-        multiline_close_indent="",
-        skip_null_dict_values=False,
-        format_variable_declaration=None,
-        format_collection_open=None,
-    )
-    result = literalize_json(
-        json_string="[1, 2]",
-        language=custom,
-        prefix="",
-        wrap=True,
-        variable_name="x",
-    )
-    assert result == "[\n    1,\n    2\n]"

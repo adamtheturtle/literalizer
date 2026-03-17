@@ -58,9 +58,7 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
 @beartype
 def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
     """Format a single dict key-value entry using the language spec."""
-    if spec.format_dict_entry is not None:
-        return spec.format_dict_entry(key_str, val_str)
-    return f"{key_str}{spec.dict_separator}{val_str}"
+    return spec.format_dict_entry(key_str, val_str)
 
 
 @beartype
@@ -70,10 +68,7 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
         return spec.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
-    if spec.format_set_entry is not None:
-        entries = [spec.format_set_entry(item) for item in formatted]
-    else:
-        entries = formatted
+    entries = [spec.format_set_entry(item) for item in formatted]
     return spec.set_open + ", ".join(entries) + spec.set_close
 
 
@@ -244,25 +239,25 @@ def _literalize(
                     key_str=formatted_key, val_str=formatted_val, spec=spec
                 )
             )
-            comma = "" if i == last_idx and not spec.trailing_comma else ","
+            add_comma = i < last_idx or spec.multiline_trailing_comma
+            comma = "," if add_comma else ""
             lines.append(f"{effective_prefix}{entry}{comma}")
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
             formatted = _format_value(value=item, spec=spec)
-            if spec.format_set_entry is not None:
-                entry = spec.format_set_entry(formatted)
-            else:
-                entry = formatted
-            comma = "" if i == last_idx and not spec.trailing_comma else ","
+            entry = spec.format_set_entry(formatted)
+            add_comma = i < last_idx or spec.multiline_trailing_comma
+            comma = "," if add_comma else ""
             lines.append(f"{effective_prefix}{entry}{comma}")
     else:
         items = list(data)
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
             formatted = _format_value(value=item, spec=spec)
-            comma = "" if i == last_idx and not spec.trailing_comma else ","
+            add_comma = i < last_idx or spec.multiline_trailing_comma
+            comma = "," if add_comma else ""
             lines.append(f"{effective_prefix}{formatted}{comma}")
 
     body = "\n".join(lines)
@@ -316,9 +311,8 @@ def literalize_json(
         prefix=prefix,
         wrap=wrap,
     )
-    fmt = language.format_variable_declaration
-    if variable_name is not None and fmt is not None:
-        return fmt(variable_name, result)
+    if variable_name is not None:
+        return language.format_variable_declaration(variable_name, result)
     return result
 
 
@@ -435,7 +429,6 @@ def literalize_yaml(
             )
             result = literalize_yaml_collection(ctx=ctx)
 
-    fmt = language.format_variable_declaration
-    if variable_name is not None and fmt is not None:
-        return fmt(variable_name, result)
+    if variable_name is not None:
+        return language.format_variable_declaration(variable_name, result)
     return result
