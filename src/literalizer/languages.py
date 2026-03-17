@@ -82,7 +82,7 @@ from literalizer.formatters import (
     format_variable_declaration_rust,
     format_variable_declaration_scala,
     format_variable_declaration_swift,
-    passthrough_list_entry,
+    passthrough_sequence_entry,
     passthrough_set_entry,
     to_fsharp_val,
     to_ocaml_val,
@@ -113,7 +113,7 @@ PYTHON = LanguageSpec(
     set_open="{",
     set_close="}",
     empty_set="set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
     omap_open="OrderedDict([",
@@ -152,7 +152,7 @@ CSHARP = LanguageSpec(
     set_open="new HashSet<object> {",
     set_close="}",
     empty_set="new HashSet<object>()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="new Dictionary<string, object> {",
@@ -190,7 +190,7 @@ DART = LanguageSpec(
     set_open="{",
     set_close="}",
     empty_set="<dynamic>{}",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="{",
@@ -228,7 +228,7 @@ JAVASCRIPT = LanguageSpec(
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="{",
@@ -260,7 +260,7 @@ TYPESCRIPT = LanguageSpec(
     set_open="new Set([",
     set_close="])",
     empty_set="new Set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="{",
@@ -298,7 +298,7 @@ RUBY = LanguageSpec(
     set_open="Set.new([",
     set_close="])",
     empty_set="Set.new",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
     omap_open="{",
@@ -345,7 +345,7 @@ GO = LanguageSpec(
     set_open="map[any]struct{}{",
     set_close="}",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=_format_go_set_entry,
     comment_prefix="//",
     omap_open="[][2]any{",
@@ -384,7 +384,7 @@ CPP = LanguageSpec(
     set_open="{",
     set_close="}",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="{",
@@ -423,7 +423,7 @@ JAVA = LanguageSpec(
     set_open="Set.of(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="new java.util.ArrayList<>(java.util.Arrays.asList(",
@@ -461,7 +461,7 @@ SWIFT = LanguageSpec(
     set_open="Set<AnyHashable>([",
     set_close="])",
     empty_set="Set<AnyHashable>()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="[",
@@ -505,7 +505,7 @@ RUST = LanguageSpec(
     set_open="HashSet::from([",
     set_close="])",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="HashMap::from([",
@@ -543,7 +543,7 @@ KOTLIN = LanguageSpec(
     set_open="setOf<Any?>(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="linkedMapOf<String, Any?>(",
@@ -581,7 +581,7 @@ PHP = LanguageSpec(
     set_open="[",
     set_close="]",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="[",
@@ -619,7 +619,7 @@ JULIA = LanguageSpec(
     set_open="Set([",
     set_close="])",
     empty_set="Set()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
     omap_open="[",
@@ -658,7 +658,7 @@ ELIXIR = LanguageSpec(
     set_open="MapSet.new([",
     set_close="])",
     empty_set="MapSet.new()",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
     omap_open="[",
@@ -702,7 +702,7 @@ HASKELL = LanguageSpec(
     set_open="HSet [",
     set_close="]",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="--",
     omap_open="HMap [",
@@ -731,8 +731,8 @@ def _format_fsharp_set_entry(item: str) -> str:
     return to_fsharp_val(value=item)
 
 
-def _format_fsharp_list_entry(item: str) -> str:
-    """Format an F# list entry with the appropriate ``Val``
+def _format_fsharp_sequence_entry(item: str) -> str:
+    """Format an F# sequence entry with the appropriate ``Val``
     constructor.
     """
     return to_fsharp_val(value=item)
@@ -767,7 +767,7 @@ FSHARP = LanguageSpec(
     format_variable_declaration=format_variable_declaration_fsharp,
     format_variable_assignment=format_variable_assignment_fsharp,
     element_separator="; ",
-    format_list_entry=_format_fsharp_list_entry,
+    format_sequence_entry=_format_fsharp_sequence_entry,
 )
 
 
@@ -790,7 +790,7 @@ CLOJURE = LanguageSpec(
     set_open="#{",
     set_close="}",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix=";",
     omap_open="{",
@@ -828,7 +828,7 @@ SCALA = LanguageSpec(
     set_open="Set(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="scala.collection.immutable.ListMap(",
@@ -861,7 +861,7 @@ def _format_ocaml_set_entry(item: str) -> str:
     return to_ocaml_val(value=item)
 
 
-def _format_ocaml_list_entry(item: str) -> str:
+def _format_ocaml_sequence_entry(item: str) -> str:
     """Format an OCaml list entry with the appropriate ``val_t``
     constructor.
     """
@@ -897,7 +897,7 @@ OCAML = LanguageSpec(
     format_variable_declaration=format_variable_declaration_ocaml,
     format_variable_assignment=format_variable_assignment_ocaml,
     element_separator="; ",
-    format_list_entry=_format_ocaml_list_entry,
+    format_sequence_entry=_format_ocaml_sequence_entry,
 )
 
 
@@ -920,7 +920,7 @@ GROOVY = LanguageSpec(
     set_open="[",
     set_close="] as Set<Object>",
     empty_set="[] as Set<Object>",
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="//",
     omap_open="[",
@@ -957,7 +957,7 @@ R = LanguageSpec(
     set_open="list(",
     set_close=")",
     empty_set=None,
-    format_list_entry=passthrough_list_entry,
+    format_sequence_entry=passthrough_sequence_entry,
     format_set_entry=passthrough_set_entry,
     comment_prefix="#",
     omap_open="list(",

@@ -53,7 +53,7 @@ from literalizer.formatters import (
     format_variable_assignment_fsharp,
     format_variable_assignment_python,
     format_variable_declaration_python,
-    passthrough_list_entry,
+    passthrough_sequence_entry,
     passthrough_set_entry,
     to_fsharp_val,
     to_ocaml_val,
@@ -103,8 +103,8 @@ def _format_test_omap_entry(key: str, value: str) -> str:
         (RUST, 'vec![true, None, "hi", vec![1, 2]],'),
     ],
 )
-def test_language_list(*, language: Language, expected: str) -> None:
-    """Each language produces the correct list literal."""
+def test_language_sequence(*, language: Language, expected: str) -> None:
+    """Each language produces the correct sequence literal."""
     result = literalize_json(
         json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
         language=language,
@@ -289,8 +289,8 @@ def test_java_yaml_omap_skips_null_values() -> None:
     assert result == expected
 
 
-def test_java_list_wrap_uses_braces() -> None:
-    """Java wrapped lists use ``new Object[]{…}``."""
+def test_java_sequence_wrap_uses_braces() -> None:
+    """Java wrapped sequences use ``new Object[]{…}``."""
     result = literalize_json(
         json_string=json.dumps(obj=[1, "hello", True]),
         language=JAVA,
@@ -386,8 +386,8 @@ def test_dicts() -> None:
     assert result == '{"name": "alice", "age": 30},'
 
 
-def test_nested_dict_in_list() -> None:
-    """A dict nested inside a list is rendered inline."""
+def test_nested_dict_in_sequence() -> None:
+    """A dict nested inside a sequence is rendered inline."""
     result = literalize_json(
         json_string=json.dumps(obj=[["a", {"x": 1}]]),
         language=PYTHON,
@@ -397,8 +397,8 @@ def test_nested_dict_in_list() -> None:
     assert result == '("a", {"x": 1}),'
 
 
-def test_nested_list_in_dict() -> None:
-    """A list nested inside a dict is rendered inline."""
+def test_nested_sequence_in_dict() -> None:
+    """A sequence nested inside a dict is rendered inline."""
     result = literalize_json(
         json_string=json.dumps(obj=[{"items": [1, 2]}]),
         language=PYTHON,
@@ -537,7 +537,7 @@ def test_custom_language() -> None:
         set_open="<",
         set_close=">",
         empty_set=None,
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
@@ -1110,7 +1110,7 @@ def test_custom_format_date() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
@@ -1152,7 +1152,7 @@ def test_custom_format_datetime() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
@@ -1194,7 +1194,7 @@ def test_java_native_dates() -> None:
         set_open="Set.of(",
         set_close=")",
         empty_set=None,
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
@@ -1238,7 +1238,7 @@ def test_ruby_native_dates() -> None:
         set_open="Set.new([",
         set_close="])",
         empty_set="Set.new",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
         omap_open="{",
@@ -1259,8 +1259,8 @@ def test_ruby_native_dates() -> None:
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
 
 
-def test_yaml_set_inline_in_list() -> None:
-    """A !!set nested in a list is formatted inline using set
+def test_yaml_set_inline_in_sequence() -> None:
+    """A !!set nested in a sequence is formatted inline using set
     delimiters.
     """
     result = literalize_yaml(
@@ -1377,7 +1377,7 @@ def test_custom_format_bytes() -> None:
         set_open="{",
         set_close="}",
         empty_set="set()",
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
         omap_open="{",
@@ -1724,8 +1724,8 @@ def test_yaml_comment_scalar_only_comments() -> None:
     assert result == expected
 
 
-def test_omap_nested_in_list() -> None:
-    """An omap nested inside a list exercises _format_value's omap
+def test_omap_nested_in_sequence() -> None:
+    """An omap nested inside a sequence exercises _format_value's omap
     branch.
     """
     yaml_string = textwrap.dedent(
@@ -1779,7 +1779,7 @@ def test_omap_custom_language_spec() -> None:
         set_open="[",
         set_close="]",
         empty_set=None,
-        format_list_entry=passthrough_list_entry,
+        format_sequence_entry=passthrough_sequence_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
