@@ -259,6 +259,8 @@ ignore = [
     "check_haskell_golden_syntax.py",
     "check_java_golden_syntax.py",
     "check_swift_golden_syntax.py",
+    ".clj-kondo",
+    ".clj-kondo/**",
 ]
 
 [tool.deptry]

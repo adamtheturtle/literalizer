@@ -93,9 +93,10 @@ class Language:
     ``set_open + set_close``.
     """
 
-    format_list_entry: Callable[[str], str]
-    """Callable that formats a list entry from a pre-formatted item string.
-    Use :func:`~literalizer.formatters.passthrough_list_entry` when no
+    format_sequence_entry: Callable[[str], str]
+    """Callable that formats a sequence entry from a pre-formatted item
+    string.  Use
+    :func:`~literalizer.formatters.passthrough_sequence_entry` when no
     transformation is needed.
     """
 
