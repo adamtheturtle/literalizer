@@ -12,6 +12,15 @@ FSet
 FStr
 JSONDecodeError
 NEL
+OBool
+OCaml
+OFloat
+OInt
+OList
+OMap
+ONull
+OSet
+OStr
 YAMLError
 beartype
 booleans
@@ -40,6 +49,7 @@ literalizer
 localhost
 namespaces
 natively
+ocamlopt
 ofEntries
 omap
 paren
@@ -63,5 +73,6 @@ subdirectory
 swiftc
 typeclass
 uv
+val_t
 whitespace
 yaml
