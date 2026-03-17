@@ -681,6 +681,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".R",
         wrap=_wrap_r,
         varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, a: d + "\n" + a,
         date_variants=(
             _DateVariant(
                 name="r_native",
