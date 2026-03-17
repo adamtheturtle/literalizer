@@ -401,19 +401,19 @@ CPP = LanguageSpec(
 @beartype
 def _format_c_dict_entry(key: str, value: str) -> str:
     """Format a C dict entry as a ``_CKV`` compound literal."""
-    return f"{{{key}, {to_c_val(value)}}}"
+    return f"{{{key}, {to_c_val(value=value)}}}"
 
 
 @beartype
 def _format_c_list_entry(item: str) -> str:
     """Format a C list entry as a ``_CVal`` compound literal."""
-    return to_c_val(item)
+    return to_c_val(value=item)
 
 
 @beartype
 def _format_c_set_entry(item: str) -> str:
     """Format a C set entry as a ``_CVal`` compound literal."""
-    return to_c_val(item)
+    return to_c_val(value=item)
 
 
 C = LanguageSpec(
