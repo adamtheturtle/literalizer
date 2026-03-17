@@ -1,4 +1,4 @@
-"""Check syntax of Julia golden files using julia."""
+"""Check syntax of Julia golden files using Julia."""
 
 import shutil
 import subprocess
