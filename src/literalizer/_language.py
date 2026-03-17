@@ -151,6 +151,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def comment_suffix(self) -> str:
+        """The comment suffix for the language (e.g. ``""`` for line
+        comments, ``" *)"`` for OCaml block comments).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def omap_open(self) -> str:
         """The opening delimiter for ordered-map literals."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -244,3 +251,4 @@ class LanguageSpec:
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
+    comment_suffix: str = ""
