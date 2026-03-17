@@ -87,7 +87,7 @@ def _parse_after_token(
 
 @dataclasses.dataclass(frozen=True)
 class _CollectionComments:
-    """Comments extracted from a YAML collection string."""
+    """Comments extracted from a YAML sequence or mapping string."""
 
     elements: tuple[_ElementComments, ...]
     trailing: tuple[str, ...]
@@ -211,7 +211,7 @@ def _extract_scalar_comments(
 
 @dataclasses.dataclass(frozen=True)
 class YamlCollectionContext:
-    """Context for formatting collection YAML with comments."""
+    """Context for formatting sequence/mapping YAML with comments."""
 
     base: str
     element_comments: tuple[_ElementComments, ...]
@@ -264,7 +264,7 @@ def literalize_yaml_collection(
     *,
     ctx: YamlCollectionContext,
 ) -> str:
-    """Preserve comments for collection YAML values."""
+    """Preserve comments for sequence/mapping YAML values."""
     effective_prefix = ctx.prefix if not ctx.wrap else (ctx.prefix or "    ")
     all_lines = ctx.base.split(sep="\n")
 
