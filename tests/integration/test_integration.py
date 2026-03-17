@@ -133,6 +133,19 @@ def _wrap_haskell(content: str) -> str:
 _VARIABLE_NAME = "my_data"
 
 
+def _wrap_swift_varname(content: str) -> str:
+    """Wrap a Swift let declaration with type annotation for mixed
+    types.
+    """
+    old_prefix = f"let {_VARIABLE_NAME} = "
+    new_prefix = f"let {_VARIABLE_NAME}: Any? = "
+    return (
+        new_prefix + content[len(old_prefix) :]
+        if content.startswith(old_prefix)
+        else content
+    )
+
+
 def _wrap_go_varname(content: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
     return (
@@ -211,6 +224,52 @@ def _wrap_cpp_varname(content: str) -> str:
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
+
+
+def _wrap_rust_varname(content: str) -> str:
+    """Wrap a Rust let declaration in a main function."""
+    return (
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        f"{content}\n"
+        f"let _ = {_VARIABLE_NAME};\n"
+        "}"
+    )
+
+
+def _wrap_haskell_varname(content: str) -> str:
+    """Wrap a Haskell variable binding with the Val ADT and type
+    annotation.
+    """
+    return (
+        "{-# LANGUAGE OverloadedStrings #-}\n"
+        "module Check where\n"
+        "import Data.String (IsString(fromString))\n"
+        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
+        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+        "instance IsString Val where\n"
+        "    fromString = HStr\n"
+        "instance Num Val where\n"
+        "    fromInteger = HInt\n"
+        '    a + b = error "not implemented"\n'
+        '    a * b = error "not implemented"\n'
+        '    abs a = error "not implemented"\n'
+        '    signum a = error "not implemented"\n'
+        "    negate (HInt n) = HInt (negate n)\n"
+        "    negate (HFloat f) = HFloat (negate f)\n"
+        '    negate _ = error "not implemented"\n'
+        "instance Fractional Val where\n"
+        "    fromRational r = HFloat (realToFrac r)\n"
+        '    a / b = error "not implemented"\n'
+        f"{_VARIABLE_NAME} :: Val\n"
+        f"{content}"
+    )
+
+
+def _wrap_php_varname(content: str) -> str:
+    """Wrap a PHP variable declaration in a script."""
+    return f"<?php\n{content}"
 
 
 def _wrap_python_datetime(content: str) -> str:
@@ -511,6 +570,30 @@ _LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp_varname,
+        date_variants=(),
+    ),
+    "swift": _LanguageConfig(
+        spec=literalizer.languages.SWIFT,
+        extension=".swift",
+        wrap=_wrap_swift_varname,
+        date_variants=(),
+    ),
+    "rust": _LanguageConfig(
+        spec=literalizer.languages.RUST,
+        extension=".rs",
+        wrap=_wrap_rust_varname,
+        date_variants=(),
+    ),
+    "haskell": _LanguageConfig(
+        spec=literalizer.languages.HASKELL,
+        extension=".hs",
+        wrap=_wrap_haskell_varname,
+        date_variants=(),
+    ),
+    "php": _LanguageConfig(
+        spec=literalizer.languages.PHP,
+        extension=".php",
+        wrap=_wrap_php_varname,
         date_variants=(),
     ),
 }
