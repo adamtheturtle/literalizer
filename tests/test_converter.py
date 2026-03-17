@@ -17,7 +17,6 @@ from hypothesis import strategies as st
 
 from literalizer import (
     Language,
-    LanguageSpec,
     literalize_json,
     literalize_yaml,
 )
@@ -82,7 +81,7 @@ from literalizer.languages import (
 
 
 def _format_test_omap_entry(key: str, value: str) -> str:
-    """Format an omap entry for use in custom LanguageSpec test
+    """Format an omap entry for use in custom Language test
     fixtures.
     """
     return f"{key}: {value}"
@@ -517,8 +516,8 @@ def test_scalar_wrap_ignored() -> None:
 
 
 def test_custom_language() -> None:
-    """A custom LanguageSpec works as a language."""
-    custom = LanguageSpec(
+    """A custom Language works as a language."""
+    custom = Language(
         null_literal="NIL",
         true_literal="YES",
         false_literal="NO",
@@ -1092,7 +1091,7 @@ def test_format_datetime_cpp_seconds_and_microseconds() -> None:
 
 def test_custom_format_date() -> None:
     """A custom format_date callable is used for date values."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="None",
         true_literal="True",
         false_literal="False",
@@ -1135,7 +1134,7 @@ def test_custom_format_date() -> None:
 
 def test_custom_format_datetime() -> None:
     """A custom format_datetime callable is used for datetime values."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="None",
         true_literal="True",
         false_literal="False",
@@ -1178,7 +1177,7 @@ def test_custom_format_datetime() -> None:
 
 def test_java_native_dates() -> None:
     """Java language spec with native date formatting."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="null",
         true_literal="true",
         false_literal="false",
@@ -1223,7 +1222,7 @@ def test_java_native_dates() -> None:
 
 def test_ruby_native_dates() -> None:
     """Ruby language spec with native date formatting."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="nil",
         true_literal="true",
         false_literal="false",
@@ -1363,7 +1362,7 @@ def test_literalize_yaml_binary() -> None:
 
 def test_custom_format_bytes() -> None:
     """A custom format_bytes callable is used for bytes values."""
-    spec = LanguageSpec(
+    spec = Language(
         null_literal="None",
         true_literal="True",
         false_literal="False",
@@ -1590,7 +1589,7 @@ def test_yaml_comment_multiple_before_lines() -> None:
         (GO, "//"),
     ],
 )
-def test_comment_prefix(language: LanguageSpec, expected: str) -> None:
+def test_comment_prefix(language: Language, expected: str) -> None:
     """Each language has the expected comment prefix."""
     assert language.comment_prefix == expected
 
@@ -1604,7 +1603,7 @@ def test_comment_prefix(language: LanguageSpec, expected: str) -> None:
         GO,
     ],
 )
-def test_comment_suffix(language: LanguageSpec) -> None:
+def test_comment_suffix(language: Language) -> None:
     """Each language has an empty comment suffix."""
     assert language.comment_suffix == ""
 
@@ -1772,7 +1771,7 @@ def test_omap_nested_in_sequence() -> None:
 
 
 def test_omap_custom_language_spec() -> None:
-    """An omap with a custom LanguageSpec calls format_omap_entry."""
+    """An omap with a custom Language calls format_omap_entry."""
     yaml_string = textwrap.dedent(
         text="""\
         !!omap
@@ -1780,7 +1779,7 @@ def test_omap_custom_language_spec() -> None:
         - age: 30
         """,
     )
-    custom = LanguageSpec(
+    custom = Language(
         null_literal="null",
         true_literal="true",
         false_literal="false",

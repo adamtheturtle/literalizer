@@ -959,7 +959,7 @@ def format_variable_declaration_ocaml(name: str, value: str) -> str:
 
     Example: ``"x"`` and ``"OList [...]"`` → ``"let x : val_t = OList [...]"``
     """
-    return f"let {name} : val_t = {value}"
+    return f"let {name} : val_t = {to_ocaml_val(value=value)}"
 
 
 @beartype
@@ -968,7 +968,7 @@ def format_variable_assignment_ocaml(name: str, value: str) -> str:
 
     Example: ``"x"`` and ``"OList [...]"`` → ``"let x : val_t = OList [...]"``
     """
-    return f"let {name} : val_t = {value}"
+    return format_variable_declaration_ocaml(name=name, value=value)
 
 
 def to_ocaml_val(value: str) -> str:
