@@ -12,6 +12,7 @@ ci:
     - elixir-syntax-check
     - fsharp-golden-syntax-check
     - ocaml-golden-syntax-check
+    - occam-golden-syntax-check
     - deptry
     - doc8
     - docs
@@ -528,6 +529,14 @@ repos:
         language: python
         types: [ocaml]
         files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: occam-golden-syntax-check
+        name: occam-pi golden file syntax check
+        entry: uv run python check_occam_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.occ$
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
