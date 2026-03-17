@@ -27,6 +27,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Swift
+        if: runner.os != 'Windows'
         uses: SwiftyLab/setup-swift@v1
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -36,7 +37,9 @@ jobs:
 
       - name: Initialize .NET runtime
         if: runner.os == 'Linux'
-        run: dotnet --info
+        run: |
+          dotnet --info
+          mkdir -p /tmp/.dotnet/shm
 
       - name: Lint
         shell: bash
