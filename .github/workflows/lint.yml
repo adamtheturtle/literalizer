@@ -36,7 +36,9 @@ jobs:
 
       - name: Initialize .NET runtime
         if: runner.os == 'Linux'
-        run: dotnet --info
+        run: |
+          dotnet --info
+          mkdir -p /tmp/.dotnet/shm
 
       - name: Lint
         shell: bash
