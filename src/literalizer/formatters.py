@@ -49,6 +49,7 @@ __all__ = [
     "format_variable_assignment_python",
     "format_variable_assignment_ruby",
     "format_variable_assignment_rust",
+    "format_variable_assignment_scala",
     "format_variable_assignment_swift",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
@@ -603,6 +604,15 @@ def format_variable_assignment_rust(name: str, value: str) -> str:
     Example: ``"x"`` and ``"vec![1, 2]"`` → ``"x = vec![1, 2];"``
     """
     return f"{name} = {value};"
+
+
+@beartype
+def format_variable_assignment_scala(name: str, value: str) -> str:
+    """Format a Scala assignment to an existing variable.
+
+    Example: ``"x"`` and ``"List(1, 2)"`` → ``"x = List(1, 2)"``
+    """
+    return f"{name} = {value}"
 
 
 @beartype

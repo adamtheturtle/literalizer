@@ -40,6 +40,7 @@ from literalizer.formatters import (
     format_variable_assignment_python,
     format_variable_assignment_ruby,
     format_variable_assignment_rust,
+    format_variable_assignment_scala,
     format_variable_assignment_swift,
     format_variable_declaration_cpp,
     format_variable_declaration_csharp,
@@ -576,4 +577,5 @@ SCALA = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_scala,
+    format_variable_assignment=format_variable_assignment_scala,
 )
