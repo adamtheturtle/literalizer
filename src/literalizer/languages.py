@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from beartype import beartype
 
 __all__ = [
@@ -1009,7 +1011,7 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
     expanding them into a struct array.
     """
     if key.startswith('"') and key.endswith('"'):
-        inner = key[1:-1].replace("'", "''")
+        inner = json.loads(key).replace("'", "''")
         key = f"'{inner}'"
     if value.startswith("{") and value.endswith("}"):
         value = f"{{{value}}}"
@@ -1095,7 +1097,7 @@ ERLANG = Language(
 )
 
 
-MATLAB = LanguageSpec(
+MATLAB = Language(
     null_literal="[]",
     true_literal="true",
     false_literal="false",
