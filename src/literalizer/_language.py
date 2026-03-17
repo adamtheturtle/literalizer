@@ -170,9 +170,9 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_variable_declaration(self) -> Callable[[str, str], str] | None:
+    def format_variable_declaration(self) -> Callable[[str, str], str]:
         """Callable that formats a variable declaration from a name and
-        value string, or ``None`` if not supported.
+        value string.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -216,4 +216,4 @@ class LanguageSpec:
     format_omap_entry: Callable[[str, str], str]
     multiline_close_indent: str
     skip_null_dict_values: bool
-    format_variable_declaration: Callable[[str, str], str] | None
+    format_variable_declaration: Callable[[str, str], str]

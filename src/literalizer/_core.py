@@ -298,9 +298,8 @@ def literalize_json(
         prefix=prefix,
         wrap=wrap,
     )
-    fmt = language.format_variable_declaration
-    if variable_name is not None and fmt is not None:
-        return fmt(variable_name, result)
+    if variable_name is not None:
+        return language.format_variable_declaration(variable_name, result)
     return result
 
 
@@ -417,7 +416,6 @@ def literalize_yaml(
             )
             result = literalize_yaml_collection(ctx=ctx)
 
-    fmt = language.format_variable_declaration
-    if variable_name is not None and fmt is not None:
-        return fmt(variable_name, result)
+    if variable_name is not None:
+        return language.format_variable_declaration(variable_name, result)
     return result
