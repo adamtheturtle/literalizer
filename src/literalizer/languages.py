@@ -1004,19 +1004,7 @@ def _format_ada_dict_entry(key: str, value: str) -> str:
     return f"AEntry ({key}, {to_ada_val(value=value)})"
 
 
-def _format_ada_list_entry(item: str) -> str:
-    """Format an Ada list entry with the appropriate ``A_Val`` constructor."""
-    return to_ada_val(value=item)
-
-
-def _format_ada_set_entry(item: str) -> str:
-    """Format an Ada set entry with the appropriate ``A_Val``
-    constructor.
-    """
-    return to_ada_val(value=item)
-
-
-ADA = LanguageSpec(
+ADA = Language(
     null_literal="ANull",
     true_literal="ABool (True)",
     false_literal="ABool (False)",
@@ -1035,8 +1023,8 @@ ADA = LanguageSpec(
     set_open="ASet'(",
     set_close=")",
     empty_set="ASet'(1 .. 0 => ANull)",
-    format_sequence_entry=_format_ada_list_entry,
-    format_set_entry=_format_ada_set_entry,
+    format_sequence_entry=to_ada_val,
+    format_set_entry=to_ada_val,
     comment_prefix="--",
     comment_suffix="",
     omap_open="AMap'(",

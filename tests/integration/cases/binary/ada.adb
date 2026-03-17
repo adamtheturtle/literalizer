@@ -1,5 +1,5 @@
 procedure Check is
-   X : Integer := AList'(
+   X : A_Val := AList'(
        AStr ("48656c6c6f")
    );
 begin

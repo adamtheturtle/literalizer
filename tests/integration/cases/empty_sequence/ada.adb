@@ -1,5 +1,5 @@
 procedure Check is
-   X : Integer := AList'(
+   X : A_Val := AList'(
        AList'(1 .. 0 => ANull),
        AMap'(1 .. 0 => ANull)
    );

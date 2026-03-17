@@ -1,5 +1,5 @@
 procedure Check is
-   X : Integer := AList'(
+   X : A_Val := AList'(
        AMap'(AEntry ("name", AStr ("Alice")), AEntry ("age", AInt (30))),
        AMap'(AEntry ("name", AStr ("Bob")), AEntry ("age", AInt (25)))
    );

@@ -1,5 +1,5 @@
 procedure Check is
-   X : Integer := AList'(
+   X : A_Val := AList'(
        ABool (True),
        AStr ("hi"),
        AList'(AInt (1), AInt (2)),

@@ -387,7 +387,7 @@ def _wrap_ada(content: str) -> str:
     indented = content.replace("\n", "\n   ")
     return (
         "procedure Check is\n"
-        f"   X : Integer := {indented};\n"
+        f"   X : A_Val := {indented};\n"
         "begin\n"
         "   null;\n"
         "end Check;"

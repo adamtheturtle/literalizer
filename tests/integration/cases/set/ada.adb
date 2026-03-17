@@ -1,5 +1,5 @@
 procedure Check is
-   X : Integer := ASet'(
+   X : A_Val := ASet'(
        AStr ("apple"),
        AStr ("banana"),
        AStr ("cherry")

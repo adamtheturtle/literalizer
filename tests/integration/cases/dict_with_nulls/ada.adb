@@ -1,5 +1,5 @@
 procedure Check is
-   X : Integer := AMap'(
+   X : A_Val := AMap'(
        AEntry ("name", AStr ("Alice")),
        AEntry ("score", ANull),
        AEntry ("age", AInt (30))
