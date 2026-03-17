@@ -16,17 +16,13 @@ def main() -> None:
             tmp_src = Path(tmpdir) / "check.adb"
             content: str = src.read_text(encoding="utf-8")
             tmp_src.write_text(data=content, encoding="utf-8")
-            try:
-                result = subprocess.run(
-                    args=[gnatmake_path, "-gnats", "check.adb"],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    cwd=tmpdir,
-                )
-            except FileNotFoundError:
-                # gnatmake not installed - skip check
-                continue
+            result = subprocess.run(
+                args=[gnatmake_path, "-gnats", "check.adb"],
+                capture_output=True,
+                text=True,
+                check=False,
+                cwd=tmpdir,
+            )
         if result.returncode != 0:
             msg = f"{filename}: Ada syntax error\n{result.stderr}"
             sys.stderr.write(msg)
