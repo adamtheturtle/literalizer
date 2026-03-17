@@ -6,6 +6,7 @@ void _declaration() {
       // Enable debug mode
       "debug": true,
   };
+  my_data.hashCode;
 }
 void _assignment() {
   dynamic my_data;
@@ -16,4 +17,9 @@ void _assignment() {
       // Enable debug mode
       "debug": true,
   };
+  my_data.hashCode;
+}
+void main() {
+  _declaration();
+  _assignment();
 }

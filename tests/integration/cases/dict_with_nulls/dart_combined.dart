@@ -4,6 +4,7 @@ void _declaration() {
       "score": null,
       "age": 30,
   };
+  my_data.hashCode;
 }
 void _assignment() {
   dynamic my_data;
@@ -12,4 +13,9 @@ void _assignment() {
       "score": null,
       "age": 30,
   };
+  my_data.hashCode;
+}
+void main() {
+  _declaration();
+  _assignment();
 }

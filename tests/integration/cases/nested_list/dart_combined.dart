@@ -5,6 +5,7 @@ void _declaration() {
       [1, 2],
       null,
   ];
+  my_data.hashCode;
 }
 void _assignment() {
   dynamic my_data;
@@ -14,4 +15,9 @@ void _assignment() {
       [1, 2],
       null,
   ];
+  my_data.hashCode;
+}
+void main() {
+  _declaration();
+  _assignment();
 }
