@@ -30,6 +30,8 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
       - name: Install Dart
         uses: dart-lang/setup-dart@v1
+      - name: Install clj-kondo
+        uses: clj-kondo/setup-clj-kondo@v1
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
