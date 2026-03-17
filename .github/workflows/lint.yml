@@ -31,6 +31,9 @@ jobs:
         with:
           elixir-version: '1.18'
           otp-version: '27'
+      - uses: coursier/setup-action@v1
+        with:
+          apps: scalac
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
       - name: Install R

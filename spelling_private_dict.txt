@@ -43,6 +43,8 @@ reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
 ruamel
+scala
+scalac
 stdin
 struct
 subclasses
