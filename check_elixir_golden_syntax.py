@@ -9,10 +9,7 @@ from pathlib import Path
 
 def main() -> None:
     """Check syntax of each given Elixir golden file."""
-    elixirc_path = shutil.which(cmd="elixirc")
-    if not elixirc_path:
-        # elixirc not installed; skip.
-        return
+    elixirc_path = shutil.which(cmd="elixirc") or "elixirc"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -9,10 +9,7 @@ from pathlib import Path
 
 def main() -> None:
     """Check syntax of each given Swift golden file."""
-    swiftc_path = shutil.which(cmd="swiftc")
-    if not swiftc_path:
-        # swiftc not installed; skip.
-        return
+    swiftc_path = shutil.which(cmd="swiftc") or "swiftc"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as tmpdir:
