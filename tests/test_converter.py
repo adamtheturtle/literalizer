@@ -57,6 +57,7 @@ from literalizer.formatters import (
     passthrough_set_entry,
     to_fsharp_val,
     to_ocaml_val,
+    to_occam_val,
 )
 from literalizer.languages import (
     CLOJURE,
@@ -2029,4 +2030,20 @@ def test_to_ocaml_val_unknown_value() -> None:
     classified as a string literal, int, or float.
     """
     result = to_ocaml_val("SomeUnknownValue")  # type: ignore[misc]
+    assert result == "SomeUnknownValue"
+
+
+def test_to_occam_val_float() -> None:
+    """``to_occam_val`` wraps float values in the ``lit.float``
+    constructor.
+    """
+    result = to_occam_val("3.14")
+    assert result == "MOBILE LIT(lit.float; 3.14(REAL32))"
+
+
+def test_to_occam_val_unknown_value() -> None:
+    """``to_occam_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_occam_val("SomeUnknownValue")  # type: ignore[misc]
     assert result == "SomeUnknownValue"
