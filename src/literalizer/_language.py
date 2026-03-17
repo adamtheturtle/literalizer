@@ -78,7 +78,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def trailing_comma(self) -> bool:
+    def multiline_trailing_comma(self) -> bool:
         """Whether to append a trailing comma after the last entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -199,7 +199,7 @@ class LanguageSpec:
     dict_open: str
     dict_close: str
     format_dict_entry: Callable[[str, str], str]
-    trailing_comma: bool
+    multiline_trailing_comma: bool
     single_element_trailing_comma: bool
     format_bytes: Callable[[bytes], str]
     format_date: Callable[[datetime.date], str]
