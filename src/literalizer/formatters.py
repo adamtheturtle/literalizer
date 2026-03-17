@@ -561,7 +561,7 @@ def format_variable_declaration_fsharp(name: str, value: str) -> str:
 
     Example: ``"x"`` and ``"FList [...]"`` → ``"let x: Val = FList [...]"``
     """
-    return f"let {name}: Val = {value}"
+    return f"let {name}: Val = {to_fsharp_val(value=value)}"
 
 
 def to_fsharp_val(value: str) -> str:
@@ -868,7 +868,7 @@ def format_variable_assignment_fsharp(name: str, value: str) -> str:
 
     Example: ``"x"`` and ``"FList [1; 2]"`` → ``"let x: Val = FList [1; 2]"``
     """
-    return f"let {name}: Val = {value}"
+    return f"let {name}: Val = {to_fsharp_val(value=value)}"
 
 
 @beartype
