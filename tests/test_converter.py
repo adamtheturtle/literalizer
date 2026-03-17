@@ -59,6 +59,7 @@ from literalizer.languages import (
     CPP,
     CSHARP,
     DART,
+    ELIXIR,
     GO,
     HASKELL,
     JAVA,
@@ -1863,6 +1864,9 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     ),
     DART: _VariableSyntax(
         declaration="final my_var = 42;", assignment="my_var = 42;"
+    ),
+    ELIXIR: _VariableSyntax(
+        declaration="my_var = 42", assignment="my_var = 42"
     ),
     CLOJURE: _VariableSyntax(
         declaration="(def my_var 42)", assignment="(def my_var 42)"

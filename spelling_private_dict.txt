@@ -13,6 +13,7 @@ config
 datetime
 datetimes
 dicts
+elixirc
 formatter
 formatters
 fromhex
