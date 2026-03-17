@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 @runtime_checkable
 class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Protocol describing how a language formats scalar literals and
-    collections.
+    sequences.
 
     Implement this protocol to add support for additional languages
     beyond the built-in defaults.
@@ -36,13 +36,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def collection_open(self) -> str:
-        """The opening delimiter for collections."""
+    def sequence_open(self) -> str:
+        """The opening delimiter for sequences."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def collection_close(self) -> str:
-        """The closing delimiter for collections."""
+    def sequence_close(self) -> str:
+        """The closing delimiter for sequences."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
@@ -85,7 +85,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
 
     @property
     def single_element_trailing_comma(self) -> bool:
-        """Whether a single-element collection requires a trailing comma
+        """Whether a single-element sequence requires a trailing comma
         to be syntactically unambiguous (e.g. Python tuples).
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -98,9 +98,9 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def empty_collection(self) -> str | None:
-        """Override for empty list literals, or ``None`` to use
-        ``collection_open + collection_close``.
+    def empty_sequence(self) -> str | None:
+        """Override for empty sequence literals, or ``None`` to use
+        ``sequence_open + sequence_close``.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -125,6 +125,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     def empty_set(self) -> str | None:
         """Override for empty set literals, or ``None`` to use
         ``set_open + set_close``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_list_entry(self) -> Callable[[str], str]:
+        """Callable that formats a list entry from a pre-formatted item
+        string.  Use :func:`~literalizer.formatters.passthrough_list_entry`
+        when no transformation is needed.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -163,7 +171,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def multiline_close_indent(self) -> str:
         """The prefix to prepend to the closing delimiter of multi-line
-        collections, sets, and dicts.  Defaults to ``""`` (closing
+        sequences, sets, and dicts.  Defaults to ``""`` (closing
         delimiter at column 0).  Set to ``"    "`` for languages like
         Haskell where the layout rule requires the closing bracket to
         be indented.
@@ -181,6 +189,15 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     def format_variable_assignment(self) -> Callable[[str, str], str]:
         """Callable that formats an assignment to an existing variable
         from a name and value string.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def element_separator(self) -> str:
+        """The separator placed between elements in inline sequences
+        (e.g. ``", "`` for most languages, ``" "`` for Clojure).
+        The stripped form is used as the per-element suffix in
+        multi-line sequences.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -214,8 +231,8 @@ class LanguageSpec:
     null_literal: str
     true_literal: str
     false_literal: str
-    collection_open: str
-    collection_close: str
+    sequence_open: str
+    sequence_close: str
     dict_open: str
     dict_close: str
     format_dict_entry: Callable[[str, str], str]
@@ -224,17 +241,19 @@ class LanguageSpec:
     format_bytes: Callable[[bytes], str]
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
-    empty_collection: str | None
+    empty_sequence: str | None
     empty_dict: str | None
     set_open: str
     set_close: str
     empty_set: str | None
+    format_list_entry: Callable[[str], str]
     format_set_entry: Callable[[str], str]
     comment_prefix: str
     omap_open: str
     omap_close: str
     format_omap_entry: Callable[[str, str], str]
     multiline_close_indent: str
+    element_separator: str
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
     format_collection_open: Callable[[list[Any]], str] | None

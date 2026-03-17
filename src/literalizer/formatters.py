@@ -16,6 +16,7 @@ __all__ = [
     "format_bytes_python",
     "format_date_cpp",
     "format_date_csharp",
+    "format_date_dart",
     "format_date_go",
     "format_date_iso",
     "format_date_java",
@@ -24,10 +25,12 @@ __all__ = [
     "format_date_kotlin",
     "format_date_php",
     "format_date_python",
+    "format_date_r",
     "format_date_ruby",
     "format_date_rust",
     "format_datetime_cpp",
     "format_datetime_csharp",
+    "format_datetime_dart",
     "format_datetime_epoch",
     "format_datetime_go",
     "format_datetime_iso",
@@ -38,10 +41,14 @@ __all__ = [
     "format_datetime_kotlin",
     "format_datetime_php",
     "format_datetime_python",
+    "format_datetime_r",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
     "format_variable_assignment_csharp",
+    "format_variable_assignment_dart",
+    "format_variable_assignment_elixir",
     "format_variable_assignment_go",
     "format_variable_assignment_haskell",
     "format_variable_assignment_java",
@@ -49,11 +56,16 @@ __all__ = [
     "format_variable_assignment_kotlin",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
+    "format_variable_assignment_r",
     "format_variable_assignment_ruby",
     "format_variable_assignment_rust",
+    "format_variable_assignment_scala",
     "format_variable_assignment_swift",
+    "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
+    "format_variable_declaration_dart",
+    "format_variable_declaration_elixir",
     "format_variable_declaration_go",
     "format_variable_declaration_haskell",
     "format_variable_declaration_java",
@@ -62,9 +74,12 @@ __all__ = [
     "format_variable_declaration_kotlin",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
+    "format_variable_declaration_r",
     "format_variable_declaration_ruby",
     "format_variable_declaration_rust",
+    "format_variable_declaration_scala",
     "format_variable_declaration_swift",
+    "passthrough_list_entry",
     "passthrough_set_entry",
 ]
 
@@ -500,12 +515,115 @@ def format_variable_declaration_php(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_declaration_elixir(name: str, value: str) -> str:
+    """Format an Elixir variable assignment.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_declaration_clojure(name: str, value: str) -> str:
+    """Format a Clojure ``def`` binding.
+
+    Example: ``"my_data"`` and ``"{:a 1}"`` → ``"(def my_data {:a 1})"``
+    """
+    return f"(def {name} {value})"
+
+
+@beartype
+def format_variable_declaration_scala(name: str, value: str) -> str:
+    """Format a Scala ``val`` declaration.
+
+    Example: ``"x"`` and ``"List(1, 2)"`` → ``"val x = List(1, 2)"``
+    """
+    return f"val {name} = {value}"
+
+
+@beartype
 def format_variable_declaration_haskell(name: str, value: str) -> str:
     """Format a Haskell variable binding.
 
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """
     return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_clojure(name: str, value: str) -> str:
+    """Format a Clojure ``def`` reassignment.
+
+    Example: ``"my_data"`` and ``"{:a 1}"`` → ``"(def my_data {:a 1})"``
+    """
+    return f"(def {name} {value})"
+
+
+@beartype
+def format_date_r(value: datetime.date) -> str:
+    """Format a date as an R ``as.Date(...)`` call.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``as.Date("2024-01-15")``.
+    """
+    return f'as.Date("{value.isoformat()}")'
+
+
+@beartype
+def format_datetime_r(value: datetime.datetime) -> str:
+    """Format a datetime as an R ``as.POSIXct(...)`` call.
+
+    The ISO 8601 offset in the string is used for parsing, so no
+    separate ``tz`` argument is needed.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
+    ``as.POSIXct("2024-01-15T12:30:00")``.
+    """
+    return f'as.POSIXct("{value.isoformat()}")'
+
+
+@beartype
+def format_variable_declaration_r(name: str, value: str) -> str:
+    """Format an R variable assignment using ``<-``.
+
+    Example: ``"x"`` and ``"list(1, 2)"`` → ``"x <- list(1, 2)"``
+    """
+    return f"{name} <- {value}"
+
+
+@beartype
+def format_variable_assignment_r(name: str, value: str) -> str:
+    """Format an R assignment to an existing variable using ``<-``.
+
+    Example: ``"x"`` and ``"list(1, 2)"`` → ``"x <- list(1, 2)"``
+    """
+    return f"{name} <- {value}"
+
+
+@beartype
+def format_date_dart(value: datetime.date) -> str:
+    """Format a date as a Dart ``DateTime.parse(...)`` call.
+
+    Example: ``DateTime.parse("2024-01-15")``.
+    """
+    return f'DateTime.parse("{value.isoformat()}")'
+
+
+@beartype
+def format_datetime_dart(value: datetime.datetime) -> str:
+    """Format a datetime as a Dart ``DateTime.parse(...)`` call.
+
+    Example: ``DateTime.parse("2024-01-15T12:30:00")``.
+    """
+    return f'DateTime.parse("{value.isoformat()}")'
+
+
+@beartype
+def format_variable_declaration_dart(name: str, value: str) -> str:
+    """Format a Dart ``final`` declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"final x = [1, 2];"``
+    """
+    return f"final {name} = {value};"
 
 
 @beartype
@@ -630,6 +748,15 @@ def format_variable_assignment_rust(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_assignment_scala(name: str, value: str) -> str:
+    """Format a Scala assignment to an existing variable.
+
+    Example: ``"x"`` and ``"List(1, 2)"`` → ``"x = List(1, 2)"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
 def format_variable_assignment_php(name: str, value: str) -> str:
     """Format a PHP assignment to an existing variable.
 
@@ -641,6 +768,15 @@ def format_variable_assignment_php(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_assignment_elixir(name: str, value: str) -> str:
+    """Format an Elixir assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``
+    """
+    return f"{name} = {value}"
+
+
+@beartype
 def format_variable_assignment_haskell(name: str, value: str) -> str:
     """Format a Haskell variable binding (same syntax for new and
     existing).
@@ -648,6 +784,15 @@ def format_variable_assignment_haskell(name: str, value: str) -> str:
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """
     return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_dart(name: str, value: str) -> str:
+    """Format a Dart assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2];"``
+    """
+    return f"{name} = {value};"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
@@ -663,6 +808,16 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
         return f"{key}{separator}{value}"
 
     return _format
+
+
+@beartype
+def passthrough_list_entry(item: str) -> str:
+    """Return *item* unchanged.
+
+    Use this as ``format_list_entry`` for languages where list entries
+    need no extra formatting.
+    """
+    return item
 
 
 @beartype

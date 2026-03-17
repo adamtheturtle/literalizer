@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import base64
+import dataclasses
 import datetime
 import json
 import textwrap
@@ -11,7 +12,7 @@ from collections.abc import Callable  # noqa: TC003
 from typing import Any
 
 import pytest
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from literalizer import (
@@ -51,11 +52,15 @@ from literalizer.formatters import (
     format_datetime_rust,
     format_variable_assignment_python,
     format_variable_declaration_python,
+    passthrough_list_entry,
     passthrough_set_entry,
 )
 from literalizer.languages import (
+    CLOJURE,
     CPP,
     CSHARP,
+    DART,
+    ELIXIR,
     GO,
     HASKELL,
     JAVA,
@@ -65,8 +70,10 @@ from literalizer.languages import (
     PYTHON,
     RUBY,
     RUST,
+    SCALA,
     SWIFT,
     TYPESCRIPT,
+    R,
 )
 
 
@@ -533,8 +540,8 @@ def test_custom_language() -> None:
         null_literal="NIL",
         true_literal="YES",
         false_literal="NO",
-        collection_open="<",
-        collection_close=">",
+        sequence_open="<",
+        sequence_close=">",
         dict_open="{",
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=" -> "),
@@ -543,17 +550,19 @@ def test_custom_language() -> None:
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
-        empty_collection=None,
+        empty_sequence=None,
         empty_dict=None,
         set_open="<",
         set_close=">",
         empty_set=None,
+        format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
@@ -621,6 +630,10 @@ def _lists_to_tuples(*, value: _JSONValue) -> object:
     return value
 
 
+# Characters valid in JSON strings: Unicode letters (L), marks (M), numbers
+# (N), punctuation (P), symbols (S), and separators (Z). Control characters
+# (category C) are excluded because JSON forbids raw control characters,
+# and ``\x00`` is excluded explicitly because json.dumps refuses null bytes.
 json_text = st.text(
     alphabet=st.characters(
         categories=("L", "M", "N", "P", "S", "Z"), exclude_characters="\x00"
@@ -630,17 +643,19 @@ json_scalars = (
     st.none()
     | st.booleans()
     | st.integers()
+    # ``nan`` and ``inf`` are excluded because JSON does not support them.
     | st.floats(allow_nan=False, allow_infinity=False)
     | json_text
 )
 json_values: st.SearchStrategy[Any] = st.recursive(
     base=json_scalars,
     extend=lambda children: (
-        # ``max_size`` prevents unbounded nesting that causes test timeouts
+        # ``max_size`` prevents unbounded nesting that causes test timeouts.
         st.lists(elements=children, max_size=5)
         | st.dictionaries(keys=json_text, values=children, max_size=5)
     ),
 )
+# ``max_size`` prevents very large inputs that would slow down tests.
 json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
 
@@ -722,7 +737,12 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
     assert parsed == data
 
 
+# ``st.dictionaries`` internally filters draws to ensure unique keys, which
+# can accumulate enough filtered examples to trigger the ``filter_too_much``
+# health check on unlucky seeds.  The filtering is expected behavior here,
+# so we suppress the check rather than change the strategy.
 @given(data=json_objects)
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 def test_roundtrip_dict(data: dict[str, Any]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
@@ -1094,8 +1114,8 @@ def test_custom_format_date() -> None:
         null_literal="None",
         true_literal="True",
         false_literal="False",
-        collection_open="(",
-        collection_close=")",
+        sequence_open="(",
+        sequence_close=")",
         dict_open="{",
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=": "),
@@ -1104,17 +1124,19 @@ def test_custom_format_date() -> None:
         format_bytes=format_bytes_hex,
         format_date=format_date_python,
         format_datetime=format_datetime_iso,
-        empty_collection=None,
+        empty_sequence=None,
         empty_dict=None,
         set_open="{",
         set_close="}",
         empty_set="set()",
+        format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
@@ -1135,8 +1157,8 @@ def test_custom_format_datetime() -> None:
         null_literal="None",
         true_literal="True",
         false_literal="False",
-        collection_open="(",
-        collection_close=")",
+        sequence_open="(",
+        sequence_close=")",
         dict_open="{",
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=": "),
@@ -1145,17 +1167,19 @@ def test_custom_format_datetime() -> None:
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_python,
-        empty_collection=None,
+        empty_sequence=None,
         empty_dict=None,
         set_open="{",
         set_close="}",
         empty_set="set()",
+        format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
@@ -1176,8 +1200,8 @@ def test_java_native_dates() -> None:
         null_literal="null",
         true_literal="true",
         false_literal="false",
-        collection_open="{",
-        collection_close="}",
+        sequence_open="{",
+        sequence_close="}",
         dict_open="{",
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=": "),
@@ -1186,17 +1210,19 @@ def test_java_native_dates() -> None:
         format_bytes=format_bytes_hex,
         format_date=format_date_java,
         format_datetime=format_datetime_java_instant,
-        empty_collection=None,
+        empty_sequence=None,
         empty_dict=None,
         set_open="Set.of(",
         set_close=")",
         empty_set=None,
+        format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
@@ -1219,8 +1245,8 @@ def test_ruby_native_dates() -> None:
         null_literal="nil",
         true_literal="true",
         false_literal="false",
-        collection_open="[",
-        collection_close="]",
+        sequence_open="[",
+        sequence_close="]",
         dict_open="{",
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=" => "),
@@ -1229,17 +1255,19 @@ def test_ruby_native_dates() -> None:
         format_bytes=format_bytes_hex,
         format_date=format_date_ruby,
         format_datetime=format_datetime_ruby,
-        empty_collection=None,
+        empty_sequence=None,
         empty_dict=None,
         set_open="Set.new([",
         set_close="])",
         empty_set="Set.new",
+        format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
@@ -1357,8 +1385,8 @@ def test_custom_format_bytes() -> None:
         null_literal="None",
         true_literal="True",
         false_literal="False",
-        collection_open="(",
-        collection_close=")",
+        sequence_open="(",
+        sequence_close=")",
         dict_open="{",
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=": "),
@@ -1367,17 +1395,19 @@ def test_custom_format_bytes() -> None:
         format_bytes=format_bytes_python,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
-        empty_collection=None,
+        empty_sequence=None,
         empty_dict=None,
         set_open="{",
         set_close="}",
         empty_set="set()",
+        format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="#",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
@@ -1758,8 +1788,8 @@ def test_omap_custom_language_spec() -> None:
         null_literal="null",
         true_literal="true",
         false_literal="false",
-        collection_open="[",
-        collection_close="]",
+        sequence_open="[",
+        sequence_close="]",
         dict_open="{",
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=": "),
@@ -1768,17 +1798,19 @@ def test_omap_custom_language_spec() -> None:
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
-        empty_collection=None,
+        empty_sequence=None,
         empty_dict=None,
         set_open="[",
         set_close="]",
         empty_set=None,
+        format_list_entry=passthrough_list_entry,
         format_set_entry=passthrough_set_entry,
         comment_prefix="//",
         omap_open="{",
         omap_close="}",
         format_omap_entry=_format_test_omap_entry,
         multiline_close_indent="",
+        element_separator=", ",
         skip_null_dict_values=False,
         format_variable_declaration=format_variable_declaration_python,
         format_collection_open=None,
@@ -1819,23 +1851,79 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
     assert result == expected
 
 
+@dataclasses.dataclass(frozen=True)
+class _VariableSyntax:
+    """Expected output for variable declaration and assignment."""
+
+    declaration: str
+    assignment: str
+
+
+# Maps each language to its declaration and assignment expected output for a
+# scalar integer. Both _DECLARATION_PARAMS and _ASSIGNMENT_PARAMS are derived
+# from this single source of truth so that adding a language to one
+# automatically adds it to the other.
+_VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
+    PYTHON: _VariableSyntax(
+        declaration="my_var = 42", assignment="my_var = 42"
+    ),
+    JAVASCRIPT: _VariableSyntax(
+        declaration="const my_var = 42;", assignment="my_var = 42;"
+    ),
+    TYPESCRIPT: _VariableSyntax(
+        declaration="const my_var = 42;", assignment="my_var = 42;"
+    ),
+    GO: _VariableSyntax(declaration="my_var := 42", assignment="my_var = 42"),
+    RUBY: _VariableSyntax(declaration="my_var = 42", assignment="my_var = 42"),
+    CSHARP: _VariableSyntax(
+        declaration="var my_var = 42;", assignment="my_var = 42;"
+    ),
+    CPP: _VariableSyntax(
+        declaration="auto my_var = 42;", assignment="my_var = 42;"
+    ),
+    JAVA: _VariableSyntax(
+        declaration="var my_var = 42;", assignment="my_var = 42;"
+    ),
+    KOTLIN: _VariableSyntax(
+        declaration="val my_var = 42", assignment="my_var = 42"
+    ),
+    SWIFT: _VariableSyntax(
+        declaration="let my_var = 42", assignment="my_var = 42"
+    ),
+    RUST: _VariableSyntax(
+        declaration="let my_var = 42;", assignment="my_var = 42;"
+    ),
+    PHP: _VariableSyntax(
+        declaration="$my_var = 42;", assignment="$my_var = 42;"
+    ),
+    HASKELL: _VariableSyntax(
+        declaration="my_var = 42", assignment="my_var = 42"
+    ),
+    DART: _VariableSyntax(
+        declaration="final my_var = 42;", assignment="my_var = 42;"
+    ),
+    ELIXIR: _VariableSyntax(
+        declaration="my_var = 42", assignment="my_var = 42"
+    ),
+    CLOJURE: _VariableSyntax(
+        declaration="(def my_var 42)", assignment="(def my_var 42)"
+    ),
+    SCALA: _VariableSyntax(
+        declaration="val my_var = 42", assignment="my_var = 42"
+    ),
+    R: _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),
+}
+
+_DECLARATION_PARAMS = [
+    (lang, syntax.declaration) for lang, syntax in _VARIABLE_SYNTAX.items()
+]
+_ASSIGNMENT_PARAMS = [
+    (lang, syntax.assignment) for lang, syntax in _VARIABLE_SYNTAX.items()
+]
+
+
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "const my_var = 42;"),
-        (TYPESCRIPT, "const my_var = 42;"),
-        (GO, "my_var := 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "var my_var = 42;"),
-        (CPP, "auto my_var = 42;"),
-        (JAVA, "var my_var = 42;"),
-        (KOTLIN, "val my_var = 42"),
-        (SWIFT, "let my_var = 42"),
-        (RUST, "let my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-    ],
+    argnames=("language", "expected"), argvalues=_DECLARATION_PARAMS
 )
 def test_variable_declaration_json(
     *, language: Language, expected: str
@@ -1852,22 +1940,7 @@ def test_variable_declaration_json(
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "const my_var = 42;"),
-        (TYPESCRIPT, "const my_var = 42;"),
-        (GO, "my_var := 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "var my_var = 42;"),
-        (CPP, "auto my_var = 42;"),
-        (JAVA, "var my_var = 42;"),
-        (KOTLIN, "val my_var = 42"),
-        (SWIFT, "let my_var = 42"),
-        (RUST, "let my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-    ],
+    argnames=("language", "expected"), argvalues=_DECLARATION_PARAMS
 )
 def test_variable_declaration_yaml(
     *, language: Language, expected: str
@@ -1896,22 +1969,7 @@ def test_variable_declaration_none_no_wrap() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "my_var = 42;"),
-        (TYPESCRIPT, "my_var = 42;"),
-        (GO, "my_var = 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "my_var = 42;"),
-        (CPP, "my_var = 42;"),
-        (JAVA, "my_var = 42;"),
-        (KOTLIN, "my_var = 42"),
-        (SWIFT, "my_var = 42"),
-        (RUST, "my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-    ],
+    argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
 )
 def test_existing_variable_assignment_json(
     *, language: Language, expected: str
@@ -1931,22 +1989,7 @@ def test_existing_variable_assignment_json(
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, "my_var = 42"),
-        (JAVASCRIPT, "my_var = 42;"),
-        (TYPESCRIPT, "my_var = 42;"),
-        (GO, "my_var = 42"),
-        (RUBY, "my_var = 42"),
-        (CSHARP, "my_var = 42;"),
-        (CPP, "my_var = 42;"),
-        (JAVA, "my_var = 42;"),
-        (KOTLIN, "my_var = 42"),
-        (SWIFT, "my_var = 42"),
-        (RUST, "my_var = 42;"),
-        (PHP, "$my_var = 42;"),
-        (HASKELL, "my_var = 42"),
-    ],
+    argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
 )
 def test_existing_variable_assignment_yaml(
     *, language: Language, expected: str

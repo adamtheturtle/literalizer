@@ -6,6 +6,10 @@ per supported language, using the real file extension for that language.
 
 Golden files contain syntactically valid programs so that pre-commit hooks
 can syntax-check them directly without additional wrapping.
+
+To regenerate all golden files after changing output::
+
+    uv run pytest tests/integration/ --regen-all
 """
 
 from __future__ import annotations
@@ -208,9 +212,86 @@ def _wrap_cpp_varname(content: str) -> str:
     )
 
 
+def _wrap_scala(content: str) -> str:
+    """Wrap in a Scala object with a typed variable assignment."""
+    return f"object Check {{\nval x: Any = {content}\n}}"
+
+
+def _wrap_scala_varname(content: str) -> str:
+    """Wrap a Scala variable declaration in an object."""
+    return f"object Check {{\n{content}\n}}"
+
+
+def _wrap_scala_combined(declaration: str, assignment: str) -> str:
+    """Scala: val declaration in one object, var + assignment in
+    another.
+    """
+    decl_indented = "  " + declaration.replace("\n", "\n  ")
+    assign_indented = "  " + assignment.replace("\n", "\n  ")
+    return (
+        f"object Declaration {{\n"
+        f"{decl_indented}\n"
+        f"}}\n"
+        f"object Assignment {{\n"
+        f"  var {_VARIABLE_NAME}: Any = null\n"
+        f"{assign_indented}\n"
+        f"}}"
+    )
+
+
+def _wrap_dart(content: str) -> str:
+    """Wrap in a Dart final variable assignment."""
+    return f"final x = {content};"
+
+
+def _wrap_dart_combined(declaration: str, assignment: str) -> str:
+    """Dart: final declaration in one function, dynamic + assignment in
+    another, with a main that calls both to avoid unused-element warnings.
+    """
+    decl_indented = "  " + declaration.replace("\n", "\n  ")
+    assign_indented = "  " + assignment.replace("\n", "\n  ")
+    return (
+        f"void _declaration() {{\n"
+        f"{decl_indented}\n"
+        f"  {_VARIABLE_NAME}.hashCode;\n"
+        f"}}\n"
+        f"void _assignment() {{\n"
+        f"  dynamic {_VARIABLE_NAME};\n"
+        f"{assign_indented}\n"
+        f"  {_VARIABLE_NAME}.hashCode;\n"
+        f"}}\n"
+        f"void main() {{\n"
+        f"  _declaration();\n"
+        f"  _assignment();\n"
+        f"}}"
+    )
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
+
+
+def _wrap_elixir(content: str) -> str:
+    """Wrap in an Elixir module function."""
+    return f"defmodule Check do\n  def x do\n    {content}\n  end\nend"
+
+
+def _wrap_elixir_varname(content: str) -> str:
+    """Wrap an Elixir variable assignment in a module function."""
+    return (
+        f"defmodule Check do\n"
+        f"  def x do\n"
+        f"    {content}\n"
+        f"    _ = {_VARIABLE_NAME}\n"
+        f"  end\n"
+        f"end"
+    )
+
+
+def _wrap_r(content: str) -> str:
+    """Wrap in an R variable assignment."""
+    return f"x <- {content}"
 
 
 def _wrap_rust_varname(content: str) -> str:
@@ -268,6 +349,79 @@ def _wrap_swift_varname(content: str) -> str:
     """
     prefix = f"let {_VARIABLE_NAME}"
     return prefix + ": Any =" + content[len(prefix) + 2 :]
+
+
+def _wrap_js_combined(declaration: str, assignment: str) -> str:
+    """Wrap a JavaScript declaration in an IIFE to scope the variable,
+    then assign to an outer var.
+    """
+    return (
+        f"void (function() {{\n{declaration}\n}})();\n"
+        f"var {_VARIABLE_NAME};\n"
+        f"{assignment}"
+    )
+
+
+def _wrap_ts_combined(declaration: str, assignment: str) -> str:
+    """TypeScript combined: same as JavaScript but as a module with export."""
+    return (
+        f"void (function() {{\n{declaration}\n}})();\n"
+        f"var {_VARIABLE_NAME};\n"
+        f"{assignment}\n"
+        f"export {{}};"
+    )
+
+
+def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
+    """Kotlin: val declaration in one fun, var + assignment in another."""
+    decl_indented = "    " + declaration.replace("\n", "\n    ")
+    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    return (
+        f"fun _declaration() {{\n"
+        f"{decl_indented}\n"
+        f"}}\n"
+        f"fun _assignment() {{\n"
+        f"    var {_VARIABLE_NAME}: Any? = null\n"
+        f"{assign_indented}\n"
+        f"}}"
+    )
+
+
+def _wrap_swift_combined(declaration: str, assignment: str) -> str:
+    """Swift: let declaration (with type annotation) in a do block,
+    then var + assignment in the outer scope.
+    """
+    annotated = _wrap_swift_varname(content=declaration)
+    decl_indented = "    " + annotated.replace("\n", "\n    ")
+    return (
+        f"do {{\n{decl_indented}\n}}\nvar {_VARIABLE_NAME}: Any\n{assignment}"
+    )
+
+
+def _wrap_rust_combined(declaration: str, assignment: str) -> str:
+    """Rust: let declaration in an inner block, then a deferred-init
+    let + assignment in the outer scope.
+    """
+    decl_indented = "        " + declaration.replace("\n", "\n        ")
+    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    return (
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        "    {\n"
+        f"{decl_indented}\n"
+        f"        let _ = {_VARIABLE_NAME};\n"
+        "    }\n"
+        f"    let {_VARIABLE_NAME};\n"
+        f"{assign_indented}\n"
+        f"    let _ = {_VARIABLE_NAME};\n"
+        "}"
+    )
+
+
+def _wrap_combined_newline(declaration: str, assignment: str) -> str:
+    """Join declaration and assignment with a newline."""
+    return declaration + "\n" + assignment
 
 
 def _wrap_python_datetime(content: str) -> str:
@@ -354,15 +508,25 @@ class _LanguageConfig:
     extension: str
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
+    combined_wrap: Callable[[str, str], str]
     date_variants: tuple[_DateVariant, ...]
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
+    "clojure": _LanguageConfig(
+        spec=literalizer.languages.CLOJURE,
+        extension=".clj",
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
     "python": _LanguageConfig(
         spec=literalizer.languages.PYTHON,
         extension=".py",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(
             _DateVariant(
                 name="python_native",
@@ -383,6 +547,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".js",
         wrap=_wrap_js,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_js_combined,
         date_variants=(
             _DateVariant(
                 name="js_native",
@@ -397,6 +562,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".ts",
         wrap=_wrap_js,
         varname_wrap=_wrap_ts_varname,
+        combined_wrap=_wrap_ts_combined,
         date_variants=(
             _DateVariant(
                 name="ts_native",
@@ -411,6 +577,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".kts",
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_kotlin_combined,
         date_variants=(
             _DateVariant(
                 name="kotlin_native",
@@ -425,6 +592,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".rb",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(
             _DateVariant(
                 name="ruby_native",
@@ -439,6 +607,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".go",
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
+        combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="go_native",
@@ -453,6 +622,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".java",
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
+        combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="java_instant",
@@ -473,6 +643,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".cs",
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
+        combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="csharp_native",
@@ -482,11 +653,27 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             ),
         ),
     ),
+    "dart": _LanguageConfig(
+        spec=literalizer.languages.DART,
+        extension=".dart",
+        wrap=_wrap_dart,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_dart_combined,
+        date_variants=(
+            _DateVariant(
+                name="dart_native",
+                format_date=literalizer.formatters.format_date_dart,
+                format_datetime=literalizer.formatters.format_datetime_dart,
+                wrap=_wrap_dart,
+            ),
+        ),
+    ),
     "swift": _LanguageConfig(
         spec=literalizer.languages.SWIFT,
         extension=".swift",
         wrap=_wrap_swift,
         varname_wrap=_wrap_swift_varname,
+        combined_wrap=_wrap_swift_combined,
         date_variants=(),
     ),
     "cpp": _LanguageConfig(
@@ -494,6 +681,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".cpp",
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
+        combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
         date_variants=(
             _DateVariant(
                 name="cpp_native",
@@ -508,6 +696,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".rs",
         wrap=_wrap_rust,
         varname_wrap=_wrap_rust_varname,
+        combined_wrap=_wrap_rust_combined,
         date_variants=(
             _DateVariant(
                 name="rust_native",
@@ -522,6 +711,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".hs",
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
+        combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
         date_variants=(),
     ),
     "julia": _LanguageConfig(
@@ -529,6 +719,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".jl",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(
             _DateVariant(
                 name="julia_native",
@@ -543,7 +734,39 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".php",
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
+        combined_wrap=lambda d, a: _wrap_php_varname(content=d + "\n" + a),
         date_variants=(),
+    ),
+    "elixir": _LanguageConfig(
+        spec=literalizer.languages.ELIXIR,
+        extension=".ex",
+        wrap=_wrap_elixir,
+        varname_wrap=_wrap_elixir_varname,
+        combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
+        date_variants=(),
+    ),
+    "scala": _LanguageConfig(
+        spec=literalizer.languages.SCALA,
+        extension=".scala",
+        wrap=_wrap_scala,
+        varname_wrap=_wrap_scala_varname,
+        combined_wrap=_wrap_scala_combined,
+        date_variants=(),
+    ),
+    "r": _LanguageConfig(
+        spec=literalizer.languages.R,
+        extension=".R",
+        wrap=_wrap_r,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(
+            _DateVariant(
+                name="r_native",
+                format_date=literalizer.formatters.format_date_r,
+                format_datetime=literalizer.formatters.format_datetime_r,
+                wrap=_wrap_r,
+            ),
+        ),
     ),
 }
 
@@ -636,6 +859,48 @@ def test_golden_file_with_variable_name(
         extension=lang_config.extension,
         fullpath=input_path.parent
         / (language + "_varname" + lang_config.extension),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=("_case_name", "language", "input_path"),
+    argvalues=_CASES,
+    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
+)
+def test_golden_file_combined_variable_forms(
+    _case_name: str,
+    language: str,
+    input_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test that literalize_yaml with new_variable=True (declaration) and
+    new_variable=False (assignment to existing variable) produce expected
+    golden output, combined in one file to show the difference in syntax.
+    """
+    lang_config = _LANGUAGES[language]
+    yaml_string = input_path.read_text()
+    declaration = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=lang_config.spec,
+        prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=True,
+    )
+    assignment = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=lang_config.spec,
+        prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=False,
+    )
+    combined = lang_config.combined_wrap(declaration, assignment)
+    file_regression.check(
+        contents=combined + "\n",
+        extension=lang_config.extension,
+        fullpath=input_path.parent
+        / (language + "_combined" + lang_config.extension),
     )
 
 

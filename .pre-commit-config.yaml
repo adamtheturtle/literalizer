@@ -4,8 +4,12 @@ fail_fast: true
 ci:
   skip:
     - actionlint
+    - r-syntax-check
     - check-manifest
+    - clojure-syntax-check
     - csharp-golden-syntax-check
+    - dart-syntax-check
+    - elixir-syntax-check
     - deptry
     - doc8
     - docs
@@ -39,6 +43,7 @@ ci:
     - php-syntax-check
     - ruby-syntax-check
     - rust-golden-syntax-check
+    - scala-golden-syntax-check
     - shellcheck
     - shellcheck-docs
     - shfmt
@@ -490,11 +495,43 @@ repos:
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
+      - id: elixir-syntax-check
+        name: Elixir golden file syntax check
+        entry: uv run python check_elixir_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.ex$
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
       - id: haskell-golden-syntax-check
         name: Haskell golden file syntax check
         entry: uv run python check_haskell_golden_syntax.py
         language: python
         types: [haskell]
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: clojure-syntax-check
+        name: Clojure syntax check
+        entry: clj-kondo --lint
+        language: system
+        files: ^tests/integration/cases/.*\.clj$
+        stages: [pre-commit]
+
+      - id: scala-golden-syntax-check
+        name: Scala golden file syntax check
+        entry: uv run python check_scala_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.scala$
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: dart-syntax-check
+        name: Dart golden file syntax check
+        entry: uv run python check_dart_golden_syntax.py
+        language: python
+        types: [dart]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
@@ -513,6 +550,15 @@ repos:
         entry: php -l
         language: system
         types: [php]
+        stages: [pre-commit]
+
+      - id: r-syntax-check
+        name: R golden file syntax check
+        entry: uv run python check_r_golden_syntax.py
+        language: python
+        types: [r]
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: sphinx-lint

@@ -69,7 +69,8 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [spec.format_set_entry(item) for item in formatted]
-    return spec.set_open + ", ".join(entries) + spec.set_close
+    joined = spec.element_separator.join(entries)
+    return spec.set_open + joined + spec.set_close
 
 
 @beartype
@@ -91,7 +92,8 @@ def _format_value(*, value: Value, spec: Language) -> str:
             )
             for k, v in omap_items
         ]
-        return spec.omap_open + ", ".join(pairs) + spec.omap_close
+        joined = spec.element_separator.join(pairs)
+        return spec.omap_open + joined + spec.omap_close
 
     if isinstance(value, dict):
         dict_items = {
@@ -109,26 +111,30 @@ def _format_value(*, value: Value, spec: Language) -> str:
             )
             for k, v in dict_items.items()
         ]
-        return spec.dict_open + ", ".join(pairs) + spec.dict_close
+        joined = spec.element_separator.join(pairs)
+        return spec.dict_open + joined + spec.dict_close
 
     if isinstance(value, set):
         return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
-        if not value and spec.empty_collection is not None:
-            return spec.empty_collection
-        items = [_format_value(value=v, spec=spec) for v in value]
-        joined = ", ".join(items)
+        if not value and spec.empty_sequence is not None:
+            return spec.empty_sequence
+        items = [
+            spec.format_list_entry(_format_value(value=v, spec=spec))
+            for v in value
+        ]
+        joined = spec.element_separator.join(items)
         # Some languages (e.g. Python) require a trailing comma on
-        # single-element collections to avoid syntactic ambiguity.
+        # single-element sequences to avoid syntactic ambiguity.
         if len(items) == 1 and spec.single_element_trailing_comma:
-            joined += ","
+            joined += spec.element_separator.strip()
         collection_open = (
             spec.format_collection_open(value)
             if spec.format_collection_open is not None
-            else spec.collection_open
+            else spec.sequence_open
         )
-        return f"{collection_open}{joined}{spec.collection_close}"
+        return f"{collection_open}{joined}{spec.sequence_close}"
 
     return _format_scalar(value=value, spec=spec)
 
@@ -152,9 +158,9 @@ def _wrap_body(
     collection_open = (
         spec.format_collection_open(list(data))
         if spec.format_collection_open is not None
-        else spec.collection_open
+        else spec.sequence_open
     )
-    return f"{collection_open}\n{body}\n{ci}{spec.collection_close}"
+    return f"{collection_open}\n{body}\n{ci}{spec.sequence_close}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
@@ -239,26 +245,28 @@ def _literalize(
                     key_str=formatted_key, val_str=formatted_val, spec=spec
                 )
             )
-            add_comma = i < last_idx or spec.multiline_trailing_comma
-            comma = "," if add_comma else ""
-            lines.append(f"{effective_prefix}{entry}{comma}")
+            add_sep = i < last_idx or spec.multiline_trailing_comma
+            sep = spec.element_separator.strip() if add_sep else ""
+            lines.append(f"{effective_prefix}{entry}{sep}")
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
             formatted = _format_value(value=item, spec=spec)
             entry = spec.format_set_entry(formatted)
-            add_comma = i < last_idx or spec.multiline_trailing_comma
-            comma = "," if add_comma else ""
-            lines.append(f"{effective_prefix}{entry}{comma}")
+            add_sep = i < last_idx or spec.multiline_trailing_comma
+            sep = spec.element_separator.strip() if add_sep else ""
+            lines.append(f"{effective_prefix}{entry}{sep}")
     else:
         items = list(data)
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
-            formatted = _format_value(value=item, spec=spec)
-            add_comma = i < last_idx or spec.multiline_trailing_comma
-            comma = "," if add_comma else ""
-            lines.append(f"{effective_prefix}{formatted}{comma}")
+            formatted = spec.format_list_entry(
+                _format_value(value=item, spec=spec)
+            )
+            add_sep = i < last_idx or spec.multiline_trailing_comma
+            sep = spec.element_separator.strip() if add_sep else ""
+            lines.append(f"{effective_prefix}{formatted}{sep}")
 
     body = "\n".join(lines)
 
