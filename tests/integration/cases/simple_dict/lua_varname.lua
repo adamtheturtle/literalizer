@@ -2,5 +2,4 @@ local my_data = {
     ["name"] = "Alice",
     ["age"] = 30,
     ["active"] = true,
-    ["score"] = nil,
 }
