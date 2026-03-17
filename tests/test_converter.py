@@ -58,6 +58,7 @@ from literalizer.formatters import (
     to_fsharp_val,
 )
 from literalizer.languages import (
+    CLOJURE,
     CPP,
     CSHARP,
     DART,
@@ -1876,6 +1877,9 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     ),
     FSHARP: _VariableSyntax(
         declaration="let my_var: Val = 42", assignment="let my_var: Val = 42"
+    ),
+    CLOJURE: _VariableSyntax(
+        declaration="(def my_var 42)", assignment="(def my_var 42)"
     ),
     SCALA: _VariableSyntax(
         declaration="val my_var = 42", assignment="my_var = 42"
