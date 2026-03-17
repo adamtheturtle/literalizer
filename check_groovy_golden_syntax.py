@@ -9,11 +9,7 @@ from pathlib import Path
 
 def main() -> None:
     """Check syntax of each given Groovy golden file."""
-    groovyc_path = shutil.which(cmd="groovyc")
-    if groovyc_path is None:
-        # Groovy not installed, skip silently
-        return
-
+    groovyc_path: str = shutil.which(cmd="groovyc") or "groovyc"
     for filename in sys.argv[1:]:
         path = Path(filename).resolve()
         with tempfile.TemporaryDirectory() as tmpdir:
