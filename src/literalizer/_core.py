@@ -120,7 +120,10 @@ def _format_value(*, value: Value, spec: Language) -> str:
     if isinstance(value, list):
         if not value and spec.empty_sequence is not None:
             return spec.empty_sequence
-        items = [_format_value(value=v, spec=spec) for v in value]
+        items = [
+            spec.format_list_entry(_format_value(value=v, spec=spec))
+            for v in value
+        ]
         joined = spec.element_separator.join(items)
         # Some languages (e.g. Python) require a trailing comma on
         # single-element sequences to avoid syntactic ambiguity.
@@ -248,7 +251,9 @@ def _literalize(
         items = list(data)
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
-            formatted = _format_value(value=item, spec=spec)
+            formatted = spec.format_list_entry(
+                _format_value(value=item, spec=spec)
+            )
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{effective_prefix}{formatted}{sep}")
