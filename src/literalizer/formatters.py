@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import datetime  # noqa: TC003
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 __all__ = [
+    "dict_entry_with_separator",
     "format_bytes_hex",
     "format_bytes_python",
     "format_date_cpp",
@@ -45,6 +50,7 @@ __all__ = [
     "format_variable_declaration_ruby",
     "format_variable_declaration_rust",
     "format_variable_declaration_swift",
+    "passthrough_set_entry",
 ]
 
 
@@ -485,3 +491,28 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
     Example: ``"x"`` and ``"HList [1, 2]"`` → ``"x = HList [1, 2]"``
     """
     return f"{name} = {value}"
+
+
+def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
+    """Return a ``format_dict_entry`` callable that joins key and value
+    with *separator*.
+
+    Example: ``dict_entry_with_separator(": ")("k", "v")`` → ``"k: v"``.
+    """
+
+    @beartype
+    def _format(key: str, value: str) -> str:
+        """Format a dict entry by joining key and value with separator."""
+        return f"{key}{separator}{value}"
+
+    return _format
+
+
+@beartype
+def passthrough_set_entry(item: str) -> str:
+    """Return *item* unchanged.
+
+    Use this as ``format_set_entry`` for languages where set entries
+    need no extra formatting.
+    """
+    return item

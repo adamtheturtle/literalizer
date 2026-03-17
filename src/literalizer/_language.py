@@ -45,11 +45,6 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def dict_separator(self) -> str:
-        """The separator between dict keys and values."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
     def dict_open(self) -> str:
         """The opening delimiter for dict literals."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -60,9 +55,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_dict_entry(self) -> Callable[[str, str], str] | None:
+    def format_dict_entry(self) -> Callable[[str, str], str]:
         """Callable that formats a dict entry from a pre-formatted key
-        and value string, or ``None`` to use ``dict_separator``.
+        and value string.  Use
+        :func:`~literalizer.formatters.dict_entry_with_separator`
+        for the common ``key + separator + value`` pattern.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -131,9 +128,10 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_set_entry(self) -> Callable[[str], str] | None:
+    def format_set_entry(self) -> Callable[[str], str]:
         """Callable that formats a set entry from a pre-formatted item
-        string, or ``None`` to use the item directly.
+        string.  Use :func:`~literalizer.formatters.passthrough_set_entry`
+        when no transformation is needed.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -198,10 +196,9 @@ class LanguageSpec:
     false_literal: str
     collection_open: str
     collection_close: str
-    dict_separator: str
     dict_open: str
     dict_close: str
-    format_dict_entry: Callable[[str, str], str] | None
+    format_dict_entry: Callable[[str, str], str]
     trailing_comma: bool
     single_element_trailing_comma: bool
     format_bytes: Callable[[bytes], str]
@@ -212,7 +209,7 @@ class LanguageSpec:
     set_open: str
     set_close: str
     empty_set: str | None
-    format_set_entry: Callable[[str], str] | None
+    format_set_entry: Callable[[str], str]
     comment_prefix: str
     omap_open: str
     omap_close: str
