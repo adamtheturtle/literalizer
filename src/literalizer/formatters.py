@@ -44,6 +44,7 @@ __all__ = [
     "format_datetime_r",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_assignment_c",
     "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
     "format_variable_assignment_csharp",
@@ -64,6 +65,7 @@ __all__ = [
     "format_variable_assignment_rust",
     "format_variable_assignment_scala",
     "format_variable_assignment_swift",
+    "format_variable_declaration_c",
     "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
@@ -87,6 +89,7 @@ __all__ = [
     "format_variable_declaration_swift",
     "passthrough_list_entry",
     "passthrough_set_entry",
+    "to_c_val",
     "to_fsharp_val",
     "to_ocaml_val",
 ]
@@ -951,6 +954,59 @@ def to_ocaml_val(value: str) -> str:
     if float_result is not None:
         return float_result
     return value
+
+
+def to_c_val(value: str) -> str:
+    """Wrap a pre-formatted value string in a C ``_CVal`` compound literal.
+
+    Inspects the string representation to determine the appropriate union
+    member: ``b`` for bool, ``i`` for integer, ``f`` for float, ``s`` for
+    string.  Values that are already ``_CVal`` compound literals (starting
+    with ``((_CVal)``) are returned unchanged.
+    """
+    if value.startswith("((_CVal)"):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"((_CVal){{.s = {value}}})"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"((_CVal){{.i = {value}}})"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"((_CVal){{.f = {value}}})"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def format_variable_declaration_c(name: str, value: str) -> str:
+    """Format a C variable declaration using the ``_CVal`` type.
+
+    Example: ``"x"`` and ``"((_CVal){.i = 42})"`` →
+    ``"_CVal x = ((_CVal){.i = 42});"``
+    """
+    return f"_CVal {name} = {value};"
+
+
+@beartype
+def format_variable_assignment_c(name: str, value: str) -> str:
+    """Format a C assignment to an existing ``_CVal`` variable.
+
+    Example: ``"x"`` and ``"((_CVal){.i = 42})"`` →
+    ``"x = ((_CVal){.i = 42});"``
+    """
+    return f"{name} = {value};"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:

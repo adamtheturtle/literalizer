@@ -41,6 +41,7 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
+    - c-golden-syntax-check
     - cpp-golden-syntax-check
     - swift-syntax-check
     - php-syntax-check
@@ -463,6 +464,14 @@ repos:
         types: [java]
         files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: c-golden-syntax-check
+        name: C golden file syntax check
+        entry: clang -fsyntax-only -std=c11
+        language: system
+        types: [c]
+        files: ^tests/integration/cases/
         stages: [pre-commit]
 
       - id: cpp-golden-syntax-check
