@@ -65,6 +65,7 @@ from literalizer.languages import (
     PYTHON,
     RUBY,
     RUST,
+    SCALA,
     SWIFT,
     TYPESCRIPT,
 )
@@ -1882,6 +1883,7 @@ def test_variable_declaration_none_no_wrap() -> None:
         (RUST, "my_var = 42;"),
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
+        (SCALA, "my_var = 42"),
     ],
 )
 def test_existing_variable_assignment_json(
@@ -1917,6 +1919,7 @@ def test_existing_variable_assignment_json(
         (RUST, "my_var = 42;"),
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
+        (SCALA, "my_var = 42"),
     ],
 )
 def test_existing_variable_assignment_yaml(
