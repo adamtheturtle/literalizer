@@ -128,6 +128,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def format_list_entry(self) -> Callable[[str], str]:
+        """Callable that formats a list entry from a pre-formatted item
+        string.  Use :func:`~literalizer.formatters.passthrough_list_entry`
+        when no transformation is needed.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_set_entry(self) -> Callable[[str], str]:
         """Callable that formats a set entry from a pre-formatted item
         string.  Use :func:`~literalizer.formatters.passthrough_set_entry`
@@ -225,6 +233,7 @@ class LanguageSpec:
     set_open: str
     set_close: str
     empty_set: str | None
+    format_list_entry: Callable[[str], str]
     format_set_entry: Callable[[str], str]
     comment_prefix: str
     omap_open: str

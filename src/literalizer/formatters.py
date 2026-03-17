@@ -79,6 +79,7 @@ __all__ = [
     "format_variable_declaration_rust",
     "format_variable_declaration_scala",
     "format_variable_declaration_swift",
+    "passthrough_list_entry",
     "passthrough_set_entry",
 ]
 
@@ -807,6 +808,16 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
         return f"{key}{separator}{value}"
 
     return _format
+
+
+@beartype
+def passthrough_list_entry(item: str) -> str:
+    """Return *item* unchanged.
+
+    Use this as ``format_list_entry`` for languages where list entries
+    need no extra formatting.
+    """
+    return item
 
 
 @beartype
