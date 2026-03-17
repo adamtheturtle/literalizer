@@ -534,6 +534,7 @@ JULIA = LanguageSpec(
     multiline_close_indent="",
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_julia,
+    format_variable_assignment=format_variable_declaration_julia,
 )
 
 
