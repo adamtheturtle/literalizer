@@ -56,6 +56,7 @@ from literalizer.formatters import (
 from literalizer.languages import (
     CPP,
     CSHARP,
+    DART,
     GO,
     HASKELL,
     JAVA,
@@ -1806,6 +1807,7 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
         (RUST, "let my_var = 42;"),
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
+        (DART, "final my_var = 42;"),
     ],
 )
 def test_variable_declaration_json(
@@ -1838,6 +1840,7 @@ def test_variable_declaration_json(
         (RUST, "let my_var = 42;"),
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
+        (DART, "final my_var = 42;"),
     ],
 )
 def test_variable_declaration_yaml(
@@ -1882,6 +1885,7 @@ def test_variable_declaration_none_no_wrap() -> None:
         (RUST, "my_var = 42;"),
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
+        (DART, "my_var = 42;"),
     ],
 )
 def test_existing_variable_assignment_json(
@@ -1917,6 +1921,7 @@ def test_existing_variable_assignment_json(
         (RUST, "my_var = 42;"),
         (PHP, "$my_var = 42;"),
         (HASKELL, "my_var = 42"),
+        (DART, "my_var = 42;"),
     ],
 )
 def test_existing_variable_assignment_yaml(
