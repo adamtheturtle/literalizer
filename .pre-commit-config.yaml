@@ -11,6 +11,7 @@ ci:
     - dart-syntax-check
     - elixir-syntax-check
     - fsharp-golden-syntax-check
+    - ocaml-golden-syntax-check
     - deptry
     - doc8
     - docs
@@ -518,6 +519,15 @@ repos:
         entry: uv run python check_fsharp_golden_syntax.py
         language: python
         files: \.(fs|fsi)$
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: ocaml-golden-syntax-check
+        name: OCaml golden file syntax check
+        entry: uv run python check_ocaml_golden_syntax.py
+        language: python
+        types: [ocaml]
+        files: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
