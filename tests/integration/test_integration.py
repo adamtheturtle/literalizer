@@ -293,8 +293,8 @@ def _wrap_swift_varname(content: str) -> str:
 
 
 def _wrap_js_combined(declaration: str, assignment: str) -> str:
-    """Wrap JS declaration in an IIFE to scope the const, then assign
-    to an outer var.
+    """Wrap a JavaScript declaration in an IIFE to scope the variable,
+    then assign to an outer var.
     """
     return (
         f"void (function() {{\n{declaration}\n}})();\n"
@@ -304,7 +304,7 @@ def _wrap_js_combined(declaration: str, assignment: str) -> str:
 
 
 def _wrap_ts_combined(declaration: str, assignment: str) -> str:
-    """TypeScript combined: same as JS but as a module with export."""
+    """TypeScript combined: same as JavaScript but as a module with export."""
     return (
         f"void (function() {{\n{declaration}\n}})();\n"
         f"var {_VARIABLE_NAME};\n"
