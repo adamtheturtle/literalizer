@@ -78,7 +78,7 @@ from literalizer.languages import (
     SWIFT,
     TYPESCRIPT,
     R,
-    _format_matlab_dict_entry,
+    _format_matlab_dict_entry,  # pyright: ignore[reportPrivateUsage]
 )
 
 
