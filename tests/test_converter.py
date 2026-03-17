@@ -1864,3 +1864,73 @@ def test_variable_declaration_none_no_wrap() -> None:
         variable_name=None,
     )
     assert result == "(\n    1,\n    2,\n)"
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (PYTHON, "my_var = 42"),
+        (JAVASCRIPT, "my_var = 42;"),
+        (TYPESCRIPT, "my_var = 42;"),
+        (GO, "my_var = 42"),
+        (RUBY, "my_var = 42"),
+        (CSHARP, "my_var = 42;"),
+        (CPP, "my_var = 42;"),
+        (JAVA, "my_var = 42;"),
+        (KOTLIN, "my_var = 42"),
+        (SWIFT, "my_var = 42"),
+        (RUST, "my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
+    ],
+)
+def test_existing_variable_assignment_json(
+    *, language: Language, expected: str
+) -> None:
+    """Each language produces correct existing-variable assignment
+    syntax.
+    """
+    result = literalize_json(
+        json_string="42",
+        language=language,
+        prefix="",
+        wrap=False,
+        variable_name="my_var",
+        new_variable=False,
+    )
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (PYTHON, "my_var = 42"),
+        (JAVASCRIPT, "my_var = 42;"),
+        (TYPESCRIPT, "my_var = 42;"),
+        (GO, "my_var = 42"),
+        (RUBY, "my_var = 42"),
+        (CSHARP, "my_var = 42;"),
+        (CPP, "my_var = 42;"),
+        (JAVA, "my_var = 42;"),
+        (KOTLIN, "my_var = 42"),
+        (SWIFT, "my_var = 42"),
+        (RUST, "my_var = 42;"),
+        (PHP, "$my_var = 42;"),
+        (HASKELL, "my_var = 42"),
+    ],
+)
+def test_existing_variable_assignment_yaml(
+    *, language: Language, expected: str
+) -> None:
+    """Each language produces correct existing-variable assignment syntax
+    for YAML.
+    """
+    result = literalize_yaml(
+        yaml_string="42\n",
+        language=language,
+        prefix="",
+        wrap=False,
+        variable_name="my_var",
+        new_variable=False,
+    )
+    assert result == expected

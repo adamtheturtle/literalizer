@@ -518,7 +518,7 @@ def format_variable_declaration_haskell(name: str, value: str) -> str:
 
 @beartype
 def format_variable_assignment_python(name: str, value: str) -> str:
-    """Format a Python assignment to an existing variable.
+    """Format a Python variable assignment to an existing variable.
 
     Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
     """
