@@ -9,9 +9,7 @@ from pathlib import Path
 
 def main() -> None:
     """Check syntax of each given Dart golden file."""
-    dart_path = shutil.which(cmd="dart")
-    if not dart_path:
-        return  # Skip if dart is not installed
+    dart_path = shutil.which(cmd="dart") or "dart"
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as tmpdir:
