@@ -1,5 +1,5 @@
 {
-    "name" "Alice",
-    "score" nil,
+    "name" "Alice"
+    "score" nil
     "age" 30
 }
