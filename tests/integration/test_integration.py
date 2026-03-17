@@ -230,6 +230,63 @@ def _wrap_elixir_varname(content: str) -> str:
     )
 
 
+def _wrap_rust_varname(content: str) -> str:
+    """Wrap a Rust let binding in a main function."""
+    indented = content.replace("\n", "\n    ")
+    return (
+        "use std::collections::HashMap;\n"
+        "use std::collections::HashSet;\n"
+        "fn main() {\n"
+        f"    {indented}\n"
+        f"    let _ = {_VARIABLE_NAME};\n"
+        "}"
+    )
+
+
+def _wrap_haskell_varname(content: str) -> str:
+    """Wrap a Haskell variable binding in module boilerplate."""
+    return (
+        "{-# LANGUAGE OverloadedStrings #-}\n"
+        "module Check where\n"
+        "import Data.String (IsString(fromString))\n"
+        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
+        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+        "instance IsString Val where\n"
+        "    fromString = HStr\n"
+        "instance Num Val where\n"
+        "    fromInteger = HInt\n"
+        '    a + b = error "not implemented"\n'
+        '    a * b = error "not implemented"\n'
+        '    abs a = error "not implemented"\n'
+        '    signum a = error "not implemented"\n'
+        "    negate (HInt n) = HInt (negate n)\n"
+        "    negate (HFloat f) = HFloat (negate f)\n"
+        '    negate _ = error "not implemented"\n'
+        "instance Fractional Val where\n"
+        "    fromRational r = HFloat (realToFrac r)\n"
+        '    a / b = error "not implemented"\n'
+        f"{_VARIABLE_NAME} :: Val\n"
+        f"{content}"
+    )
+
+
+def _wrap_php_varname(content: str) -> str:
+    """Wrap a PHP variable assignment in a PHP script."""
+    return f"<?php\n{content}"
+
+
+def _wrap_swift_varname(content: str) -> str:
+    """Add type annotation to Swift let declaration for mixed-type
+    collections.
+
+    The content from format_variable_declaration_swift is like
+    "let my_data = [...]", and we need to add a type annotation for Swift
+    to accept heterogeneous collections.
+    """
+    prefix = f"let {_VARIABLE_NAME}"
+    return prefix + ": Any =" + content[len(prefix) + 2 :]
+
+
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
@@ -313,6 +370,7 @@ class _LanguageConfig:
     spec: literalizer.LanguageSpec
     extension: str
     wrap: Callable[[str], str]
+    varname_wrap: Callable[[str], str]
     date_variants: tuple[_DateVariant, ...]
 
 
@@ -321,6 +379,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.PYTHON,
         extension=".py",
         wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="python_native",
@@ -340,6 +399,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.JAVASCRIPT,
         extension=".js",
         wrap=_wrap_js,
+        varname_wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="js_native",
@@ -353,6 +413,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.TYPESCRIPT,
         extension=".ts",
         wrap=_wrap_js,
+        varname_wrap=_wrap_ts_varname,
         date_variants=(
             _DateVariant(
                 name="ts_native",
@@ -366,6 +427,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.KOTLIN,
         extension=".kts",
         wrap=_wrap_kotlin,
+        varname_wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="kotlin_native",
@@ -379,6 +441,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.RUBY,
         extension=".rb",
         wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="ruby_native",
@@ -392,6 +455,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.GO,
         extension=".go",
         wrap=_wrap_go,
+        varname_wrap=_wrap_go_varname,
         date_variants=(
             _DateVariant(
                 name="go_native",
@@ -405,6 +469,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.JAVA,
         extension=".java",
         wrap=_wrap_java,
+        varname_wrap=_wrap_java_varname,
         date_variants=(
             _DateVariant(
                 name="java_instant",
@@ -424,6 +489,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.CSHARP,
         extension=".cs",
         wrap=_wrap_csharp,
+        varname_wrap=_wrap_csharp_varname,
         date_variants=(
             _DateVariant(
                 name="csharp_native",
@@ -437,12 +503,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.SWIFT,
         extension=".swift",
         wrap=_wrap_swift,
+        varname_wrap=_wrap_swift_varname,
         date_variants=(),
     ),
     "cpp": _LanguageConfig(
         spec=literalizer.languages.CPP,
         extension=".cpp",
         wrap=_wrap_cpp,
+        varname_wrap=_wrap_cpp_varname,
         date_variants=(
             _DateVariant(
                 name="cpp_native",
@@ -456,6 +524,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.RUST,
         extension=".rs",
         wrap=_wrap_rust,
+        varname_wrap=_wrap_rust_varname,
         date_variants=(
             _DateVariant(
                 name="rust_native",
@@ -469,12 +538,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.HASKELL,
         extension=".hs",
         wrap=_wrap_haskell,
+        varname_wrap=_wrap_haskell_varname,
         date_variants=(),
     ),
     "julia": _LanguageConfig(
         spec=literalizer.languages.JULIA,
         extension=".jl",
         wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
         date_variants=(
             _DateVariant(
                 name="julia_native",
@@ -488,82 +559,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.PHP,
         extension=".php",
         wrap=_wrap_php,
+        varname_wrap=_wrap_php_varname,
         date_variants=(),
     ),
     "elixir": _LanguageConfig(
         spec=literalizer.languages.ELIXIR,
         extension=".ex",
         wrap=_wrap_elixir,
-        date_variants=(),
-    ),
-}
-
-
-_LANGUAGES_WITH_VARNAME: dict[str, _LanguageConfig] = {
-    "python": _LanguageConfig(
-        spec=literalizer.languages.PYTHON,
-        extension=".py",
-        wrap=_wrap_identity,
-        date_variants=(),
-    ),
-    "javascript": _LanguageConfig(
-        spec=literalizer.languages.JAVASCRIPT,
-        extension=".js",
-        wrap=_wrap_identity,
-        date_variants=(),
-    ),
-    "typescript": _LanguageConfig(
-        spec=literalizer.languages.TYPESCRIPT,
-        extension=".ts",
-        wrap=_wrap_ts_varname,
-        date_variants=(),
-    ),
-    "kotlin": _LanguageConfig(
-        spec=literalizer.languages.KOTLIN,
-        extension=".kts",
-        wrap=_wrap_identity,
-        date_variants=(),
-    ),
-    "ruby": _LanguageConfig(
-        spec=literalizer.languages.RUBY,
-        extension=".rb",
-        wrap=_wrap_identity,
-        date_variants=(),
-    ),
-    "go": _LanguageConfig(
-        spec=literalizer.languages.GO,
-        extension=".go",
-        wrap=_wrap_go_varname,
-        date_variants=(),
-    ),
-    "java": _LanguageConfig(
-        spec=literalizer.languages.JAVA,
-        extension=".java",
-        wrap=_wrap_java_varname,
-        date_variants=(),
-    ),
-    "csharp": _LanguageConfig(
-        spec=literalizer.languages.CSHARP,
-        extension=".cs",
-        wrap=_wrap_csharp_varname,
-        date_variants=(),
-    ),
-    "cpp": _LanguageConfig(
-        spec=literalizer.languages.CPP,
-        extension=".cpp",
-        wrap=_wrap_cpp_varname,
-        date_variants=(),
-    ),
-    "elixir": _LanguageConfig(
-        spec=literalizer.languages.ELIXIR,
-        extension=".ex",
-        wrap=_wrap_elixir_varname,
-        date_variants=(),
-    ),
-    "julia": _LanguageConfig(
-        spec=literalizer.languages.JULIA,
-        extension=".jl",
-        wrap=_wrap_identity,
+        varname_wrap=_wrap_elixir_varname,
         date_variants=(),
     ),
 }
@@ -592,7 +595,7 @@ def _discover_varname_cases() -> list[tuple[str, str, Path]]:
     for case_dir in sorted(_CASES_DIR.iterdir()):
         cases.extend(
             (case_dir.name, lang_name, case_dir / "input.yaml")
-            for lang_name in _LANGUAGES_WITH_VARNAME
+            for lang_name in _LANGUAGES
         )
     return cases
 
@@ -642,7 +645,7 @@ def test_golden_file_with_variable_name(
     """Test that literalize_yaml with variable_name matches golden
     file.
     """
-    lang_config = _LANGUAGES_WITH_VARNAME[language]
+    lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
@@ -651,7 +654,7 @@ def test_golden_file_with_variable_name(
         wrap=True,
         variable_name=_VARIABLE_NAME,
     )
-    wrapped = lang_config.wrap(result)
+    wrapped = lang_config.varname_wrap(result)
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.extension,
