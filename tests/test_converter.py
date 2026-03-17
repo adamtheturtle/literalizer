@@ -54,6 +54,7 @@ from literalizer.formatters import (
     passthrough_set_entry,
 )
 from literalizer.languages import (
+    CLOJURE,
     CPP,
     CSHARP,
     GO,
@@ -1869,6 +1870,7 @@ def test_variable_declaration_none_no_wrap() -> None:
 @pytest.mark.parametrize(
     argnames=("language", "expected"),
     argvalues=[
+        (CLOJURE, "(def my_var 42)"),
         (PYTHON, "my_var = 42"),
         (JAVASCRIPT, "my_var = 42;"),
         (TYPESCRIPT, "my_var = 42;"),
@@ -1904,6 +1906,7 @@ def test_existing_variable_assignment_json(
 @pytest.mark.parametrize(
     argnames=("language", "expected"),
     argvalues=[
+        (CLOJURE, "(def my_var 42)"),
         (PYTHON, "my_var = 42"),
         (JAVASCRIPT, "my_var = 42;"),
         (TYPESCRIPT, "my_var = 42;"),
