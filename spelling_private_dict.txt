@@ -44,6 +44,7 @@ initializers
 javac
 json
 kotlinc
+kroc
 kts
 literalize
 literalizer
@@ -51,6 +52,7 @@ localhost
 namespaces
 natively
 ocamlopt
+occam
 ofEntries
 omap
 paren
