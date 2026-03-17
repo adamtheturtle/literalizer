@@ -4,7 +4,7 @@ procedure Check is
        AFloat (3.14),
        ABool (True),
        ABool (False),
-       AStr ("hello \"world\"")
+       AStr ("hello ""world""")
    );
 begin
    null;

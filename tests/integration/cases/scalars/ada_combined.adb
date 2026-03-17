@@ -5,7 +5,7 @@ procedure Check is
           AFloat (3.14),
           ABool (True),
           ABool (False),
-          AStr ("hello \"world\"")
+          AStr ("hello ""world""")
       );
    begin
       null;
@@ -17,7 +17,7 @@ procedure Check is
           AFloat (3.14),
           ABool (True),
           ABool (False),
-          AStr ("hello \"world\"")
+          AStr ("hello ""world""")
       );
    end Check_Assignment;
 begin

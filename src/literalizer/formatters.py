@@ -1022,7 +1022,8 @@ def to_ada_val(value: str) -> str:
     if any(value.startswith(p) for p in _val_prefixes):
         return value
     if value.startswith('"') and value.endswith('"'):
-        return f"AStr ({value})"
+        ada_escaped = value.replace('\\"', '""')
+        return f"AStr ({ada_escaped})"
     negative = value.startswith("-")
     rest = value[1:] if negative else value
     int_result = None

@@ -2033,6 +2033,12 @@ def test_to_ada_val_unknown_value() -> None:
     assert result == "SomeUnknownValue"
 
 
+def test_to_ada_val_string_with_embedded_quote() -> None:
+    """``to_ada_val`` uses Ada doubled-quote escaping, not backslash."""
+    result = to_ada_val('"hello \\"world\\""')
+    assert result == 'AStr ("hello ""world""")'
+
+
 def test_to_ocaml_val_unknown_value() -> None:
     """``to_ocaml_val`` returns the value unchanged when it cannot be
     classified as a string literal, int, or float.
