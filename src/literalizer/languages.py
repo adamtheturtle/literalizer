@@ -7,6 +7,7 @@ from beartype import beartype
 __all__ = [
     "CPP",
     "CSHARP",
+    "DART",
     "GO",
     "HASKELL",
     "JAVA",
@@ -32,6 +33,7 @@ from literalizer.formatters import (
     format_datetime_php,
     format_variable_assignment_cpp,
     format_variable_assignment_csharp,
+    format_variable_assignment_dart,
     format_variable_assignment_go,
     format_variable_assignment_haskell,
     format_variable_assignment_java,
@@ -45,6 +47,7 @@ from literalizer.formatters import (
     format_variable_assignment_swift,
     format_variable_declaration_cpp,
     format_variable_declaration_csharp,
+    format_variable_declaration_dart,
     format_variable_declaration_go,
     format_variable_declaration_haskell,
     format_variable_declaration_java,
@@ -131,6 +134,42 @@ CSHARP = LanguageSpec(
     skip_null_dict_values=False,
     format_variable_declaration=format_variable_declaration_csharp,
     format_variable_assignment=format_variable_assignment_csharp,
+)
+
+
+def _format_dart_omap_entry(key: str, value: str) -> str:
+    """Format a Dart map entry."""
+    return f"{key}: {value}"
+
+
+DART = LanguageSpec(
+    null_literal="null",
+    true_literal="true",
+    false_literal="false",
+    collection_open="[",
+    collection_close="]",
+    dict_open="{",
+    dict_close="}",
+    format_dict_entry=dict_entry_with_separator(separator=": "),
+    multiline_trailing_comma=True,
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_collection=None,
+    empty_dict=None,
+    set_open="{",
+    set_close="}",
+    empty_set="<dynamic>{}",
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="//",
+    omap_open="{",
+    omap_close="}",
+    format_omap_entry=_format_dart_omap_entry,
+    multiline_close_indent="",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_dart,
+    format_variable_assignment=format_variable_assignment_dart,
 )
 
 

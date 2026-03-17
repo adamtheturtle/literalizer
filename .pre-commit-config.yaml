@@ -6,6 +6,7 @@ ci:
     - actionlint
     - check-manifest
     - csharp-golden-syntax-check
+    - dart-syntax-check
     - deptry
     - doc8
     - docs
@@ -505,6 +506,15 @@ repos:
         entry: bash -c 'for f; do scalac "$f" || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.scala$
+        stages: [pre-commit]
+
+      - id: dart-syntax-check
+        name: Dart golden file syntax check
+        entry: uv run python check_dart_golden_syntax.py
+        language: python
+        types: [dart]
+        files: ^tests/integration/cases/
+        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: julia-golden-syntax-check
