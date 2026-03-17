@@ -997,17 +997,8 @@ GROOVY = Language(
 
 
 def _format_occam_dict_entry(key: str, value: str) -> str:
-    """Format an occam-pi dict entry as a ``MOBILE LIT(lit.pair; ...)``
-    constructor.
-    """
-    val = to_occam_val(value=value)
-    return f"MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {val})"
-
-
-def _format_occam_omap_entry(key: str, value: str) -> str:
-    """Format an occam-pi ordered-map entry as a ``MOBILE LIT(lit.pair;
-    ...)``
-    constructor.
+    """Format an occam-pi dict or omap entry as a ``MOBILE LIT(lit.pair;
+    ...)`` constructor.
     """
     val = to_occam_val(value=value)
     return f"MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {val})"
@@ -1027,7 +1018,7 @@ def _format_occam_set_entry(item: str) -> str:
     return to_occam_val(value=item)
 
 
-OCCAM = LanguageSpec(
+OCCAM = Language(
     null_literal="MOBILE LIT(lit.null)",
     true_literal="MOBILE LIT(lit.bool; TRUE)",
     false_literal="MOBILE LIT(lit.bool; FALSE)",
@@ -1052,7 +1043,7 @@ OCCAM = LanguageSpec(
     comment_suffix="",
     omap_open="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
     omap_close="])",
-    format_omap_entry=_format_occam_omap_entry,
+    format_omap_entry=_format_occam_dict_entry,
     multiline_close_indent="",
     element_separator=", ",
     skip_null_dict_values=False,
