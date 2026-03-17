@@ -1001,7 +1001,7 @@ def to_c_val(value: str) -> str:
     """Wrap a pre-formatted value string in a C ``_CVal`` compound literal.
 
     Inspects the string representation to determine the appropriate union
-    member: ``b`` for bool, ``i`` for integer, ``f`` for float, ``s`` for
+    member: ``b`` for boolean, ``i`` for integer, ``f`` for float, ``s`` for
     string.  Values that are already ``_CVal`` compound literals (starting
     with ``((_CVal)``) are returned unchanged.
     """
