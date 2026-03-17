@@ -109,6 +109,11 @@ class Language:
     comment_prefix: str
     """The comment prefix for the language (e.g. ``"#"`` or ``"//"``)."""
 
+    comment_suffix: str
+    """The comment suffix for the language (e.g. ``""`` or ``" *)"`` for
+    block-comment styles).
+    """
+
     omap_open: str
     """The opening delimiter for ordered-map literals."""
 

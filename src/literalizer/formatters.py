@@ -59,6 +59,7 @@ __all__ = [
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
     "format_variable_assignment_ocaml",
+    "format_variable_assignment_perl",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
     "format_variable_assignment_r",
@@ -81,6 +82,7 @@ __all__ = [
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
     "format_variable_declaration_ocaml",
+    "format_variable_declaration_perl",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
     "format_variable_declaration_r",
@@ -1015,3 +1017,21 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
+
+
+@beartype
+def format_variable_declaration_perl(name: str, value: str) -> str:
+    """Format a Perl ``my`` variable declaration.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"my $x = [1, 2];"``
+    """
+    return f"my ${name} = {value};"
+
+
+@beartype
+def format_variable_assignment_perl(name: str, value: str) -> str:
+    """Format a Perl assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
+    """
+    return f"${name} = {value};"
