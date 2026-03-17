@@ -501,7 +501,7 @@ repos:
 
       - id: clojure-syntax-check
         name: Clojure syntax check
-        entry: bash check_clojure_golden_syntax.sh
+        entry: clj-kondo --lint
         language: system
         files: ^tests/integration/cases/.*\.clj$
         stages: [pre-commit]
