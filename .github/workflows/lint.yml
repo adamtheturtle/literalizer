@@ -28,6 +28,7 @@ jobs:
           persist-credentials: false
       - name: Install Swift
         uses: compnerd/gha-setup-swift@v0.2.3
+        continue-on-error: true
         with:
           branch: swift-6.2.3-release
           tag: swift-6.2.3-RELEASE
