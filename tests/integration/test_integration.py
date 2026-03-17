@@ -213,6 +213,23 @@ def _wrap_dart(content: str) -> str:
     return f"final x = {content};"
 
 
+def _wrap_dart_combined(declaration: str, assignment: str) -> str:
+    """Dart: final declaration in one function, dynamic + assignment in
+    another.
+    """
+    decl_indented = "  " + declaration.replace("\n", "\n  ")
+    assign_indented = "  " + assignment.replace("\n", "\n  ")
+    return (
+        f"void _declaration() {{\n"
+        f"{decl_indented}\n"
+        f"}}\n"
+        f"void _assignment() {{\n"
+        f"  dynamic {_VARIABLE_NAME};\n"
+        f"{assign_indented}\n"
+        f"}}"
+    )
+
+
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
@@ -569,6 +586,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".dart",
         wrap=_wrap_dart,
         varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_dart_combined,
         date_variants=(
             _DateVariant(
                 name="dart_native",
