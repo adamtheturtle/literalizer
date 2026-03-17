@@ -880,7 +880,8 @@ def format_bytes_erlang(value: bytes) -> str:
     """
     if not value:
         return "<<>>"
-    return "<<" + ", ".join(str(b) for b in value) + ">>"
+    parts = ", ".join(map(str, value))
+    return f"<<{parts}>>"
 
 
 @beartype
