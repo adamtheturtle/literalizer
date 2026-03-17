@@ -353,10 +353,8 @@ class _LanguageConfig:
     spec: literalizer.LanguageSpec
     extension: str
     wrap: Callable[[str], str]
+    varname_wrap: Callable[[str], str]
     date_variants: tuple[_DateVariant, ...]
-    varname_wrap: Callable[[str], str] = dataclasses.field(
-        default=_wrap_identity
-    )
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
