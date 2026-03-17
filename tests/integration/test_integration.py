@@ -693,6 +693,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".ex",
         wrap=_wrap_elixir,
         varname_wrap=_wrap_elixir_varname,
+        combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
         date_variants=(),
     ),
 }
