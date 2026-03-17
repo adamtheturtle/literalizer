@@ -21,7 +21,13 @@ def _target_framework(dotnet_path: str) -> str:
         dotnet_tmp = Path(tmpdir) / "tmp"
         dotnet_tmp.mkdir()
         env = os.environ.copy()
-        env.update({"TMPDIR": dotnet_tmp.as_posix(), **_DOTNET_ENV})
+        env.update(
+            {
+                "TMPDIR": dotnet_tmp.as_posix(),
+                "HOME": dotnet_tmp.as_posix(),
+                **_DOTNET_ENV,
+            }
+        )
         result = subprocess.run(
             args=[dotnet_path, "--version"],
             capture_output=True,
@@ -60,7 +66,13 @@ def main() -> None:
             dotnet_tmp = Path(tmpdir) / "tmp"
             dotnet_tmp.mkdir()
             env = os.environ.copy()
-            env.update({"TMPDIR": dotnet_tmp.as_posix(), **_DOTNET_ENV})
+            env.update(
+                {
+                    "TMPDIR": dotnet_tmp.as_posix(),
+                    "HOME": dotnet_tmp.as_posix(),
+                    **_DOTNET_ENV,
+                }
+            )
             result = subprocess.run(
                 args=[dotnet_path, "build", csproj_path.as_posix()],
                 capture_output=True,
