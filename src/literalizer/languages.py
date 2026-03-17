@@ -547,29 +547,26 @@ HASKELL = LanguageSpec(
 )
 
 
-@beartype
 def _format_fsharp_dict_entry(key: str, value: str) -> str:
     """Format an F# dict entry as a ``(key, FVal value)`` tuple."""
-    return f"({key}, {to_fsharp_val(value)})"
+    return f"({key}, {to_fsharp_val(value)})"  # type: ignore[misc]
 
 
 def _format_fsharp_omap_entry(key: str, value: str) -> str:
     """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
-    return f"({key}, {to_fsharp_val(value)})"
+    return f"({key}, {to_fsharp_val(value)})"  # type: ignore[misc]
 
 
-@beartype
 def _format_fsharp_set_entry(item: str) -> str:
     """Format an F# set entry with the appropriate ``Val`` constructor."""
-    return to_fsharp_val(item)
+    return to_fsharp_val(item)  # type: ignore[misc]
 
 
-@beartype
 def _format_fsharp_list_entry(item: str) -> str:
     """Format an F# list entry with the appropriate ``Val``
     constructor.
     """
-    return to_fsharp_val(item)
+    return to_fsharp_val(item)  # type: ignore[misc]
 
 
 FSHARP = LanguageSpec(
