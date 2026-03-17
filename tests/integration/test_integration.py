@@ -366,6 +366,11 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     )
 
 
+def _wrap_combined_newline(declaration: str, assignment: str) -> str:
+    """Join declaration and assignment with a newline."""
+    return declaration + "\n" + assignment
+
+
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
@@ -460,7 +465,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".py",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
-        combined_wrap=lambda d, a: d + "\n" + a,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(
             _DateVariant(
                 name="python_native",
@@ -526,7 +531,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".rb",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
-        combined_wrap=lambda d, a: d + "\n" + a,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(
             _DateVariant(
                 name="ruby_native",
@@ -653,7 +658,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         extension=".jl",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
-        combined_wrap=lambda d, a: d + "\n" + a,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(
             _DateVariant(
                 name="julia_native",
