@@ -7,6 +7,24 @@ import sys
 import tempfile
 from pathlib import Path
 
+# A shared home directory persisted for the lifetime of this process.
+#
+# When ``dotnet`` runs, NuGet checks whether migrations have been
+# applied by looking for state files under ``$HOME/.nuget/NuGet/``.
+# If they haven't, it acquires a named mutex
+# (``NuGet-Migrations``), runs migrations, and writes the state
+# files.  Running ``dotnet`` a second time from the same script—
+# once in ``_target_framework`` and once per golden file—makes
+# both calls try to ``mkdir("/tmp/.dotnet/shm/session<hash>")``
+# for the mutex; the second call fails with ``EEXIST`` because
+# the directory was left behind by the first.
+#
+# Using a shared ``HOME`` means the migration state files written
+# by the *first* invocation are visible to all later invocations,
+# which therefore skip migrations entirely and never touch the
+# mutex session directory.
+_DOTNET_HOME: Path = Path(tempfile.mkdtemp(prefix="dotnet-home-"))
+
 
 def _target_framework(dotnet_path: str) -> str:
     """Return the target framework moniker for the installed
@@ -19,8 +37,10 @@ def _target_framework(dotnet_path: str) -> str:
         env.update(
             {
                 "TMPDIR": dotnet_tmp.as_posix(),
+                "HOME": _DOTNET_HOME.as_posix(),
                 "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
                 "DOTNET_NOLOGO": "1",
+                "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
             }
         )
         result = subprocess.run(
@@ -61,11 +81,13 @@ def main() -> None:
             dotnet_tmp = Path(tmpdir) / "tmp"
             dotnet_tmp.mkdir()
             env = os.environ.copy()
-            env["TMPDIR"] = dotnet_tmp.as_posix()
             env.update(
                 {
+                    "TMPDIR": dotnet_tmp.as_posix(),
+                    "HOME": _DOTNET_HOME.as_posix(),
                     "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
                     "DOTNET_NOLOGO": "1",
+                    "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
                 }
             )
             result = subprocess.run(
