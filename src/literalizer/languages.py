@@ -29,7 +29,7 @@ __all__ = [
     "R",
 ]
 
-from literalizer._language import LanguageSpec
+from literalizer._language import Language
 from literalizer.formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -90,7 +90,7 @@ def _format_python_omap_entry(key: str, value: str) -> str:
     return f"({key}, {value})"
 
 
-PYTHON = LanguageSpec(
+PYTHON = Language(
     null_literal="None",
     true_literal="True",
     false_literal="False",
@@ -129,7 +129,7 @@ def _format_csharp_dict_entry(key: str, value: str) -> str:
     return f"[{key}] = {value}"
 
 
-CSHARP = LanguageSpec(
+CSHARP = Language(
     null_literal="(object?)null",
     true_literal="true",
     false_literal="false",
@@ -167,7 +167,7 @@ def _format_dart_omap_entry(key: str, value: str) -> str:
     return f"{key}: {value}"
 
 
-DART = LanguageSpec(
+DART = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -205,7 +205,7 @@ def _format_js_omap_entry(key: str, value: str) -> str:
     return f"{key}: {value}"
 
 
-JAVASCRIPT = LanguageSpec(
+JAVASCRIPT = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -237,7 +237,7 @@ JAVASCRIPT = LanguageSpec(
     format_variable_assignment=format_variable_assignment_js,
 )
 
-TYPESCRIPT = LanguageSpec(
+TYPESCRIPT = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -275,7 +275,7 @@ def _format_ruby_omap_entry(key: str, value: str) -> str:
     return f"{key} => {value}"
 
 
-RUBY = LanguageSpec(
+RUBY = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -322,7 +322,7 @@ def _format_go_omap_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
-GO = LanguageSpec(
+GO = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -361,7 +361,7 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
-CPP = LanguageSpec(
+CPP = Language(
     null_literal="nullptr",
     true_literal="true",
     false_literal="false",
@@ -400,7 +400,7 @@ def _format_java_dict_entry(key: str, value: str) -> str:
     return f"Map.entry({key}, {value})"
 
 
-JAVA = LanguageSpec(
+JAVA = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -438,7 +438,7 @@ def _format_swift_omap_entry(key: str, value: str) -> str:
     return f"{key}: {value}"
 
 
-SWIFT = LanguageSpec(
+SWIFT = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -482,7 +482,7 @@ def _format_rust_omap_entry(key: str, value: str) -> str:
     return f"({key}, {value})"
 
 
-RUST = LanguageSpec(
+RUST = Language(
     null_literal="None",
     true_literal="true",
     false_literal="false",
@@ -520,7 +520,7 @@ def _format_kotlin_omap_entry(key: str, value: str) -> str:
     return f"{key} to {value}"
 
 
-KOTLIN = LanguageSpec(
+KOTLIN = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -558,7 +558,7 @@ def _format_php_omap_entry(key: str, value: str) -> str:
     return f"{key} => {value}"
 
 
-PHP = LanguageSpec(
+PHP = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -596,7 +596,7 @@ def _format_julia_omap_entry(key: str, value: str) -> str:
     return f"{key} => {value}"
 
 
-JULIA = LanguageSpec(
+JULIA = Language(
     null_literal="nothing",
     true_literal="true",
     false_literal="false",
@@ -635,7 +635,7 @@ def _format_elixir_omap_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
-ELIXIR = LanguageSpec(
+ELIXIR = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -679,7 +679,7 @@ def _format_haskell_omap_entry(key: str, value: str) -> str:
     return f"({key}, {value})"
 
 
-HASKELL = LanguageSpec(
+HASKELL = Language(
     null_literal="HNull",
     true_literal="HBool True",
     false_literal="HBool False",
@@ -734,7 +734,7 @@ def _format_fsharp_list_entry(item: str) -> str:
     return to_fsharp_val(value=item)
 
 
-FSHARP = LanguageSpec(
+FSHARP = Language(
     null_literal="FNull",
     true_literal="FBool true",
     false_literal="FBool false",
@@ -767,7 +767,7 @@ FSHARP = LanguageSpec(
 )
 
 
-CLOJURE = LanguageSpec(
+CLOJURE = Language(
     null_literal="nil",
     true_literal="true",
     false_literal="false",
@@ -805,7 +805,7 @@ def _format_scala_omap_entry(key: str, value: str) -> str:
     return f"{key} -> {value}"
 
 
-SCALA = LanguageSpec(
+SCALA = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -864,7 +864,7 @@ def _format_ocaml_list_entry(item: str) -> str:
     return to_ocaml_val(value=item)
 
 
-OCAML = LanguageSpec(
+OCAML = Language(
     null_literal="ONull",
     true_literal="OBool true",
     false_literal="OBool false",
@@ -897,7 +897,7 @@ OCAML = LanguageSpec(
 )
 
 
-GROOVY = LanguageSpec(
+GROOVY = Language(
     null_literal="null",
     true_literal="true",
     false_literal="false",
@@ -935,7 +935,7 @@ def _format_r_omap_entry(key: str, value: str) -> str:
     return f"{key} = {value}"
 
 
-R = LanguageSpec(
+R = Language(
     null_literal="NULL",
     true_literal="TRUE",
     false_literal="FALSE",
