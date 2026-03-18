@@ -1,3 +1,4 @@
+require "set"
 _ = Set{
     "apple",
     "banana",
