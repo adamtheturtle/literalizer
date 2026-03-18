@@ -11,7 +11,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_backslash,
+    format_string_ada,
 )
 
 if TYPE_CHECKING:
@@ -42,8 +42,7 @@ def _to_ada_val(value: str) -> str:
     if any(value.startswith(p) for p in _val_prefixes):
         return value
     if value.startswith('"') and value.endswith('"'):
-        ada_escaped = value.replace('\\"', '""').replace("\\\\", "\\")
-        return f"AStr ({ada_escaped})"
+        return f"AStr ({value})"
     negative = value.startswith("-")
     rest = value[1:] if negative else value
     int_result = None
@@ -94,7 +93,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 _bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
-_string_format: Callable[[str], str] = format_string_backslash
+_string_format: Callable[[str], str] = format_string_ada
 
 
 class Ada:
