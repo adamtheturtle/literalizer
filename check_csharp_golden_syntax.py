@@ -42,10 +42,7 @@ def _target_framework(dotnet_path: str) -> str:
 
 def main() -> None:
     """Check syntax of each given C# golden file."""
-    dotnet_path = shutil.which(cmd="dotnet")
-
-    if dotnet_path is None:
-        return
+    dotnet_path: str = shutil.which(cmd="dotnet") or "dotnet"
     target_framework = _target_framework(dotnet_path=dotnet_path)
     for filename in sys.argv[1:]:
         content = Path(filename).read_text(encoding="utf-8")
