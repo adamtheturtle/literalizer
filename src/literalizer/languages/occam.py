@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from beartype import beartype
+
 from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
@@ -10,6 +12,7 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
+@beartype
 def _to_val(value: str) -> str:
     """Convert a value to an occam-pi MOBILE LIT expression."""
     if value.startswith("MOBILE LIT("):
@@ -37,6 +40,7 @@ def _to_val(value: str) -> str:
     return value  # pragma: no cover
 
 
+@beartype
 def _format_occam_dict_entry(key: str, value: str) -> str:
     """Format an occam-pi dict or omap entry as a ``MOBILE LIT(lit.pair;
     ...)`` constructor.
@@ -45,6 +49,7 @@ def _format_occam_dict_entry(key: str, value: str) -> str:
     return f"MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {val})"
 
 
+@beartype
 def _format_occam_list_entry(item: str) -> str:
     """Format an occam-pi list entry with the appropriate ``LIT``
     constructor.
@@ -52,6 +57,7 @@ def _format_occam_list_entry(item: str) -> str:
     return _to_val(value=item)
 
 
+@beartype
 def _format_occam_set_entry(item: str) -> str:
     """Format an occam-pi set entry with the appropriate ``LIT``
     constructor.
@@ -59,11 +65,13 @@ def _format_occam_set_entry(item: str) -> str:
     return _to_val(value=item)
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an occam-pi variable declaration."""
     return f"VAL MOBILE LIT {name} IS {value}:"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an occam-pi variable assignment."""
     return f"{name} := {value}"

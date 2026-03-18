@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from beartype import beartype
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -13,11 +15,13 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
+@beartype
 def _format_julia_omap_entry(key: str, value: str) -> str:
     """Format a Julia ordered-map entry as a pair arrow expression."""
     return f"{key} => {value}"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Julia variable declaration."""
     return f"{name} = {value}"

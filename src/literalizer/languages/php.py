@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import datetime  # noqa: TC003
 
+from beartype import beartype
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -13,26 +15,31 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
+@beartype
 def _format_php_omap_entry(key: str, value: str) -> str:
     """Format one PHP array entry as a ``key => value`` pair."""
     return f"{key} => {value}"
 
 
+@beartype
 def _format_date(value: datetime.date) -> str:
     """Format a date as a PHP DateTime object."""
     return f'new DateTime("{value.isoformat()}")'
 
 
+@beartype
 def _format_datetime(value: datetime.datetime) -> str:
     """Format a datetime as a PHP DateTime object."""
     return f'new DateTime("{value.isoformat()}")'
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a PHP variable declaration."""
     return f"${name} = {value};"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a PHP variable assignment."""
     return f"${name} = {value};"

@@ -307,6 +307,7 @@ def format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
+@beartype
 def format_bytes_hex(value: bytes) -> str:
     """Format bytes as a hex string literal.
 
@@ -315,6 +316,7 @@ def format_bytes_hex(value: bytes) -> str:
     return f'"{value.hex()}"'
 
 
+@beartype
 def format_bytes_python(value: bytes) -> str:
     """Format bytes as a Python ``bytes`` literal.
 

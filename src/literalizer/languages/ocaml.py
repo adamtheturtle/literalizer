@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from beartype import beartype
+
 from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
@@ -10,6 +12,7 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
+@beartype
 def _to_val(value: str) -> str:
     """Convert a value to an OCaml union type expression."""
     _val_prefixes = (
@@ -47,11 +50,13 @@ def _to_val(value: str) -> str:
     return value  # pragma: no cover
 
 
+@beartype
 def _format_ocaml_dict_entry(key: str, value: str) -> str:
     """Format an OCaml dict entry as a ``(key, OXxx value)`` tuple."""
     return f"({key}, {_to_val(value=value)})"
 
 
+@beartype
 def _format_ocaml_omap_entry(key: str, value: str) -> str:
     """Format an OCaml ordered-map entry as a ``(key, OXxx value)``
     tuple.
@@ -59,6 +64,7 @@ def _format_ocaml_omap_entry(key: str, value: str) -> str:
     return f"({key}, {_to_val(value=value)})"
 
 
+@beartype
 def _format_ocaml_set_entry(item: str) -> str:
     """Format an OCaml set entry with the appropriate ``val_t``
     constructor.
@@ -66,6 +72,7 @@ def _format_ocaml_set_entry(item: str) -> str:
     return _to_val(value=item)
 
 
+@beartype
 def _format_ocaml_sequence_entry(item: str) -> str:
     """Format an OCaml list entry with the appropriate ``val_t``
     constructor.
@@ -73,11 +80,13 @@ def _format_ocaml_sequence_entry(item: str) -> str:
     return _to_val(value=item)
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an OCaml variable declaration."""
     return f"let {name} : val_t = {_to_val(value=value)}"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an OCaml variable assignment."""
     return _format_variable_declaration(name=name, value=value)

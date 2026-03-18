@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from beartype import beartype
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -13,16 +15,19 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
+@beartype
 def _format_python_omap_entry(key: str, value: str) -> str:
     """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
     return f"({key}, {value})"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Python variable declaration."""
     return f"{name} = {value}"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Python variable assignment."""
     return f"{name} = {value}"

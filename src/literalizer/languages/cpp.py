@@ -20,11 +20,13 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a C++ variable declaration."""
     return f"auto {name} = {value};"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a C++ variable assignment."""
     return f"{name} = {value};"
