@@ -36,7 +36,12 @@ def _format_sequence_entry(item: str) -> str:
 
 def _format_string(value: str) -> str:
     """Format a string using PowerShell back-tick escaping."""
-    escaped = value.replace("`", "``").replace('"', '`"').replace("\n", "`n")
+    escaped = (
+        value.replace("`", "``")
+        .replace('"', '`"')
+        .replace("\n", "`n")
+        .replace("\t", "`t")
+    )
     return f'"{escaped}"'
 
 

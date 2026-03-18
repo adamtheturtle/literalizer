@@ -13,8 +13,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install GHC
-        run: sudo apt-get install -y ghc
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: latest
       - name: Check Haskell syntax
         run: |-
           tmpdir=$(mktemp -d)

@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Literal
 from beartype import beartype
 
 from literalizer._formatters import (
-    dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_date_r,
@@ -21,6 +20,19 @@ from literalizer._formatters import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+@beartype
+def _format_r_dict_entry(key: str, value: str) -> str:
+    """Format an R named list entry.
+
+    R list syntax does not allow zero-length names (``"" = value`` is a
+    parse error), so empty-string keys are emitted as positional (unnamed)
+    elements.
+    """
+    if key == '""':
+        return value
+    return f"{key} = {value}"
 
 
 @beartype
@@ -71,7 +83,7 @@ class R:
         self.dict_open = "list("
         self.dict_close = ")"
         self.format_dict_entry: Callable[[str, str], str] = (
-            dict_entry_with_separator(separator=" = ")
+            _format_r_dict_entry
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False

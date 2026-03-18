@@ -45,3 +45,13 @@ ADT and typeclass instances in the consuming module:
 ``OverloadedStrings`` lets bare string literals like ``"hi"`` resolve to
 ``HStr "hi"`` via ``IsString``, and the ``Num`` / ``Fractional`` instances
 let numeric literals resolve to ``HInt`` / ``HFloat``.
+
+R
+-
+
+The :data:`R` spec represents dicts as named ``list()`` calls where each
+entry is written as ``"key" = value``.  R's parser rejects zero-length
+names, so **dict keys that are empty strings are emitted as positional
+(unnamed) list elements** rather than as ``"" = value``.  The name is
+lost in the output; if you need to round-trip empty-string keys, use a
+different target language.
