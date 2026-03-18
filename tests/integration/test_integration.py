@@ -178,11 +178,12 @@ def _wrap_ocaml_varname(content: str) -> str:
 
 def _wrap_occam(content: str) -> str:
     """Wrap in an occam-pi PROC with a custom ``LIT`` mobile data type."""
+    typed = literalizer.languages.Occam().format_sequence_entry(content)
     return (
         _OCCAM_LIT_TYPE
         + "\n\n"
         + "PROC check ()\n"
-        + f"  VAL MOBILE LIT x IS {content}:\n"
+        + f"  VAL MOBILE LIT x IS {typed}:\n"
         + "  SEQ\n"
         + "    SKIP\n"
         + ":"
@@ -494,9 +495,8 @@ def _wrap_nim_combined(declaration: str, assignment: str) -> str:
 
 def _wrap_d(content: str) -> str:
     """Wrap in a D function with ``std.json`` imported."""
-    return (
-        f"import std.json;\n\nvoid _check() {{\n    auto _v = {content};\n}}"
-    )
+    typed = literalizer.languages.D().format_sequence_entry(content)
+    return f"import std.json;\n\nvoid _check() {{\n    auto _v = {typed};\n}}"
 
 
 def _wrap_d_varname(content: str) -> str:

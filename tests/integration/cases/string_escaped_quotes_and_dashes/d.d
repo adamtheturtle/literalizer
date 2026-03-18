@@ -1,5 +1,5 @@
 import std.json;
 
 void _check() {
-    auto _v = "hello \"world\" -- not a comment";
+    auto _v = JSONValue("hello \"world\" -- not a comment");
 }
