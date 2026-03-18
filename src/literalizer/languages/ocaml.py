@@ -107,6 +107,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class OCaml:
     """OCaml language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize OCaml language specification."""
         self.null_literal = "ONull"

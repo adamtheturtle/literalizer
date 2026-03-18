@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import datetime  # noqa: TC003
 import re
-from typing import TYPE_CHECKING
+from collections.abc import Callable  # noqa: TC003
 
 from beartype import beartype
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 @beartype
@@ -397,6 +394,7 @@ def format_datetime_julia(value: datetime.datetime) -> str:
     )
 
 
+@beartype
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value
     with *separator*.
@@ -441,6 +439,23 @@ def format_string_matlab(value: str) -> str:
     if len(parts) == 1:
         return parts[0]
     return " + ".join(parts)
+
+
+@beartype
+def format_string_ada(value: str) -> str:
+    r"""Format a string using Ada double-quote escaping.
+
+    Ada has no backslash escaping — backslashes are literal characters.
+    Only double quotes are escaped, by doubling them (``""``).
+    Newlines and tabs are rendered as ``\n`` / ``\t`` for readability
+    since Ada string literals cannot span lines.
+
+    Example: ``hello "world" bye`` → ``"hello ""world"" bye"``.
+    """
+    escaped = (
+        value.replace("\n", "\\n").replace("\t", "\\t").replace('"', '""')
+    )
+    return f'"{escaped}"'
 
 
 @beartype

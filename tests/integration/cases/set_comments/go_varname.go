@@ -1,0 +1,11 @@
+package main
+
+func main() {
+my_data := map[any]struct{}{
+    "apple": struct{}{},  // inline comment
+    // before banana
+    "banana": struct{}{},
+    // trailing
+}
+_ = my_data
+}

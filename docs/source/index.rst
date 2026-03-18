@@ -1,8 +1,12 @@
 |project|
 =========
 
-|project| converts JSON data structures to native language literal syntax
-(Python, JavaScript, TypeScript, Go, Ruby, C#, C++, Java, Kotlin, Rust, Haskell, Swift, PHP).
+|project| converts JSON data structures to native language literal syntax.
+
+Supported languages
+-------------------
+
+See :ref:`languages` for the full list with per-language options.
 
 Installation
 ------------

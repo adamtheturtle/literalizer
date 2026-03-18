@@ -48,8 +48,24 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class Julia:
-    """Julia language specification."""
+    """Julia language specification.
 
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"julia"`` — ``Date(...)`` constructor call,
+              e.g. ``Date(2024, 1, 15)``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"julia"`` — ``DateTime(...)`` constructor call,
+              e.g. ``DateTime(2024, 1, 15, 12, 30, 0)``.
+    """
+
+    @beartype
     def __init__(
         self,
         *,

@@ -42,6 +42,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Nim:
     """Nim language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Nim language specification."""
         self.null_literal = "nil"

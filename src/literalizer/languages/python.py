@@ -62,8 +62,31 @@ _bytes_formats: dict[str, Callable[[bytes], str]] = {
 
 
 class Python:
-    """Python language specification."""
+    """Python language specification.
 
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"python"`` — ``datetime.date`` constructor call,
+              e.g. ``datetime.date(2024, 1, 15)``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"python"`` — ``datetime.datetime`` constructor call,
+              e.g. ``datetime.datetime(2024, 1, 15, 12, 30, 0)``.
+            * ``"epoch"`` — Unix epoch float, e.g. ``1705312200.0``.
+
+        bytes_format: How to format :class:`bytes` values.
+
+            * ``"hex"`` (default) — lowercase hex string,
+              e.g. ``"48656c6c6f"``.
+            * ``"python"`` — Python bytes literal, e.g. ``b'Hello'``.
+    """
+
+    @beartype
     def __init__(
         self,
         *,

@@ -7,7 +7,7 @@ from collections.abc import Iterable  # noqa: TC003
 from typing import Any
 
 from beartype import beartype
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.tokens import CommentToken  # noqa: TC002
 
 
@@ -96,14 +96,14 @@ class _CollectionComments:
 @beartype
 def extract_yaml_comments(
     *,
-    ruamel_data: CommentedSeq | CommentedMap,
-    is_sequence: bool,
+    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
 ) -> _CollectionComments:
     """Extract top-level comments from parsed ruamel.yaml data.
 
-    Only works for sequences and mappings — *ruamel.yaml*'s
+    Only works for sequences, mappings, and sets — *ruamel.yaml*'s
     round-trip loader preserves comment metadata in
-    :class:`CommentedSeq` / :class:`CommentedMap` objects.
+    :class:`CommentedSeq` / :class:`CommentedMap` / :class:`CommentedSet`
+    objects.
     Scalar values do not carry this metadata; use
     :func:`_extract_scalar_comments` for those.
     """
@@ -119,12 +119,14 @@ def extract_yaml_comments(
                 _token_comment_lines(value=header_value),  # pyright: ignore[reportUnknownArgumentType]
             )
 
-    # Sequences store after-element tokens at index 0,
+    # Sequences and sets store after-element tokens at index 0,
     # mappings at index 2.
-    token_idx = 0 if is_sequence else 2
+    token_idx = 2 if isinstance(ruamel_data, CommentedMap) else 0
 
     if isinstance(ruamel_data, CommentedSeq):
         keys: list[object] = list(range(len(ruamel_data)))
+    elif isinstance(ruamel_data, CommentedSet):
+        keys = list(ruamel_data)
     else:
         keys = list(ruamel_data.keys())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
@@ -321,3 +323,38 @@ def literalize_yaml_collection(
     if ctx.wrap and header is not None and footer is not None:
         return "\n".join([header, *result, footer])
     return "\n".join(result)
+
+
+@beartype
+def apply_collection_comments(
+    *,
+    collection_comments: _CollectionComments,
+    base: str,
+    comment_prefix: str,
+    comment_suffix: str,
+    prefix: str,
+    wrap: bool,
+) -> str:
+    """Apply extracted comments to a collection literal.
+
+    Returns *base* unchanged when there are no comments to apply.
+    """
+    has_comments = (
+        any(
+            element_comment.before or element_comment.inline
+            for element_comment in collection_comments.elements
+        )
+        or collection_comments.trailing
+    )
+    if not has_comments:
+        return base
+    ctx = YamlCollectionContext(
+        base=base,
+        element_comments=collection_comments.elements,
+        trailing=collection_comments.trailing,
+        comment_prefix=comment_prefix,
+        comment_suffix=comment_suffix,
+        prefix=prefix,
+        wrap=wrap,
+    )
+    return literalize_yaml_collection(ctx=ctx)

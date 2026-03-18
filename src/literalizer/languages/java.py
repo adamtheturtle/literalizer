@@ -55,8 +55,27 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class Java:
-    """Java language specification."""
+    """Java language specification.
 
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"java"`` — ``LocalDate.of(...)`` call,
+              e.g. ``LocalDate.of(2024, 1, 15)``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"instant"`` — ``Instant.parse(...)`` call,
+              e.g. ``Instant.parse("2024-01-15T12:30:00")``.
+            * ``"zoned"`` — ``ZonedDateTime.of(...)`` call,
+              e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
+              ZoneId.of("UTC"))``.
+    """
+
+    @beartype
     def __init__(
         self,
         *,
