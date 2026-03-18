@@ -21,6 +21,34 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _infer_scala_element_type(values: list[Any]) -> str | None:
+    """Recursively infer the Scala element type for a list of values.
+
+    Returns a type string like ``"String"``, ``"Int"``,
+    ``"Array[Int]"``, or ``None`` when the type cannot be inferred.
+    """
+    if not values:
+        return None
+    if all(isinstance(v, str) for v in values):
+        return "String"
+    if all(isinstance(v, bool) for v in values):
+        return "Boolean"
+    if all(isinstance(v, int) and not isinstance(v, bool) for v in values):
+        return "Int"
+    if all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
+    ) and any(isinstance(v, float) for v in values):
+        return "Double"
+    if all(isinstance(v, list) for v in values):
+        inner_types = {_infer_scala_element_type(values=v) for v in values}
+        if len(inner_types) == 1:
+            inner_type = inner_types.pop()
+            if inner_type is not None:
+                return f"Array[{inner_type}]"
+    return None
+
+
+@beartype
 def _format_scala_collection_open(values: list[Any]) -> str:
     """Return a typed Scala collection opener inferred from element types.
 
@@ -28,25 +56,12 @@ def _format_scala_collection_open(values: list[Any]) -> str:
     ``"Array[Boolean]("`` when all elements are booleans,
     ``"Array[Int]("`` when all elements are non-boolean integers,
     ``"Array[Double]("`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"List("`` otherwise.
+    (float, or mixed int and float), ``"Array[Array[Int]]("`` for nested
+    homogeneous arrays, and ``"List("`` otherwise.
     """
-    if values and all(isinstance(v, str) for v in values):
-        return "Array[String]("
-    if values and all(isinstance(v, bool) for v in values):
-        return "Array[Boolean]("
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "Array[Int]("
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "Array[Double]("
+    element_type = _infer_scala_element_type(values=values)
+    if element_type is not None:
+        return f"Array[{element_type}]("
     return "List("
 
 

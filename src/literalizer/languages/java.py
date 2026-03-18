@@ -29,6 +29,34 @@ def _format_java_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
+def _infer_java_element_type(values: list[Any]) -> str | None:
+    """Recursively infer the Java element type for a list of values.
+
+    Returns a type string like ``"String"``, ``"int"``, ``"int[]"``,
+    or ``None`` when the type cannot be inferred.
+    """
+    if not values:
+        return None
+    if all(isinstance(v, str) for v in values):
+        return "String"
+    if all(isinstance(v, bool) for v in values):
+        return "boolean"
+    if all(isinstance(v, int) and not isinstance(v, bool) for v in values):
+        return "int"
+    if all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
+    ) and any(isinstance(v, float) for v in values):
+        return "double"
+    if all(isinstance(v, list) for v in values):
+        inner_types = {_infer_java_element_type(values=v) for v in values}
+        if len(inner_types) == 1:
+            inner_type = inner_types.pop()
+            if inner_type is not None:
+                return inner_type + "[]"
+    return None
+
+
+@beartype
 def _format_java_collection_open(values: list[Any]) -> str:
     """Return a typed Java array opener inferred from element types.
 
@@ -36,25 +64,12 @@ def _format_java_collection_open(values: list[Any]) -> str:
     ``"new boolean[]{"`` when all elements are booleans,
     ``"new int[]{"`` when all elements are non-boolean integers,
     ``"new double[]{"`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"new Object[]{"`` otherwise.
+    (float, or mixed int and float), ``"new int[][]{" `` for nested
+    homogeneous arrays, and ``"new Object[]{"`` otherwise.
     """
-    if values and all(isinstance(v, str) for v in values):
-        return "new String[]{"
-    if values and all(isinstance(v, bool) for v in values):
-        return "new boolean[]{"
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "new int[]{"
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "new double[]{"
+    element_type = _infer_java_element_type(values=values)
+    if element_type is not None:
+        return f"new {element_type}[]{{"
     return "new Object[]{"
 
 

@@ -23,12 +23,40 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _infer_kotlin_element_type(values: list[Any]) -> str | None:
+    """Recursively infer the Kotlin element type for a list of values.
+
+    Returns a type string like ``"String"``, ``"Int"``, ``"Array"``,
+    or ``None`` when the type cannot be inferred.
+    """
+    if not values:
+        return None
+    if all(isinstance(v, str) for v in values):
+        return "String"
+    if all(isinstance(v, bool) for v in values):
+        return "Boolean"
+    if all(isinstance(v, int) and not isinstance(v, bool) for v in values):
+        return "Int"
+    if all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
+    ) and any(isinstance(v, float) for v in values):
+        return "Double"
+    if all(isinstance(v, list) for v in values):
+        inner_types = {_infer_kotlin_element_type(values=v) for v in values}
+        if len(inner_types) == 1:
+            inner_type = inner_types.pop()
+            if inner_type is not None:
+                return "Array"
+    return None
+
+
+@beartype
 def _format_kotlin_collection_open(values: list[Any]) -> str:
     """Return a typed Kotlin collection opener inferred from element types.
 
-    Returns ``"arrayOf("`` when all elements are strings,
-    ``"booleanArrayOf("`` when all elements are booleans,
-    ``"intArrayOf("`` when all elements are non-boolean integers,
+    Returns ``"arrayOf("`` when all elements are strings or nested
+    homogeneous arrays, ``"booleanArrayOf("`` when all elements are
+    booleans, ``"intArrayOf("`` when all elements are non-boolean integers,
     ``"doubleArrayOf("`` when all elements are non-boolean numeric
     (float, or mixed int and float), and ``"listOf<Any?>("`` otherwise.
     """
@@ -49,6 +77,12 @@ def _format_kotlin_collection_open(values: list[Any]) -> str:
         and any(isinstance(v, float) for v in values)
     ):
         return "doubleArrayOf("
+    if values and all(isinstance(v, list) for v in values):
+        inner_types = {_infer_kotlin_element_type(values=v) for v in values}
+        if len(inner_types) == 1:
+            inner_type = inner_types.pop()
+            if inner_type is not None:
+                return "arrayOf("
     return "listOf<Any?>("
 
 

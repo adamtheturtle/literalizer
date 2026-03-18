@@ -22,6 +22,34 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _infer_go_element_type(values: list[Any]) -> str | None:
+    """Recursively infer the Go element type for a list of values.
+
+    Returns a type string like ``"string"``, ``"int"``, ``"[]int"``,
+    or ``None`` when the type cannot be inferred.
+    """
+    if not values:
+        return None
+    if all(isinstance(v, str) for v in values):
+        return "string"
+    if all(isinstance(v, bool) for v in values):
+        return "bool"
+    if all(isinstance(v, int) and not isinstance(v, bool) for v in values):
+        return "int"
+    if all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
+    ) and any(isinstance(v, float) for v in values):
+        return "float64"
+    if all(isinstance(v, list) for v in values):
+        inner_types = {_infer_go_element_type(values=v) for v in values}
+        if len(inner_types) == 1:
+            inner_type = inner_types.pop()
+            if inner_type is not None:
+                return "[]" + inner_type
+    return None
+
+
+@beartype
 def _format_go_collection_open(values: list[Any]) -> str:
     """Return a typed Go slice opener inferred from element types.
 
@@ -29,25 +57,12 @@ def _format_go_collection_open(values: list[Any]) -> str:
     ``"[]bool{"`` when all elements are booleans,
     ``"[]int{"`` when all elements are non-boolean integers,
     ``"[]float64{"`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"[]any{"`` otherwise.
+    (float, or mixed int and float), ``"[][]int{"`` for nested
+    homogeneous slices, and ``"[]any{"`` otherwise.
     """
-    if values and all(isinstance(v, str) for v in values):
-        return "[]string{"
-    if values and all(isinstance(v, bool) for v in values):
-        return "[]bool{"
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "[]int{"
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "[]float64{"
+    element_type = _infer_go_element_type(values=values)
+    if element_type is not None:
+        return f"[]{element_type}{{"
     return "[]any{"
 
 

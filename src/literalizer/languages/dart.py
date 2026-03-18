@@ -23,6 +23,34 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _infer_dart_element_type(values: list[Any]) -> str | None:
+    """Recursively infer the Dart element type for a list of values.
+
+    Returns a type string like ``"String"``, ``"int"``,
+    ``"List<int>"``, or ``None`` when the type cannot be inferred.
+    """
+    if not values:
+        return None
+    if all(isinstance(v, str) for v in values):
+        return "String"
+    if all(isinstance(v, bool) for v in values):
+        return "bool"
+    if all(isinstance(v, int) and not isinstance(v, bool) for v in values):
+        return "int"
+    if all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
+    ) and any(isinstance(v, float) for v in values):
+        return "double"
+    if all(isinstance(v, list) for v in values):
+        inner_types = {_infer_dart_element_type(values=v) for v in values}
+        if len(inner_types) == 1:
+            inner_type = inner_types.pop()
+            if inner_type is not None:
+                return f"List<{inner_type}>"
+    return None
+
+
+@beartype
 def _format_dart_collection_open(values: list[Any]) -> str:
     """Return a typed Dart list opener inferred from element types.
 
@@ -30,25 +58,12 @@ def _format_dart_collection_open(values: list[Any]) -> str:
     ``"<bool>["`` when all elements are booleans,
     ``"<int>["`` when all elements are non-boolean integers,
     ``"<double>["`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"["`` otherwise.
+    (float, or mixed int and float), ``"<List<int>>["`` for nested
+    homogeneous lists, and ``"["`` otherwise.
     """
-    if values and all(isinstance(v, str) for v in values):
-        return "<String>["
-    if values and all(isinstance(v, bool) for v in values):
-        return "<bool>["
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "<int>["
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "<double>["
+    element_type = _infer_dart_element_type(values=values)
+    if element_type is not None:
+        return f"<{element_type}>["
     return "["
 
 
