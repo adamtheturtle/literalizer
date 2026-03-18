@@ -23,6 +23,7 @@ from literalizer import (
 )
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_bytes_python,
     format_date_cpp,
@@ -590,7 +591,7 @@ def test_custom_language() -> None:
         null_literal="NIL",
         true_literal="YES",
         false_literal="NO",
-        sequence_open="<",
+        sequence_open=fixed_sequence_open("<"),  # type: ignore[misc]
         sequence_close=">",
         dict_open="{",
         dict_close="}",
@@ -1687,7 +1688,7 @@ def test_omap_custom_language_spec() -> None:
         null_literal="null",
         true_literal="true",
         false_literal="false",
-        sequence_open="[",
+        sequence_open=fixed_sequence_open("["),  # type: ignore[misc]
         sequence_close="]",
         dict_open="{",
         dict_close="}",

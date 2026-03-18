@@ -9,6 +9,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -48,7 +49,7 @@ class Perl:
         self.null_literal = "undef"
         self.true_literal = "1"
         self.false_literal = "0"
-        self.sequence_open = "["
+        self.sequence_open = fixed_sequence_open("[")
         self.sequence_close = "]"
         self.dict_open = "{"
         self.dict_close = "}"

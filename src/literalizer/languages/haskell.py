@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -98,7 +99,7 @@ class Haskell:
         self.null_literal = "HNull"
         self.true_literal = "HBool True"
         self.false_literal = "HBool False"
-        self.sequence_open = "HList ["
+        self.sequence_open = fixed_sequence_open("HList [")
         self.sequence_close = "]"
         self.dict_open = "HMap ["
         self.dict_close = "]"

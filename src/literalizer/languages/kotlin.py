@@ -9,6 +9,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_date_kotlin,
@@ -82,7 +83,7 @@ class Kotlin:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = "listOf<Any?>("
+        self.sequence_open = fixed_sequence_open("listOf<Any?>(")
         self.sequence_close = ")"
         self.dict_open = "mapOf<String, Any?>("
         self.dict_close = ")"

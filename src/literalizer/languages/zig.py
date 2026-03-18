@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -85,7 +86,7 @@ class Zig:
         self.null_literal = ".nil"
         self.true_literal = ".{ .bool = true }"
         self.false_literal = ".{ .bool = false }"
-        self.sequence_open = ".{ .arr = &.{"
+        self.sequence_open = fixed_sequence_open(".{ .arr = &.{")
         self.sequence_close = "}}"
         self.dict_open = ".{ .map = &.{"
         self.dict_close = "}}"

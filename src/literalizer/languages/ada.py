@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -106,7 +107,7 @@ class Ada:
         self.null_literal = "ANull"
         self.true_literal = "ABool (True)"
         self.false_literal = "ABool (False)"
-        self.sequence_open = "AList'("
+        self.sequence_open = fixed_sequence_open("AList'(")
         self.sequence_close = ")"
         self.dict_open = "AMap'("
         self.dict_close = ")"

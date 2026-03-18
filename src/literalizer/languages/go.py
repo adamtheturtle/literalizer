@@ -9,6 +9,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_go,
     format_date_iso,
@@ -91,7 +92,7 @@ class Go:
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = "[]any{"
+        self.sequence_open = fixed_sequence_open("[]any{")
         self.sequence_close = "}"
         self.dict_open = "map[string]any{"
         self.dict_close = "}"

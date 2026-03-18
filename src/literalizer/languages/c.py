@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -91,7 +92,7 @@ class C:
         self.null_literal = "((_CVal){.s = NULL})"
         self.true_literal = "((_CVal){.b = true})"
         self.false_literal = "((_CVal){.b = false})"
-        self.sequence_open = "((_CVal){.a = (_CVal[]){"
+        self.sequence_open = fixed_sequence_open("((_CVal){.a = (_CVal[]){")
         self.sequence_close = "}})"
         self.dict_open = "((_CVal){.m = (_CKV[]){"
         self.dict_close = "}})"

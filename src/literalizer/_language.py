@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from literalizer._types import Value
+
 
 @runtime_checkable
 class Language(Protocol):
@@ -32,8 +34,8 @@ class Language(Protocol):
     false_literal: str
     """The literal representing false/False."""
 
-    sequence_open: str
-    """The opening delimiter for sequences."""
+    sequence_open: Callable[[list[Value]], str]
+    """Callable that returns the opening delimiter for a sequence."""
 
     sequence_close: str
     """The closing delimiter for sequences."""
@@ -138,7 +140,7 @@ class LanguageSpec:
     null_literal: str
     true_literal: str
     false_literal: str
-    sequence_open: str
+    sequence_open: Callable[[list[Value]], str]
     sequence_close: str
     dict_open: str
     dict_close: str

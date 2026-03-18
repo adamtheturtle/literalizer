@@ -7,6 +7,8 @@ from collections.abc import Callable  # noqa: TC003
 
 from beartype import beartype
 
+from literalizer._types import Value  # noqa: TC001
+
 
 @beartype
 def format_date_iso(value: datetime.date) -> str:
@@ -485,3 +487,19 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
+
+
+@beartype
+def fixed_sequence_open(delimiter: str) -> Callable[[list[Value]], str]:
+    """Return a ``sequence_open`` callable that always returns *delimiter*,
+    regardless of the sequence's contents.
+
+    Example: ``fixed_sequence_open("[")([1, 2, 3])`` → ``"["``.
+    """
+
+    @beartype
+    def _open(_seq: list[Value]) -> str:
+        """Return the fixed opening delimiter."""
+        return delimiter
+
+    return _open

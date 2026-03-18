@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -113,7 +114,7 @@ class OCaml:
         self.null_literal = "ONull"
         self.true_literal = "OBool true"
         self.false_literal = "OBool false"
-        self.sequence_open = "OList ["
+        self.sequence_open = fixed_sequence_open("OList [")
         self.sequence_close = "]"
         self.dict_open = "OMap ["
         self.dict_close = "]"

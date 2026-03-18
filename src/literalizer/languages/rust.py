@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_date_rust,
@@ -88,7 +89,7 @@ class Rust:
         self.null_literal = "None"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = "vec!["
+        self.sequence_open = fixed_sequence_open("vec![")
         self.sequence_close = "]"
         self.dict_open = "HashMap::from(["
         self.dict_close = "])"
