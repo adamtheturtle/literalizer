@@ -114,7 +114,7 @@ class OCaml:
         self.null_literal = "ONull"
         self.true_literal = "OBool true"
         self.false_literal = "OBool false"
-        self.sequence_open = fixed_sequence_open("OList [")
+        self.sequence_open = fixed_sequence_open(delimiter="OList [")
         self.sequence_close = "]"
         self.dict_open = "OMap ["
         self.dict_close = "]"

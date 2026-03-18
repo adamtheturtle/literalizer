@@ -87,7 +87,7 @@ class Java:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("new Object[]{")
+        self.sequence_open = fixed_sequence_open(delimiter="new Object[]{")
         self.sequence_close = "}"
         self.dict_open = "Map.ofEntries("
         self.dict_close = ")"

@@ -99,7 +99,7 @@ class Haskell:
         self.null_literal = "HNull"
         self.true_literal = "HBool True"
         self.false_literal = "HBool False"
-        self.sequence_open = fixed_sequence_open("HList [")
+        self.sequence_open = fixed_sequence_open(delimiter="HList [")
         self.sequence_close = "]"
         self.dict_open = "HMap ["
         self.dict_close = "]"

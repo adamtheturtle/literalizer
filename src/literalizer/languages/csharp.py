@@ -82,7 +82,7 @@ class CSharp:
         self.null_literal = "(object?)null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("(")
+        self.sequence_open = fixed_sequence_open(delimiter="(")
         self.sequence_close = ")"
         self.dict_open = "new Dictionary<string, object> {"
         self.dict_close = "}"

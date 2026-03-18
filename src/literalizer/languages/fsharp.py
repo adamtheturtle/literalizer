@@ -110,7 +110,7 @@ class FSharp:
         self.null_literal = "FNull"
         self.true_literal = "FBool true"
         self.false_literal = "FBool false"
-        self.sequence_open = fixed_sequence_open("FList [")
+        self.sequence_open = fixed_sequence_open(delimiter="FList [")
         self.sequence_close = "]"
         self.dict_open = "FMap ["
         self.dict_close = "]"

@@ -92,7 +92,7 @@ class Go:
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("[]any{")
+        self.sequence_open = fixed_sequence_open(delimiter="[]any{")
         self.sequence_close = "}"
         self.dict_open = "map[string]any{"
         self.dict_close = "}"

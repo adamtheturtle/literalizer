@@ -83,7 +83,7 @@ class Kotlin:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("listOf<Any?>(")
+        self.sequence_open = fixed_sequence_open(delimiter="listOf<Any?>(")
         self.sequence_close = ")"
         self.dict_open = "mapOf<String, Any?>("
         self.dict_close = ")"

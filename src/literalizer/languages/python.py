@@ -99,7 +99,7 @@ class Python:
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"
-        self.sequence_open = fixed_sequence_open("(")
+        self.sequence_open = fixed_sequence_open(delimiter="(")
         self.sequence_close = ")"
         self.dict_open = "{"
         self.dict_close = "}"

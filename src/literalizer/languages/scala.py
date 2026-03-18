@@ -55,7 +55,7 @@ class Scala:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("List(")
+        self.sequence_open = fixed_sequence_open(delimiter="List(")
         self.sequence_close = ")"
         self.dict_open = "Map("
         self.dict_close = ")"

@@ -97,7 +97,7 @@ class Matlab:
         self.null_literal = "[]"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("{")
+        self.sequence_open = fixed_sequence_open(delimiter="{")
         self.sequence_close = "}"
         self.dict_open = "struct("
         self.dict_close = ")"

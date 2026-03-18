@@ -89,7 +89,7 @@ class Rust:
         self.null_literal = "None"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("vec![")
+        self.sequence_open = fixed_sequence_open(delimiter="vec![")
         self.sequence_close = "]"
         self.dict_open = "HashMap::from(["
         self.dict_close = "])"

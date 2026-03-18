@@ -92,7 +92,9 @@ class C:
         self.null_literal = "((_CVal){.s = NULL})"
         self.true_literal = "((_CVal){.b = true})"
         self.false_literal = "((_CVal){.b = false})"
-        self.sequence_open = fixed_sequence_open("((_CVal){.a = (_CVal[]){")
+        self.sequence_open = fixed_sequence_open(
+            delimiter="((_CVal){.a = (_CVal[]){"
+        )
         self.sequence_close = "}})"
         self.dict_open = "((_CVal){.m = (_CKV[]){"
         self.dict_close = "}})"

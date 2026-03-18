@@ -101,7 +101,9 @@ class Occam:
         self.null_literal = "MOBILE LIT(lit.null)"
         self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
         self.false_literal = "MOBILE LIT(lit.bool; FALSE)"
-        self.sequence_open = fixed_sequence_open(_OCCAM_SEQUENCE_OPEN)
+        self.sequence_open = fixed_sequence_open(
+            delimiter=_OCCAM_SEQUENCE_OPEN
+        )
         self.sequence_close = "])"
         self.dict_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
         self.dict_close = "])"

@@ -71,7 +71,7 @@ class PowerShell:
         self.null_literal = "$null"
         self.true_literal = "$true"
         self.false_literal = "$false"
-        self.sequence_open = fixed_sequence_open("@(")
+        self.sequence_open = fixed_sequence_open(delimiter="@(")
         self.sequence_close = ")"
         self.dict_open = "@{"
         self.dict_close = "}"

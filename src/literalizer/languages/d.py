@@ -109,7 +109,7 @@ class D:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = fixed_sequence_open("JSONValue([")
+        self.sequence_open = fixed_sequence_open(delimiter="JSONValue([")
         self.sequence_close = "])"
         self.dict_open = "JSONValue(["
         self.dict_close = "])"

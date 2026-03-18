@@ -107,7 +107,7 @@ class Ada:
         self.null_literal = "ANull"
         self.true_literal = "ABool (True)"
         self.false_literal = "ABool (False)"
-        self.sequence_open = fixed_sequence_open("AList'(")
+        self.sequence_open = fixed_sequence_open(delimiter="AList'(")
         self.sequence_close = ")"
         self.dict_open = "AMap'("
         self.dict_close = ")"

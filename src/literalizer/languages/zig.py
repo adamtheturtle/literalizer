@@ -86,7 +86,7 @@ class Zig:
         self.null_literal = ".nil"
         self.true_literal = ".{ .bool = true }"
         self.false_literal = ".{ .bool = false }"
-        self.sequence_open = fixed_sequence_open(".{ .arr = &.{")
+        self.sequence_open = fixed_sequence_open(delimiter=".{ .arr = &.{")
         self.sequence_close = "}}"
         self.dict_open = ".{ .map = &.{"
         self.dict_close = "}}"

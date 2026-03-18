@@ -102,7 +102,7 @@ class R:
         self.null_literal = "NULL"
         self.true_literal = "TRUE"
         self.false_literal = "FALSE"
-        self.sequence_open = fixed_sequence_open("list(")
+        self.sequence_open = fixed_sequence_open(delimiter="list(")
         self.sequence_close = ")"
         self.dict_open = "list("
         self.dict_close = ")"

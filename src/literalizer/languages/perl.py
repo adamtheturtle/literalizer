@@ -49,7 +49,7 @@ class Perl:
         self.null_literal = "undef"
         self.true_literal = "1"
         self.false_literal = "0"
-        self.sequence_open = fixed_sequence_open("[")
+        self.sequence_open = fixed_sequence_open(delimiter="[")
         self.sequence_close = "]"
         self.dict_open = "{"
         self.dict_close = "}"
