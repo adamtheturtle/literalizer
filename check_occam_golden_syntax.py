@@ -64,8 +64,8 @@ def _check_proc(lines: list[str]) -> str | None:
 def _check_brackets(lines: list[str]) -> str | None:
     """Return an error if square brackets are unbalanced."""
     depth = 0
-    for line_num, line in enumerate(lines, 1):
-        clean = _strip_comment(line)
+    for line_num, line in enumerate(iterable=lines, start=1):
+        clean = _strip_comment(line=line)
         in_string = False
         for ch in clean:
             if ch == '"':
@@ -93,7 +93,9 @@ def _check_file(path: Path) -> str | None:
 
     # Locate top-level ':' terminators (lines that are exactly ":").
     # In occam-pi every top-level definition ends with a bare ':'.
-    top_level_term_indices = [i for i, line in enumerate(lines) if line == ":"]
+    top_level_term_indices = [
+        i for i, line in enumerate(iterable=lines) if line == ":"
+    ]
 
     if len(top_level_term_indices) < _MIN_TOP_LEVEL_TERMINATORS:
         count = len(top_level_term_indices)
