@@ -446,7 +446,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Install DMD
-        run: sudo apt-get install -y dmd-compiler
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: dmd-latest
       - name: Check D syntax
         run: |
           set -o pipefail
