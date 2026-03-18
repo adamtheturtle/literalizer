@@ -24,5 +24,6 @@ pub fn main() void {
         .{ .key = "age", .val = .{ .int = 30 } },
         .{ .key = "active", .val = .{ .bool = true } },
     }};
-    _ = my_data;
+    const _my_data_read = my_data;
+    _ = _my_data_read;
 }

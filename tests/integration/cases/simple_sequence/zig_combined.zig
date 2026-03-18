@@ -26,5 +26,6 @@ pub fn main() void {
         .{ .bool = true },
         .nil,
     }};
-    _ = my_data;
+    const _my_data_read = my_data;
+    _ = _my_data_read;
 }

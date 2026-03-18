@@ -20,5 +20,6 @@ pub fn main() void {
     my_data = .{ .map = &.{
         .{ .key = "users", .val = .{ .arr = &.{.{ .map = &.{.{ .key = "name", .val = .{ .str = "Bob" } }, .{ .key = "tags", .val = .{ .arr = &.{.{ .str = "admin" }, .{ .str = "user" }}} }}}, .{ .map = &.{.{ .key = "name", .val = .{ .str = "Carol" } }, .{ .key = "tags", .val = .{ .arr = &.{.{ .str = "guest" }}} }}}}} },
     }};
-    _ = my_data;
+    const _my_data_read = my_data;
+    _ = _my_data_read;
 }

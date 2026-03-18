@@ -28,5 +28,6 @@ pub fn main() void {
         // Enable debug mode
         .{ .key = "debug", .val = .{ .bool = true } },
     }};
-    _ = my_data;
+    const _my_data_read = my_data;
+    _ = _my_data_read;
 }

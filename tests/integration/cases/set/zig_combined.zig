@@ -24,5 +24,6 @@ pub fn main() void {
         .{ .str = "banana" },
         .{ .str = "cherry" },
     }};
-    _ = my_data;
+    const _my_data_read = my_data;
+    _ = _my_data_read;
 }

@@ -22,5 +22,6 @@ pub fn main() void {
         .{ .key = "date", .val = .{ .str = "2024-01-15" } },
         .{ .key = "datetime", .val = .{ .str = "2024-01-15T12:30:00+00:00" } },
     }};
-    _ = my_data;
+    const _my_data_read = my_data;
+    _ = _my_data_read;
 }

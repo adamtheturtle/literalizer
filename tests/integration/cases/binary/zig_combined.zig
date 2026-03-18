@@ -20,5 +20,6 @@ pub fn main() void {
     my_data = .{ .arr = &.{
         .{ .str = "48656c6c6f" },
     }};
-    _ = my_data;
+    const _my_data_read = my_data;
+    _ = _my_data_read;
 }

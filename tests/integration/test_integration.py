@@ -657,7 +657,8 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
         + "    }\n"
         + f"    var {_VARIABLE_NAME}: ZVal = undefined;\n"
         + f"{assign_indented}\n"
-        + f"    _ = {_VARIABLE_NAME};\n"
+        + f"    const _{_VARIABLE_NAME}_read = {_VARIABLE_NAME};\n"
+        + f"    _ = _{_VARIABLE_NAME}_read;\n"
         + "}"
     )
 
