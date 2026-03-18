@@ -2,7 +2,7 @@ void _declaration() {
   final my_data = [
       true,
       "hi",
-      [1, 2],
+      <int>[1, 2],
       null,
   ];
   my_data.hashCode;
@@ -12,7 +12,7 @@ void _assignment() {
   my_data = [
       true,
       "hi",
-      [1, 2],
+      <int>[1, 2],
       null,
   ];
   my_data.hashCode;

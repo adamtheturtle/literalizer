@@ -1,4 +1,4 @@
-final my_data = [
+final my_data = <String>[
     "foo",
     "bar",
     "baz",

@@ -1,4 +1,4 @@
-val x: Any? = listOf<Any?>(
+val x: Any? = intArrayOf(
     1,
     2,
     3,

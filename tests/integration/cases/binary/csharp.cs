@@ -1,4 +1,4 @@
 using System.Collections.Generic;
-var x = (
+var x = new object[] {
     "48656c6c6f"
-);
+};

@@ -5,12 +5,12 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-_Any my_data = {
+_Any my_data = std::vector<double>{
     1.1,
     2.2,
     3.3,
 };
-my_data = {
+my_data = std::vector<double>{
     1.1,
     2.2,
     3.3,

@@ -1,5 +1,5 @@
 void _declaration() {
-  final my_data = [
+  final my_data = <String>[
       "price \$10",
       "\$HOME",
   ];
@@ -7,7 +7,7 @@ void _declaration() {
 }
 void _assignment() {
   dynamic my_data;
-  my_data = [
+  my_data = <String>[
       "price \$10",
       "\$HOME",
   ];

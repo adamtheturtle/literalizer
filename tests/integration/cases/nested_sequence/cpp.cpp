@@ -8,7 +8,7 @@ void _check() {
     [[maybe_unused]] _Any _v = {
     true,
     "hi",
-    {1, 2},
+    std::vector<int>{1, 2},
     nullptr,
 };
 }

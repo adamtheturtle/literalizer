@@ -6,7 +6,7 @@ struct _Any {
 };
 void _check() {
 _Any my_data = {
-    {{1, 2}, {3, 4}},
-    {{5}},
+    {std::vector<int>{1, 2}, std::vector<int>{3, 4}},
+    {std::vector<int>{5}},
 };
 }

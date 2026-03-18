@@ -1,6 +1,6 @@
 package main
 
-var _ = []any{
+var _ = []string{
     "price $10",
     "$HOME",
 }

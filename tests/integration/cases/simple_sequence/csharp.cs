@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-var x = (
+var x = new object[] {
     1,
     "hello",
     true,
     (object?)null
-);
+};

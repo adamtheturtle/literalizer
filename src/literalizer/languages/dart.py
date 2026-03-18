@@ -2,13 +2,12 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
-    fixed_sequence_open,
     format_bytes_hex,
     format_date_dart,
     format_date_iso,
@@ -21,6 +20,36 @@ from literalizer._formatters import (
 
 if TYPE_CHECKING:
     from literalizer._types import Value
+
+
+@beartype
+def _format_dart_collection_open(values: list[Any]) -> str:
+    """Return a typed Dart list opener inferred from element types.
+
+    Returns ``"<String>["`` when all elements are strings,
+    ``"<bool>["`` when all elements are booleans,
+    ``"<int>["`` when all elements are non-boolean integers,
+    ``"<double>["`` when all elements are non-boolean numeric
+    (float, or mixed int and float), and ``"["`` otherwise.
+    """
+    if values and all(isinstance(v, str) for v in values):
+        return "<String>["
+    if values and all(isinstance(v, bool) for v in values):
+        return "<bool>["
+    if values and all(
+        isinstance(v, int) and not isinstance(v, bool) for v in values
+    ):
+        return "<int>["
+    if (
+        values
+        and all(
+            isinstance(v, (int, float)) and not isinstance(v, bool)
+            for v in values
+        )
+        and any(isinstance(v, float) for v in values)
+    ):
+        return "<double>["
+    return "["
 
 
 @beartype
@@ -82,8 +111,8 @@ class Dart:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="["
+        self.sequence_open: Callable[[list[Value]], str] = (
+            _format_dart_collection_open
         )
         self.sequence_close = "]"
         self.dict_open = "{"

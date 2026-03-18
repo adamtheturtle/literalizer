@@ -1,12 +1,12 @@
 package main
 
 func main() {
-my_data := []any{
+my_data := []string{
     "foo",
     "bar",
     "baz",
 }
-my_data = []any{
+my_data = []string{
     "foo",
     "bar",
     "baz",

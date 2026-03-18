@@ -6,6 +6,6 @@ struct _Any {
 };
 void _check() {
 _Any my_data = {
-    {"users", {{{"name", "Bob"}, {"tags", {"admin", "user"}}}, {{"name", "Carol"}, {"tags", {"guest"}}}}},
+    {"users", {{{"name", "Bob"}, {"tags", std::vector<std::string>{"admin", "user"}}}, {{"name", "Carol"}, {"tags", std::vector<std::string>{"guest"}}}}},
 };
 }

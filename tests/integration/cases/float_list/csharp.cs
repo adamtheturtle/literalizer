@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-var x = (
+var x = new double[] {
     1.1,
     2.2,
     3.3
-);
+};

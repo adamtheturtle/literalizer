@@ -1,5 +1,5 @@
 void _declaration() {
-  final my_data = [
+  final my_data = <double>[
       1.1,
       2.2,
       3.3,
@@ -8,7 +8,7 @@ void _declaration() {
 }
 void _assignment() {
   dynamic my_data;
-  my_data = [
+  my_data = <double>[
       1.1,
       2.2,
       3.3,

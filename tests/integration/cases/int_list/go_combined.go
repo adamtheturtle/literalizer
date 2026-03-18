@@ -1,12 +1,12 @@
 package main
 
 func main() {
-my_data := []any{
+my_data := []int{
     1,
     2,
     3,
 }
-my_data = []any{
+my_data = []int{
     1,
     2,
     3,

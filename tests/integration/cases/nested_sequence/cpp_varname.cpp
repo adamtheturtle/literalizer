@@ -8,7 +8,7 @@ void _check() {
 _Any my_data = {
     true,
     "hi",
-    {1, 2},
+    std::vector<int>{1, 2},
     nullptr,
 };
 }

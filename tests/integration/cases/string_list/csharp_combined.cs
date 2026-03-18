@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-var my_data = (
+var my_data = new string[] {
     "foo",
     "bar",
     "baz"
-);
-my_data = (
+};
+my_data = new string[] {
     "foo",
     "bar",
     "baz"
-);
+};
