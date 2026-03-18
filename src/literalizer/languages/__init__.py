@@ -21,6 +21,7 @@ from .javascript import JAVASCRIPT
 from .julia import JULIA
 from .kotlin import KOTLIN
 from .lua import LUA
+from .matlab import MATLAB
 from .nim import NIM
 from .ocaml import OCAML
 from .occam import OCCAM
@@ -33,6 +34,7 @@ from .rust import RUST
 from .scala import SCALA
 from .swift import SWIFT
 from .typescript import TYPESCRIPT
+from .zig import ZIG
 
 __all__ = [
     "ADA",
@@ -52,6 +54,7 @@ __all__ = [
     "JULIA",
     "KOTLIN",
     "LUA",
+    "MATLAB",
     "NIM",
     "OCAML",
     "OCCAM",
@@ -63,6 +66,7 @@ __all__ = [
     "SCALA",
     "SWIFT",
     "TYPESCRIPT",
+    "ZIG",
     "C",
     "D",
     "R",

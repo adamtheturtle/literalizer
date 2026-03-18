@@ -419,3 +419,17 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
+
+
+@beartype
+def format_string_backslash(value: str) -> str:
+    r"""Format a string as a double-quoted literal with backslash escaping.
+
+    Escapes backslashes, double quotes, and newlines.
+
+    Example: ``hello "world"`` → ``"hello \"world\""``
+    """
+    escaped = (
+        value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    )
+    return f'"{escaped}"'

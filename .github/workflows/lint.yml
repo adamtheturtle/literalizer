@@ -129,8 +129,14 @@ jobs:
   lint-occam:
     uses: ./.github/workflows/lint-occam.yml
 
+  lint-matlab:
+    uses: ./.github/workflows/lint-matlab.yml
+
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
+
+  lint-zig:
+    uses: ./.github/workflows/lint-zig.yml
 
   completion-lint:
     needs:
@@ -164,7 +170,9 @@ jobs:
       - lint-d
       - lint-ada
       - lint-occam
+      - lint-matlab
       - lint-nim
+      - lint-zig
     runs-on: ubuntu-latest
     if: always()
     steps:

@@ -8,6 +8,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash,
 )
 from literalizer._language import Language
 
@@ -34,7 +35,7 @@ def _to_ada_val(value: str) -> str:
     if any(value.startswith(p) for p in _val_prefixes):
         return value
     if value.startswith('"') and value.endswith('"'):
-        ada_escaped = value.replace('\\"', '""')
+        ada_escaped = value.replace('\\"', '""').replace("\\\\", "\\")
         return f"AStr ({ada_escaped})"
     negative = value.startswith("-")
     rest = value[1:] if negative else value
@@ -94,6 +95,7 @@ ADA = Language(
     format_dict_entry=_format_ada_dict_entry,
     multiline_trailing_comma=False,
     single_element_trailing_comma=False,
+    format_string=format_string_backslash,
     format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,

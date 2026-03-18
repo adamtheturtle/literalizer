@@ -8,6 +8,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -43,6 +44,7 @@ CSHARP = Language(
     format_dict_entry=_format_csharp_dict_entry,
     multiline_trailing_comma=False,
     single_element_trailing_comma=False,
+    format_string=format_string_backslash,
     format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
