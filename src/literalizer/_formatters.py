@@ -419,21 +419,3 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
-
-
-@beartype
-def format_variable_declaration_crystal(name: str, value: str) -> str:
-    """Format a Crystal variable assignment.
-
-    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
-    """
-    return f"{name} = {value}"
-
-
-@beartype
-def format_variable_assignment_crystal(name: str, value: str) -> str:
-    """Format a Crystal assignment to an existing variable.
-
-    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
-    """
-    return f"{name} = {value}"

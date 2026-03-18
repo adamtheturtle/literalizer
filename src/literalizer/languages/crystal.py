@@ -2,22 +2,29 @@
 
 from __future__ import annotations
 
+from beartype import beartype
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_variable_assignment_crystal,
-    format_variable_declaration_crystal,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer._language import Language
 
 
-def _format_crystal_omap_entry(key: str, value: str) -> str:
-    """Format a Crystal ordered-map entry."""
-    return f"{key} => {value}"
+@beartype
+def _format_variable_declaration(name: str, value: str) -> str:
+    """Format a Crystal variable declaration."""
+    return f"{name} = {value}"
+
+
+@beartype
+def _format_variable_assignment(name: str, value: str) -> str:
+    """Format a Crystal variable assignment."""
+    return f"{name} = {value}"
 
 
 CRYSTAL = Language(
@@ -45,10 +52,10 @@ CRYSTAL = Language(
     comment_suffix="",
     omap_open="{",
     omap_close="}",
-    format_omap_entry=_format_crystal_omap_entry,
+    format_omap_entry=dict_entry_with_separator(separator=" => "),
     multiline_close_indent="",
     element_separator=", ",
     skip_null_dict_values=False,
-    format_variable_declaration=format_variable_declaration_crystal,
-    format_variable_assignment=format_variable_assignment_crystal,
+    format_variable_declaration=_format_variable_declaration,
+    format_variable_assignment=_format_variable_assignment,
 )
