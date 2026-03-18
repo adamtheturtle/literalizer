@@ -49,7 +49,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Check Ruby syntax
-        run: find tests/integration/cases -name "*.rb" -exec ruby -c {} \;
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.rb" -print0 | \
+            while IFS= read -r -d '' f; do
+              ruby -c "$f" || exit 1
+            done
 
   lint-go:
     runs-on: ubuntu-latest
@@ -86,7 +91,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Check JavaScript syntax
-        run: find tests/integration/cases -name "*.js" -exec node --check {} \;
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.js" -print0 | \
+            while IFS= read -r -d '' f; do
+              node --check "$f" || exit 1
+            done
 
   lint-typescript:
     runs-on: ubuntu-latest
@@ -385,7 +395,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Check Perl syntax
-        run: find tests/integration/cases -name "*.pl" -exec perl -c {} \;
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.pl" -print0 | \
+            while IFS= read -r -d '' f; do
+              perl -c "$f" || exit 1
+            done
 
   lint-lua:
     runs-on: ubuntu-latest
