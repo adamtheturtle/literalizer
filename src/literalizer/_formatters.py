@@ -426,6 +426,23 @@ def format_string_matlab(value: str) -> str:
 
 
 @beartype
+def format_string_ada(value: str) -> str:
+    r"""Format a string using Ada double-quote escaping.
+
+    Ada has no backslash escaping — backslashes are literal characters.
+    Only double quotes are escaped, by doubling them (``""``).
+    Newlines and tabs are rendered as ``\n`` / ``\t`` for readability
+    since Ada string literals cannot span lines.
+
+    Example: ``hello "world" bye`` → ``"hello ""world"" bye"``.
+    """
+    escaped = (
+        value.replace("\n", "\\n").replace("\t", "\\t").replace('"', '""')
+    )
+    return f'"{escaped}"'
+
+
+@beartype
 def format_string_backslash(value: str) -> str:
     r"""Format a string using backslash escaping.
 
@@ -439,6 +456,25 @@ def format_string_backslash(value: str) -> str:
         .replace('"', '\\"')
         .replace("\n", "\\n")
         .replace("\t", "\\t")
+    )
+    return f'"{escaped}"'
+
+
+@beartype
+def format_string_backslash_dollar(value: str) -> str:
+    r"""Format a string using backslash escaping, including ``$``.
+
+    Escapes backslashes, double quotes, newlines, tabs, and dollar signs
+    with a backslash prefix, then wraps the result in double quotes.
+
+    Example: ``price $10`` → ``"price \$10"``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace("$", "\\$")
     )
     return f'"{escaped}"'
 

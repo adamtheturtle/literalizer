@@ -38,6 +38,7 @@ def _format_string(value: str) -> str:
     """Format a string using PowerShell back-tick escaping."""
     escaped = (
         value.replace("`", "``")
+        .replace("$", "`$")
         .replace('"', '`"')
         .replace("\n", "`n")
         .replace("\t", "`t")
