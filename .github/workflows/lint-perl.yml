@@ -1,0 +1,22 @@
+---
+name: Lint Perl
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-perl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Perl syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.pl" -print0 | \
+            while IFS= read -r -d '' f; do
+              perl -c "$f" || exit 1
+            done

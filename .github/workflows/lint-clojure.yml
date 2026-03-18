@@ -1,0 +1,23 @@
+---
+name: Lint Clojure
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-clojure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install clj-kondo
+        uses: DeLaGuardo/setup-clojure@13
+        with:
+          clj-kondo: latest
+      - name: Check Clojure syntax
+        run: >-
+          find tests/integration/cases -name "*.clj" -print0 |
+          xargs -0 clj-kondo --lint
