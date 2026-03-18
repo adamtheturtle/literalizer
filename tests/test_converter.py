@@ -9,7 +9,6 @@ import datetime
 import json
 import textwrap
 from collections.abc import Callable  # noqa: TC003
-from typing import Any
 
 import pytest
 from hypothesis import HealthCheck, given, settings
@@ -623,7 +622,7 @@ json_scalars = (
     | st.floats(allow_nan=False, allow_infinity=False)
     | json_text
 )
-json_values: st.SearchStrategy[Any] = st.recursive(
+json_values: st.SearchStrategy[_JSONValue] = st.recursive(
     base=json_scalars,
     extend=lambda children: (
         # ``max_size`` prevents unbounded nesting that causes test timeouts.
@@ -685,7 +684,7 @@ def test_literalize_json_invalid_is_parse_error() -> None:
 
 
 @given(data=json_arrays)
-def test_roundtrip_array(data: list[Any]) -> None:
+def test_roundtrip_array(data: list[_JSONValue]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
         json_string=json.dumps(obj=data),
@@ -719,7 +718,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
 # so we suppress the check rather than change the strategy.
 @given(data=json_objects)
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
-def test_roundtrip_dict(data: dict[str, Any]) -> None:
+def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
         json_string=json.dumps(obj=data),
