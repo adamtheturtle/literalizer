@@ -1,0 +1,7 @@
+void (
+[
+    true,
+    false,
+    true,
+]
+)
