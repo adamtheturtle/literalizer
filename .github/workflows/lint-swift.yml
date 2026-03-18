@@ -1,0 +1,28 @@
+---
+name: Lint Swift
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-swift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          cache-snapshot: true
+      - name: Check Swift syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.swift" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              cp "$f" "$tmpdir/check.swift"
+              swiftc -typecheck "$tmpdir/check.swift" || exit 1
+            done
