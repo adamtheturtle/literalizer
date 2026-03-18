@@ -17,6 +17,8 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from literalizer._types import Value
+
 
 def _to_val(value: str) -> str:
     """Wrap a pre-formatted value string in a D ``JSONValue(...)`` call.
@@ -145,4 +147,4 @@ class D:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-        self.format_collection_open: Callable[[list], str] | None = None
+        self.format_collection_open: Callable[[list[Value]], str] | None = None

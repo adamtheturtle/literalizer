@@ -22,6 +22,8 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from literalizer._types import Value
+
 
 @beartype
 def _format_kotlin_omap_entry(key: str, value: str) -> str:
@@ -108,4 +110,4 @@ class Kotlin:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-        self.format_collection_open = None
+        self.format_collection_open: Callable[[list[Value]], str] | None = None

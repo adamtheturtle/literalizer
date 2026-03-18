@@ -21,6 +21,8 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from literalizer._types import Value
+
 _CONTROL_CHAR_THRESHOLD = 32
 
 
@@ -136,4 +138,4 @@ class Matlab:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-        self.format_collection_open: Callable[[list], str] | None = None
+        self.format_collection_open: Callable[[list[Value]], str] | None = None

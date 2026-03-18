@@ -22,6 +22,8 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from literalizer._types import Value
+
 
 @beartype
 def _format_java_dict_entry(key: str, value: str) -> str:
@@ -126,4 +128,6 @@ class Java:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-        self.format_collection_open = _format_java_collection_open
+        self.format_collection_open: Callable[[list[Value]], str] | None = (
+            _format_java_collection_open
+        )
