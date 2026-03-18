@@ -13,8 +13,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install OCaml
-        run: sudo apt-get install -y ocaml
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ocaml-base-compiler
       - name: Check OCaml syntax
         run: |-
           tmpdir=$(mktemp -d)
