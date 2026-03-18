@@ -477,6 +477,21 @@ def _wrap_r(content: str) -> str:
     return f"x <- {content}"
 
 
+def _wrap_nim(content: str) -> str:
+    """Wrap in a Nim import json and %* expression."""
+    return f"import json\nlet _ = %*{content}"
+
+
+def _wrap_nim_varname(content: str) -> str:
+    """Wrap a Nim var declaration with the json import."""
+    return f"import json\n{content}"
+
+
+def _wrap_nim_combined(declaration: str, assignment: str) -> str:
+    """Wrap Nim declaration and assignment with the json import."""
+    return f"import json\n{declaration}\n{assignment}"
+
+
 def _wrap_d(content: str) -> str:
     """Wrap in a D function with ``std.json`` imported."""
     return (
@@ -779,6 +794,11 @@ class _LanguageConfig:
     date_variants: tuple[_DateVariant, ...]
 
 
+def _wrap_bash(content: str) -> str:
+    """Wrap in a Bash ``declare`` statement for syntax validation."""
+    return f"declare _v={content}"
+
+
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
         spec=literalizer.languages.ADA,
@@ -786,6 +806,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_ada,
         varname_wrap=_wrap_ada_varname,
         combined_wrap=_wrap_ada_combined,
+        date_variants=(),
+    ),
+    "bash": _LanguageConfig(
+        spec=literalizer.languages.BASH,
+        extension=".sh",
+        wrap=_wrap_bash,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
     "c": _LanguageConfig(
@@ -1114,6 +1142,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_r,
             ),
         ),
+    ),
+    "nim": _LanguageConfig(
+        spec=literalizer.languages.NIM,
+        extension=".nim",
+        wrap=_wrap_nim,
+        varname_wrap=_wrap_nim_varname,
+        combined_wrap=_wrap_nim_combined,
+        date_variants=(),
     ),
     "powershell": _LanguageConfig(
         spec=literalizer.languages.POWERSHELL,

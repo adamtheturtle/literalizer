@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .ada import ADA
+from .bash import BASH
 from .c import C
 from .clojure import CLOJURE
 from .cpp import CPP
@@ -20,6 +21,7 @@ from .javascript import JAVASCRIPT
 from .julia import JULIA
 from .kotlin import KOTLIN
 from .lua import LUA
+from .nim import NIM
 from .ocaml import OCAML
 from .occam import OCCAM
 from .perl import PERL
@@ -35,6 +37,7 @@ from .typescript import TYPESCRIPT
 
 __all__ = [
     "ADA",
+    "BASH",
     "CLOJURE",
     "CPP",
     "CSHARP",
@@ -50,6 +53,7 @@ __all__ = [
     "JULIA",
     "KOTLIN",
     "LUA",
+    "NIM",
     "OCAML",
     "OCCAM",
     "PERL",
