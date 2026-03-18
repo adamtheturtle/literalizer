@@ -59,6 +59,7 @@ dataclasses
 datetime
 datetimes
 dicts
+durations
 elixirc
 erlc
 formatter

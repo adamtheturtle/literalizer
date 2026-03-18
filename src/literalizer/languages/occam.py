@@ -89,7 +89,7 @@ _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
-_occam_sequence_open = "MOBILE LIT(lit.list; MOBILE []MOBILE LIT ["
+_OCCAM_SEQUENCE_OPEN: str = "MOBILE LIT(lit.list; MOBILE []MOBILE LIT ["
 
 
 class Occam:
@@ -101,7 +101,7 @@ class Occam:
         self.null_literal = "MOBILE LIT(lit.null)"
         self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
         self.false_literal = "MOBILE LIT(lit.bool; FALSE)"
-        self.sequence_open = fixed_sequence_open(_occam_sequence_open)
+        self.sequence_open = fixed_sequence_open(_OCCAM_SEQUENCE_OPEN)
         self.sequence_close = "])"
         self.dict_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
         self.dict_close = "])"
