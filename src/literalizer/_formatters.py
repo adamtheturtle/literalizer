@@ -60,6 +60,7 @@ __all__ = [
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
     "format_variable_assignment_lua",
+    "format_variable_assignment_nim",
     "format_variable_assignment_ocaml",
     "format_variable_assignment_occam",
     "format_variable_assignment_perl",
@@ -86,6 +87,7 @@ __all__ = [
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
     "format_variable_declaration_lua",
+    "format_variable_declaration_nim",
     "format_variable_declaration_ocaml",
     "format_variable_declaration_occam",
     "format_variable_declaration_perl",
@@ -1170,3 +1172,21 @@ def format_variable_assignment_perl(name: str, value: str) -> str:
     Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
     """
     return f"${name} = {value};"
+
+
+@beartype
+def format_variable_declaration_nim(name: str, value: str) -> str:
+    """Format a Nim ``var`` declaration using ``%*`` for JSON nodes.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"var x = %*[1, 2]"``
+    """
+    return f"var {name} = %*{value}"
+
+
+@beartype
+def format_variable_assignment_nim(name: str, value: str) -> str:
+    """Format a Nim assignment to an existing variable using ``%*``.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = %*[1, 2]"``
+    """
+    return f"{name} = %*{value}"

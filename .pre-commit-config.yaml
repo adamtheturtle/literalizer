@@ -24,6 +24,7 @@ ci:
     - haskell-golden-syntax-check
     - julia-golden-syntax-check
     - lua-syntax-check
+    - nim-golden-syntax-check
     - java-golden-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
@@ -620,6 +621,15 @@ repos:
         language: system
         types: [lua]
         files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: nim-golden-syntax-check
+        name: Nim golden file syntax check
+        entry: bash -c 'command -v nim > /dev/null || exit 0; tmpdir=$(mktemp -d);
+          for f; do nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1; done'
+          --
+        language: system
+        files: ^tests/integration/cases/.*\.nim$
         stages: [pre-commit]
 
       - id: php-syntax-check
