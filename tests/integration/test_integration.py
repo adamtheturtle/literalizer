@@ -638,7 +638,8 @@ def _wrap_zig(content: str) -> str:
     """Wrap in a Zig main function with ``ZVal``/``ZKV`` type
     definitions.
     """
-    indented = content.replace("\n", "\n    ")
+    typed = literalizer.languages.ZIG.format_sequence_entry(content)
+    indented = typed.replace("\n", "\n    ")
     return (
         _ZIG_PREAMBLE
         + "pub fn main() void {\n"
