@@ -1,6 +1,7 @@
 """Functions for formatting scalars as language-specific literals."""
 
 import datetime
+import re
 from collections.abc import Callable
 
 from beartype import beartype
@@ -407,18 +408,35 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     return _format
 
 
+_MATLAB_CONTROL_CHAR_THRESHOLD = 32
+
+
 @beartype
 def format_string_matlab(value: str) -> str:
     r"""Format a string using MATLAB double-quoted string escaping rules.
 
-    In MATLAB, double-quoted strings escape double quotes by doubling them
-    (``""``); backslashes are treated as literal characters and require no
-    escaping.
+    MATLAB double-quoted strings (the ``string`` type) interpret backslash
+    escape sequences: ``\\`` for a literal backslash, ``\n`` for newline,
+    ``\t`` for tab, etc.  Double quotes are escaped by doubling (``""``).
+    Control characters (code points 0-31) are emitted as ``char(N)``
+    expressions joined with ``+``.
 
-    Example: ``hello "world" bye`` → ``"hello ""world"" bye"``.
+    Example: ``hello "world" bye`` -> ``"hello ""world"" bye"``.
     """
-    escaped = value.replace('"', '""')
-    return f'"{escaped}"'
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if len(segment) == 1 and ord(segment) < _MATLAB_CONTROL_CHAR_THRESHOLD:
+            parts.append(f"char({ord(segment)})")
+        else:
+            escaped = segment.replace("\\", "\\\\").replace('"', '""')
+            parts.append(f'"{escaped}"')
+    if not parts:
+        return '""'
+    if len(parts) == 1:
+        return parts[0]
+    return " + ".join(parts)
 
 
 @beartype

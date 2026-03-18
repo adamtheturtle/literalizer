@@ -1,7 +1,6 @@
 """MATLAB language specification."""
 
 import datetime
-import json
 import re
 from collections.abc import Callable
 
@@ -17,6 +16,26 @@ from literalizer._formatters import (
 )
 
 _CONTROL_CHAR_THRESHOLD = 32
+
+
+def _decode_matlab_string_expr(expr: str) -> str:
+    r"""Decode a MATLAB string expression back to its raw string value.
+
+    Reverses the output of ``format_string_matlab``.  Handles both the
+    simple ``"..."`` form (with ``""`` for embedded double-quotes and
+    ``\\\\`` for literal backslashes) and the ``"..." + char(N) + "..."``
+    concatenation form used for control characters.
+    """
+    raw: list[str] = []
+    for string_seg, char_code in re.findall(
+        pattern=r'"((?:[^"]|"")*)"|char\((\d+)\)',
+        string=expr,
+    ):
+        if char_code:
+            raw.append(chr(int(char_code)))
+        else:
+            raw.append(string_seg.replace('""', '"').replace("\\\\", "\\"))
+    return "".join(raw)
 
 
 def _matlab_char_key(s: str) -> str:
@@ -58,7 +77,7 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
     ``struct`` stores them as a single cell-array field rather than
     expanding them into a struct array.
     """
-    inner = json.loads(s=key, strict=False)
+    inner = _decode_matlab_string_expr(expr=key)
     key_expr = _matlab_char_key(s=inner)
     if value.startswith("{") and value.endswith("}"):
         value = f"{{{value}}}"
