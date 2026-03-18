@@ -10,4 +10,4 @@ type Val =
     | FMap of (string * Val) list
     | FSet of Val list
 
-let x: Val = "hello \"world\" -- not a comment"
+let x: Val = FStr "hello \"world\" -- not a comment"

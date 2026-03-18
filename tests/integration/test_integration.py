@@ -147,9 +147,9 @@ _OCCAM_LIT_TYPE = (
 
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
+    typed = literalizer.languages.FSHARP.format_sequence_entry(content)
     return (
-        "module Check\n"
-        "\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {content}"
+        "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {typed}"
     )
 
 
