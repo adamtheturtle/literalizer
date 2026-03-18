@@ -38,7 +38,7 @@ class Language(Protocol):
         can depend on the element types when needed.  For a fixed delimiter
         use :func:`~literalizer.fixed_sequence_open`.
         """
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     sequence_close: str
     """The closing delimiter for sequences."""
@@ -54,7 +54,7 @@ class Language(Protocol):
         """Callable that formats a dict entry from a pre-formatted key and
         value string.
         """
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     multiline_trailing_comma: bool
     """Whether to append a trailing comma after the last entry."""
@@ -67,21 +67,21 @@ class Language(Protocol):
         """Callable that formats a :class:`bytes` value as a string
         literal.
         """
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a :class:`datetime.date` as a string
         literal.
         """
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a string
         literal.
         """
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     empty_sequence: str | None
     """Override for empty sequence literals, or ``None``."""
@@ -101,12 +101,12 @@ class Language(Protocol):
     @property
     def format_sequence_entry(self) -> Callable[[str], str]:
         """Callable that formats a sequence entry."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_set_entry(self) -> Callable[[str], str]:
         """Callable that formats a set entry."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     comment_prefix: str
     """The comment prefix for the language."""
@@ -123,7 +123,7 @@ class Language(Protocol):
     @property
     def format_omap_entry(self) -> Callable[[str, str], str]:
         """Callable that formats one ordered-map entry."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     multiline_close_indent: str
     """The prefix to prepend to the closing delimiter of multi-line
@@ -139,17 +139,17 @@ class Language(Protocol):
     @property
     def format_variable_declaration(self) -> Callable[[str, str], str]:
         """Callable that formats a new variable declaration."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_variable_assignment(self) -> Callable[[str, str], str]:
         """Callable that formats an assignment to an existing variable."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @dataclasses.dataclass
