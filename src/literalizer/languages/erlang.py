@@ -6,11 +6,8 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
-    format_bytes_erlang,
     format_date_iso,
     format_datetime_iso,
-    format_variable_assignment_erlang,
-    format_variable_declaration_erlang,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -21,6 +18,27 @@ from literalizer._language import Language
 def _format_erlang_omap_entry(key: str, value: str) -> str:
     """Format an Erlang ordered-map entry as a ``{key, value}`` tuple."""
     return f"{{{key}, {value}}}"
+
+
+@beartype
+def _format_bytes(value: bytes) -> str:
+    """Format bytes as an Erlang binary literal."""
+    parts = ", ".join(f"{b}" for b in value)
+    return f"<<{parts}>>"
+
+
+@beartype
+def _format_variable_declaration(name: str, value: str) -> str:
+    """Format an Erlang variable declaration."""
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
+
+
+@beartype
+def _format_variable_assignment(name: str, value: str) -> str:
+    """Format an Erlang variable assignment."""
+    erlang_name = name[0].upper() + name[1:]
+    return f"{erlang_name} = {value}"
 
 
 ERLANG = Language(
@@ -34,7 +52,7 @@ ERLANG = Language(
     format_dict_entry=dict_entry_with_separator(separator=" => "),
     multiline_trailing_comma=False,
     single_element_trailing_comma=False,
-    format_bytes=format_bytes_erlang,
+    format_bytes=_format_bytes,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_sequence=None,
@@ -52,6 +70,6 @@ ERLANG = Language(
     multiline_close_indent="",
     element_separator=", ",
     skip_null_dict_values=False,
-    format_variable_declaration=format_variable_declaration_erlang,
-    format_variable_assignment=format_variable_assignment_erlang,
+    format_variable_declaration=_format_variable_declaration,
+    format_variable_assignment=_format_variable_assignment,
 )
