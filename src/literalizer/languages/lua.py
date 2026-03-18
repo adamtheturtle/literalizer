@@ -8,6 +8,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash,
     passthrough_sequence_entry,
 )
 from literalizer._language import Language
@@ -74,4 +75,5 @@ LUA = Language(
     skip_null_dict_values=True,
     format_variable_declaration=_format_variable_declaration,
     format_variable_assignment=_format_variable_assignment,
+    format_string=format_string_backslash,
 )

@@ -8,6 +8,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash,
 )
 from literalizer._language import Language
 
@@ -123,4 +124,5 @@ OCAML = Language(
     format_variable_assignment=_format_variable_assignment,
     element_separator="; ",
     format_sequence_entry=_format_ocaml_sequence_entry,
+    format_string=format_string_backslash,
 )

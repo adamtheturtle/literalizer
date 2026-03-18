@@ -8,6 +8,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -63,4 +64,5 @@ CPP = Language(
     skip_null_dict_values=False,
     format_variable_declaration=_format_variable_declaration,
     format_variable_assignment=_format_variable_assignment,
+    format_string=format_string_backslash,
 )

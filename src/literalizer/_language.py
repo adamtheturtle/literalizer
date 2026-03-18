@@ -151,11 +151,11 @@ class Language:
     name and value string.
     """
 
-    format_string: Callable[[str], str] | None = None
-    """Optional callable that formats a string value as a quoted literal.
+    format_string: Callable[[str], str]
+    """Callable that formats a string value as a quoted literal.
 
-    When ``None``, the default backslash-escape quoting is used:
-    backslashes are doubled, double quotes are backslash-escaped, and
-    newlines become ``\\n``.  Override this for languages that use a
-    different escape convention (e.g. PowerShell uses backtick escaping).
+    Use :func:`~literalizer._formatters.format_string_backslash` for the
+    common backslash-escape convention, or provide a custom callable for
+    languages with a different escape convention (e.g. PowerShell uses
+    backtick escaping).
     """

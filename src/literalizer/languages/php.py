@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -76,4 +77,5 @@ PHP = Language(
     skip_null_dict_values=False,
     format_variable_declaration=_format_variable_declaration,
     format_variable_assignment=_format_variable_assignment,
+    format_string=format_string_backslash,
 )
