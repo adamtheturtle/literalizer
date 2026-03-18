@@ -8,8 +8,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_variable_assignment_haskell,
-    format_variable_declaration_haskell,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -22,9 +20,22 @@ def _format_haskell_dict_entry(key: str, value: str) -> str:
     return f"({key}, {value})"
 
 
+@beartype
 def _format_haskell_omap_entry(key: str, value: str) -> str:
     """Format a Haskell ordered-map entry as a tuple pair."""
     return f"({key}, {value})"
+
+
+@beartype
+def _format_variable_declaration(name: str, value: str) -> str:
+    """Format a Haskell variable declaration."""
+    return f"{name} = {value}"
+
+
+@beartype
+def _format_variable_assignment(name: str, value: str) -> str:
+    """Format a Haskell variable assignment."""
+    return f"{name} = {value}"
 
 
 HASKELL = Language(
@@ -56,6 +67,6 @@ HASKELL = Language(
     multiline_close_indent="    ",
     element_separator=", ",
     skip_null_dict_values=False,
-    format_variable_declaration=format_variable_declaration_haskell,
-    format_variable_assignment=format_variable_assignment_haskell,
+    format_variable_declaration=_format_variable_declaration,
+    format_variable_assignment=_format_variable_assignment,
 )

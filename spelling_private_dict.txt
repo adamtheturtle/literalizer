@@ -1,4 +1,13 @@
+ABool
 ADT
+AEntry
+AFloat
+AInt
+AList
+AMap
+ANull
+ASet
+AStr
 Args
 CPP
 Changelog
@@ -39,6 +48,7 @@ formatter
 formatters
 fromhex
 ghc
+gnatmake
 gofmt
 initializer
 initializers
