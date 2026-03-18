@@ -70,8 +70,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._language import Language
-
 _bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
@@ -126,6 +124,3 @@ class Zig:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-
-
-ZIG: Language = Zig()

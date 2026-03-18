@@ -18,8 +18,6 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._language import Language
-
 
 def _to_bash_value(item: str) -> str:
     """Quote an item if it is a nested array or dict expression.
@@ -128,6 +126,3 @@ class Bash:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-
-
-BASH: Language = Bash()

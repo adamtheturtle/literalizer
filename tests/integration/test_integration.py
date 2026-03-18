@@ -145,7 +145,7 @@ _OCCAM_LIT_TYPE = (
 
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
-    typed = literalizer.languages.FSHARP.format_sequence_entry(content)
+    typed = literalizer.languages.FSharp().format_sequence_entry(content)
     return (
         "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {typed}"
     )
@@ -153,7 +153,7 @@ def _wrap_fsharp(content: str) -> str:
 
 def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a custom val_t variant type."""
-    typed = literalizer.languages.OCAML.format_sequence_entry(content)
+    typed = literalizer.languages.OCaml().format_sequence_entry(content)
     return (
         "module Check = struct\n\n"
         + _OCAML_VAL_TYPE
@@ -428,7 +428,7 @@ def _wrap_groovy(content: str) -> str:
 
 def _wrap_ada(content: str) -> str:
     """Wrap in an Ada procedure with a local variable assignment."""
-    typed = literalizer.languages.ADA.format_sequence_entry(content)
+    typed = literalizer.languages.Ada().format_sequence_entry(content)
     indented = typed.replace("\n", "\n   ")
     return (
         "procedure Check is\n"
@@ -646,7 +646,7 @@ def _wrap_zig(content: str) -> str:
     """Wrap in a Zig main function with ``ZVal``/``ZKV`` type
     definitions.
     """
-    typed = literalizer.languages.ZIG.format_sequence_entry(content)
+    typed = literalizer.languages.Zig().format_sequence_entry(content)
     indented = typed.replace("\n", "\n    ")
     return (
         _ZIG_PREAMBLE
@@ -901,7 +901,7 @@ def _wrap_bash(content: str) -> str:
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
-        spec=literalizer.languages.ADA,
+        spec=literalizer.languages.Ada(),
         extension=".adb",
         wrap=_wrap_ada,
         varname_wrap=_wrap_ada_varname,
@@ -909,7 +909,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "bash": _LanguageConfig(
-        spec=literalizer.languages.BASH,
+        spec=literalizer.languages.Bash(),
         extension=".sh",
         wrap=_wrap_bash,
         varname_wrap=_wrap_identity,
@@ -933,7 +933,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "clojure": _LanguageConfig(
-        spec=literalizer.languages.CLOJURE,
+        spec=literalizer.languages.Clojure(),
         extension=".clj",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
@@ -941,7 +941,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "python": _LanguageConfig(
-        spec=literalizer.languages.PYTHON,
+        spec=literalizer.languages.Python(),
         extension=".py",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
@@ -962,7 +962,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "javascript": _LanguageConfig(
-        spec=literalizer.languages.JAVASCRIPT,
+        spec=literalizer.languages.JavaScript(),
         extension=".js",
         wrap=_wrap_js,
         varname_wrap=_wrap_identity,
@@ -978,7 +978,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "typescript": _LanguageConfig(
-        spec=literalizer.languages.TYPESCRIPT,
+        spec=literalizer.languages.TypeScript(),
         extension=".ts",
         wrap=_wrap_js,
         varname_wrap=_wrap_ts_varname,
@@ -994,7 +994,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "kotlin": _LanguageConfig(
-        spec=literalizer.languages.KOTLIN,
+        spec=literalizer.languages.Kotlin(),
         extension=".kts",
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_identity,
@@ -1010,7 +1010,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "ruby": _LanguageConfig(
-        spec=literalizer.languages.RUBY,
+        spec=literalizer.languages.Ruby(),
         extension=".rb",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
@@ -1026,7 +1026,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "go": _LanguageConfig(
-        spec=literalizer.languages.GO,
+        spec=literalizer.languages.Go(),
         extension=".go",
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
@@ -1042,7 +1042,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "java": _LanguageConfig(
-        spec=literalizer.languages.JAVA,
+        spec=literalizer.languages.Java(),
         extension=".java",
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
@@ -1065,7 +1065,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "csharp": _LanguageConfig(
-        spec=literalizer.languages.CSHARP,
+        spec=literalizer.languages.CSharp(),
         extension=".cs",
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
@@ -1081,7 +1081,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "dart": _LanguageConfig(
-        spec=literalizer.languages.DART,
+        spec=literalizer.languages.Dart(),
         extension=".dart",
         wrap=_wrap_dart,
         varname_wrap=_wrap_identity,
@@ -1097,7 +1097,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "swift": _LanguageConfig(
-        spec=literalizer.languages.SWIFT,
+        spec=literalizer.languages.Swift(),
         extension=".swift",
         wrap=_wrap_swift,
         varname_wrap=_wrap_swift_varname,
@@ -1105,7 +1105,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "cpp": _LanguageConfig(
-        spec=literalizer.languages.CPP,
+        spec=literalizer.languages.Cpp(),
         extension=".cpp",
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
@@ -1121,7 +1121,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "rust": _LanguageConfig(
-        spec=literalizer.languages.RUST,
+        spec=literalizer.languages.Rust(),
         extension=".rs",
         wrap=_wrap_rust,
         varname_wrap=_wrap_rust_varname,
@@ -1137,7 +1137,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "haskell": _LanguageConfig(
-        spec=literalizer.languages.HASKELL,
+        spec=literalizer.languages.Haskell(),
         extension=".hs",
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
@@ -1145,7 +1145,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "julia": _LanguageConfig(
-        spec=literalizer.languages.JULIA,
+        spec=literalizer.languages.Julia(),
         extension=".jl",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
@@ -1161,7 +1161,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "lua": _LanguageConfig(
-        spec=literalizer.languages.LUA,
+        spec=literalizer.languages.Lua(),
         extension=".lua",
         wrap=_wrap_lua,
         varname_wrap=_wrap_identity,
@@ -1169,7 +1169,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "perl": _LanguageConfig(
-        spec=literalizer.languages.PERL,
+        spec=literalizer.languages.Perl(),
         extension=".pl",
         wrap=_wrap_perl,
         varname_wrap=_wrap_identity,
@@ -1177,7 +1177,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "php": _LanguageConfig(
-        spec=literalizer.languages.PHP,
+        spec=literalizer.languages.Php(),
         extension=".php",
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
@@ -1185,7 +1185,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "elixir": _LanguageConfig(
-        spec=literalizer.languages.ELIXIR,
+        spec=literalizer.languages.Elixir(),
         extension=".ex",
         wrap=_wrap_elixir,
         varname_wrap=_wrap_elixir_varname,
@@ -1193,7 +1193,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "erlang": _LanguageConfig(
-        spec=literalizer.languages.ERLANG,
+        spec=literalizer.languages.Erlang(),
         extension=".erl",
         wrap=_wrap_erlang,
         varname_wrap=_wrap_erlang_varname,
@@ -1201,7 +1201,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "fsharp": _LanguageConfig(
-        spec=literalizer.languages.FSHARP,
+        spec=literalizer.languages.FSharp(),
         extension=".fs",
         wrap=_wrap_fsharp,
         varname_wrap=_wrap_fsharp_varname,
@@ -1209,7 +1209,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "ocaml": _LanguageConfig(
-        spec=literalizer.languages.OCAML,
+        spec=literalizer.languages.OCaml(),
         extension=".ml",
         wrap=_wrap_ocaml,
         varname_wrap=_wrap_ocaml_varname,
@@ -1217,7 +1217,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "occam": _LanguageConfig(
-        spec=literalizer.languages.OCCAM,
+        spec=literalizer.languages.Occam(),
         extension=".occ",
         wrap=_wrap_occam,
         varname_wrap=_wrap_occam_varname,
@@ -1225,7 +1225,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "groovy": _LanguageConfig(
-        spec=literalizer.languages.GROOVY,
+        spec=literalizer.languages.Groovy(),
         extension=".groovy",
         wrap=_wrap_groovy,
         varname_wrap=_wrap_identity,

@@ -141,6 +141,3 @@ class Ada:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-
-
-ADA = Ada()

@@ -22,8 +22,6 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._language import Language
-
 
 @beartype
 def _format_ts_omap_entry(key: str, value: str) -> str:
@@ -110,6 +108,3 @@ class TypeScript:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-
-
-TYPESCRIPT: Language = TypeScript()

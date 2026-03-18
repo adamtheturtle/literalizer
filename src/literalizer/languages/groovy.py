@@ -20,8 +20,6 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._language import Language
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -89,6 +87,3 @@ class Groovy:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-
-
-GROOVY: Language = Groovy()

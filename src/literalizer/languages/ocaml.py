@@ -17,8 +17,6 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._language import Language
-
 
 @beartype
 def _to_val(value: str) -> str:
@@ -154,6 +152,3 @@ class OCaml:
         self.format_sequence_entry: Callable[[str], str] = (
             _format_ocaml_sequence_entry
         )
-
-
-OCAML: Language = OCaml()

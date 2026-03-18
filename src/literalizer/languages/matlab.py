@@ -20,8 +20,6 @@ from literalizer._formatters import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._language import Language
-
 
 @beartype
 def _format_matlab_dict_entry(key: str, value: str) -> str:
@@ -109,6 +107,3 @@ class Matlab:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-
-
-MATLAB: Language = Matlab()
