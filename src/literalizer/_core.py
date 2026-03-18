@@ -240,7 +240,8 @@ def _literalize(
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{effective_prefix}{entry}{sep}")
     else:
-        items = list(cast("list[Value]", data))
+        # At this point data must be a list (scalars/dict/set/omap handled)
+        items = list(data)  # type: ignore[arg-type]
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
             formatted = spec.format_sequence_entry(
