@@ -1,7 +1,7 @@
 package main
 
 func main() {
-my_data := []any{
+my_data := []string{
     "price $10",
     "$HOME",
 }

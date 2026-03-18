@@ -1,12 +1,12 @@
 package main
 
 func main() {
-my_data := []any{
+my_data := []bool{
     true,
     false,
     true,
 }
-my_data = []any{
+my_data = []bool{
     true,
     false,
     true,

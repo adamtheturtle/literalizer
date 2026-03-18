@@ -1,5 +1,5 @@
 fun _declaration() {
-    val my_data = listOf<Any?>(
+    val my_data = arrayOf(
         "C:\\path\\to\\file",
         "back\\\\slash",
         "hello \\\"world\\\"",
@@ -7,7 +7,7 @@ fun _declaration() {
 }
 fun _assignment() {
     var my_data: Any? = null
-    my_data = listOf<Any?>(
+    my_data = arrayOf(
         "C:\\path\\to\\file",
         "back\\\\slash",
         "hello \\\"world\\\"",

@@ -1,7 +1,7 @@
 package main
 
 func main() {
-my_data := []any{
+my_data := []string{
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",

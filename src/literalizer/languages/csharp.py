@@ -2,12 +2,11 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from beartype import beartype
 
 from literalizer._formatters import (
-    fixed_sequence_open,
     format_bytes_hex,
     format_date_csharp,
     format_date_iso,
@@ -20,6 +19,36 @@ from literalizer._formatters import (
 
 if TYPE_CHECKING:
     from literalizer._types import Value
+
+
+@beartype
+def _format_csharp_collection_open(values: list[Any]) -> str:
+    """Return a typed C# array opener inferred from element types.
+
+    Returns ``"new string[] {"`` when all elements are strings,
+    ``"new bool[] {"`` when all elements are booleans,
+    ``"new int[] {"`` when all elements are non-boolean integers,
+    ``"new double[] {"`` when all elements are non-boolean numeric
+    (float, or mixed int and float), and ``"new object[] {"`` otherwise.
+    """
+    if values and all(isinstance(v, str) for v in values):
+        return "new string[] {"
+    if values and all(isinstance(v, bool) for v in values):
+        return "new bool[] {"
+    if values and all(
+        isinstance(v, int) and not isinstance(v, bool) for v in values
+    ):
+        return "new int[] {"
+    if (
+        values
+        and all(
+            isinstance(v, (int, float)) and not isinstance(v, bool)
+            for v in values
+        )
+        and any(isinstance(v, float) for v in values)
+    ):
+        return "new double[] {"
+    return "new object[] {"
 
 
 @beartype
@@ -81,10 +110,10 @@ class CSharp:
         self.null_literal = "(object?)null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="("
+        self.sequence_open: Callable[[list[Value]], str] = (
+            _format_csharp_collection_open
         )
-        self.sequence_close = ")"
+        self.sequence_close = "}"
         self.dict_open = "new Dictionary<string, object> {"
         self.dict_close = "}"
         self.format_dict_entry: Callable[[str, str], str] = (
@@ -100,7 +129,7 @@ class CSharp:
             _datetime_formats[datetime_format]
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = "ValueTuple.Create()"
+        self.empty_sequence: str | None = "Array.Empty<object>()"
         self.empty_dict: str | None = None
         self.set_open = "new HashSet<object> {"
         self.set_close = "}"

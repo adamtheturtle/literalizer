@@ -1,6 +1,6 @@
 final x = [
     true,
     "hi",
-    [1, 2],
+    <int>[1, 2],
     null,
 ];

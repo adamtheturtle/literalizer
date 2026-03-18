@@ -1,5 +1,5 @@
 object Check {
-val x: Any = List(
+val x: Any = Array[String](
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",

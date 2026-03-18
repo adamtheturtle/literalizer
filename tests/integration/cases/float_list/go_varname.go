@@ -1,7 +1,7 @@
 package main
 
 func main() {
-my_data := []any{
+my_data := []float64{
     1.1,
     2.2,
     3.3,

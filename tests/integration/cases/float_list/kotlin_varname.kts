@@ -1,4 +1,4 @@
-val my_data = listOf<Any?>(
+val my_data = doubleArrayOf(
     1.1,
     2.2,
     3.3,

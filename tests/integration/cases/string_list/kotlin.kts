@@ -1,4 +1,4 @@
-val x: Any? = listOf<Any?>(
+val x: Any? = arrayOf(
     "foo",
     "bar",
     "baz",

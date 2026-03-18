@@ -2,7 +2,7 @@ fun _declaration() {
     val my_data = listOf<Any?>(
         true,
         "hi",
-        listOf<Any?>(1, 2),
+        intArrayOf(1, 2),
         null,
     )
 }
@@ -11,7 +11,7 @@ fun _assignment() {
     my_data = listOf<Any?>(
         true,
         "hi",
-        listOf<Any?>(1, 2),
+        intArrayOf(1, 2),
         null,
     )
 }

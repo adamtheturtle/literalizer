@@ -76,6 +76,8 @@ def _wrap_cpp(content: str) -> str:
     return (
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
+        "#include <string>\n"
+        "#include <vector>\n"
         "struct _Any {\n"
         "    template<class T> _Any(T&&) noexcept {}\n"
         "    _Any(std::initializer_list<_Any>) noexcept {}\n"
@@ -332,6 +334,8 @@ def _wrap_cpp_varname(content: str) -> str:
     return (
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
+        "#include <string>\n"
+        "#include <vector>\n"
         "struct _Any {\n"
         "    template<class T> _Any(T&&) noexcept {}\n"
         "    _Any(std::initializer_list<_Any>) noexcept {}\n"
@@ -883,6 +887,8 @@ def _wrap_cpp_chrono(content: str) -> str:
         "#include <chrono>\n"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
+        "#include <string>\n"
+        "#include <vector>\n"
         "struct _Any {\n"
         "    template<class T> _Any(T&&) noexcept {}\n"
         "    _Any(std::initializer_list<_Any>) noexcept {}\n"

@@ -1,4 +1,4 @@
-final x = [
+final x = <int>[
     1,
     2,
     3,

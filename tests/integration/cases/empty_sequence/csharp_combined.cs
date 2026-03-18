@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-var my_data = (
-    ValueTuple.Create(),
+var my_data = new object[] {
+    Array.Empty<object>(),
     new Dictionary<string, object> {}
-);
-my_data = (
-    ValueTuple.Create(),
+};
+my_data = new object[] {
+    Array.Empty<object>(),
     new Dictionary<string, object> {}
-);
+};

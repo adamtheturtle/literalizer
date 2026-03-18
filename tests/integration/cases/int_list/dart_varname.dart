@@ -1,4 +1,4 @@
-final my_data = [
+final my_data = <int>[
     1,
     2,
     3,

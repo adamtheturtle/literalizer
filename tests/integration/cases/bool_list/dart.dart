@@ -1,4 +1,4 @@
-final x = [
+final x = <bool>[
     true,
     false,
     true,
