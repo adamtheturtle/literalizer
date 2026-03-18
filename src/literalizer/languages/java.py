@@ -20,11 +20,13 @@ def _format_java_dict_entry(key: str, value: str) -> str:
     return f"Map.entry({key}, {value})"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Java variable declaration."""
     return f"var {name} = {value};"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Java variable assignment."""
     return f"{name} = {value};"
