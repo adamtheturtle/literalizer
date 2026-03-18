@@ -66,12 +66,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name}={value}"
 
 
-@beartype
-def _format_bash_set_entry(item: str) -> str:
-    """Format a Bash indexed-array set element."""
-    return passthrough_set_entry(item=item)
-
-
 _bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
@@ -109,7 +103,7 @@ class Bash:
         self.format_sequence_entry: Callable[[str], str] = (
             _format_bash_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = _format_bash_set_entry
+        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "#"
         self.comment_suffix = ""
         self.omap_open = "("
