@@ -22,7 +22,7 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-import literalizer.formatters
+import literalizer._formatters as literalizer_formatters
 import literalizer.languages
 
 if TYPE_CHECKING:
@@ -129,6 +129,21 @@ _OCAML_VAL_TYPE = (
     "  | OSet of val_t list\n"
 )
 
+_OCCAM_LIT_TYPE = (
+    "MOBILE DATA TYPE LIT IS\n"
+    "  CASE\n"
+    "    lit.null\n"
+    "    lit.bool ; BOOL\n"
+    "    lit.int ; INT\n"
+    "    lit.float ; REAL32\n"
+    "    lit.str ; MOBILE []BYTE\n"
+    "    lit.list ; MOBILE []MOBILE LIT\n"
+    "    lit.map ; MOBILE []MOBILE LIT\n"
+    "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
+    "    lit.set ; MOBILE []MOBILE LIT\n"
+    ":"
+)
+
 
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
@@ -159,6 +174,36 @@ def _wrap_ocaml_varname(content: str) -> str:
         + "\n"
         + content
         + "\n\nend"
+    )
+
+
+def _wrap_occam(content: str) -> str:
+    """Wrap in an occam-pi PROC with a custom ``LIT`` mobile data type."""
+    return (
+        _OCCAM_LIT_TYPE
+        + "\n\n"
+        + "PROC check ()\n"
+        + f"  VAL MOBILE LIT x IS {content}:\n"
+        + "  SEQ\n"
+        + "    SKIP\n"
+        + ":"
+    )
+
+
+def _wrap_occam_varname(content: str) -> str:
+    """Wrap an occam-pi ``VAL`` declaration in a PROC with the LIT
+    type.
+    """
+    indented = "  " + content.replace("\n", "\n  ")
+    return (
+        _OCCAM_LIT_TYPE
+        + "\n\n"
+        + "PROC check ()\n"
+        + indented
+        + "\n"
+        + "  SEQ\n"
+        + "    SKIP\n"
+        + ":"
     )
 
 
@@ -382,9 +427,67 @@ def _wrap_groovy(content: str) -> str:
     return f"def x = {content}"
 
 
+def _wrap_lua(content: str) -> str:
+    """Wrap a Lua table constructor in a local variable assignment."""
+    return f"local _ = {content}"
+
+
 def _wrap_r(content: str) -> str:
     """Wrap in an R variable assignment."""
     return f"x <- {content}"
+
+
+_C_PREAMBLE = (
+    "#include <stdbool.h>\n"
+    "#include <stddef.h>\n"
+    "typedef struct _CVal _CVal;\n"
+    "typedef struct _CKV _CKV;\n"
+    "struct _CVal {\n"
+    "    union {\n"
+    "        _Bool b;\n"
+    "        long long i;\n"
+    "        double f;\n"
+    "        const char *s;\n"
+    "        const _CVal *a;\n"
+    "        const _CKV *m;\n"
+    "    };\n"
+    "};\n"
+    "struct _CKV { const char *k; _CVal v; };\n"
+)
+
+
+def _wrap_c(content: str) -> str:
+    """Wrap in a C function with the _CVal/_CKV type definitions."""
+    return (
+        _C_PREAMBLE
+        + "void _check(void) {\n"
+        + f"    _CVal _v = {content};\n"
+        + "    (void)_v;\n"
+        + "}"
+    )
+
+
+def _wrap_c_varname(content: str) -> str:
+    """Wrap a C _CVal declaration in a function with type definitions."""
+    return (
+        _C_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{content}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
+def _wrap_c_combined(declaration: str, assignment: str) -> str:
+    """Wrap C declaration and assignment together in one function."""
+    return (
+        _C_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{declaration}\n"
+        + f"{assignment}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
 
 
 def _wrap_rust_varname(content: str) -> str:
@@ -606,6 +709,14 @@ class _LanguageConfig:
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
+    "c": _LanguageConfig(
+        spec=literalizer.languages.C,
+        extension=".c",
+        wrap=_wrap_c,
+        varname_wrap=_wrap_c_varname,
+        combined_wrap=_wrap_c_combined,
+        date_variants=(),
+    ),
     "clojure": _LanguageConfig(
         spec=literalizer.languages.CLOJURE,
         extension=".clj",
@@ -623,14 +734,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="python_native",
-                format_date=literalizer.formatters.format_date_python,
-                format_datetime=literalizer.formatters.format_datetime_python,
+                format_date=literalizer_formatters.format_date_python,
+                format_datetime=literalizer_formatters.format_datetime_python,
                 wrap=_wrap_python_datetime,
             ),
             _DateVariant(
                 name="python_epoch",
-                format_date=literalizer.formatters.format_date_iso,
-                format_datetime=literalizer.formatters.format_datetime_epoch,
+                format_date=literalizer_formatters.format_date_iso,
+                format_datetime=literalizer_formatters.format_datetime_epoch,
                 wrap=_wrap_identity,
             ),
         ),
@@ -644,8 +755,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="js_native",
-                format_date=literalizer.formatters.format_date_js,
-                format_datetime=literalizer.formatters.format_datetime_js,
+                format_date=literalizer_formatters.format_date_js,
+                format_datetime=literalizer_formatters.format_datetime_js,
                 wrap=_wrap_js,
             ),
         ),
@@ -659,8 +770,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="ts_native",
-                format_date=literalizer.formatters.format_date_js,
-                format_datetime=literalizer.formatters.format_datetime_js,
+                format_date=literalizer_formatters.format_date_js,
+                format_datetime=literalizer_formatters.format_datetime_js,
                 wrap=_wrap_js,
             ),
         ),
@@ -674,8 +785,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="kotlin_native",
-                format_date=literalizer.formatters.format_date_kotlin,
-                format_datetime=literalizer.formatters.format_datetime_kotlin,
+                format_date=literalizer_formatters.format_date_kotlin,
+                format_datetime=literalizer_formatters.format_datetime_kotlin,
                 wrap=_wrap_kotlin_time,
             ),
         ),
@@ -689,8 +800,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="ruby_native",
-                format_date=literalizer.formatters.format_date_ruby,
-                format_datetime=literalizer.formatters.format_datetime_ruby,
+                format_date=literalizer_formatters.format_date_ruby,
+                format_datetime=literalizer_formatters.format_datetime_ruby,
                 wrap=_wrap_ruby_date,
             ),
         ),
@@ -704,8 +815,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="go_native",
-                format_date=literalizer.formatters.format_date_go,
-                format_datetime=literalizer.formatters.format_datetime_go,
+                format_date=literalizer_formatters.format_date_go,
+                format_datetime=literalizer_formatters.format_datetime_go,
                 wrap=_wrap_go_time,
             ),
         ),
@@ -719,14 +830,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="java_instant",
-                format_date=literalizer.formatters.format_date_java,
-                format_datetime=literalizer.formatters.format_datetime_java_instant,
+                format_date=literalizer_formatters.format_date_java,
+                format_datetime=literalizer_formatters.format_datetime_java_instant,
                 wrap=_wrap_java_time,
             ),
             _DateVariant(
                 name="java_zoned",
-                format_date=literalizer.formatters.format_date_java,
-                format_datetime=literalizer.formatters.format_datetime_java_zoned,
+                format_date=literalizer_formatters.format_date_java,
+                format_datetime=literalizer_formatters.format_datetime_java_zoned,
                 wrap=_wrap_java_time,
             ),
         ),
@@ -740,8 +851,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="csharp_native",
-                format_date=literalizer.formatters.format_date_csharp,
-                format_datetime=literalizer.formatters.format_datetime_csharp,
+                format_date=literalizer_formatters.format_date_csharp,
+                format_datetime=literalizer_formatters.format_datetime_csharp,
                 wrap=_wrap_csharp_date,
             ),
         ),
@@ -755,8 +866,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="dart_native",
-                format_date=literalizer.formatters.format_date_dart,
-                format_datetime=literalizer.formatters.format_datetime_dart,
+                format_date=literalizer_formatters.format_date_dart,
+                format_datetime=literalizer_formatters.format_datetime_dart,
                 wrap=_wrap_dart,
             ),
         ),
@@ -778,8 +889,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="cpp_native",
-                format_date=literalizer.formatters.format_date_cpp,
-                format_datetime=literalizer.formatters.format_datetime_cpp,
+                format_date=literalizer_formatters.format_date_cpp,
+                format_datetime=literalizer_formatters.format_datetime_cpp,
                 wrap=_wrap_cpp_chrono,
             ),
         ),
@@ -793,8 +904,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="rust_native",
-                format_date=literalizer.formatters.format_date_rust,
-                format_datetime=literalizer.formatters.format_datetime_rust,
+                format_date=literalizer_formatters.format_date_rust,
+                format_datetime=literalizer_formatters.format_datetime_rust,
                 wrap=_wrap_rust_chrono,
             ),
         ),
@@ -816,11 +927,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="julia_native",
-                format_date=literalizer.formatters.format_date_julia,
-                format_datetime=literalizer.formatters.format_datetime_julia,
+                format_date=literalizer_formatters.format_date_julia,
+                format_datetime=literalizer_formatters.format_datetime_julia,
                 wrap=_wrap_julia_dates,
             ),
         ),
+    ),
+    "lua": _LanguageConfig(
+        spec=literalizer.languages.LUA,
+        extension=".lua",
+        wrap=_wrap_lua,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
     ),
     "perl": _LanguageConfig(
         spec=literalizer.languages.PERL,
@@ -870,6 +989,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
         date_variants=(),
     ),
+    "occam": _LanguageConfig(
+        spec=literalizer.languages.OCCAM,
+        extension=".occ",
+        wrap=_wrap_occam,
+        varname_wrap=_wrap_occam_varname,
+        combined_wrap=lambda d, _a: _wrap_occam_varname(content=d),
+        date_variants=(),
+    ),
     "groovy": _LanguageConfig(
         spec=literalizer.languages.GROOVY,
         extension=".groovy",
@@ -895,8 +1022,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="r_native",
-                format_date=literalizer.formatters.format_date_r,
-                format_datetime=literalizer.formatters.format_datetime_r,
+                format_date=literalizer_formatters.format_date_r,
+                format_datetime=literalizer_formatters.format_datetime_r,
                 wrap=_wrap_r,
             ),
         ),

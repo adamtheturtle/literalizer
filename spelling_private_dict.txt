@@ -11,6 +11,7 @@ FNull
 FSet
 FStr
 JSONDecodeError
+Lua
 NEL
 OBool
 OCaml
@@ -44,13 +45,16 @@ initializers
 javac
 json
 kotlinc
+kroc
 kts
 literalize
 literalizer
 localhost
+luac
 namespaces
 natively
 ocamlopt
+occam
 ofEntries
 omap
 paren

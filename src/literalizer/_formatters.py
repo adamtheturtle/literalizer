@@ -45,6 +45,7 @@ __all__ = [
     "format_datetime_r",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_assignment_c",
     "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
     "format_variable_assignment_csharp",
@@ -58,7 +59,9 @@ __all__ = [
     "format_variable_assignment_java",
     "format_variable_assignment_js",
     "format_variable_assignment_kotlin",
+    "format_variable_assignment_lua",
     "format_variable_assignment_ocaml",
+    "format_variable_assignment_occam",
     "format_variable_assignment_perl",
     "format_variable_assignment_php",
     "format_variable_assignment_python",
@@ -67,6 +70,7 @@ __all__ = [
     "format_variable_assignment_rust",
     "format_variable_assignment_scala",
     "format_variable_assignment_swift",
+    "format_variable_declaration_c",
     "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
@@ -81,7 +85,9 @@ __all__ = [
     "format_variable_declaration_js",
     "format_variable_declaration_julia",
     "format_variable_declaration_kotlin",
+    "format_variable_declaration_lua",
     "format_variable_declaration_ocaml",
+    "format_variable_declaration_occam",
     "format_variable_declaration_perl",
     "format_variable_declaration_php",
     "format_variable_declaration_python",
@@ -92,8 +98,10 @@ __all__ = [
     "format_variable_declaration_swift",
     "passthrough_sequence_entry",
     "passthrough_set_entry",
+    "to_c_val",
     "to_fsharp_val",
     "to_ocaml_val",
+    "to_occam_val",
 ]
 
 
@@ -934,6 +942,24 @@ def format_variable_assignment_erlang(name: str, value: str) -> str:
 
 
 @beartype
+def format_variable_declaration_lua(name: str, value: str) -> str:
+    """Format a Lua local variable declaration.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"local x = {1, 2}"``.
+    """
+    return f"local {name} = {value}"
+
+
+@beartype
+def format_variable_assignment_lua(name: str, value: str) -> str:
+    """Format a Lua assignment to an existing variable.
+
+    Example: ``"x"`` and ``"{1, 2}"`` → ``"x = {1, 2}"``.
+    """
+    return f"{name} = {value}"
+
+
+@beartype
 def format_variable_declaration_ocaml(name: str, value: str) -> str:
     """Format an OCaml ``let`` declaration with explicit ``val_t`` type.
 
@@ -992,6 +1018,115 @@ def to_ocaml_val(value: str) -> str:
     if float_result is not None:
         return float_result
     return value
+
+
+def to_c_val(value: str) -> str:
+    """Wrap a pre-formatted value string in a C ``_CVal`` compound literal.
+
+    Inspects the string representation to determine the appropriate union
+    member: ``b`` for boolean, ``i`` for integer, ``f`` for float, ``s`` for
+    string.  Values that are already ``_CVal`` compound literals (starting
+    with ``((_CVal)``) are returned unchanged.
+    """
+    if value.startswith("((_CVal)"):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"((_CVal){{.s = {value}}})"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"((_CVal){{.i = {value}}})"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"((_CVal){{.f = {value}}})"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def format_variable_declaration_c(name: str, value: str) -> str:
+    """Format a C variable declaration using the ``_CVal`` type.
+
+    Example: ``"x"`` and ``"((_CVal){.i = 42})"`` →
+    ``"_CVal x = ((_CVal){.i = 42});"``
+    """
+    return f"_CVal {name} = {to_c_val(value=value)};"
+
+
+@beartype
+def format_variable_assignment_c(name: str, value: str) -> str:
+    """Format a C assignment to an existing ``_CVal`` variable.
+
+    Example: ``"x"`` and ``"((_CVal){.i = 42})"`` →
+    ``"x = ((_CVal){.i = 42});"``
+    """
+    return f"{name} = {to_c_val(value=value)};"
+
+
+@beartype
+def to_occam_val(value: str) -> str:
+    """Wrap a pre-formatted value string in an occam-pi ``MOBILE LIT``
+    constructor.
+
+    Inspects the string representation to determine the appropriate
+    variant constructor: ``lit.str``, ``lit.int``, ``lit.float``, or
+    passes through values that are already ``MOBILE LIT(...)``
+    expressions.
+    """
+    if value.startswith("MOBILE LIT("):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f"MOBILE LIT(lit.str; MOBILE []BYTE {value})"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"MOBILE LIT(lit.int; {value})"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"MOBILE LIT(lit.float; {value}(REAL32))"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def format_variable_declaration_occam(name: str, value: str) -> str:
+    """Format an occam-pi ``VAL`` abbreviation for a ``MOBILE LIT``.
+
+    Example: ``"x"`` and ``"MOBILE LIT(lit.int; 42)"`` →
+    ``"VAL MOBILE LIT x IS MOBILE LIT(lit.int; 42):"``
+    """
+    return f"VAL MOBILE LIT {name} IS {value}:"
+
+
+@beartype
+def format_variable_assignment_occam(name: str, value: str) -> str:
+    """Format an occam-pi assignment to an existing ``MOBILE LIT``
+    variable.
+
+    Example: ``"x"`` and ``"MOBILE LIT(lit.int; 42)"`` →
+    ``"x := MOBILE LIT(lit.int; 42)"``
+    """
+    return f"{name} := {value}"
 
 
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:

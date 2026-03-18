@@ -1,0 +1,55 @@
+"""R language specification."""
+
+from __future__ import annotations
+
+from literalizer._formatters import (
+    dict_entry_with_separator,
+    format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
+    format_variable_assignment_r,
+    format_variable_declaration_r,
+    passthrough_sequence_entry,
+    passthrough_set_entry,
+)
+from literalizer._language import Language
+
+
+def _format_r_omap_entry(key: str, value: str) -> str:
+    """Format an R named list entry for an ordered map."""
+    return f"{key} = {value}"
+
+
+R = Language(
+    null_literal="NULL",
+    true_literal="TRUE",
+    false_literal="FALSE",
+    sequence_open="list(",
+    sequence_close=")",
+    dict_open="list(",
+    dict_close=")",
+    format_dict_entry=dict_entry_with_separator(separator=" = "),
+    single_element_trailing_comma=False,
+    format_bytes=format_bytes_hex,
+    format_date=format_date_iso,
+    format_datetime=format_datetime_iso,
+    empty_sequence=None,
+    empty_dict=None,
+    set_open="list(",
+    set_close=")",
+    empty_set=None,
+    format_sequence_entry=passthrough_sequence_entry,
+    format_set_entry=passthrough_set_entry,
+    comment_prefix="#",
+    comment_suffix="",
+    omap_open="list(",
+    omap_close=")",
+    format_omap_entry=_format_r_omap_entry,
+    multiline_trailing_comma=False,
+    multiline_close_indent="",
+    element_separator=", ",
+    skip_null_dict_values=False,
+    format_variable_declaration=format_variable_declaration_r,
+    format_variable_assignment=format_variable_assignment_r,
+    format_collection_open=None,
+)

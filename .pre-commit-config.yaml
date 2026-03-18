@@ -13,6 +13,7 @@ ci:
     - erlang-syntax-check
     - fsharp-golden-syntax-check
     - ocaml-golden-syntax-check
+    - occam-golden-syntax-check
     - deptry
     - doc8
     - docs
@@ -22,6 +23,7 @@ ci:
     - groovy-syntax-check
     - haskell-golden-syntax-check
     - julia-golden-syntax-check
+    - lua-syntax-check
     - java-golden-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
@@ -42,6 +44,7 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
+    - c-golden-syntax-check
     - cpp-golden-syntax-check
     - swift-syntax-check
     - perl-syntax-check
@@ -467,6 +470,14 @@ repos:
         files: ^tests/integration/cases/
         stages: [pre-commit]
 
+      - id: c-golden-syntax-check
+        name: C golden file syntax check
+        entry: clang -fsyntax-only -std=c11
+        language: system
+        types: [c]
+        files: ^tests/integration/cases/
+        stages: [pre-commit]
+
       - id: cpp-golden-syntax-check
         name: C++ golden file syntax check
         entry: clang++ -fsyntax-only -std=c++20
@@ -518,10 +529,10 @@ repos:
 
       - id: erlang-syntax-check
         name: Erlang golden file syntax check
-        entry: uv run python check_erlang_golden_syntax.py
-        language: python
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d); cp "$f" "$tmpdir/check.erl"
+          && (cd "$tmpdir" && erlc check.erl) || exit 1; done' --
+        language: system
         files: ^tests/integration/cases/.*\.erl$
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: fsharp-golden-syntax-check
@@ -540,6 +551,14 @@ repos:
         language: system
         types: [ocaml]
         files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: occam-golden-syntax-check
+        name: occam-pi golden file syntax check
+        entry: bash -c 'command -v kroc > /dev/null || exit 0; for f; do tmpdir=$(mktemp
+          -d); kroc -o "$tmpdir/check" "$f" || exit 1; done' --
+        language: system
+        files: ^tests/integration/cases/.*\.occ$
         stages: [pre-commit]
 
       - id: haskell-golden-syntax-check
@@ -593,6 +612,14 @@ repos:
         entry: perl -c
         language: system
         types: [perl]
+        files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: lua-syntax-check
+        name: Lua golden file syntax check
+        entry: luac -p
+        language: system
+        types: [lua]
         files: ^tests/integration/cases/
         stages: [pre-commit]
 
