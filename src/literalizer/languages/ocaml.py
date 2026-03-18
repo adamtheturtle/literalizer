@@ -2,10 +2,12 @@
 
 import datetime
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -99,6 +101,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
+
 class OCaml:
     """OCaml language specification."""
 
@@ -108,7 +114,9 @@ class OCaml:
         self.null_literal = "ONull"
         self.true_literal = "OBool true"
         self.false_literal = "OBool false"
-        self.sequence_open = "OList ["
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="OList ["
+        )
         self.sequence_close = "]"
         self.dict_open = "OMap ["
         self.dict_close = "]"

@@ -6,6 +6,8 @@ from collections.abc import Callable
 
 from beartype import beartype
 
+from literalizer._types import Value
+
 
 @beartype
 def format_date_iso(value: datetime.date) -> str:
@@ -501,3 +503,21 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
+
+
+@beartype
+def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
+    """Return a ``sequence_open`` callable that always returns *open_str*.
+
+    Use this as ``sequence_open`` when the opening delimiter for sequences
+    is a fixed string that does not depend on the sequence contents.
+
+    Example: ``fixed_sequence_open(open_str="[")([1, 2, 3])`` → ``"["``.
+    """
+
+    @beartype
+    def _open(_items: list[Value]) -> str:
+        """Return the fixed opening delimiter."""
+        return open_str
+
+    return _open

@@ -2,12 +2,13 @@
 
 import datetime
 from collections.abc import Callable
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_date_js,
@@ -49,6 +50,10 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
+
 class JavaScript:
     """JavaScript language specification.
 
@@ -78,7 +83,9 @@ class JavaScript:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = "["
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="["
+        )
         self.sequence_close = "]"
         self.dict_open = "{"
         self.dict_close = "}"

@@ -118,7 +118,7 @@ def _format_value(*, value: Value, spec: Language) -> str:
         # single-element sequences to avoid syntactic ambiguity.
         if len(items) == 1 and spec.single_element_trailing_comma:
             joined += spec.element_separator.strip()
-        return f"{spec.sequence_open}{joined}{spec.sequence_close}"
+        return f"{spec.sequence_open(value)}{joined}{spec.sequence_close}"
 
     return _format_scalar(value=value, spec=spec)
 
@@ -139,7 +139,7 @@ def _wrap_body(
         return f"{spec.dict_open}\n{body}\n{ci}{spec.dict_close}"
     if isinstance(data, set):
         return f"{spec.set_open}\n{body}\n{ci}{spec.set_close}"
-    return f"{spec.sequence_open}\n{body}\n{ci}{spec.sequence_close}"
+    return f"{spec.sequence_open(data)}\n{body}\n{ci}{spec.sequence_close}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
