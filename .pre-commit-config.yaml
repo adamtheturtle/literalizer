@@ -103,6 +103,7 @@ repos:
         entry: uv run --extra=dev shellcheck --shell=bash
         language: python
         types_or: [shell]
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -120,6 +121,7 @@ repos:
         entry: uv run --extra=dev shfmt --write --space-redirects --indent=4
         language: python
         types_or: [shell]
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
