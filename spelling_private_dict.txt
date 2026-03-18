@@ -79,9 +79,11 @@ kroc
 kts
 literalize
 literalizer
+literalizer's
 localhost
 luac
 matlab
+misclassifies
 namespaces
 natively
 norc
@@ -98,6 +100,7 @@ pyright
 pytest
 regen
 reportAttributeAccessIssue
+reportMissingTypeStubs
 reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
