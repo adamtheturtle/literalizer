@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from beartype import beartype
 
-from literalizer._language import Language
-from literalizer.formatters import (
+from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_erlang,
     format_date_iso,
@@ -15,6 +14,7 @@ from literalizer.formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import Language
 
 
 @beartype

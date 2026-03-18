@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from literalizer._language import Language
-from literalizer.formatters import (
+from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -11,6 +10,7 @@ from literalizer.formatters import (
     format_variable_declaration_occam,
     to_occam_val,
 )
+from literalizer._language import Language
 
 
 def _format_occam_dict_entry(key: str, value: str) -> str:
