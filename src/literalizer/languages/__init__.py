@@ -29,6 +29,7 @@ from .rust import RUST
 from .scala import SCALA
 from .swift import SWIFT
 from .typescript import TYPESCRIPT
+from .zig import ZIG
 
 __all__ = [
     "CLOJURE",
@@ -56,6 +57,7 @@ __all__ = [
     "SCALA",
     "SWIFT",
     "TYPESCRIPT",
+    "ZIG",
     "C",
     "R",
 ]

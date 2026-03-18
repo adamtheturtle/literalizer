@@ -25,6 +25,7 @@ ci:
     - julia-golden-syntax-check
     - lua-syntax-check
     - java-golden-syntax-check
+    - zig-syntax-check
     - javascript-syntax-check
     - kotlin-syntax-check
     - typescript-syntax-check
@@ -619,6 +620,15 @@ repos:
         entry: luac -p
         language: system
         types: [lua]
+        files: ^tests/integration/cases/
+        stages: [pre-commit]
+
+      - id: zig-syntax-check
+        name: Zig golden file syntax check
+        entry: bash -c 'for f; do zig ast-check "$f" > /dev/null || exit 1; done'
+          --
+        language: system
+        types: [zig]
         files: ^tests/integration/cases/
         stages: [pre-commit]
 

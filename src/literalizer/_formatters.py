@@ -70,6 +70,7 @@ __all__ = [
     "format_variable_assignment_rust",
     "format_variable_assignment_scala",
     "format_variable_assignment_swift",
+    "format_variable_assignment_zig",
     "format_variable_declaration_c",
     "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
@@ -96,12 +97,14 @@ __all__ = [
     "format_variable_declaration_rust",
     "format_variable_declaration_scala",
     "format_variable_declaration_swift",
+    "format_variable_declaration_zig",
     "passthrough_sequence_entry",
     "passthrough_set_entry",
     "to_c_val",
     "to_fsharp_val",
     "to_ocaml_val",
     "to_occam_val",
+    "to_zig_val",
 ]
 
 
@@ -1170,3 +1173,55 @@ def format_variable_assignment_perl(name: str, value: str) -> str:
     Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
     """
     return f"${name} = {value};"
+
+
+def to_zig_val(value: str) -> str:
+    """Wrap a pre-formatted value string in a Zig ``ZVal`` union literal.
+
+    Inspects the string representation to determine the appropriate union
+    tag: ``.int`` for integers, ``.float`` for floats, ``.str`` for
+    strings.  Values that are already tagged (starting with ``.``) are
+    returned unchanged.
+    """
+    if value.startswith("."):
+        return value
+    if value.startswith('"') and value.endswith('"'):
+        return f".{{ .str = {value} }}"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f".{{ .int = {value} }}"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f".{{ .float = {value} }}"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def format_variable_declaration_zig(name: str, value: str) -> str:
+    """Format a Zig ``const`` declaration with explicit ``ZVal`` type.
+
+    Example: ``"x"`` and ``"42"`` →
+    ``"const x: ZVal = .{ .int = 42 };"``
+    """
+    return f"const {name}: ZVal = {to_zig_val(value=value)};"
+
+
+@beartype
+def format_variable_assignment_zig(name: str, value: str) -> str:
+    """Format a Zig assignment to an existing ``ZVal`` variable.
+
+    Example: ``"x"`` and ``"42"`` → ``"x = .{ .int = 42 };"``
+    """
+    return f"{name} = {to_zig_val(value=value)};"
