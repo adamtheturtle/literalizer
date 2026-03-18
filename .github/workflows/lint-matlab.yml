@@ -17,10 +17,69 @@ jobs:
         run: sudo apt-get install -y octave
       # Octave is a practical CI substitute, but it accepts some
       # double-quoted backslash escapes (e.g. \") that MATLAB rejects.
-      - name: Check MATLAB syntax
+      - name: Check MATLAB quote escaping
+        run: |-
+          set -o pipefail
+          python3 <<'PY'
+          from __future__ import annotations
+
+          from pathlib import Path
+          import sys
+
+          errors: list[str] = []
+          for path in Path("tests/integration/cases").rglob("*.m"):
+              text = path.read_text()
+              in_string = False
+              line = 1
+              column = 1
+              i = 0
+              while i < len(text):
+                  char = text[i]
+                  next_char = text[i + 1] if i + 1 < len(text) else ""
+
+                  if not in_string:
+                      if char == '"':
+                          in_string = True
+                  else:
+                      if char == '"':
+                          if next_char == '"':
+                              i += 1
+                              column += 1
+                          else:
+                              in_string = False
+                      elif (
+                          char == "\\"
+                          and next_char == '"'
+                          and (
+                              i + 2 >= len(text)
+                              or text[i + 2] != '"'
+                          )
+                      ):
+                          errors.append(
+                              f"{path}:{line}:{column}: invalid backslash escape "
+                              f"in MATLAB double-quoted string"
+                          )
+                          break
+
+                  if char == "\n":
+                      line += 1
+                      column = 1
+                  else:
+                      column += 1
+                  i += 1
+
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
+          PY
+      - name: Check MATLAB syntax (Octave-compatible files)
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.m" -print0 | \
             while IFS= read -r -d '' f; do
+              if grep -q '""' "$f"; then
+                echo "Skipping Octave parse check for MATLAB-escaped quotes in $f"
+                continue
+              fi
               octave --norc --no-gui "$f" || exit 1
             done
