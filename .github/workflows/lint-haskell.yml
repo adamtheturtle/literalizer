@@ -16,7 +16,6 @@ jobs:
       - uses: haskell-actions/setup@v2
         with:
           ghc-version: latest
-          cabal-version: none
       - name: Check Haskell syntax
         run: |-
           tmpdir=$(mktemp -d)
