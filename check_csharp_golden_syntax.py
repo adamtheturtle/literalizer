@@ -54,9 +54,14 @@ def main() -> None:
             f"    <TargetFramework>{target_framework}</TargetFramework>\n"
             "    <Nullable>disable</Nullable>\n"
             "    <ImplicitUsings>enable</ImplicitUsings>\n"
+            "    <EnableDefaultCompileItems>false"
+            "</EnableDefaultCompileItems>\n"
             "    <EnableDefaultEmbeddedResourceItems>false"
             "</EnableDefaultEmbeddedResourceItems>\n"
             "  </PropertyGroup>\n"
+            "  <ItemGroup>\n"
+            '    <Compile Include="Program.cs" />\n'
+            "  </ItemGroup>\n"
             "</Project>\n"
         )
 

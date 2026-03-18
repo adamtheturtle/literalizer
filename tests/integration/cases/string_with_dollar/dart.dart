@@ -1,4 +1,4 @@
 final x = [
-    "price $10",
-    "$HOME",
+    "price \$10",
+    "\$HOME",
 ];

@@ -1,15 +1,15 @@
 void _declaration() {
   final my_data = [
-      "price $10",
-      "$HOME",
+      "price \$10",
+      "\$HOME",
   ];
   my_data.hashCode;
 }
 void _assignment() {
   dynamic my_data;
   my_data = [
-      "price $10",
-      "$HOME",
+      "price \$10",
+      "\$HOME",
   ];
   my_data.hashCode;
 }

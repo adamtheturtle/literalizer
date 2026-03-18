@@ -430,6 +430,25 @@ def format_string_backslash(value: str) -> str:
 
 
 @beartype
+def format_string_backslash_dollar(value: str) -> str:
+    r"""Format a string using backslash escaping, including ``$``.
+
+    Escapes backslashes, double quotes, newlines, tabs, and dollar signs
+    with a backslash prefix, then wraps the result in double quotes.
+
+    Example: ``price $10`` → ``"price \$10"``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace("$", "\\$")
+    )
+    return f'"{escaped}"'
+
+
+@beartype
 def passthrough_set_entry(item: str) -> str:
     """Return *item* unchanged.
 

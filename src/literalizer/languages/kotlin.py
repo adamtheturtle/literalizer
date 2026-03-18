@@ -14,7 +14,7 @@ from literalizer._formatters import (
     format_date_kotlin,
     format_datetime_iso,
     format_datetime_kotlin,
-    format_string_backslash,
+    format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -50,7 +50,7 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
     "iso": format_datetime_iso,
     "kotlin": format_datetime_kotlin,
 }
-_string_format: Callable[[str], str] = format_string_backslash
+_string_format: Callable[[str], str] = format_string_backslash_dollar
 
 
 class Kotlin:
