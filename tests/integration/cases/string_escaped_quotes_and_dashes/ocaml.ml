@@ -10,6 +10,6 @@ type val_t =
   | OMap of (string * val_t) list
   | OSet of val_t list
 
-let x : val_t = "hello \"world\" -- not a comment"
+let x : val_t = OStr "hello \"world\" -- not a comment"
 
 end

@@ -155,11 +155,12 @@ def _wrap_fsharp(content: str) -> str:
 
 def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a custom val_t variant type."""
+    typed = literalizer.languages.OCAML.format_sequence_entry(content)
     return (
         "module Check = struct\n\n"
         + _OCAML_VAL_TYPE
         + "\n"
-        + f"let x : val_t = {content}\n\n"
+        + f"let x : val_t = {typed}\n\n"
         + "end"
     )
 
@@ -429,7 +430,8 @@ def _wrap_groovy(content: str) -> str:
 
 def _wrap_ada(content: str) -> str:
     """Wrap in an Ada procedure with a local variable assignment."""
-    indented = content.replace("\n", "\n   ")
+    typed = literalizer.languages.ADA.format_sequence_entry(content)
+    indented = typed.replace("\n", "\n   ")
     return (
         "procedure Check is\n"
         f"   X : A_Val := {indented};\n"
@@ -524,10 +526,11 @@ _C_PREAMBLE = (
 
 def _wrap_c(content: str) -> str:
     """Wrap in a C function with the _CVal/_CKV type definitions."""
+    typed = literalizer.languages.C.format_sequence_entry(content)
     return (
         _C_PREAMBLE
         + "void _check(void) {\n"
-        + f"    _CVal _v = {content};\n"
+        + f"    _CVal _v = {typed};\n"
         + "    (void)_v;\n"
         + "}"
     )

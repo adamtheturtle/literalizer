@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := "hello \"world\" -- not a comment";
+   X : A_Val := AStr ("hello ""world"" -- not a comment");
 begin
    null;
 end Check;
