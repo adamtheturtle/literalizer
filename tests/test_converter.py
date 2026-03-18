@@ -11,6 +11,7 @@ import textwrap
 from collections.abc import Callable  # noqa: TC003
 
 import pytest
+from beartype import beartype
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -93,6 +94,7 @@ SWIFT = Swift()
 TYPESCRIPT = TypeScript()
 
 
+@beartype
 def _format_test_omap_entry(key: str, value: str) -> str:
     """Format an omap entry for use in custom Language test
     fixtures.
@@ -614,6 +616,7 @@ type _JSONScalar = str | int | float | bool | None
 type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
 
 
+@beartype
 def _lists_to_tuples(*, value: _JSONValue) -> object:
     """Recursively convert lists to tuples to match Python converter
     output.

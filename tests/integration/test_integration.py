@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
@@ -30,11 +31,13 @@ if TYPE_CHECKING:
 _CASES_DIR = Path(__file__).parent / "cases"
 
 
+@beartype
 def _wrap_identity(content: str) -> str:
     """Return content unchanged."""
     return content
 
 
+@beartype
 def _wrap_js(content: str) -> str:
     """Wrap in ``void(...)`` so bare object/array literals parse as
     expressions in JavaScript and TypeScript.
@@ -42,11 +45,13 @@ def _wrap_js(content: str) -> str:
     return f"void (\n{content}\n)"
 
 
+@beartype
 def _wrap_go(content: str) -> str:
     """Wrap in a Go package-level variable declaration."""
     return f"package main\n\nvar _ = {content}"
 
 
+@beartype
 def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     return f"""\
@@ -57,11 +62,13 @@ class Check {{
 }}"""
 
 
+@beartype
 def _wrap_kotlin(content: str) -> str:
     """Wrap in a Kotlin variable assignment."""
     return f"val x: Any? = {content}"
 
 
+@beartype
 def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
@@ -79,11 +86,13 @@ def _wrap_cpp(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
     return f"let x: Any? = {content}"
 
 
+@beartype
 def _wrap_csharp(content: str) -> str:
     """Wrap in C# using statement and variable assignment."""
     return f"""\
@@ -91,6 +100,7 @@ using System.Collections.Generic;
 var x = {content};"""
 
 
+@beartype
 def _wrap_rust(content: str) -> str:
     """Wrap in a Rust main function with necessary imports."""
     indented = content.replace("\n", "\n    ")
@@ -143,6 +153,7 @@ _OCCAM_LIT_TYPE = (
 )
 
 
+@beartype
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
     typed = literalizer.languages.FSharp().format_sequence_entry(content)
@@ -151,6 +162,7 @@ def _wrap_fsharp(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a custom val_t variant type."""
     typed = literalizer.languages.OCaml().format_sequence_entry(content)
@@ -163,6 +175,7 @@ def _wrap_ocaml(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_ocaml_varname(content: str) -> str:
     """Wrap an OCaml ``let`` declaration with the val_t type
     definition.
@@ -176,6 +189,7 @@ def _wrap_ocaml_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_occam(content: str) -> str:
     """Wrap in an occam-pi PROC with a custom ``LIT`` mobile data type."""
     typed = literalizer.languages.Occam().format_sequence_entry(content)
@@ -190,6 +204,7 @@ def _wrap_occam(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_occam_varname(content: str) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC with the LIT
     type.
@@ -207,11 +222,13 @@ def _wrap_occam_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_fsharp_varname(content: str) -> str:
     """Wrap a F# ``let`` declaration with the Val type definition."""
     return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
 
 
+@beartype
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a custom Val ADT that accepts mixed
     types.
@@ -244,6 +261,7 @@ def _wrap_haskell(content: str) -> str:
 _VARIABLE_NAME = "my_data"
 
 
+@beartype
 def _wrap_go_varname(content: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
     return (
@@ -251,6 +269,7 @@ def _wrap_go_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_java_varname(content: str) -> str:
     """Wrap a Java var declaration in a static method."""
     return (
@@ -264,6 +283,7 @@ def _wrap_java_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_rust_chrono(content: str) -> str:
     """Wrap in a Rust main function with chrono imports."""
     indented = content.replace("\n", "\n    ")
@@ -277,11 +297,13 @@ def _wrap_rust_chrono(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_csharp_varname(content: str) -> str:
     """Wrap a C# top-level variable declaration with required imports."""
     return f"using System.Collections.Generic;\n{content}"
 
 
+@beartype
 def _wrap_ts_varname(content: str) -> str:
     """Wrap a TypeScript variable declaration as a module.
 
@@ -293,6 +315,7 @@ def _wrap_ts_varname(content: str) -> str:
     return f"{content}\nexport {{}};"
 
 
+@beartype
 def _wrap_cpp_varname(content: str) -> str:
     """Wrap a C++ variable declaration for mixed-type initializer lists.
 
@@ -319,16 +342,19 @@ def _wrap_cpp_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_scala(content: str) -> str:
     """Wrap in a Scala object with a typed variable assignment."""
     return f"object Check {{\nval x: Any = {content}\n}}"
 
 
+@beartype
 def _wrap_scala_varname(content: str) -> str:
     """Wrap a Scala variable declaration in an object."""
     return f"object Check {{\n{content}\n}}"
 
 
+@beartype
 def _wrap_scala_combined(declaration: str, assignment: str) -> str:
     """Scala: val declaration in one object, var + assignment in
     another.
@@ -346,11 +372,13 @@ def _wrap_scala_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_dart(content: str) -> str:
     """Wrap in a Dart final variable assignment."""
     return f"final x = {content};"
 
 
+@beartype
 def _wrap_dart_combined(declaration: str, assignment: str) -> str:
     """Dart: final declaration in one function, dynamic + assignment in
     another, with a main that calls both to avoid unused-element warnings.
@@ -374,21 +402,25 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_perl(content: str) -> str:
     """Wrap in a Perl variable assignment."""
     return f"my $x = {content};"
 
 
+@beartype
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP script variable assignment."""
     return f"<?php\n$x = {content};"
 
 
+@beartype
 def _wrap_elixir(content: str) -> str:
     """Wrap in an Elixir module function."""
     return f"defmodule Check do\n  def x do\n    {content}\n  end\nend"
 
 
+@beartype
 def _wrap_elixir_varname(content: str) -> str:
     """Wrap an Elixir variable assignment in a module function."""
     return (
@@ -401,11 +433,13 @@ def _wrap_elixir_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_erlang(content: str) -> str:
     """Wrap in an Erlang module function."""
     return f"-module(check).\n-export([x/0]).\nx() ->\n    {content}."
 
 
+@beartype
 def _wrap_erlang_varname(content: str) -> str:
     """Wrap an Erlang variable binding in a module function.
 
@@ -422,11 +456,13 @@ def _wrap_erlang_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_groovy(content: str) -> str:
     """Wrap in a Groovy variable assignment."""
     return f"def x = {content}"
 
 
+@beartype
 def _wrap_ada(content: str) -> str:
     """Wrap in an Ada procedure with a local variable assignment."""
     typed = literalizer.languages.Ada().format_sequence_entry(content)
@@ -440,12 +476,14 @@ def _wrap_ada(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_ada_varname(content: str) -> str:
     """Wrap an Ada object declaration inside a procedure."""
     indented = "   " + content.replace("\n", "\n   ")
     return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
 
 
+@beartype
 def _wrap_ada_combined(declaration: str, assignment: str) -> str:
     """Ada: declaration in one nested procedure, assignment in another."""
     decl_indented = "      " + declaration.replace("\n", "\n      ")
@@ -468,37 +506,44 @@ def _wrap_ada_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_lua(content: str) -> str:
     """Wrap a Lua table constructor in a local variable assignment."""
     return f"local _ = {content}"
 
 
+@beartype
 def _wrap_r(content: str) -> str:
     """Wrap in an R variable assignment."""
     return f"x <- {content}"
 
 
+@beartype
 def _wrap_nim(content: str) -> str:
     """Wrap in a Nim import json and %* expression."""
     return f"import json\nlet _ = %*{content}"
 
 
+@beartype
 def _wrap_nim_varname(content: str) -> str:
     """Wrap a Nim var declaration with the json import."""
     return f"import json\n{content}"
 
 
+@beartype
 def _wrap_nim_combined(declaration: str, assignment: str) -> str:
     """Wrap Nim declaration and assignment with the json import."""
     return f"import json\n{declaration}\n{assignment}"
 
 
+@beartype
 def _wrap_d(content: str) -> str:
     """Wrap in a D function with ``std.json`` imported."""
     typed = literalizer.languages.D().format_sequence_entry(content)
     return f"import std.json;\n\nvoid _check() {{\n    auto _v = {typed};\n}}"
 
 
+@beartype
 def _wrap_d_varname(content: str) -> str:
     """Wrap a D ``auto`` declaration in a function with ``std.json``
     imported.
@@ -506,6 +551,7 @@ def _wrap_d_varname(content: str) -> str:
     return f"import std.json;\n\nvoid _check() {{\n{content}\n}}"
 
 
+@beartype
 def _wrap_d_combined(declaration: str, assignment: str) -> str:
     """Wrap D declaration and assignment together in one function."""
     return (
@@ -518,6 +564,7 @@ def _wrap_d_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_powershell(content: str) -> str:
     """Wrap in a PowerShell variable assignment."""
     return f"$x = {content}"
@@ -542,6 +589,7 @@ _C_PREAMBLE = (
 )
 
 
+@beartype
 def _wrap_c(content: str) -> str:
     """Wrap in a C function with the _CVal/_CKV type definitions."""
     typed = literalizer.languages.C().format_sequence_entry(content)
@@ -554,6 +602,7 @@ def _wrap_c(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_c_varname(content: str) -> str:
     """Wrap a C _CVal declaration in a function with type definitions."""
     return (
@@ -565,6 +614,7 @@ def _wrap_c_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_c_combined(declaration: str, assignment: str) -> str:
     """Wrap C declaration and assignment together in one function."""
     return (
@@ -577,11 +627,13 @@ def _wrap_c_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_matlab(content: str) -> str:
     """Wrap in a MATLAB/Octave variable assignment."""
     return f"x = {content};"
 
 
+@beartype
 def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
@@ -595,6 +647,7 @@ def _wrap_rust_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_haskell_varname(content: str) -> str:
     """Wrap a Haskell variable binding in module boilerplate."""
     return (
@@ -622,6 +675,7 @@ def _wrap_haskell_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_php_varname(content: str) -> str:
     """Wrap a PHP variable assignment in a PHP script."""
     return f"<?php\n{content}"
@@ -642,6 +696,7 @@ _ZIG_PREAMBLE = (
 )
 
 
+@beartype
 def _wrap_zig(content: str) -> str:
     """Wrap in a Zig main function with ``ZVal``/``ZKV`` type
     definitions.
@@ -657,6 +712,7 @@ def _wrap_zig(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_zig_varname(content: str) -> str:
     """Wrap a Zig ``const`` declaration in a main function."""
     indented = "    " + content.replace("\n", "\n    ")
@@ -669,6 +725,7 @@ def _wrap_zig_varname(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_zig_combined(declaration: str, assignment: str) -> str:
     """Zig: ``const`` declaration in an inner block, then ``var`` +
     assignment in the outer scope.
@@ -690,6 +747,7 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_swift_varname(content: str) -> str:
     """Add type annotation to Swift let declaration for mixed-type
     collections.
@@ -702,6 +760,7 @@ def _wrap_swift_varname(content: str) -> str:
     return prefix + ": Any =" + content[len(prefix) + 2 :]
 
 
+@beartype
 def _wrap_js_combined(declaration: str, assignment: str) -> str:
     """Wrap a JavaScript declaration in an IIFE to scope the variable,
     then assign to an outer var.
@@ -713,6 +772,7 @@ def _wrap_js_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_ts_combined(declaration: str, assignment: str) -> str:
     """TypeScript combined: same as JavaScript but as a module with export."""
     return (
@@ -723,6 +783,7 @@ def _wrap_ts_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
     """Kotlin: val declaration in one fun, var + assignment in another."""
     decl_indented = "    " + declaration.replace("\n", "\n    ")
@@ -738,6 +799,7 @@ def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_swift_combined(declaration: str, assignment: str) -> str:
     """Swift: let declaration (with type annotation) in a do block,
     then var + assignment in the outer scope.
@@ -749,6 +811,7 @@ def _wrap_swift_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     """Rust: let declaration in an inner block, then a deferred-init
     let + assignment in the outer scope.
@@ -770,16 +833,19 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     )
 
 
+@beartype
 def _wrap_combined_newline(declaration: str, assignment: str) -> str:
     """Join declaration and assignment with a newline."""
     return declaration + "\n" + assignment
 
 
+@beartype
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
 
 
+@beartype
 def _wrap_java_time(content: str) -> str:
     """Wrap in a Java class with java.time.* imports."""
     return f"""\
@@ -794,6 +860,7 @@ class Check {{
 }}"""
 
 
+@beartype
 def _wrap_kotlin_time(content: str) -> str:
     """Wrap in a Kotlin variable assignment with java.time imports."""
     return (
@@ -803,11 +870,13 @@ def _wrap_kotlin_time(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_go_time(content: str) -> str:
     """Wrap in a Go package with the time package imported."""
     return f'package main\n\nimport "time"\n\nvar _ = {content}'
 
 
+@beartype
 def _wrap_cpp_chrono(content: str) -> str:
     """Wrap in C++ with the chrono header included."""
     return (
@@ -824,6 +893,7 @@ def _wrap_cpp_chrono(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_csharp_date(content: str) -> str:
     """Wrap in C# with System and Collections.Generic namespaces."""
     return (
@@ -831,11 +901,13 @@ def _wrap_csharp_date(content: str) -> str:
     )
 
 
+@beartype
 def _wrap_ruby_date(content: str) -> str:
     """Wrap with require 'date' for Ruby Date literals."""
     return f"require 'date'\n{content}"
 
 
+@beartype
 def _wrap_crystal(content: str) -> str:
     """Wrap in a Crystal variable assignment to suppress unused-expression
     warnings. Adds ``require "set"`` when the content uses ``Set{``.
@@ -844,6 +916,7 @@ def _wrap_crystal(content: str) -> str:
     return f"{prefix}_ = {content}"
 
 
+@beartype
 def _wrap_crystal_varname(content: str) -> str:
     """Identity wrap for Crystal, but adds ``require "set"`` when the
     content uses ``Set{``.
@@ -853,6 +926,7 @@ def _wrap_crystal_varname(content: str) -> str:
     return content
 
 
+@beartype
 def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
     """Join Crystal declaration and assignment with a newline, adding
     ``require "set"`` when either uses ``Set{``.
@@ -863,6 +937,7 @@ def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
     return combined
 
 
+@beartype
 def _wrap_julia_dates(content: str) -> str:
     """Wrap with ``using Dates`` for native Julia date literals."""
     return f"using Dates\n{content}"
@@ -889,6 +964,7 @@ class _LanguageConfig:
     date_variants: tuple[_DateVariant, ...]
 
 
+@beartype
 def _wrap_bash(content: str) -> str:
     """Wrap in a Bash ``declare`` statement for syntax validation."""
     flag = (
@@ -1299,6 +1375,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 }
 
 
+@beartype
 def _discover_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples."""
     cases: list[tuple[str, str, Path]] = []
@@ -1313,6 +1390,7 @@ def _discover_cases() -> list[tuple[str, str, Path]]:
 _CASES = _discover_cases()
 
 
+@beartype
 def _discover_varname_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples for variable-
     name

@@ -396,6 +396,7 @@ def format_datetime_julia(value: datetime.datetime) -> str:
     )
 
 
+@beartype
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value
     with *separator*.
