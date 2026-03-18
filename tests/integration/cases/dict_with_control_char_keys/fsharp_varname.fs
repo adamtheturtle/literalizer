@@ -12,5 +12,5 @@ type Val =
 
 let my_data: Val = FMap [
     ("key\nwith\nnewlines", FStr "value1");
-    ("key	with	tabs", FStr "value2")
+    ("key\twith\ttabs", FStr "value2")
 ]

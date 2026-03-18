@@ -12,7 +12,7 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .map = &.{
         .{ .key = "key\nwith\nnewlines", .val = .{ .str = "value1" } },
-        .{ .key = "key	with	tabs", .val = .{ .str = "value2" } },
+        .{ .key = "key\twith\ttabs", .val = .{ .str = "value2" } },
     }};
     _ = my_data;
 }

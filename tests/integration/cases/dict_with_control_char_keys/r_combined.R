@@ -1,8 +1,8 @@
 my_data <- list(
     "key\nwith\nnewlines" = "value1",
-    "key	with	tabs" = "value2"
+    "key\twith\ttabs" = "value2"
 )
 my_data <- list(
     "key\nwith\nnewlines" = "value1",
-    "key	with	tabs" = "value2"
+    "key\twith\ttabs" = "value2"
 )

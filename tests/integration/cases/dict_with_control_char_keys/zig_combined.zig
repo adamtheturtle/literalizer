@@ -13,14 +13,14 @@ pub fn main() void {
     {
         const my_data: ZVal = .{ .map = &.{
             .{ .key = "key\nwith\nnewlines", .val = .{ .str = "value1" } },
-            .{ .key = "key	with	tabs", .val = .{ .str = "value2" } },
+            .{ .key = "key\twith\ttabs", .val = .{ .str = "value2" } },
         }};
         _ = my_data;
     }
     var my_data: ZVal = undefined;
     my_data = .{ .map = &.{
         .{ .key = "key\nwith\nnewlines", .val = .{ .str = "value1" } },
-        .{ .key = "key	with	tabs", .val = .{ .str = "value2" } },
+        .{ .key = "key\twith\ttabs", .val = .{ .str = "value2" } },
     }};
     const _my_data_read = my_data;
     _ = _my_data_read;

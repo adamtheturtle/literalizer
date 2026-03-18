@@ -12,7 +12,7 @@ type val_t =
 
 let my_data : val_t = OMap [
     ("key\nwith\nnewlines", OStr "value1");
-    ("key	with	tabs", OStr "value2")
+    ("key\twith\ttabs", OStr "value2")
 ]
 
 end

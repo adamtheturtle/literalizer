@@ -1,4 +1,4 @@
 my $x = {
     "key\nwith\nnewlines" => "value1",
-    "key	with	tabs" => "value2",
+    "key\twith\ttabs" => "value2",
 };

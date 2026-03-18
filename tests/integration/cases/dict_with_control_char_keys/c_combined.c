@@ -16,11 +16,11 @@ struct _CKV { const char *k; _CVal v; };
 void _check(void) {
 _CVal my_data = ((_CVal){.m = (_CKV[]){
     {"key\nwith\nnewlines", ((_CVal){.s = "value1"})},
-    {"key	with	tabs", ((_CVal){.s = "value2"})},
+    {"key\twith\ttabs", ((_CVal){.s = "value2"})},
 }});
 my_data = ((_CVal){.m = (_CKV[]){
     {"key\nwith\nnewlines", ((_CVal){.s = "value1"})},
-    {"key	with	tabs", ((_CVal){.s = "value2"})},
+    {"key\twith\ttabs", ((_CVal){.s = "value2"})},
 }});
     (void)my_data;
 }

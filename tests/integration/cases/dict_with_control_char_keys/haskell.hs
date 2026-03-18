@@ -19,5 +19,5 @@ instance Fractional Val where
 x :: Val
 x = HMap [
     ("key\nwith\nnewlines", "value1"),
-    ("key	with	tabs", "value2")
+    ("key\twith\ttabs", "value2")
     ]

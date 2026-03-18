@@ -14,7 +14,7 @@ MOBILE DATA TYPE LIT IS
 PROC check ()
   VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
       MOBILE LIT(lit.pair; MOBILE []BYTE "key\nwith\nnewlines"; MOBILE LIT(lit.str; MOBILE []BYTE "value1")),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "key	with	tabs"; MOBILE LIT(lit.str; MOBILE []BYTE "value2"))
+      MOBILE LIT(lit.pair; MOBILE []BYTE "key\twith\ttabs"; MOBILE LIT(lit.str; MOBILE []BYTE "value2"))
   ]):
   SEQ
     SKIP

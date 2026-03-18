@@ -1,7 +1,7 @@
 void _declaration() {
   final my_data = {
       "key\nwith\nnewlines": "value1",
-      "key	with	tabs": "value2",
+      "key\twith\ttabs": "value2",
   };
   my_data.hashCode;
 }
@@ -9,7 +9,7 @@ void _assignment() {
   dynamic my_data;
   my_data = {
       "key\nwith\nnewlines": "value1",
-      "key	with	tabs": "value2",
+      "key\twith\ttabs": "value2",
   };
   my_data.hashCode;
 }

@@ -7,6 +7,6 @@ struct _Any {
 void _check() {
     [[maybe_unused]] _Any _v = {
     {"key\nwith\nnewlines", "value1"},
-    {"key	with	tabs", "value2"},
+    {"key\twith\ttabs", "value2"},
 };
 }

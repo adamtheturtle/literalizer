@@ -2,7 +2,7 @@ procedure Check is
    procedure Check_Declaration is
       my_data : A_Val := AMap'(
           AEntry ("key\nwith\nnewlines", AStr ("value1")),
-          AEntry ("key	with	tabs", AStr ("value2"))
+          AEntry ("key\twith\ttabs", AStr ("value2"))
       );
    begin
       null;
@@ -11,7 +11,7 @@ procedure Check is
    begin
       my_data := AMap'(
           AEntry ("key\nwith\nnewlines", AStr ("value1")),
-          AEntry ("key	with	tabs", AStr ("value2"))
+          AEntry ("key\twith\ttabs", AStr ("value2"))
       );
    end Check_Assignment;
 begin

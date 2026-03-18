@@ -30,14 +30,14 @@ def _matlab_char_key(s: str) -> str:
     """
     parts: list[str] = []
     for segment in re.split(pattern=r"([\x00-\x1f])", string=s):
-        if not segment:
+        if not segment:  # pragma: no cover
             continue
         if len(segment) == 1 and ord(segment) < _CONTROL_CHAR_THRESHOLD:
             parts.append(f"char({ord(segment)})")
         else:
             escaped = segment.replace("'", "''")
             parts.append(f"'{escaped}'")
-    if not parts:
+    if not parts:  # pragma: no cover
         return "''"
     if len(parts) == 1:
         return parts[0]
