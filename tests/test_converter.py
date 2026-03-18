@@ -1919,14 +1919,15 @@ def test_existing_variable_assignment_yaml(
         ("hello\n", '"hello"'),
         ('"hello\\nworld"\n', '"hello" + char(10) + "world"'),
         ('"hello\\tworld"\n', '"hello" + char(9) + "world"'),
-        ('"back\\\\slash"\n', '"back\\slash"'),
+        ('"back\\\\slash"\n', '"back\\\\slash"'),
     ],
 )
 def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
-    """MATLAB string values use char() concatenation for control
+    r"""MATLAB string values escape backslashes and use char() for control
     characters.
 
-    Backslashes are literal in MATLAB double-quoted strings; control
+    Backslashes are doubled (``\\`` -> ``\\\\``) because MATLAB
+    double-quoted strings interpret backslash escape sequences; control
     characters (newlines, tabs, etc.) are represented as ``char(N)``
     expressions joined with ``+``.
     """
