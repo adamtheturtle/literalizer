@@ -7,6 +7,7 @@ from .bash import BASH
 from .c import C
 from .clojure import CLOJURE
 from .cpp import CPP
+from .crystal import CRYSTAL
 from .csharp import CSHARP
 from .d import D
 from .dart import DART
@@ -42,6 +43,7 @@ __all__ = [
     "BASH",
     "CLOJURE",
     "CPP",
+    "CRYSTAL",
     "CSHARP",
     "DART",
     "ELIXIR",
