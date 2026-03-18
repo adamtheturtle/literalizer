@@ -68,6 +68,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class R:
     """R language specification."""
 
+    @beartype
     def __init__(
         self,
         *,

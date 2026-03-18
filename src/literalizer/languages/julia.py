@@ -50,6 +50,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Julia:
     """Julia language specification."""
 
+    @beartype
     def __init__(
         self,
         *,

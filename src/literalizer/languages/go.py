@@ -64,6 +64,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Go:
     """Go language specification."""
 
+    @beartype
     def __init__(
         self,
         *,

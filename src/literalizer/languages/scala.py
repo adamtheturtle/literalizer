@@ -48,6 +48,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Scala:
     """Scala language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Scala language specification."""
         self.null_literal = "null"

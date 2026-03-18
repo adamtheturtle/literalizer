@@ -58,6 +58,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Lua:
     """Lua language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Lua language specification."""
         self.null_literal = "nil"

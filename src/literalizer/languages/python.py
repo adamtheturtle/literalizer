@@ -64,6 +64,7 @@ _bytes_formats: dict[str, Callable[[bytes], str]] = {
 class Python:
     """Python language specification."""
 
+    @beartype
     def __init__(
         self,
         *,

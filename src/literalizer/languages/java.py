@@ -57,6 +57,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Java:
     """Java language specification."""
 
+    @beartype
     def __init__(
         self,
         *,

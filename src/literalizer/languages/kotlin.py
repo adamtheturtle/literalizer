@@ -56,6 +56,7 @@ _string_format: Callable[[str], str] = format_string_backslash_dollar
 class Kotlin:
     """Kotlin language specification."""
 
+    @beartype
     def __init__(
         self,
         *,

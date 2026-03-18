@@ -53,6 +53,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Haskell:
     """Haskell language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Haskell language specification."""
         self.null_literal = "HNull"
