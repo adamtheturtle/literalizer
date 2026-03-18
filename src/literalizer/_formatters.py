@@ -415,13 +415,18 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
 def format_string_matlab(value: str) -> str:
     r"""Format a string using MATLAB double-quoted string escaping rules.
 
-    In MATLAB, double-quoted strings escape double quotes by doubling them
-    (``""``); backslashes are treated as literal characters and require no
-    escaping.
+    In MATLAB, double-quoted strings support escape sequences: backslashes
+    must be doubled (``\\``), double quotes are escaped by doubling (``""``),
+    and control characters use their escape sequences (``\n``, ``\t``).
 
     Example: ``hello "world" bye`` → ``"hello ""world"" bye"``.
     """
-    escaped = value.replace('"', '""')
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '""')
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
     return f'"{escaped}"'
 
 

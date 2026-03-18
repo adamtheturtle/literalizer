@@ -63,6 +63,7 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Kotlin,
+    Matlab,
     Php,
     Python,
     R,
@@ -1853,5 +1854,25 @@ def test_existing_variable_assignment_yaml(
         wrap=False,
         variable_name="my_var",
         new_variable=False,
+    )
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("yaml_string", "expected"),
+    argvalues=[
+        ("hello\n", '"hello"'),
+        ('"hello\\nworld"\n', '"hello\\nworld"'),
+        ('"hello\\tworld"\n', '"hello\\tworld"'),
+        ('"back\\\\slash"\n', '"back\\\\slash"'),
+    ],
+)
+def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
+    """MATLAB string values escape backslashes, newlines, and tabs."""
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=Matlab(),
+        prefix="",
+        wrap=False,
     )
     assert result == expected
