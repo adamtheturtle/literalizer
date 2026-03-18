@@ -1,0 +1,5 @@
+--- !!set
+? banana  # banana inline
+# before apple
+? apple
+# trailing
