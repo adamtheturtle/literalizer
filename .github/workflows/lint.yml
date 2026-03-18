@@ -124,20 +124,7 @@ jobs:
     uses: ./.github/workflows/lint-ada.yml
 
   lint-crystal:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install Crystal
-        uses: crystal-lang/install-crystal@v1
-      - name: Check Crystal syntax
-        run: |
-          set -o pipefail
-          find tests/integration/cases -name "*.cr" -print0 | \
-            while IFS= read -r -d '' f; do
-              crystal build --no-codegen "$f" || exit 1
-            done
+    uses: ./.github/workflows/lint-crystal.yml
 
   completion-lint:
     needs:
