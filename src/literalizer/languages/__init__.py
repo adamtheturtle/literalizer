@@ -5,6 +5,7 @@ from __future__ import annotations
 from .c import C
 from .clojure import CLOJURE
 from .cpp import CPP
+from .crystal import CRYSTAL
 from .csharp import CSHARP
 from .dart import DART
 from .elixir import ELIXIR
@@ -33,6 +34,7 @@ from .typescript import TYPESCRIPT
 __all__ = [
     "CLOJURE",
     "CPP",
+    "CRYSTAL",
     "CSHARP",
     "DART",
     "ELIXIR",

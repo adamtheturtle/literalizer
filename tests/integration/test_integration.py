@@ -681,6 +681,13 @@ def _wrap_ruby_date(content: str) -> str:
     return f"require 'date'\n{content}"
 
 
+def _wrap_crystal(content: str) -> str:
+    """Wrap in a Crystal variable assignment to suppress unused-expression
+    warnings.
+    """
+    return f"_ = {content}"
+
+
 def _wrap_julia_dates(content: str) -> str:
     """Wrap with ``using Dates`` for native Julia date literals."""
     return f"using Dates\n{content}"
@@ -1027,6 +1034,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_r,
             ),
         ),
+    ),
+    "crystal": _LanguageConfig(
+        spec=literalizer.languages.CRYSTAL,
+        extension=".cr",
+        wrap=_wrap_crystal,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
     ),
 }
 

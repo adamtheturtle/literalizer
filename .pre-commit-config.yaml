@@ -7,6 +7,7 @@ ci:
     - r-syntax-check
     - check-manifest
     - clojure-syntax-check
+    - crystal-syntax-check
     - csharp-golden-syntax-check
     - dart-syntax-check
     - elixir-syntax-check
@@ -575,6 +576,15 @@ repos:
         entry: clj-kondo --lint
         language: system
         files: ^tests/integration/cases/.*\.clj$
+        stages: [pre-commit]
+
+      - id: crystal-syntax-check
+        name: Crystal golden file syntax check
+        entry: bash -c 'for f; do crystal build --no-codegen "$f" || exit 1; done'
+          --
+        language: system
+        types: [crystal]
+        files: ^tests/integration/cases/
         stages: [pre-commit]
 
       - id: scala-golden-syntax-check

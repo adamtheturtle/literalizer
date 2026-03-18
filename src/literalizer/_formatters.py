@@ -48,6 +48,7 @@ __all__ = [
     "format_variable_assignment_c",
     "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
+    "format_variable_assignment_crystal",
     "format_variable_assignment_csharp",
     "format_variable_assignment_dart",
     "format_variable_assignment_elixir",
@@ -73,6 +74,7 @@ __all__ = [
     "format_variable_declaration_c",
     "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
+    "format_variable_declaration_crystal",
     "format_variable_declaration_csharp",
     "format_variable_declaration_dart",
     "format_variable_declaration_elixir",
@@ -1152,6 +1154,24 @@ def passthrough_set_entry(item: str) -> str:
     need no extra formatting.
     """
     return item
+
+
+@beartype
+def format_variable_declaration_crystal(name: str, value: str) -> str:
+    """Format a Crystal variable assignment.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
+
+
+@beartype
+def format_variable_assignment_crystal(name: str, value: str) -> str:
+    """Format a Crystal assignment to an existing variable.
+
+    Example: ``"x"`` and ``"[1, 2]"`` → ``"x = [1, 2]"``.
+    """
+    return f"{name} = {value}"
 
 
 @beartype
