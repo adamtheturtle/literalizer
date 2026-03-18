@@ -124,21 +124,7 @@ jobs:
     uses: ./.github/workflows/lint-ada.yml
 
   lint-nim:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install Nim
-        uses: jiro4989/setup-nim-action@v2
-      - name: Check Nim syntax
-        run: |
-          set -o pipefail
-          find tests/integration/cases -name "*.nim" -print0 | \
-            while IFS= read -r -d '' f; do
-              tmpdir=$(mktemp -d)
-              nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
-            done
+    uses: ./.github/workflows/lint-nim.yml
 
   completion-lint:
     needs:
