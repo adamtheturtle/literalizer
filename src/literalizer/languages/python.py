@@ -58,11 +58,9 @@ _bytes_formats: dict[str, Callable[[bytes], str]] = {
 }
 
 
-
-
-
 if TYPE_CHECKING:
     from literalizer._types import Value
+
 
 class Python:
     """Python language specification.
@@ -101,7 +99,9 @@ class Python:
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="(")
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="("
+        )
         self.sequence_close = ")"
         self.dict_open = "{"
         self.dict_close = "}"

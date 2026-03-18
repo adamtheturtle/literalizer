@@ -516,7 +516,7 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
     """
 
     @beartype
-    def _open(items: list[Value]) -> str:  # noqa: ARG001
+    def _open(_items: list[Value]) -> str:
         """Return the fixed opening delimiter."""
         return open_str
 

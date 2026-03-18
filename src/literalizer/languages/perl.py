@@ -36,11 +36,9 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-
-
-
 if TYPE_CHECKING:
     from literalizer._types import Value
+
 
 class Perl:
     """Perl language specification."""
@@ -51,7 +49,9 @@ class Perl:
         self.null_literal = "undef"
         self.true_literal = "1"
         self.false_literal = "0"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="[")
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="["
+        )
         self.sequence_close = "]"
         self.dict_open = "{"
         self.dict_close = "}"

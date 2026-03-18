@@ -104,11 +104,9 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_matlab
 
 
-
-
-
 if TYPE_CHECKING:
     from literalizer._types import Value
+
 
 class Matlab:
     """MATLAB language specification."""
@@ -118,7 +116,9 @@ class Matlab:
         self.null_literal = "[]"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="{")
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="{"
+        )
         self.sequence_close = "}"
         self.dict_open = "struct("
         self.dict_close = ")"

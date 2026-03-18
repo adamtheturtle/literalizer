@@ -70,11 +70,9 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-
-
-
 if TYPE_CHECKING:
     from literalizer._types import Value
+
 
 class Bash:
     """Bash language specification."""
@@ -85,7 +83,9 @@ class Bash:
         self.null_literal = '""'
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="(")
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="("
+        )
         self.sequence_close = ")"
         self.dict_open = "("
         self.dict_close = ")"

@@ -50,11 +50,9 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
 _string_format: Callable[[str], str] = format_string_backslash_dollar
 
 
-
-
-
 if TYPE_CHECKING:
     from literalizer._types import Value
+
 
 class Kotlin:
     """Kotlin language specification.
@@ -85,7 +83,9 @@ class Kotlin:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="listOf<Any?>(")
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="listOf<Any?>("
+        )
         self.sequence_close = ")"
         self.dict_open = "mapOf<String, Any?>("
         self.dict_close = ")"

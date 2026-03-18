@@ -47,11 +47,9 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-
-
-
 if TYPE_CHECKING:
     from literalizer._types import Value
+
 
 class Haskell:
     """Haskell language specification.
@@ -101,7 +99,9 @@ class Haskell:
         self.null_literal = "HNull"
         self.true_literal = "HBool True"
         self.false_literal = "HBool False"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="HList [")
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="HList ["
+        )
         self.sequence_close = "]"
         self.dict_open = "HMap ["
         self.dict_close = "]"

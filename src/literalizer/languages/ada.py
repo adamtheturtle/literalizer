@@ -94,11 +94,9 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_ada
 
 
-
-
-
 if TYPE_CHECKING:
     from literalizer._types import Value
+
 
 class Ada:
     """Ada language specification."""
@@ -109,7 +107,9 @@ class Ada:
         self.null_literal = "ANull"
         self.true_literal = "ABool (True)"
         self.false_literal = "ABool (False)"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="AList'(")
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="AList'("
+        )
         self.sequence_close = ")"
         self.dict_open = "AMap'("
         self.dict_close = ")"
