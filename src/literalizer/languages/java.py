@@ -33,15 +33,28 @@ def _format_java_collection_open(values: list[Any]) -> str:
     """Return a typed Java array opener inferred from element types.
 
     Returns ``"new String[]{"`` when all elements are strings,
-    ``"new int[]{"`` when all elements are non-boolean integers, and
-    ``"new Object[]{"`` otherwise.
+    ``"new boolean[]{"`` when all elements are booleans,
+    ``"new int[]{"`` when all elements are non-boolean integers,
+    ``"new double[]{"`` when all elements are non-boolean numeric
+    (float, or mixed int and float), and ``"new Object[]{"`` otherwise.
     """
     if values and all(isinstance(v, str) for v in values):
         return "new String[]{"
+    if values and all(isinstance(v, bool) for v in values):
+        return "new boolean[]{"
     if values and all(
         isinstance(v, int) and not isinstance(v, bool) for v in values
     ):
         return "new int[]{"
+    if (
+        values
+        and all(
+            isinstance(v, (int, float)) and not isinstance(v, bool)
+            for v in values
+        )
+        and any(isinstance(v, float) for v in values)
+    ):
+        return "new double[]{"
     return "new Object[]{"
 
 
