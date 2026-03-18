@@ -49,7 +49,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check Ruby syntax
-        run: find tests/integration/cases -name "*.rb" -exec ruby -c {} +
+        run: find tests/integration/cases -name "*.rb" -exec ruby -c {} \;
 
   lint-go:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check JavaScript syntax
-        run: find tests/integration/cases -name "*.js" -exec node --check {} +
+        run: find tests/integration/cases -name "*.js" -exec node --check {} \;
 
   lint-typescript:
     runs-on: ubuntu-latest
@@ -146,7 +146,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Kotlin
-        run: sudo apt-get install -y kotlin
+        uses: fwilhe2/setup-kotlin@v1
       - name: Check Kotlin syntax
         run: |
           set -o pipefail
@@ -385,7 +385,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check Perl syntax
-        run: find tests/integration/cases -name "*.pl" -exec perl -c {} +
+        run: find tests/integration/cases -name "*.pl" -exec perl -c {} \;
 
   lint-lua:
     runs-on: ubuntu-latest
