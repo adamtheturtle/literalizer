@@ -315,7 +315,7 @@ def literalize_json(
 
 
 @beartype
-def literalize_yaml(  # noqa: PLR0912
+def literalize_yaml(
     *,
     yaml_string: str,
     language: Language,
