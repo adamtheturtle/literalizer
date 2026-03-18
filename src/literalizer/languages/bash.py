@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from beartype import beartype
 
 from literalizer._formatters import (
@@ -22,7 +24,7 @@ def _to_bash_value(item: str) -> str:
     ``(``) is collapsed to a single line and double-quoted.
     """
     if item.startswith("("):
-        collapsed = " ".join(item.split())
+        collapsed = re.sub(pattern=r"[ \t]*\n[ \t]*", repl=" ", string=item)
         escaped = collapsed.replace("\\", "\\\\").replace('"', '\\"')
         return f'"{escaped}"'
     return item
