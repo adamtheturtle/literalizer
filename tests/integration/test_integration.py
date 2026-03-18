@@ -836,6 +836,33 @@ def _wrap_ruby_date(content: str) -> str:
     return f"require 'date'\n{content}"
 
 
+def _wrap_crystal(content: str) -> str:
+    """Wrap in a Crystal variable assignment to suppress unused-expression
+    warnings. Adds ``require "set"`` when the content uses ``Set{``.
+    """
+    prefix = 'require "set"\n' if "Set{" in content else ""
+    return f"{prefix}_ = {content}"
+
+
+def _wrap_crystal_varname(content: str) -> str:
+    """Identity wrap for Crystal, but adds ``require "set"`` when the
+    content uses ``Set{``.
+    """
+    if "Set{" in content:
+        return f'require "set"\n{content}'
+    return content
+
+
+def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
+    """Join Crystal declaration and assignment with a newline, adding
+    ``require "set"`` when either uses ``Set{``.
+    """
+    combined = declaration + "\n" + assignment
+    if "Set{" in combined:
+        return f'require "set"\n{combined}'
+    return combined
+
+
 def _wrap_julia_dates(content: str) -> str:
     """Wrap with ``using Dates`` for native Julia date literals."""
     return f"using Dates\n{content}"
@@ -1223,6 +1250,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_r,
             ),
         ),
+    ),
+    "crystal": _LanguageConfig(
+        spec=literalizer.languages.CRYSTAL,
+        extension=".cr",
+        wrap=_wrap_crystal,
+        varname_wrap=_wrap_crystal_varname,
+        combined_wrap=_wrap_crystal_combined,
+        date_variants=(),
     ),
     "matlab": _LanguageConfig(
         spec=literalizer.languages.MATLAB,

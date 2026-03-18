@@ -54,6 +54,8 @@ def main() -> None:
             f"    <TargetFramework>{target_framework}</TargetFramework>\n"
             "    <Nullable>disable</Nullable>\n"
             "    <ImplicitUsings>enable</ImplicitUsings>\n"
+            "    <EnableDefaultEmbeddedResourceItems>false"
+            "</EnableDefaultEmbeddedResourceItems>\n"
             "  </PropertyGroup>\n"
             "</Project>\n"
         )
@@ -82,7 +84,8 @@ def main() -> None:
             )
         if result.returncode != 0:
             msg = (
-                f"{filename}: C# syntax error\n{result.stderr}{result.stdout}"
+                f"{filename}: dotnet build failed\n"
+                f"{result.stderr}{result.stdout}"
             )
             sys.stderr.write(msg)
             sys.exit(1)
