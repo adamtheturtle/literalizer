@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import datetime  # noqa: TC003
-from typing import TYPE_CHECKING
+from collections.abc import Callable  # noqa: TC003
 
 from beartype import beartype
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 @beartype
