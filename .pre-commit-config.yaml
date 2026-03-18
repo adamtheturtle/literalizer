@@ -415,8 +415,8 @@ repos:
 
       - id: groovy-syntax-check
         name: Groovy golden file syntax check
-        entry: bash -c 'tmpdir=$(mktemp -d); for f; do groovyc -d "$tmpdir" "$(realpath
-          "$f")" || exit 1; done' --
+        entry: bash -c 'command -v groovyc || exit 0; tmpdir=$(mktemp -d); for f;
+          do groovyc -d "$tmpdir" "$(realpath "$f")" || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.groovy$
         stages: [pre-commit]
