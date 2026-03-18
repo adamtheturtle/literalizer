@@ -21,9 +21,6 @@ from literalizer._formatters import (
     passthrough_set_entry,
 )
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
 
 @beartype
 def _format_python_omap_entry(key: str, value: str) -> str:
@@ -59,6 +56,10 @@ _bytes_formats: dict[str, Callable[[bytes], str]] = {
     "hex": format_bytes_hex,
     "python": format_bytes_python,
 }
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 class Python:

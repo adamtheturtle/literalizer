@@ -18,9 +18,6 @@ from literalizer._formatters import (
     passthrough_set_entry,
 )
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
 
 @beartype
 def _format_rust_dict_entry(key: str, value: str) -> str:
@@ -56,6 +53,10 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
     "rust": format_datetime_rust,
 }
 _string_format: Callable[[str], str] = format_string_backslash
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 class Rust:

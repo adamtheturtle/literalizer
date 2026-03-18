@@ -15,9 +15,6 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
 )
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
 
 @beartype
 def _format_lua_dict_entry(key: str, value: str) -> str:
@@ -53,6 +50,10 @@ _bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 class Lua:

@@ -18,9 +18,6 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
 )
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
 
 @beartype
 def _format_go_set_entry(item: str) -> str:
@@ -59,6 +56,10 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
     "go": format_datetime_go,
 }
 _string_format: Callable[[str], str] = format_string_backslash
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 class Go:
