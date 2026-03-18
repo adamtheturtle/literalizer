@@ -54,6 +54,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     to_c_val,
+    to_d_val,
     to_fsharp_val,
     to_ocaml_val,
     to_occam_val,
@@ -2054,4 +2055,12 @@ def test_to_c_val_unknown_value() -> None:
     classified as a string literal, int, or float.
     """
     result = to_c_val("SomeUnknownValue")  # type: ignore[misc]
+    assert result == "SomeUnknownValue"
+
+
+def test_to_d_val_unknown_value() -> None:
+    """``to_d_val`` returns the value unchanged when it cannot be
+    classified as a JSON literal, int, or float.
+    """
+    result = to_d_val("SomeUnknownValue")  # type: ignore[misc]
     assert result == "SomeUnknownValue"

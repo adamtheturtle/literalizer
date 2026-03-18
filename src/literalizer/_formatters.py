@@ -1185,7 +1185,7 @@ def to_d_val(value: str) -> str:
     """
     if value.startswith(("JSONValue(", 'parseJSON("')):
         return value
-    if value in ("null", "true", "false"):
+    if value in {"null", "true", "false"}:
         return f"JSONValue({value})"
     if value.startswith('"') and value.endswith('"'):
         return f"JSONValue({value})"
