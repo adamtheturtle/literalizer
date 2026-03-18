@@ -14,18 +14,6 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
-def _is_assoc_array(value: str) -> bool:
-    """Return True if *value* is a Bash associative-array expression."""
-    stripped = value.strip()
-    if not stripped.startswith("("):
-        return False
-    for line in stripped.splitlines()[1:]:
-        content = line.strip()
-        if content and not content.startswith("#"):
-            return content.startswith("[")
-    return False  # pragma: no cover
-
-
 def _to_bash_value(item: str) -> str:
     """Quote an item if it is a nested array or dict expression.
 
@@ -59,7 +47,11 @@ def _format_bash_dict_entry(key: str, value: str) -> str:
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Bash ``declare`` variable declaration."""
-    flag = " -A" if _is_assoc_array(value=value) else ""
+    flag = (
+        " -A"
+        if any(line.lstrip().startswith("[") for line in value.splitlines())
+        else ""
+    )
     return f"declare{flag} {name}={value}"
 
 
