@@ -1,0 +1,20 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC check ()
+  VAL MOBILE LIT x IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+    MOBILE LIT(lit.pair; MOBILE []BYTE "level1"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "level2"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "level3"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "level4"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.str; MOBILE []BYTE "deep")), MOBILE LIT(lit.pair; MOBILE []BYTE "items"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.str; MOBILE []BYTE "a"), MOBILE LIT(lit.str; MOBILE []BYTE "b")]))]))])), MOBILE LIT(lit.pair; MOBILE []BYTE "sibling"; MOBILE LIT(lit.int; 42))])), MOBILE LIT(lit.pair; MOBILE []BYTE "tags"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "tag1")), MOBILE LIT(lit.pair; MOBILE []BYTE "meta"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "priority"; MOBILE LIT(lit.int; 1)), MOBILE LIT(lit.pair; MOBILE []BYTE "labels"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.str; MOBILE []BYTE "x"), MOBILE LIT(lit.str; MOBILE []BYTE "y")]))]))])]))]))
+]):
+  SEQ
+    SKIP
+:
