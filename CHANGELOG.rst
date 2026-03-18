@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.03.18
+----------
+
+
 - Added ``format_sequence_entry`` to the ``Language`` protocol and ``LanguageSpec`` dataclass, mirroring the existing ``format_set_entry`` field. All built-in languages use the new ``passthrough_sequence_entry`` formatter.
 
 2026.03.17.2
