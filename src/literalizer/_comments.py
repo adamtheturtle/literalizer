@@ -155,6 +155,43 @@ def extract_yaml_comments(
 
 
 @beartype
+def _merge_null_dict_comments(
+    *,
+    collection_comments: _CollectionComments,
+    data: dict[str, object],
+    ruamel_data: CommentedMap,
+) -> _CollectionComments:
+    """Merge comments from null-valued dict entries into adjacent entries.
+
+    When skip_null_dict_values filters out null entries, their comments
+    should be preserved by moving them to the next non-null entry's
+    before-comments (or to trailing if no subsequent non-null entries exist).
+    """
+    pending: list[str] = []
+    filtered_elements_list = []
+    for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
+        ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        collection_comments.elements,
+        strict=True,
+    ):
+        if data[key] is None:
+            pending.extend(ec.before)
+            if ec.inline:
+                pending.append(ec.inline)
+        else:
+            new_before = (*pending, *ec.before)
+            pending = []
+            filtered_elements_list.append(
+                dataclasses.replace(ec, before=new_before),
+            )
+    return dataclasses.replace(
+        collection_comments,
+        elements=tuple(filtered_elements_list),
+        trailing=(*pending, *collection_comments.trailing),
+    )
+
+
+@beartype
 def _format_comment(
     *,
     text: str,

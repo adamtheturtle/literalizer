@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import dataclasses
 import datetime
 import json
 from io import StringIO
@@ -16,6 +15,7 @@ from ruamel.yaml.error import YAMLError
 
 from literalizer._comments import (
     YamlCollectionContext,
+    _merge_null_dict_comments,
     extract_yaml_comments,
     literalize_yaml_collection,
     literalize_yaml_scalar,
@@ -402,18 +402,10 @@ def literalize_yaml(
             and language.skip_null_dict_values
             and isinstance(ruamel_data, CommentedMap)
         ):
-            filtered_elements = tuple(
-                ec
-                for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
-                    ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                    collection_comments.elements,
-                    strict=True,
-                )
-                if data[key] is not None
-            )
-            collection_comments = dataclasses.replace(
-                collection_comments,
-                elements=filtered_elements,
+            collection_comments = _merge_null_dict_comments(
+                collection_comments=collection_comments,
+                data=data,
+                ruamel_data=ruamel_data,
             )
 
         has_comments = (

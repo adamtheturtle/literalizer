@@ -261,6 +261,60 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
     assert result == expected
 
 
+def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
+    """Inline comment on a null-valued dict entry is preserved as a before
+    comment on the next non-null entry when skip_null_dict_values=True.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        host: localhost
+        port: null  # not configured yet
+        debug: true
+        """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("host", "localhost"),
+            // not configured yet
+            Map.entry("debug", true)
+        )"""
+    )
+    assert result == expected
+
+
+def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
+    """Inline comment on a null-valued dict entry at the end becomes a
+    trailing comment when skip_null_dict_values=True.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        host: localhost
+        port: null  # not configured yet
+        """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("host", "localhost")
+            // not configured yet
+        )"""
+    )
+    assert result == expected
+
+
 def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
     """All-null Java YAML dict with trailing comments does not duplicate
     delimiters.
