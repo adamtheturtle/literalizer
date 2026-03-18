@@ -409,18 +409,27 @@ def literalize_yaml(
         if language.skip_null_dict_values and isinstance(
             ruamel_data, CommentedMap
         ):
-            filtered_elements = tuple(
-                ec
-                for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
-                    ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                    collection_comments.elements,
-                    strict=True,
-                )
-                if data[key] is not None
-            )
+            pending: list[str] = []
+            filtered_elements_list = []
+            for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
+                ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                collection_comments.elements,
+                strict=True,
+            ):
+                if data[key] is None:
+                    pending.extend(ec.before)
+                    if ec.inline:
+                        pending.append(ec.inline)
+                else:
+                    new_before = (*pending, *ec.before)
+                    pending = []
+                    filtered_elements_list.append(  # pyright: ignore[reportUnknownMemberType]
+                        dataclasses.replace(ec, before=new_before),
+                    )
             collection_comments = dataclasses.replace(
                 collection_comments,
-                elements=filtered_elements,
+                elements=tuple(filtered_elements_list),  # pyright: ignore[reportUnknownArgumentType]
+                trailing=(*pending, *collection_comments.trailing),
             )
 
         result = apply_collection_comments(
