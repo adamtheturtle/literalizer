@@ -7,8 +7,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_variable_assignment_js,
-    format_variable_declaration_js,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -18,6 +16,16 @@ from literalizer._language import Language
 def _format_js_omap_entry(key: str, value: str) -> str:
     """Format a JavaScript ordered-map entry."""
     return f"{key}: {value}"
+
+
+def _format_variable_declaration(name: str, value: str) -> str:
+    """Format a JavaScript variable declaration."""
+    return f"const {name} = {value};"
+
+
+def _format_variable_assignment(name: str, value: str) -> str:
+    """Format a JavaScript variable assignment."""
+    return f"{name} = {value};"
 
 
 JAVASCRIPT = Language(
@@ -49,6 +57,6 @@ JAVASCRIPT = Language(
     multiline_close_indent="",
     element_separator=", ",
     skip_null_dict_values=False,
-    format_variable_declaration=format_variable_declaration_js,
-    format_variable_assignment=format_variable_assignment_js,
+    format_variable_declaration=_format_variable_declaration,
+    format_variable_assignment=_format_variable_assignment,
 )

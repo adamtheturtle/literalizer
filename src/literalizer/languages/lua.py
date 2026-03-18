@@ -8,8 +8,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_variable_assignment_lua,
-    format_variable_declaration_lua,
     passthrough_sequence_entry,
 )
 from literalizer._language import Language
@@ -31,6 +29,16 @@ def _format_lua_set_entry(item: str) -> str:
     Example: ``'"apple"'`` → ``'["apple"] = true'``.
     """
     return f"[{item}] = true"
+
+
+def _format_variable_declaration(name: str, value: str) -> str:
+    """Format a Lua variable declaration."""
+    return f"local {name} = {value}"
+
+
+def _format_variable_assignment(name: str, value: str) -> str:
+    """Format a Lua variable assignment."""
+    return f"{name} = {value}"
 
 
 LUA = Language(
@@ -62,6 +70,6 @@ LUA = Language(
     multiline_close_indent="",
     element_separator=", ",
     skip_null_dict_values=True,
-    format_variable_declaration=format_variable_declaration_lua,
-    format_variable_assignment=format_variable_assignment_lua,
+    format_variable_declaration=_format_variable_declaration,
+    format_variable_assignment=_format_variable_assignment,
 )
