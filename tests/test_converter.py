@@ -49,6 +49,9 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import (
+    _LanguageSpec,  # pyright: ignore[reportPrivateUsage]
+)
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
     CLOJURE,
@@ -69,7 +72,10 @@ from literalizer.languages import (
     SCALA,
     SWIFT,
     TYPESCRIPT,
+    Java,
+    Python,
     R,
+    Ruby,
 )
 
 
@@ -510,7 +516,7 @@ def test_scalar_wrap_ignored() -> None:
 
 def test_custom_language() -> None:
     """A custom Language works as a language."""
-    custom = Language(
+    custom = _LanguageSpec(
         null_literal="NIL",
         true_literal="YES",
         false_literal="NO",
@@ -1072,38 +1078,7 @@ def test_format_datetime_cpp_seconds_and_microseconds() -> None:
 
 def test_custom_format_date() -> None:
     """A custom format_date callable is used for date values."""
-    spec = Language(
-        null_literal="None",
-        true_literal="True",
-        false_literal="False",
-        sequence_open="(",
-        sequence_close=")",
-        dict_open="{",
-        dict_close="}",
-        format_dict_entry=dict_entry_with_separator(separator=": "),
-        multiline_trailing_comma=True,
-        single_element_trailing_comma=False,
-        format_bytes=format_bytes_hex,
-        format_date=format_date_python,
-        format_datetime=format_datetime_iso,
-        empty_sequence=None,
-        empty_dict=None,
-        set_open="{",
-        set_close="}",
-        empty_set="set()",
-        format_sequence_entry=passthrough_sequence_entry,
-        format_set_entry=passthrough_set_entry,
-        comment_prefix="//",
-        comment_suffix="",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
-        multiline_close_indent="",
-        element_separator=", ",
-        skip_null_dict_values=False,
-        format_variable_declaration=PYTHON.format_variable_declaration,
-        format_variable_assignment=PYTHON.format_variable_assignment,
-    )
+    spec = Python(date_format="python")
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
         language=spec,
@@ -1115,38 +1090,7 @@ def test_custom_format_date() -> None:
 
 def test_custom_format_datetime() -> None:
     """A custom format_datetime callable is used for datetime values."""
-    spec = Language(
-        null_literal="None",
-        true_literal="True",
-        false_literal="False",
-        sequence_open="(",
-        sequence_close=")",
-        dict_open="{",
-        dict_close="}",
-        format_dict_entry=dict_entry_with_separator(separator=": "),
-        multiline_trailing_comma=True,
-        single_element_trailing_comma=False,
-        format_bytes=format_bytes_hex,
-        format_date=format_date_iso,
-        format_datetime=format_datetime_python,
-        empty_sequence=None,
-        empty_dict=None,
-        set_open="{",
-        set_close="}",
-        empty_set="set()",
-        format_sequence_entry=passthrough_sequence_entry,
-        format_set_entry=passthrough_set_entry,
-        comment_prefix="//",
-        comment_suffix="",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
-        multiline_close_indent="",
-        element_separator=", ",
-        skip_null_dict_values=False,
-        format_variable_declaration=PYTHON.format_variable_declaration,
-        format_variable_assignment=PYTHON.format_variable_assignment,
-    )
+    spec = Python(datetime_format="python")
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
@@ -1158,38 +1102,7 @@ def test_custom_format_datetime() -> None:
 
 def test_java_native_dates() -> None:
     """Java language spec with native date formatting."""
-    spec = Language(
-        null_literal="null",
-        true_literal="true",
-        false_literal="false",
-        sequence_open="{",
-        sequence_close="}",
-        dict_open="{",
-        dict_close="}",
-        format_dict_entry=dict_entry_with_separator(separator=": "),
-        multiline_trailing_comma=True,
-        single_element_trailing_comma=False,
-        format_bytes=format_bytes_hex,
-        format_date=format_date_java,
-        format_datetime=format_datetime_java_instant,
-        empty_sequence=None,
-        empty_dict=None,
-        set_open="Set.of(",
-        set_close=")",
-        empty_set=None,
-        format_sequence_entry=passthrough_sequence_entry,
-        format_set_entry=passthrough_set_entry,
-        comment_prefix="//",
-        comment_suffix="",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
-        multiline_close_indent="",
-        element_separator=", ",
-        skip_null_dict_values=False,
-        format_variable_declaration=PYTHON.format_variable_declaration,
-        format_variable_assignment=PYTHON.format_variable_assignment,
-    )
+    spec = Java(date_format="java", datetime_format="instant")
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
         language=spec,
@@ -1198,43 +1111,12 @@ def test_java_native_dates() -> None:
     )
     lines = result.split(sep="\n")
     assert lines[0] == "LocalDate.of(2024, 1, 15),"
-    assert lines[1] == 'Instant.parse("2024-01-15T12:30:00"),'
+    assert lines[1] == 'Instant.parse("2024-01-15T12:30:00")'
 
 
 def test_ruby_native_dates() -> None:
     """Ruby language spec with native date formatting."""
-    spec = Language(
-        null_literal="nil",
-        true_literal="true",
-        false_literal="false",
-        sequence_open="[",
-        sequence_close="]",
-        dict_open="{",
-        dict_close="}",
-        format_dict_entry=dict_entry_with_separator(separator=" => "),
-        multiline_trailing_comma=True,
-        single_element_trailing_comma=False,
-        format_bytes=format_bytes_hex,
-        format_date=format_date_ruby,
-        format_datetime=format_datetime_ruby,
-        empty_sequence=None,
-        empty_dict=None,
-        set_open="Set.new([",
-        set_close="])",
-        empty_set="Set.new",
-        format_sequence_entry=passthrough_sequence_entry,
-        format_set_entry=passthrough_set_entry,
-        comment_prefix="#",
-        comment_suffix="",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
-        multiline_close_indent="",
-        element_separator=", ",
-        skip_null_dict_values=False,
-        format_variable_declaration=PYTHON.format_variable_declaration,
-        format_variable_assignment=PYTHON.format_variable_assignment,
-    )
+    spec = Ruby(date_format="ruby", datetime_format="ruby")
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
@@ -1343,38 +1225,7 @@ def test_literalize_yaml_binary() -> None:
 
 def test_custom_format_bytes() -> None:
     """A custom format_bytes callable is used for bytes values."""
-    spec = Language(
-        null_literal="None",
-        true_literal="True",
-        false_literal="False",
-        sequence_open="(",
-        sequence_close=")",
-        dict_open="{",
-        dict_close="}",
-        format_dict_entry=dict_entry_with_separator(separator=": "),
-        multiline_trailing_comma=True,
-        single_element_trailing_comma=False,
-        format_bytes=format_bytes_python,
-        format_date=format_date_iso,
-        format_datetime=format_datetime_iso,
-        empty_sequence=None,
-        empty_dict=None,
-        set_open="{",
-        set_close="}",
-        empty_set="set()",
-        format_sequence_entry=passthrough_sequence_entry,
-        format_set_entry=passthrough_set_entry,
-        comment_prefix="#",
-        comment_suffix="",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
-        multiline_close_indent="",
-        element_separator=", ",
-        skip_null_dict_values=False,
-        format_variable_declaration=PYTHON.format_variable_declaration,
-        format_variable_assignment=PYTHON.format_variable_assignment,
-    )
+    spec = Python(bytes_format="python")
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
         language=spec,
@@ -1760,7 +1611,7 @@ def test_omap_custom_language_spec() -> None:
         - age: 30
         """,
     )
-    custom = Language(
+    custom = _LanguageSpec(
         null_literal="null",
         true_literal="true",
         false_literal="false",
@@ -1891,7 +1742,9 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     SCALA: _VariableSyntax(
         declaration="val my_var = 42", assignment="my_var = 42"
     ),
-    R: _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),
+    R(): _VariableSyntax(
+        declaration="my_var <- 42", assignment="my_var <- 42"
+    ),
 }
 
 _DECLARATION_PARAMS = [

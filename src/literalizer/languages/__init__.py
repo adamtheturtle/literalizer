@@ -3,32 +3,32 @@
 from __future__ import annotations
 
 from .c import C
-from .clojure import CLOJURE
-from .cpp import CPP
-from .csharp import CSHARP
-from .dart import DART
-from .elixir import ELIXIR
-from .erlang import ERLANG
-from .fsharp import FSHARP
-from .go import GO
-from .groovy import GROOVY
-from .haskell import HASKELL
-from .java import JAVA
-from .javascript import JAVASCRIPT
-from .julia import JULIA
-from .kotlin import KOTLIN
-from .lua import LUA
-from .ocaml import OCAML
-from .occam import OCCAM
-from .perl import PERL
-from .php import PHP
-from .python import PYTHON
+from .clojure import CLOJURE, Clojure
+from .cpp import CPP, Cpp
+from .csharp import CSHARP, CSharp
+from .dart import DART, Dart
+from .elixir import ELIXIR, Elixir
+from .erlang import ERLANG, Erlang
+from .fsharp import FSHARP, FSharp
+from .go import GO, Go
+from .groovy import GROOVY, Groovy
+from .haskell import HASKELL, Haskell
+from .java import JAVA, Java
+from .javascript import JAVASCRIPT, JavaScript
+from .julia import JULIA, Julia
+from .kotlin import KOTLIN, Kotlin
+from .lua import LUA, Lua
+from .ocaml import OCAML, OCaml
+from .occam import OCCAM, Occam
+from .perl import PERL, Perl
+from .php import PHP, Php
+from .python import PYTHON, Python
 from .r import R
-from .ruby import RUBY
-from .rust import RUST
-from .scala import SCALA
-from .swift import SWIFT
-from .typescript import TYPESCRIPT
+from .ruby import RUBY, Ruby
+from .rust import RUST, Rust
+from .scala import SCALA, Scala
+from .swift import SWIFT, Swift
+from .typescript import TYPESCRIPT, TypeScript
 
 __all__ = [
     "CLOJURE",
@@ -57,5 +57,30 @@ __all__ = [
     "SWIFT",
     "TYPESCRIPT",
     "C",
+    "CSharp",
+    "Clojure",
+    "Cpp",
+    "Dart",
+    "Elixir",
+    "Erlang",
+    "FSharp",
+    "Go",
+    "Groovy",
+    "Haskell",
+    "Java",
+    "JavaScript",
+    "Julia",
+    "Kotlin",
+    "Lua",
+    "OCaml",
+    "Occam",
+    "Perl",
+    "Php",
+    "Python",
     "R",
+    "Ruby",
+    "Rust",
+    "Scala",
+    "Swift",
+    "TypeScript",
 ]

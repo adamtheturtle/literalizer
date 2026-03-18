@@ -9,7 +9,6 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
 )
-from literalizer._language import Language
 
 
 def _to_val(value: str) -> str:
@@ -67,35 +66,38 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {_to_val(value=value)};"
 
 
-C = Language(
-    null_literal="((_CVal){.s = NULL})",
-    true_literal="((_CVal){.b = true})",
-    false_literal="((_CVal){.b = false})",
-    sequence_open="((_CVal){.a = (_CVal[]){",
-    sequence_close="}})",
-    dict_open="((_CVal){.m = (_CKV[]){",
-    dict_close="}})",
-    format_dict_entry=_format_c_dict_entry,
-    multiline_trailing_comma=True,
-    single_element_trailing_comma=False,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence=None,
-    empty_dict=None,
-    set_open="((_CVal){.a = (_CVal[]){",
-    set_close="}})",
-    empty_set=None,
-    format_sequence_entry=_format_c_list_entry,
-    format_set_entry=_format_c_set_entry,
-    comment_prefix="//",
-    comment_suffix="",
-    omap_open="((_CVal){.m = (_CKV[]){",
-    omap_close="}})",
-    format_omap_entry=_format_c_dict_entry,
-    multiline_close_indent="",
-    element_separator=", ",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-)
+class C:
+    """C language specification."""
+
+    def __init__(self) -> None:
+        """Initialize C language specification."""
+        self.null_literal = "((_CVal){.s = NULL})"
+        self.true_literal = "((_CVal){.b = true})"
+        self.false_literal = "((_CVal){.b = false})"
+        self.sequence_open = "((_CVal){.a = (_CVal[]){"
+        self.sequence_close = "}})"
+        self.dict_open = "((_CVal){.m = (_CKV[]){"
+        self.dict_close = "}})"
+        self.format_dict_entry = _format_c_dict_entry
+        self.multiline_trailing_comma = True
+        self.single_element_trailing_comma = False
+        self.format_bytes = format_bytes_hex
+        self.format_date = format_date_iso
+        self.format_datetime = format_datetime_iso
+        self.empty_sequence: str | None = None
+        self.empty_dict: str | None = None
+        self.set_open = "((_CVal){.a = (_CVal[]){"
+        self.set_close = "}})"
+        self.empty_set: str | None = None
+        self.format_sequence_entry = _format_c_list_entry
+        self.format_set_entry = _format_c_set_entry
+        self.comment_prefix = "//"
+        self.comment_suffix = ""
+        self.omap_open = "((_CVal){.m = (_CKV[]){"
+        self.omap_close = "}})"
+        self.format_omap_entry = _format_c_dict_entry
+        self.multiline_close_indent = ""
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.format_variable_declaration = _format_variable_declaration
+        self.format_variable_assignment = _format_variable_assignment

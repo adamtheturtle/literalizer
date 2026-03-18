@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
 )
-from literalizer._language import Language
+
+if TYPE_CHECKING:
+    from literalizer._language import Language
 
 
 def _to_val(value: str) -> str:
@@ -69,35 +73,41 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} := {value}"
 
 
-OCCAM = Language(
-    null_literal="MOBILE LIT(lit.null)",
-    true_literal="MOBILE LIT(lit.bool; TRUE)",
-    false_literal="MOBILE LIT(lit.bool; FALSE)",
-    sequence_open="MOBILE LIT(lit.list; MOBILE []MOBILE LIT [",
-    sequence_close="])",
-    dict_open="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
-    dict_close="])",
-    format_dict_entry=_format_occam_dict_entry,
-    multiline_trailing_comma=False,
-    single_element_trailing_comma=False,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence=None,
-    empty_dict=None,
-    set_open="MOBILE LIT(lit.set; MOBILE []MOBILE LIT [",
-    set_close="])",
-    empty_set=None,
-    format_sequence_entry=_format_occam_list_entry,
-    format_set_entry=_format_occam_set_entry,
-    comment_prefix="--",
-    comment_suffix="",
-    omap_open="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
-    omap_close="])",
-    format_omap_entry=_format_occam_dict_entry,
-    multiline_close_indent="",
-    element_separator=", ",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-)
+class Occam:
+    """Occam-pi language specification."""
+
+    def __init__(self) -> None:
+        """Initialize Occam language specification."""
+        self.null_literal = "MOBILE LIT(lit.null)"
+        self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
+        self.false_literal = "MOBILE LIT(lit.bool; FALSE)"
+        self.sequence_open = "MOBILE LIT(lit.list; MOBILE []MOBILE LIT ["
+        self.sequence_close = "])"
+        self.dict_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
+        self.dict_close = "])"
+        self.format_dict_entry = _format_occam_dict_entry
+        self.multiline_trailing_comma = False
+        self.single_element_trailing_comma = False
+        self.format_bytes = format_bytes_hex
+        self.format_date = format_date_iso
+        self.format_datetime = format_datetime_iso
+        self.empty_sequence: str | None = None
+        self.empty_dict: str | None = None
+        self.set_open = "MOBILE LIT(lit.set; MOBILE []MOBILE LIT ["
+        self.set_close = "])"
+        self.empty_set: str | None = None
+        self.format_sequence_entry = _format_occam_list_entry
+        self.format_set_entry = _format_occam_set_entry
+        self.comment_prefix = "--"
+        self.comment_suffix = ""
+        self.omap_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
+        self.omap_close = "])"
+        self.format_omap_entry = _format_occam_dict_entry
+        self.multiline_close_indent = ""
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.format_variable_declaration = _format_variable_declaration
+        self.format_variable_assignment = _format_variable_assignment
+
+
+OCCAM: Language = Occam()

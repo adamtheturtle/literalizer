@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -10,7 +12,9 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import Language
+
+if TYPE_CHECKING:
+    from literalizer._language import Language
 
 
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -23,35 +27,41 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
-GROOVY = Language(
-    null_literal="null",
-    true_literal="true",
-    false_literal="false",
-    sequence_open="[",
-    sequence_close="]",
-    dict_open="[",
-    dict_close="]",
-    format_dict_entry=dict_entry_with_separator(separator=": "),
-    multiline_trailing_comma=True,
-    single_element_trailing_comma=False,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence=None,
-    empty_dict="[:]",
-    set_open="[",
-    set_close="] as Set<Object>",
-    empty_set="[] as Set<Object>",
-    format_sequence_entry=passthrough_sequence_entry,
-    format_set_entry=passthrough_set_entry,
-    comment_prefix="//",
-    comment_suffix="",
-    omap_open="[",
-    omap_close="]",
-    format_omap_entry=dict_entry_with_separator(separator=": "),
-    multiline_close_indent="",
-    element_separator=", ",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-)
+class Groovy:
+    """Groovy language specification."""
+
+    def __init__(self) -> None:
+        """Initialize Groovy language specification."""
+        self.null_literal = "null"
+        self.true_literal = "true"
+        self.false_literal = "false"
+        self.sequence_open = "["
+        self.sequence_close = "]"
+        self.dict_open = "["
+        self.dict_close = "]"
+        self.format_dict_entry = dict_entry_with_separator(separator=": ")
+        self.multiline_trailing_comma = True
+        self.single_element_trailing_comma = False
+        self.format_bytes = format_bytes_hex
+        self.format_date = format_date_iso
+        self.format_datetime = format_datetime_iso
+        self.empty_sequence: str | None = None
+        self.empty_dict: str | None = "[:]"
+        self.set_open = "["
+        self.set_close = "] as Set<Object>"
+        self.empty_set: str | None = "[] as Set<Object>"
+        self.format_sequence_entry = passthrough_sequence_entry
+        self.format_set_entry = passthrough_set_entry
+        self.comment_prefix = "//"
+        self.comment_suffix = ""
+        self.omap_open = "["
+        self.omap_close = "]"
+        self.format_omap_entry = dict_entry_with_separator(separator=": ")
+        self.multiline_close_indent = ""
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.format_variable_declaration = _format_variable_declaration
+        self.format_variable_assignment = _format_variable_assignment
+
+
+GROOVY: Language = Groovy()

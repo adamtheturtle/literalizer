@@ -22,11 +22,9 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-import literalizer._formatters as literalizer_formatters
 import literalizer.languages
 
 if TYPE_CHECKING:
-    import datetime
     from collections.abc import Callable
 
 _CASES_DIR = Path(__file__).parent / "cases"
@@ -691,8 +689,7 @@ class _DateVariant:
     """A date/datetime formatting variant for a language."""
 
     name: str
-    format_date: Callable[[datetime.date], str]
-    format_datetime: Callable[[datetime.datetime], str]
+    spec: literalizer.Language
     wrap: Callable[[str], str]
 
 
@@ -710,7 +707,7 @@ class _LanguageConfig:
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "c": _LanguageConfig(
-        spec=literalizer.languages.C,
+        spec=literalizer.languages.C(),
         extension=".c",
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
@@ -734,14 +731,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="python_native",
-                format_date=literalizer_formatters.format_date_python,
-                format_datetime=literalizer_formatters.format_datetime_python,
+                spec=literalizer.languages.Python(
+                    date_format="python", datetime_format="python"
+                ),
                 wrap=_wrap_python_datetime,
             ),
             _DateVariant(
                 name="python_epoch",
-                format_date=literalizer_formatters.format_date_iso,
-                format_datetime=literalizer_formatters.format_datetime_epoch,
+                spec=literalizer.languages.Python(datetime_format="epoch"),
                 wrap=_wrap_identity,
             ),
         ),
@@ -755,8 +752,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="js_native",
-                format_date=literalizer_formatters.format_date_js,
-                format_datetime=literalizer_formatters.format_datetime_js,
+                spec=literalizer.languages.JavaScript(
+                    date_format="js", datetime_format="js"
+                ),
                 wrap=_wrap_js,
             ),
         ),
@@ -770,8 +768,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="ts_native",
-                format_date=literalizer_formatters.format_date_js,
-                format_datetime=literalizer_formatters.format_datetime_js,
+                spec=literalizer.languages.TypeScript(
+                    date_format="js", datetime_format="js"
+                ),
                 wrap=_wrap_js,
             ),
         ),
@@ -785,8 +784,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="kotlin_native",
-                format_date=literalizer_formatters.format_date_kotlin,
-                format_datetime=literalizer_formatters.format_datetime_kotlin,
+                spec=literalizer.languages.Kotlin(
+                    date_format="kotlin", datetime_format="kotlin"
+                ),
                 wrap=_wrap_kotlin_time,
             ),
         ),
@@ -800,8 +800,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="ruby_native",
-                format_date=literalizer_formatters.format_date_ruby,
-                format_datetime=literalizer_formatters.format_datetime_ruby,
+                spec=literalizer.languages.Ruby(
+                    date_format="ruby", datetime_format="ruby"
+                ),
                 wrap=_wrap_ruby_date,
             ),
         ),
@@ -815,8 +816,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="go_native",
-                format_date=literalizer_formatters.format_date_go,
-                format_datetime=literalizer_formatters.format_datetime_go,
+                spec=literalizer.languages.Go(
+                    date_format="go", datetime_format="go"
+                ),
                 wrap=_wrap_go_time,
             ),
         ),
@@ -830,14 +832,16 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="java_instant",
-                format_date=literalizer_formatters.format_date_java,
-                format_datetime=literalizer_formatters.format_datetime_java_instant,
+                spec=literalizer.languages.Java(
+                    date_format="java", datetime_format="instant"
+                ),
                 wrap=_wrap_java_time,
             ),
             _DateVariant(
                 name="java_zoned",
-                format_date=literalizer_formatters.format_date_java,
-                format_datetime=literalizer_formatters.format_datetime_java_zoned,
+                spec=literalizer.languages.Java(
+                    date_format="java", datetime_format="zoned"
+                ),
                 wrap=_wrap_java_time,
             ),
         ),
@@ -851,8 +855,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="csharp_native",
-                format_date=literalizer_formatters.format_date_csharp,
-                format_datetime=literalizer_formatters.format_datetime_csharp,
+                spec=literalizer.languages.CSharp(
+                    date_format="csharp", datetime_format="csharp"
+                ),
                 wrap=_wrap_csharp_date,
             ),
         ),
@@ -866,8 +871,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="dart_native",
-                format_date=literalizer_formatters.format_date_dart,
-                format_datetime=literalizer_formatters.format_datetime_dart,
+                spec=literalizer.languages.Dart(
+                    date_format="dart", datetime_format="dart"
+                ),
                 wrap=_wrap_dart,
             ),
         ),
@@ -889,8 +895,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="cpp_native",
-                format_date=literalizer_formatters.format_date_cpp,
-                format_datetime=literalizer_formatters.format_datetime_cpp,
+                spec=literalizer.languages.Cpp(
+                    date_format="cpp", datetime_format="cpp"
+                ),
                 wrap=_wrap_cpp_chrono,
             ),
         ),
@@ -904,8 +911,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="rust_native",
-                format_date=literalizer_formatters.format_date_rust,
-                format_datetime=literalizer_formatters.format_datetime_rust,
+                spec=literalizer.languages.Rust(
+                    date_format="rust", datetime_format="rust"
+                ),
                 wrap=_wrap_rust_chrono,
             ),
         ),
@@ -927,8 +935,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="julia_native",
-                format_date=literalizer_formatters.format_date_julia,
-                format_datetime=literalizer_formatters.format_datetime_julia,
+                spec=literalizer.languages.Julia(
+                    date_format="julia", datetime_format="julia"
+                ),
                 wrap=_wrap_julia_dates,
             ),
         ),
@@ -1014,7 +1023,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "r": _LanguageConfig(
-        spec=literalizer.languages.R,
+        spec=literalizer.languages.R(),
         extension=".R",
         wrap=_wrap_r,
         varname_wrap=_wrap_identity,
@@ -1022,8 +1031,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(
             _DateVariant(
                 name="r_native",
-                format_date=literalizer_formatters.format_date_r,
-                format_datetime=literalizer_formatters.format_datetime_r,
+                spec=literalizer.languages.R(
+                    date_format="r", datetime_format="r"
+                ),
                 wrap=_wrap_r,
             ),
         ),
@@ -1185,15 +1195,10 @@ def test_date_format_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test native date format variants against golden files."""
-    spec = dataclasses.replace(
-        lang_config.spec,
-        format_date=variant.format_date,
-        format_datetime=variant.format_datetime,
-    )
     yaml_string = (_DATES_CASE_DIR / "input.yaml").read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=spec,
+        language=variant.spec,
         prefix="",
         wrap=True,
     )

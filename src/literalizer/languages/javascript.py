@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
+import datetime  # noqa: TC003
+from typing import TYPE_CHECKING, Literal
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
+    format_date_js,
     format_datetime_iso,
+    format_datetime_js,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import Language
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from literalizer._language import Language
 
 
 def _format_js_omap_entry(key: str, value: str) -> str:
@@ -28,35 +37,57 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-JAVASCRIPT = Language(
-    null_literal="null",
-    true_literal="true",
-    false_literal="false",
-    sequence_open="[",
-    sequence_close="]",
-    dict_open="{",
-    dict_close="}",
-    format_dict_entry=dict_entry_with_separator(separator=": "),
-    multiline_trailing_comma=True,
-    single_element_trailing_comma=False,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence=None,
-    empty_dict=None,
-    set_open="new Set([",
-    set_close="])",
-    empty_set="new Set()",
-    format_sequence_entry=passthrough_sequence_entry,
-    format_set_entry=passthrough_set_entry,
-    comment_prefix="//",
-    comment_suffix="",
-    omap_open="{",
-    omap_close="}",
-    format_omap_entry=_format_js_omap_entry,
-    multiline_close_indent="",
-    element_separator=", ",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-)
+_DATE_FORMATS: dict[str, Callable[[datetime.date], str]] = {
+    "iso": format_date_iso,
+    "js": format_date_js,
+}
+
+_DATETIME_FORMATS: dict[str, Callable[[datetime.datetime], str]] = {
+    "iso": format_datetime_iso,
+    "js": format_datetime_js,
+}
+
+
+class JavaScript:
+    """JavaScript language specification."""
+
+    def __init__(
+        self,
+        *,
+        date_format: Literal["iso", "js"] = "iso",
+        datetime_format: Literal["iso", "js"] = "iso",
+    ) -> None:
+        """Initialize JavaScript language specification."""
+        self.null_literal = "null"
+        self.true_literal = "true"
+        self.false_literal = "false"
+        self.sequence_open = "["
+        self.sequence_close = "]"
+        self.dict_open = "{"
+        self.dict_close = "}"
+        self.format_dict_entry = dict_entry_with_separator(separator=": ")
+        self.multiline_trailing_comma = True
+        self.single_element_trailing_comma = False
+        self.format_bytes = format_bytes_hex
+        self.format_date = _DATE_FORMATS[date_format]
+        self.format_datetime = _DATETIME_FORMATS[datetime_format]
+        self.empty_sequence: str | None = None
+        self.empty_dict: str | None = None
+        self.set_open = "new Set(["
+        self.set_close = "])"
+        self.empty_set: str | None = "new Set()"
+        self.format_sequence_entry = passthrough_sequence_entry
+        self.format_set_entry = passthrough_set_entry
+        self.comment_prefix = "//"
+        self.comment_suffix = ""
+        self.omap_open = "{"
+        self.omap_close = "}"
+        self.format_omap_entry = _format_js_omap_entry
+        self.multiline_close_indent = ""
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.format_variable_declaration = _format_variable_declaration
+        self.format_variable_assignment = _format_variable_assignment
+
+
+JAVASCRIPT: Language = JavaScript()

@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+import datetime  # noqa: TC003
+from typing import TYPE_CHECKING, Literal
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
+    format_date_r,
     format_datetime_iso,
+    format_datetime_r,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import Language
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _format_r_omap_entry(key: str, value: str) -> str:
@@ -28,35 +35,54 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} <- {value}"
 
 
-R = Language(
-    null_literal="NULL",
-    true_literal="TRUE",
-    false_literal="FALSE",
-    sequence_open="list(",
-    sequence_close=")",
-    dict_open="list(",
-    dict_close=")",
-    format_dict_entry=dict_entry_with_separator(separator=" = "),
-    single_element_trailing_comma=False,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence=None,
-    empty_dict=None,
-    set_open="list(",
-    set_close=")",
-    empty_set=None,
-    format_sequence_entry=passthrough_sequence_entry,
-    format_set_entry=passthrough_set_entry,
-    comment_prefix="#",
-    comment_suffix="",
-    omap_open="list(",
-    omap_close=")",
-    format_omap_entry=_format_r_omap_entry,
-    multiline_trailing_comma=False,
-    multiline_close_indent="",
-    element_separator=", ",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-)
+_DATE_FORMATS: dict[str, Callable[[datetime.date], str]] = {
+    "iso": format_date_iso,
+    "r": format_date_r,
+}
+
+_DATETIME_FORMATS: dict[str, Callable[[datetime.datetime], str]] = {
+    "iso": format_datetime_iso,
+    "r": format_datetime_r,
+}
+
+
+class R:
+    """R language specification."""
+
+    def __init__(
+        self,
+        *,
+        date_format: Literal["iso", "r"] = "iso",
+        datetime_format: Literal["iso", "r"] = "iso",
+    ) -> None:
+        """Initialize R language specification."""
+        self.null_literal = "NULL"
+        self.true_literal = "TRUE"
+        self.false_literal = "FALSE"
+        self.sequence_open = "list("
+        self.sequence_close = ")"
+        self.dict_open = "list("
+        self.dict_close = ")"
+        self.format_dict_entry = dict_entry_with_separator(separator=" = ")
+        self.multiline_trailing_comma = False
+        self.single_element_trailing_comma = False
+        self.format_bytes = format_bytes_hex
+        self.format_date = _DATE_FORMATS[date_format]
+        self.format_datetime = _DATETIME_FORMATS[datetime_format]
+        self.empty_sequence: str | None = None
+        self.empty_dict: str | None = None
+        self.set_open = "list("
+        self.set_close = ")"
+        self.empty_set: str | None = None
+        self.format_sequence_entry = passthrough_sequence_entry
+        self.format_set_entry = passthrough_set_entry
+        self.comment_prefix = "#"
+        self.comment_suffix = ""
+        self.omap_open = "list("
+        self.omap_close = ")"
+        self.format_omap_entry = _format_r_omap_entry
+        self.multiline_close_indent = ""
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.format_variable_declaration = _format_variable_declaration
+        self.format_variable_assignment = _format_variable_assignment
