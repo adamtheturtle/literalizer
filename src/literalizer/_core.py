@@ -243,7 +243,7 @@ def _literalize(
         # At this point data must be a list (scalars/dict/set/omap handled)
         items = cast("list[Value]", data)
         last_idx = len(items) - 1
-        for i, item in enumerate(iterable=items):
+        for i, item in enumerate(iterable=items):  # type: ignore[assignment]
             formatted = spec.format_sequence_entry(
                 _format_value(value=item, spec=spec)
             )
