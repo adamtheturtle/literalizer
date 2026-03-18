@@ -35,7 +35,7 @@ CRYSTAL = Language(
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
     empty_sequence="[] of Nil",
-    empty_dict=None,
+    empty_dict="{} of Nil => Nil",
     set_open="Set{",
     set_close="}",
     empty_set="Set(Nil).new",
