@@ -1882,3 +1882,19 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
         wrap=False,
     )
     assert result == expected
+
+
+def test_matlab_dict_key_with_quote() -> None:
+    """MATLAB struct keys containing double quotes are decoded correctly.
+
+    The ``_decode_matlab_string_expr`` helper must handle ``""`` inside a
+    double-quoted string, which represents a literal ``"`` character.
+    """
+    yaml_string = '{"hello \\"world\\"": 1}\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=Matlab(),
+        prefix="",
+        wrap=False,
+    )
+    assert result == "'hello \"world\"', 1"
