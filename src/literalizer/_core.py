@@ -372,21 +372,18 @@ def literalize_yaml(
 
     result: str
     if isinstance(data, set):
-        if not base:
-            result = base
-        else:
-            ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
-                stream=StringIO(initial_value=yaml_string),
-            )
-            set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
-            result = apply_collection_comments(
-                collection_comments=set_comments,
-                base=base,
-                comment_prefix=cp,
-                comment_suffix=cs,
-                prefix=prefix,
-                wrap=wrap,
-            )
+        ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+            stream=StringIO(initial_value=yaml_string),
+        )
+        set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
+        result = apply_collection_comments(
+            collection_comments=set_comments,
+            base=base,
+            comment_prefix=cp,
+            comment_suffix=cs,
+            prefix=prefix,
+            wrap=wrap,
+        )
     elif not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
