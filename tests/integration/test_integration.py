@@ -551,7 +551,9 @@ _ZIG_PREAMBLE = (
 
 
 def _wrap_zig(content: str) -> str:
-    """Wrap in a Zig main function with ZVal/ZKV type definitions."""
+    """Wrap in a Zig main function with ``ZVal``/``ZKV`` type
+    definitions.
+    """
     indented = content.replace("\n", "\n    ")
     return (
         _ZIG_PREAMBLE
@@ -575,8 +577,8 @@ def _wrap_zig_varname(content: str) -> str:
 
 
 def _wrap_zig_combined(declaration: str, assignment: str) -> str:
-    """Zig: const declaration in an inner block, then var + assignment in
-    the outer scope.
+    """Zig: ``const`` declaration in an inner block, then ``var`` +
+    assignment in the outer scope.
     """
     decl_indented = "        " + declaration.replace("\n", "\n        ")
     assign_indented = "    " + assignment.replace("\n", "\n    ")

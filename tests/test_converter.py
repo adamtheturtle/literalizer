@@ -57,6 +57,7 @@ from literalizer._formatters import (
     to_fsharp_val,
     to_ocaml_val,
     to_occam_val,
+    to_zig_val,
 )
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
@@ -2054,4 +2055,12 @@ def test_to_c_val_unknown_value() -> None:
     classified as a string literal, int, or float.
     """
     result = to_c_val("SomeUnknownValue")  # type: ignore[misc]
+    assert result == "SomeUnknownValue"
+
+
+def test_to_zig_val_unknown_value() -> None:
+    """``to_zig_val`` returns the value unchanged when it cannot be
+    classified as a string literal, int, or float.
+    """
+    result = to_zig_val("SomeUnknownValue")  # type: ignore[misc]
     assert result == "SomeUnknownValue"
