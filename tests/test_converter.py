@@ -621,7 +621,7 @@ def test_custom_language() -> None:
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
-        language=custom,  # type: ignore[arg-type]
+        language=custom,
         prefix="",
         wrap=False,
     )
@@ -1718,7 +1718,7 @@ def test_omap_custom_language_spec() -> None:
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
-        language=custom,  # type: ignore[arg-type]
+        language=custom,
         prefix="",
         wrap=True,
     )

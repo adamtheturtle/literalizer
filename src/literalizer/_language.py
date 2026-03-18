@@ -30,13 +30,15 @@ class Language(Protocol):
     false_literal: str
     """The literal representing false/False."""
 
-    sequence_open: Callable[[list[Value]], str]
-    """Callable that returns the opening delimiter for a sequence.
+    @property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence.
 
-    Receives the list of items about to be formatted, so the delimiter
-    can depend on the element types when needed.  For a fixed delimiter
-    use :func:`~literalizer.fixed_sequence_open`.
-    """
+        Receives the list of items about to be formatted, so the delimiter
+        can depend on the element types when needed.  For a fixed delimiter
+        use :func:`~literalizer.fixed_sequence_open`.
+        """
+        ...
 
     sequence_close: str
     """The closing delimiter for sequences."""
@@ -47,10 +49,12 @@ class Language(Protocol):
     dict_close: str
     """The closing delimiter for dict literals."""
 
-    format_dict_entry: Callable[[str, str], str]
-    """Callable that formats a dict entry from a pre-formatted key and
-    value string.
-    """
+    @property
+    def format_dict_entry(self) -> Callable[[str, str], str]:
+        """Callable that formats a dict entry from a pre-formatted key and
+        value string.
+        """
+        ...
 
     multiline_trailing_comma: bool
     """Whether to append a trailing comma after the last entry."""
@@ -58,20 +62,26 @@ class Language(Protocol):
     single_element_trailing_comma: bool
     """Whether a single-element sequence requires a trailing comma."""
 
-    format_bytes: Callable[[bytes], str]
-    """Callable that formats a :class:`bytes` value as a string
-    literal.
-    """
+    @property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a :class:`bytes` value as a string
+        literal.
+        """
+        ...
 
-    format_date: Callable[[datetime.date], str]
-    """Callable that formats a :class:`datetime.date` as a string
-    literal.
-    """
+    @property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a :class:`datetime.date` as a string
+        literal.
+        """
+        ...
 
-    format_datetime: Callable[[datetime.datetime], str]
-    """Callable that formats a :class:`datetime.datetime` as a string
-    literal.
-    """
+    @property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a :class:`datetime.datetime` as a string
+        literal.
+        """
+        ...
 
     empty_sequence: str | None
     """Override for empty sequence literals, or ``None``."""
@@ -88,11 +98,15 @@ class Language(Protocol):
     empty_set: str | None
     """Override for empty set literals, or ``None``."""
 
-    format_sequence_entry: Callable[[str], str]
-    """Callable that formats a sequence entry."""
+    @property
+    def format_sequence_entry(self) -> Callable[[str], str]:
+        """Callable that formats a sequence entry."""
+        ...
 
-    format_set_entry: Callable[[str], str]
-    """Callable that formats a set entry."""
+    @property
+    def format_set_entry(self) -> Callable[[str], str]:
+        """Callable that formats a set entry."""
+        ...
 
     comment_prefix: str
     """The comment prefix for the language."""
@@ -106,8 +120,10 @@ class Language(Protocol):
     omap_close: str
     """The closing delimiter for ordered-map literals."""
 
-    format_omap_entry: Callable[[str, str], str]
-    """Callable that formats one ordered-map entry."""
+    @property
+    def format_omap_entry(self) -> Callable[[str, str], str]:
+        """Callable that formats one ordered-map entry."""
+        ...
 
     multiline_close_indent: str
     """The prefix to prepend to the closing delimiter of multi-line
@@ -120,14 +136,20 @@ class Language(Protocol):
     skip_null_dict_values: bool
     """Whether to omit dict entries whose value is ``None``."""
 
-    format_variable_declaration: Callable[[str, str], str]
-    """Callable that formats a new variable declaration."""
+    @property
+    def format_variable_declaration(self) -> Callable[[str, str], str]:
+        """Callable that formats a new variable declaration."""
+        ...
 
-    format_variable_assignment: Callable[[str, str], str]
-    """Callable that formats an assignment to an existing variable."""
+    @property
+    def format_variable_assignment(self) -> Callable[[str, str], str]:
+        """Callable that formats an assignment to an existing variable."""
+        ...
 
-    format_string: Callable[[str], str]
-    """Callable that formats a string value as a quoted literal."""
+    @property
+    def format_string(self) -> Callable[[str], str]:
+        """Callable that formats a string value as a quoted literal."""
+        ...
 
 
 @dataclasses.dataclass
