@@ -30,7 +30,7 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
     expanding them into a struct array.
     """
     if key.startswith('"') and key.endswith('"'):
-        inner = json.loads(key).replace("'", "''")  # type: ignore[misc]
+        inner = json.loads(s=key).replace("'", "''")
         key = f"'{inner}'"
     if value.startswith("{") and value.endswith("}"):
         value = f"{{{value}}}"
