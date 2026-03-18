@@ -475,6 +475,23 @@ jobs:
           find tests/integration/cases -name "*.adb" -print0 |
           xargs -0 uv run python check_ada_golden_syntax.py
 
+  lint-occam:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install KroC
+        run: sudo apt-get install -y kroc
+      - name: Check Occam-pi syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.occ" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              kroc -o "$tmpdir/check" "$f" || exit 1
+            done
+
   completion-lint:
     needs:
       - build
@@ -505,6 +522,7 @@ jobs:
       - lint-r
       - lint-d
       - lint-ada
+      - lint-occam
     runs-on: ubuntu-latest
     if: always()
     steps:
