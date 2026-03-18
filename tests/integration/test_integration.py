@@ -789,7 +789,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "d": _LanguageConfig(
-        spec=literalizer.languages.D,
+        spec=literalizer.languages.D(),
         extension=".d",
         wrap=_wrap_d,
         varname_wrap=_wrap_d_varname,
