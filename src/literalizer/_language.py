@@ -150,3 +150,12 @@ class Language:
     """Callable that formats an assignment to an existing variable from a
     name and value string.
     """
+
+    format_string: Callable[[str], str] | None = None
+    """Optional callable that formats a string value as a quoted literal.
+
+    When ``None``, the default backslash-escape quoting is used:
+    backslashes are doubled, double quotes are backslash-escaped, and
+    newlines become ``\\n``.  Override this for languages that use a
+    different escape convention (e.g. PowerShell uses backtick escaping).
+    """

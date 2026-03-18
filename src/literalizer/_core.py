@@ -40,12 +40,15 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     elif isinstance(value, float):
         result = repr(value)
     elif isinstance(value, str):
-        escaped = (
-            value.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("\n", "\\n")
-        )
-        result = f'"{escaped}"'
+        if spec.format_string is not None:
+            result = spec.format_string(value)
+        else:
+            escaped = (
+                value.replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("\n", "\\n")
+            )
+            result = f'"{escaped}"'
     elif isinstance(value, bytes):
         result = spec.format_bytes(value)
     elif isinstance(value, datetime.datetime):

@@ -29,6 +29,12 @@ def _format_sequence_entry(item: str) -> str:
     return item
 
 
+def _format_string(value: str) -> str:
+    """Format a string using PowerShell backtick escaping."""
+    escaped = value.replace("`", "``").replace('"', '`"').replace("\n", "`n")
+    return f'"{escaped}"'
+
+
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a PowerShell variable declaration."""
     return f"${name} = {value}"
@@ -70,4 +76,5 @@ POWERSHELL = Language(
     skip_null_dict_values=False,
     format_variable_declaration=_format_variable_declaration,
     format_variable_assignment=_format_variable_assignment,
+    format_string=_format_string,
 )
