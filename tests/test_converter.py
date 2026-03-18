@@ -16,6 +16,7 @@ from hypothesis import strategies as st
 
 from literalizer import (
     Language,
+    LanguageSpec,
     literalize_json,
     literalize_yaml,
 )
@@ -48,9 +49,6 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
-)
-from literalizer._language import (
-    _LanguageSpec,  # pyright: ignore[reportPrivateUsage]
 )
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
@@ -516,7 +514,7 @@ def test_scalar_wrap_ignored() -> None:
 
 def test_custom_language() -> None:
     """A custom Language works as a language."""
-    custom = _LanguageSpec(
+    custom = LanguageSpec(
         null_literal="NIL",
         true_literal="YES",
         false_literal="NO",
@@ -1612,7 +1610,7 @@ def test_omap_custom_language_spec() -> None:
         - age: 30
         """,
     )
-    custom = _LanguageSpec(
+    custom = LanguageSpec(
         null_literal="null",
         true_literal="true",
         false_literal="false",

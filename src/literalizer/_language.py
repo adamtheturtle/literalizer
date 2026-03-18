@@ -20,7 +20,7 @@ class Language(Protocol):
     :data:`~literalizer.languages.PYTHON`,
     :data:`~literalizer.languages.JAVASCRIPT`). To support additional
     languages or override defaults, write a class that provides all the
-    required attributes, or use :class:`~literalizer._language._LanguageSpec`.
+    required attributes, or use :class:`~literalizer.LanguageSpec`.
     """
 
     null_literal: str
@@ -128,10 +128,11 @@ class Language(Protocol):
 
 
 @dataclasses.dataclass
-class _LanguageSpec:  # pyright: ignore[reportUnusedClass]
-    """Private dataclass implementing :class:`Language`.
+class LanguageSpec:
+    """Dataclass implementing :class:`Language`.
 
-    Use this to build fully custom language specifications in tests.
+    Use this to build fully custom language specifications without
+    writing a dedicated class.
     """
 
     null_literal: str
