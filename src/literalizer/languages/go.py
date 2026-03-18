@@ -64,8 +64,25 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class Go:
-    """Go language specification."""
+    """Go language specification.
 
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"go"`` — ``time.Date`` call,
+              e.g. ``time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"go"`` — ``time.Date`` call,
+              e.g. ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
+              time.UTC)``.
+    """
+
+    @beartype
     def __init__(
         self,
         *,

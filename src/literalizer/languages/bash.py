@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+@beartype
 def _to_bash_value(item: str) -> str:
     """Quote an item if it is a nested array or dict expression.
 
@@ -77,6 +78,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Bash:
     """Bash language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Bash language specification."""
         self.null_literal = '""'

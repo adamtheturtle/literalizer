@@ -44,6 +44,7 @@ _string_format: Callable[[str], str] = format_string_backslash_dollar
 class Groovy:
     """Groovy language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Groovy language specification."""
         self.null_literal = "null"

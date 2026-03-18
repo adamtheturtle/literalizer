@@ -9,6 +9,7 @@ ANull
 ASet
 AStr
 Args
+Bool
 CPP
 CSharp
 Changelog
@@ -22,10 +23,18 @@ FNull
 FSet
 FSharp
 FStr
+HBool
+HFloat
+HList
+HMap
+HNull
+HSet
+HStr
 JSONDecodeError
 Lua
 NEL
 Nim
+Num
 OBool
 OCaml
 OFloat
@@ -58,6 +67,7 @@ fromhex
 ghc
 gnatmake
 gofmt
+haskell
 initializer
 initializers
 javac

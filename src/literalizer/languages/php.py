@@ -60,6 +60,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Php:
     """PHP language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Php language specification."""
         self.null_literal = "null"

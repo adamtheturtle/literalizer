@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+@beartype
 def _to_val(value: str) -> str:
     """Wrap a pre-formatted value string in a D ``JSONValue(...)`` call.
 
@@ -83,11 +84,13 @@ def _format_d_omap_entry(key: str, value: str) -> str:
     return f"JSONValue([JSONValue({key}), {_to_val(value=value)}])"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a D ``auto`` variable declaration using ``JSONValue``."""
     return f"auto {name} = {_to_val(value=value)};"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a D assignment to an existing variable."""
     return f"{name} = {_to_val(value=value)};"

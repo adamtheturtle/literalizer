@@ -58,6 +58,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Erlang:
     """Erlang language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Erlang language specification."""
         self.null_literal = "undefined"

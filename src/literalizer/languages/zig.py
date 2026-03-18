@@ -81,6 +81,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Zig:
     """Zig language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Zig language specification."""
         self.null_literal = ".nil"

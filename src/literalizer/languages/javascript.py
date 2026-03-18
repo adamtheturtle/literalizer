@@ -56,8 +56,24 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class JavaScript:
-    """JavaScript language specification."""
+    """JavaScript language specification.
 
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"js"`` — ``new Date(...)`` call,
+              e.g. ``new Date("2024-01-15")``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"js"`` — ``new Date(...)`` call,
+              e.g. ``new Date("2024-01-15T12:30:00")``.
+    """
+
+    @beartype
     def __init__(
         self,
         *,

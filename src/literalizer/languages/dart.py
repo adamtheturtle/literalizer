@@ -56,8 +56,24 @@ _string_format: Callable[[str], str] = format_string_backslash_dollar
 
 
 class Dart:
-    """Dart language specification."""
+    """Dart language specification.
 
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"dart"`` — ``DateTime.parse(...)`` call,
+              e.g. ``DateTime.parse("2024-01-15")``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"dart"`` — ``DateTime.parse(...)`` call,
+              e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
+    """
+
+    @beartype
     def __init__(
         self,
         *,

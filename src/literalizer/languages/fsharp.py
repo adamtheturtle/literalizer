@@ -105,6 +105,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class FSharp:
     """F# language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize FSharp language specification."""
         self.null_literal = "FNull"

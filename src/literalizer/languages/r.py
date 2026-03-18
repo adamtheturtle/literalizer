@@ -68,8 +68,31 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class R:
-    """R language specification."""
+    """R language specification.
 
+    Dicts are represented as named ``list()`` calls where each entry is
+    written as ``"key" = value``.  R's parser rejects zero-length names, so
+    **dict keys that are empty strings are emitted as positional (unnamed)
+    list elements** rather than as ``"" = value``.  The name is lost in the
+    output; if you need to round-trip empty-string keys, use a different
+    target language.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"r"`` — ``as.Date(...)`` call,
+              e.g. ``as.Date("2024-01-15")``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"r"`` — ``as.POSIXct(...)`` call,
+              e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
+    """
+
+    @beartype
     def __init__(
         self,
         *,
