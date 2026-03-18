@@ -303,7 +303,7 @@ project_excludes = [
 ]
 
 [tool.pyright]
-enableTypeIgnoreComments = true
+enableTypeIgnoreComments = false
 exclude = [
     ".venv",
     "tests/integration/cases",
