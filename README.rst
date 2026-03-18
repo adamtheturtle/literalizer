@@ -26,7 +26,7 @@ Usage
    """Example of using literalizer."""
 
    from literalizer import literalize_yaml
-   from literalizer.languages import GO
+   from literalizer.languages import Go
 
    # YAML comments are preserved using the target language's comment syntax
    yaml_config = """\
@@ -38,7 +38,7 @@ Usage
    """
    result = literalize_yaml(
        yaml_string=yaml_config,
-       language=GO,
+       language=Go(),
        prefix="    ",
        wrap=True,
    )

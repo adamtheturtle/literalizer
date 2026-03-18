@@ -4,30 +4,12 @@ fail_fast: true
 ci:
   skip:
     - actionlint
-    - r-syntax-check
     - check-manifest
-    - clojure-syntax-check
-    - csharp-golden-syntax-check
-    - dart-syntax-check
-    - elixir-syntax-check
-    - erlang-syntax-check
-    - fsharp-golden-syntax-check
-    - ocaml-golden-syntax-check
-    - occam-golden-syntax-check
     - deptry
     - doc8
     - docs
     - interrogate
     - interrogate-docs
-    - go-golden-syntax-check
-    - groovy-syntax-check
-    - haskell-golden-syntax-check
-    - julia-golden-syntax-check
-    - lua-syntax-check
-    - java-golden-syntax-check
-    - javascript-syntax-check
-    - kotlin-syntax-check
-    - typescript-syntax-check
     - linkcheck
     - mypy
     - mypy-docs
@@ -44,14 +26,6 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
-    - c-golden-syntax-check
-    - cpp-golden-syntax-check
-    - swift-syntax-check
-    - perl-syntax-check
-    - php-syntax-check
-    - ruby-syntax-check
-    - rust-golden-syntax-check
-    - scala-golden-syntax-check
     - shellcheck
     - shellcheck-docs
     - shfmt
@@ -129,6 +103,7 @@ repos:
         entry: uv run --extra=dev shellcheck --shell=bash
         language: python
         types_or: [shell]
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -146,6 +121,7 @@ repos:
         entry: uv run --extra=dev shfmt --write --space-redirects --indent=4
         language: python
         types_or: [shell]
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 

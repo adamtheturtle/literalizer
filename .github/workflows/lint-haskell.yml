@@ -1,0 +1,26 @@
+---
+name: Lint Haskell
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-haskell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: latest
+      - name: Check Haskell syntax
+        run: |-
+          tmpdir=$(mktemp -d)
+          set -o pipefail
+          find tests/integration/cases -name "*.hs" -print0 | \
+            while IFS= read -r -d '' f; do
+              ghc -fno-code -outputdir "$tmpdir" "$f" || exit 1
+            done

@@ -2,60 +2,76 @@
 
 from __future__ import annotations
 
+from .ada import Ada
+from .bash import Bash
 from .c import C
-from .clojure import CLOJURE
-from .cpp import CPP
-from .csharp import CSHARP
-from .dart import DART
-from .elixir import ELIXIR
-from .erlang import ERLANG
-from .fsharp import FSHARP
-from .go import GO
-from .groovy import GROOVY
-from .haskell import HASKELL
-from .java import JAVA
-from .javascript import JAVASCRIPT
-from .julia import JULIA
-from .kotlin import KOTLIN
-from .lua import LUA
-from .ocaml import OCAML
-from .occam import OCCAM
-from .perl import PERL
-from .php import PHP
-from .python import PYTHON
+from .clojure import Clojure
+from .cpp import Cpp
+from .crystal import Crystal
+from .csharp import CSharp
+from .d import D
+from .dart import Dart
+from .elixir import Elixir
+from .erlang import Erlang
+from .fsharp import FSharp
+from .go import Go
+from .groovy import Groovy
+from .haskell import Haskell
+from .java import Java
+from .javascript import JavaScript
+from .julia import Julia
+from .kotlin import Kotlin
+from .lua import Lua
+from .matlab import Matlab
+from .nim import Nim
+from .ocaml import OCaml
+from .occam import Occam
+from .perl import Perl
+from .php import Php
+from .powershell import PowerShell
+from .python import Python
 from .r import R
-from .ruby import RUBY
-from .rust import RUST
-from .scala import SCALA
-from .swift import SWIFT
-from .typescript import TYPESCRIPT
+from .ruby import Ruby
+from .rust import Rust
+from .scala import Scala
+from .swift import Swift
+from .typescript import TypeScript
+from .zig import Zig
 
 __all__ = [
-    "CLOJURE",
-    "CPP",
-    "CSHARP",
-    "DART",
-    "ELIXIR",
-    "ERLANG",
-    "FSHARP",
-    "GO",
-    "GROOVY",
-    "HASKELL",
-    "JAVA",
-    "JAVASCRIPT",
-    "JULIA",
-    "KOTLIN",
-    "LUA",
-    "OCAML",
-    "OCCAM",
-    "PERL",
-    "PHP",
-    "PYTHON",
-    "RUBY",
-    "RUST",
-    "SCALA",
-    "SWIFT",
-    "TYPESCRIPT",
+    "Ada",
+    "Bash",
     "C",
+    "CSharp",
+    "Clojure",
+    "Cpp",
+    "Crystal",
+    "D",
+    "Dart",
+    "Elixir",
+    "Erlang",
+    "FSharp",
+    "Go",
+    "Groovy",
+    "Haskell",
+    "Java",
+    "JavaScript",
+    "Julia",
+    "Kotlin",
+    "Lua",
+    "Matlab",
+    "Nim",
+    "OCaml",
+    "Occam",
+    "Perl",
+    "Php",
+    "PowerShell",
+    "Python",
     "R",
+    "Ruby",
+    "Rust",
+    "Scala",
+    "Swift",
+    "TypeScript",
+    "Zig",
 ]
