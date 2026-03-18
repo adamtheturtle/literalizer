@@ -31,7 +31,6 @@ from literalizer._formatters import (
     format_date_java,
     format_date_js,
     format_date_kotlin,
-    format_date_php,
     format_date_python,
     format_date_ruby,
     format_date_rust,
@@ -44,20 +43,11 @@ from literalizer._formatters import (
     format_datetime_java_zoned,
     format_datetime_js,
     format_datetime_kotlin,
-    format_datetime_php,
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
-    format_variable_assignment_fsharp,
-    format_variable_assignment_python,
-    format_variable_declaration_python,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    to_c_val,
-    to_fsharp_val,
-    to_ocaml_val,
-    to_occam_val,
-    to_zig_val,
 )
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
@@ -549,8 +539,8 @@ def test_custom_language() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
-        format_variable_declaration=format_variable_declaration_python,
-        format_variable_assignment=format_variable_assignment_python,
+        format_variable_declaration=PYTHON.format_variable_declaration,
+        format_variable_assignment=PYTHON.format_variable_assignment,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -1026,18 +1016,6 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "NaiveTime::from_hms_micro_opt(12, 30, 0, 123456).unwrap())",
             id="format_datetime_rust_microsecond",
         ),
-        pytest.param(
-            format_date_php,
-            _SAMPLE_DATE,
-            'new DateTime("2024-01-15")',
-            id="format_date_php",
-        ),
-        pytest.param(
-            format_datetime_php,
-            _SAMPLE_DATETIME,
-            'new DateTime("2024-01-15T12:30:00")',
-            id="format_datetime_php",
-        ),
     ],
 )
 def test_format_date_datetime(
@@ -1123,8 +1101,8 @@ def test_custom_format_date() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
-        format_variable_declaration=format_variable_declaration_python,
-        format_variable_assignment=format_variable_assignment_python,
+        format_variable_declaration=PYTHON.format_variable_declaration,
+        format_variable_assignment=PYTHON.format_variable_assignment,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -1166,8 +1144,8 @@ def test_custom_format_datetime() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
-        format_variable_declaration=format_variable_declaration_python,
-        format_variable_assignment=format_variable_assignment_python,
+        format_variable_declaration=PYTHON.format_variable_declaration,
+        format_variable_assignment=PYTHON.format_variable_assignment,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1209,8 +1187,8 @@ def test_java_native_dates() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
-        format_variable_declaration=format_variable_declaration_python,
-        format_variable_assignment=format_variable_assignment_python,
+        format_variable_declaration=PYTHON.format_variable_declaration,
+        format_variable_assignment=PYTHON.format_variable_assignment,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1254,8 +1232,8 @@ def test_ruby_native_dates() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
-        format_variable_declaration=format_variable_declaration_python,
-        format_variable_assignment=format_variable_assignment_python,
+        format_variable_declaration=PYTHON.format_variable_declaration,
+        format_variable_assignment=PYTHON.format_variable_assignment,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1394,8 +1372,8 @@ def test_custom_format_bytes() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
-        format_variable_declaration=format_variable_declaration_python,
-        format_variable_assignment=format_variable_assignment_python,
+        format_variable_declaration=PYTHON.format_variable_declaration,
+        format_variable_assignment=PYTHON.format_variable_assignment,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
@@ -1811,8 +1789,8 @@ def test_omap_custom_language_spec() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
-        format_variable_declaration=format_variable_declaration_python,
-        format_variable_assignment=format_variable_assignment_python,
+        format_variable_declaration=PYTHON.format_variable_declaration,
+        format_variable_assignment=PYTHON.format_variable_assignment,
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -2008,59 +1986,3 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
-
-
-def test_to_fsharp_val_unknown_value() -> None:
-    """``to_fsharp_val`` returns the value unchanged when it cannot be
-    classified as a string literal, int, or float.
-    """
-    result = to_fsharp_val(value="SomeUnknownValue")
-    assert result == "SomeUnknownValue"
-
-
-def test_format_variable_assignment_fsharp() -> None:
-    """``format_variable_assignment_fsharp`` produces a ``let`` binding
-    with an explicit ``Val`` type annotation.
-    """
-    result = format_variable_assignment_fsharp(name="x", value="FList [1; 2]")
-    assert result == "let x: Val = FList [1; 2]"
-
-
-def test_to_ocaml_val_unknown_value() -> None:
-    """``to_ocaml_val`` returns the value unchanged when it cannot be
-    classified as a string literal, int, or float.
-    """
-    result = to_ocaml_val(value="SomeUnknownValue")
-    assert result == "SomeUnknownValue"
-
-
-def test_to_occam_val_float() -> None:
-    """``to_occam_val`` wraps float values in the ``lit.float``
-    constructor.
-    """
-    result = to_occam_val(value="3.14")
-    assert result == "MOBILE LIT(lit.float; 3.14(REAL32))"
-
-
-def test_to_occam_val_unknown_value() -> None:
-    """``to_occam_val`` returns the value unchanged when it cannot be
-    classified as a string literal, int, or float.
-    """
-    result = to_occam_val(value="SomeUnknownValue")
-    assert result == "SomeUnknownValue"
-
-
-def test_to_c_val_unknown_value() -> None:
-    """``to_c_val`` returns the value unchanged when it cannot be
-    classified as a string literal, int, or float.
-    """
-    result = to_c_val("SomeUnknownValue")  # type: ignore[misc]
-    assert result == "SomeUnknownValue"
-
-
-def test_to_zig_val_unknown_value() -> None:
-    """``to_zig_val`` returns the value unchanged when it cannot be
-    classified as a string literal, int, or float.
-    """
-    result = to_zig_val("SomeUnknownValue")  # type: ignore[misc]
-    assert result == "SomeUnknownValue"

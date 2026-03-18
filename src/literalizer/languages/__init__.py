@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from .ada import ADA
 from .c import C
 from .clojure import CLOJURE
 from .cpp import CPP
 from .csharp import CSHARP
+from .d import D
 from .dart import DART
 from .elixir import ELIXIR
 from .erlang import ERLANG
@@ -32,6 +34,7 @@ from .typescript import TYPESCRIPT
 from .zig import ZIG
 
 __all__ = [
+    "ADA",
     "CLOJURE",
     "CPP",
     "CSHARP",
@@ -59,5 +62,6 @@ __all__ = [
     "TYPESCRIPT",
     "ZIG",
     "C",
+    "D",
     "R",
 ]

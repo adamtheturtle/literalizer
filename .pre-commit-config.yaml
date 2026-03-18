@@ -4,6 +4,7 @@ fail_fast: true
 ci:
   skip:
     - actionlint
+    - ada-syntax-check
     - r-syntax-check
     - check-manifest
     - clojure-syntax-check
@@ -47,6 +48,7 @@ ci:
     - ruff-format-fix-docs
     - c-golden-syntax-check
     - cpp-golden-syntax-check
+    - d-golden-syntax-check
     - swift-syntax-check
     - perl-syntax-check
     - php-syntax-check
@@ -424,6 +426,14 @@ repos:
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
+      - id: ada-syntax-check
+        name: Ada golden file syntax check
+        entry: uv run python check_ada_golden_syntax.py
+        language: python
+        files: ^tests/integration/cases/.*\.adb$
+        additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
       - id: ruby-syntax-check
         name: Ruby syntax check
         entry: ruby -c
@@ -484,6 +494,14 @@ repos:
         entry: clang++ -fsyntax-only -std=c++20
         language: system
         types: [c++]
+        stages: [pre-commit]
+
+      - id: d-golden-syntax-check
+        name: D golden file syntax check
+        entry: bash -c 'command -v dmd > /dev/null || exit 0; for f; do dmd -o- -c
+          "$f" || exit 1; done' --
+        language: system
+        files: ^tests/integration/cases/.*\.d$
         stages: [pre-commit]
 
       - id: kotlin-syntax-check
@@ -625,8 +643,8 @@ repos:
 
       - id: zig-syntax-check
         name: Zig golden file syntax check
-        entry: bash -c 'for f; do zig ast-check "$f" > /dev/null || exit 1; done'
-          --
+        entry: bash -c 'command -v zig > /dev/null || exit 0; for f; do zig ast-check
+          "$f" > /dev/null || exit 1; done' --
         language: system
         types: [zig]
         files: ^tests/integration/cases/
