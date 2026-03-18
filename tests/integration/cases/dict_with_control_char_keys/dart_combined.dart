@@ -2,6 +2,7 @@ void _declaration() {
   final my_data = {
       "key\nwith\nnewlines": "value1",
       "key\twith\ttabs": "value2",
+      "": "value3",
   };
   my_data.hashCode;
 }
@@ -10,6 +11,7 @@ void _assignment() {
   my_data = {
       "key\nwith\nnewlines": "value1",
       "key\twith\ttabs": "value2",
+      "": "value3",
   };
   my_data.hashCode;
 }

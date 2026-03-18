@@ -17,10 +17,12 @@ void _check(void) {
 _CVal my_data = ((_CVal){.m = (_CKV[]){
     {"key\nwith\nnewlines", ((_CVal){.s = "value1"})},
     {"key\twith\ttabs", ((_CVal){.s = "value2"})},
+    {"", ((_CVal){.s = "value3"})},
 }});
 my_data = ((_CVal){.m = (_CKV[]){
     {"key\nwith\nnewlines", ((_CVal){.s = "value1"})},
     {"key\twith\ttabs", ((_CVal){.s = "value2"})},
+    {"", ((_CVal){.s = "value3"})},
 }});
     (void)my_data;
 }

@@ -17,6 +17,7 @@ void _check(void) {
     _CVal _v = ((_CVal){.m = (_CKV[]){
     {"key\nwith\nnewlines", ((_CVal){.s = "value1"})},
     {"key\twith\ttabs", ((_CVal){.s = "value2"})},
+    {"", ((_CVal){.s = "value3"})},
 }});
     (void)_v;
 }

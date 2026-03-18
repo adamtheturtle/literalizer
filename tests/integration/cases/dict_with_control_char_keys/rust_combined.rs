@@ -5,6 +5,7 @@ fn main() {
         let my_data = HashMap::from([
             ("key\nwith\nnewlines", "value1"),
             ("key\twith\ttabs", "value2"),
+            ("", "value3"),
         ]);
         let _ = my_data;
     }
@@ -12,6 +13,7 @@ fn main() {
     my_data = HashMap::from([
         ("key\nwith\nnewlines", "value1"),
         ("key\twith\ttabs", "value2"),
+        ("", "value3"),
     ]);
     let _ = my_data;
 }

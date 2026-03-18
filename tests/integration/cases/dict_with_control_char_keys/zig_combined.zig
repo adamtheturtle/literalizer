@@ -14,6 +14,7 @@ pub fn main() void {
         const my_data: ZVal = .{ .map = &.{
             .{ .key = "key\nwith\nnewlines", .val = .{ .str = "value1" } },
             .{ .key = "key\twith\ttabs", .val = .{ .str = "value2" } },
+            .{ .key = "", .val = .{ .str = "value3" } },
         }};
         _ = my_data;
     }
@@ -21,6 +22,7 @@ pub fn main() void {
     my_data = .{ .map = &.{
         .{ .key = "key\nwith\nnewlines", .val = .{ .str = "value1" } },
         .{ .key = "key\twith\ttabs", .val = .{ .str = "value2" } },
+        .{ .key = "", .val = .{ .str = "value3" } },
     }};
     const _my_data_read = my_data;
     _ = _my_data_read;

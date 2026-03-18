@@ -1,4 +1,5 @@
 $x = @{
     "key`nwith`nnewlines" = "value1";
-    "key	with	tabs" = "value2"
+    "key	with	tabs" = "value2";
+    "" = "value3"
 }

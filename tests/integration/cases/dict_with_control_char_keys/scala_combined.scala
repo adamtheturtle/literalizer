@@ -2,6 +2,7 @@ object Declaration {
   val my_data = Map(
       "key\nwith\nnewlines" -> "value1",
       "key\twith\ttabs" -> "value2",
+      "" -> "value3",
   )
 }
 object Assignment {
@@ -9,5 +10,6 @@ object Assignment {
   my_data = Map(
       "key\nwith\nnewlines" -> "value1",
       "key\twith\ttabs" -> "value2",
+      "" -> "value3",
   )
 }
