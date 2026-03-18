@@ -241,7 +241,8 @@ def _literalize(
             lines.append(f"{effective_prefix}{entry}{sep}")
     else:
         # At this point data must be a list (scalars/dict/set/omap handled)
-        items = list(data)  # type: ignore[arg-type]
+        assert isinstance(data, list)  # noqa: S101
+        items = data
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
             formatted = spec.format_sequence_entry(
