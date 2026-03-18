@@ -29,7 +29,7 @@ def _matlab_char_key(s: str) -> str:
     concatenated with ``[...]``.
     """
     parts: list[str] = []
-    for segment in re.split(r"([\x00-\x1f])", s):
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=s):
         if not segment:
             continue
         if len(segment) == 1 and ord(segment) < _CONTROL_CHAR_THRESHOLD:
@@ -60,7 +60,7 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
     expanding them into a struct array.
     """
     inner = json.loads(s=key, strict=False)
-    key_expr = _matlab_char_key(inner)
+    key_expr = _matlab_char_key(s=inner)
     if value.startswith("{") and value.endswith("}"):
         value = f"{{{value}}}"
     return f"{key_expr}, {value}"
