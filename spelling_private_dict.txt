@@ -32,6 +32,8 @@ ONull
 OSet
 OStr
 YAMLError
+ZKV
+ZVal
 beartype
 booleans
 chrono

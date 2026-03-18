@@ -129,6 +129,9 @@ jobs:
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
 
+  lint-zig:
+    uses: ./.github/workflows/lint-zig.yml
+
   completion-lint:
     needs:
       - build
@@ -161,6 +164,7 @@ jobs:
       - lint-d
       - lint-ada
       - lint-nim
+      - lint-zig
     runs-on: ubuntu-latest
     if: always()
     steps:
