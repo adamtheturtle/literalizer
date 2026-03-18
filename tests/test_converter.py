@@ -20,8 +20,7 @@ from literalizer import (
     literalize_json,
     literalize_yaml,
 )
-from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
-from literalizer.formatters import (
+from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_bytes_python,
@@ -59,6 +58,7 @@ from literalizer.formatters import (
     to_ocaml_val,
     to_occam_val,
 )
+from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
     CLOJURE,
     CPP,
