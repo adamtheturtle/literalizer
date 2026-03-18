@@ -71,6 +71,7 @@ class JavaScript:
               e.g. ``new Date("2024-01-15T12:30:00")``.
     """
 
+    @beartype
     def __init__(
         self,
         *,

@@ -75,6 +75,7 @@ class Java:
               ZoneId.of("UTC"))``.
     """
 
+    @beartype
     def __init__(
         self,
         *,

@@ -90,6 +90,7 @@ class R:
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
     """
 
+    @beartype
     def __init__(
         self,
         *,

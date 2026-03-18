@@ -77,6 +77,7 @@ class Rust:
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
     """
 
+    @beartype
     def __init__(
         self,
         *,

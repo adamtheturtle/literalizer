@@ -92,6 +92,7 @@ class Haskell:
     let numeric literals resolve to ``HInt`` / ``HFloat``.
     """
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Haskell language specification."""
         self.null_literal = "HNull"

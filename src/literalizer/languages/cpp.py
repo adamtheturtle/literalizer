@@ -73,6 +73,7 @@ class Cpp:
               + std::chrono::minutes{30}``.
     """
 
+    @beartype
     def __init__(
         self,
         *,

@@ -80,6 +80,7 @@ class Go:
               time.UTC)``.
     """
 
+    @beartype
     def __init__(
         self,
         *,

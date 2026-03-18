@@ -86,6 +86,7 @@ class Python:
             * ``"python"`` — Python bytes literal, e.g. ``b'Hello'``.
     """
 
+    @beartype
     def __init__(
         self,
         *,

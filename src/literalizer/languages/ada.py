@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
+@beartype
 def _to_ada_val(value: str) -> str:
     """Wrap a pre-formatted value string in an Ada ``A_Val`` constructor.
 
@@ -70,6 +71,7 @@ def _format_ada_dict_entry(key: str, value: str) -> str:
     return f"AEntry ({key}, {_to_ada_val(value=value)})"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an Ada object declaration.
 
@@ -79,6 +81,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
     return f"{name} : A_Val := {_to_ada_val(value=value)};"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an Ada assignment statement to an existing variable.
 
@@ -97,6 +100,7 @@ _string_format: Callable[[str], str] = format_string_ada
 class Ada:
     """Ada language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Ada language specification."""
         self.null_literal = "ANull"
