@@ -1,6 +1,7 @@
 """Functions for formatting scalars as language-specific literals."""
 
 import datetime
+import functools
 import re
 from collections.abc import Callable
 from typing import Any
@@ -535,17 +536,35 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
 
 
 @beartype
-def typed_sequence_open(
+def _typed_sequence_open(
+    items: list[Value],
     *,
     schema_to_opener: Callable[[dict[str, Any]], str],
-) -> Callable[[list[Value]], str]:
-    """Return a ``sequence_open`` callable that infers an item schema
-    and delegates to *schema_to_opener*.
+) -> str:
+    """Infer an item schema and return the language-specific opener.
 
     Uses ``json-to-schema`` to infer a JSON Schema from the list
     values, then passes the ``items`` sub-schema to
     *schema_to_opener* which returns the language-specific opening
     delimiter.
+
+    See ``_NON_JSON_NATIVE_TYPES`` for why we skip inference for
+    YAML-only types.
+    """
+    if any(isinstance(v, _NON_JSON_NATIVE_TYPES) for v in items):
+        return schema_to_opener({})
+    schema: dict[str, Any] = infer_schema(value=items)
+    item_schema: dict[str, Any] = schema.get("items", {})
+    return schema_to_opener(item_schema)
+
+
+@beartype
+def typed_sequence_open(
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str],
+) -> Callable[[list[Value]], str]:
+    """Return a ``sequence_open`` callable that infers an item schema and
+    delegates to *schema_to_opener*.
 
     Example::
 
@@ -558,16 +577,7 @@ def typed_sequence_open(
             schema_to_opener=my_opener,
         )
     """
-
-    @beartype
-    def _open(items: list[Value]) -> str:
-        """Infer item schema and return the typed opener."""
-        # See _NON_JSON_NATIVE_TYPES for why we skip inference
-        # for YAML-only types.
-        if any(isinstance(v, _NON_JSON_NATIVE_TYPES) for v in items):
-            return schema_to_opener({})
-        schema: dict[str, Any] = infer_schema(value=items)
-        item_schema: dict[str, Any] = schema.get("items", {})
-        return schema_to_opener(item_schema)
-
-    return _open
+    return functools.partial(
+        _typed_sequence_open,
+        schema_to_opener=schema_to_opener,
+    )
