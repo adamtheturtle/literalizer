@@ -51,10 +51,10 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"${name} = {value};"
 
 
-_BYTES_FORMAT: Callable[[bytes], str] = format_bytes_hex
-_DATE_FORMAT: Callable[[datetime.date], str] = _format_date
-_DATETIME_FORMAT: Callable[[datetime.datetime], str] = _format_datetime
-_STRING_FORMAT: Callable[[str], str] = format_string_backslash
+_bytes_format: Callable[[bytes], str] = format_bytes_hex
+_date_format: Callable[[datetime.date], str] = _format_date
+_datetime_format: Callable[[datetime.datetime], str] = _format_datetime
+_string_format: Callable[[str], str] = format_string_backslash
 
 
 class Php:
@@ -74,12 +74,12 @@ class Php:
         )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = _BYTES_FORMAT
-        self.format_date: Callable[[datetime.date], str] = _DATE_FORMAT
+        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_date: Callable[[datetime.date], str] = _date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _DATETIME_FORMAT
+            _datetime_format
         )
-        self.format_string: Callable[[str], str] = _STRING_FORMAT
+        self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "["

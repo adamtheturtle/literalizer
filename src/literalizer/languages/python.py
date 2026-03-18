@@ -45,19 +45,19 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
-_DATE_FORMATS: dict[str, Callable[[datetime.date], str]] = {
+_date_formats: dict[str, Callable[[datetime.date], str]] = {
     "iso": format_date_iso,
     "python": format_date_python,
 }
 
-_DATETIME_FORMATS: dict[str, Callable[[datetime.datetime], str]] = {
+_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
     "iso": format_datetime_iso,
     "python": format_datetime_python,
     "epoch": format_datetime_epoch,
 }
-_STRING_FORMAT: Callable[[str], str] = format_string_backslash
+_string_format: Callable[[str], str] = format_string_backslash
 
-_BYTES_FORMATS: dict[str, Callable[[bytes], str]] = {
+_bytes_formats: dict[str, Callable[[bytes], str]] = {
     "hex": format_bytes_hex,
     "python": format_bytes_python,
 }
@@ -86,16 +86,16 @@ class Python:
         )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = True
-        self.format_bytes: Callable[[bytes], str] = _BYTES_FORMATS[
+        self.format_bytes: Callable[[bytes], str] = _bytes_formats[
             bytes_format
         ]
-        self.format_date: Callable[[datetime.date], str] = _DATE_FORMATS[
+        self.format_date: Callable[[datetime.date], str] = _date_formats[
             date_format
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _DATETIME_FORMATS[datetime_format]
+            _datetime_formats[datetime_format]
         )
-        self.format_string: Callable[[str], str] = _STRING_FORMAT
+        self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "{"

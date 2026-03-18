@@ -89,10 +89,10 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} := {_to_ada_val(value=value)};"
 
 
-_BYTES_FORMAT: Callable[[bytes], str] = format_bytes_hex
-_DATE_FORMAT: Callable[[datetime.date], str] = format_date_iso
-_DATETIME_FORMAT: Callable[[datetime.datetime], str] = format_datetime_iso
-_STRING_FORMAT: Callable[[str], str] = format_string_backslash
+_bytes_format: Callable[[bytes], str] = format_bytes_hex
+_date_format: Callable[[datetime.date], str] = format_date_iso
+_datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
+_string_format: Callable[[str], str] = format_string_backslash
 
 
 class Ada:
@@ -112,12 +112,12 @@ class Ada:
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = _BYTES_FORMAT
-        self.format_date: Callable[[datetime.date], str] = _DATE_FORMAT
+        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_date: Callable[[datetime.date], str] = _date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _DATETIME_FORMAT
+            _datetime_format
         )
-        self.format_string: Callable[[str], str] = _STRING_FORMAT
+        self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = "AList'(1 .. 0 => ANull)"
         self.empty_dict: str | None = "AMap'(1 .. 0 => ANull)"
         self.set_open = "ASet'("

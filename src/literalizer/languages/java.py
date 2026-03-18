@@ -43,17 +43,17 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-_DATE_FORMATS: dict[str, Callable[[datetime.date], str]] = {
+_date_formats: dict[str, Callable[[datetime.date], str]] = {
     "iso": format_date_iso,
     "java": format_date_java,
 }
 
-_DATETIME_FORMATS: dict[str, Callable[[datetime.datetime], str]] = {
+_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
     "iso": format_datetime_iso,
     "instant": format_datetime_java_instant,
     "zoned": format_datetime_java_zoned,
 }
-_STRING_FORMAT: Callable[[str], str] = format_string_backslash
+_string_format: Callable[[str], str] = format_string_backslash
 
 
 class Java:
@@ -79,13 +79,13 @@ class Java:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _DATE_FORMATS[
+        self.format_date: Callable[[datetime.date], str] = _date_formats[
             date_format
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _DATETIME_FORMATS[datetime_format]
+            _datetime_formats[datetime_format]
         )
-        self.format_string: Callable[[str], str] = _STRING_FORMAT
+        self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "Set.of("
