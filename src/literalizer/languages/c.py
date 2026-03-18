@@ -2,10 +2,12 @@
 
 import datetime
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -77,6 +79,12 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
 class C:
     """C language specification."""
 
@@ -86,7 +94,9 @@ class C:
         self.null_literal = "((_CVal){.s = NULL})"
         self.true_literal = "((_CVal){.b = true})"
         self.false_literal = "((_CVal){.b = false})"
-        self.sequence_open = "((_CVal){.a = (_CVal[]){"
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="((_CVal){.a = (_CVal[]){"
+        )
         self.sequence_close = "}})"
         self.dict_open = "((_CVal){.m = (_CKV[]){"
         self.dict_close = "}})"

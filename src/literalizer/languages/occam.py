@@ -2,10 +2,12 @@
 
 import datetime
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -84,6 +86,12 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
 class Occam:
     """Occam-pi language specification."""
 
@@ -93,7 +101,9 @@ class Occam:
         self.null_literal = "MOBILE LIT(lit.null)"
         self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
         self.false_literal = "MOBILE LIT(lit.bool; FALSE)"
-        self.sequence_open = "MOBILE LIT(lit.list; MOBILE []MOBILE LIT ["
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="MOBILE LIT(lit.list; MOBILE []MOBILE LIT ["
+        )
         self.sequence_close = "])"
         self.dict_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
         self.dict_close = "])"

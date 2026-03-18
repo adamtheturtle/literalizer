@@ -2,11 +2,12 @@
 
 import datetime
 from collections.abc import Callable
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_date_r,
@@ -61,6 +62,12 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
 class R:
     """R language specification.
 
@@ -97,7 +104,7 @@ class R:
         self.null_literal = "NULL"
         self.true_literal = "TRUE"
         self.false_literal = "FALSE"
-        self.sequence_open = "list("
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(open_str="list(")
         self.sequence_close = ")"
         self.dict_open = "list("
         self.dict_close = ")"

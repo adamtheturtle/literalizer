@@ -5,6 +5,8 @@ import datetime
 from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
+from literalizer._types import Value
+
 
 @runtime_checkable
 class Language(Protocol):
@@ -28,8 +30,13 @@ class Language(Protocol):
     false_literal: str
     """The literal representing false/False."""
 
-    sequence_open: str
-    """The opening delimiter for sequences."""
+    sequence_open: Callable[[list[Value]], str]
+    """Callable that returns the opening delimiter for a sequence.
+
+    Receives the list of items about to be formatted, so the delimiter
+    can depend on the element types when needed.  For a fixed delimiter
+    use :func:`~literalizer.fixed_sequence_open`.
+    """
 
     sequence_close: str
     """The closing delimiter for sequences."""
@@ -134,7 +141,7 @@ class LanguageSpec:
     null_literal: str
     true_literal: str
     false_literal: str
-    sequence_open: str
+    sequence_open: Callable[[list[Value]], str]
     sequence_close: str
     dict_open: str
     dict_close: str
