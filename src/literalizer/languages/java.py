@@ -19,6 +19,9 @@ from literalizer._formatters import (
     passthrough_set_entry,
 )
 
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
 
 @beartype
 def _format_java_dict_entry(key: str, value: str) -> str:
@@ -49,10 +52,6 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
     "zoned": format_datetime_java_zoned,
 }
 _string_format: Callable[[str], str] = format_string_backslash
-
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
 
 class Java:
