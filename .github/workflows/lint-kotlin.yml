@@ -1,0 +1,24 @@
+---
+name: Lint Kotlin
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-kotlin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Kotlin
+        uses: fwilhe2/setup-kotlin@v1
+      - name: Check Kotlin syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.kts" -print0 | \
+            while IFS= read -r -d '' f; do
+              kotlinc -script "$f" || exit 1
+            done
