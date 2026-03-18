@@ -53,10 +53,6 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
 _string_format: Callable[[str], str] = format_string_backslash_dollar
 
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-
 class Dart:
     """Dart language specification.
 

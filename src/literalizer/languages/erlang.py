@@ -53,10 +53,6 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-
 class Erlang:
     """Erlang language specification."""
 

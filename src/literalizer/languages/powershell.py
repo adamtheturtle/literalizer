@@ -62,10 +62,6 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = _format_string
 
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-
 class PowerShell:
     """PowerShell language specification."""
 

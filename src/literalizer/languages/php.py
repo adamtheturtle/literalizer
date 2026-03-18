@@ -55,10 +55,6 @@ _datetime_format: Callable[[datetime.datetime], str] = _format_datetime
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-
 class Php:
     """PHP language specification."""
 

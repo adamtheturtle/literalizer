@@ -61,10 +61,6 @@ _bytes_formats: dict[str, Callable[[bytes], str]] = {
 }
 
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-
 class Python:
     """Python language specification.
 
