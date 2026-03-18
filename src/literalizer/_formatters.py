@@ -1,14 +1,9 @@
 """Functions for formatting scalars as language-specific literals."""
 
-from __future__ import annotations
-
-import datetime  # noqa: TC003
-from typing import TYPE_CHECKING
+import datetime
+from collections.abc import Callable
 
 from beartype import beartype
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 @beartype
@@ -396,6 +391,7 @@ def format_datetime_julia(value: datetime.datetime) -> str:
     )
 
 
+@beartype
 def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value
     with *separator*.

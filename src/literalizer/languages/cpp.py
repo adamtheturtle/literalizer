@@ -1,8 +1,7 @@
 """C++ language specification."""
 
-from __future__ import annotations
-
-import datetime  # noqa: TC003
+import datetime
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
 
 from beartype import beartype
@@ -19,8 +18,6 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 

@@ -1,16 +1,14 @@
 """Core conversion logic: formatting values and parsing JSON/YAML."""
 
-from __future__ import annotations
-
 import dataclasses
 import datetime
 import json
 from io import StringIO
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 
@@ -19,12 +17,9 @@ from literalizer._comments import (
     extract_yaml_comments,
     literalize_yaml_scalar,
 )
-from literalizer._language import Language  # noqa: TC001
-from literalizer._types import Scalar, Value  # noqa: TC001
+from literalizer._language import Language
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import JSONParseError, YAMLParseError
-
-if TYPE_CHECKING:
-    from ruamel.yaml.comments import CommentedSeq, CommentedSet
 
 
 @beartype
@@ -419,18 +414,27 @@ def literalize_yaml(
         if language.skip_null_dict_values and isinstance(
             ruamel_data, CommentedMap
         ):
-            filtered_elements = tuple(
-                ec
-                for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
-                    ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                    collection_comments.elements,
-                    strict=True,
-                )
-                if data[key] is not None
-            )
+            pending: list[str] = []
+            filtered_elements_list = []
+            for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
+                ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                collection_comments.elements,
+                strict=True,
+            ):
+                if data[key] is None:
+                    pending.extend(ec.before)
+                    if ec.inline:
+                        pending.append(ec.inline)
+                else:
+                    new_before = (*pending, *ec.before)
+                    pending = []
+                    filtered_elements_list.append(  # pyright: ignore[reportUnknownMemberType]
+                        dataclasses.replace(ec, before=new_before),
+                    )
             collection_comments = dataclasses.replace(
                 collection_comments,
-                elements=filtered_elements,
+                elements=tuple(filtered_elements_list),  # pyright: ignore[reportUnknownArgumentType]
+                trailing=(*pending, *collection_comments.trailing),
             )
 
         result = apply_collection_comments(

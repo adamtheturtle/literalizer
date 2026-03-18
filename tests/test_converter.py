@@ -1,16 +1,15 @@
 """Tests for literalizer converter."""
 
-from __future__ import annotations
-
 import ast
 import base64
 import dataclasses
 import datetime
 import json
 import textwrap
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable
 
 import pytest
+from beartype import beartype
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -93,6 +92,7 @@ SWIFT = Swift()
 TYPESCRIPT = TypeScript()
 
 
+@beartype
 def _format_test_omap_entry(key: str, value: str) -> str:
     """Format an omap entry for use in custom Language test
     fixtures.
@@ -256,6 +256,60 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         Map.ofEntries(
             // comment
             Map.entry("name", "Alice")
+        )"""
+    )
+    assert result == expected
+
+
+def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
+    """Inline comment on a null-valued dict entry is preserved as a before
+    comment on the next non-null entry when skip_null_dict_values=True.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        host: localhost
+        port: null  # not configured yet
+        debug: true
+        """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("host", "localhost"),
+            // not configured yet
+            Map.entry("debug", true)
+        )"""
+    )
+    assert result == expected
+
+
+def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
+    """Inline comment on a null-valued dict entry at the end becomes a
+    trailing comment when skip_null_dict_values=True.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        host: localhost
+        port: null  # not configured yet
+        """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("host", "localhost")
+            // not configured yet
         )"""
     )
     assert result == expected
@@ -636,6 +690,7 @@ type _JSONScalar = str | int | float | bool | None
 type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
 
 
+@beartype
 def _lists_to_tuples(*, value: _JSONValue) -> object:
     """Recursively convert lists to tuples to match Python converter
     output.

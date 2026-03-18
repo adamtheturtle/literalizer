@@ -1,8 +1,7 @@
 """Zig language specification."""
 
-from __future__ import annotations
-
-import datetime  # noqa: TC003
+import datetime
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -13,6 +12,9 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -66,11 +68,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Zig assignment to an existing ``ZVal`` variable."""
     return f"{name} = {_to_val(value=value)};"
 
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from literalizer._types import Value
 
 _bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
