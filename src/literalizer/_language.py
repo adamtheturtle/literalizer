@@ -57,6 +57,13 @@ class Language:
     syntactically unambiguous (e.g. Python tuples).
     """
 
+    format_string: Callable[[str], str]
+    """Callable that formats a :class:`str` value as a quoted string
+    literal.  Use
+    :func:`~literalizer._formatters.format_string_backslash` for the
+    common double-quoted backslash-escaping convention.
+    """
+
     format_bytes: Callable[[bytes], str]
     """Callable that formats a :class:`bytes` value as a string
     literal.
