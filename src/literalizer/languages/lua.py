@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -54,6 +55,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
+
 class Lua:
     """Lua language specification."""
 
@@ -63,7 +68,9 @@ class Lua:
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = "{"
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="{"
+        )
         self.sequence_close = "}"
         self.dict_open = "{"
         self.dict_close = "}"
@@ -103,4 +110,3 @@ class Lua:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-        self.format_collection_open: Callable[[list[Value]], str] | None = None

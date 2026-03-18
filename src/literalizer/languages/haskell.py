@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -47,6 +48,10 @@ _bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
+
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 class Haskell:
@@ -97,7 +102,9 @@ class Haskell:
         self.null_literal = "HNull"
         self.true_literal = "HBool True"
         self.false_literal = "HBool False"
-        self.sequence_open = "HList ["
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="HList ["
+        )
         self.sequence_close = "]"
         self.dict_open = "HMap ["
         self.dict_close = "]"
@@ -137,4 +144,3 @@ class Haskell:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-        self.format_collection_open: Callable[[list[Value]], str] | None = None

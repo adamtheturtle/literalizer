@@ -21,6 +21,7 @@ from literalizer import (
 )
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_bytes_python,
     format_date_cpp,
@@ -62,6 +63,7 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Kotlin,
+    Matlab,
     Php,
     Python,
     R,
@@ -610,7 +612,7 @@ def test_custom_language() -> None:
         null_literal="NIL",
         true_literal="YES",
         false_literal="NO",
-        sequence_open="<",
+        sequence_open=fixed_sequence_open(open_str="<"),
         sequence_close=">",
         dict_open="{",
         dict_close="}",
@@ -1707,7 +1709,7 @@ def test_omap_custom_language_spec() -> None:
         null_literal="null",
         true_literal="true",
         false_literal="false",
-        sequence_open="[",
+        sequence_open=fixed_sequence_open(open_str="["),
         sequence_close="]",
         dict_open="{",
         dict_close="}",
@@ -1932,3 +1934,46 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("yaml_string", "expected"),
+    argvalues=[
+        ("hello\n", '"hello"'),
+        ('"hello\\nworld"\n', '"hello" + char(10) + "world"'),
+        ('"hello\\tworld"\n', '"hello" + char(9) + "world"'),
+        ('"back\\\\slash"\n', '"back\\\\slash"'),
+    ],
+)
+def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
+    r"""MATLAB string values escape backslashes and use char() for control
+    characters.
+
+    Backslashes are doubled (``\\`` -> ``\\\\``) because MATLAB
+    double-quoted strings interpret backslash escape sequences; control
+    characters (newlines, tabs, etc.) are represented as ``char(N)``
+    expressions joined with ``+``.
+    """
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=Matlab(),
+        prefix="",
+        wrap=False,
+    )
+    assert result == expected
+
+
+def test_matlab_dict_key_with_quote() -> None:
+    """MATLAB struct keys containing double quotes are decoded correctly.
+
+    The ``_decode_matlab_string_expr`` helper must handle ``""`` inside a
+    double-quoted string, which represents a literal ``"`` character.
+    """
+    yaml_string = '{"hello \\"world\\"": 1}\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=Matlab(),
+        prefix="",
+        wrap=False,
+    )
+    assert result == "'hello \"world\"', 1"

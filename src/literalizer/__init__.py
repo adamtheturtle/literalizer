@@ -4,11 +4,13 @@ from literalizer._core import (
     literalize_json,
     literalize_yaml,
 )
+from literalizer._formatters import fixed_sequence_open
 from literalizer._language import Language, LanguageSpec
 
 __all__ = [
     "Language",
     "LanguageSpec",
+    "fixed_sequence_open",
     "literalize_json",
     "literalize_yaml",
 ]

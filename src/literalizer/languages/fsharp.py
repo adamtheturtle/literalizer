@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -99,6 +100,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
+
 class FSharp:
     """F# language specification."""
 
@@ -108,7 +113,9 @@ class FSharp:
         self.null_literal = "FNull"
         self.true_literal = "FBool true"
         self.false_literal = "FBool false"
-        self.sequence_open = "FList ["
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str="FList ["
+        )
         self.sequence_close = "]"
         self.dict_open = "FMap ["
         self.dict_close = "]"
@@ -144,7 +151,6 @@ class FSharp:
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
-        self.format_collection_open: Callable[[list[Value]], str] | None = None
         self.element_separator = "; "
         self.format_sequence_entry: Callable[[str], str] = (
             _format_fsharp_sequence_entry

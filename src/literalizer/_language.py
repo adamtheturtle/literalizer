@@ -30,8 +30,13 @@ class Language(Protocol):
     false_literal: str
     """The literal representing false/False."""
 
-    sequence_open: str
-    """The opening delimiter for sequences."""
+    sequence_open: Callable[[list[Value]], str]
+    """Callable that returns the opening delimiter for a sequence.
+
+    Receives the list of items about to be formatted, so the delimiter
+    can depend on the element types when needed.  For a fixed delimiter
+    use :func:`~literalizer.fixed_sequence_open`.
+    """
 
     sequence_close: str
     """The closing delimiter for sequences."""
@@ -124,11 +129,6 @@ class Language(Protocol):
     format_string: Callable[[str], str]
     """Callable that formats a string value as a quoted literal."""
 
-    format_collection_open: Callable[[list[Value]], str] | None
-    """Callable that returns the sequence opener string for a given list of
-    values, or ``None`` to use ``sequence_open``.
-    """
-
 
 @dataclasses.dataclass
 class LanguageSpec:
@@ -141,7 +141,7 @@ class LanguageSpec:
     null_literal: str
     true_literal: str
     false_literal: str
-    sequence_open: str
+    sequence_open: Callable[[list[Value]], str]
     sequence_close: str
     dict_open: str
     dict_close: str
@@ -169,11 +169,3 @@ class LanguageSpec:
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
     format_string: Callable[[str], str]
-    format_collection_open: Callable[[list[Value]], str] | None = None
-    """Callable that returns the sequence opener string for a given list of
-    values, or ``None`` to use ``sequence_open``.
-
-    When set, the callable receives the raw list values and returns the
-    opening delimiter (e.g. ``"new String[]{"`` for an all-string Java
-    array).  The closing delimiter is always taken from ``sequence_close``.
-    """
