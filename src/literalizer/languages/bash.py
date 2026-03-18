@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime  # noqa: TC003
+import re
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -29,7 +30,7 @@ def _to_bash_value(item: str) -> str:
     ``(``) is collapsed to a single line and double-quoted.
     """
     if item.startswith("("):
-        collapsed = " ".join(item.split())
+        collapsed = re.sub(pattern=r"[ \t]*\n[ \t]*", repl=" ", string=item)
         escaped = collapsed.replace("\\", "\\\\").replace('"', '\\"')
         return f'"{escaped}"'
     return item
