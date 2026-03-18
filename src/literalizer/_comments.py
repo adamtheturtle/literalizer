@@ -1,14 +1,12 @@
 """YAML comment extraction and formatting."""
 
-from __future__ import annotations
-
 import dataclasses
-from collections.abc import Iterable  # noqa: TC003
+from collections.abc import Iterable
 from typing import Any
 
 from beartype import beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
-from ruamel.yaml.tokens import CommentToken  # noqa: TC002
+from ruamel.yaml.tokens import CommentToken
 
 
 @dataclasses.dataclass(frozen=True)

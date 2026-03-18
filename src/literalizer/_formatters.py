@@ -1,10 +1,8 @@
 """Functions for formatting scalars as language-specific literals."""
 
-from __future__ import annotations
-
-import datetime  # noqa: TC003
+import datetime
 import re
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable
 
 from beartype import beartype
 
