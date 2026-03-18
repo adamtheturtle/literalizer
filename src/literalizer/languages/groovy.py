@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime  # noqa: TC003
 from typing import TYPE_CHECKING
 
 from literalizer._formatters import (
@@ -14,6 +15,8 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from literalizer._language import Language
 
 
@@ -25,6 +28,11 @@ def _format_variable_declaration(name: str, value: str) -> str:
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Groovy variable assignment."""
     return f"{name} = {value}"
+
+
+_BYTES_FORMAT: Callable[[bytes], str] = format_bytes_hex
+_DATE_FORMAT: Callable[[datetime.date], str] = format_date_iso
+_DATETIME_FORMAT: Callable[[datetime.datetime], str] = format_datetime_iso
 
 
 class Groovy:
@@ -39,29 +47,41 @@ class Groovy:
         self.sequence_close = "]"
         self.dict_open = "["
         self.dict_close = "]"
-        self.format_dict_entry = dict_entry_with_separator(separator=": ")
+        self.format_dict_entry: Callable[[str, str], str] = (
+            dict_entry_with_separator(separator=": ")
+        )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
-        self.format_bytes = format_bytes_hex
-        self.format_date = format_date_iso
-        self.format_datetime = format_datetime_iso
+        self.format_bytes: Callable[[bytes], str] = _BYTES_FORMAT
+        self.format_date: Callable[[datetime.date], str] = _DATE_FORMAT
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _DATETIME_FORMAT
+        )
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = "[:]"
         self.set_open = "["
         self.set_close = "] as Set<Object>"
         self.empty_set: str | None = "[] as Set<Object>"
-        self.format_sequence_entry = passthrough_sequence_entry
-        self.format_set_entry = passthrough_set_entry
+        self.format_sequence_entry: Callable[[str], str] = (
+            passthrough_sequence_entry
+        )
+        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "//"
         self.comment_suffix = ""
         self.omap_open = "["
         self.omap_close = "]"
-        self.format_omap_entry = dict_entry_with_separator(separator=": ")
+        self.format_omap_entry: Callable[[str, str], str] = (
+            dict_entry_with_separator(separator=": ")
+        )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.format_variable_declaration = _format_variable_declaration
-        self.format_variable_assignment = _format_variable_assignment
+        self.format_variable_declaration: Callable[[str, str], str] = (
+            _format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str], str] = (
+            _format_variable_assignment
+        )
 
 
 GROOVY: Language = Groovy()

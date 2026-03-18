@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime  # noqa: TC003
 from typing import TYPE_CHECKING
 
 from literalizer._formatters import (
@@ -11,6 +12,8 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from literalizer._language import Language
 
 
@@ -73,6 +76,11 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} := {value}"
 
 
+_BYTES_FORMAT: Callable[[bytes], str] = format_bytes_hex
+_DATE_FORMAT: Callable[[datetime.date], str] = format_date_iso
+_DATETIME_FORMAT: Callable[[datetime.datetime], str] = format_datetime_iso
+
+
 class Occam:
     """Occam-pi language specification."""
 
@@ -85,29 +93,41 @@ class Occam:
         self.sequence_close = "])"
         self.dict_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
         self.dict_close = "])"
-        self.format_dict_entry = _format_occam_dict_entry
+        self.format_dict_entry: Callable[[str, str], str] = (
+            _format_occam_dict_entry
+        )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes = format_bytes_hex
-        self.format_date = format_date_iso
-        self.format_datetime = format_datetime_iso
+        self.format_bytes: Callable[[bytes], str] = _BYTES_FORMAT
+        self.format_date: Callable[[datetime.date], str] = _DATE_FORMAT
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _DATETIME_FORMAT
+        )
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "MOBILE LIT(lit.set; MOBILE []MOBILE LIT ["
         self.set_close = "])"
         self.empty_set: str | None = None
-        self.format_sequence_entry = _format_occam_list_entry
-        self.format_set_entry = _format_occam_set_entry
+        self.format_sequence_entry: Callable[[str], str] = (
+            _format_occam_list_entry
+        )
+        self.format_set_entry: Callable[[str], str] = _format_occam_set_entry
         self.comment_prefix = "--"
         self.comment_suffix = ""
         self.omap_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
         self.omap_close = "])"
-        self.format_omap_entry = _format_occam_dict_entry
+        self.format_omap_entry: Callable[[str, str], str] = (
+            _format_occam_dict_entry
+        )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.format_variable_declaration = _format_variable_declaration
-        self.format_variable_assignment = _format_variable_assignment
+        self.format_variable_declaration: Callable[[str, str], str] = (
+            _format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str], str] = (
+            _format_variable_assignment
+        )
 
 
 OCCAM: Language = Occam()

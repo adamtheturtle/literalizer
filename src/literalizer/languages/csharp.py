@@ -67,29 +67,43 @@ class CSharp:
         self.sequence_close = ")"
         self.dict_open = "new Dictionary<string, object> {"
         self.dict_close = "}"
-        self.format_dict_entry = _format_csharp_dict_entry
+        self.format_dict_entry: Callable[[str, str], str] = (
+            _format_csharp_dict_entry
+        )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes = format_bytes_hex
-        self.format_date = _DATE_FORMATS[date_format]
-        self.format_datetime = _DATETIME_FORMATS[datetime_format]
+        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_date: Callable[[datetime.date], str] = _DATE_FORMATS[
+            date_format
+        ]
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _DATETIME_FORMATS[datetime_format]
+        )
         self.empty_sequence: str | None = "ValueTuple.Create()"
         self.empty_dict: str | None = None
         self.set_open = "new HashSet<object> {"
         self.set_close = "}"
         self.empty_set: str | None = "new HashSet<object>()"
-        self.format_sequence_entry = passthrough_sequence_entry
-        self.format_set_entry = passthrough_set_entry
+        self.format_sequence_entry: Callable[[str], str] = (
+            passthrough_sequence_entry
+        )
+        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "//"
         self.comment_suffix = ""
         self.omap_open = "new Dictionary<string, object> {"
         self.omap_close = "}"
-        self.format_omap_entry = _format_csharp_dict_entry
+        self.format_omap_entry: Callable[[str, str], str] = (
+            _format_csharp_dict_entry
+        )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.format_variable_declaration = _format_variable_declaration
-        self.format_variable_assignment = _format_variable_assignment
+        self.format_variable_declaration: Callable[[str, str], str] = (
+            _format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str], str] = (
+            _format_variable_assignment
+        )
 
 
 CSHARP: Language = CSharp()

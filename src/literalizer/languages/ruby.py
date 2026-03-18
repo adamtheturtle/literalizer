@@ -65,29 +65,43 @@ class Ruby:
         self.sequence_close = "]"
         self.dict_open = "{"
         self.dict_close = "}"
-        self.format_dict_entry = dict_entry_with_separator(separator=" => ")
+        self.format_dict_entry: Callable[[str, str], str] = (
+            dict_entry_with_separator(separator=" => ")
+        )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
-        self.format_bytes = format_bytes_hex
-        self.format_date = _DATE_FORMATS[date_format]
-        self.format_datetime = _DATETIME_FORMATS[datetime_format]
+        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_date: Callable[[datetime.date], str] = _DATE_FORMATS[
+            date_format
+        ]
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _DATETIME_FORMATS[datetime_format]
+        )
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "Set.new(["
         self.set_close = "])"
         self.empty_set: str | None = "Set.new"
-        self.format_sequence_entry = passthrough_sequence_entry
-        self.format_set_entry = passthrough_set_entry
+        self.format_sequence_entry: Callable[[str], str] = (
+            passthrough_sequence_entry
+        )
+        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "#"
         self.comment_suffix = ""
         self.omap_open = "{"
         self.omap_close = "}"
-        self.format_omap_entry = _format_ruby_omap_entry
+        self.format_omap_entry: Callable[[str, str], str] = (
+            _format_ruby_omap_entry
+        )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.format_variable_declaration = _format_variable_declaration
-        self.format_variable_assignment = _format_variable_assignment
+        self.format_variable_declaration: Callable[[str, str], str] = (
+            _format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str], str] = (
+            _format_variable_assignment
+        )
 
 
 RUBY: Language = Ruby()
