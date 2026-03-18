@@ -835,14 +835,14 @@ def _wrap_ruby_date(content: str) -> str:
 
 def _wrap_crystal(content: str) -> str:
     """Wrap in a Crystal variable assignment to suppress unused-expression
-    warnings. Prepends ``require "set"`` when the content uses ``Set{``.
+    warnings. Adds ``require "set"`` when the content uses ``Set{``.
     """
     prefix = 'require "set"\n' if "Set{" in content else ""
     return f"{prefix}_ = {content}"
 
 
 def _wrap_crystal_varname(content: str) -> str:
-    """Identity wrap for Crystal, but prepends ``require "set"`` when the
+    """Identity wrap for Crystal, but adds ``require "set"`` when the
     content uses ``Set{``.
     """
     if "Set{" in content:
@@ -851,7 +851,7 @@ def _wrap_crystal_varname(content: str) -> str:
 
 
 def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
-    """Join Crystal declaration and assignment with a newline, prepending
+    """Join Crystal declaration and assignment with a newline, adding
     ``require "set"`` when either uses ``Set{``.
     """
     combined = declaration + "\n" + assignment
