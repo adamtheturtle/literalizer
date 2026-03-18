@@ -38,7 +38,73 @@ from .swift import Swift
 from .typescript import TypeScript
 from .zig import Zig
 
+# Backward-compatible default instances.
+ADA = Ada()
+BASH = Bash()
+CLOJURE = Clojure()
+CPP = Cpp()
+CRYSTAL = Crystal()
+CSHARP = CSharp()
+DART = Dart()
+ELIXIR = Elixir()
+ERLANG = Erlang()
+FSHARP = FSharp()
+GO = Go()
+GROOVY = Groovy()
+HASKELL = Haskell()
+JAVA = Java()
+JAVASCRIPT = JavaScript()
+JULIA = Julia()
+KOTLIN = Kotlin()
+LUA = Lua()
+MATLAB = Matlab()
+NIM = Nim()
+OCAML = OCaml()
+OCCAM = Occam()
+PERL = Perl()
+PHP = Php()
+POWERSHELL = PowerShell()
+PYTHON = Python()
+RUBY = Ruby()
+RUST = Rust()
+SCALA = Scala()
+SWIFT = Swift()
+TYPESCRIPT = TypeScript()
+ZIG = Zig()
+
 __all__ = [
+    "ADA",
+    "BASH",
+    "CLOJURE",
+    "CPP",
+    "CRYSTAL",
+    "CSHARP",
+    "DART",
+    "ELIXIR",
+    "ERLANG",
+    "FSHARP",
+    "GO",
+    "GROOVY",
+    "HASKELL",
+    "JAVA",
+    "JAVASCRIPT",
+    "JULIA",
+    "KOTLIN",
+    "LUA",
+    "MATLAB",
+    "NIM",
+    "OCAML",
+    "OCCAM",
+    "PERL",
+    "PHP",
+    "POWERSHELL",
+    "PYTHON",
+    "RUBY",
+    "RUST",
+    "SCALA",
+    "SWIFT",
+    "TYPESCRIPT",
+    "ZIG",
     "Ada",
     "Bash",
     "C",
