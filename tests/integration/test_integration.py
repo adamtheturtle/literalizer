@@ -574,6 +574,11 @@ def _wrap_c_combined(declaration: str, assignment: str) -> str:
     )
 
 
+def _wrap_matlab(content: str) -> str:
+    """Wrap in a MATLAB/Octave variable assignment."""
+    return f"x = {content};"
+
+
 def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
@@ -617,6 +622,69 @@ def _wrap_haskell_varname(content: str) -> str:
 def _wrap_php_varname(content: str) -> str:
     """Wrap a PHP variable assignment in a PHP script."""
     return f"<?php\n{content}"
+
+
+_ZIG_PREAMBLE = (
+    "const ZVal = union(enum) {\n"
+    "    nil,\n"
+    "    bool: bool,\n"
+    "    int: i64,\n"
+    "    float: f64,\n"
+    "    str: []const u8,\n"
+    "    arr: []const ZVal,\n"
+    "    map: []const ZKV,\n"
+    "    set: []const ZVal,\n"
+    "};\n"
+    "const ZKV = struct { key: []const u8, val: ZVal };\n"
+)
+
+
+def _wrap_zig(content: str) -> str:
+    """Wrap in a Zig main function with ``ZVal``/``ZKV`` type
+    definitions.
+    """
+    typed = literalizer.languages.ZIG.format_sequence_entry(content)
+    indented = typed.replace("\n", "\n    ")
+    return (
+        _ZIG_PREAMBLE
+        + "pub fn main() void {\n"
+        + f"    const v: ZVal = {indented};\n"
+        + "    _ = v;\n"
+        + "}"
+    )
+
+
+def _wrap_zig_varname(content: str) -> str:
+    """Wrap a Zig ``const`` declaration in a main function."""
+    indented = "    " + content.replace("\n", "\n    ")
+    return (
+        _ZIG_PREAMBLE
+        + "pub fn main() void {\n"
+        + f"{indented}\n"
+        + f"    _ = {_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
+def _wrap_zig_combined(declaration: str, assignment: str) -> str:
+    """Zig: ``const`` declaration in an inner block, then ``var`` +
+    assignment in the outer scope.
+    """
+    decl_indented = "        " + declaration.replace("\n", "\n        ")
+    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    return (
+        _ZIG_PREAMBLE
+        + "pub fn main() void {\n"
+        + "    {\n"
+        + f"{decl_indented}\n"
+        + f"        _ = {_VARIABLE_NAME};\n"
+        + "    }\n"
+        + f"    var {_VARIABLE_NAME}: ZVal = undefined;\n"
+        + f"{assign_indented}\n"
+        + f"    const _{_VARIABLE_NAME}_read = {_VARIABLE_NAME};\n"
+        + f"    _ = _{_VARIABLE_NAME}_read;\n"
+        + "}"
+    )
 
 
 def _wrap_swift_varname(content: str) -> str:
@@ -1156,12 +1224,28 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
+    "matlab": _LanguageConfig(
+        spec=literalizer.languages.MATLAB,
+        extension=".m",
+        wrap=_wrap_matlab,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
     "nim": _LanguageConfig(
         spec=literalizer.languages.NIM,
         extension=".nim",
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
+        date_variants=(),
+    ),
+    "zig": _LanguageConfig(
+        spec=literalizer.languages.ZIG,
+        extension=".zig",
+        wrap=_wrap_zig,
+        varname_wrap=_wrap_zig_varname,
+        combined_wrap=_wrap_zig_combined,
         date_variants=(),
     ),
 }

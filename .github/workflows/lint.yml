@@ -129,8 +129,14 @@ jobs:
   lint-crystal:
     uses: ./.github/workflows/lint-crystal.yml
 
+  lint-matlab:
+    uses: ./.github/workflows/lint-matlab.yml
+
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
+
+  lint-zig:
+    uses: ./.github/workflows/lint-zig.yml
 
   completion-lint:
     needs:
@@ -164,7 +170,9 @@ jobs:
       - lint-d
       - lint-ada
       - lint-crystal
+      - lint-matlab
       - lint-nim
+      - lint-zig
     runs-on: ubuntu-latest
     if: always()
     steps:

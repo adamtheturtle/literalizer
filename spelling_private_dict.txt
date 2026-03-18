@@ -32,6 +32,8 @@ ONull
 OSet
 OStr
 YAMLError
+ZKV
+ZVal
 beartype
 booleans
 chrono
@@ -61,10 +63,13 @@ literalize
 literalizer
 localhost
 luac
+matlab
 namespaces
 natively
+norc
 ocamlopt
 occam
+octave
 ofEntries
 omap
 paren
@@ -75,6 +80,7 @@ pyright
 pytest
 regen
 reportAttributeAccessIssue
+reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
