@@ -6,7 +6,9 @@ from collections.abc import Callable
 from typing import Any
 
 from beartype import beartype
-from json_to_schema import infer_schema  # type: ignore[import-untyped]
+from json_to_schema import (  # pyright: ignore[reportMissingTypeStubs]
+    infer_schema,
+)
 
 from literalizer._types import Value
 

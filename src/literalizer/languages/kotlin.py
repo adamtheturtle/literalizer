@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
+from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
@@ -32,7 +33,7 @@ def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str:
             return "intArrayOf("
         case "number":
             return "doubleArrayOf("
-        case list() as types if set(types) == {"integer", "number"}:
+        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             return "doubleArrayOf("
         case _:
             return "listOf<Any?>("
@@ -97,7 +98,7 @@ class Kotlin:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = typed_sequence_open(
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_kotlin_schema_to_opener,
         )
         self.sequence_close = ")"

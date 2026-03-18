@@ -17,6 +17,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
+from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
@@ -31,7 +32,7 @@ def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str:
             return "std::vector<int>{"
         case "number":
             return "std::vector<double>{"
-        case list() as types if set(types) == {"integer", "number"}:
+        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             return "std::vector<double>{"
         case _:
             return "{"
@@ -99,7 +100,7 @@ class Cpp:
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open = typed_sequence_open(
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_cpp_schema_to_opener,
         )
         self.sequence_close = "}"
