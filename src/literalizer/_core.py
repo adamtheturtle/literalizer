@@ -240,7 +240,7 @@ def _literalize(
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{effective_prefix}{entry}{sep}")
     else:
-        items = list(data)
+        items = list(cast("list[Value]", data))
         last_idx = len(items) - 1
         for i, item in enumerate(iterable=items):
             formatted = spec.format_sequence_entry(
