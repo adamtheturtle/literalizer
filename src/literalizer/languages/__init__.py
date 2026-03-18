@@ -7,6 +7,7 @@ from .c import C
 from .clojure import CLOJURE
 from .cpp import CPP
 from .csharp import CSHARP
+from .d import D
 from .dart import DART
 from .elixir import ELIXIR
 from .erlang import ERLANG
@@ -59,5 +60,6 @@ __all__ = [
     "SWIFT",
     "TYPESCRIPT",
     "C",
+    "D",
     "R",
 ]

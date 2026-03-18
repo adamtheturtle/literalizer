@@ -12,6 +12,7 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
+@beartype
 def _to_val(value: str) -> str:
     """Convert a value to a C union cast expression."""
     if value.startswith("((_CVal)"):
@@ -57,11 +58,13 @@ def _format_c_set_entry(item: str) -> str:
     return _to_val(value=item)
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a C variable declaration."""
     return f"_CVal {name} = {_to_val(value=value)};"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a C variable assignment."""
     return f"{name} = {_to_val(value=value)};"

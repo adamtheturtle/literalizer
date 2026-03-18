@@ -477,6 +477,32 @@ def _wrap_r(content: str) -> str:
     return f"x <- {content}"
 
 
+def _wrap_d(content: str) -> str:
+    """Wrap in a D function with ``std.json`` imported."""
+    return (
+        f"import std.json;\n\nvoid _check() {{\n    auto _v = {content};\n}}"
+    )
+
+
+def _wrap_d_varname(content: str) -> str:
+    """Wrap a D ``auto`` declaration in a function with ``std.json``
+    imported.
+    """
+    return f"import std.json;\n\nvoid _check() {{\n{content}\n}}"
+
+
+def _wrap_d_combined(declaration: str, assignment: str) -> str:
+    """Wrap D declaration and assignment together in one function."""
+    return (
+        "import std.json;\n"
+        "\n"
+        "void _check() {\n"
+        f"{declaration}\n"
+        f"{assignment}\n"
+        "}"
+    )
+
+
 _C_PREAMBLE = (
     "#include <stdbool.h>\n"
     "#include <stddef.h>\n"
@@ -763,6 +789,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
         combined_wrap=_wrap_c_combined,
+        date_variants=(),
+    ),
+    "d": _LanguageConfig(
+        spec=literalizer.languages.D,
+        extension=".d",
+        wrap=_wrap_d,
+        varname_wrap=_wrap_d_varname,
+        combined_wrap=_wrap_d_combined,
         date_variants=(),
     ),
     "clojure": _LanguageConfig(

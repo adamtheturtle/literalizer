@@ -31,11 +31,13 @@ def _format_lua_set_entry(item: str) -> str:
     return f"[{item}] = true"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Lua variable declaration."""
     return f"local {name} = {value}"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Lua variable assignment."""
     return f"{name} = {value}"
