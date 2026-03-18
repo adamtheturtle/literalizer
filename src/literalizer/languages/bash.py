@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 from beartype import beartype
 
 from literalizer._formatters import (
@@ -21,11 +19,15 @@ def _to_bash_value(item: str) -> str:
 
     Bash does not support nested array literals, so any value that is
     itself an array or associative-array expression (starting with
-    ``(``) is collapsed to a single line and double-quoted.
+    ``(``) is double-quoted with special characters escaped.
     """
     if item.startswith("("):
-        collapsed = re.sub(pattern=r"[ \t]*\n[ \t]*", repl=" ", string=item)
-        escaped = collapsed.replace("\\", "\\\\").replace('"', '\\"')
+        escaped = (
+            item.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("$", "\\$")
+            .replace("`", "\\`")
+        )
         return f'"{escaped}"'
     return item
 
@@ -45,19 +47,18 @@ def _format_bash_dict_entry(key: str, value: str) -> str:
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Bash ``declare`` variable declaration."""
-    return f"declare {name}={value}"
+    flag = (
+        " -A"
+        if any(line.lstrip().startswith("[") for line in value.splitlines())
+        else ""
+    )
+    return f"declare{flag} {name}={value}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Bash variable assignment."""
     return f"{name}={value}"
-
-
-@beartype
-def _format_bash_set_entry(item: str) -> str:
-    """Format a Bash indexed-array set element."""
-    return passthrough_set_entry(item=item)
 
 
 BASH = Language(
@@ -81,7 +82,7 @@ BASH = Language(
     set_close=")",
     empty_set=None,
     format_sequence_entry=_format_bash_sequence_entry,
-    format_set_entry=_format_bash_set_entry,
+    format_set_entry=passthrough_set_entry,
     comment_prefix="#",
     comment_suffix="",
     omap_open="(",

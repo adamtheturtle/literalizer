@@ -1,4 +1,4 @@
-declare my_data=(
+declare -A my_data=(
     ["name"]="Alice"
     ["age"]=30
     ["active"]=true
