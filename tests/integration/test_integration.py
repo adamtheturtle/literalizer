@@ -544,7 +544,7 @@ _C_PREAMBLE = (
 
 def _wrap_c(content: str) -> str:
     """Wrap in a C function with the _CVal/_CKV type definitions."""
-    typed = literalizer.languages.C.format_sequence_entry(content)
+    typed = literalizer.languages.C().format_sequence_entry(content)
     return (
         _C_PREAMBLE
         + "void _check(void) {\n"
