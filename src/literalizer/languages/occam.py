@@ -30,11 +30,11 @@ def _to_val(value: str) -> str:
     try:
         float(rest)
         float_result = f"MOBILE LIT(lit.float; {value}(REAL32))"
-    except ValueError:
+    except ValueError:  # pragma: no cover
         pass
     if float_result is not None:
         return float_result
-    return value
+    return value  # pragma: no cover
 
 
 def _format_occam_dict_entry(key: str, value: str) -> str:

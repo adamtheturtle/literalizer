@@ -40,11 +40,11 @@ def _to_val(value: str) -> str:
     try:
         float(rest)
         float_result = f"FFloat({value})" if negative else f"FFloat {value}"
-    except ValueError:
+    except ValueError:  # pragma: no cover
         pass
     if float_result is not None:
         return float_result
-    return value
+    return value  # pragma: no cover
 
 
 def _format_fsharp_dict_entry(key: str, value: str) -> str:

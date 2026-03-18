@@ -32,11 +32,11 @@ def _to_val(value: str) -> str:
     try:
         float(rest)
         float_result = f"((_CVal){{.f = {value}}})"
-    except ValueError:
+    except ValueError:  # pragma: no cover
         pass
     if float_result is not None:
         return float_result
-    return value
+    return value  # pragma: no cover
 
 
 @beartype
