@@ -435,7 +435,10 @@ def format_string_backslash(value: str) -> str:
     Example: ``hello "world"`` → ``"hello \"world\""``.
     """
     escaped = (
-        value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
     )
     return f'"{escaped}"'
 

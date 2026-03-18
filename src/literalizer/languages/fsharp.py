@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import datetime  # noqa: TC003
+from typing import TYPE_CHECKING
+
 from beartype import beartype
 
 from literalizer._formatters import (
@@ -10,7 +13,9 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
-from literalizer._language import Language
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @beartype
@@ -89,36 +94,57 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"let {name}: Val = {_to_val(value=value)}"
 
 
-FSHARP = Language(
-    null_literal="FNull",
-    true_literal="FBool true",
-    false_literal="FBool false",
-    sequence_open="FList [",
-    sequence_close="]",
-    dict_open="FMap [",
-    dict_close="]",
-    format_dict_entry=_format_fsharp_dict_entry,
-    multiline_trailing_comma=False,
-    single_element_trailing_comma=False,
-    format_string=format_string_backslash,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence=None,
-    empty_dict=None,
-    set_open="FSet [",
-    set_close="]",
-    empty_set=None,
-    format_set_entry=_format_fsharp_set_entry,
-    comment_prefix="//",
-    comment_suffix="",
-    omap_open="FMap [",
-    omap_close="]",
-    format_omap_entry=_format_fsharp_omap_entry,
-    multiline_close_indent="",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-    element_separator="; ",
-    format_sequence_entry=_format_fsharp_sequence_entry,
-)
+_bytes_format: Callable[[bytes], str] = format_bytes_hex
+_date_format: Callable[[datetime.date], str] = format_date_iso
+_datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
+_string_format: Callable[[str], str] = format_string_backslash
+
+
+class FSharp:
+    """F# language specification."""
+
+    def __init__(self) -> None:
+        """Initialize FSharp language specification."""
+        self.null_literal = "FNull"
+        self.true_literal = "FBool true"
+        self.false_literal = "FBool false"
+        self.sequence_open = "FList ["
+        self.sequence_close = "]"
+        self.dict_open = "FMap ["
+        self.dict_close = "]"
+        self.format_dict_entry: Callable[[str, str], str] = (
+            _format_fsharp_dict_entry
+        )
+        self.multiline_trailing_comma = False
+        self.single_element_trailing_comma = False
+        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_date: Callable[[datetime.date], str] = _date_format
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _datetime_format
+        )
+        self.format_string: Callable[[str], str] = _string_format
+        self.empty_sequence: str | None = None
+        self.empty_dict: str | None = None
+        self.set_open = "FSet ["
+        self.set_close = "]"
+        self.empty_set: str | None = None
+        self.format_set_entry: Callable[[str], str] = _format_fsharp_set_entry
+        self.comment_prefix = "//"
+        self.comment_suffix = ""
+        self.omap_open = "FMap ["
+        self.omap_close = "]"
+        self.format_omap_entry: Callable[[str, str], str] = (
+            _format_fsharp_omap_entry
+        )
+        self.multiline_close_indent = ""
+        self.skip_null_dict_values = False
+        self.format_variable_declaration: Callable[[str, str], str] = (
+            _format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str], str] = (
+            _format_variable_assignment
+        )
+        self.element_separator = "; "
+        self.format_sequence_entry: Callable[[str], str] = (
+            _format_fsharp_sequence_entry
+        )

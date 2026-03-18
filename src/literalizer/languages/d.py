@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import datetime  # noqa: TC003
+from typing import TYPE_CHECKING
+
 from beartype import beartype
 
 from literalizer._formatters import (
@@ -10,7 +13,9 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
-from literalizer._language import Language
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _to_val(value: str) -> str:
@@ -86,36 +91,57 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {_to_val(value=value)};"
 
 
-D = Language(
-    null_literal="null",
-    true_literal="true",
-    false_literal="false",
-    sequence_open="JSONValue([",
-    sequence_close="])",
-    dict_open="JSONValue([",
-    dict_close="])",
-    format_dict_entry=_format_d_dict_entry,
-    multiline_trailing_comma=True,
-    single_element_trailing_comma=False,
-    format_string=format_string_backslash,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence='parseJSON("[]")',
-    empty_dict='parseJSON("{}")',
-    set_open="JSONValue([",
-    set_close="])",
-    empty_set='parseJSON("[]")',
-    format_sequence_entry=_format_d_sequence_entry,
-    format_set_entry=_format_d_set_entry,
-    comment_prefix="//",
-    comment_suffix="",
-    omap_open="JSONValue([",
-    omap_close="])",
-    format_omap_entry=_format_d_omap_entry,
-    multiline_close_indent="",
-    element_separator=", ",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-)
+_bytes_format: Callable[[bytes], str] = format_bytes_hex
+_date_format: Callable[[datetime.date], str] = format_date_iso
+_datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
+_string_format: Callable[[str], str] = format_string_backslash
+
+
+class D:
+    """D language specification."""
+
+    def __init__(self) -> None:
+        """Initialize D language specification."""
+        self.null_literal = "null"
+        self.true_literal = "true"
+        self.false_literal = "false"
+        self.sequence_open = "JSONValue(["
+        self.sequence_close = "])"
+        self.dict_open = "JSONValue(["
+        self.dict_close = "])"
+        self.format_dict_entry: Callable[[str, str], str] = (
+            _format_d_dict_entry
+        )
+        self.multiline_trailing_comma = True
+        self.single_element_trailing_comma = False
+        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_date: Callable[[datetime.date], str] = _date_format
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _datetime_format
+        )
+        self.format_string: Callable[[str], str] = _string_format
+        self.empty_sequence: str | None = 'parseJSON("[]")'
+        self.empty_dict: str | None = 'parseJSON("{}")'
+        self.set_open = "JSONValue(["
+        self.set_close = "])"
+        self.empty_set: str | None = 'parseJSON("[]")'
+        self.format_sequence_entry: Callable[[str], str] = (
+            _format_d_sequence_entry
+        )
+        self.format_set_entry: Callable[[str], str] = _format_d_set_entry
+        self.comment_prefix = "//"
+        self.comment_suffix = ""
+        self.omap_open = "JSONValue(["
+        self.omap_close = "])"
+        self.format_omap_entry: Callable[[str, str], str] = (
+            _format_d_omap_entry
+        )
+        self.multiline_close_indent = ""
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.format_variable_declaration: Callable[[str, str], str] = (
+            _format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str], str] = (
+            _format_variable_assignment
+        )
