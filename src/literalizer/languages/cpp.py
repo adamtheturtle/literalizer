@@ -53,7 +53,25 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class Cpp:
-    """C++ language specification."""
+    """C++ language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"cpp"`` — ``std::chrono::year_month_day`` literal,
+              e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
+              std::chrono::month{1}, std::chrono::day{15}}``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"cpp"`` — ``std::chrono::sys_days`` with time-of-day
+              durations,
+              e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
+              + std::chrono::minutes{30}``.
+    """
 
     def __init__(
         self,
