@@ -124,20 +124,7 @@ jobs:
     uses: ./.github/workflows/lint-ada.yml
 
   lint-occam:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Occam-pi syntax
-        run: >
-          find tests/integration/cases -name "*.occ" -print0 |
-          xargs -0 uv run python check_occam_golden_syntax.py
+    uses: ./.github/workflows/lint-occam.yml
 
   completion-lint:
     needs:
