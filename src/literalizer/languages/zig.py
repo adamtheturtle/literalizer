@@ -31,8 +31,7 @@ def _to_val(value: str) -> str:
         int(rest)
     except ValueError:
         return f".{{ .float = {value} }}"
-    else:
-        return f".{{ .int = {value} }}"
+    return f".{{ .int = {value} }}"
 
 
 @beartype
