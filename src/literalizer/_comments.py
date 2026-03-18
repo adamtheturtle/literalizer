@@ -130,7 +130,10 @@ def extract_yaml_comments(
     else:
         keys = list(ruamel_data.keys())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
-    elements: list[_ElementComments] = []
+    # Iterate in insertion order so that pending_before propagation is
+    # correct (a "before element N" comment is stored in the after-token
+    # of element N-1 in insertion order).
+    element_map: dict[object, _ElementComments] = {}
     for key in keys:
         before = list(pending_before)
         inline = ""
@@ -143,15 +146,23 @@ def extract_yaml_comments(
                 inline = parsed.inline
                 pending_before = parsed.before_next
 
-        elements.append(
-            _ElementComments(
-                before=tuple(before),
-                inline=inline,
-            ),
+        element_map[key] = _ElementComments(
+            before=tuple(before),
+            inline=inline,
         )
 
+    # CommentedSet elements are emitted in sorted order by _literalize,
+    # so reorder to match that sort key to keep comments aligned.
+    if isinstance(ruamel_data, CommentedSet):
+        output_keys: list[object] = sorted(
+            keys,
+            key=lambda v: (type(v).__name__, repr(v)),
+        )
+    else:
+        output_keys = keys
+
     return _CollectionComments(
-        elements=tuple(elements),
+        elements=tuple(element_map[k] for k in output_keys),
         trailing=tuple(pending_before),
     )
 
