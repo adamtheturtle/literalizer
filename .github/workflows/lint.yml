@@ -26,50 +26,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install Erlang and Elixir
-        uses: erlef/setup-beam@v1
-        with:
-          elixir-version: '1.18'
-          otp-version: '27'
-      - uses: coursier/setup-action@v2
-        with:
-          apps: scalac
-      - name: Install Swift
-        uses: SwiftyLab/setup-swift@v1
-        with:
-          cache-snapshot: true
-      - name: Install R
-        uses: r-lib/actions/setup-r@v2
-        with:
-          windows-path-include-rtools: false
-      - name: Install Dart
-        uses: dart-lang/setup-dart@v1
-      - name: Install Groovy
-        uses: wtfjoke/setup-groovy@v3
-        with:
-          groovy-version: 4.x
-      - name: Install clj-kondo
-        uses: DeLaGuardo/setup-clojure@13
-        with:
-          clj-kondo: latest
-      - name: Set up MSVC for Lua (Windows only)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-      - name: Install Lua
-        uses: leafo/gh-actions-lua@v12
-        with:
-          luaVersion: '5.4'
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-
-      - name: Initialize .NET runtime
-        if: runner.os == 'Linux'
-        run: |
-          mkdir -p /tmp/.dotnet/shm
-          dotnet --info
 
       - name: Lint
         shell: bash
@@ -81,14 +42,485 @@ jobs:
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
 
+  lint-bash:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Bash syntax
+        run: find tests/integration/cases -name "*.sh" -exec bash -n {} +
+
+  lint-ruby:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Ruby syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.rb" -print0 | \
+            while IFS= read -r -d '' f; do
+              ruby -c "$f" || exit 1
+            done
+
+  lint-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Go syntax
+        run: find tests/integration/cases -name "*.go" -exec gofmt -e {} +
+
+  lint-groovy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Groovy
+        uses: wtfjoke/setup-groovy@v3
+        with:
+          groovy-version: 4.x
+      - name: Check Groovy syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.groovy" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              groovyc -d "$tmpdir" "$(realpath "$f")" || exit 1
+            done
+
+  lint-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check JavaScript syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.js" -print0 | \
+            while IFS= read -r -d '' f; do
+              node --check "$f" || exit 1
+            done
+
+  lint-typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install TypeScript
+        run: npm install -g typescript
+      - name: Check TypeScript syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.ts" -print0 | \
+            while IFS= read -r -d '' f; do
+              tsc --noEmit --noResolve --skipLibCheck --lib es2015 "$f" || exit 1
+            done
+
+  lint-java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Java syntax
+        run: |
+          tmpdir=$(mktemp -d)
+          set -o pipefail
+          find tests/integration/cases -name "*.java" -print0 | \
+            while IFS= read -r -d '' f; do
+              javac -d "$tmpdir" "$f" || exit 1
+            done
+
+  lint-c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check C syntax
+        run: find tests/integration/cases -name "*.c" -exec clang -fsyntax-only -std=c11
+          {} +
+
+  lint-cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check C++ syntax
+        run: find tests/integration/cases -name "*.cpp" -exec clang++ -fsyntax-only
+          -std=c++20 {} +
+
+  lint-kotlin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Kotlin
+        uses: fwilhe2/setup-kotlin@v1
+      - name: Check Kotlin syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.kts" -print0 | \
+            while IFS= read -r -d '' f; do
+              kotlinc -script "$f" || exit 1
+            done
+
+  lint-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install rustfmt
+        run: rustup component add rustfmt
+      - name: Check Rust syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.rs" -print0 | \
+            while IFS= read -r -d '' f; do
+              rustfmt --edition 2021 --emit stdout "$f" > /dev/null || exit 1
+            done
+
+  lint-swift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          cache-snapshot: true
+      - name: Check Swift syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.swift" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              cp "$f" "$tmpdir/check.swift"
+              swiftc -typecheck "$tmpdir/check.swift" || exit 1
+            done
+
+  lint-csharp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Initialize .NET runtime
+        run: |
+          mkdir -p /tmp/.dotnet/shm
+          dotnet --info
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Check C# syntax
+        run: >
+          find tests/integration/cases -name "*.cs" -print0 |
+          xargs -0 uv run python check_csharp_golden_syntax.py
+
+  lint-elixir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+      - name: Check Elixir syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.ex" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              cp "$f" "$tmpdir/check.ex"
+              (cd "$tmpdir" && elixirc check.ex) || exit 1
+            done
+
+  lint-erlang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          install-rebar: false
+          install-hex: false
+      - name: Check Erlang syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.erl" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              cp "$f" "$tmpdir/check.erl"
+              (cd "$tmpdir" && erlc check.erl) || exit 1
+            done
+
+  lint-fsharp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Initialize .NET runtime
+        run: |
+          mkdir -p /tmp/.dotnet/shm
+          dotnet --info
+      - name: Check F# syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases \( -name "*.fs" -o -name "*.fsi" \) -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
+                TMPDIR="$tmpdir" HOME="$tmpdir" \
+                dotnet fsi --nologo --exec "$f" || exit 1
+            done
+
+  lint-ocaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install OCaml
+        run: sudo apt-get install -y ocaml
+      - name: Check OCaml syntax
+        run: |
+          tmpdir=$(mktemp -d)
+          set -o pipefail
+          find tests/integration/cases -name "*.ml" -print0 | \
+            while IFS= read -r -d '' f; do
+              ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
+            done
+
+  lint-haskell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install GHC
+        run: sudo apt-get install -y ghc
+      - name: Check Haskell syntax
+        run: |
+          tmpdir=$(mktemp -d)
+          set -o pipefail
+          find tests/integration/cases -name "*.hs" -print0 | \
+            while IFS= read -r -d '' f; do
+              ghc -fno-code -outputdir "$tmpdir" "$f" || exit 1
+            done
+
+  lint-clojure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install clj-kondo
+        uses: DeLaGuardo/setup-clojure@13
+        with:
+          clj-kondo: latest
+      - name: Check Clojure syntax
+        run: >
+          find tests/integration/cases -name "*.clj" -print0 |
+          xargs -0 clj-kondo --lint
+
+  lint-scala:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Scala
+        uses: coursier/setup-action@v2
+        with:
+          apps: scalac
+      - name: Check Scala syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.scala" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              scalac -d "$tmpdir" "$f" || exit 1
+            done
+
+  lint-dart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Dart
+        uses: dart-lang/setup-dart@v1
+      - name: Check Dart syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.dart" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
+              cp "$f" "$tmpdir/check.dart"
+              dart analyze --fatal-infos "$tmpdir/check.dart" || exit 1
+            done
+
+  lint-julia:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Julia
+        uses: julia-actions/setup-julia@v2
+      - name: Check Julia syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.jl" -print0 | \
+            while IFS= read -r -d '' f; do
+              julia --startup-file=no -e 'Meta.parseall(read(ARGS[1], String))' -- "$f" || exit 1
+            done
+
+  lint-perl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Perl syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.pl" -print0 | \
+            while IFS= read -r -d '' f; do
+              perl -c "$f" || exit 1
+            done
+
+  lint-lua:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Lua
+        uses: leafo/gh-actions-lua@v12
+        with:
+          luaVersion: '5.4'
+      - name: Check Lua syntax
+        run: find tests/integration/cases -name "*.lua" -exec luac -p {} +
+
+  lint-php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check PHP syntax
+        run: find tests/integration/cases -name "*.php" -exec php -l {} +
+
+  lint-r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          windows-path-include-rtools: false
+      - name: Check R syntax
+        run: >
+          find tests/integration/cases -name "*.R" -print0 |
+          xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
+
+  lint-d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install DMD
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: dmd-latest
+      - name: Check D syntax
+        run: |
+          set -o pipefail
+          find tests/integration/cases -name "*.d" -print0 | \
+            while IFS= read -r -d '' f; do
+              dmd -o- -c "$f" || exit 1
+            done
+
+  lint-ada:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install GNAT
+        run: sudo apt-get install -y gnat
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Check Ada syntax
+        run: >
+          find tests/integration/cases -name "*.adb" -print0 |
+          xargs -0 uv run python check_ada_golden_syntax.py
+
   completion-lint:
-    needs: build
+    needs:
+      - build
+      - lint-bash
+      - lint-ruby
+      - lint-go
+      - lint-groovy
+      - lint-javascript
+      - lint-typescript
+      - lint-java
+      - lint-c
+      - lint-cpp
+      - lint-kotlin
+      - lint-rust
+      - lint-swift
+      - lint-csharp
+      - lint-elixir
+      - lint-erlang
+      - lint-fsharp
+      - lint-ocaml
+      - lint-haskell
+      - lint-clojure
+      - lint-scala
+      - lint-dart
+      - lint-julia
+      - lint-perl
+      - lint-lua
+      - lint-php
+      - lint-r
+      - lint-d
+      - lint-ada
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Check matrix job status
+      - name: Check all jobs succeeded
         run: |-
-          if ! ${{ needs.build.result == 'success' }}; then
-            echo "One or more matrix jobs failed"
+          if ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}; then
+            echo "One or more jobs failed or were cancelled"
             exit 1
           fi
