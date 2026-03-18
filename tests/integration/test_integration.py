@@ -427,6 +427,46 @@ def _wrap_groovy(content: str) -> str:
     return f"def x = {content}"
 
 
+def _wrap_ada(content: str) -> str:
+    """Wrap in an Ada procedure with a local variable assignment."""
+    indented = content.replace("\n", "\n   ")
+    return (
+        "procedure Check is\n"
+        f"   X : A_Val := {indented};\n"
+        "begin\n"
+        "   null;\n"
+        "end Check;"
+    )
+
+
+def _wrap_ada_varname(content: str) -> str:
+    """Wrap an Ada object declaration inside a procedure."""
+    indented = "   " + content.replace("\n", "\n   ")
+    return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+
+
+def _wrap_ada_combined(declaration: str, assignment: str) -> str:
+    """Ada: declaration in one nested procedure, assignment in another."""
+    decl_indented = "      " + declaration.replace("\n", "\n      ")
+    assign_indented = "      " + assignment.replace("\n", "\n      ")
+    return (
+        "procedure Check is\n"
+        "   procedure Check_Declaration is\n"
+        f"{decl_indented}\n"
+        "   begin\n"
+        "      null;\n"
+        "   end Check_Declaration;\n"
+        "   procedure Check_Assignment is\n"
+        "   begin\n"
+        f"{assign_indented}\n"
+        "   end Check_Assignment;\n"
+        "begin\n"
+        "   Check_Declaration;\n"
+        "   Check_Assignment;\n"
+        "end Check;"
+    )
+
+
 def _wrap_lua(content: str) -> str:
     """Wrap a Lua table constructor in a local variable assignment."""
     return f"local _ = {content}"
@@ -450,6 +490,32 @@ def _wrap_nim_varname(content: str) -> str:
 def _wrap_nim_combined(declaration: str, assignment: str) -> str:
     """Wrap Nim declaration and assignment with the json import."""
     return f"import json\n{declaration}\n{assignment}"
+
+
+def _wrap_d(content: str) -> str:
+    """Wrap in a D function with ``std.json`` imported."""
+    return (
+        f"import std.json;\n\nvoid _check() {{\n    auto _v = {content};\n}}"
+    )
+
+
+def _wrap_d_varname(content: str) -> str:
+    """Wrap a D ``auto`` declaration in a function with ``std.json``
+    imported.
+    """
+    return f"import std.json;\n\nvoid _check() {{\n{content}\n}}"
+
+
+def _wrap_d_combined(declaration: str, assignment: str) -> str:
+    """Wrap D declaration and assignment together in one function."""
+    return (
+        "import std.json;\n"
+        "\n"
+        "void _check() {\n"
+        f"{declaration}\n"
+        f"{assignment}\n"
+        "}"
+    )
 
 
 _C_PREAMBLE = (
@@ -724,12 +790,28 @@ class _LanguageConfig:
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
+    "ada": _LanguageConfig(
+        spec=literalizer.languages.ADA,
+        extension=".adb",
+        wrap=_wrap_ada,
+        varname_wrap=_wrap_ada_varname,
+        combined_wrap=_wrap_ada_combined,
+        date_variants=(),
+    ),
     "c": _LanguageConfig(
         spec=literalizer.languages.C,
         extension=".c",
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
         combined_wrap=_wrap_c_combined,
+        date_variants=(),
+    ),
+    "d": _LanguageConfig(
+        spec=literalizer.languages.D,
+        extension=".d",
+        wrap=_wrap_d,
+        varname_wrap=_wrap_d_varname,
+        combined_wrap=_wrap_d_combined,
         date_variants=(),
     ),
     "clojure": _LanguageConfig(

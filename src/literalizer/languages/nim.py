@@ -2,17 +2,30 @@
 
 from __future__ import annotations
 
+from beartype import beartype
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_variable_assignment_nim,
-    format_variable_declaration_nim,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer._language import Language
+
+
+@beartype
+def _format_variable_declaration(name: str, value: str) -> str:
+    """Format a Nim ``var`` declaration using ``%*`` for JSON nodes."""
+    return f"var {name} = %*{value}"
+
+
+@beartype
+def _format_variable_assignment(name: str, value: str) -> str:
+    """Format a Nim assignment to an existing variable using ``%*``."""
+    return f"{name} = %*{value}"
+
 
 NIM = Language(
     null_literal="nil",
@@ -43,6 +56,6 @@ NIM = Language(
     multiline_close_indent="",
     element_separator=", ",
     skip_null_dict_values=False,
-    format_variable_declaration=format_variable_declaration_nim,
-    format_variable_assignment=format_variable_assignment_nim,
+    format_variable_declaration=_format_variable_declaration,
+    format_variable_assignment=_format_variable_assignment,
 )

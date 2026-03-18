@@ -8,8 +8,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_variable_assignment_cpp,
-    format_variable_declaration_cpp,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -20,6 +18,18 @@ from literalizer._language import Language
 def _format_cpp_dict_entry(key: str, value: str) -> str:
     """Format a C++ dict entry as a brace-enclosed pair."""
     return f"{{{key}, {value}}}"
+
+
+@beartype
+def _format_variable_declaration(name: str, value: str) -> str:
+    """Format a C++ variable declaration."""
+    return f"auto {name} = {value};"
+
+
+@beartype
+def _format_variable_assignment(name: str, value: str) -> str:
+    """Format a C++ variable assignment."""
+    return f"{name} = {value};"
 
 
 CPP = Language(
@@ -51,6 +61,6 @@ CPP = Language(
     multiline_close_indent="",
     element_separator=", ",
     skip_null_dict_values=False,
-    format_variable_declaration=format_variable_declaration_cpp,
-    format_variable_assignment=format_variable_assignment_cpp,
+    format_variable_declaration=_format_variable_declaration,
+    format_variable_assignment=_format_variable_assignment,
 )
