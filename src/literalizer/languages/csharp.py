@@ -21,7 +21,7 @@ from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str:
+def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a C# array opener."""
     match item_schema.get("type"):
         case "string":
@@ -35,7 +35,7 @@ def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str:
         case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             return "new double[] {"
         case _:
-            return "new object[] {"
+            return None
 
 
 @beartype
@@ -99,6 +99,7 @@ class CSharp:
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_csharp_schema_to_opener,
+            fallback="new object[] {",
         )
         self.sequence_close = "}"
         self.dict_open = "new Dictionary<string, object> {"

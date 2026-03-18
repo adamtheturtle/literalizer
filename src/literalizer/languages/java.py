@@ -28,7 +28,7 @@ def _format_java_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _java_schema_to_opener(item_schema: dict[str, Any]) -> str:
+def _java_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Java array opener."""
     match item_schema.get("type"):
         case "string":
@@ -42,7 +42,7 @@ def _java_schema_to_opener(item_schema: dict[str, Any]) -> str:
         case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             return "new double[]{"
         case _:
-            return "new Object[]{"
+            return None
 
 
 @beartype
@@ -104,6 +104,7 @@ class Java:
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_java_schema_to_opener,
+            fallback="new Object[]{",
         )
         self.sequence_close = "}"
         self.dict_open = "Map.ofEntries("

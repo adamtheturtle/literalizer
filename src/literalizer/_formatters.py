@@ -535,11 +535,15 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
     return _open
 
 
+class _NoTypedOpenerError(Exception):
+    """Raised when type inference cannot produce a specific opener."""
+
+
 @beartype
 def _typed_sequence_open(
     items: list[Value],
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str],
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
 ) -> str:
     """Infer an item schema and return the language-specific opener.
 
@@ -548,36 +552,65 @@ def _typed_sequence_open(
     *schema_to_opener* which returns the language-specific opening
     delimiter.
 
+    Raises ``_NoTypedOpenerError`` when inference is not possible (e.g.
+    YAML-only types) or when the mapper returns ``None``.
+
     See ``_NON_JSON_NATIVE_TYPES`` for why we skip inference for
     YAML-only types.
     """
     if any(isinstance(v, _NON_JSON_NATIVE_TYPES) for v in items):
-        return schema_to_opener({})
+        raise _NoTypedOpenerError
     schema: dict[str, Any] = infer_schema(value=items)
     item_schema: dict[str, Any] = schema.get("items", {})
-    return schema_to_opener(item_schema)
+    result = schema_to_opener(item_schema)
+    if result is None:
+        raise _NoTypedOpenerError
+    return result
+
+
+@beartype
+def _typed_sequence_open_with_fallback(
+    items: list[Value],
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
+) -> str:
+    """Call ``_typed_sequence_open``, falling back to *fallback*."""
+    try:
+        return _typed_sequence_open(
+            items=items,
+            schema_to_opener=schema_to_opener,
+        )
+    except _NoTypedOpenerError:
+        return fallback
 
 
 @beartype
 def typed_sequence_open(
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str],
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
 ) -> Callable[[list[Value]], str]:
     """Return a ``sequence_open`` callable that infers an item schema and
     delegates to *schema_to_opener*.
 
+    When inference is not possible or *schema_to_opener* returns
+    ``None``, *fallback* is used instead.
+
     Example::
 
-        def my_opener(item_schema: dict[str, Any]) -> str:
+        def my_opener(item_schema: dict[str, Any]) -> str | None:
             if item_schema.get("type") == "string":
                 return "[]string{"
-            return "[]any{"
+            return None
 
         sequence_open = typed_sequence_open(
             schema_to_opener=my_opener,
+            fallback="[]any{",
         )
     """
     return functools.partial(
-        _typed_sequence_open,
+        _typed_sequence_open_with_fallback,
         schema_to_opener=schema_to_opener,
+        fallback=fallback,
     )

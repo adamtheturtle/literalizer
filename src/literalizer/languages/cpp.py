@@ -21,7 +21,7 @@ from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str:
+def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a C++ initializer-list opener."""
     match item_schema.get("type"):
         case "string":
@@ -35,7 +35,7 @@ def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str:
         case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             return "std::vector<double>{"
         case _:
-            return "{"
+            return None
 
 
 @beartype
@@ -102,6 +102,7 @@ class Cpp:
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_cpp_schema_to_opener,
+            fallback="{",
         )
         self.sequence_close = "}"
         self.dict_open = "{"

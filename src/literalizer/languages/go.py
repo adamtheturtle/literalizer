@@ -21,7 +21,7 @@ from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _go_schema_to_opener(item_schema: dict[str, Any]) -> str:
+def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Go slice opener."""
     match item_schema.get("type"):
         case "string":
@@ -35,7 +35,7 @@ def _go_schema_to_opener(item_schema: dict[str, Any]) -> str:
         case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             return "[]float64{"
         case _:
-            return "[]any{"
+            return None
 
 
 @beartype
@@ -109,6 +109,7 @@ class Go:
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_go_schema_to_opener,
+            fallback="[]any{",
         )
         self.sequence_close = "}"
         self.dict_open = "map[string]any{"

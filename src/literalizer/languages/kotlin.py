@@ -22,7 +22,7 @@ from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str:
+def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Kotlin collection opener."""
     match item_schema.get("type"):
         case "string":
@@ -36,7 +36,7 @@ def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str:
         case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             return "listOf<Any?>("
         case _:
-            return "listOf<Any?>("
+            return None
 
 
 @beartype
@@ -100,6 +100,7 @@ class Kotlin:
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_kotlin_schema_to_opener,
+            fallback="listOf<Any?>(",
         )
         self.sequence_close = ")"
         self.dict_open = "mapOf<String, Any?>("
