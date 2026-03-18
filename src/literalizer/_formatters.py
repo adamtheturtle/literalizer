@@ -3,10 +3,21 @@
 import datetime
 import re
 from collections.abc import Callable
+from typing import Any
 
 from beartype import beartype
+from json_to_schema import (
+    infer_schema,  # pyright: ignore[reportMissingTypeStubs]
+)
 
 from literalizer._types import Value
+
+# literalizer's Value type includes bytes, date, and datetime, which
+# exist in YAML but not in JSON.  json-to-schema has no representation
+# for these and misclassifies them as "string".  When any value of
+# these types is present we skip schema inference entirely and let the
+# language mapper fall through to its fallback opener.
+_NON_JSON_NATIVE_TYPES = (bytes, datetime.date, datetime.datetime)
 
 
 @beartype
@@ -519,5 +530,44 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
     def _open(_items: list[Value]) -> str:
         """Return the fixed opening delimiter."""
         return open_str
+
+    return _open
+
+
+@beartype
+def typed_sequence_open(
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str],
+) -> Callable[[list[Value]], str]:
+    """Return a ``sequence_open`` callable that infers an item schema
+    and delegates to *schema_to_opener*.
+
+    Uses ``json-to-schema`` to infer a JSON Schema from the list
+    values, then passes the ``items`` sub-schema to
+    *schema_to_opener* which returns the language-specific opening
+    delimiter.
+
+    Example::
+
+        def my_opener(item_schema: dict[str, Any]) -> str:
+            if item_schema.get("type") == "string":
+                return "[]string{"
+            return "[]any{"
+
+        sequence_open = typed_sequence_open(
+            schema_to_opener=my_opener,
+        )
+    """
+
+    @beartype
+    def _open(items: list[Value]) -> str:
+        """Infer item schema and return the typed opener."""
+        # See _NON_JSON_NATIVE_TYPES for why we skip inference
+        # for YAML-only types.
+        if any(isinstance(v, _NON_JSON_NATIVE_TYPES) for v in items):
+            return schema_to_opener({})
+        schema: dict[str, Any] = infer_schema(value=items)
+        item_schema: dict[str, Any] = schema.get("items", {})
+        return schema_to_opener(item_schema)
 
     return _open

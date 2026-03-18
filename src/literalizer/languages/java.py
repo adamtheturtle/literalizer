@@ -2,7 +2,7 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from beartype import beartype
 
@@ -16,10 +16,8 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_sequence_open,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
 
 @beartype
@@ -29,33 +27,21 @@ def _format_java_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_java_collection_open(values: list[Any]) -> str:
-    """Return a typed Java array opener inferred from element types.
-
-    Returns ``"new String[]{"`` when all elements are strings,
-    ``"new boolean[]{"`` when all elements are booleans,
-    ``"new int[]{"`` when all elements are non-boolean integers,
-    ``"new double[]{"`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"new Object[]{"`` otherwise.
-    """
-    if values and all(isinstance(v, str) for v in values):
-        return "new String[]{"
-    if values and all(isinstance(v, bool) for v in values):
-        return "new boolean[]{"
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "new int[]{"
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "new double[]{"
-    return "new Object[]{"
+def _java_schema_to_opener(item_schema: dict[str, Any]) -> str:
+    """Map a JSON Schema item type to a Java array opener."""
+    match item_schema.get("type"):
+        case "string":
+            return "new String[]{"
+        case "boolean":
+            return "new boolean[]{"
+        case "integer":
+            return "new int[]{"
+        case "number":
+            return "new double[]{"
+        case list() as types if set(types) == {"integer", "number"}:
+            return "new double[]{"
+        case _:
+            return "new Object[]{"
 
 
 @beartype
@@ -115,8 +101,8 @@ class Java:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = (
-            _format_java_collection_open
+        self.sequence_open = typed_sequence_open(
+            schema_to_opener=_java_schema_to_opener,
         )
         self.sequence_close = "}"
         self.dict_open = "Map.ofEntries("

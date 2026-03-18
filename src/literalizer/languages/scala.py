@@ -2,7 +2,7 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from beartype import beartype
 
@@ -14,40 +14,26 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_sequence_open,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
 
 @beartype
-def _format_scala_collection_open(values: list[Any]) -> str:
-    """Return a typed Scala collection opener inferred from element types.
-
-    Returns ``"Array[String]("`` when all elements are strings,
-    ``"Array[Boolean]("`` when all elements are booleans,
-    ``"Array[Int]("`` when all elements are non-boolean integers,
-    ``"Array[Double]("`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"List("`` otherwise.
-    """
-    if values and all(isinstance(v, str) for v in values):
-        return "Array[String]("
-    if values and all(isinstance(v, bool) for v in values):
-        return "Array[Boolean]("
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "Array[Int]("
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "Array[Double]("
-    return "List("
+def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str:
+    """Map a JSON Schema item type to a Scala collection opener."""
+    match item_schema.get("type"):
+        case "string":
+            return "Array[String]("
+        case "boolean":
+            return "Array[Boolean]("
+        case "integer":
+            return "Array[Int]("
+        case "number":
+            return "Array[Double]("
+        case list() as types if set(types) == {"integer", "number"}:
+            return "Array[Double]("
+        case _:
+            return "List("
 
 
 @beartype
@@ -83,8 +69,8 @@ class Scala:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = (
-            _format_scala_collection_open
+        self.sequence_open = typed_sequence_open(
+            schema_to_opener=_scala_schema_to_opener,
         )
         self.sequence_close = ")"
         self.dict_open = "Map("
