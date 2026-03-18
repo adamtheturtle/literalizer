@@ -6,7 +6,7 @@ import dataclasses
 import datetime
 import json
 from io import StringIO
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
@@ -139,7 +139,7 @@ def _wrap_body(
     *,
     body: str,
     is_omap: bool,
-    data: list[Any] | dict[str, Any] | set[Any],
+    data: list[Value] | dict[str, Value] | set[Scalar],
     spec: Language,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
@@ -156,15 +156,7 @@ def _wrap_body(
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize(
     *,
-    data: list[Any]
-    | dict[str, Any]
-    | set[Any]
-    | str
-    | bytes
-    | datetime.date
-    | float
-    | bool
-    | None,
+    data: Value,
     language: Language,
     prefix: str,
     wrap: bool,
@@ -213,14 +205,14 @@ def _literalize(
 
     is_omap = isinstance(data, ordereddict)
     if is_omap or isinstance(data, dict):
-        dict_data = cast("dict[str, Any]", data)
+        dict_data = cast("dict[str, Value]", data)
         entries = [
             (k, v)
             for k, v in dict_data.items()
             if not (spec.skip_null_dict_values and v is None)
         ]
         if not entries and wrap and dict_data:
-            empty_value: ordereddict | dict[str, Any] = (
+            empty_value: ordereddict | dict[str, Value] = (
                 ordereddict() if is_omap else {}
             )
             return _format_value(value=empty_value, spec=spec)
