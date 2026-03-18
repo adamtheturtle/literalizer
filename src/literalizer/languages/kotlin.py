@@ -34,7 +34,7 @@ def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str:
         case "number":
             return "doubleArrayOf("
         case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
-            return "doubleArrayOf("
+            return "listOf<Any?>("
         case _:
             return "listOf<Any?>("
 

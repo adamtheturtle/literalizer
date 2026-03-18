@@ -1,5 +1,5 @@
 fun _declaration() {
-    val my_data = doubleArrayOf(
+    val my_data = listOf<Any?>(
         1,
         2.5,
         3,
@@ -7,7 +7,7 @@ fun _declaration() {
 }
 fun _assignment() {
     var my_data: Any? = null
-    my_data = doubleArrayOf(
+    my_data = listOf<Any?>(
         1,
         2.5,
         3,
