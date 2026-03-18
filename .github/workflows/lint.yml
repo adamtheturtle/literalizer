@@ -129,9 +129,6 @@ jobs:
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
 
-  lint-occam:
-    uses: ./.github/workflows/lint-occam.yml
-
   completion-lint:
     needs:
       - build
@@ -164,7 +161,6 @@ jobs:
       - lint-d
       - lint-ada
       - lint-nim
-      - lint-occam
     runs-on: ubuntu-latest
     if: always()
     steps:
