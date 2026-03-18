@@ -5,6 +5,8 @@ from __future__ import annotations
 import datetime  # noqa: TC003
 from typing import TYPE_CHECKING
 
+from beartype import beartype
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -20,11 +22,13 @@ if TYPE_CHECKING:
     from literalizer._language import Language
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Groovy variable declaration."""
     return f"def {name} = {value}"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Groovy variable assignment."""
     return f"{name} = {value}"

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from .ada import ADA, Ada
 from .c import C
 from .clojure import CLOJURE, Clojure
 from .cpp import CPP, Cpp
 from .csharp import CSHARP, CSharp
+from .d import D
 from .dart import DART, Dart
 from .elixir import ELIXIR, Elixir
 from .erlang import ERLANG, Erlang
@@ -31,6 +33,7 @@ from .swift import SWIFT, Swift
 from .typescript import TYPESCRIPT, TypeScript
 
 __all__ = [
+    "ADA",
     "CLOJURE",
     "CPP",
     "CSHARP",
@@ -56,10 +59,12 @@ __all__ = [
     "SCALA",
     "SWIFT",
     "TYPESCRIPT",
+    "Ada",
     "C",
     "CSharp",
     "Clojure",
     "Cpp",
+    "D",
     "Dart",
     "Elixir",
     "Erlang",

@@ -5,6 +5,8 @@ from __future__ import annotations
 import datetime  # noqa: TC003
 from typing import TYPE_CHECKING, Literal
 
+from beartype import beartype
+
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -22,16 +24,19 @@ if TYPE_CHECKING:
     from literalizer._language import Language
 
 
+@beartype
 def _format_js_omap_entry(key: str, value: str) -> str:
     """Format a JavaScript ordered-map entry."""
     return f"{key}: {value}"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a JavaScript variable declaration."""
     return f"const {name} = {value};"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a JavaScript variable assignment."""
     return f"{name} = {value};"

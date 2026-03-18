@@ -28,11 +28,13 @@ def _format_elixir_omap_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an Elixir variable declaration."""
     return f"{name} = {value}"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an Elixir variable assignment."""
     return f"{name} = {value}"

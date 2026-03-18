@@ -10,42 +10,6 @@ from beartype import beartype
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-__all__ = [
-    "dict_entry_with_separator",
-    "format_bytes_hex",
-    "format_bytes_python",
-    "format_date_cpp",
-    "format_date_csharp",
-    "format_date_dart",
-    "format_date_go",
-    "format_date_iso",
-    "format_date_java",
-    "format_date_js",
-    "format_date_julia",
-    "format_date_kotlin",
-    "format_date_python",
-    "format_date_r",
-    "format_date_ruby",
-    "format_date_rust",
-    "format_datetime_cpp",
-    "format_datetime_csharp",
-    "format_datetime_dart",
-    "format_datetime_epoch",
-    "format_datetime_go",
-    "format_datetime_iso",
-    "format_datetime_java_instant",
-    "format_datetime_java_zoned",
-    "format_datetime_js",
-    "format_datetime_julia",
-    "format_datetime_kotlin",
-    "format_datetime_python",
-    "format_datetime_r",
-    "format_datetime_ruby",
-    "format_datetime_rust",
-    "passthrough_sequence_entry",
-    "passthrough_set_entry",
-]
-
 
 @beartype
 def format_date_iso(value: datetime.date) -> str:
@@ -307,6 +271,7 @@ def format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
+@beartype
 def format_bytes_hex(value: bytes) -> str:
     """Format bytes as a hex string literal.
 
@@ -315,6 +280,7 @@ def format_bytes_hex(value: bytes) -> str:
     return f'"{value.hex()}"'
 
 
+@beartype
 def format_bytes_python(value: bytes) -> str:
     """Format bytes as a Python ``bytes`` literal.
 

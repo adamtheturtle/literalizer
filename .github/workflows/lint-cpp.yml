@@ -1,0 +1,18 @@
+---
+name: Lint C++
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check C++ syntax
+        run: find tests/integration/cases -name "*.cpp" -exec clang++ -fsyntax-only
+          -std=c++20 {} +

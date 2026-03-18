@@ -32,16 +32,19 @@ def _format_go_set_entry(item: str) -> str:
     return f"{item}: struct{{}}{{}}"
 
 
+@beartype
 def _format_go_omap_entry(key: str, value: str) -> str:
     """Format a Go ordered-map entry as a ``{key, value}`` pair."""
     return f"{{{key}, {value}}}"
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Go variable declaration."""
     return f"{name} := {value}"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Go variable assignment."""
     return f"{name} = {value}"
