@@ -57,13 +57,6 @@ class Language:
     syntactically unambiguous (e.g. Python tuples).
     """
 
-    format_string: Callable[[str], str]
-    """Callable that formats a :class:`str` value as a quoted string
-    literal.  Use
-    :func:`~literalizer._formatters.format_string_backslash` for the
-    common double-quoted backslash-escaping convention.
-    """
-
     format_bytes: Callable[[bytes], str]
     """Callable that formats a :class:`bytes` value as a string
     literal.
@@ -156,4 +149,13 @@ class Language:
     format_variable_assignment: Callable[[str, str], str]
     """Callable that formats an assignment to an existing variable from a
     name and value string.
+    """
+
+    format_string: Callable[[str], str]
+    """Callable that formats a string value as a quoted literal.
+
+    Use :func:`~literalizer._formatters.format_string_backslash` for the
+    common backslash-escape convention, or provide a custom callable for
+    languages with a different escape convention (e.g. PowerShell uses
+    back-tick escaping).
     """

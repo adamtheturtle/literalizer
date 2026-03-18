@@ -1,0 +1,23 @@
+---
+name: Lint PowerShell
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-powershell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check PowerShell syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.ps1" -print0 | \
+            while IFS= read -r -d '' f; do
+              pwsh -NoProfile -NonInteractive -Command \
+                "\$null = [scriptblock]::Create((Get-Content -Raw '$f'))" || exit 1
+            done

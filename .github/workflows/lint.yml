@@ -123,8 +123,14 @@ jobs:
   lint-d:
     uses: ./.github/workflows/lint-d.yml
 
+  lint-powershell:
+    uses: ./.github/workflows/lint-powershell.yml
+
   lint-ada:
     uses: ./.github/workflows/lint-ada.yml
+
+  lint-crystal:
+    uses: ./.github/workflows/lint-crystal.yml
 
   lint-matlab:
     uses: ./.github/workflows/lint-matlab.yml
@@ -166,9 +172,11 @@ jobs:
       - lint-r
       - lint-d
       - lint-ada
+      - lint-crystal
       - lint-matlab
       - lint-nim
       - lint-zig
+      - lint-powershell
     runs-on: ubuntu-latest
     if: always()
     steps:

@@ -520,6 +520,11 @@ def _wrap_d_combined(declaration: str, assignment: str) -> str:
     )
 
 
+def _wrap_powershell(content: str) -> str:
+    """Wrap in a PowerShell variable assignment."""
+    return f"$x = {content}"
+
+
 _C_PREAMBLE = (
     "#include <stdbool.h>\n"
     "#include <stddef.h>\n"
@@ -831,6 +836,33 @@ def _wrap_csharp_date(content: str) -> str:
 def _wrap_ruby_date(content: str) -> str:
     """Wrap with require 'date' for Ruby Date literals."""
     return f"require 'date'\n{content}"
+
+
+def _wrap_crystal(content: str) -> str:
+    """Wrap in a Crystal variable assignment to suppress unused-expression
+    warnings. Adds ``require "set"`` when the content uses ``Set{``.
+    """
+    prefix = 'require "set"\n' if "Set{" in content else ""
+    return f"{prefix}_ = {content}"
+
+
+def _wrap_crystal_varname(content: str) -> str:
+    """Identity wrap for Crystal, but adds ``require "set"`` when the
+    content uses ``Set{``.
+    """
+    if "Set{" in content:
+        return f'require "set"\n{content}'
+    return content
+
+
+def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
+    """Join Crystal declaration and assignment with a newline, adding
+    ``require "set"`` when either uses ``Set{``.
+    """
+    combined = declaration + "\n" + assignment
+    if "Set{" in combined:
+        return f'require "set"\n{combined}'
+    return combined
 
 
 def _wrap_julia_dates(content: str) -> str:
@@ -1214,6 +1246,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             ),
         ),
     ),
+    "crystal": _LanguageConfig(
+        spec=literalizer.languages.CRYSTAL,
+        extension=".cr",
+        wrap=_wrap_crystal,
+        varname_wrap=_wrap_crystal_varname,
+        combined_wrap=_wrap_crystal_combined,
+        date_variants=(),
+    ),
     "matlab": _LanguageConfig(
         spec=literalizer.languages.MATLAB,
         extension=".m",
@@ -1236,6 +1276,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_zig,
         varname_wrap=_wrap_zig_varname,
         combined_wrap=_wrap_zig_combined,
+        date_variants=(),
+    ),
+    "powershell": _LanguageConfig(
+        spec=literalizer.languages.POWERSHELL,
+        extension=".ps1",
+        wrap=_wrap_powershell,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
 }
