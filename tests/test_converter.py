@@ -71,9 +71,6 @@ from literalizer.languages import (
     TYPESCRIPT,
     R,
 )
-from literalizer.languages.matlab import (
-    _format_matlab_dict_entry,  # pyright: ignore[reportPrivateUsage]
-)
 
 
 def _format_test_omap_entry(key: str, value: str) -> str:
@@ -1989,15 +1986,3 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
-
-
-def test_matlab_dict_non_quoted_key() -> None:
-    """MATLAB struct entries where the key is not a double-quoted string
-    are
-    passed through unchanged.
-
-    In practice keys are always double-quoted strings, but the defensive
-    branch handles any other pre-formatted key by passing it through as-is.
-    """
-    result = _format_matlab_dict_entry(key="somekey", value="42")
-    assert result == "somekey, 42"

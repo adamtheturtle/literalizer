@@ -29,9 +29,8 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
     ``struct`` stores them as a single cell-array field rather than
     expanding them into a struct array.
     """
-    if key.startswith('"') and key.endswith('"'):
-        inner = json.loads(s=key).replace("'", "''")
-        key = f"'{inner}'"
+    inner = json.loads(s=key).replace("'", "''")
+    key = f"'{inner}'"
     if value.startswith("{") and value.endswith("}"):
         value = f"{{{value}}}"
     return f"{key}, {value}"
