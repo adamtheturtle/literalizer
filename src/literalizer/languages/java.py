@@ -2,12 +2,11 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from beartype import beartype
 
 from literalizer._formatters import (
-    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_date_java,
@@ -27,6 +26,23 @@ if TYPE_CHECKING:
 def _format_java_dict_entry(key: str, value: str) -> str:
     """Format a Java ``Map.entry(key, value)`` call."""
     return f"Map.entry({key}, {value})"
+
+
+@beartype
+def _format_java_collection_open(values: list[Any]) -> str:
+    """Return a typed Java array opener inferred from element types.
+
+    Returns ``"new String[]{"`` when all elements are strings,
+    ``"new int[]{"`` when all elements are non-boolean integers, and
+    ``"new Object[]{"`` otherwise.
+    """
+    if values and all(isinstance(v, str) for v in values):
+        return "new String[]{"
+    if values and all(
+        isinstance(v, int) and not isinstance(v, bool) for v in values
+    ):
+        return "new int[]{"
+    return "new Object[]{"
 
 
 @beartype
@@ -86,8 +102,8 @@ class Java:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="new Object[]{"
+        self.sequence_open: Callable[[list[Value]], str] = (
+            _format_java_collection_open
         )
         self.sequence_close = "}"
         self.dict_open = "Map.ofEntries("

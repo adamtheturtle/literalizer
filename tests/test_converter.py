@@ -110,7 +110,7 @@ def _format_test_omap_entry(key: str, value: str) -> str:
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
         (GO, '[]any{true, nil, "hi", []any{1, 2}},'),
         (CPP, '{true, nullptr, "hi", {1, 2}},'),
-        (JAVA, 'new Object[]{true, null, "hi", new Object[]{1, 2}}'),
+        (JAVA, 'new Object[]{true, null, "hi", new int[]{1, 2}}'),
         (CSHARP, '(true, (object?)null, "hi", (1, 2))'),
         (RUBY, '[true, nil, "hi", [1, 2]],'),
         (KOTLIN, 'listOf<Any?>(true, null, "hi", listOf<Any?>(1, 2)),'),
@@ -374,6 +374,28 @@ def test_java_sequence_wrap_uses_braces() -> None:
         }"""
     )
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("json_input", "expected_open"),
+    argvalues=[
+        ([1, 2, 3], "new int[]{"),
+        (["hello", "world"], "new String[]{"),
+        ([1, "hello", True], "new Object[]{"),
+    ],
+    ids=["all_int", "all_string", "mixed"],
+)
+def test_java_typed_array_opener(
+    *, json_input: list[object], expected_open: str
+) -> None:
+    """Java uses typed array openers inferred from element types."""
+    result = literalize_json(
+        json_string=json.dumps(obj=json_input),
+        language=JAVA,
+        prefix="",
+        wrap=True,
+    )
+    assert result.startswith(expected_open)
 
 
 @pytest.mark.parametrize(argnames="wrap", argvalues=[False, True])
