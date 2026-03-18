@@ -16,6 +16,7 @@ jobs:
       - name: Check Occam-pi syntax
         run: >-
           docker run --rm -v "$PWD:/work" omegahm/kroc
-          sh -c 'find /work/tests/integration/cases -name "*.occ" |
+          sh -c '. /usr/local/kroc/bin/kroc-setup.sh &&
+          find /work/tests/integration/cases -name "*.occ" |
           while read f; do tmpdir=$(mktemp -d) &&
           kroc -o "$tmpdir/check" "$f" || exit 1; done'
