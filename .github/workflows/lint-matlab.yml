@@ -1,0 +1,26 @@
+---
+name: Lint MATLAB
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-matlab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Octave
+        run: sudo apt-get install -y octave
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Check MATLAB syntax
+        run: >-
+          find tests/integration/cases -name "*.m" -print0 |
+          xargs -0 uv run python check_matlab_golden_syntax.py
