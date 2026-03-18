@@ -44,6 +44,7 @@ ci:
     - ruff-check-fix-docs
     - ruff-format-fix
     - ruff-format-fix-docs
+    - bash-golden-syntax-check
     - c-golden-syntax-check
     - cpp-golden-syntax-check
     - swift-syntax-check
@@ -129,6 +130,7 @@ repos:
         entry: uv run --extra=dev shellcheck --shell=bash
         language: python
         types_or: [shell]
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -146,6 +148,7 @@ repos:
         entry: uv run --extra=dev shfmt --write --space-redirects --indent=4
         language: python
         types_or: [shell]
+        exclude: ^tests/integration/cases/
         additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
@@ -421,6 +424,14 @@ repos:
         pass_filenames: false
         types_or: [yaml]
         additional_dependencies: [uv==0.9.5]
+        stages: [pre-commit]
+
+      - id: bash-golden-syntax-check
+        name: Bash golden file syntax check
+        entry: bash -n
+        language: system
+        types: [shell]
+        files: ^tests/integration/cases/
         stages: [pre-commit]
 
       - id: ruby-syntax-check

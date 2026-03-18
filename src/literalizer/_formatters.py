@@ -45,6 +45,7 @@ __all__ = [
     "format_datetime_r",
     "format_datetime_ruby",
     "format_datetime_rust",
+    "format_variable_assignment_bash",
     "format_variable_assignment_c",
     "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
@@ -70,6 +71,7 @@ __all__ = [
     "format_variable_assignment_rust",
     "format_variable_assignment_scala",
     "format_variable_assignment_swift",
+    "format_variable_declaration_bash",
     "format_variable_declaration_c",
     "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
@@ -1170,3 +1172,21 @@ def format_variable_assignment_perl(name: str, value: str) -> str:
     Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
     """
     return f"${name} = {value};"
+
+
+@beartype
+def format_variable_declaration_bash(name: str, value: str) -> str:
+    """Format a Bash ``declare`` variable declaration.
+
+    Example: ``"x"`` and ``"(1 2)"`` → ``"declare x=(1 2)"``
+    """
+    return f"declare {name}={value}"
+
+
+@beartype
+def format_variable_assignment_bash(name: str, value: str) -> str:
+    """Format a Bash variable assignment to an existing variable.
+
+    Example: ``"x"`` and ``"(1 2)"`` → ``"x=(1 2)"``
+    """
+    return f"{name}={value}"

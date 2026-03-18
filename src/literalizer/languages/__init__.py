@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .bash import BASH
 from .c import C
 from .clojure import CLOJURE
 from .cpp import CPP
@@ -31,6 +32,7 @@ from .swift import SWIFT
 from .typescript import TYPESCRIPT
 
 __all__ = [
+    "BASH",
     "CLOJURE",
     "CPP",
     "CSHARP",
