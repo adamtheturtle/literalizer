@@ -454,7 +454,8 @@ repos:
 
       - id: typescript-syntax-check
         name: TypeScript syntax check
-        entry: tsc --noEmit --noResolve --skipLibCheck --lib es2015
+        entry: bash -c 'tsc --noEmit --noResolve --skipLibCheck --lib es2015 "$@"'
+          --
         language: node
         additional_dependencies: [typescript]
         types: [ts]
