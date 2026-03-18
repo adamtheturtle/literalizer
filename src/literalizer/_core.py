@@ -1,16 +1,14 @@
 """Core conversion logic: formatting values and parsing JSON/YAML."""
 
-from __future__ import annotations
-
 import dataclasses
 import datetime
 import json
 from io import StringIO
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 
@@ -19,12 +17,9 @@ from literalizer._comments import (
     extract_yaml_comments,
     literalize_yaml_scalar,
 )
-from literalizer._language import Language  # noqa: TC001
-from literalizer._types import Scalar, Value  # noqa: TC001
+from literalizer._language import Language
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import JSONParseError, YAMLParseError
-
-if TYPE_CHECKING:
-    from ruamel.yaml.comments import CommentedSeq, CommentedSet
 
 
 @beartype

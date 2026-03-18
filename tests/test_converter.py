@@ -1,14 +1,12 @@
 """Tests for literalizer converter."""
 
-from __future__ import annotations
-
 import ast
 import base64
 import dataclasses
 import datetime
 import json
 import textwrap
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable
 
 import pytest
 from beartype import beartype

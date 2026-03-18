@@ -1,9 +1,7 @@
 """Bash language specification."""
 
-from __future__ import annotations
-
-import datetime  # noqa: TC003
-from typing import TYPE_CHECKING
+import datetime
+from collections.abc import Callable
 
 from beartype import beartype
 
@@ -14,9 +12,6 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_set_entry,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 @beartype

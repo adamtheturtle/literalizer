@@ -1,11 +1,9 @@
 """MATLAB language specification."""
 
-from __future__ import annotations
-
-import datetime  # noqa: TC003
+import datetime
 import json
 import re
-from typing import TYPE_CHECKING
+from collections.abc import Callable
 
 from beartype import beartype
 
@@ -17,9 +15,6 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 _CONTROL_CHAR_THRESHOLD = 32
 

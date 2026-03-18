@@ -1,13 +1,9 @@
 """Language protocol and internal spec dataclass."""
 
-from __future__ import annotations
-
 import dataclasses
-import datetime  # noqa: TC003
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
+import datetime
+from collections.abc import Callable
+from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
