@@ -19,6 +19,9 @@ from literalizer._formatters import (
     passthrough_set_entry,
 )
 
+if TYPE_CHECKING:
+    from literalizer._types import Value
+
 
 @beartype
 def _format_kotlin_omap_entry(key: str, value: str) -> str:
@@ -48,10 +51,6 @@ _datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
     "kotlin": format_datetime_kotlin,
 }
 _string_format: Callable[[str], str] = format_string_backslash_dollar
-
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
 
 class Kotlin:
