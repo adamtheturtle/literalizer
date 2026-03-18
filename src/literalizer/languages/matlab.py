@@ -32,27 +32,14 @@ def _decode_matlab_string_expr(expr: str) -> str:
     characters.
     """
     raw: list[str] = []
-    i = 0
-    while i < len(expr):
-        if expr[i] == '"':
-            i += 1
-            while i < len(expr):
-                if expr[i] == '"':
-                    if i + 1 < len(expr) and expr[i + 1] == '"':
-                        raw.append('"')
-                        i += 2
-                    else:
-                        i += 1
-                        break
-                else:
-                    raw.append(expr[i])
-                    i += 1
-        elif expr[i : i + 5] == "char(":
-            end = expr.index(")", i)
-            raw.append(chr(int(expr[i + 5 : end])))
-            i = end + 1
+    for string_seg, char_code in re.findall(
+        pattern=r'"((?:[^"]|"")*)"|char\((\d+)\)',
+        string=expr,
+    ):
+        if char_code:
+            raw.append(chr(int(char_code)))
         else:
-            i += 1
+            raw.append(string_seg.replace('""', '"'))
     return "".join(raw)
 
 
