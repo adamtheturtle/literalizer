@@ -1,0 +1,17 @@
+---
+name: Lint PHP
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check PHP syntax
+        run: find tests/integration/cases -name "*.php" -exec php -l {} +
