@@ -1,0 +1,30 @@
+---
+name: Lint Erlang
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-erlang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          install-rebar: false
+          install-hex: false
+      - name: Check Erlang syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.erl" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              cp "$f" "$tmpdir/check.erl"
+              (cd "$tmpdir" && erlc check.erl) || exit 1
+            done

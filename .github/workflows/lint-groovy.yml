@@ -1,0 +1,27 @@
+---
+name: Lint Groovy
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-groovy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Groovy
+        uses: wtfjoke/setup-groovy@v3
+        with:
+          groovy-version: 4.x
+      - name: Check Groovy syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.groovy" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              groovyc -d "$tmpdir" "$(realpath "$f")" || exit 1
+            done
