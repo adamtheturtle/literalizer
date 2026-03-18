@@ -45,6 +45,7 @@ TYPESCRIPT = Language(
     format_dict_entry=dict_entry_with_separator(separator=": "),
     multiline_trailing_comma=True,
     single_element_trailing_comma=False,
+    format_string=format_string_backslash,
     format_bytes=format_bytes_hex,
     format_date=format_date_iso,
     format_datetime=format_datetime_iso,
@@ -65,5 +66,4 @@ TYPESCRIPT = Language(
     skip_null_dict_values=False,
     format_variable_declaration=_format_variable_declaration,
     format_variable_assignment=_format_variable_assignment,
-    format_string=format_string_backslash,
 )

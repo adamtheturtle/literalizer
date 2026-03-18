@@ -129,8 +129,14 @@ jobs:
   lint-ada:
     uses: ./.github/workflows/lint-ada.yml
 
+  lint-matlab:
+    uses: ./.github/workflows/lint-matlab.yml
+
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
+
+  lint-zig:
+    uses: ./.github/workflows/lint-zig.yml
 
   completion-lint:
     needs:
@@ -163,7 +169,9 @@ jobs:
       - lint-r
       - lint-d
       - lint-ada
+      - lint-matlab
       - lint-nim
+      - lint-zig
       - lint-powershell
     runs-on: ubuntu-latest
     if: always()

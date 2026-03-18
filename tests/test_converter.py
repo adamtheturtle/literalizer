@@ -9,7 +9,6 @@ import datetime
 import json
 import textwrap
 from collections.abc import Callable  # noqa: TC003
-from typing import Any
 
 import pytest
 from hypothesis import HealthCheck, given, settings
@@ -522,6 +521,7 @@ def test_custom_language() -> None:
         format_dict_entry=dict_entry_with_separator(separator=" -> "),
         multiline_trailing_comma=True,
         single_element_trailing_comma=False,
+        format_string=format_string_backslash,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
@@ -542,7 +542,6 @@ def test_custom_language() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
-        format_string=format_string_backslash,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -623,7 +622,7 @@ json_scalars = (
     | st.floats(allow_nan=False, allow_infinity=False)
     | json_text
 )
-json_values: st.SearchStrategy[Any] = st.recursive(
+json_values: st.SearchStrategy[_JSONValue] = st.recursive(
     base=json_scalars,
     extend=lambda children: (
         # ``max_size`` prevents unbounded nesting that causes test timeouts.
@@ -685,7 +684,7 @@ def test_literalize_json_invalid_is_parse_error() -> None:
 
 
 @given(data=json_arrays)
-def test_roundtrip_array(data: list[Any]) -> None:
+def test_roundtrip_array(data: list[_JSONValue]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
         json_string=json.dumps(obj=data),
@@ -719,7 +718,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
 # so we suppress the check rather than change the strategy.
 @given(data=json_objects)
 @settings(suppress_health_check=[HealthCheck.filter_too_much])
-def test_roundtrip_dict(data: dict[str, Any]) -> None:
+def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
         json_string=json.dumps(obj=data),
@@ -1085,6 +1084,7 @@ def test_custom_format_date() -> None:
         format_dict_entry=dict_entry_with_separator(separator=": "),
         multiline_trailing_comma=True,
         single_element_trailing_comma=False,
+        format_string=format_string_backslash,
         format_bytes=format_bytes_hex,
         format_date=format_date_python,
         format_datetime=format_datetime_iso,
@@ -1105,7 +1105,6 @@ def test_custom_format_date() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
-        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -1129,6 +1128,7 @@ def test_custom_format_datetime() -> None:
         format_dict_entry=dict_entry_with_separator(separator=": "),
         multiline_trailing_comma=True,
         single_element_trailing_comma=False,
+        format_string=format_string_backslash,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_python,
@@ -1149,7 +1149,6 @@ def test_custom_format_datetime() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
-        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1173,6 +1172,7 @@ def test_java_native_dates() -> None:
         format_dict_entry=dict_entry_with_separator(separator=": "),
         multiline_trailing_comma=True,
         single_element_trailing_comma=False,
+        format_string=format_string_backslash,
         format_bytes=format_bytes_hex,
         format_date=format_date_java,
         format_datetime=format_datetime_java_instant,
@@ -1193,7 +1193,6 @@ def test_java_native_dates() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
-        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1219,6 +1218,7 @@ def test_ruby_native_dates() -> None:
         format_dict_entry=dict_entry_with_separator(separator=" => "),
         multiline_trailing_comma=True,
         single_element_trailing_comma=False,
+        format_string=format_string_backslash,
         format_bytes=format_bytes_hex,
         format_date=format_date_ruby,
         format_datetime=format_datetime_ruby,
@@ -1239,7 +1239,6 @@ def test_ruby_native_dates() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
-        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1360,6 +1359,7 @@ def test_custom_format_bytes() -> None:
         format_dict_entry=dict_entry_with_separator(separator=": "),
         multiline_trailing_comma=True,
         single_element_trailing_comma=False,
+        format_string=format_string_backslash,
         format_bytes=format_bytes_python,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
@@ -1380,7 +1380,6 @@ def test_custom_format_bytes() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
-        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
@@ -1778,6 +1777,7 @@ def test_omap_custom_language_spec() -> None:
         format_dict_entry=dict_entry_with_separator(separator=": "),
         multiline_trailing_comma=True,
         single_element_trailing_comma=False,
+        format_string=format_string_backslash,
         format_bytes=format_bytes_hex,
         format_date=format_date_iso,
         format_datetime=format_datetime_iso,
@@ -1798,7 +1798,6 @@ def test_omap_custom_language_spec() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
-        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
