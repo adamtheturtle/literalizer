@@ -10,7 +10,9 @@ ASet
 AStr
 Args
 CPP
+CSharp
 Changelog
+Cpp
 FBool
 FFloat
 FInt
@@ -18,10 +20,12 @@ FList
 FMap
 FNull
 FSet
+FSharp
 FStr
 JSONDecodeError
 Lua
 NEL
+Nim
 OBool
 OCaml
 OFloat
@@ -31,9 +35,11 @@ OMap
 ONull
 OSet
 OStr
+Php
 YAMLError
 ZKV
 ZVal
+Zig
 beartype
 booleans
 chrono

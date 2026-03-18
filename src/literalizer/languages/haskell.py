@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import datetime  # noqa: TC003
+from typing import TYPE_CHECKING
+
 from beartype import beartype
 
 from literalizer._formatters import (
@@ -12,7 +15,9 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import Language
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @beartype
@@ -39,36 +44,57 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
-HASKELL = Language(
-    null_literal="HNull",
-    true_literal="HBool True",
-    false_literal="HBool False",
-    sequence_open="HList [",
-    sequence_close="]",
-    dict_open="HMap [",
-    dict_close="]",
-    format_dict_entry=_format_haskell_dict_entry,
-    multiline_trailing_comma=False,
-    single_element_trailing_comma=False,
-    format_string=format_string_backslash,
-    format_bytes=format_bytes_hex,
-    format_date=format_date_iso,
-    format_datetime=format_datetime_iso,
-    empty_sequence=None,
-    empty_dict=None,
-    set_open="HSet [",
-    set_close="]",
-    empty_set=None,
-    format_sequence_entry=passthrough_sequence_entry,
-    format_set_entry=passthrough_set_entry,
-    comment_prefix="--",
-    comment_suffix="",
-    omap_open="HMap [",
-    omap_close="]",
-    format_omap_entry=_format_haskell_omap_entry,
-    multiline_close_indent="    ",
-    element_separator=", ",
-    skip_null_dict_values=False,
-    format_variable_declaration=_format_variable_declaration,
-    format_variable_assignment=_format_variable_assignment,
-)
+_bytes_format: Callable[[bytes], str] = format_bytes_hex
+_date_format: Callable[[datetime.date], str] = format_date_iso
+_datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
+_string_format: Callable[[str], str] = format_string_backslash
+
+
+class Haskell:
+    """Haskell language specification."""
+
+    def __init__(self) -> None:
+        """Initialize Haskell language specification."""
+        self.null_literal = "HNull"
+        self.true_literal = "HBool True"
+        self.false_literal = "HBool False"
+        self.sequence_open = "HList ["
+        self.sequence_close = "]"
+        self.dict_open = "HMap ["
+        self.dict_close = "]"
+        self.format_dict_entry: Callable[[str, str], str] = (
+            _format_haskell_dict_entry
+        )
+        self.multiline_trailing_comma = False
+        self.single_element_trailing_comma = False
+        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_date: Callable[[datetime.date], str] = _date_format
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _datetime_format
+        )
+        self.format_string: Callable[[str], str] = _string_format
+        self.empty_sequence: str | None = None
+        self.empty_dict: str | None = None
+        self.set_open = "HSet ["
+        self.set_close = "]"
+        self.empty_set: str | None = None
+        self.format_sequence_entry: Callable[[str], str] = (
+            passthrough_sequence_entry
+        )
+        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_prefix = "--"
+        self.comment_suffix = ""
+        self.omap_open = "HMap ["
+        self.omap_close = "]"
+        self.format_omap_entry: Callable[[str, str], str] = (
+            _format_haskell_omap_entry
+        )
+        self.multiline_close_indent = "    "
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.format_variable_declaration: Callable[[str, str], str] = (
+            _format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str], str] = (
+            _format_variable_assignment
+        )
