@@ -1,0 +1,24 @@
+---
+name: Lint Rust
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install rustfmt
+        run: rustup component add rustfmt
+      - name: Check Rust syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.rs" -print0 | \
+            while IFS= read -r -d '' f; do
+              rustfmt --edition 2021 --emit stdout "$f" > /dev/null || exit 1
+            done

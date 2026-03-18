@@ -1,0 +1,24 @@
+---
+name: Lint TypeScript
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install TypeScript
+        run: npm install -g typescript
+      - name: Check TypeScript syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.ts" -print0 | \
+            while IFS= read -r -d '' f; do
+              tsc --noEmit --noResolve --skipLibCheck --lib es2015 "$f" || exit 1
+            done
