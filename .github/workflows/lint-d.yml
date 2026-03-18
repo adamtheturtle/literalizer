@@ -1,0 +1,26 @@
+---
+name: Lint D
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install DMD
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: dmd-latest
+      - name: Check D syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.d" -print0 | \
+            while IFS= read -r -d '' f; do
+              dmd -o- -c "$f" || exit 1
+            done

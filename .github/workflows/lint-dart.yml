@@ -1,0 +1,27 @@
+---
+name: Lint Dart
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-dart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Dart
+        uses: dart-lang/setup-dart@v1
+      - name: Check Dart syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.dart" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
+              cp "$f" "$tmpdir/check.dart"
+              dart analyze --fatal-infos "$tmpdir/check.dart" || exit 1
+            done

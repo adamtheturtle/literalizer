@@ -1,0 +1,23 @@
+---
+name: Lint R
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          windows-path-include-rtools: false
+      - name: Check R syntax
+        run: >-
+          find tests/integration/cases -name "*.R" -print0 |
+          xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
