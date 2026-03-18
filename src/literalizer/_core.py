@@ -370,6 +370,7 @@ def literalize_yaml(
     cp = language.comment_prefix
     cs = language.comment_suffix
 
+    result: str
     if isinstance(data, set):
         if not base:
             result = base
