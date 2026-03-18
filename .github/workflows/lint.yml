@@ -43,13 +43,7 @@ jobs:
         if: always()
 
   lint-bash:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Check Bash syntax
-        run: find tests/integration/cases -name "*.sh" -exec bash -n {} +
+    uses: ./.github/workflows/lint-bash.yml
 
   lint-ruby:
     uses: ./.github/workflows/lint-ruby.yml
