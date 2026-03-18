@@ -477,6 +477,21 @@ def _wrap_r(content: str) -> str:
     return f"x <- {content}"
 
 
+def _wrap_nim(content: str) -> str:
+    """Wrap in a Nim import json and %* expression."""
+    return f"import json\nlet _ = %*{content}"
+
+
+def _wrap_nim_varname(content: str) -> str:
+    """Wrap a Nim var declaration with the json import."""
+    return f"import json\n{content}"
+
+
+def _wrap_nim_combined(declaration: str, assignment: str) -> str:
+    """Wrap Nim declaration and assignment with the json import."""
+    return f"import json\n{declaration}\n{assignment}"
+
+
 def _wrap_d(content: str) -> str:
     """Wrap in a D function with ``std.json`` imported."""
     return (
@@ -1122,6 +1137,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_r,
             ),
         ),
+    ),
+    "nim": _LanguageConfig(
+        spec=literalizer.languages.NIM,
+        extension=".nim",
+        wrap=_wrap_nim,
+        varname_wrap=_wrap_nim_varname,
+        combined_wrap=_wrap_nim_combined,
+        date_variants=(),
     ),
 }
 

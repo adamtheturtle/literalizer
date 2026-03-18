@@ -21,6 +21,7 @@ from .javascript import JAVASCRIPT
 from .julia import JULIA
 from .kotlin import KOTLIN
 from .lua import LUA
+from .nim import NIM
 from .ocaml import OCAML
 from .occam import OCCAM
 from .perl import PERL
@@ -51,6 +52,7 @@ __all__ = [
     "JULIA",
     "KOTLIN",
     "LUA",
+    "NIM",
     "OCAML",
     "OCCAM",
     "PERL",
