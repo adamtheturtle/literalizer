@@ -530,10 +530,10 @@ repos:
 
       - id: erlang-syntax-check
         name: Erlang golden file syntax check
-        entry: uv run python check_erlang_golden_syntax.py
-        language: python
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d); cp "$f" "$tmpdir/check.erl"
+          && (cd "$tmpdir" && erlc check.erl) || exit 1; done' --
+        language: system
         files: ^tests/integration/cases/.*\.erl$
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: fsharp-golden-syntax-check
@@ -556,10 +556,10 @@ repos:
 
       - id: occam-golden-syntax-check
         name: occam-pi golden file syntax check
-        entry: uv run python check_occam_golden_syntax.py
-        language: python
+        entry: bash -c 'command -v kroc > /dev/null || exit 0; for f; do tmpdir=$(mktemp
+          -d); kroc -o "$tmpdir/check" "$f" || exit 1; done' --
+        language: system
         files: ^tests/integration/cases/.*\.occ$
-        additional_dependencies: [uv==0.9.5]
         stages: [pre-commit]
 
       - id: haskell-golden-syntax-check
