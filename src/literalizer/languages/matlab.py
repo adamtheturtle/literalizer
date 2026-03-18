@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from beartype import beartype
 
@@ -16,6 +17,32 @@ from literalizer._formatters import (
 )
 from literalizer._language import Language
 
+_CONTROL_CHAR_THRESHOLD = 32
+
+
+def _matlab_char_key(s: str) -> str:
+    """Build a MATLAB char-array expression for a struct key.
+
+    Single quotes are doubled for valid char-vector literals.  Control
+    characters (code points 0-31) cannot appear literally inside a
+    MATLAB char vector, so they are emitted as ``char(N)`` calls and
+    concatenated with ``[...]``.
+    """
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=s):
+        if not segment:
+            continue
+        if len(segment) == 1 and ord(segment) < _CONTROL_CHAR_THRESHOLD:
+            parts.append(f"char({ord(segment)})")
+        else:
+            escaped = segment.replace("'", "''")
+            parts.append(f"'{escaped}'")
+    if not parts:
+        return "''"
+    if len(parts) == 1:
+        return parts[0]
+    return "[" + ", ".join(parts) + "]"
+
 
 @beartype
 def _format_matlab_dict_entry(key: str, value: str) -> str:
@@ -25,16 +52,18 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
     Dictionary keys arrive as double-quoted strings; they are converted to
     single-quoted character vectors as required by ``struct``.  Internal
     single quotes are doubled to produce valid MATLAB char-vector literals.
+    Control characters are emitted as ``char(N)`` concatenation expressions
+    because MATLAB char vectors cannot contain literal control characters.
 
     Cell-array values are wrapped in an extra layer of braces so that
     ``struct`` stores them as a single cell-array field rather than
     expanding them into a struct array.
     """
-    inner = json.loads(s=key).replace("'", "''")
-    key = f"'{inner}'"
+    inner = json.loads(s=key, strict=False)
+    key_expr = _matlab_char_key(s=inner)
     if value.startswith("{") and value.endswith("}"):
         value = f"{{{value}}}"
-    return f"{key}, {value}"
+    return f"{key_expr}, {value}"
 
 
 @beartype

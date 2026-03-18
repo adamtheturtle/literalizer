@@ -5,7 +5,6 @@ from __future__ import annotations
 from beartype import beartype
 
 from literalizer._formatters import (
-    dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -14,6 +13,19 @@ from literalizer._formatters import (
     passthrough_set_entry,
 )
 from literalizer._language import Language
+
+
+@beartype
+def _format_r_dict_entry(key: str, value: str) -> str:
+    """Format an R named list entry.
+
+    R list syntax does not allow zero-length names (``"" = value`` is a
+    parse error), so empty-string keys are emitted as positional (unnamed)
+    elements.
+    """
+    if key == '""':
+        return value
+    return f"{key} = {value}"
 
 
 @beartype
@@ -42,7 +54,7 @@ R = Language(
     sequence_close=")",
     dict_open="list(",
     dict_close=")",
-    format_dict_entry=dict_entry_with_separator(separator=" = "),
+    format_dict_entry=_format_r_dict_entry,
     single_element_trailing_comma=False,
     format_string=format_string_backslash,
     format_bytes=format_bytes_hex,
