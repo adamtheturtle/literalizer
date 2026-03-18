@@ -24,4 +24,5 @@ pub fn main() void {
         .{ .str = "banana" },
         .{ .str = "cherry" },
     }};
+    _ = my_data;
 }

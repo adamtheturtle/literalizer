@@ -17,10 +17,10 @@ jobs:
         uses: mlugg/setup-zig@v1
         with:
           version: 0.14.0
-      - name: Check Zig syntax
+      - name: Check Zig
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.zig" -print0 | \
             while IFS= read -r -d '' f; do
-              zig ast-check "$f" > /dev/null || exit 1
+              zig build-obj -fno-emit-bin "$f" || exit 1
             done

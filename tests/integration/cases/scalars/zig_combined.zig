@@ -28,4 +28,5 @@ pub fn main() void {
         .{ .bool = false },
         .{ .str = "hello \"world\"" },
     }};
+    _ = my_data;
 }

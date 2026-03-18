@@ -22,4 +22,5 @@ pub fn main() void {
         .{ .arr = &.{}},
         .{ .map = &.{}},
     }};
+    _ = my_data;
 }

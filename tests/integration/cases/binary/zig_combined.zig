@@ -20,4 +20,5 @@ pub fn main() void {
     my_data = .{ .arr = &.{
         .{ .str = "48656c6c6f" },
     }};
+    _ = my_data;
 }
