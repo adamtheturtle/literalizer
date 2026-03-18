@@ -32,11 +32,6 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
-      - name: Install Groovy
-        uses: wtfjoke/setup-groovy@v3
-        with:
-          groovy-version: 4.x
-
       - name: Lint
         shell: bash
         run: uv run --extra=dev prek run --all-files --hook-stage ${{ matrix.hook-stage }}
