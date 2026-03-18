@@ -11,6 +11,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash,
 )
 
 if TYPE_CHECKING:
@@ -87,6 +88,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 _BYTES_FORMAT: Callable[[bytes], str] = format_bytes_hex
 _DATE_FORMAT: Callable[[datetime.date], str] = format_date_iso
 _DATETIME_FORMAT: Callable[[datetime.datetime], str] = format_datetime_iso
+_STRING_FORMAT: Callable[[str], str] = format_string_backslash
 
 
 class Occam:
@@ -111,6 +113,7 @@ class Occam:
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _DATETIME_FORMAT
         )
+        self.format_string: Callable[[str], str] = _STRING_FORMAT
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "MOBILE LIT(lit.set; MOBILE []MOBILE LIT ["

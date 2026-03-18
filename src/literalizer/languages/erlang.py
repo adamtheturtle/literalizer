@@ -11,6 +11,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -51,6 +52,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 _BYTES_FORMAT: Callable[[bytes], str] = _format_bytes
 _DATE_FORMAT: Callable[[datetime.date], str] = format_date_iso
 _DATETIME_FORMAT: Callable[[datetime.datetime], str] = format_datetime_iso
+_STRING_FORMAT: Callable[[str], str] = format_string_backslash
 
 
 class Erlang:
@@ -75,6 +77,7 @@ class Erlang:
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _DATETIME_FORMAT
         )
+        self.format_string: Callable[[str], str] = _STRING_FORMAT
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "sets:from_list(["

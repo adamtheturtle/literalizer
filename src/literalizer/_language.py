@@ -123,6 +123,9 @@ class Language(Protocol):
     format_variable_assignment: Callable[[str, str], str]
     """Callable that formats an assignment to an existing variable."""
 
+    format_string: Callable[[str], str]
+    """Callable that formats a string value as a quoted literal."""
+
 
 @dataclasses.dataclass
 class _LanguageSpec:  # pyright: ignore[reportUnusedClass]
@@ -161,3 +164,4 @@ class _LanguageSpec:  # pyright: ignore[reportUnusedClass]
     skip_null_dict_values: bool
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
+    format_string: Callable[[str], str]

@@ -42,6 +42,9 @@ jobs:
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
 
+  lint-bash:
+    uses: ./.github/workflows/lint-bash.yml
+
   lint-ruby:
     uses: ./.github/workflows/lint-ruby.yml
 
@@ -120,12 +123,25 @@ jobs:
   lint-d:
     uses: ./.github/workflows/lint-d.yml
 
+  lint-powershell:
+    uses: ./.github/workflows/lint-powershell.yml
+
   lint-ada:
     uses: ./.github/workflows/lint-ada.yml
+
+  lint-matlab:
+    uses: ./.github/workflows/lint-matlab.yml
+
+  lint-nim:
+    uses: ./.github/workflows/lint-nim.yml
+
+  lint-zig:
+    uses: ./.github/workflows/lint-zig.yml
 
   completion-lint:
     needs:
       - build
+      - lint-bash
       - lint-ruby
       - lint-go
       - lint-groovy
@@ -153,6 +169,10 @@ jobs:
       - lint-r
       - lint-d
       - lint-ada
+      - lint-matlab
+      - lint-nim
+      - lint-zig
+      - lint-powershell
     runs-on: ubuntu-latest
     if: always()
     steps:

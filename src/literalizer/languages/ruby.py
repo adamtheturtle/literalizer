@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_date_ruby,
     format_datetime_iso,
     format_datetime_ruby,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -51,6 +52,7 @@ _DATETIME_FORMATS: dict[str, Callable[[datetime.datetime], str]] = {
     "iso": format_datetime_iso,
     "ruby": format_datetime_ruby,
 }
+_STRING_FORMAT: Callable[[str], str] = format_string_backslash
 
 
 class Ruby:
@@ -82,6 +84,7 @@ class Ruby:
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _DATETIME_FORMATS[datetime_format]
         )
+        self.format_string: Callable[[str], str] = _STRING_FORMAT
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "Set.new(["

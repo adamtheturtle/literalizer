@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -53,6 +54,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 _BYTES_FORMAT: Callable[[bytes], str] = format_bytes_hex
 _DATE_FORMAT: Callable[[datetime.date], str] = _format_date
 _DATETIME_FORMAT: Callable[[datetime.datetime], str] = _format_datetime
+_STRING_FORMAT: Callable[[str], str] = format_string_backslash
 
 
 class Php:
@@ -77,6 +79,7 @@ class Php:
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _DATETIME_FORMAT
         )
+        self.format_string: Callable[[str], str] = _STRING_FORMAT
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "["

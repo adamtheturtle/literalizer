@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_datetime_java_instant,
     format_datetime_java_zoned,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -52,6 +53,7 @@ _DATETIME_FORMATS: dict[str, Callable[[datetime.datetime], str]] = {
     "instant": format_datetime_java_instant,
     "zoned": format_datetime_java_zoned,
 }
+_STRING_FORMAT: Callable[[str], str] = format_string_backslash
 
 
 class Java:
@@ -83,6 +85,7 @@ class Java:
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _DATETIME_FORMATS[datetime_format]
         )
+        self.format_string: Callable[[str], str] = _STRING_FORMAT
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "Set.of("
