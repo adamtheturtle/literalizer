@@ -46,6 +46,7 @@ from literalizer._formatters import (
     format_datetime_python,
     format_datetime_ruby,
     format_datetime_rust,
+    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -541,6 +542,7 @@ def test_custom_language() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        format_string=format_string_backslash,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -1103,6 +1105,7 @@ def test_custom_format_date() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -1146,6 +1149,7 @@ def test_custom_format_datetime() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1189,6 +1193,7 @@ def test_java_native_dates() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -1234,6 +1239,7 @@ def test_ruby_native_dates() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -1374,6 +1380,7 @@ def test_custom_format_bytes() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
@@ -1791,6 +1798,7 @@ def test_omap_custom_language_spec() -> None:
         skip_null_dict_values=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        format_string=format_string_backslash,
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
