@@ -1,3 +1,3 @@
 declare _v=(
-    "([\"key\"]=\"hello world\" [\"value\"]=1)"
+    "([\"key\"]=\"hello   world\" [\"value\"]=1)"
 )

@@ -860,9 +860,22 @@ class _LanguageConfig:
     date_variants: tuple[_DateVariant, ...]
 
 
+def _is_bash_assoc_array(value: str) -> bool:
+    """Return True if *value* is a Bash associative-array expression."""
+    stripped = value.strip()
+    if not stripped.startswith("("):
+        return False
+    for line in stripped.splitlines()[1:]:
+        content = line.strip()
+        if content and not content.startswith("#"):
+            return content.startswith("[")
+    return False
+
+
 def _wrap_bash(content: str) -> str:
     """Wrap in a Bash ``declare`` statement for syntax validation."""
-    return f"declare _v={content}"
+    flag = " -A" if _is_bash_assoc_array(value=content) else ""
+    return f"declare{flag} _v={content}"
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {

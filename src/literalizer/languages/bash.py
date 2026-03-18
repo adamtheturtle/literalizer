@@ -14,16 +14,32 @@ from literalizer._formatters import (
 from literalizer._language import Language
 
 
+def _is_assoc_array(value: str) -> bool:
+    """Return True if *value* is a Bash associative-array expression."""
+    stripped = value.strip()
+    if not stripped.startswith("("):
+        return False
+    for line in stripped.splitlines()[1:]:
+        content = line.strip()
+        if content and not content.startswith("#"):
+            return content.startswith("[")
+    return False
+
+
 def _to_bash_value(item: str) -> str:
     """Quote an item if it is a nested array or dict expression.
 
     Bash does not support nested array literals, so any value that is
     itself an array or associative-array expression (starting with
-    ``(``) is collapsed to a single line and double-quoted.
+    ``(``) is double-quoted with special characters escaped.
     """
     if item.startswith("("):
-        collapsed = " ".join(item.split())
-        escaped = collapsed.replace("\\", "\\\\").replace('"', '\\"')
+        escaped = (
+            item.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("$", "\\$")
+            .replace("`", "\\`")
+        )
         return f'"{escaped}"'
     return item
 
@@ -43,19 +59,14 @@ def _format_bash_dict_entry(key: str, value: str) -> str:
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Bash ``declare`` variable declaration."""
-    return f"declare {name}={value}"
+    flag = " -A" if _is_assoc_array(value=value) else ""
+    return f"declare{flag} {name}={value}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Bash variable assignment."""
     return f"{name}={value}"
-
-
-@beartype
-def _format_bash_set_entry(item: str) -> str:
-    """Format a Bash indexed-array set element."""
-    return passthrough_set_entry(item=item)
 
 
 BASH = Language(
@@ -79,7 +90,7 @@ BASH = Language(
     set_close=")",
     empty_set=None,
     format_sequence_entry=_format_bash_sequence_entry,
-    format_set_entry=_format_bash_set_entry,
+    format_set_entry=passthrough_set_entry,
     comment_prefix="#",
     comment_suffix="",
     omap_open="(",
