@@ -546,8 +546,8 @@ repos:
 
       - id: ocaml-golden-syntax-check
         name: OCaml golden file syntax check
-        entry: bash -c 'command -v ocamlopt > /dev/null || exit 0; tmpdir=$(mktemp
-          -d); for f; do ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1; done' --
+        entry: bash -c 'tmpdir=$(mktemp -d); for f; do ocamlopt -c -o "$tmpdir/check.o"
+          "$f" || exit 1; done' --
         language: system
         types: [ocaml]
         files: ^tests/integration/cases/
@@ -555,8 +555,8 @@ repos:
 
       - id: occam-golden-syntax-check
         name: occam-pi golden file syntax check
-        entry: bash -c 'command -v kroc > /dev/null || exit 0; for f; do tmpdir=$(mktemp
-          -d); kroc -o "$tmpdir/check" "$f" || exit 1; done' --
+        entry: bash -c 'for f; do tmpdir=$(mktemp -d); kroc -o "$tmpdir/check" "$f"
+          || exit 1; done' --
         language: system
         files: ^tests/integration/cases/.*\.occ$
         stages: [pre-commit]
