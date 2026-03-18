@@ -59,6 +59,7 @@ dataclasses
 datetime
 datetimes
 dicts
+durations
 elixirc
 erlc
 formatter
@@ -68,6 +69,7 @@ ghc
 gnatmake
 gofmt
 haskell
+init
 initializer
 initializers
 javac
