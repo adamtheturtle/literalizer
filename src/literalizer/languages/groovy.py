@@ -12,7 +12,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_backslash,
+    format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -36,7 +36,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 _bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
-_string_format: Callable[[str], str] = format_string_backslash
+_string_format: Callable[[str], str] = format_string_backslash_dollar
 
 
 class Groovy:
