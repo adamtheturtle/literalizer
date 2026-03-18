@@ -12,6 +12,9 @@ def _strip_comment(line: str) -> str:
     i = 0
     while i < len(line):
         ch = line[i]
+        if ch == "\\" and in_string:
+            i += 2
+            continue
         if ch == '"':
             in_string = not in_string
         elif not in_string and line[i : i + 2] == "--":
@@ -67,7 +70,12 @@ def _check_brackets(lines: list[str]) -> str | None:
     for line_num, line in enumerate(iterable=lines, start=1):
         clean = _strip_comment(line=line)
         in_string = False
-        for ch in clean:
+        i = 0
+        while i < len(clean):
+            ch = clean[i]
+            if ch == "\\" and in_string:
+                i += 2
+                continue
             if ch == '"':
                 in_string = not in_string
             elif not in_string:
@@ -77,6 +85,7 @@ def _check_brackets(lines: list[str]) -> str | None:
                     depth -= 1
                     if depth < 0:
                         return f"Unmatched ']' at line {line_num}"
+            i += 1
 
     if depth != 0:
         return f"Unbalanced '[': {depth} unclosed bracket(s)"
