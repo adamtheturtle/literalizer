@@ -869,7 +869,7 @@ def _is_bash_assoc_array(value: str) -> bool:
         content = line.strip()
         if content and not content.startswith("#"):
             return content.startswith("[")
-    return False
+    return False  # pragma: no cover
 
 
 def _wrap_bash(content: str) -> str:

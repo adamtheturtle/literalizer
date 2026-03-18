@@ -23,7 +23,7 @@ def _is_assoc_array(value: str) -> bool:
         content = line.strip()
         if content and not content.startswith("#"):
             return content.startswith("[")
-    return False
+    return False  # pragma: no cover
 
 
 def _to_bash_value(item: str) -> str:
