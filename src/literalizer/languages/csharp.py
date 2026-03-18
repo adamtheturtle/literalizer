@@ -53,7 +53,22 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class CSharp:
-    """C# language specification."""
+    """C# language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
+            * ``"csharp"`` — ``new DateOnly(...)`` call,
+              e.g. ``new DateOnly(2024, 1, 15)``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``"iso"`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``"csharp"`` — ``new DateTime(...)`` call,
+              e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
+    """
 
     def __init__(
         self,

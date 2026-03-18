@@ -6,10 +6,7 @@
 Supported languages
 -------------------
 
-Ada, Bash, C, C#, C++, Clojure, Crystal, D, Dart, Elixir, Erlang, F#, Go,
-Groovy, Haskell, Java, JavaScript, Julia, Kotlin, Lua, MATLAB, Nim, OCaml,
-Occam-pi, Perl, PHP, PowerShell, Python, R, Ruby, Rust, Scala, Swift,
-TypeScript, Zig.
+See :ref:`languages` for the full list with per-language options.
 
 Installation
 ------------
