@@ -27,23 +27,12 @@ def _to_val(value: str) -> str:
         return f".{{ .str = {value} }}"
     negative = value.startswith("-")
     rest = value[1:] if negative else value
-    int_result = None
     try:
         int(rest)
-        int_result = f".{{ .int = {value} }}"
     except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f".{{ .float = {value} }}"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+        return f".{{ .float = {value} }}"
+    else:
+        return f".{{ .int = {value} }}"
 
 
 @beartype
