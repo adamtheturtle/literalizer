@@ -42,6 +42,9 @@ jobs:
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
 
+  lint-bash:
+    uses: ./.github/workflows/lint-bash.yml
+
   lint-ruby:
     uses: ./.github/workflows/lint-ruby.yml
 
@@ -126,9 +129,13 @@ jobs:
   lint-occam:
     uses: ./.github/workflows/lint-occam.yml
 
+  lint-nim:
+    uses: ./.github/workflows/lint-nim.yml
+
   completion-lint:
     needs:
       - build
+      - lint-bash
       - lint-ruby
       - lint-go
       - lint-groovy
@@ -157,6 +164,7 @@ jobs:
       - lint-d
       - lint-ada
       - lint-occam
+      - lint-nim
     runs-on: ubuntu-latest
     if: always()
     steps:
