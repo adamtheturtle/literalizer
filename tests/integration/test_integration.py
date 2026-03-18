@@ -774,6 +774,11 @@ class _LanguageConfig:
     date_variants: tuple[_DateVariant, ...]
 
 
+def _wrap_bash(content: str) -> str:
+    """Wrap in a Bash ``declare`` statement for syntax validation."""
+    return f"declare _v={content}"
+
+
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
         spec=literalizer.languages.ADA,
@@ -781,6 +786,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_ada,
         varname_wrap=_wrap_ada_varname,
         combined_wrap=_wrap_ada_combined,
+        date_variants=(),
+    ),
+    "bash": _LanguageConfig(
+        spec=literalizer.languages.BASH,
+        extension=".sh",
+        wrap=_wrap_bash,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
     "c": _LanguageConfig(

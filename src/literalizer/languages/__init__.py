@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .ada import ADA
+from .bash import BASH
 from .c import C
 from .clojure import CLOJURE
 from .cpp import CPP
@@ -34,6 +35,7 @@ from .typescript import TYPESCRIPT
 
 __all__ = [
     "ADA",
+    "BASH",
     "CLOJURE",
     "CPP",
     "CSHARP",
