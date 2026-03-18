@@ -15,9 +15,8 @@ from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 
 from literalizer._comments import (
-    YamlCollectionContext,
+    apply_collection_comments,
     extract_yaml_comments,
-    literalize_yaml_collection,
     literalize_yaml_scalar,
 )
 from literalizer._language import Language  # noqa: TC001
@@ -25,7 +24,7 @@ from literalizer._types import Scalar, Value  # noqa: TC001
 from literalizer.exceptions import JSONParseError, YAMLParseError
 
 if TYPE_CHECKING:
-    from ruamel.yaml.comments import CommentedSeq
+    from ruamel.yaml.comments import CommentedSeq, CommentedSet
 
 
 @beartype
@@ -381,8 +380,20 @@ def literalize_yaml(
     cp = language.comment_prefix
     cs = language.comment_suffix
 
+    result: str
     if isinstance(data, set):
-        result = base
+        ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+            stream=StringIO(initial_value=yaml_string),
+        )
+        set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
+        result = apply_collection_comments(
+            collection_comments=set_comments,
+            base=base,
+            comment_prefix=cp,
+            comment_suffix=cs,
+            prefix=prefix,
+            wrap=wrap,
+        )
     elif not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
@@ -397,20 +408,16 @@ def literalize_yaml(
     elif not base:
         result = base
     else:
-        is_sequence = isinstance(data, list)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
         )
         collection_comments = extract_yaml_comments(
             ruamel_data=ruamel_data,
-            is_sequence=is_sequence,
         )
 
-        if (
-            not is_sequence
-            and language.skip_null_dict_values
-            and isinstance(ruamel_data, CommentedMap)
+        if language.skip_null_dict_values and isinstance(
+            ruamel_data, CommentedMap
         ):
             filtered_elements = tuple(
                 ec
@@ -426,26 +433,14 @@ def literalize_yaml(
                 elements=filtered_elements,
             )
 
-        has_comments = (
-            any(
-                element_comment.before or element_comment.inline
-                for element_comment in collection_comments.elements
-            )
-            or collection_comments.trailing
+        result = apply_collection_comments(
+            collection_comments=collection_comments,
+            base=base,
+            comment_prefix=cp,
+            comment_suffix=cs,
+            prefix=prefix,
+            wrap=wrap,
         )
-        if not has_comments:
-            result = base
-        else:
-            ctx = YamlCollectionContext(
-                base=base,
-                element_comments=collection_comments.elements,
-                trailing=collection_comments.trailing,
-                comment_prefix=cp,
-                comment_suffix=cs,
-                prefix=prefix,
-                wrap=wrap,
-            )
-            result = literalize_yaml_collection(ctx=ctx)
 
     if variable_name is not None:
         formatter = (
