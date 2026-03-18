@@ -1862,13 +1862,19 @@ def test_existing_variable_assignment_yaml(
     argnames=("yaml_string", "expected"),
     argvalues=[
         ("hello\n", '"hello"'),
-        ('"hello\\nworld"\n', '"hello\\nworld"'),
-        ('"hello\\tworld"\n', '"hello\\tworld"'),
-        ('"back\\\\slash"\n', '"back\\\\slash"'),
+        ('"hello\\nworld"\n', '"hello" + char(10) + "world"'),
+        ('"hello\\tworld"\n', '"hello" + char(9) + "world"'),
+        ('"back\\\\slash"\n', '"back\\slash"'),
     ],
 )
 def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
-    """MATLAB string values escape backslashes, newlines, and tabs."""
+    """MATLAB string values use char() concatenation for control
+    characters.
+
+    Backslashes are literal in MATLAB double-quoted strings; control
+    characters (newlines, tabs, etc.) are represented as ``char(N)``
+    expressions joined with ``+``.
+    """
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=Matlab(),

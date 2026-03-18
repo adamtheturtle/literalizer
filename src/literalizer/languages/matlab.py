@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime  # noqa: TC003
-import json
 import re
 from typing import TYPE_CHECKING
 
@@ -22,6 +21,39 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _CONTROL_CHAR_THRESHOLD = 32
+
+
+def _decode_matlab_string_expr(expr: str) -> str:
+    """Decode a MATLAB string expression back to its raw string value.
+
+    Reverses the output of ``format_string_matlab``.  Handles both the
+    simple ``"..."`` form (with ``""`` for embedded double-quotes) and the
+    ``"..." + char(N) + "..."`` concatenation form used for control
+    characters.
+    """
+    raw: list[str] = []
+    i = 0
+    while i < len(expr):
+        if expr[i] == '"':
+            i += 1
+            while i < len(expr):
+                if expr[i] == '"':
+                    if i + 1 < len(expr) and expr[i + 1] == '"':
+                        raw.append('"')
+                        i += 2
+                    else:
+                        i += 1
+                        break
+                else:
+                    raw.append(expr[i])
+                    i += 1
+        elif expr[i : i + 5] == "char(":
+            end = expr.index(")", i)
+            raw.append(chr(int(expr[i + 5 : end])))
+            i = end + 1
+        else:
+            i += 1
+    return "".join(raw)
 
 
 def _matlab_char_key(s: str) -> str:
@@ -63,7 +95,7 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
     ``struct`` stores them as a single cell-array field rather than
     expanding them into a struct array.
     """
-    inner = json.loads(s=key, strict=False)
+    inner = _decode_matlab_string_expr(expr=key)
     key_expr = _matlab_char_key(s=inner)
     if value.startswith("{") and value.endswith("}"):
         value = f"{{{value}}}"
