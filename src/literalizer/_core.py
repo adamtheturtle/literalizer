@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
 import json
 from io import StringIO
@@ -15,7 +16,6 @@ from ruamel.yaml.error import YAMLError
 
 from literalizer._comments import (
     YamlCollectionContext,
-    _merge_null_dict_comments,
     extract_yaml_comments,
     literalize_yaml_collection,
     literalize_yaml_scalar,
@@ -315,7 +315,7 @@ def literalize_json(
 
 
 @beartype
-def literalize_yaml(
+def literalize_yaml(  # noqa: PLR0912
     *,
     yaml_string: str,
     language: Language,
@@ -402,10 +402,27 @@ def literalize_yaml(
             and language.skip_null_dict_values
             and isinstance(ruamel_data, CommentedMap)
         ):
-            collection_comments = _merge_null_dict_comments(
-                collection_comments=collection_comments,
-                data=data,
-                ruamel_data=ruamel_data,
+            pending: list[str] = []
+            filtered_elements_list = []
+            for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
+                ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                collection_comments.elements,
+                strict=True,
+            ):
+                if data[key] is None:
+                    pending.extend(ec.before)
+                    if ec.inline:
+                        pending.append(ec.inline)
+                else:
+                    new_before = (*pending, *ec.before)
+                    pending = []
+                    filtered_elements_list.append(  # pyright: ignore[reportUnknownMemberType]
+                        dataclasses.replace(ec, before=new_before),
+                    )
+            collection_comments = dataclasses.replace(
+                collection_comments,
+                elements=tuple(filtered_elements_list),  # pyright: ignore[reportUnknownArgumentType]
+                trailing=(*pending, *collection_comments.trailing),
             )
 
         has_comments = (
