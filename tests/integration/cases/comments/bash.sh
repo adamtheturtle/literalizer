@@ -1,4 +1,4 @@
-declare _v=(
+declare -A _v=(
     # Server configuration
     ["host"]="localhost"  # default host
     ["port"]=8080

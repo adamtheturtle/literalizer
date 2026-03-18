@@ -891,7 +891,12 @@ class _LanguageConfig:
 
 def _wrap_bash(content: str) -> str:
     """Wrap in a Bash ``declare`` statement for syntax validation."""
-    return f"declare _v={content}"
+    flag = (
+        " -A"
+        if any(line.lstrip().startswith("[") for line in content.splitlines())
+        else ""
+    )
+    return f"declare{flag} _v={content}"
 
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
