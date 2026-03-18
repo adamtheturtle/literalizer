@@ -49,6 +49,7 @@ __all__ = [
     "format_variable_assignment_clojure",
     "format_variable_assignment_cpp",
     "format_variable_assignment_csharp",
+    "format_variable_assignment_d",
     "format_variable_assignment_dart",
     "format_variable_assignment_elixir",
     "format_variable_assignment_erlang",
@@ -74,6 +75,7 @@ __all__ = [
     "format_variable_declaration_clojure",
     "format_variable_declaration_cpp",
     "format_variable_declaration_csharp",
+    "format_variable_declaration_d",
     "format_variable_declaration_dart",
     "format_variable_declaration_elixir",
     "format_variable_declaration_erlang",
@@ -99,6 +101,7 @@ __all__ = [
     "passthrough_sequence_entry",
     "passthrough_set_entry",
     "to_c_val",
+    "to_d_val",
     "to_fsharp_val",
     "to_ocaml_val",
     "to_occam_val",
@@ -1170,3 +1173,58 @@ def format_variable_assignment_perl(name: str, value: str) -> str:
     Example: ``"x"`` and ``"[1, 2]"`` → ``"$x = [1, 2];"``
     """
     return f"${name} = {value};"
+
+
+def to_d_val(value: str) -> str:
+    """Wrap a pre-formatted value string in a D ``JSONValue(...)`` call.
+
+    Inspects the string representation to determine whether wrapping is
+    needed.  Values that are already ``JSONValue(...)`` or ``parseJSON(...)``
+    expressions are returned unchanged; ``null``, ``true``, and ``false``
+    literals and numeric and string literals are all wrapped.
+    """
+    if value.startswith(("JSONValue(", 'parseJSON("')):
+        return value
+    if value in ("null", "true", "false"):
+        return f"JSONValue({value})"
+    if value.startswith('"') and value.endswith('"'):
+        return f"JSONValue({value})"
+    negative = value.startswith("-")
+    rest = value[1:] if negative else value
+    int_result = None
+    try:
+        int(rest)
+        int_result = f"JSONValue({value})"
+    except ValueError:
+        pass
+    if int_result is not None:
+        return int_result
+    float_result = None
+    try:
+        float(rest)
+        float_result = f"JSONValue({value})"
+    except ValueError:
+        pass
+    if float_result is not None:
+        return float_result
+    return value
+
+
+@beartype
+def format_variable_declaration_d(name: str, value: str) -> str:
+    """Format a D ``auto`` variable declaration using ``JSONValue``.
+
+    Example: ``"x"`` and ``"JSONValue(42)"`` →
+    ``"auto x = JSONValue(42);"``
+    """
+    return f"auto {name} = {to_d_val(value=value)};"
+
+
+@beartype
+def format_variable_assignment_d(name: str, value: str) -> str:
+    """Format a D assignment to an existing variable.
+
+    Example: ``"x"`` and ``"JSONValue(42)"`` →
+    ``"x = JSONValue(42);"``
+    """
+    return f"{name} = {to_d_val(value=value)};"
