@@ -1233,7 +1233,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "scala": _LanguageConfig(
-        spec=literalizer.languages.SCALA,
+        spec=literalizer.languages.Scala(),
         extension=".scala",
         wrap=_wrap_scala,
         varname_wrap=_wrap_scala_varname,
@@ -1257,7 +1257,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
     ),
     "crystal": _LanguageConfig(
-        spec=literalizer.languages.CRYSTAL,
+        spec=literalizer.languages.Crystal(),
         extension=".cr",
         wrap=_wrap_crystal,
         varname_wrap=_wrap_crystal_varname,
@@ -1265,7 +1265,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "matlab": _LanguageConfig(
-        spec=literalizer.languages.MATLAB,
+        spec=literalizer.languages.Matlab(),
         extension=".m",
         wrap=_wrap_matlab,
         varname_wrap=_wrap_identity,
@@ -1273,7 +1273,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "nim": _LanguageConfig(
-        spec=literalizer.languages.NIM,
+        spec=literalizer.languages.Nim(),
         extension=".nim",
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
@@ -1281,7 +1281,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "zig": _LanguageConfig(
-        spec=literalizer.languages.ZIG,
+        spec=literalizer.languages.Zig(),
         extension=".zig",
         wrap=_wrap_zig,
         varname_wrap=_wrap_zig_varname,
@@ -1289,7 +1289,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         date_variants=(),
     ),
     "powershell": _LanguageConfig(
-        spec=literalizer.languages.POWERSHELL,
+        spec=literalizer.languages.PowerShell(),
         extension=".ps1",
         wrap=_wrap_powershell,
         varname_wrap=_wrap_identity,

@@ -52,29 +52,45 @@ from literalizer._formatters import (
 )
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
-    CLOJURE,
-    CPP,
-    CSHARP,
-    DART,
-    ELIXIR,
-    FSHARP,
-    GO,
-    HASKELL,
-    JAVA,
-    JAVASCRIPT,
-    KOTLIN,
-    PHP,
-    PYTHON,
-    RUBY,
-    RUST,
-    SCALA,
-    SWIFT,
-    TYPESCRIPT,
+    Clojure,
+    Cpp,
+    CSharp,
+    Dart,
+    Elixir,
+    FSharp,
+    Go,
+    Haskell,
     Java,
+    JavaScript,
+    Kotlin,
+    Php,
     Python,
     R,
     Ruby,
+    Rust,
+    Scala,
+    Swift,
+    TypeScript,
 )
+
+CLOJURE = Clojure()
+CPP = Cpp()
+CSHARP = CSharp()
+DART = Dart()
+ELIXIR = Elixir()
+FSHARP = FSharp()
+GO = Go()
+HASKELL = Haskell()
+JAVA = Java()
+JAVASCRIPT = JavaScript()
+KOTLIN = Kotlin()
+PHP = Php()
+PYTHON = Python()
+RUBY = Ruby()
+RUST = Rust()
+SCALA = Scala()
+SWIFT = Swift()
+TYPESCRIPT = TypeScript()
 
 
 def _format_test_omap_entry(key: str, value: str) -> str:
