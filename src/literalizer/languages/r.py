@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from literalizer._language import Language
-from literalizer.formatters import (
+from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
@@ -13,6 +12,7 @@ from literalizer.formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import Language
 
 
 def _format_r_omap_entry(key: str, value: str) -> str:

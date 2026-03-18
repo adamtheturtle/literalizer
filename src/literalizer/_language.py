@@ -45,7 +45,7 @@ class Language:
     format_dict_entry: Callable[[str, str], str]
     """Callable that formats a dict entry from a pre-formatted key and
     value
-    string.  Use :func:`~literalizer.formatters.dict_entry_with_separator`
+    string.  Use :func:`~literalizer._formatters.dict_entry_with_separator`
     for the common ``key + separator + value`` pattern.
     """
 
@@ -96,13 +96,13 @@ class Language:
     format_sequence_entry: Callable[[str], str]
     """Callable that formats a sequence entry from a pre-formatted item
     string.  Use
-    :func:`~literalizer.formatters.passthrough_sequence_entry` when no
+    :func:`~literalizer._formatters.passthrough_sequence_entry` when no
     transformation is needed.
     """
 
     format_set_entry: Callable[[str], str]
     """Callable that formats a set entry from a pre-formatted item string.
-    Use :func:`~literalizer.formatters.passthrough_set_entry` when no
+    Use :func:`~literalizer._formatters.passthrough_set_entry` when no
     transformation is needed.
     """
 
