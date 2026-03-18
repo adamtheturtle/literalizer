@@ -157,5 +157,5 @@ class Language:
     Use :func:`~literalizer._formatters.format_string_backslash` for the
     common backslash-escape convention, or provide a custom callable for
     languages with a different escape convention (e.g. PowerShell uses
-    backtick escaping).
+    back-tick escaping).
     """
