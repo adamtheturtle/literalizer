@@ -1,1 +1,1 @@
-x = "hello \"world\" -- not a comment";
+x = "hello ""world"" -- not a comment";
