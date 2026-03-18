@@ -120,6 +120,9 @@ jobs:
   lint-d:
     uses: ./.github/workflows/lint-d.yml
 
+  lint-powershell:
+    uses: ./.github/workflows/lint-powershell.yml
+
   lint-ada:
     uses: ./.github/workflows/lint-ada.yml
 
@@ -153,6 +156,7 @@ jobs:
       - lint-r
       - lint-d
       - lint-ada
+      - lint-powershell
     runs-on: ubuntu-latest
     if: always()
     steps:

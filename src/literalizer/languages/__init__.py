@@ -24,6 +24,7 @@ from .ocaml import OCAML
 from .occam import OCCAM
 from .perl import PERL
 from .php import PHP
+from .powershell import POWERSHELL
 from .python import PYTHON
 from .r import R
 from .ruby import RUBY
@@ -53,6 +54,7 @@ __all__ = [
     "OCCAM",
     "PERL",
     "PHP",
+    "POWERSHELL",
     "PYTHON",
     "RUBY",
     "RUST",
