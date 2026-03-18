@@ -412,22 +412,13 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
 
 
 @beartype
-def passthrough_set_entry(item: str) -> str:
-    """Return *item* unchanged.
-
-    Use this as ``format_set_entry`` for languages where set entries
-    need no extra formatting.
-    """
-    return item
-
-
-@beartype
 def format_string_backslash(value: str) -> str:
-    r"""Format a string as a double-quoted literal with backslash escaping.
+    r"""Format a string using backslash escaping.
 
-    Escapes backslashes, double quotes, and newlines.
+    Escapes backslashes, double quotes, and newlines with a backslash
+    prefix, then wraps the result in double quotes.
 
-    Example: ``hello "world"`` → ``"hello \"world\""``
+    Example: ``hello "world"`` → ``"hello \"world\""``.
     """
     escaped = (
         value.replace("\\", "\\\\")
@@ -436,3 +427,13 @@ def format_string_backslash(value: str) -> str:
         .replace("\t", "\\t")
     )
     return f'"{escaped}"'
+
+
+@beartype
+def passthrough_set_entry(item: str) -> str:
+    """Return *item* unchanged.
+
+    Use this as ``format_set_entry`` for languages where set entries
+    need no extra formatting.
+    """
+    return item

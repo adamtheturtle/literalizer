@@ -520,6 +520,11 @@ def _wrap_d_combined(declaration: str, assignment: str) -> str:
     )
 
 
+def _wrap_powershell(content: str) -> str:
+    """Wrap in a PowerShell variable assignment."""
+    return f"$x = {content}"
+
+
 _C_PREAMBLE = (
     "#include <stdbool.h>\n"
     "#include <stddef.h>\n"
@@ -1231,6 +1236,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_zig,
         varname_wrap=_wrap_zig_varname,
         combined_wrap=_wrap_zig_combined,
+        date_variants=(),
+    ),
+    "powershell": _LanguageConfig(
+        spec=literalizer.languages.POWERSHELL,
+        extension=".ps1",
+        wrap=_wrap_powershell,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
         date_variants=(),
     ),
 }
