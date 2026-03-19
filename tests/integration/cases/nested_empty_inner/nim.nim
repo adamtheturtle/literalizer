@@ -1,0 +1,5 @@
+import json
+let _ = %*[
+    [],
+    []
+]
