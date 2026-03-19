@@ -6,10 +6,6 @@ from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
-if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable
-
 from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
@@ -20,6 +16,10 @@ from literalizer._formatters import (
     typed_sequence_open,
 )
 from literalizer._types import Value  # noqa: TC001
+
+if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
 
 _VB_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
@@ -122,6 +122,7 @@ class VisualBasic:
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
+        self.inline_comment_after_separator = False
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
         )

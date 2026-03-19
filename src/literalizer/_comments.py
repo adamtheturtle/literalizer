@@ -232,6 +232,7 @@ class YamlCollectionContext:
     comment_suffix: str
     comment_line_prefix: str
     wrap: bool
+    inline_comment_after_separator: bool = True
 
 
 @beartype
@@ -311,10 +312,29 @@ def literalize_yaml_collection(
         )
         if element_comment.inline:
             inline_text = element_comment.inline
-            output_line = (
-                f"{body_line}  {ctx.comment_prefix} {inline_text}"
-                f"{ctx.comment_suffix}"
+            stripped = body_line.rstrip()
+            line_ends_with_plain_separator = stripped.endswith(
+                ","
+            ) and not stripped.endswith("},")
+            move_comment_before = (
+                not ctx.inline_comment_after_separator
+                and line_ends_with_plain_separator
             )
+            if not move_comment_before:
+                output_line = (
+                    f"{body_line}  {ctx.comment_prefix} {inline_text}"
+                    f"{ctx.comment_suffix}"
+                )
+            else:
+                result.append(
+                    _format_comment(
+                        text=inline_text,
+                        comment_prefix=ctx.comment_prefix,
+                        comment_suffix=ctx.comment_suffix,
+                        line_prefix=effective_indent,
+                    )
+                )
+                output_line = body_line
         else:
             output_line = body_line
         result.append(output_line)
@@ -343,6 +363,7 @@ def apply_collection_comments(
     comment_suffix: str,
     comment_line_prefix: str,
     wrap: bool,
+    inline_comment_after_separator: bool = True,
 ) -> str:
     """Apply extracted comments to a collection literal.
 
@@ -365,5 +386,6 @@ def apply_collection_comments(
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
         wrap=wrap,
+        inline_comment_after_separator=inline_comment_after_separator,
     )
     return literalize_yaml_collection(ctx=ctx)

@@ -521,7 +521,7 @@ def format_string_backslash_dollar(value: str) -> str:
     return f'"{escaped}"'
 
 
-def _vb_string_parts(value: str) -> list[str]:  # noqa: C901,PLR0912
+def _vb_string_parts(value: str) -> list[str]:  # noqa: C901,PLR0912  # pylint: disable=too-complex,too-many-branches
     """Generate VB.NET string parts for control character handling."""
     vb_control_char_threshold = 32
     parts: list[str] = []

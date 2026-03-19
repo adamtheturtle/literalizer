@@ -414,6 +414,9 @@ def literalize_yaml(
             comment_suffix=cs,
             comment_line_prefix=comment_line_prefix,
             wrap=wrap,
+            inline_comment_after_separator=getattr(
+                language, "inline_comment_after_separator", True
+            ),
         )
     elif not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
@@ -470,6 +473,9 @@ def literalize_yaml(
             comment_suffix=cs,
             comment_line_prefix=comment_line_prefix,
             wrap=wrap,
+            inline_comment_after_separator=getattr(
+                language, "inline_comment_after_separator", True
+            ),
         )
 
     if variable_name is not None:
