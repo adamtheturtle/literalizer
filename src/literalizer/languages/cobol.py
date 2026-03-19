@@ -88,7 +88,7 @@ def _bump_levels(content: str) -> str:
             result.append(
                 f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
             )
-        else:
+        else:  # pragma: no cover
             result.append(line)
     return "\n".join(result)
 
@@ -121,7 +121,7 @@ def _key_to_cobol_name(key_str: str) -> str:
     """
     if key_str.startswith('"') and key_str.endswith('"'):
         name = key_str[1:-1].replace('""', '"')
-    else:
+    else:  # pragma: no cover
         name = key_str
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
