@@ -22,6 +22,19 @@ from literalizer._types import Value
 _JSON_NATIVE_TYPES = (str, int, float, bool, type(None), list, dict)
 
 
+def _all_json_native(values: Value) -> bool:
+    """Return True when every scalar in *values* is a JSON-native type.
+
+    Recurses into lists and dict values so that nested YAML-only types
+    (``bytes``, ``date``, ``datetime``) are detected.
+    """
+    if isinstance(values, list):
+        return all(_all_json_native(values=v) for v in values)
+    if isinstance(values, dict):
+        return all(_all_json_native(values=v) for v in values.values())
+    return isinstance(values, _JSON_NATIVE_TYPES)
+
+
 @beartype
 def format_date_iso(value: datetime.date) -> str:
     """Format a date as an ISO 8601 quoted string literal.
@@ -554,7 +567,7 @@ def _typed_sequence_open(
     See ``_JSON_NATIVE_TYPES`` for why we skip inference for
     YAML-only types.
     """
-    if not all(isinstance(v, _JSON_NATIVE_TYPES) for v in items):
+    if not _all_json_native(values=items):
         return fallback
     schema: dict[str, Any] = infer_schema(value=items)
     item_schema: dict[str, Any] = schema.get("items", {})
