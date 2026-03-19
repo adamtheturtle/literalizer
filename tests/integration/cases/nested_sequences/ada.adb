@@ -1,8 +1,0 @@
-procedure Check is
-   X : A_Val := AList'(
-       AList'(AList'(AInt (1), AInt (2)), AList'(AInt (3), AInt (4))),
-       AList'(AList'(AInt (5)))
-   );
-begin
-   null;
-end Check;
