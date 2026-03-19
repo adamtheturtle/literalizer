@@ -1,0 +1,21 @@
+---
+name: Lint Common Lisp
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-common-lisp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install SBCL
+        run: sudo apt-get install -y sbcl
+      - name: Check Common Lisp syntax
+        run: >-
+          find tests/integration/cases -name "*.lisp" -print0 |
+          xargs -0 -I{} sbcl --script {}
