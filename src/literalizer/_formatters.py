@@ -521,7 +521,6 @@ def format_string_backslash_dollar(value: str) -> str:
     return f'"{escaped}"'
 
 
-@beartype
 def _vb_string_parts(value: str) -> list[str]:  # noqa: C901,PLR0912
     """Generate VB.NET string parts for control character handling."""
     vb_control_char_threshold = 32

@@ -1,10 +1,13 @@
 """Visual Basic (.NET) language specification."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 if TYPE_CHECKING:
+    import datetime
     from collections.abc import Callable
 
 from literalizer._formatters import (
@@ -89,33 +92,39 @@ class VisualBasic:
         self.sequence_close = "}"
         self.dict_open = "New Dictionary(Of String, Object) From {"
         self.dict_close = "}"
-        self.format_dict_entry = _format_vb_dict_entry  # type: ignore[assignment]
+        self.format_dict_entry: Callable[[str, str], str] = (
+            _format_vb_dict_entry
+        )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes = format_bytes_hex  # type: ignore[assignment]
-        self.format_date = format_date_iso  # type: ignore[assignment]
-        self.format_datetime = format_datetime_iso  # type: ignore[assignment]
-        self.format_string = format_string_vb  # type: ignore[assignment]
+        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_date: Callable[[datetime.date], str] = format_date_iso
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            format_datetime_iso
+        )
+        self.format_string: Callable[[str], str] = format_string_vb
         self.empty_sequence: str | None = "New Object() {}"
         self.empty_dict: str | None = None
         self.set_open = "New HashSet(Of Object) From {"
         self.set_close = "}"
         self.empty_set: str | None = "New HashSet(Of Object)()"
-        self.format_sequence_entry = (  # type: ignore[assignment]
+        self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
-        self.format_set_entry = passthrough_set_entry  # type: ignore[assignment]
+        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "'"
         self.comment_suffix = ""
         self.omap_open = "New Dictionary(Of String, Object) From {"
         self.omap_close = "}"
-        self.format_omap_entry = _format_vb_dict_entry  # type: ignore[assignment]
+        self.format_omap_entry: Callable[[str, str], str] = (
+            _format_vb_dict_entry
+        )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.format_variable_declaration = (  # type: ignore[assignment]
+        self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment = (  # type: ignore[assignment]
+        self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
