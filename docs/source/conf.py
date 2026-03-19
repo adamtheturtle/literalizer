@@ -25,9 +25,8 @@ extensions = [
 
 templates_path = ["_templates"]
 
-# Multiple language classes define identically-named nested enums
-# (DateFormat, DatetimeFormat, BytesFormat).  Sphinx cannot disambiguate the
-# cross-references that autodoc generates from type annotations.
+# Ambiguous cross-references from identically-named nested classes
+# (DateFormat, DatetimeFormat, BytesFormat) across language modules.
 suppress_warnings = ["ref.python"]
 
 project_copyright = f"%Y, {author}"
