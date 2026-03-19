@@ -55,6 +55,7 @@ from literalizer._formatters import (
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
     Clojure,
+    Cobol,
     Cpp,
     CSharp,
     Dart,
@@ -77,6 +78,7 @@ from literalizer.languages import (
 )
 
 CLOJURE = Clojure()
+COBOL = Cobol()
 CPP = Cpp()
 CSHARP = CSharp()
 DART = Dart()
@@ -2016,3 +2018,75 @@ def test_matlab_dict_key_with_quote() -> None:
         wrap=False,
     )
     assert result == "'hello \"world\"', 1"
+
+
+def test_cobol_string_control_characters() -> None:
+    """COBOL string literals replace control characters with spaces."""
+    result = literalize_yaml(
+        yaml_string='"line1\\nline2"\n',
+        language=COBOL,
+        line_prefix="",
+        wrap=False,
+    )
+    assert result == '"line1 line2"'
+
+
+def test_cobol_string_tab_characters() -> None:
+    """COBOL string literals replace tab characters with spaces."""
+    result = literalize_yaml(
+        yaml_string='"col1\\tcol2"\n',
+        language=COBOL,
+        line_prefix="",
+        wrap=False,
+    )
+    assert result == '"col1 col2"'
+
+
+def test_cobol_level_number_cap() -> None:
+    """COBOL level numbers are capped at 49 for deeply nested
+    structures.
+    """
+    yaml_string = (
+        "a:\n"
+        "  b:\n"
+        "    c:\n"
+        "      d:\n"
+        "        e:\n"
+        "          f:\n"
+        "            g:\n"
+        "              h:\n"
+        "                i:\n"
+        "                  value: deep\n"
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=COBOL,
+        line_prefix="    ",
+        wrap=True,
+    )
+    # Level 49 is the max; deeper nesting stays at 49.
+    max_cobol_level = 49
+    assert "49 F-VALUE" in result
+    # No level number should exceed 49.
+    for line in result.splitlines():
+        stripped = line.lstrip()
+        if stripped and stripped[:2].isdigit():
+            level = int(stripped[:2])
+            assert level <= max_cobol_level
+
+
+def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
+    """COBOL data names must not end with a hyphen after truncation."""
+    long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
+    yaml_string = f'"{long_key}": 1\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=COBOL,
+        line_prefix="    ",
+        wrap=True,
+    )
+    for line in result.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("05 F-"):
+            name = stripped.split()[1]
+            assert not name.endswith("-")

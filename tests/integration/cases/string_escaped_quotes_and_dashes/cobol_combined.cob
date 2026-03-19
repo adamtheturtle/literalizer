@@ -1,0 +1,8 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 MY-DATA PIC X(30) VALUE "hello ""world"" -- not a comment".
+PROCEDURE DIVISION.
+    MOVE "hello ""world"" -- not a comment" TO MY-DATA.
+    STOP RUN.
