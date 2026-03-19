@@ -147,7 +147,7 @@ def _wrap_body(
     else:
         opening = f"{line_prefix}{spec.sequence_open(data)}"
         closing = f"{close_prefix}{spec.sequence_close}"
-    return f"{opening}\n{body}\n{closing}"
+    return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
