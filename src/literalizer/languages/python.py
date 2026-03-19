@@ -74,6 +74,13 @@ class Python:
               e.g. ``"48656c6c6f"``.
             * ``BytesFormat.PYTHON`` — Python bytes literal,
               e.g. ``b'Hello'``.
+
+        sequence_format: Which Python sequence type to use.
+
+            * ``SequenceFormat.TUPLE`` (default) — tuple literal,
+              e.g. ``(1, 2, 3)``.
+            * ``SequenceFormat.LIST`` — list literal,
+              e.g. ``[1, 2, 3]``.
     """
 
     class DateFormat(enum.Enum):
@@ -95,6 +102,12 @@ class Python:
         HEX = enum.member(value=format_bytes_hex)
         PYTHON = enum.member(value=format_bytes_python)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Python."""
+
+        TUPLE = "tuple"
+        LIST = "list"
+
     @beartype
     def __init__(
         self,
@@ -102,15 +115,23 @@ class Python:
         date_format: DateFormat = DateFormat.ISO,
         datetime_format: DatetimeFormat = DatetimeFormat.ISO,
         bytes_format: BytesFormat = BytesFormat.HEX,
+        sequence_format: SequenceFormat = SequenceFormat.TUPLE,
     ) -> None:
         """Initialize Python language specification."""
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="("
-        )
-        self.sequence_close = ")"
+        self.sequence_open: Callable[[list[Value]], str]
+        self.sequence_close: str
+        self.single_element_trailing_comma: bool
+        if sequence_format == Python.SequenceFormat.LIST:
+            self.sequence_open = fixed_sequence_open(open_str="[")
+            self.sequence_close = "]"
+            self.single_element_trailing_comma = False
+        else:
+            self.sequence_open = fixed_sequence_open(open_str="(")
+            self.sequence_close = ")"
+            self.single_element_trailing_comma = True
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="{"
         )
@@ -119,7 +140,6 @@ class Python:
             dict_entry_with_separator(separator=": ")
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = True
 
         self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]

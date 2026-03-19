@@ -1041,6 +1041,15 @@ class _DateVariant:
 
 
 @dataclasses.dataclass
+class _SequenceVariant:
+    """A sequence-type formatting variant for a language."""
+
+    name: str
+    spec: literalizer.Language
+    wrap: Callable[[str], str]
+
+
+@dataclasses.dataclass
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
 
@@ -1050,6 +1059,7 @@ class _LanguageConfig:
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
     date_variants: tuple[_DateVariant, ...]
+    sequence_variants: tuple[_SequenceVariant, ...] = ()
 
 
 @beartype
@@ -1207,6 +1217,15 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 name="python_epoch",
                 spec=literalizer.languages.Python(
                     datetime_format=literalizer.languages.Python.DatetimeFormat.EPOCH
+                ),
+                wrap=_wrap_identity,
+            ),
+        ),
+        sequence_variants=(
+            _SequenceVariant(
+                name="python_list",
+                spec=literalizer.languages.Python(
+                    sequence_format=literalizer.languages.Python.SequenceFormat.LIST,
                 ),
                 wrap=_wrap_identity,
             ),
@@ -1430,6 +1449,15 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_julia_dates,
             ),
         ),
+        sequence_variants=(
+            _SequenceVariant(
+                name="julia_tuple",
+                spec=literalizer.languages.Julia(
+                    sequence_format=literalizer.languages.Julia.SequenceFormat.TUPLE,
+                ),
+                wrap=_wrap_identity,
+            ),
+        ),
     ),
     "lua": _LanguageConfig(
         spec=literalizer.languages.Lua(),
@@ -1462,6 +1490,15 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_elixir_varname,
         combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
         date_variants=(),
+        sequence_variants=(
+            _SequenceVariant(
+                name="elixir_tuple",
+                spec=literalizer.languages.Elixir(
+                    sequence_format=literalizer.languages.Elixir.SequenceFormat.TUPLE,
+                ),
+                wrap=_wrap_elixir,
+            ),
+        ),
     ),
     "erlang": _LanguageConfig(
         spec=literalizer.languages.Erlang(),
@@ -1470,6 +1507,15 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_erlang_varname,
         combined_wrap=lambda d, _a: _wrap_erlang_varname(content=d),
         date_variants=(),
+        sequence_variants=(
+            _SequenceVariant(
+                name="erlang_tuple",
+                spec=literalizer.languages.Erlang(
+                    sequence_format=literalizer.languages.Erlang.SequenceFormat.TUPLE,
+                ),
+                wrap=_wrap_erlang,
+            ),
+        ),
     ),
     "fsharp": _LanguageConfig(
         spec=literalizer.languages.FSharp(),
@@ -1543,6 +1589,15 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_crystal_varname,
         combined_wrap=_wrap_crystal_combined,
         date_variants=(),
+        sequence_variants=(
+            _SequenceVariant(
+                name="crystal_tuple",
+                spec=literalizer.languages.Crystal(
+                    sequence_format=literalizer.languages.Crystal.SequenceFormat.TUPLE,
+                ),
+                wrap=_wrap_crystal,
+            ),
+        ),
     ),
     "matlab": _LanguageConfig(
         spec=literalizer.languages.Matlab(),
@@ -1763,4 +1818,42 @@ def test_date_format_golden_file(
         contents=wrapped + "\n",
         extension=lang_config.extension,
         fullpath=_DATES_CASE_DIR / (variant_name + lang_config.extension),
+    )
+
+
+_SEQUENCE_CASE_DIR = _CASES_DIR / "simple_sequence"
+
+_SEQUENCE_VARIANT_CASES: list[
+    tuple[str, _LanguageConfig, _SequenceVariant]
+] = [
+    (variant.name, lang_config, variant)
+    for lang_config in _LANGUAGES.values()
+    for variant in lang_config.sequence_variants
+]
+
+
+@pytest.mark.parametrize(
+    argnames=("variant_name", "lang_config", "variant"),
+    argvalues=_SEQUENCE_VARIANT_CASES,
+    ids=[c[0] for c in _SEQUENCE_VARIANT_CASES],
+)
+def test_sequence_format_golden_file(
+    variant_name: str,
+    lang_config: _LanguageConfig,
+    variant: _SequenceVariant,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test sequence type variants against golden files."""
+    yaml_string = (_SEQUENCE_CASE_DIR / "input.yaml").read_text()
+    result = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=variant.spec,
+        line_prefix="",
+        wrap=True,
+    )
+    wrapped = variant.wrap(result)
+    file_regression.check(
+        contents=wrapped + "\n",
+        extension=lang_config.extension,
+        fullpath=_SEQUENCE_CASE_DIR / (variant_name + lang_config.extension),
     )

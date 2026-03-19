@@ -1,6 +1,7 @@
 """Crystal language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -41,18 +42,44 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class Crystal:
-    """Crystal language specification."""
+    """Crystal language specification.
+
+    Args:
+        sequence_format: Which Crystal sequence type to use.
+
+            * ``SequenceFormat.ARRAY`` (default) — array literal,
+              e.g. ``[1, 2, 3]``.
+            * ``SequenceFormat.TUPLE`` — tuple literal,
+              e.g. ``{1, 2, 3}``.
+    """
+
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Crystal."""
+
+        ARRAY = "array"
+        TUPLE = "tuple"
 
     @beartype
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat = SequenceFormat.ARRAY,
+    ) -> None:
         """Initialize Crystal language specification."""
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="["
-        )
-        self.sequence_close = "]"
+        self.sequence_open: Callable[[list[Value]], str]
+        self.sequence_close: str
+        self.empty_sequence: str | None
+        if sequence_format == Crystal.SequenceFormat.TUPLE:
+            self.sequence_open = fixed_sequence_open(open_str="{")
+            self.sequence_close = "}"
+            self.empty_sequence = None
+        else:
+            self.sequence_open = fixed_sequence_open(open_str="[")
+            self.sequence_close = "]"
+            self.empty_sequence = "[] of Nil"
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="{"
         )
@@ -68,7 +95,6 @@ class Crystal:
             _datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = "[] of Nil"
         self.empty_dict: str | None = "{} of Nil => Nil"
         self.set_open = "Set{"
         self.set_close = "}"

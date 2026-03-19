@@ -57,6 +57,13 @@ class Julia:
               e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.JULIA`` — ``DateTime(...)`` constructor
               call, e.g. ``DateTime(2024, 1, 15, 12, 30, 0)``.
+
+        sequence_format: Which Julia sequence type to use.
+
+            * ``SequenceFormat.ARRAY`` (default) — array literal,
+              e.g. ``[1, 2, 3]``.
+            * ``SequenceFormat.TUPLE`` — tuple literal,
+              e.g. ``(1, 2, 3)``.
     """
 
     class DateFormat(enum.Enum):
@@ -71,21 +78,35 @@ class Julia:
         ISO = enum.member(value=format_datetime_iso)
         JULIA = enum.member(value=format_datetime_julia)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Julia."""
+
+        ARRAY = "array"
+        TUPLE = "tuple"
+
     @beartype
     def __init__(
         self,
         *,
         date_format: DateFormat = DateFormat.ISO,
         datetime_format: DatetimeFormat = DatetimeFormat.ISO,
+        sequence_format: SequenceFormat = SequenceFormat.ARRAY,
     ) -> None:
         """Initialize Julia language specification."""
         self.null_literal = "nothing"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="["
-        )
-        self.sequence_close = "]"
+        self.sequence_open: Callable[[list[Value]], str]
+        self.sequence_close: str
+        self.single_element_trailing_comma: bool
+        if sequence_format == Julia.SequenceFormat.TUPLE:
+            self.sequence_open = fixed_sequence_open(open_str="(")
+            self.sequence_close = ")"
+            self.single_element_trailing_comma = True
+        else:
+            self.sequence_open = fixed_sequence_open(open_str="[")
+            self.sequence_close = "]"
+            self.single_element_trailing_comma = False
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="Dict("
         )
@@ -94,7 +115,6 @@ class Julia:
             dict_entry_with_separator(separator=" => ")
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
         self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
