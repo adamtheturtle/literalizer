@@ -1,8 +1,9 @@
 """Java language specification."""
 
-import datetime
-from collections.abc import Callable
-from typing import Any, Literal
+from __future__ import annotations
+
+import enum
+from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
@@ -19,7 +20,12 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
-from literalizer._types import Value  # noqa: TC001
+
+if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -77,46 +83,47 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "java": format_date_java,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "instant": format_datetime_java_instant,
-    "zoned": format_datetime_java_zoned,
-}
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 class Java:
     """Java language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"java"`` — ``LocalDate.of(...)`` call,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.JAVA`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"instant"`` — ``Instant.parse(...)`` call,
+            * ``DatetimeFormat.INSTANT`` — ``Instant.parse(...)`` call,
               e.g. ``Instant.parse("2024-01-15T12:30:00")``.
-            * ``"zoned"`` — ``ZonedDateTime.of(...)`` call,
+            * ``DatetimeFormat.ZONED`` — ``ZonedDateTime.of(...)`` call,
               e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
               ZoneId.of("UTC"))``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date formatting options for Java."""
+
+        ISO = enum.member(value=format_date_iso)
+        JAVA = enum.member(value=format_date_java)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime formatting options for Java."""
+
+        ISO = enum.member(value=format_datetime_iso)
+        INSTANT = enum.member(value=format_datetime_java_instant)
+        ZONED = enum.member(value=format_datetime_java_zoned)
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "java"] = "iso",
-        datetime_format: Literal["iso", "instant", "zoned"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Java language specification."""
         self.null_literal = "null"
@@ -137,13 +144,11 @@ class Java:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
-        ]
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "Set.of("

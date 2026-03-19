@@ -1,8 +1,9 @@
 """Rust language specification."""
 
-import datetime
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from __future__ import annotations
+
+import enum
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -20,6 +21,9 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 
@@ -47,43 +51,46 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "rust": format_date_rust,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "rust": format_datetime_rust,
-}
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 class Rust:
     """Rust language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"rust"`` — ``NaiveDate::from_ymd_opt(...)`` call,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.RUST`` —
+              ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"rust"`` — ``NaiveDateTime::new(...)`` call, e.g.
+            * ``DatetimeFormat.RUST`` —
+              ``NaiveDateTime::new(...)`` call, e.g.
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for Rust."""
+
+        ISO = enum.member(value=format_date_iso)
+        RUST = enum.member(value=format_date_rust)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Rust."""
+
+        ISO = enum.member(value=format_datetime_iso)
+        RUST = enum.member(value=format_datetime_rust)
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "rust"] = "iso",
-        datetime_format: Literal["iso", "rust"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Rust language specification."""
         self.null_literal = "None"
@@ -103,13 +110,12 @@ class Rust:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
-        ]
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
-        self.format_string: Callable[[str], str] = _string_format
+
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "HashSet::from(["

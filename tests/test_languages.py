@@ -34,6 +34,7 @@ from literalizer.languages import (
     Python,
     Ruby,
     Rust,
+    Toml,
     TypeScript,
 )
 
@@ -47,6 +48,7 @@ KOTLIN = Kotlin()
 PYTHON = Python()
 RUBY = Ruby()
 RUST = Rust()
+TOML = Toml()
 TYPESCRIPT = TypeScript()
 
 
@@ -401,6 +403,32 @@ def test_matlab_dict_key_with_quote() -> None:
         wrap=False,
     )
     assert result == "'hello \"world\"', 1"
+
+
+def test_toml_integer_dict_key() -> None:
+    """TOML dict entry with an integer key passes through without
+    modification.
+
+    Integer keys are not quoted strings, so the bare-key optimisation is
+    skipped and the raw formatted key is used directly.
+    """
+    result = literalize_yaml(
+        yaml_string="1: value\n",
+        language=TOML,
+        line_prefix="",
+        wrap=True,
+    )
+    assert '1 = "value"' in result
+
+
+def test_toml_non_quoted_dict_key() -> None:
+    """TOML format_dict_entry with a key that is not a quoted string.
+
+    When the key does not start with a double-quote character the
+    bare-key optimization is skipped and the key is used verbatim.
+    """
+    result = TOML.format_dict_entry("plain_key", '"value"')
+    assert result == 'plain_key = "value"'
 
 
 def test_cobol_string_control_characters() -> None:

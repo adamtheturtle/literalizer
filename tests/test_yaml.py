@@ -291,7 +291,7 @@ def test_omap_custom_language_spec() -> None:
 
 def test_custom_format_date() -> None:
     """A custom format_date callable is used for date values."""
-    spec = Python(date_format="python")
+    spec = Python(date_format=Python.DateFormat.PYTHON)
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
         language=spec,
@@ -303,7 +303,7 @@ def test_custom_format_date() -> None:
 
 def test_custom_format_datetime() -> None:
     """A custom format_datetime callable is used for datetime values."""
-    spec = Python(datetime_format="python")
+    spec = Python(datetime_format=Python.DatetimeFormat.PYTHON)
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
@@ -315,7 +315,10 @@ def test_custom_format_datetime() -> None:
 
 def test_java_native_dates() -> None:
     """Java language spec with native date formatting."""
-    spec = Java(date_format="java", datetime_format="instant")
+    spec = Java(
+        date_format=Java.DateFormat.JAVA,
+        datetime_format=Java.DatetimeFormat.INSTANT,
+    )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
         language=spec,
@@ -329,7 +332,10 @@ def test_java_native_dates() -> None:
 
 def test_ruby_native_dates() -> None:
     """Ruby language spec with native date formatting."""
-    spec = Ruby(date_format="ruby", datetime_format="ruby")
+    spec = Ruby(
+        date_format=Ruby.DateFormat.RUBY,
+        datetime_format=Ruby.DatetimeFormat.RUBY,
+    )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
@@ -341,7 +347,7 @@ def test_ruby_native_dates() -> None:
 
 def test_custom_format_bytes() -> None:
     """A custom format_bytes callable is used for bytes values."""
-    spec = Python(bytes_format="python")
+    spec = Python(bytes_format=Python.BytesFormat.PYTHON)
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
         language=spec,
