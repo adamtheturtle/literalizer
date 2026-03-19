@@ -15,6 +15,8 @@ jobs:
           persist-credentials: false
       - name: Install hcl2json
         run: go install github.com/tmccombs/hcl2json@latest
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check HCL syntax
         run: |-
           set -o pipefail
