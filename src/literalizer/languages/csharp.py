@@ -87,16 +87,16 @@ class CSharp:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * :attr:`DateFormat.CSHARP` — ``new DateOnly(...)`` call,
+            * ``DateFormat.CSHARP`` — ``new DateOnly(...)`` call,
               e.g. ``new DateOnly(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * :attr:`DatetimeFormat.CSHARP` — ``new DateTime(...)`` call,
+            * ``DatetimeFormat.CSHARP`` — ``new DateTime(...)`` call,
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
     """
 

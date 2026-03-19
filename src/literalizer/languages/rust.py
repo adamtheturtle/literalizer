@@ -57,17 +57,17 @@ class Rust:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * :attr:`DateFormat.RUST` —
+            * ``DateFormat.RUST`` —
               ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * :attr:`DatetimeFormat.RUST` —
+            * ``DatetimeFormat.RUST`` —
               ``NaiveDateTime::new(...)`` call, e.g.
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.

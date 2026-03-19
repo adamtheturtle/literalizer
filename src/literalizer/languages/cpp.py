@@ -87,17 +87,17 @@ class Cpp:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * :attr:`DateFormat.CPP` — ``std::chrono::year_month_day`` literal,
+            * ``DateFormat.CPP`` — ``std::chrono::year_month_day`` literal,
               e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
               std::chrono::month{1}, std::chrono::day{15}}``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * :attr:`DatetimeFormat.CPP` — ``std::chrono::sys_days`` with
+            * ``DatetimeFormat.CPP`` — ``std::chrono::sys_days`` with
               time-of-day durations,
               e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
               + std::chrono::minutes{30}``.

@@ -88,16 +88,16 @@ class Dart:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * :attr:`DateFormat.DART` — ``DateTime.parse(...)`` call,
+            * ``DateFormat.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * :attr:`DatetimeFormat.DART` — ``DateTime.parse(...)`` call,
+            * ``DatetimeFormat.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
     """
 
