@@ -31,6 +31,7 @@ from .php import Php
 from .powershell import PowerShell
 from .python import Python
 from .r import R
+from .racket import Racket
 from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
@@ -68,6 +69,7 @@ __all__ = [
     "PowerShell",
     "Python",
     "R",
+    "Racket",
     "Ruby",
     "Rust",
     "Scala",

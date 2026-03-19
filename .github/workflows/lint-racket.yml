@@ -1,0 +1,21 @@
+---
+name: Lint Racket
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-racket:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Racket
+        run: sudo apt-get install -y racket
+      - name: Check Racket syntax
+        run: >-
+          find tests/integration/cases -name "*.rkt" -print0 |
+          xargs -0 raco make

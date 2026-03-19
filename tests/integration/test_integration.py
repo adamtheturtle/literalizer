@@ -407,6 +407,28 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
+def _wrap_racket(content: str) -> str:
+    """Wrap in a Racket #lang racket module.
+
+    Trailing whitespace is stripped from each line because the
+    ``(list ``/``(hash ``/``(set `` opening delimiters produce a
+    trailing space before the newline in multi-line mode, which the
+    ``trim trailing whitespace`` pre-commit hook removes from the
+    committed golden files.
+    """
+    cleaned = "\n".join(line.rstrip() for line in content.splitlines())
+    return f"#lang racket\n{cleaned}"
+
+
+@beartype
+def _wrap_racket_combined(declaration: str, assignment: str) -> str:
+    """Wrap Racket declaration and assignment in a #lang racket module."""
+    combined = f"{declaration}\n{assignment}"
+    cleaned = "\n".join(line.rstrip() for line in combined.splitlines())
+    return f"#lang racket\n{cleaned}"
+
+
+@beartype
 def _wrap_perl(content: str) -> str:
     """Wrap in a Perl variable assignment."""
     return f"my $x = {content};"
@@ -1337,6 +1359,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_r,
             ),
         ),
+    ),
+    "racket": _LanguageConfig(
+        spec=literalizer.languages.Racket(),
+        extension=".rkt",
+        wrap=_wrap_racket,
+        varname_wrap=_wrap_racket,
+        combined_wrap=_wrap_racket_combined,
+        date_variants=(),
     ),
     "crystal": _LanguageConfig(
         spec=literalizer.languages.Crystal(),

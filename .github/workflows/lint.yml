@@ -141,6 +141,9 @@ jobs:
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
 
+  lint-racket:
+    uses: ./.github/workflows/lint-racket.yml
+
   lint-zig:
     uses: ./.github/workflows/lint-zig.yml
 
@@ -179,6 +182,7 @@ jobs:
       - lint-crystal
       - lint-matlab
       - lint-nim
+      - lint-racket
       - lint-zig
       - lint-powershell
     runs-on: ubuntu-latest
