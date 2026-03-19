@@ -50,7 +50,7 @@ def _pic_from_value(value: str) -> str:
     """
     if value == "SPACES":
         return "PIC X(1)"
-    if value in ('"TRUE"', '"FALSE"'):
+    if value in {'"TRUE"', '"FALSE"'}:
         return "PIC X(5)"
     if value.startswith('"') and value.endswith('"'):
         inner = value[1:-1].replace('""', '"')
@@ -112,10 +112,11 @@ def _format_cobol_sequence_entry(item: str) -> str:
 def _key_to_cobol_name(key_str: str) -> str:
     """Convert a formatted COBOL string literal to a valid COBOL data name.
 
-    Strips outer quotes, unescapes doubled double-quotes, uppercases the
-    result, replaces non-alphanumeric characters with hyphens, and
-    prepends ``F-`` to avoid clashes with COBOL reserved words.  The
-    result is truncated to 28 characters (leaving room for the prefix).
+    Strips outer quotes, converts doubled double-quotes back to single,
+    converts the result to upper case, replaces non-alphanumeric characters
+    with hyphens, and adds the ``F-`` prefix to avoid clashes with COBOL
+    reserved words.  The result is truncated to 28 characters (leaving
+    room for the prefix).
     """
     if key_str.startswith('"') and key_str.endswith('"'):
         name = key_str[1:-1].replace('""', '"')
@@ -151,7 +152,7 @@ def _format_cobol_dict_entry(key: str, value: str) -> str:
 def _to_cobol_name(python_name: str) -> str:
     """Convert a Python-style identifier to a COBOL data name.
 
-    Uppercases the name and replaces underscores with hyphens.
+    Converts the name to upper case and replaces underscores with hyphens.
     """
     return python_name.upper().replace("_", "-")
 
