@@ -335,6 +335,45 @@ def literalize_yaml_collection(
 
 
 @beartype
+def prepend_collection_comments(
+    *,
+    collection_comments: _CollectionComments,
+    base: str,
+    comment_prefix: str,
+    comment_suffix: str,
+    line_prefix: str,
+) -> str:
+    """Flatten all collection comments as lines before *base*.
+
+    Used for languages that do not support comments inside collection
+    initializers.  All element comments (before and inline) and trailing
+    comments are flattened into standalone comment lines emitted
+    immediately before *base*.
+
+    Returns *base* unchanged when there are no comments.
+    """
+
+    def _fmt(text: str) -> str:
+        """Format *text* as a comment line using the outer parameters."""
+        return _format_comment(
+            text=text,
+            comment_prefix=comment_prefix,
+            comment_suffix=comment_suffix,
+            line_prefix=line_prefix,
+        )
+
+    lines: list[str] = []
+    for ec in collection_comments.elements:
+        lines.extend(_fmt(text=text) for text in ec.before)
+        if ec.inline:
+            lines.append(_fmt(text=ec.inline))
+    lines.extend(_fmt(text=text) for text in collection_comments.trailing)
+    if not lines:
+        return base
+    return "\n".join(lines) + "\n" + base
+
+
+@beartype
 def apply_collection_comments(
     *,
     collection_comments: _CollectionComments,

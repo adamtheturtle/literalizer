@@ -142,6 +142,7 @@ class R:
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
+        self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
         )
