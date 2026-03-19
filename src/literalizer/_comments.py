@@ -230,7 +230,7 @@ class YamlCollectionContext:
     trailing: tuple[str, ...]
     comment_prefix: str
     comment_suffix: str
-    indent: str
+    comment_line_prefix: str
     wrap: bool
 
 
@@ -241,7 +241,7 @@ def literalize_yaml_scalar(
     base: str,
     comment_prefix: str,
     comment_suffix: str,
-    indent: str,
+    line_prefix: str,
 ) -> str:
     """Preserve comments for scalar YAML values.
 
@@ -261,7 +261,7 @@ def literalize_yaml_scalar(
             text=comment_text,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            line_prefix=indent,
+            line_prefix=line_prefix,
         )
         for comment_text in scalar_comments.before
     ]
@@ -281,7 +281,7 @@ def literalize_yaml_collection(
     ctx: YamlCollectionContext,
 ) -> str:
     """Preserve comments for sequence/mapping YAML values."""
-    effective_indent = ctx.indent if not ctx.wrap else (ctx.indent or "    ")
+    effective_indent = ctx.comment_line_prefix
     all_lines = ctx.base.split(sep="\n")
 
     if ctx.wrap and len(all_lines) > 1:
@@ -341,7 +341,7 @@ def apply_collection_comments(
     base: str,
     comment_prefix: str,
     comment_suffix: str,
-    indent: str,
+    comment_line_prefix: str,
     wrap: bool,
 ) -> str:
     """Apply extracted comments to a collection literal.
@@ -363,7 +363,7 @@ def apply_collection_comments(
         trailing=collection_comments.trailing,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
-        indent=indent,
+        comment_line_prefix=comment_line_prefix,
         wrap=wrap,
     )
     return literalize_yaml_collection(ctx=ctx)

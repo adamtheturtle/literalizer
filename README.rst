@@ -47,7 +47,6 @@ Usage
    result = literalize_yaml(
        yaml_string=yaml_config,
        language=Go(),
-       indent="    ",
        wrap=True,
    )
    # result:
