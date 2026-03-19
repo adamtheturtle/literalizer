@@ -1,5 +1,5 @@
 void _declaration() {
-  final my_data = {
+  final my_data = <String, double>{
       "a": 1,
       "b": 2.5,
       "c": 3,
@@ -8,7 +8,7 @@ void _declaration() {
 }
 void _assignment() {
   dynamic my_data;
-  my_data = {
+  my_data = <String, double>{
       "a": 1,
       "b": 2.5,
       "c": 3,

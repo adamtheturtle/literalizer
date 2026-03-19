@@ -45,11 +45,11 @@ class Language(Protocol):
 
     @property
     def dict_open(self) -> Callable[[dict[str, Value]], str]:
-        """Callable that returns the opening delimiter for a dict.
+        """Callable that returns the opening delimiter for a dict literal.
 
-        Receives the dict about to be formatted, so the delimiter
-        can depend on the contents when needed.  For a fixed delimiter
-        use :func:`~literalizer.fixed_dict_open`.
+        Receives the dict about to be formatted, so the delimiter can depend
+        on the value types when needed.  For a fixed delimiter use
+        :func:`~literalizer.fixed_dict_open`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
