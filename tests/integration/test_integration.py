@@ -260,6 +260,12 @@ def _wrap_haskell(content: str) -> str:
     )
 
 
+@beartype
+def _wrap_hcl(content: str) -> str:
+    """Wrap in an HCL attribute assignment for syntax validation."""
+    return f"_ = {content}"
+
+
 _VARIABLE_NAME = "my_data"
 
 
@@ -1224,6 +1230,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
         combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
+        date_variants=(),
+    ),
+    "hcl": _LanguageConfig(
+        spec=literalizer.languages.Hcl(),
+        extension=".hcl",
+        wrap=_wrap_hcl,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, _a: d,
         date_variants=(),
     ),
     "julia": _LanguageConfig(

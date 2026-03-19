@@ -1,0 +1,24 @@
+---
+name: Lint HCL
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-hcl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install hcl2json
+        run: go install github.com/tmccombs/hcl2json@latest
+      - name: Check HCL syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.hcl" -print0 | \
+            while IFS= read -r -d '' f; do
+              hcl2json "$f" > /dev/null || exit 1
+            done
