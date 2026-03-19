@@ -20,23 +20,32 @@ from literalizer._formatters import (
 )
 from literalizer._types import Value  # noqa: TC001
 
+_KOTLIN_SCALAR_OPENERS: dict[str, str] = {
+    "string": "arrayOf(",
+    "boolean": "booleanArrayOf(",
+    "integer": "intArrayOf(",
+    "number": "doubleArrayOf(",
+}
+
 
 @beartype
 def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Kotlin collection opener."""
-    match item_schema.get("type"):
-        case "string":
-            return "arrayOf("
-        case "boolean":
-            return "booleanArrayOf("
-        case "integer":
-            return "intArrayOf("
-        case "number":
-            return "doubleArrayOf("
-        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
-            return "listOf<Any?>("
-        case _:
-            return None
+    schema_type = item_schema.get("type")
+    if isinstance(schema_type, str):
+        if schema_type in _KOTLIN_SCALAR_OPENERS:
+            return _KOTLIN_SCALAR_OPENERS[schema_type]
+        if schema_type == "array":
+            nested = item_schema.get("items", {})
+            inner = _kotlin_schema_to_opener(item_schema=nested)
+            return "arrayOf(" if inner is not None else None
+        return None
+    if (
+        isinstance(schema_type, list)
+        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
+    ):
+        return "listOf<Any?>("
+    return None
 
 
 @beartype

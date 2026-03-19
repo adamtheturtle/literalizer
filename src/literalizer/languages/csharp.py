@@ -19,23 +19,41 @@ from literalizer._formatters import (
 )
 from literalizer._types import Value  # noqa: TC001
 
+_CSHARP_SCALAR_TYPES: dict[str, str] = {
+    "string": "string",
+    "boolean": "bool",
+    "integer": "int",
+    "number": "double",
+}
+
+
+@beartype
+def _csharp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema item type to a C# type name, recursively."""
+    schema_type = item_schema.get("type")
+    if isinstance(schema_type, str):
+        if schema_type in _CSHARP_SCALAR_TYPES:
+            return _CSHARP_SCALAR_TYPES[schema_type]
+        if schema_type == "array":
+            nested = item_schema.get("items", {})
+            inner = _csharp_schema_to_type(item_schema=nested)
+            return f"{inner}[]" if inner is not None else None
+        return None
+    if (
+        isinstance(schema_type, list)
+        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
+    ):
+        return "double"
+    return None
+
 
 @beartype
 def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a C# array opener."""
-    match item_schema.get("type"):
-        case "string":
-            return "new string[] {"
-        case "boolean":
-            return "new bool[] {"
-        case "integer":
-            return "new int[] {"
-        case "number":
-            return "new double[] {"
-        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
-            return "new double[] {"
-        case _:
-            return None
+    type_name = _csharp_schema_to_type(item_schema=item_schema)
+    if type_name is None:
+        return None
+    return f"new {type_name}[] {{"
 
 
 @beartype

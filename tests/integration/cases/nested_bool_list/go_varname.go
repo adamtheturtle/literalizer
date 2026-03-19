@@ -1,7 +1,7 @@
 package main
 
 func main() {
-my_data := []any{
+my_data := [][]bool{
     []bool{true, false},
     []bool{true, true},
 }

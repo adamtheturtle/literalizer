@@ -20,23 +20,41 @@ from literalizer._formatters import (
 )
 from literalizer._types import Value  # noqa: TC001
 
+_DART_SCALAR_TYPES: dict[str, str] = {
+    "string": "String",
+    "boolean": "bool",
+    "integer": "int",
+    "number": "double",
+}
+
+
+@beartype
+def _dart_schema_to_type(item_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema item type to a Dart type name, recursively."""
+    schema_type = item_schema.get("type")
+    if isinstance(schema_type, str):
+        if schema_type in _DART_SCALAR_TYPES:
+            return _DART_SCALAR_TYPES[schema_type]
+        if schema_type == "array":
+            nested = item_schema.get("items", {})
+            inner = _dart_schema_to_type(item_schema=nested)
+            return f"List<{inner}>" if inner is not None else None
+        return None
+    if (
+        isinstance(schema_type, list)
+        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
+    ):
+        return "double"
+    return None
+
 
 @beartype
 def _dart_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Dart list opener."""
-    match item_schema.get("type"):
-        case "string":
-            return "<String>["
-        case "boolean":
-            return "<bool>["
-        case "integer":
-            return "<int>["
-        case "number":
-            return "<double>["
-        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
-            return "<double>["
-        case _:
-            return None
+    type_name = _dart_schema_to_type(item_schema=item_schema)
+    if type_name is None:
+        return None
+    return f"<{type_name}>["
 
 
 @beartype

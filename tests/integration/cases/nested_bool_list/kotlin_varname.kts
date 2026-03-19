@@ -1,4 +1,4 @@
-val my_data = listOf<Any?>(
+val my_data = arrayOf(
     booleanArrayOf(true, false),
     booleanArrayOf(true, true),
 )

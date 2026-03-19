@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-var my_data = new object[] {
+var my_data = new double[][] {
     new double[] {1.5, 2.5},
     new double[] {3.5, 4.5}
 };
-my_data = new object[] {
+my_data = new double[][] {
     new double[] {1.5, 2.5},
     new double[] {3.5, 4.5}
 };
