@@ -23,5 +23,5 @@ jobs:
           set -o pipefail
           find tests/integration/cases -name "*.toml" -print0 | \
             while IFS= read -r -d '' f; do
-              taplo lint "$f" || exit 1
+              taplo lint --allowed-toml-versions 1.1 "$f" || exit 1
             done
