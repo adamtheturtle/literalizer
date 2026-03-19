@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-_BARE_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+_BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
 _MIN_QUOTED_KEY_LENGTH = 2
 
 
@@ -39,7 +39,7 @@ def _format_toml_dict_entry(key: str, value: str) -> str:
         and len(key) >= _MIN_QUOTED_KEY_LENGTH
     ):
         inner = key[1:-1]
-        if _BARE_KEY_PATTERN.match(inner):
+        if _BARE_KEY_PATTERN.match(string=inner):
             return f"{inner} = {value}"
     return f"{key} = {value}"
 
