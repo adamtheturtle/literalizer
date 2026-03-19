@@ -102,9 +102,9 @@ class TypeScript:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = date_format.value
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format.value
+            datetime_format.value  # ty: ignore[invalid-assignment]
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
