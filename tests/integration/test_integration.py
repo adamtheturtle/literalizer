@@ -1665,24 +1665,6 @@ def _discover_cases() -> list[tuple[str, str, Path]]:
 _CASES = _discover_cases()
 
 
-@beartype
-def _discover_varname_cases() -> list[tuple[str, str, Path]]:
-    """Return ``(case_name, language, input_path)`` tuples for variable-
-    name
-    tests.
-    """
-    cases: list[tuple[str, str, Path]] = []
-    for case_dir in sorted(_CASES_DIR.iterdir()):
-        cases.extend(
-            (case_dir.name, lang_name, case_dir / "input.yaml")
-            for lang_name in _LANGUAGES
-        )
-    return cases
-
-
-_VARNAME_CASES = _discover_varname_cases()
-
-
 @pytest.mark.parametrize(
     argnames=("_case_name", "language", "input_path"),
     argvalues=_CASES,
@@ -1713,8 +1695,8 @@ def test_golden_file(
 
 @pytest.mark.parametrize(
     argnames=("_case_name", "language", "input_path"),
-    argvalues=_VARNAME_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _VARNAME_CASES],
+    argvalues=_CASES,
+    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
 )
 def test_golden_file_with_variable_name(
     _case_name: str,
