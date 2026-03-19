@@ -48,12 +48,14 @@ from literalizer._formatters import (
     format_datetime_ruby,
     format_datetime_rust,
     format_string_backslash,
+    format_string_vb,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer.exceptions import JSONParseError, ParseError, YAMLParseError
 from literalizer.languages import (
     Clojure,
+    Cobol,
     Cpp,
     CSharp,
     Dart,
@@ -76,6 +78,7 @@ from literalizer.languages import (
 )
 
 CLOJURE = Clojure()
+COBOL = Cobol()
 CPP = Cpp()
 CSHARP = CSharp()
 DART = Dart()
@@ -1332,6 +1335,42 @@ def test_custom_format_bytes() -> None:
     assert result == "b'Hello',"
 
 
+@pytest.mark.parametrize(
+    argnames=("value", "expected"),
+    argvalues=[
+        pytest.param("", '""', id="empty"),
+        pytest.param("hello", '"hello"', id="plain"),
+        pytest.param('say "hi"', '"say ""hi"""', id="quotes"),
+        pytest.param(
+            "line1\r\nline2", '"line1" & vbCrLf & "line2"', id="crlf"
+        ),
+        pytest.param("\r\nline2", 'vbCrLf & "line2"', id="crlf_at_start"),
+        pytest.param("line1\nline2", '"line1" & Chr(10) & "line2"', id="lf"),
+        pytest.param("\nline2", 'Chr(10) & "line2"', id="lf_at_start"),
+        pytest.param("line1\rline2", '"line1" & Chr(13) & "line2"', id="cr"),
+        pytest.param("\rline2", 'Chr(13) & "line2"', id="cr_at_start"),
+        pytest.param("col1\tcol2", '"col1" & vbTab & "col2"', id="tab"),
+        pytest.param("\tcol2", 'vbTab & "col2"', id="tab_at_start"),
+        pytest.param("\x01", "Chr(1)", id="control_char"),
+        pytest.param(
+            "\x01text",
+            'Chr(1) & "text"',
+            id="control_char_then_text",
+        ),
+        pytest.param(
+            "text\x01",
+            '"text" & Chr(1)',
+            id="text_then_control_char",
+        ),
+    ],
+)
+def test_format_string_vb(value: str, expected: str) -> None:
+    """``format_string_vb`` formats strings using VB.NET escaping
+    rules.
+    """
+    assert format_string_vb(value=value) == expected
+
+
 def test_yaml_comment_sequence_before() -> None:
     """Full-line comments before sequence items are preserved."""
     yaml_string = "# first\n- a\n# second\n- b\n"
@@ -1981,3 +2020,75 @@ def test_matlab_dict_key_with_quote() -> None:
         wrap=False,
     )
     assert result == "'hello \"world\"', 1"
+
+
+def test_cobol_string_control_characters() -> None:
+    """COBOL string literals replace control characters with spaces."""
+    result = literalize_yaml(
+        yaml_string='"line1\\nline2"\n',
+        language=COBOL,
+        line_prefix="",
+        wrap=False,
+    )
+    assert result == '"line1 line2"'
+
+
+def test_cobol_string_tab_characters() -> None:
+    """COBOL string literals replace tab characters with spaces."""
+    result = literalize_yaml(
+        yaml_string='"col1\\tcol2"\n',
+        language=COBOL,
+        line_prefix="",
+        wrap=False,
+    )
+    assert result == '"col1 col2"'
+
+
+def test_cobol_level_number_cap() -> None:
+    """COBOL level numbers are capped at 49 for deeply nested
+    structures.
+    """
+    yaml_string = (
+        "a:\n"
+        "  b:\n"
+        "    c:\n"
+        "      d:\n"
+        "        e:\n"
+        "          f:\n"
+        "            g:\n"
+        "              h:\n"
+        "                i:\n"
+        "                  value: deep\n"
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=COBOL,
+        line_prefix="    ",
+        wrap=True,
+    )
+    # Level 49 is the max; deeper nesting stays at 49.
+    max_cobol_level = 49
+    assert "49 F-VALUE" in result
+    # No level number should exceed 49.
+    for line in result.splitlines():
+        stripped = line.lstrip()
+        if stripped and stripped[:2].isdigit():
+            level = int(stripped[:2])
+            assert level <= max_cobol_level
+
+
+def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
+    """COBOL data names must not end with a hyphen after truncation."""
+    long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
+    yaml_string = f'"{long_key}": 1\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=COBOL,
+        line_prefix="    ",
+        wrap=True,
+    )
+    for line in result.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("05 F-"):
+            name = stripped.split()[1]
+            assert not name.endswith("-")

@@ -988,6 +988,57 @@ def _wrap_julia_dates(content: str) -> str:
     return f"using Dates\n{content}"
 
 
+@beartype
+def _wrap_vb(content: str) -> str:
+    """Wrap in a VB.NET Module with a Dim declaration.
+
+    Leading comment lines (starting with ``'``) are hoisted before the
+    ``Dim`` statement so that the output remains valid VB.NET.
+    """
+    lines = content.split(sep="\n")
+    comment_lines: list[str] = []
+    while lines and lines[0].startswith("'"):
+        comment_lines.append("    " + lines.pop(0))
+    rest = "\n".join(lines)
+    rest_indented = rest.replace("\n", "\n    ")
+    dim_line = f"    Dim x As Object = {rest_indented}"
+    body = "\n".join([*comment_lines, dim_line]) if comment_lines else dim_line
+    return (
+        f"Imports System.Collections.Generic\nModule Check\n{body}\nEnd Module"
+    )
+
+
+@beartype
+def _wrap_vb_varname(content: str) -> str:
+    """Wrap a VB.NET Dim declaration inside a Module."""
+    indented = "    " + content.replace("\n", "\n    ")
+    return (
+        "Imports System.Collections.Generic\n"
+        "Module Check\n"
+        f"{indented}\n"
+        "End Module"
+    )
+
+
+@beartype
+def _wrap_vb_combined(declaration: str, assignment: str) -> str:
+    """VB.NET: Dim declaration in one Sub, assignment in another."""
+    decl_indented = "        " + declaration.replace("\n", "\n        ")
+    assign_indented = "        " + assignment.replace("\n", "\n        ")
+    return (
+        "Imports System.Collections.Generic\n"
+        "Module Check\n"
+        "    Sub _declaration()\n"
+        f"{decl_indented}\n"
+        "    End Sub\n"
+        "    Sub _assignment()\n"
+        f"        Dim {_VARIABLE_NAME} As Object\n"
+        f"{assign_indented}\n"
+        "    End Sub\n"
+        "End Module"
+    )
+
+
 @dataclasses.dataclass
 class _DateVariant:
     """A date/datetime formatting variant for a language."""
@@ -1020,6 +1071,63 @@ def _wrap_bash(content: str) -> str:
     return f"declare{flag} _v={content}"
 
 
+_COBOL_PROGRAM_PREFIX = (
+    "IDENTIFICATION DIVISION.\n"
+    "PROGRAM-ID. CHECK.\n"
+    "DATA DIVISION.\n"
+    "WORKING-STORAGE SECTION.\n"
+)
+
+_COBOL_PROGRAM_SUFFIX = "PROCEDURE DIVISION.\n    STOP RUN."
+
+
+@beartype
+def _wrap_cobol(content: str) -> str:
+    """Wrap in a free-format GnuCOBOL program for syntax checking."""
+    cobol_level_field_sep = 2
+    cobol_level_min_len = 3
+    stripped = content.strip("\n")
+    scalar = stripped.strip()
+    is_data_entry = (
+        scalar
+        and scalar[0].isdigit()
+        and len(scalar) > cobol_level_min_len
+        and scalar[cobol_level_field_sep] == " "
+    )
+    if "\n" in stripped or is_data_entry:
+        # Already DATA DIVISION entries
+        data_body = stripped
+    else:
+        # Scalar literal - convert to a DATA entry
+        entry = literalizer.languages.Cobol().format_sequence_entry(scalar)
+        data_body = f"    {entry}"
+    return (
+        _COBOL_PROGRAM_PREFIX
+        + f"01 LITERAL-VALUE.\n{data_body}\n"
+        + _COBOL_PROGRAM_SUFFIX
+    )
+
+
+@beartype
+def _wrap_cobol_varname(content: str) -> str:
+    """Wrap a COBOL variable declaration in a complete program."""
+    return _COBOL_PROGRAM_PREFIX + f"{content}\n" + _COBOL_PROGRAM_SUFFIX
+
+
+@beartype
+def _wrap_cobol_combined(declaration: str, assignment: str) -> str:
+    """Wrap COBOL declaration (DATA DIVISION) and assignment (PROCEDURE
+    DIVISION).
+    """
+    return (
+        _COBOL_PROGRAM_PREFIX
+        + f"{declaration}\n"
+        + "PROCEDURE DIVISION.\n"
+        + f"    {assignment}\n"
+        + "    STOP RUN."
+    )
+
+
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
         spec=literalizer.languages.Ada(),
@@ -1043,6 +1151,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
         combined_wrap=_wrap_c_combined,
+        date_variants=(),
+    ),
+    "cobol": _LanguageConfig(
+        spec=literalizer.languages.Cobol(),
+        extension=".cob",
+        wrap=_wrap_cobol,
+        varname_wrap=_wrap_cobol_varname,
+        combined_wrap=_wrap_cobol_combined,
         date_variants=(),
     ),
     "d": _LanguageConfig(
@@ -1431,6 +1547,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
+        date_variants=(),
+    ),
+    "vb": _LanguageConfig(
+        spec=literalizer.languages.VisualBasic(),
+        extension=".vb",
+        wrap=_wrap_vb,
+        varname_wrap=_wrap_vb_varname,
+        combined_wrap=_wrap_vb_combined,
         date_variants=(),
     ),
     "zig": _LanguageConfig(

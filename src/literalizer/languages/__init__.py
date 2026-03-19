@@ -6,6 +6,7 @@ from .ada import Ada
 from .bash import Bash
 from .c import C
 from .clojure import Clojure
+from .cobol import Cobol
 from .common_lisp import CommonLisp
 from .cpp import Cpp
 from .crystal import Crystal
@@ -40,6 +41,7 @@ from .rust import Rust
 from .scala import Scala
 from .swift import Swift
 from .typescript import TypeScript
+from .vb import VisualBasic
 from .zig import Zig
 
 __all__ = [
@@ -48,6 +50,7 @@ __all__ = [
     "C",
     "CSharp",
     "Clojure",
+    "Cobol",
     "CommonLisp",
     "Cpp",
     "Crystal",
@@ -81,5 +84,6 @@ __all__ = [
     "Scala",
     "Swift",
     "TypeScript",
+    "VisualBasic",
     "Zig",
 ]
