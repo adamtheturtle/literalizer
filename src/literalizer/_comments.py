@@ -230,7 +230,7 @@ class YamlCollectionContext:
     trailing: tuple[str, ...]
     comment_prefix: str
     comment_suffix: str
-    prefix: str
+    indent: str
     wrap: bool
 
 
@@ -241,7 +241,7 @@ def literalize_yaml_scalar(
     base: str,
     comment_prefix: str,
     comment_suffix: str,
-    prefix: str,
+    indent: str,
 ) -> str:
     """Preserve comments for scalar YAML values.
 
@@ -261,7 +261,7 @@ def literalize_yaml_scalar(
             text=comment_text,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            line_prefix=prefix,
+            line_prefix=indent,
         )
         for comment_text in scalar_comments.before
     ]
@@ -281,7 +281,7 @@ def literalize_yaml_collection(
     ctx: YamlCollectionContext,
 ) -> str:
     """Preserve comments for sequence/mapping YAML values."""
-    effective_prefix = ctx.prefix if not ctx.wrap else (ctx.prefix or "    ")
+    effective_indent = ctx.indent if not ctx.wrap else (ctx.indent or "    ")
     all_lines = ctx.base.split(sep="\n")
 
     if ctx.wrap and len(all_lines) > 1:
@@ -305,7 +305,7 @@ def literalize_yaml_collection(
                 text=comment_text,
                 comment_prefix=ctx.comment_prefix,
                 comment_suffix=ctx.comment_suffix,
-                line_prefix=effective_prefix,
+                line_prefix=effective_indent,
             )
             for comment_text in element_comment.before
         )
@@ -324,7 +324,7 @@ def literalize_yaml_collection(
             text=comment_text,
             comment_prefix=ctx.comment_prefix,
             comment_suffix=ctx.comment_suffix,
-            line_prefix=effective_prefix,
+            line_prefix=effective_indent,
         )
         for comment_text in ctx.trailing
     )
@@ -341,7 +341,7 @@ def apply_collection_comments(
     base: str,
     comment_prefix: str,
     comment_suffix: str,
-    prefix: str,
+    indent: str,
     wrap: bool,
 ) -> str:
     """Apply extracted comments to a collection literal.
@@ -363,7 +363,7 @@ def apply_collection_comments(
         trailing=collection_comments.trailing,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
-        prefix=prefix,
+        indent=indent,
         wrap=wrap,
     )
     return literalize_yaml_collection(ctx=ctx)

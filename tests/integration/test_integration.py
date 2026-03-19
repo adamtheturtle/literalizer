@@ -1431,7 +1431,7 @@ def test_golden_file(
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=lang_config.spec,
-        prefix="",
+        indent="",
         wrap=True,
     )
     wrapped = lang_config.wrap(result)
@@ -1461,7 +1461,7 @@ def test_golden_file_with_variable_name(
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=lang_config.spec,
-        prefix="",
+        indent="",
         wrap=True,
         variable_name=_VARIABLE_NAME,
     )
@@ -1494,7 +1494,7 @@ def test_golden_file_combined_variable_forms(
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=lang_config.spec,
-        prefix="",
+        indent="",
         wrap=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
@@ -1502,7 +1502,7 @@ def test_golden_file_combined_variable_forms(
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=lang_config.spec,
-        prefix="",
+        indent="",
         wrap=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,
@@ -1541,7 +1541,7 @@ def test_date_format_golden_file(
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=variant.spec,
-        prefix="",
+        indent="",
         wrap=True,
     )
     wrapped = variant.wrap(result)
