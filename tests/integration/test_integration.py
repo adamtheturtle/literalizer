@@ -984,7 +984,7 @@ def _wrap_vb(content: str) -> str:
     Leading comment lines (starting with ``'``) are hoisted before the
     ``Dim`` statement so that the output remains valid VB.NET.
     """
-    lines = content.split("\n")
+    lines = content.split(sep="\n")
     comment_lines = []
     while lines and lines[0].startswith("'"):
         comment_lines.append("    " + lines.pop(0))

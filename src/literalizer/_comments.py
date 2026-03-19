@@ -364,10 +364,10 @@ def prepend_collection_comments(
 
     lines: list[str] = []
     for ec in collection_comments.elements:
-        lines.extend(_fmt(text) for text in ec.before)
+        lines.extend(_fmt(text=text) for text in ec.before)
         if ec.inline:
-            lines.append(_fmt(ec.inline))
-    lines.extend(_fmt(text) for text in collection_comments.trailing)
+            lines.append(_fmt(text=ec.inline))
+    lines.extend(_fmt(text=text) for text in collection_comments.trailing)
     if not lines:
         return base
     return "\n".join(lines) + "\n" + base
