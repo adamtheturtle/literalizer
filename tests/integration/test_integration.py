@@ -1063,6 +1063,17 @@ def _wrap_bash(content: str) -> str:
     return f"declare{flag} _v={content}"
 
 
+@beartype
+def _wrap_toml(content: str) -> str:
+    """Wrap in a TOML key assignment for syntax validation.
+
+    TOML v1.1 permits newlines and comments within inline tables, so the
+    multiline output from ``_literalize`` can be used directly as a TOML
+    value.
+    """
+    return f"x = {content}"
+
+
 _COBOL_PROGRAM_PREFIX = (
     "IDENTIFICATION DIVISION.\n"
     "PROGRAM-ID. CHECK.\n"
@@ -1571,6 +1582,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_powershell,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
+    "toml": _LanguageConfig(
+        spec=literalizer.languages.Toml(),
+        extension=".toml",
+        wrap=_wrap_toml,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, _a: d,
         date_variants=(),
     ),
 }

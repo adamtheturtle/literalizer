@@ -86,14 +86,17 @@ localhost
 luac
 matlab
 misclassifies
+multiline
 namespaces
 natively
 norc
+normalise
 ocamlopt
 occam
 octave
 ofEntries
 omap
+optimisation
 paren
 pragma
 pre
