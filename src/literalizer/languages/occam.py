@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
@@ -102,7 +103,9 @@ class Occam:
             open_str="MOBILE LIT(lit.list; MOBILE []MOBILE LIT ["
         )
         self.sequence_close = "])"
-        self.dict_open = "MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
+        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
+            open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
+        )
         self.dict_close = "])"
         self.format_dict_entry: Callable[[str, str], str] = (
             _format_occam_dict_entry
