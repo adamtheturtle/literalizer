@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Map(
+val x: Any = Map[String, String](
     "key\nwith\nnewlines" -> "value1",
     "key\twith\ttabs" -> "value2",
     "" -> "value3",
