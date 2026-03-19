@@ -98,6 +98,7 @@ paren
 pragma
 pre
 prepended
+pyrefly
 pyright
 pytest
 regen
