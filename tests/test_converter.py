@@ -2098,11 +2098,13 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
 
 def test_coerce_heterogeneous_bytes_in_collection() -> None:
     """Bytes in a heterogeneous collection are coerced to hex strings."""
-    yaml_string = textwrap.dedent("""\
+    yaml_string = textwrap.dedent(
+        text="""\
         key1: !!binary |
           SGVsbG8=
         key2: 42
-    """)
+    """,
+    )
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
@@ -2114,11 +2116,13 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
 
 def test_coerce_heterogeneous_set() -> None:
     """Heterogeneous sets are coerced to all strings."""
-    yaml_string = textwrap.dedent("""\
+    yaml_string = textwrap.dedent(
+        text="""\
         --- !!set
         ? 1
         ? "hello"
-    """)
+    """,
+    )
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
@@ -2130,11 +2134,13 @@ def test_coerce_heterogeneous_set() -> None:
 
 def test_coerce_homogeneous_omap_no_coercion() -> None:
     """Homogeneous ordereddict values are not coerced."""
-    yaml_string = textwrap.dedent("""\
+    yaml_string = textwrap.dedent(
+        text="""\
         --- !!omap
           - name: Alice
           - city: Paris
-    """)
+    """,
+    )
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
