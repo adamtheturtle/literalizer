@@ -85,11 +85,14 @@ def _format_value(*, value: Value, spec: Language) -> str:
         return spec.omap_open + joined + spec.omap_close
 
     if isinstance(value, dict):
-        dict_items = {
-            k: v
-            for k, v in value.items()
-            if not (spec.skip_null_dict_values and v is None)
-        }
+        dict_items = cast(
+            "dict[str, Value]",
+            {
+                k: v
+                for k, v in value.items()
+                if not (spec.skip_null_dict_values and v is None)
+            },
+        )
         if not dict_items and spec.empty_dict is not None:
             return spec.empty_dict
         pairs = [
@@ -101,7 +104,7 @@ def _format_value(*, value: Value, spec: Language) -> str:
             for k, v in dict_items.items()
         ]
         joined = spec.element_separator.join(pairs)
-        return spec.dict_open + joined + spec.dict_close
+        return spec.dict_open(dict_items) + joined + spec.dict_close
 
     if isinstance(value, set):
         return _format_set_value(value=value, spec=spec)
@@ -139,7 +142,7 @@ def _wrap_body(
         opening = f"{line_prefix}{spec.omap_open}"
         closing = f"{close_prefix}{spec.omap_close}"
     elif isinstance(data, dict):
-        opening = f"{line_prefix}{spec.dict_open}"
+        opening = f"{line_prefix}{spec.dict_open(data)}"
         closing = f"{close_prefix}{spec.dict_close}"
     elif isinstance(data, set):
         opening = f"{line_prefix}{spec.set_open}"
@@ -209,16 +212,17 @@ def _literalize(
     is_omap = isinstance(data, ordereddict)
     if is_omap or isinstance(data, dict):
         dict_data = cast("dict[str, Value]", data)
-        entries = [
-            (k, v)
+        filtered_dict: dict[str, Value] = {
+            k: v
             for k, v in dict_data.items()
             if not (spec.skip_null_dict_values and v is None)
-        ]
-        if not entries and wrap and dict_data:
+        }
+        if not filtered_dict and wrap and dict_data:
             empty_value: ordereddict | dict[str, Value] = (
                 ordereddict() if is_omap else {}
             )
             return _format_value(value=empty_value, spec=spec)
+        entries = list(filtered_dict.items())
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
@@ -233,6 +237,7 @@ def _literalize(
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
+        data = filtered_dict
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
