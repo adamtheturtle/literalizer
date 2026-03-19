@@ -1016,7 +1016,7 @@ _COBOL_PROGRAM_PREFIX = (
     "WORKING-STORAGE SECTION.\n"
 )
 
-_COBOL_PROGRAM_SUFFIX = "PROCEDURE DIVISION.\n    STOP RUN.\n"
+_COBOL_PROGRAM_SUFFIX = "PROCEDURE DIVISION.\n    STOP RUN."
 
 
 @beartype
@@ -1062,7 +1062,7 @@ def _wrap_cobol_combined(declaration: str, assignment: str) -> str:
         + f"{declaration}\n"
         + "PROCEDURE DIVISION.\n"
         + f"    {assignment}\n"
-        + "    STOP RUN.\n"
+        + "    STOP RUN."
     )
 
 
