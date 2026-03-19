@@ -1,8 +1,8 @@
 """Rust language specification."""
 
-import datetime
+from __future__ import annotations
+
 import enum
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -21,6 +21,9 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 
@@ -46,18 +49,6 @@ def _format_variable_declaration(name: str, value: str) -> str:
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Rust variable assignment."""
     return f"{name} = {value};"
-
-
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "rust": format_date_rust,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "rust": format_datetime_rust,
-}
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 class Rust:
@@ -119,13 +110,19 @@ class Rust:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format.value
-        ]
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format.value]
-        )
-        self.format_string: Callable[[str], str] = _string_format
+        if date_format is Rust.DateFormat.RUST:
+            self.format_date: Callable[[datetime.date], str] = format_date_rust
+        else:
+            self.format_date = format_date_iso
+
+        if datetime_format is Rust.DatetimeFormat.RUST:
+            self.format_datetime: Callable[[datetime.datetime], str] = (
+                format_datetime_rust
+            )
+        else:
+            self.format_datetime = format_datetime_iso
+
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "HashSet::from(["

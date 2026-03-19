@@ -1,8 +1,8 @@
 """Python language specification."""
 
-import datetime
+from __future__ import annotations
+
 import enum
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -24,6 +24,9 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 
@@ -43,24 +46,6 @@ def _format_variable_declaration(name: str, value: str) -> str:
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Python variable assignment."""
     return f"{name} = {value}"
-
-
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "python": format_date_python,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "python": format_datetime_python,
-    "epoch": format_datetime_epoch,
-}
-_string_format: Callable[[str], str] = format_string_backslash
-
-_bytes_formats: dict[str, Callable[[bytes], str]] = {
-    "hex": format_bytes_hex,
-    "python": format_bytes_python,
-}
 
 
 class Python:
@@ -135,16 +120,29 @@ class Python:
         )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = True
-        self.format_bytes: Callable[[bytes], str] = _bytes_formats[
-            bytes_format.value
-        ]
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format.value
-        ]
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format.value]
-        )
-        self.format_string: Callable[[str], str] = _string_format
+
+        if bytes_format is Python.BytesFormat.PYTHON:
+            self.format_bytes: Callable[[bytes], str] = format_bytes_python
+        else:
+            self.format_bytes = format_bytes_hex
+
+        if date_format is Python.DateFormat.PYTHON:
+            self.format_date: Callable[[datetime.date], str] = (
+                format_date_python
+            )
+        else:
+            self.format_date = format_date_iso
+
+        if datetime_format is Python.DatetimeFormat.PYTHON:
+            self.format_datetime: Callable[[datetime.datetime], str] = (
+                format_datetime_python
+            )
+        elif datetime_format is Python.DatetimeFormat.EPOCH:
+            self.format_datetime = format_datetime_epoch
+        else:
+            self.format_datetime = format_datetime_iso
+
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "{"

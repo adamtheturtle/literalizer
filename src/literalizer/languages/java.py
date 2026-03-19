@@ -1,9 +1,9 @@
 """Java language specification."""
 
-import datetime
+from __future__ import annotations
+
 import enum
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
@@ -20,7 +20,12 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
-from literalizer._types import Value  # noqa: TC001
+
+if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -76,19 +81,6 @@ def _format_variable_declaration(name: str, value: str) -> str:
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Java variable assignment."""
     return f"{name} = {value};"
-
-
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "java": format_date_java,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "instant": format_datetime_java_instant,
-    "zoned": format_datetime_java_zoned,
-}
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 class Java:
@@ -152,13 +144,19 @@ class Java:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format.value
-        ]
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format.value]
-        )
-        self.format_string: Callable[[str], str] = _string_format
+        if date_format is Java.DateFormat.JAVA:
+            self.format_date: Callable[[datetime.date], str] = format_date_java
+        else:
+            self.format_date = format_date_iso
+        if datetime_format is Java.DatetimeFormat.INSTANT:
+            self.format_datetime: Callable[[datetime.datetime], str] = (
+                format_datetime_java_instant
+            )
+        elif datetime_format is Java.DatetimeFormat.ZONED:
+            self.format_datetime = format_datetime_java_zoned
+        else:
+            self.format_datetime = format_datetime_iso
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "Set.of("
