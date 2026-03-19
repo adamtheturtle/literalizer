@@ -144,6 +144,9 @@ jobs:
   lint-zig:
     uses: ./.github/workflows/lint-zig.yml
 
+  lint-toml:
+    uses: ./.github/workflows/lint-toml.yml
+
   completion-lint:
     needs:
       - build
@@ -180,6 +183,7 @@ jobs:
       - lint-matlab
       - lint-nim
       - lint-zig
+      - lint-toml
       - lint-powershell
     runs-on: ubuntu-latest
     if: always()
