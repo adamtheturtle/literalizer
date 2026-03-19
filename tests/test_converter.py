@@ -21,6 +21,7 @@ from literalizer import (
 )
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
     format_bytes_python,
@@ -615,7 +616,7 @@ def test_custom_language() -> None:
         false_literal="NO",
         sequence_open=fixed_sequence_open(open_str="<"),
         sequence_close=">",
-        dict_open="{",
+        dict_open=fixed_dict_open(open_str="{"),
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=" -> "),
         multiline_trailing_comma=True,
@@ -1712,7 +1713,7 @@ def test_omap_custom_language_spec() -> None:
         false_literal="false",
         sequence_open=fixed_sequence_open(open_str="["),
         sequence_close="]",
-        dict_open="{",
+        dict_open=fixed_dict_open(open_str="{"),
         dict_close="}",
         format_dict_entry=dict_entry_with_separator(separator=": "),
         multiline_trailing_comma=True,

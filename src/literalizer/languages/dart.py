@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_dict_open,
     format_bytes_hex,
     format_date_dart,
     format_date_iso,
@@ -121,7 +122,9 @@ class Dart:
             fallback="[",
         )
         self.sequence_close = "]"
-        self.dict_open = "{"
+        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
+            open_str="{"
+        )
         self.dict_close = "}"
         self.format_dict_entry: Callable[[str, str], str] = (
             dict_entry_with_separator(separator=": ")

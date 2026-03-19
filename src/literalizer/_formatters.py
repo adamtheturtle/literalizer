@@ -550,6 +550,24 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
 
 
 @beartype
+def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
+    """Return a ``dict_open`` callable that always returns *open_str*.
+
+    Use this as ``dict_open`` when the opening delimiter for dicts
+    is a fixed string that does not depend on the dict contents.
+
+    Example: ``fixed_dict_open(open_str="{")({"a": 1})`` → ``"{"``.
+    """
+
+    @beartype
+    def _open(_items: dict[str, Value]) -> str:
+        """Return the fixed opening delimiter."""
+        return open_str
+
+    return _open
+
+
+@beartype
 def _typed_sequence_open(
     items: list[Value],
     *,
