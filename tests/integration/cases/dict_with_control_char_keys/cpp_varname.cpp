@@ -7,7 +7,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-_Any my_data = {
+_Any my_data = std::map<std::string, std::string>{
     {"key\nwith\nnewlines", "value1"},
     {"key\twith\ttabs", "value2"},
     {"", "value3"},

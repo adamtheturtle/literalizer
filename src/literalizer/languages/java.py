@@ -7,6 +7,7 @@ from typing import Any, Literal
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_dict_open,
     format_bytes_hex,
     format_date_iso,
     format_date_java,
@@ -126,7 +127,9 @@ class Java:
             fallback="new Object[]{",
         )
         self.sequence_close = "}"
-        self.dict_open = "Map.ofEntries("
+        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
+            open_str="Map.ofEntries("
+        )
         self.dict_close = ")"
         self.format_dict_entry: Callable[[str, str], str] = (
             _format_java_dict_entry

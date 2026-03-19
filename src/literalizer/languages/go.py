@@ -15,6 +15,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
+    typed_dict_open,
     typed_sequence_open,
 )
 from literalizer._types import Value  # noqa: TC001
@@ -54,6 +55,15 @@ def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"[]{type_name}{{"
+
+
+@beartype
+def _go_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema value type to a Go map opener."""
+    type_name = _go_schema_to_type(item_schema=value_schema)
+    if type_name is None:
+        return None
+    return f"map[string]{type_name}{{"
 
 
 @beartype
@@ -130,7 +140,10 @@ class Go:
             fallback="[]any{",
         )
         self.sequence_close = "}"
-        self.dict_open = "map[string]any{"
+        self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
+            schema_to_opener=_go_dict_schema_to_opener,
+            fallback="map[string]any{",
+        )
         self.dict_close = "}"
         self.format_dict_entry: Callable[[str, str], str] = (
             dict_entry_with_separator(separator=": ")
