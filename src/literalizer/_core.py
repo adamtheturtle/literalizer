@@ -147,13 +147,13 @@ def _literalize(
     *,
     data: Value,
     language: Language,
-    prefix: str,
+    indent: str,
     wrap: bool,
 ) -> str:
     r"""Convert data to native language literal text.
 
     Each element (or key-value pair) is formatted as a native literal
-    for the given language with a trailing comma and the specified prefix.
+    for the given language with a trailing comma and the specified indent.
 
     Args:
         data: A scalar, sequence, or mapping.  Scalars (strings,
@@ -166,7 +166,7 @@ def _literalize(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        prefix: String to prepend to each output line (e.g. ``"        "``
+        indent: String to prepend to each output line (e.g. ``"        "``
             for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
@@ -187,9 +187,9 @@ def _literalize(
         datetime.date,
     )
     if isinstance(data, scalar_types) or data is None:
-        return f"{prefix}{_format_scalar(value=data, spec=spec)}"
+        return f"{indent}{_format_scalar(value=data, spec=spec)}"
 
-    effective_prefix = prefix if not wrap else (prefix or "    ")
+    effective_indent = indent if not wrap else (indent or "    ")
     lines: list[str] = []
 
     is_omap = isinstance(data, ordereddict)
@@ -218,7 +218,7 @@ def _literalize(
             )
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{effective_prefix}{entry}{sep}")
+            lines.append(f"{effective_indent}{entry}{sep}")
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
@@ -227,7 +227,7 @@ def _literalize(
             entry = spec.format_set_entry(formatted)
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{effective_prefix}{entry}{sep}")
+            lines.append(f"{effective_indent}{entry}{sep}")
     else:
         # At this point data must be a list (scalars/dict/set/omap handled)
         items: list[Value] = list(data)
@@ -238,7 +238,7 @@ def _literalize(
             )
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{effective_prefix}{formatted}{sep}")
+            lines.append(f"{effective_indent}{formatted}{sep}")
 
     body = "\n".join(lines)
 
@@ -253,7 +253,7 @@ def literalize_json(
     *,
     json_string: str,
     language: Language,
-    prefix: str,
+    indent: str,
     wrap: bool,
     variable_name: str | None = None,
     new_variable: bool = True,
@@ -268,7 +268,7 @@ def literalize_json(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        prefix: String to prepend to each output line (e.g. ``"        "``
+        indent: String to prepend to each output line (e.g. ``"        "``
             for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
@@ -295,7 +295,7 @@ def literalize_json(
     result = _literalize(
         data=data,
         language=language,
-        prefix=prefix,
+        indent=indent,
         wrap=wrap,
     )
     if variable_name is not None:
@@ -313,7 +313,7 @@ def literalize_yaml(
     *,
     yaml_string: str,
     language: Language,
-    prefix: str,
+    indent: str,
     wrap: bool,
     variable_name: str | None = None,
     new_variable: bool = True,
@@ -331,7 +331,7 @@ def literalize_yaml(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        prefix: String to prepend to each output line (e.g. ``"        "``
+        indent: String to prepend to each output line (e.g. ``"        "``
             for 8-space indent, or ``"\t\t"`` for 2-tab indent).
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
@@ -358,7 +358,7 @@ def literalize_yaml(
     base = _literalize(
         data=data,
         language=language,
-        prefix=prefix,
+        indent=indent,
         wrap=wrap,
     )
 
@@ -376,7 +376,7 @@ def literalize_yaml(
             base=base,
             comment_prefix=cp,
             comment_suffix=cs,
-            prefix=prefix,
+            indent=indent,
             wrap=wrap,
         )
     elif not isinstance(data, (list, dict)):
@@ -388,7 +388,7 @@ def literalize_yaml(
             base=base,
             comment_prefix=cp,
             comment_suffix=cs,
-            prefix=prefix,
+            indent=indent,
         )
     elif not base:
         result = base
@@ -432,7 +432,7 @@ def literalize_yaml(
             base=base,
             comment_prefix=cp,
             comment_suffix=cs,
-            prefix=prefix,
+            indent=indent,
             wrap=wrap,
         )
 

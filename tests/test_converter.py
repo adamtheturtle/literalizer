@@ -122,7 +122,7 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
         language=language,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == expected
@@ -133,7 +133,7 @@ def test_ruby_dict() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[{"key": None}]),
         language=RUBY,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '{"key" => nil},'
@@ -145,7 +145,7 @@ def test_dict_python() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        prefix="    ",
+        indent="    ",
         wrap=False,
     )
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
@@ -156,7 +156,7 @@ def test_dict_ruby() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"user_1": "team_alpha"}),
         language=RUBY,
-        prefix="  ",
+        indent="  ",
         wrap=False,
     )
     assert result == '  "user_1" => "team_alpha",'
@@ -167,7 +167,7 @@ def test_dict_wrap() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"a": 1, "b": 2}),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -187,7 +187,7 @@ def test_java_dict_wrap_no_multiline_trailing_comma() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"name": "Alice", "age": 30}),
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -206,7 +206,7 @@ def test_java_dict_skips_null_values() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -224,7 +224,7 @@ def test_java_dict_skips_null_values_no_wrap() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"a": None, "b": 1}),
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=False,
     )
     expected = 'Map.entry("b", 1)'
@@ -238,7 +238,7 @@ def test_java_dict_all_null_values_wrap() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"a": None, "b": None}),
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     assert result == "Map.ofEntries()"
@@ -250,7 +250,7 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -277,7 +277,7 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -304,7 +304,7 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -325,7 +325,7 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = "Map.ofEntries()\n    // trailing"
@@ -346,7 +346,7 @@ def test_java_yaml_omap_skips_null_values() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     omap_inline = (
@@ -362,7 +362,7 @@ def test_java_sequence_wrap_uses_braces() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[1, "hello", True]),
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -392,7 +392,7 @@ def test_java_typed_array_opener(
     result = literalize_json(
         json_string=json.dumps(obj=json_input),
         language=JAVA,
-        prefix="",
+        indent="",
         wrap=True,
     )
     assert result.startswith(expected_open)
@@ -402,7 +402,7 @@ def test_java_typed_array_opener(
 def test_dict_empty(*, wrap: bool) -> None:
     """An empty dict produces an empty string regardless of wrap."""
     result = literalize_json(
-        json_string=json.dumps(obj={}), language=PYTHON, prefix="", wrap=wrap
+        json_string=json.dumps(obj={}), language=PYTHON, indent="", wrap=wrap
     )
     assert result == ""
 
@@ -412,7 +412,7 @@ def test_integers() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[42, 0, -7]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     expected = textwrap.dedent(
@@ -429,7 +429,7 @@ def test_floats() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[1000.0, 3.14]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     expected = textwrap.dedent(
@@ -445,7 +445,7 @@ def test_string_escaping() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=['say "hi"', "a\\b", "line1\nline2"]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     lines = result.split(sep="\n")
@@ -459,7 +459,7 @@ def test_nested_arrays() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[[[1, 2], [3, 4]]]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == "((1, 2), (3, 4)),"
@@ -470,7 +470,7 @@ def test_dicts() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[{"name": "alice", "age": 30}]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '{"name": "alice", "age": 30},'
@@ -481,7 +481,7 @@ def test_nested_dict_in_sequence() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[["a", {"x": 1}]]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '("a", {"x": 1}),'
@@ -492,29 +492,29 @@ def test_nested_sequence_in_dict() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[{"items": [1, 2]}]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '{"items": (1, 2)},'
 
 
-def test_prefix_spaces() -> None:
+def test_indent_spaces() -> None:
     """Space-based prefix is prepended to each line."""
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
-        prefix="        ",
+        indent="        ",
         wrap=False,
     )
     assert result == "        True,\n        False,"
 
 
-def test_prefix_tabs() -> None:
+def test_indent_tabs() -> None:
     """Tab-based prefix is prepended to each line."""
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=GO,
-        prefix="\t\t",
+        indent="\t\t",
         wrap=False,
     )
     assert result == "\t\ttrue,\n\t\tfalse,"
@@ -525,7 +525,7 @@ def test_wrap() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -538,12 +538,12 @@ def test_wrap() -> None:
     assert result == expected
 
 
-def test_wrap_with_prefix() -> None:
+def test_wrap_with_indent() -> None:
     """Wrapping respects the given prefix."""
     result = literalize_json(
         json_string=json.dumps(obj=[["a", 1.0]]),
         language=PYTHON,
-        prefix="    ",
+        indent="    ",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -559,7 +559,7 @@ def test_wrap_with_prefix() -> None:
 def test_empty_data(*, wrap: bool) -> None:
     """An empty list produces an empty string regardless of wrap."""
     result = literalize_json(
-        json_string=json.dumps(obj=[]), language=PYTHON, prefix="", wrap=wrap
+        json_string=json.dumps(obj=[]), language=PYTHON, indent="", wrap=wrap
     )
     assert result == ""
 
@@ -585,15 +585,15 @@ def test_scalar(
 ) -> None:
     """Scalar values are formatted as native literals."""
     result = literalize_json(
-        json_string=json_string, language=language, prefix="", wrap=False
+        json_string=json_string, language=language, indent="", wrap=False
     )
     assert result == expected
 
 
-def test_scalar_with_prefix() -> None:
+def test_scalar_with_indent() -> None:
     """Scalar values respect the prefix parameter."""
     result = literalize_json(
-        json_string="42", language=PYTHON, prefix="    ", wrap=False
+        json_string="42", language=PYTHON, indent="    ", wrap=False
     )
     assert result == "    42"
 
@@ -601,7 +601,7 @@ def test_scalar_with_prefix() -> None:
 def test_scalar_wrap_ignored() -> None:
     """Wrap is ignored for scalar values."""
     result = literalize_json(
-        json_string="42", language=PYTHON, prefix="", wrap=True
+        json_string="42", language=PYTHON, indent="", wrap=True
     )
     assert result == "42"
 
@@ -644,7 +644,7 @@ def test_custom_language() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
         language=custom,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == 'YES,\nNIL,\n"hi",'
@@ -661,7 +661,7 @@ def test_part1_sample_python() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        prefix="        ",
+        indent="        ",
         wrap=False,
     )
     expected_lines = [
@@ -679,7 +679,7 @@ def test_part2_sample_go() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=GO,
-        prefix="        ",
+        indent="        ",
         wrap=False,
     )
     lines = result.split(sep="\n")
@@ -740,7 +740,7 @@ def test_literalize_json_array() -> None:
     result = literalize_json(
         json_string=json_string,
         language=PYTHON,
-        prefix="    ",
+        indent="    ",
         wrap=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
@@ -753,7 +753,7 @@ def test_literalize_json_object() -> None:
     result = literalize_json(
         json_string=json_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = '{\n    "a": 1,\n    "b": True,\n}'
@@ -766,7 +766,7 @@ def test_literalize_json_invalid() -> None:
         literalize_json(
             json_string="not json",
             language=PYTHON,
-            prefix="",
+            indent="",
             wrap=False,
         )
 
@@ -777,7 +777,7 @@ def test_literalize_json_invalid_is_parse_error() -> None:
         literalize_json(
             json_string="not json",
             language=PYTHON,
-            prefix="",
+            indent="",
             wrap=False,
         )
 
@@ -788,7 +788,7 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     if not data:
@@ -804,7 +804,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     parsed = ast.literal_eval(node_or_string=result)
@@ -822,7 +822,7 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     if not data:
@@ -856,7 +856,7 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert ast.literal_eval(node_or_string=result.rstrip(",")) == data.hex()
@@ -867,7 +867,7 @@ def test_literalize_yaml_empty_sequence() -> None:
     result = literalize_yaml(
         yaml_string="[]\n",
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     assert result == ""
@@ -879,7 +879,7 @@ def test_literalize_yaml_sequence() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="    ",
+        indent="    ",
         wrap=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
@@ -892,7 +892,7 @@ def test_literalize_yaml_mapping() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = '{\n    "a": 1,\n    "b": True,\n}'
@@ -905,7 +905,7 @@ def test_literalize_yaml_invalid() -> None:
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
-            prefix="",
+            indent="",
             wrap=False,
         )
 
@@ -916,7 +916,7 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
-            prefix="",
+            indent="",
             wrap=False,
         )
 
@@ -944,7 +944,7 @@ def test_literalize_yaml_scalar(
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=language,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == expected
@@ -956,7 +956,7 @@ def test_literalize_yaml_date() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '"2024-01-15",'
@@ -970,7 +970,7 @@ def test_literalize_yaml_datetime() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '"2024-01-15T12:30:00",'
@@ -1176,7 +1176,7 @@ def test_custom_format_date() -> None:
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
         language=spec,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == "datetime.date(2024, 1, 15),"
@@ -1188,7 +1188,7 @@ def test_custom_format_datetime() -> None:
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == "datetime.datetime(2024, 1, 15, 12, 30, 0),"
@@ -1200,7 +1200,7 @@ def test_java_native_dates() -> None:
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
         language=spec,
-        prefix="",
+        indent="",
         wrap=False,
     )
     lines = result.split(sep="\n")
@@ -1214,7 +1214,7 @@ def test_ruby_native_dates() -> None:
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
@@ -1227,7 +1227,7 @@ def test_yaml_set_inline_in_sequence() -> None:
     result = literalize_yaml(
         yaml_string="- !!set\n  ? a\n  ? b\n",
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '{"a", "b"},'
@@ -1238,7 +1238,7 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
     result = literalize_yaml(
         yaml_string="- !!set\n  ? a\n",
         language=GO,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == 'map[any]struct{}{"a": struct{}{}},'
@@ -1249,7 +1249,7 @@ def test_yaml_empty_set_inline() -> None:
     result = literalize_yaml(
         yaml_string="- !!set {}\n",
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == "set(),"
@@ -1311,7 +1311,7 @@ def test_literalize_yaml_binary() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == '"48656c6c6f",'
@@ -1323,7 +1323,7 @@ def test_custom_format_bytes() -> None:
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
         language=spec,
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == "b'Hello',"
@@ -1335,7 +1335,7 @@ def test_yaml_comment_sequence_before() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1356,7 +1356,7 @@ def test_yaml_comment_sequence_inline() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1375,7 +1375,7 @@ def test_yaml_comment_mapping() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1396,7 +1396,7 @@ def test_yaml_comment_javascript_prefix() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVASCRIPT,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1415,7 +1415,7 @@ def test_yaml_comment_trailing() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1434,7 +1434,7 @@ def test_yaml_comment_no_wrap() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="    ",
+        indent="    ",
         wrap=False,
     )
     expected = '    # comment\n    "a",\n    "b",'
@@ -1447,7 +1447,7 @@ def test_yaml_comment_scalar() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     expected = "# note\n42"
@@ -1460,7 +1460,7 @@ def test_yaml_comment_scalar_inline() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     expected = "42  # note"
@@ -1473,7 +1473,7 @@ def test_yaml_no_comments_unchanged() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1492,7 +1492,7 @@ def test_yaml_comment_multiple_before_lines() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1540,7 +1540,7 @@ def test_yaml_comment_escaped_quote_in_value() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1558,7 +1558,7 @@ def test_yaml_comment_scalar_quoted_with_hash() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=False,
     )
     expected = '"hello # world"  # note'
@@ -1571,7 +1571,7 @@ def test_yaml_comment_double_hash() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1590,7 +1590,7 @@ def test_yaml_comment_block_scalar_not_extracted() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1609,7 +1609,7 @@ def test_yaml_comment_scalar_with_document_markers() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = "# note\n42"
@@ -1622,7 +1622,7 @@ def test_yaml_comment_empty_comment_line() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1642,7 +1642,7 @@ def test_yaml_comment_more_body_lines_than_comments() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1662,7 +1662,7 @@ def test_yaml_comment_scalar_only_comments() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = "# just a comment\nNone"
@@ -1684,7 +1684,7 @@ def test_omap_nested_in_sequence() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1741,7 +1741,7 @@ def test_omap_custom_language_spec() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=custom,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1760,7 +1760,7 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
     )
     expected = textwrap.dedent(
@@ -1860,7 +1860,7 @@ def test_variable_declaration_json(
     result = literalize_json(
         json_string="42",
         language=language,
-        prefix="",
+        indent="",
         wrap=False,
         variable_name="my_var",
     )
@@ -1877,7 +1877,7 @@ def test_variable_declaration_yaml(
     result = literalize_yaml(
         yaml_string="42\n",
         language=language,
-        prefix="",
+        indent="",
         wrap=False,
         variable_name="my_var",
     )
@@ -1889,7 +1889,7 @@ def test_variable_declaration_none_no_wrap() -> None:
     result = literalize_json(
         json_string="[1, 2]",
         language=PYTHON,
-        prefix="",
+        indent="",
         wrap=True,
         variable_name=None,
     )
@@ -1908,7 +1908,7 @@ def test_existing_variable_assignment_json(
     result = literalize_json(
         json_string="42",
         language=language,
-        prefix="",
+        indent="",
         wrap=False,
         variable_name="my_var",
         new_variable=False,
@@ -1928,7 +1928,7 @@ def test_existing_variable_assignment_yaml(
     result = literalize_yaml(
         yaml_string="42\n",
         language=language,
-        prefix="",
+        indent="",
         wrap=False,
         variable_name="my_var",
         new_variable=False,
@@ -1957,7 +1957,7 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=Matlab(),
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == expected
@@ -1973,7 +1973,7 @@ def test_matlab_dict_key_with_quote() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=Matlab(),
-        prefix="",
+        indent="",
         wrap=False,
     )
     assert result == "'hello \"world\"', 1"
