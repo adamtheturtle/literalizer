@@ -522,6 +522,76 @@ def format_string_backslash_dollar(value: str) -> str:
 
 
 @beartype
+def _vb_string_parts(value: str) -> list[str]:  # noqa: C901,PLR0912
+    """Generate VB.NET string parts for control character handling."""
+    vb_control_char_threshold = 32
+    parts: list[str] = []
+    current = ""
+    i = 0
+    while i < len(value):
+        c = value[i]
+        if c == '"':
+            current += '""'
+            i += 1
+        elif c == "\r" and i + 1 < len(value) and value[i + 1] == "\n":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("vbCrLf")
+            i += 2
+        elif c == "\n":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("Chr(10)")
+            i += 1
+        elif c == "\r":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("Chr(13)")
+            i += 1
+        elif c == "\t":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("vbTab")
+            i += 1
+        elif ord(c) < vb_control_char_threshold:
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append(f"Chr({ord(c)})")
+            i += 1
+        else:
+            current += c
+            i += 1
+    if current:
+        parts.append(f'"{current}"')
+    return parts
+
+
+@beartype
+def format_string_vb(value: str) -> str:
+    r"""Format a string using VB.NET string escaping rules.
+
+    VB.NET strings use ``""`` to escape embedded double quotes and do not
+    support backslash escapes.  Control characters such as newlines and
+    tabs are expressed via ``vbCrLf``, ``vbTab``, or ``Chr(N)`` string
+    concatenation.
+
+    Example: ``hi "world" bye`` → ``"hi ""world"" bye"``.
+    Example: ``line1\nline2`` → ``"line1" & Chr(10) & "line2"``.
+    """
+    parts = _vb_string_parts(value)
+    if not parts:
+        return '""'
+    if len(parts) == 1:
+        return parts[0]
+    return " & ".join(parts)
+
+
+@beartype
 def passthrough_set_entry(item: str) -> str:
     """Return *item* unchanged.
 

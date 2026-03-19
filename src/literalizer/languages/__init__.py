@@ -39,6 +39,7 @@ from .rust import Rust
 from .scala import Scala
 from .swift import Swift
 from .typescript import TypeScript
+from .vb import VisualBasic
 from .zig import Zig
 
 __all__ = [
@@ -79,5 +80,6 @@ __all__ = [
     "Scala",
     "Swift",
     "TypeScript",
+    "VisualBasic",
     "Zig",
 ]
