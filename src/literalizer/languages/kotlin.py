@@ -29,8 +29,8 @@ def _format_kotlin_collection_open(values: list[Any]) -> str:
     Returns ``"arrayOf("`` when all elements are strings,
     ``"booleanArrayOf("`` when all elements are booleans,
     ``"intArrayOf("`` when all elements are non-boolean integers,
-    ``"doubleArrayOf("`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"listOf<Any?>("`` otherwise.
+    ``"doubleArrayOf("`` when all elements are floats,
+    and ``"listOf<Any?>("`` otherwise.
     """
     if values and all(isinstance(v, str) for v in values):
         return "arrayOf("
@@ -40,14 +40,7 @@ def _format_kotlin_collection_open(values: list[Any]) -> str:
         isinstance(v, int) and not isinstance(v, bool) for v in values
     ):
         return "intArrayOf("
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
+    if values and all(isinstance(v, float) for v in values):
         return "doubleArrayOf("
     return "listOf<Any?>("
 
