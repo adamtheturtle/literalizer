@@ -1,6 +1,6 @@
 package main
 
-var _ = []any{
+var _ = [][]bool{
     []bool{true, false},
     []bool{true, true},
 }
