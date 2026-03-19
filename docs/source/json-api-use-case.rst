@@ -20,14 +20,14 @@ returns this response:
    // Response
    {"id": 42, "name": "Alice", "email": "alice@example.com", "created": true}
 
-The following script generates per-language examples for both:
+|project| converts these into native literals for each language:
 
 .. code-block:: python
 
    """Generate per-language API examples."""
 
    from literalizer import literalize_json
-   from literalizer.languages import Go, JavaScript, Python, Ruby, Language
+   from literalizer.languages import Python
 
    request_json = '{"name": "Alice", "email": "alice@example.com"}'
    response_json = (
@@ -35,26 +35,35 @@ The following script generates per-language examples for both:
        ' "email": "alice@example.com", "created": true}'
    )
 
-   languages: list[Language] = [Python(), JavaScript(), Go(), Ruby()]
-   for language in languages:
-       print(
-           literalize_json(
-               json_string=request_json,
-               language=language,
-               variable_name="request_body",
-               wrap=True,
-           ),
-       )
-       print()
-       print(
-           literalize_json(
-               json_string=response_json,
-               language=language,
-               variable_name="response",
-               wrap=True,
-           ),
-       )
-       print()
+   request_literal = literalize_json(
+       json_string=request_json,
+       language=Python(),
+       variable_name="request_body",
+       wrap=True,
+   )
+   assert request_literal == (
+       "request_body = {\n"
+       '    "name": "Alice",\n'
+       '    "email": "alice@example.com",\n'
+       "}"
+   )
+
+   response_literal = literalize_json(
+       json_string=response_json,
+       language=Python(),
+       variable_name="response",
+       wrap=True,
+   )
+   assert response_literal == (
+       "response = {\n"
+       '    "id": 42,\n'
+       '    "name": "Alice",\n'
+       '    "email": "alice@example.com",\n'
+       '    "created": True,\n'
+       "}"
+   )
+
+Pass a different language to get the same data as JavaScript, Go, Ruby, etc.
 
 Output
 ------
@@ -62,85 +71,67 @@ Output
 Python
 ~~~~~~
 
-.. code-block:: python
-
-   import requests
+.. code-block:: text
 
    request_body = {
        "name": "Alice",
        "email": "alice@example.com",
    }
 
-   response = requests.post("https://api.example.com/users", json=request_body).json()
-   # response = {
-   #     "id": 42,
-   #     "name": "Alice",
-   #     "email": "alice@example.com",
-   #     "created": True,
-   # }
+   response = {
+       "id": 42,
+       "name": "Alice",
+       "email": "alice@example.com",
+       "created": True,
+   }
 
 JavaScript
 ~~~~~~~~~~
 
-.. code-block:: javascript
+.. code-block:: text
 
    const request_body = {
        "name": "Alice",
        "email": "alice@example.com",
    };
 
-   const response = await fetch("https://api.example.com/users", {
-       method: "POST",
-       body: JSON.stringify(request_body),
-   }).then(r => r.json());
-
-   console.log(response);
-   // response = {
-   //     "id": 42,
-   //     "name": "Alice",
-   //     "email": "alice@example.com",
-   //     "created": true,
-   // };
+   const response = {
+       "id": 42,
+       "name": "Alice",
+       "email": "alice@example.com",
+       "created": true,
+   };
 
 Go
 ~~
 
-.. code-block:: go
+.. code-block:: text
 
    request_body := map[string]any{
        "name": "Alice",
        "email": "alice@example.com",
    }
 
-   body, _ := json.Marshal(request_body)
-   resp, _ := http.Post("https://api.example.com/users", "application/json", bytes.NewBuffer(body))
-   defer resp.Body.Close()
-   // response := map[string]any{
-   //     "id": 42,
-   //     "name": "Alice",
-   //     "email": "alice@example.com",
-   //     "created": true,
-   // }
+   response := map[string]any{
+       "id": 42,
+       "name": "Alice",
+       "email": "alice@example.com",
+       "created": true,
+   }
 
 Ruby
 ~~~~
 
-.. code-block:: ruby
-
-   require 'net/http'
-   require 'json'
+.. code-block:: text
 
    request_body = {
        "name" => "Alice",
        "email" => "alice@example.com",
    }
 
-   uri = URI("https://api.example.com/users")
-   response = Net::HTTP.post(uri, request_body.to_json, { "Content-Type" => "application/json" })
-   # response_body = JSON.parse(response.body)
-   # # response_body = {
-   # #     "id" => 42,
-   # #     "name" => "Alice",
-   # #     "email" => "alice@example.com",
-   # #     "created" => true,
-   # # }
+   response = {
+       "id" => 42,
+       "name" => "Alice",
+       "email" => "alice@example.com",
+       "created" => true,
+   }
