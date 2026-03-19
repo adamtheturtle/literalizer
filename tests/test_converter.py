@@ -67,6 +67,7 @@ from literalizer.languages import (
     JavaScript,
     Kotlin,
     Matlab,
+    Mojo,
     Php,
     Python,
     R,
@@ -89,6 +90,7 @@ HASKELL = Haskell()
 JAVA = Java()
 JAVASCRIPT = JavaScript()
 KOTLIN = Kotlin()
+MOJO = Mojo()
 PHP = Php()
 PYTHON = Python()
 RUBY = Ruby()
@@ -2092,3 +2094,51 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         if stripped.startswith("05 F-"):
             name = stripped.split()[1]
             assert not name.endswith("-")
+
+
+def test_coerce_heterogeneous_bytes_in_collection() -> None:
+    """Bytes in a heterogeneous collection are coerced to hex strings."""
+    yaml_string = textwrap.dedent("""\
+        key1: !!binary |
+          SGVsbG8=
+        key2: 42
+    """)
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        wrap=True,
+    )
+    assert '"48656c6c6f"' in result
+    assert '"42"' in result
+
+
+def test_coerce_heterogeneous_set() -> None:
+    """Heterogeneous sets are coerced to all strings."""
+    yaml_string = textwrap.dedent("""\
+        --- !!set
+        ? 1
+        ? "hello"
+    """)
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        wrap=True,
+    )
+    assert '"1"' in result
+    assert '"hello"' in result
+
+
+def test_coerce_homogeneous_omap_no_coercion() -> None:
+    """Homogeneous ordereddict values are not coerced."""
+    yaml_string = textwrap.dedent("""\
+        --- !!omap
+          - name: Alice
+          - city: Paris
+    """)
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        wrap=True,
+    )
+    assert '"Alice"' in result
+    assert '"Paris"' in result
