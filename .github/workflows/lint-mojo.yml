@@ -14,7 +14,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Mojo
-        uses: modular-community/setup-mojo@v1
+        uses: fabasoad/setup-mojo-action@v3
       - name: Check Mojo syntax
         run: |-
           set -o pipefail
