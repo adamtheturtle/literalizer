@@ -535,54 +535,29 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
     return _open
 
 
-class _NoTypedOpenerError(Exception):
-    """Raised when type inference cannot produce a specific opener."""
-
-
 @beartype
 def _typed_sequence_open(
     items: list[Value],
     *,
     schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
 ) -> str:
     """Infer an item schema and return the language-specific opener.
 
     Uses ``json-to-schema`` to infer a JSON Schema from the list
     values, then passes the ``items`` sub-schema to
     *schema_to_opener* which returns the language-specific opening
-    delimiter.
-
-    Raises ``_NoTypedOpenerError`` when inference is not possible (e.g.
-    YAML-only types) or when the mapper returns ``None``.
+    delimiter.  When inference is not possible or *schema_to_opener*
+    returns ``None``, *fallback* is returned instead.
 
     See ``_NON_JSON_NATIVE_TYPES`` for why we skip inference for
     YAML-only types.
     """
     if any(isinstance(v, _NON_JSON_NATIVE_TYPES) for v in items):
-        raise _NoTypedOpenerError
+        return fallback
     schema: dict[str, Any] = infer_schema(value=items)
     item_schema: dict[str, Any] = schema.get("items", {})
-    result = schema_to_opener(item_schema)
-    if result is None:
-        raise _NoTypedOpenerError
-    return result
-
-
-@beartype
-def _typed_sequence_open_with_fallback(
-    items: list[Value],
-    *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
-    fallback: str,
-) -> str:
-    """Call ``_typed_sequence_open``, falling back to *fallback*."""
-    try:
-        return _typed_sequence_open(
-            items=items,
-            schema_to_opener=schema_to_opener,
-        )
-    except _NoTypedOpenerError:
-        return fallback
+    return schema_to_opener(item_schema) or fallback
 
 
 @beartype
@@ -610,7 +585,7 @@ def typed_sequence_open(
         )
     """
     return functools.partial(
-        _typed_sequence_open_with_fallback,
+        _typed_sequence_open,
         schema_to_opener=schema_to_opener,
         fallback=fallback,
     )
