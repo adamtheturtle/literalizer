@@ -1,12 +1,12 @@
 my_data = [
-    1,
+    "1",
     "hello",
-    True,
-    None,
+    "True",
+    "None",
 ]
 my_data = [
-    1,
+    "1",
     "hello",
-    True,
-    None,
+    "True",
+    "None",
 ]

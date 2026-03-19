@@ -1,5 +1,5 @@
 _ = [
     ("name", "Alice"),
-    ("age", 30),
-    ("active", True),
+    ("age", "30"),
+    ("active", "True"),
 ]

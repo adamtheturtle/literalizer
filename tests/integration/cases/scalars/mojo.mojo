@@ -1,7 +1,7 @@
 _ = [
-    42,
-    3.14,
-    True,
-    False,
+    "42",
+    "3.14",
+    "True",
+    "False",
     "hello \"world\"",
 ]

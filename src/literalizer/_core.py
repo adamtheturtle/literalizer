@@ -22,6 +22,94 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import JSONParseError, YAMLParseError
 
 
+def _scalar_type_bucket(value: Value) -> type | None:
+    """Return the type bucket for a scalar, or ``None`` for
+    collections.
+    """
+    if value is None:
+        return type(None)
+    # Check bool before int (bool is a subclass of int), and
+    # datetime before date (datetime is a subclass of date).
+    _buckets = (
+        bool,
+        int,
+        float,
+        str,
+        bytes,
+        datetime.datetime,
+        datetime.date,
+    )
+    for bucket in _buckets:
+        if isinstance(value, bucket):
+            return bucket
+    return None
+
+
+def _coerce_scalar_to_str(value: Scalar) -> str:
+    """Convert a scalar to its string representation."""
+    if isinstance(value, bool):
+        return "True" if value else "False"
+    if value is None:
+        return "None"
+    if isinstance(value, datetime.datetime):
+        return value.isoformat()
+    if isinstance(value, datetime.date):
+        return value.isoformat()
+    if isinstance(value, bytes):
+        return value.hex()
+    if isinstance(value, str):
+        return value
+    return repr(value)
+
+
+def _all_scalars_heterogeneous(values: list[Value] | dict[str, Value]) -> bool:
+    """Check whether values are all scalars with more than one type."""
+    items = values.values() if isinstance(values, dict) else values
+    buckets: set[type] = set()
+    for v in items:
+        bucket = _scalar_type_bucket(v)
+        if bucket is None:
+            return False
+        buckets.add(bucket)
+    return len(buckets) > 1
+
+
+def _coerce_heterogeneous(data: Value) -> Value:
+    """Recursively coerce heterogeneous all-scalar collections to
+    strings.
+    """
+    if isinstance(data, ordereddict):
+        new_omap: ordereddict = ordereddict()
+        for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            new_omap[k] = _coerce_heterogeneous(v)
+        if _all_scalars_heterogeneous(new_omap):
+            for k in new_omap:
+                new_omap[k] = _coerce_scalar_to_str(new_omap[k])
+        return new_omap
+
+    if isinstance(data, dict):
+        new_dict = {k: _coerce_heterogeneous(v) for k, v in data.items()}
+        if _all_scalars_heterogeneous(new_dict):
+            new_dict = {
+                k: _coerce_scalar_to_str(v) for k, v in new_dict.items()
+            }
+        return new_dict
+
+    if isinstance(data, set):
+        items = list(data)
+        if _all_scalars_heterogeneous(items):
+            return {_coerce_scalar_to_str(v) for v in items}
+        return data
+
+    if isinstance(data, list):
+        new_list = [_coerce_heterogeneous(v) for v in data]
+        if _all_scalars_heterogeneous(new_list):
+            return [_coerce_scalar_to_str(v) for v in new_list]
+        return new_list
+
+    return data
+
+
 @beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
@@ -187,6 +275,8 @@ def _literalize(
             Ignored for scalar values.
     """
     spec = language
+    if spec.coerce_heterogeneous_to_strings:
+        data = _coerce_heterogeneous(data)
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses

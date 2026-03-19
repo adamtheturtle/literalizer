@@ -640,6 +640,7 @@ def test_custom_language() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
+        coerce_heterogeneous_to_strings=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
     )
@@ -1737,6 +1738,7 @@ def test_omap_custom_language_spec() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
+        coerce_heterogeneous_to_strings=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
     )
