@@ -71,6 +71,7 @@ from literalizer.languages import (
     Rust,
     Scala,
     Swift,
+    Toml,
     TypeScript,
 )
 
@@ -91,6 +92,7 @@ RUBY = Ruby()
 RUST = Rust()
 SCALA = Scala()
 SWIFT = Swift()
+TOML = Toml()
 TYPESCRIPT = TypeScript()
 
 
@@ -1978,3 +1980,19 @@ def test_matlab_dict_key_with_quote() -> None:
         wrap=False,
     )
     assert result == "'hello \"world\"', 1"
+
+
+def test_toml_integer_dict_key() -> None:
+    """TOML dict entry with an integer key passes through without
+    modification.
+
+    Integer keys are not quoted strings, so the bare-key optimisation is
+    skipped and the raw formatted key is used directly.
+    """
+    result = literalize_yaml(
+        yaml_string="1: value\n",
+        language=TOML,
+        line_prefix="",
+        wrap=True,
+    )
+    assert '1 = "value"' in result
