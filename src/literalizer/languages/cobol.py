@@ -19,16 +19,30 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+_COBOL_CONTROL_CHAR_REPLACEMENTS: dict[str, str] = {
+    "\n": " ",
+    "\r": " ",
+    "\t": " ",
+}
+
+_MAX_COBOL_LEVEL: int = 49
+
+
 @beartype
 def _format_string_cobol(value: str) -> str:
     """Format a COBOL alphanumeric string literal.
 
-    Double quotes inside the string are escaped by doubling them, then
-    the whole string is wrapped in double quotes.
+    Control characters (newlines, tabs, carriage returns) are replaced
+    with spaces because COBOL string literals cannot span multiple lines
+    and have no escape sequences.  Double quotes are escaped by doubling
+    them, then the whole string is wrapped in double quotes.
 
     Example: ``say "hi" loud`` becomes ``"say ""hi"" loud"``.
     """
-    escaped = value.replace('"', '""')
+    cleaned = value
+    for char, replacement in _COBOL_CONTROL_CHAR_REPLACEMENTS.items():
+        cleaned = cleaned.replace(char, replacement)
+    escaped = cleaned.replace('"', '""')
     return f'"{escaped}"'
 
 
@@ -84,7 +98,7 @@ def _bump_levels(content: str) -> str:
     for line in lines:
         m = re.match(pattern=r"^(\s*)(\d{2})(\s)", string=line)
         if m:
-            new_level = int(m.group(2)) + 5
+            new_level = min(int(m.group(2)) + 5, _MAX_COBOL_LEVEL)
             result.append(
                 f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
             )
@@ -126,7 +140,7 @@ def _key_to_cobol_name(key_str: str) -> str:
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
-    name = name[:28] or "FILLER"
+    name = name[:28].strip("-") or "FILLER"
     return f"F-{name}"
 
 
@@ -179,8 +193,8 @@ def _format_variable_assignment(name: str, value: str) -> str:
     """Format a COBOL PROCEDURE DIVISION assignment statement.
 
     Scalars use a ``MOVE … TO …`` statement; complex group items use
-    ``INITIALIZE`` (which resets all sub-items to their VALUE-clause
-    defaults).
+    ``INITIALIZE`` (which resets alphanumeric sub-items to SPACES and
+    numeric sub-items to ZEROS).
     """
     cob_name = _to_cobol_name(python_name=name)
     stripped = value.strip("\n")
