@@ -64,6 +64,8 @@ repos:
       - id: check-json
         stages: [pre-commit]
       - id: check-toml
+        # Integration test fixtures use TOML v1.1 (multiline inline tables),
+        # which tomllib (used by check-toml) does not support.
         exclude: ^tests/integration/cases/
         stages: [pre-commit]
       - id: check-vcs-permalinks
