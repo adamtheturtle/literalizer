@@ -16,6 +16,7 @@ from literalizer._formatters import (
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_dict_open,
     typed_sequence_open,
 )
 from literalizer._types import Value  # noqa: TC001
@@ -46,6 +47,40 @@ def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     ):
         return "listOf<Any?>("
     return None
+
+
+_KOTLIN_SCALAR_TYPES: dict[str, str] = {
+    "string": "String",
+    "boolean": "Boolean",
+    "integer": "Int",
+    "number": "Double",
+}
+
+
+@beartype
+def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema item type to a Kotlin type name, recursively."""
+    schema_type = item_schema.get("type")
+    if isinstance(schema_type, str):
+        if schema_type in _KOTLIN_SCALAR_TYPES:
+            return _KOTLIN_SCALAR_TYPES[schema_type]
+        if schema_type == "array":
+            nested = item_schema.get("items", {})
+            inner = _kotlin_schema_to_type(item_schema=nested)
+            return f"Array<{inner}>" if inner is not None else None
+        return None
+    return None
+
+
+@beartype
+def _kotlin_dict_schema_to_opener(
+    value_schema: dict[str, Any],
+) -> str | None:
+    """Map a JSON Schema value type to a Kotlin map opener."""
+    type_name = _kotlin_schema_to_type(item_schema=value_schema)
+    if type_name is None:
+        return None
+    return f"mapOf<String, {type_name}>("
 
 
 @beartype
@@ -112,7 +147,10 @@ class Kotlin:
             fallback="listOf<Any?>(",
         )
         self.sequence_close = ")"
-        self.dict_open = "mapOf<String, Any?>("
+        self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
+            schema_to_opener=_kotlin_dict_schema_to_opener,
+            fallback="mapOf<String, Any?>(",
+        )
         self.dict_close = ")"
         self.format_dict_entry: Callable[[str, str], str] = (
             dict_entry_with_separator(separator=" to ")

@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_dict_open,
     typed_sequence_open,
 )
 from literalizer._types import Value  # noqa: TC001
@@ -56,6 +57,15 @@ def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
 
 
 @beartype
+def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema value type to a Scala map opener."""
+    type_name = _scala_schema_to_type(item_schema=value_schema)
+    if type_name is None:
+        return None
+    return f"Map[String, {type_name}]("
+
+
+@beartype
 def _format_scala_omap_entry(key: str, value: str) -> str:
     """Format a Scala ``ListMap`` entry as a ``key -> value`` pair."""
     return f"{key} -> {value}"
@@ -93,7 +103,10 @@ class Scala:
             fallback="List(",
         )
         self.sequence_close = ")"
-        self.dict_open = "Map("
+        self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
+            schema_to_opener=_scala_dict_schema_to_opener,
+            fallback="Map(",
+        )
         self.dict_close = ")"
         self.format_dict_entry: Callable[[str, str], str] = (
             dict_entry_with_separator(separator=" -> ")
