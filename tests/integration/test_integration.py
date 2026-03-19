@@ -981,6 +981,63 @@ def _wrap_bash(content: str) -> str:
     return f"declare{flag} _v={content}"
 
 
+_COBOL_PROGRAM_PREFIX = (
+    "IDENTIFICATION DIVISION.\n"
+    "PROGRAM-ID. CHECK.\n"
+    "DATA DIVISION.\n"
+    "WORKING-STORAGE SECTION.\n"
+)
+
+_COBOL_PROGRAM_SUFFIX = "PROCEDURE DIVISION.\n    STOP RUN.\n"
+
+
+@beartype
+def _wrap_cobol(content: str) -> str:
+    """Wrap in a free-format GnuCOBOL program for syntax checking."""
+    cobol_level_field_sep = 2
+    cobol_level_min_len = 3
+    stripped = content.strip("\n")
+    scalar = stripped.strip()
+    is_data_entry = (
+        scalar
+        and scalar[0].isdigit()
+        and len(scalar) > cobol_level_min_len
+        and scalar[cobol_level_field_sep] == " "
+    )
+    if "\n" in stripped or is_data_entry:
+        # Already DATA DIVISION entries
+        data_body = stripped
+    else:
+        # Scalar literal - convert to a DATA entry
+        entry = literalizer.languages.Cobol().format_sequence_entry(scalar)
+        data_body = f"    {entry}"
+    return (
+        _COBOL_PROGRAM_PREFIX
+        + f"01 LITERAL-VALUE.\n{data_body}\n"
+        + _COBOL_PROGRAM_SUFFIX
+    )
+
+
+@beartype
+def _wrap_cobol_varname(content: str) -> str:
+    """Wrap a COBOL variable declaration in a complete program."""
+    return _COBOL_PROGRAM_PREFIX + f"{content}\n" + _COBOL_PROGRAM_SUFFIX
+
+
+@beartype
+def _wrap_cobol_combined(declaration: str, assignment: str) -> str:
+    """Wrap COBOL declaration (DATA DIVISION) and assignment (PROCEDURE
+    DIVISION).
+    """
+    return (
+        _COBOL_PROGRAM_PREFIX
+        + f"{declaration}\n"
+        + "PROCEDURE DIVISION.\n"
+        + f"    {assignment}\n"
+        + "    STOP RUN.\n"
+    )
+
+
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
         spec=literalizer.languages.Ada(),
@@ -1004,6 +1061,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
         combined_wrap=_wrap_c_combined,
+        date_variants=(),
+    ),
+    "cobol": _LanguageConfig(
+        spec=literalizer.languages.Cobol(),
+        extension=".cob",
+        wrap=_wrap_cobol,
+        varname_wrap=_wrap_cobol_varname,
+        combined_wrap=_wrap_cobol_combined,
         date_variants=(),
     ),
     "d": _LanguageConfig(

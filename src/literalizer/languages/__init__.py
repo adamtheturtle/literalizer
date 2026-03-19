@@ -6,6 +6,7 @@ from .ada import Ada
 from .bash import Bash
 from .c import C
 from .clojure import Clojure
+from .cobol import Cobol
 from .cpp import Cpp
 from .crystal import Crystal
 from .csharp import CSharp
@@ -44,6 +45,7 @@ __all__ = [
     "C",
     "CSharp",
     "Clojure",
+    "Cobol",
     "Cpp",
     "Crystal",
     "D",

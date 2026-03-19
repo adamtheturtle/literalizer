@@ -1,0 +1,24 @@
+---
+name: Lint COBOL
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-cobol:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install GnuCOBOL
+        run: sudo apt-get install -y gnucobol
+      - name: Check COBOL syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.cob" -print0 | \
+            while IFS= read -r -d '' f; do
+              cobc -free -fsyntax-only "$f" || exit 1
+            done
