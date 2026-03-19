@@ -76,14 +76,14 @@ class Rust:
     class DateFormat(enum.Enum):
         """Date format options for Rust."""
 
-        ISO = enum.member(format_date_iso)
-        RUST = enum.member(format_date_rust)
+        ISO = enum.member(value=format_date_iso)
+        RUST = enum.member(value=format_date_rust)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for Rust."""
 
-        ISO = enum.member(format_datetime_iso)
-        RUST = enum.member(format_datetime_rust)
+        ISO = enum.member(value=format_datetime_iso)
+        RUST = enum.member(value=format_datetime_rust)
 
     @beartype
     def __init__(

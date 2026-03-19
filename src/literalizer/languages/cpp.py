@@ -106,14 +106,14 @@ class Cpp:
     class DateFormat(enum.Enum):
         """Date format options for C++."""
 
-        ISO = enum.member(format_date_iso)
-        CPP = enum.member(format_date_cpp)
+        ISO = enum.member(value=format_date_iso)
+        CPP = enum.member(value=format_date_cpp)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for C++."""
 
-        ISO = enum.member(format_datetime_iso)
-        CPP = enum.member(format_datetime_cpp)
+        ISO = enum.member(value=format_datetime_iso)
+        CPP = enum.member(value=format_datetime_cpp)
 
     @beartype
     def __init__(

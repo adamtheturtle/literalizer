@@ -62,14 +62,14 @@ class Julia:
     class DateFormat(enum.Enum):
         """Date formatting options for Julia."""
 
-        ISO = enum.member(format_date_iso)
-        JULIA = enum.member(format_date_julia)
+        ISO = enum.member(value=format_date_iso)
+        JULIA = enum.member(value=format_date_julia)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for Julia."""
 
-        ISO = enum.member(format_datetime_iso)
-        JULIA = enum.member(format_datetime_julia)
+        ISO = enum.member(value=format_datetime_iso)
+        JULIA = enum.member(value=format_datetime_julia)
 
     @beartype
     def __init__(

@@ -95,14 +95,14 @@ class Kotlin:
     class DateFormat(enum.Enum):
         """Date format options for Kotlin."""
 
-        ISO = enum.member(format_date_iso)
-        KOTLIN = enum.member(format_date_kotlin)
+        ISO = enum.member(value=format_date_iso)
+        KOTLIN = enum.member(value=format_date_kotlin)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for Kotlin."""
 
-        ISO = enum.member(format_datetime_iso)
-        KOTLIN = enum.member(format_datetime_kotlin)
+        ISO = enum.member(value=format_datetime_iso)
+        KOTLIN = enum.member(value=format_datetime_kotlin)
 
     @beartype
     def __init__(

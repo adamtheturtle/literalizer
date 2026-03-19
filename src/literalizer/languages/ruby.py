@@ -68,14 +68,14 @@ class Ruby:
     class DateFormat(enum.Enum):
         """Date format options for Ruby."""
 
-        ISO = enum.member(format_date_iso)
-        RUBY = enum.member(format_date_ruby)
+        ISO = enum.member(value=format_date_iso)
+        RUBY = enum.member(value=format_date_ruby)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for Ruby."""
 
-        ISO = enum.member(format_datetime_iso)
-        RUBY = enum.member(format_datetime_ruby)
+        ISO = enum.member(value=format_datetime_iso)
+        RUBY = enum.member(value=format_datetime_ruby)
 
     @beartype
     def __init__(

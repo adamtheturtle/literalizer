@@ -104,14 +104,14 @@ class Dart:
     class DateFormat(enum.Enum):
         """Date formatting options for Dart."""
 
-        ISO = enum.member(format_date_iso)
-        DART = enum.member(format_date_dart)
+        ISO = enum.member(value=format_date_iso)
+        DART = enum.member(value=format_date_dart)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        ISO = enum.member(format_datetime_iso)
-        DART = enum.member(format_datetime_dart)
+        ISO = enum.member(value=format_datetime_iso)
+        DART = enum.member(value=format_datetime_dart)
 
     @beartype
     def __init__(

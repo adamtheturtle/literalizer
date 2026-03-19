@@ -79,21 +79,21 @@ class Python:
     class DateFormat(enum.Enum):
         """Date formatting options for Python."""
 
-        ISO = enum.member(format_date_iso)
-        PYTHON = enum.member(format_date_python)
+        ISO = enum.member(value=format_date_iso)
+        PYTHON = enum.member(value=format_date_python)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for Python."""
 
-        ISO = enum.member(format_datetime_iso)
-        PYTHON = enum.member(format_datetime_python)
-        EPOCH = enum.member(format_datetime_epoch)
+        ISO = enum.member(value=format_datetime_iso)
+        PYTHON = enum.member(value=format_datetime_python)
+        EPOCH = enum.member(value=format_datetime_epoch)
 
     class BytesFormat(enum.Enum):
         """Bytes formatting options for Python."""
 
-        HEX = enum.member(format_bytes_hex)
-        PYTHON = enum.member(format_bytes_python)
+        HEX = enum.member(value=format_bytes_hex)
+        PYTHON = enum.member(value=format_bytes_python)
 
     @beartype
     def __init__(

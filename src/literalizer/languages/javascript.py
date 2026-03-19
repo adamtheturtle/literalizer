@@ -68,14 +68,14 @@ class JavaScript:
     class DateFormat(enum.Enum):
         """Date formatting options for JavaScript."""
 
-        ISO = enum.member(format_date_iso)
-        JS = enum.member(format_date_js)
+        ISO = enum.member(value=format_date_iso)
+        JS = enum.member(value=format_date_js)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for JavaScript."""
 
-        ISO = enum.member(format_datetime_iso)
-        JS = enum.member(format_datetime_js)
+        ISO = enum.member(value=format_datetime_iso)
+        JS = enum.member(value=format_datetime_js)
 
     @beartype
     def __init__(

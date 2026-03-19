@@ -103,14 +103,14 @@ class CSharp:
     class DateFormat(enum.Enum):
         """Date format options for C#."""
 
-        ISO = enum.member(format_date_iso)
-        CSHARP = enum.member(format_date_csharp)
+        ISO = enum.member(value=format_date_iso)
+        CSHARP = enum.member(value=format_date_csharp)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for C#."""
 
-        ISO = enum.member(format_datetime_iso)
-        CSHARP = enum.member(format_datetime_csharp)
+        ISO = enum.member(value=format_datetime_iso)
+        CSHARP = enum.member(value=format_datetime_csharp)
 
     @beartype
     def __init__(

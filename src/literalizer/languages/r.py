@@ -87,14 +87,14 @@ class R:
     class DateFormat(enum.Enum):
         """Date formatting options for R."""
 
-        ISO = enum.member(format_date_iso)
-        R = enum.member(format_date_r)
+        ISO = enum.member(value=format_date_iso)
+        R = enum.member(value=format_date_r)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for R."""
 
-        ISO = enum.member(format_datetime_iso)
-        R = enum.member(format_datetime_r)
+        ISO = enum.member(value=format_datetime_iso)
+        R = enum.member(value=format_datetime_r)
 
     @beartype
     def __init__(

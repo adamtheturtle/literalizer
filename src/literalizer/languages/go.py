@@ -114,14 +114,14 @@ class Go:
     class DateFormat(enum.Enum):
         """Date format options for Go."""
 
-        ISO = enum.member(format_date_iso)
-        GO = enum.member(format_date_go)
+        ISO = enum.member(value=format_date_iso)
+        GO = enum.member(value=format_date_go)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for Go."""
 
-        ISO = enum.member(format_datetime_iso)
-        GO = enum.member(format_datetime_go)
+        ISO = enum.member(value=format_datetime_iso)
+        GO = enum.member(value=format_datetime_go)
 
     @beartype
     def __init__(

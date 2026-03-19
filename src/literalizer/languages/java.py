@@ -108,15 +108,15 @@ class Java:
     class DateFormat(enum.Enum):
         """Date formatting options for Java."""
 
-        ISO = enum.member(format_date_iso)
-        JAVA = enum.member(format_date_java)
+        ISO = enum.member(value=format_date_iso)
+        JAVA = enum.member(value=format_date_java)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for Java."""
 
-        ISO = enum.member(format_datetime_iso)
-        INSTANT = enum.member(format_datetime_java_instant)
-        ZONED = enum.member(format_datetime_java_zoned)
+        ISO = enum.member(value=format_datetime_iso)
+        INSTANT = enum.member(value=format_datetime_java_instant)
+        ZONED = enum.member(value=format_datetime_java_zoned)
 
     @beartype
     def __init__(
