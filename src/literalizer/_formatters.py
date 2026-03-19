@@ -582,7 +582,7 @@ def format_string_vb(value: str) -> str:
     Example: ``hi "world" bye`` → ``"hi ""world"" bye"``.
     Example: ``line1\nline2`` → ``"line1" & Chr(10) & "line2"``.
     """
-    parts = _vb_string_parts(value)
+    parts = _vb_string_parts(value)  # type: ignore[misc]
     if not parts:
         return '""'
     if len(parts) == 1:
