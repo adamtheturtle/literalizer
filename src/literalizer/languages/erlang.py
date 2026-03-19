@@ -1,6 +1,7 @@
 """Erlang language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -55,18 +56,41 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class Erlang:
-    """Erlang language specification."""
+    """Erlang language specification.
+
+    Args:
+        sequence_format: Which Erlang sequence type to use.
+
+            * ``SequenceFormat.LIST`` (default) — list literal,
+              e.g. ``[1, 2, 3]``.
+            * ``SequenceFormat.TUPLE`` — tuple literal,
+              e.g. ``{1, 2, 3}``.
+    """
+
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Erlang."""
+
+        LIST = "list"
+        TUPLE = "tuple"
 
     @beartype
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat = SequenceFormat.LIST,
+    ) -> None:
         """Initialize Erlang language specification."""
         self.null_literal = "undefined"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="["
-        )
-        self.sequence_close = "]"
+        self.sequence_open: Callable[[list[Value]], str]
+        self.sequence_close: str
+        if sequence_format == Erlang.SequenceFormat.TUPLE:
+            self.sequence_open = fixed_sequence_open(open_str="{")
+            self.sequence_close = "}"
+        else:
+            self.sequence_open = fixed_sequence_open(open_str="[")
+            self.sequence_close = "]"
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="#{"
         )
