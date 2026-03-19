@@ -16,6 +16,7 @@ from literalizer._comments import (
     apply_collection_comments,
     extract_yaml_comments,
     literalize_yaml_scalar,
+    prepend_collection_comments,
 )
 from literalizer._language import Language
 from literalizer._types import Scalar, Value
@@ -85,14 +86,11 @@ def _format_value(*, value: Value, spec: Language) -> str:
         return spec.omap_open + joined + spec.omap_close
 
     if isinstance(value, dict):
-        dict_items = cast(
-            "dict[str, Value]",
-            {
-                k: v
-                for k, v in value.items()
-                if not (spec.skip_null_dict_values and v is None)
-            },
-        )
+        dict_items: dict[str, Value] = {
+            k: v
+            for k, v in value.items()
+            if not (spec.skip_null_dict_values and v is None)
+        }
         if not dict_items and spec.empty_dict is not None:
             return spec.empty_dict
         pairs = [
@@ -237,17 +235,16 @@ def _literalize(
     is_omap = isinstance(data, ordereddict)
     if is_omap or isinstance(data, dict):
         dict_data = cast("dict[str, Value]", data)
-        filtered_dict: dict[str, Value] = {
-            k: v
+        entries = [
+            (k, v)
             for k, v in dict_data.items()
             if not (spec.skip_null_dict_values and v is None)
-        }
-        if not filtered_dict and wrap and dict_data:
+        ]
+        if not entries and wrap and dict_data:
             empty_value: ordereddict | dict[str, Value] = (
                 ordereddict() if is_omap else {}
             )
             return _format_value(value=empty_value, spec=spec)
-        entries = list(filtered_dict.items())
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
@@ -262,7 +259,6 @@ def _literalize(
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
-        data = filtered_dict
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
@@ -366,7 +362,7 @@ def literalize_json(
 
 
 @beartype
-def literalize_yaml(
+def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-branches,too-complex,too-many-statements
     *,
     yaml_string: str,
     language: Language,
@@ -432,19 +428,24 @@ def literalize_yaml(
     comment_line_prefix = line_prefix + indent if wrap else line_prefix
 
     result: str
+    pending_collection_comments = None
     if isinstance(data, set):
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
         )
         set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
-        result = apply_collection_comments(
-            collection_comments=set_comments,
-            base=base,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            wrap=wrap,
-        )
+        if not language.supports_collection_comments:
+            result = base
+            pending_collection_comments = set_comments
+        else:
+            result = apply_collection_comments(
+                collection_comments=set_comments,
+                base=base,
+                comment_prefix=cp,
+                comment_suffix=cs,
+                comment_line_prefix=comment_line_prefix,
+                wrap=wrap,
+            )
     elif not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
@@ -493,14 +494,18 @@ def literalize_yaml(
                 trailing=(*pending, *collection_comments.trailing),
             )
 
-        result = apply_collection_comments(
-            collection_comments=collection_comments,
-            base=base,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            wrap=wrap,
-        )
+        if not language.supports_collection_comments:
+            result = base
+            pending_collection_comments = collection_comments
+        else:
+            result = apply_collection_comments(
+                collection_comments=collection_comments,
+                base=base,
+                comment_prefix=cp,
+                comment_suffix=cs,
+                comment_line_prefix=comment_line_prefix,
+                wrap=wrap,
+            )
 
     if variable_name is not None:
         formatter = (
@@ -508,5 +513,15 @@ def literalize_yaml(
             if new_variable
             else language.format_variable_assignment
         )
-        return formatter(variable_name, result)
+        result = formatter(variable_name, result)
+
+    if pending_collection_comments is not None:
+        result = prepend_collection_comments(
+            collection_comments=pending_collection_comments,
+            base=result,
+            comment_prefix=cp,
+            comment_suffix=cs,
+            line_prefix=line_prefix,
+        )
+
     return result

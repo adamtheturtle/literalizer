@@ -8,7 +8,6 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
-    fixed_dict_open,
     format_bytes_hex,
     format_date_dart,
     format_date_iso,
@@ -17,6 +16,7 @@ from literalizer._formatters import (
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_dict_open,
     typed_sequence_open,
 )
 from literalizer._types import Value  # noqa: TC001
@@ -56,6 +56,15 @@ def _dart_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"<{type_name}>["
+
+
+@beartype
+def _dart_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema value type to a Dart map opener."""
+    type_name = _dart_schema_to_type(item_schema=value_schema)
+    if type_name is None:
+        return None
+    return f"<String, {type_name}>{{"
 
 
 @beartype
@@ -122,8 +131,9 @@ class Dart:
             fallback="[",
         )
         self.sequence_close = "]"
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="{"
+        self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
+            schema_to_opener=_dart_dict_schema_to_opener,
+            fallback="{",
         )
         self.dict_close = "}"
         self.format_dict_entry: Callable[[str, str], str] = (
@@ -158,6 +168,7 @@ class Dart:
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
+        self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
         )

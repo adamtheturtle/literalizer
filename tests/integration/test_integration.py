@@ -76,6 +76,7 @@ def _wrap_cpp(content: str) -> str:
     return (
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
+        "#include <map>\n"
         "#include <string>\n"
         "#include <vector>\n"
         "struct _Any {\n"
@@ -340,6 +341,7 @@ def _wrap_cpp_varname(content: str) -> str:
     return (
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
+        "#include <map>\n"
         "#include <string>\n"
         "#include <vector>\n"
         "struct _Any {\n"
@@ -915,6 +917,7 @@ def _wrap_cpp_chrono(content: str) -> str:
         "#include <chrono>\n"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
+        "#include <map>\n"
         "#include <string>\n"
         "#include <vector>\n"
         "struct _Any {\n"
@@ -975,6 +978,57 @@ def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
 def _wrap_julia_dates(content: str) -> str:
     """Wrap with ``using Dates`` for native Julia date literals."""
     return f"using Dates\n{content}"
+
+
+@beartype
+def _wrap_vb(content: str) -> str:
+    """Wrap in a VB.NET Module with a Dim declaration.
+
+    Leading comment lines (starting with ``'``) are hoisted before the
+    ``Dim`` statement so that the output remains valid VB.NET.
+    """
+    lines = content.split(sep="\n")
+    comment_lines: list[str] = []
+    while lines and lines[0].startswith("'"):
+        comment_lines.append("    " + lines.pop(0))
+    rest = "\n".join(lines)
+    rest_indented = rest.replace("\n", "\n    ")
+    dim_line = f"    Dim x As Object = {rest_indented}"
+    body = "\n".join([*comment_lines, dim_line]) if comment_lines else dim_line
+    return (
+        f"Imports System.Collections.Generic\nModule Check\n{body}\nEnd Module"
+    )
+
+
+@beartype
+def _wrap_vb_varname(content: str) -> str:
+    """Wrap a VB.NET Dim declaration inside a Module."""
+    indented = "    " + content.replace("\n", "\n    ")
+    return (
+        "Imports System.Collections.Generic\n"
+        "Module Check\n"
+        f"{indented}\n"
+        "End Module"
+    )
+
+
+@beartype
+def _wrap_vb_combined(declaration: str, assignment: str) -> str:
+    """VB.NET: Dim declaration in one Sub, assignment in another."""
+    decl_indented = "        " + declaration.replace("\n", "\n        ")
+    assign_indented = "        " + assignment.replace("\n", "\n        ")
+    return (
+        "Imports System.Collections.Generic\n"
+        "Module Check\n"
+        "    Sub _declaration()\n"
+        f"{decl_indented}\n"
+        "    End Sub\n"
+        "    Sub _assignment()\n"
+        f"        Dim {_VARIABLE_NAME} As Object\n"
+        f"{assign_indented}\n"
+        "    End Sub\n"
+        "End Module"
+    )
 
 
 @dataclasses.dataclass
@@ -1423,6 +1477,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
+        date_variants=(),
+    ),
+    "vb": _LanguageConfig(
+        spec=literalizer.languages.VisualBasic(),
+        extension=".vb",
+        wrap=_wrap_vb,
+        varname_wrap=_wrap_vb_varname,
+        combined_wrap=_wrap_vb_combined,
         date_variants=(),
     ),
     "zig": _LanguageConfig(

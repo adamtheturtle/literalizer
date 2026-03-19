@@ -156,6 +156,9 @@ jobs:
   lint-toml:
     uses: ./.github/workflows/lint-toml.yml
 
+  lint-vb:
+    uses: ./.github/workflows/lint-vb.yml
+
   completion-lint:
     needs:
       - build
@@ -197,6 +200,7 @@ jobs:
       - lint-zig
       - lint-toml
       - lint-powershell
+      - lint-vb
     runs-on: ubuntu-latest
     if: always()
     steps:

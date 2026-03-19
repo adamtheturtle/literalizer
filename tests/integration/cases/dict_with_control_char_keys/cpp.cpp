@@ -1,5 +1,6 @@
 #include <initializer_list>
 #include <cstddef>
+#include <map>
 #include <string>
 #include <vector>
 struct _Any {
@@ -7,7 +8,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-    [[maybe_unused]] _Any _v = {
+    [[maybe_unused]] _Any _v = std::map<std::string, std::string>{
     {"key\nwith\nnewlines", "value1"},
     {"key\twith\ttabs", "value2"},
     {"", "value3"},

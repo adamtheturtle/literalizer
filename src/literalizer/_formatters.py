@@ -521,6 +521,75 @@ def format_string_backslash_dollar(value: str) -> str:
     return f'"{escaped}"'
 
 
+def _vb_string_parts(value: str) -> list[str]:  # noqa: C901,PLR0912  # pylint: disable=too-complex,too-many-branches
+    """Generate VB.NET string parts for control character handling."""
+    vb_control_char_threshold = 32
+    parts: list[str] = []
+    current = ""
+    i = 0
+    while i < len(value):
+        c = value[i]
+        if c == '"':
+            current += '""'
+            i += 1
+        elif c == "\r" and i + 1 < len(value) and value[i + 1] == "\n":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("vbCrLf")
+            i += 2
+        elif c == "\n":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("Chr(10)")
+            i += 1
+        elif c == "\r":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("Chr(13)")
+            i += 1
+        elif c == "\t":
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append("vbTab")
+            i += 1
+        elif ord(c) < vb_control_char_threshold:
+            if current:
+                parts.append(f'"{current}"')
+                current = ""
+            parts.append(f"Chr({ord(c)})")
+            i += 1
+        else:
+            current += c
+            i += 1
+    if current:
+        parts.append(f'"{current}"')
+    return parts
+
+
+@beartype
+def format_string_vb(value: str) -> str:
+    r"""Format a string using VB.NET string escaping rules.
+
+    VB.NET strings use ``""`` to escape embedded double quotes and do not
+    support backslash escapes.  Control characters such as newlines and
+    tabs are expressed via ``vbCrLf``, ``vbTab``, or ``Chr(N)`` string
+    concatenation.
+
+    Example: ``hi "world" bye`` → ``"hi ""world"" bye"``.
+    Example: ``line1\nline2`` → ``"line1" & Chr(10) & "line2"``.
+    """
+    parts = _vb_string_parts(value)  # type: ignore[misc]
+    if not parts:
+        return '""'
+    if len(parts) == 1:
+        return parts[0]
+    return " & ".join(parts)
+
+
 @beartype
 def passthrough_set_entry(item: str) -> str:
     """Return *item* unchanged.
@@ -618,6 +687,63 @@ def typed_sequence_open(
     """
     return functools.partial(
         _typed_sequence_open,
+        schema_to_opener=schema_to_opener,
+        fallback=fallback,
+    )
+
+
+@beartype
+def _typed_dict_open(
+    items: dict[str, Value],
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
+) -> str:
+    """Infer a value schema and return the language-specific opener.
+
+    Uses ``json-to-schema`` to infer a JSON Schema from the dict
+    values (treated as a list), then passes the ``items`` sub-schema
+    to *schema_to_opener* which returns the language-specific opening
+    delimiter.  When inference is not possible or *schema_to_opener*
+    returns ``None``, *fallback* is returned instead.
+
+    See ``_JSON_NATIVE_TYPES`` for why we skip inference for
+    YAML-only types.
+    """
+    values = list(items.values())
+    if not _all_json_native(values=values):
+        return fallback
+    schema: dict[str, Any] = infer_schema(value=values)
+    value_schema: dict[str, Any] = schema.get("items", {})
+    return schema_to_opener(value_schema) or fallback
+
+
+@beartype
+def typed_dict_open(
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
+) -> Callable[[dict[str, Value]], str]:
+    """Return a ``dict_open`` callable that infers a value schema and
+    delegates to *schema_to_opener*.
+
+    When inference is not possible or *schema_to_opener* returns
+    ``None``, *fallback* is used instead.
+
+    Example::
+
+        def my_opener(value_schema: dict[str, Any]) -> str | None:
+            if value_schema.get("type") == "string":
+                return "map[string]string{"
+            return None
+
+        dict_open = typed_dict_open(
+            schema_to_opener=my_opener,
+            fallback="map[string]any{",
+        )
+    """
+    return functools.partial(
+        _typed_dict_open,
         schema_to_opener=schema_to_opener,
         fallback=fallback,
     )
