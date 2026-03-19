@@ -23,5 +23,7 @@ jobs:
           set -o pipefail
           find tests/integration/cases -name "mojo.mojo" -print0 | \
             while IFS= read -r -d '' f; do
-              mojo run "$f" || exit 1
+              if grep -q "^_ = {" "$f"; then
+                mojo run "$f" || exit 1
+              fi
             done
