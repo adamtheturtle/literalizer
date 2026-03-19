@@ -985,7 +985,7 @@ def _wrap_vb(content: str) -> str:
     ``Dim`` statement so that the output remains valid VB.NET.
     """
     lines = content.split(sep="\n")
-    comment_lines = []
+    comment_lines: list[str] = []
     while lines and lines[0].startswith("'"):
         comment_lines.append("    " + lines.pop(0))
     rest = "\n".join(lines)
