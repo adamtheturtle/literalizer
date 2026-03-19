@@ -167,11 +167,14 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     if isinstance(data, ordereddict):
         return cast("Value", data)
     if isinstance(data, dict):
-        raw: dict[object, object] = data
-        return {f"{k}": _coerce_yaml_keys(data=v) for k, v in raw.items()}
+        return {
+            f"{k}": _coerce_yaml_keys(data=v)
+            for k, v in cast("dict[object, object]", data).items()
+        }
     if isinstance(data, list):
-        items: list[object] = data
-        return [_coerce_yaml_keys(data=item) for item in items]
+        return [
+            _coerce_yaml_keys(data=item) for item in cast("list[object]", data)
+        ]
     return cast("Value", data)
 
 
