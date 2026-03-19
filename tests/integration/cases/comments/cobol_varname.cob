@@ -1,0 +1,12 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 MY-DATA.
+    *> Server configuration
+    05 F-HOST PIC X(9) VALUE "localhost".  *> default host
+    05 F-PORT PIC S9(18) COMP-5 VALUE 8080.
+    *> Enable debug mode
+    05 F-DEBUG PIC X(5) VALUE "TRUE".
+PROCEDURE DIVISION.
+    STOP RUN.

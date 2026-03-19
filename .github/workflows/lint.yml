@@ -66,6 +66,9 @@ jobs:
   lint-c:
     uses: ./.github/workflows/lint-c.yml
 
+  lint-cobol:
+    uses: ./.github/workflows/lint-cobol.yml
+
   lint-cpp:
     uses: ./.github/workflows/lint-cpp.yml
 
@@ -170,6 +173,7 @@ jobs:
       - lint-typescript
       - lint-java
       - lint-c
+      - lint-cobol
       - lint-cpp
       - lint-kotlin
       - lint-rust
