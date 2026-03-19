@@ -303,6 +303,43 @@ def test_literalize_json_invalid() -> None:
         )
 
 
+def test_part1_sample_python() -> None:
+    """Realistic test matching part1_sample_input.json structure."""
+    data = [
+        ["user_1", 1000.0],
+        ["user_1", 1001.0],
+        ["user_1", 1002.0],
+        ["user_1", 1003.0],
+    ]
+    result = literalize_json(
+        json_string=json.dumps(obj=data),
+        language=PYTHON,
+        line_prefix="        ",
+        wrap=False,
+    )
+    expected_lines = [
+        '        ("user_1", 1000.0),',
+        '        ("user_1", 1001.0),',
+        '        ("user_1", 1002.0),',
+        '        ("user_1", 1003.0),',
+    ]
+    assert result.split(sep="\n") == expected_lines
+
+
+def test_part2_sample_go() -> None:
+    """Realistic test matching part2_sample_input.json structure."""
+    data = [["user_1", 49, 1000.0], ["user_9", 10, 1003.0]]
+    result = literalize_json(
+        json_string=json.dumps(obj=data),
+        language=GO,
+        line_prefix="        ",
+        wrap=False,
+    )
+    lines = result.split(sep="\n")
+    assert lines[0] == '        []any{"user_1", 49, 1000.0},'
+    assert lines[1] == '        []any{"user_9", 10, 1003.0},'
+
+
 def test_literalize_json_invalid_is_parse_error() -> None:
     """``JSONParseError`` is a subclass of ``ParseError``."""
     with pytest.raises(expected_exception=ParseError):
