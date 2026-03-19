@@ -17,6 +17,7 @@ from .fsharp import FSharp
 from .go import Go
 from .groovy import Groovy
 from .haskell import Haskell
+from .hcl import Hcl
 from .java import Java
 from .javascript import JavaScript
 from .julia import Julia
@@ -55,6 +56,7 @@ __all__ = [
     "Go",
     "Groovy",
     "Haskell",
+    "Hcl",
     "Java",
     "JavaScript",
     "Julia",
