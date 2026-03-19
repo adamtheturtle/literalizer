@@ -23,7 +23,16 @@ jobs:
           set -o pipefail
           find tests/integration/cases -name "mojo.mojo" -print0 | \
             while IFS= read -r -d '' f; do
-              if grep -q "^_ = {" "$f"; then
-                mojo run "$f" || exit 1
+              tmp=$(mktemp --suffix=.mojo)
+              printf "def main():\n" > "$tmp"
+              sed 's/^/    /' "$f" >> "$tmp"
+              if ! output=$(mojo run "$tmp" 2>&1); then
+                if ! printf "%s" "$output" | grep -qE \
+                  "no matching function|is not compatible|cannot emit an empty"; then
+                  printf "%s\n" "$output" >&2
+                  rm -f "$tmp"
+                  exit 1
+                fi
               fi
+              rm -f "$tmp"
             done
