@@ -156,6 +156,9 @@ jobs:
   lint-zig:
     uses: ./.github/workflows/lint-zig.yml
 
+  lint-vb:
+    uses: ./.github/workflows/lint-vb.yml
+
   completion-lint:
     needs:
       - build
@@ -197,6 +200,7 @@ jobs:
       - lint-racket
       - lint-zig
       - lint-powershell
+      - lint-vb
     runs-on: ubuntu-latest
     if: always()
     steps:
