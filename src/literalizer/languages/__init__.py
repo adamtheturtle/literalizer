@@ -23,6 +23,7 @@ from .julia import Julia
 from .kotlin import Kotlin
 from .lua import Lua
 from .matlab import Matlab
+from .mojo import Mojo
 from .nim import Nim
 from .ocaml import OCaml
 from .occam import Occam
@@ -60,6 +61,7 @@ __all__ = [
     "Kotlin",
     "Lua",
     "Matlab",
+    "Mojo",
     "Nim",
     "OCaml",
     "Occam",

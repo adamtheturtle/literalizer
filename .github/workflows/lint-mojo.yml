@@ -1,0 +1,24 @@
+---
+name: Lint Mojo
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-mojo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Mojo
+        uses: modular-community/setup-mojo@v1
+      - name: Check Mojo syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.mojo" -print0 | \
+            while IFS= read -r -d '' f; do
+              mojo check "$f" || exit 1
+            done
