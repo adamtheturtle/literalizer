@@ -23,5 +23,11 @@ jobs:
           set -o pipefail
           find tests/integration/cases -name "*.toml" -print0 | \
             while IFS= read -r -d '' f; do
+              # taplo only validates TOML v1.0. Files that use TOML v1.1
+              # multiline inline table syntax (a line ending with "{") are
+              # intentionally skipped.
+              if grep -qP '\{ *$' "$f"; then
+                continue
+              fi
               taplo lint "$f" || exit 1
             done
