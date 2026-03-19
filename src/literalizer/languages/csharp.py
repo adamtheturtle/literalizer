@@ -7,6 +7,7 @@ from typing import Any, Literal
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_dict_open,
     format_bytes_hex,
     format_date_csharp,
     format_date_iso,
@@ -120,7 +121,9 @@ class CSharp:
             fallback="new object[] {",
         )
         self.sequence_close = "}"
-        self.dict_open = "new Dictionary<string, object> {"
+        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
+            open_str="new Dictionary<string, object> {"
+        )
         self.dict_close = "}"
         self.format_dict_entry: Callable[[str, str], str] = (
             _format_csharp_dict_entry
