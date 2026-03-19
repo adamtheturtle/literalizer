@@ -23,10 +23,10 @@ _JSON_NATIVE_TYPES = (str, int, float, bool, type(None), list, dict)
 
 
 def _all_json_native(values: Value) -> bool:
-    """Return True when every scalar in *values* is a JSON-native type.
+    """Check whether every scalar in *values* is a JSON-native type.
 
-    Recurses into lists and dict values so that nested YAML-only types
-    (``bytes``, ``date``, ``datetime``) are detected.
+    Walks into nested lists and dict values so that YAML-only types
+    (``bytes``, ``date``, ``datetime``) are detected at any depth.
     """
     if isinstance(values, list):
         return all(_all_json_native(values=v) for v in values)
