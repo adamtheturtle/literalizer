@@ -1,0 +1,33 @@
+---
+name: Lint TOML
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-toml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install taplo
+        run: |-
+          curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-linux-x86_64.gz \
+            | gzip -d - \
+            | install -m 755 /dev/stdin /usr/local/bin/taplo
+      - name: Check TOML syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.toml" -print0 | \
+            while IFS= read -r -d '' f; do
+              # taplo only validates TOML v1.0. Files that use TOML v1.1
+              # multiline inline table syntax (a line ending with "{") are
+              # intentionally skipped.
+              if grep -qP '\{ *$' "$f"; then
+                continue
+              fi
+              taplo lint "$f" || exit 1
+            done

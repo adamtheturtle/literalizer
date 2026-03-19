@@ -159,6 +159,9 @@ jobs:
   lint-zig:
     uses: ./.github/workflows/lint-zig.yml
 
+  lint-toml:
+    uses: ./.github/workflows/lint-toml.yml
+
   lint-vb:
     uses: ./.github/workflows/lint-vb.yml
 
@@ -203,6 +206,7 @@ jobs:
       - lint-nim
       - lint-racket
       - lint-zig
+      - lint-toml
       - lint-powershell
       - lint-vb
     runs-on: ubuntu-latest

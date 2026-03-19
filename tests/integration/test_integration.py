@@ -1071,6 +1071,17 @@ def _wrap_bash(content: str) -> str:
     return f"declare{flag} _v={content}"
 
 
+@beartype
+def _wrap_toml(content: str) -> str:
+    """Wrap in a TOML key assignment for syntax validation.
+
+    TOML v1.1 permits newlines and comments within inline tables, so the
+    multiline output from ``_literalize`` can be used directly as a TOML
+    value.
+    """
+    return f"x = {content}"
+
+
 _COBOL_PROGRAM_PREFIX = (
     "IDENTIFICATION DIVISION.\n"
     "PROGRAM-ID. CHECK.\n"
@@ -1195,13 +1206,16 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="python_native",
                 spec=literalizer.languages.Python(
-                    date_format="python", datetime_format="python"
+                    date_format=literalizer.languages.Python.DateFormat.PYTHON,
+                    datetime_format=literalizer.languages.Python.DatetimeFormat.PYTHON,
                 ),
                 wrap=_wrap_python_datetime,
             ),
             _DateVariant(
                 name="python_epoch",
-                spec=literalizer.languages.Python(datetime_format="epoch"),
+                spec=literalizer.languages.Python(
+                    datetime_format=literalizer.languages.Python.DatetimeFormat.EPOCH
+                ),
                 wrap=_wrap_identity,
             ),
         ),
@@ -1216,7 +1230,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="js_native",
                 spec=literalizer.languages.JavaScript(
-                    date_format="js", datetime_format="js"
+                    date_format=literalizer.languages.JavaScript.DateFormat.JS,
+                    datetime_format=literalizer.languages.JavaScript.DatetimeFormat.JS,
                 ),
                 wrap=_wrap_js,
             ),
@@ -1232,7 +1247,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="ts_native",
                 spec=literalizer.languages.TypeScript(
-                    date_format="js", datetime_format="js"
+                    date_format=literalizer.languages.TypeScript.DateFormat.JS,
+                    datetime_format=literalizer.languages.TypeScript.DatetimeFormat.JS,
                 ),
                 wrap=_wrap_js,
             ),
@@ -1248,7 +1264,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="kotlin_native",
                 spec=literalizer.languages.Kotlin(
-                    date_format="kotlin", datetime_format="kotlin"
+                    date_format=literalizer.languages.Kotlin.DateFormat.KOTLIN,
+                    datetime_format=literalizer.languages.Kotlin.DatetimeFormat.KOTLIN,
                 ),
                 wrap=_wrap_kotlin_time,
             ),
@@ -1264,7 +1281,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="ruby_native",
                 spec=literalizer.languages.Ruby(
-                    date_format="ruby", datetime_format="ruby"
+                    date_format=literalizer.languages.Ruby.DateFormat.RUBY,
+                    datetime_format=literalizer.languages.Ruby.DatetimeFormat.RUBY,
                 ),
                 wrap=_wrap_ruby_date,
             ),
@@ -1280,7 +1298,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="go_native",
                 spec=literalizer.languages.Go(
-                    date_format="go", datetime_format="go"
+                    date_format=literalizer.languages.Go.DateFormat.GO,
+                    datetime_format=literalizer.languages.Go.DatetimeFormat.GO,
                 ),
                 wrap=_wrap_go_time,
             ),
@@ -1296,14 +1315,16 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="java_instant",
                 spec=literalizer.languages.Java(
-                    date_format="java", datetime_format="instant"
+                    date_format=literalizer.languages.Java.DateFormat.JAVA,
+                    datetime_format=literalizer.languages.Java.DatetimeFormat.INSTANT,
                 ),
                 wrap=_wrap_java_time,
             ),
             _DateVariant(
                 name="java_zoned",
                 spec=literalizer.languages.Java(
-                    date_format="java", datetime_format="zoned"
+                    date_format=literalizer.languages.Java.DateFormat.JAVA,
+                    datetime_format=literalizer.languages.Java.DatetimeFormat.ZONED,
                 ),
                 wrap=_wrap_java_time,
             ),
@@ -1319,7 +1340,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="csharp_native",
                 spec=literalizer.languages.CSharp(
-                    date_format="csharp", datetime_format="csharp"
+                    date_format=literalizer.languages.CSharp.DateFormat.CSHARP,
+                    datetime_format=literalizer.languages.CSharp.DatetimeFormat.CSHARP,
                 ),
                 wrap=_wrap_csharp_date,
             ),
@@ -1335,7 +1357,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="dart_native",
                 spec=literalizer.languages.Dart(
-                    date_format="dart", datetime_format="dart"
+                    date_format=literalizer.languages.Dart.DateFormat.DART,
+                    datetime_format=literalizer.languages.Dart.DatetimeFormat.DART,
                 ),
                 wrap=_wrap_dart,
             ),
@@ -1359,7 +1382,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="cpp_native",
                 spec=literalizer.languages.Cpp(
-                    date_format="cpp", datetime_format="cpp"
+                    date_format=literalizer.languages.Cpp.DateFormat.CPP,
+                    datetime_format=literalizer.languages.Cpp.DatetimeFormat.CPP,
                 ),
                 wrap=_wrap_cpp_chrono,
             ),
@@ -1375,7 +1399,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="rust_native",
                 spec=literalizer.languages.Rust(
-                    date_format="rust", datetime_format="rust"
+                    date_format=literalizer.languages.Rust.DateFormat.RUST,
+                    datetime_format=literalizer.languages.Rust.DatetimeFormat.RUST,
                 ),
                 wrap=_wrap_rust_chrono,
             ),
@@ -1407,7 +1432,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="julia_native",
                 spec=literalizer.languages.Julia(
-                    date_format="julia", datetime_format="julia"
+                    date_format=literalizer.languages.Julia.DateFormat.JULIA,
+                    datetime_format=literalizer.languages.Julia.DatetimeFormat.JULIA,
                 ),
                 wrap=_wrap_julia_dates,
             ),
@@ -1503,7 +1529,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             _DateVariant(
                 name="r_native",
                 spec=literalizer.languages.R(
-                    date_format="r", datetime_format="r"
+                    date_format=literalizer.languages.R.DateFormat.R,
+                    datetime_format=literalizer.languages.R.DatetimeFormat.R,
                 ),
                 wrap=_wrap_r,
             ),
@@ -1571,6 +1598,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_powershell,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
+    "toml": _LanguageConfig(
+        spec=literalizer.languages.Toml(),
+        extension=".toml",
+        wrap=_wrap_toml,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, _a: d,
         date_variants=(),
     ),
 }

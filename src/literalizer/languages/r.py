@@ -1,8 +1,9 @@
 """R language specification."""
 
-import datetime
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from __future__ import annotations
+
+import enum
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -20,6 +21,9 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 
@@ -54,18 +58,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} <- {value}"
 
 
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "r": format_date_r,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "r": format_datetime_r,
-}
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 class R:
     """R language specification.
 
@@ -79,24 +71,37 @@ class R:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"r"`` — ``as.Date(...)`` call,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.R`` — ``as.Date(...)`` call,
               e.g. ``as.Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"r"`` — ``as.POSIXct(...)`` call,
+            * ``DatetimeFormat.R`` — ``as.POSIXct(...)`` call,
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date formatting options for R."""
+
+        ISO = enum.member(value=format_date_iso)
+        R = enum.member(value=format_date_r)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime formatting options for R."""
+
+        ISO = enum.member(value=format_datetime_iso)
+        R = enum.member(value=format_datetime_r)
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "r"] = "iso",
-        datetime_format: Literal["iso", "r"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize R language specification."""
         self.null_literal = "NULL"
@@ -116,13 +121,11 @@ class R:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
-        ]
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "list("

@@ -1,8 +1,9 @@
 """C++ language specification."""
 
-import datetime
-from collections.abc import Callable
-from typing import Any, Literal
+from __future__ import annotations
+
+import enum
+from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
@@ -18,7 +19,12 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
-from literalizer._types import Value  # noqa: TC001
+
+if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
+    from literalizer._types import Value
 
 _CPP_SCALAR_TYPES: dict[str, str] = {
     "string": "std::string",
@@ -84,45 +90,46 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "cpp": format_date_cpp,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "cpp": format_datetime_cpp,
-}
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 class Cpp:
     """C++ language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"cpp"`` — ``std::chrono::year_month_day`` literal,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.CPP`` — ``std::chrono::year_month_day`` literal,
               e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
               std::chrono::month{1}, std::chrono::day{15}}``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"cpp"`` — ``std::chrono::sys_days`` with time-of-day
-              durations,
+            * ``DatetimeFormat.CPP`` — ``std::chrono::sys_days`` with
+              time-of-day durations,
               e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
               + std::chrono::minutes{30}``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for C++."""
+
+        ISO = enum.member(value=format_date_iso)
+        CPP = enum.member(value=format_date_cpp)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for C++."""
+
+        ISO = enum.member(value=format_datetime_iso)
+        CPP = enum.member(value=format_datetime_cpp)
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "cpp"] = "iso",
-        datetime_format: Literal["iso", "cpp"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Cpp language specification."""
         self.null_literal = "nullptr"
@@ -144,13 +151,12 @@ class Cpp:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
-        ]
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
-        self.format_string: Callable[[str], str] = _string_format
+
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "{"

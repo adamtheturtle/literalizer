@@ -75,6 +75,7 @@ from literalizer.languages import (
     Rust,
     Scala,
     Swift,
+    Toml,
     TypeScript,
 )
 
@@ -97,6 +98,7 @@ RUBY = Ruby()
 RUST = Rust()
 SCALA = Scala()
 SWIFT = Swift()
+TOML = Toml()
 TYPESCRIPT = TypeScript()
 
 
@@ -1180,7 +1182,7 @@ def test_format_datetime_cpp_seconds_and_microseconds() -> None:
 
 def test_custom_format_date() -> None:
     """A custom format_date callable is used for date values."""
-    spec = Python(date_format="python")
+    spec = Python(date_format=Python.DateFormat.PYTHON)
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
         language=spec,
@@ -1192,7 +1194,7 @@ def test_custom_format_date() -> None:
 
 def test_custom_format_datetime() -> None:
     """A custom format_datetime callable is used for datetime values."""
-    spec = Python(datetime_format="python")
+    spec = Python(datetime_format=Python.DatetimeFormat.PYTHON)
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
@@ -1204,7 +1206,10 @@ def test_custom_format_datetime() -> None:
 
 def test_java_native_dates() -> None:
     """Java language spec with native date formatting."""
-    spec = Java(date_format="java", datetime_format="instant")
+    spec = Java(
+        date_format=Java.DateFormat.JAVA,
+        datetime_format=Java.DatetimeFormat.INSTANT,
+    )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
         language=spec,
@@ -1218,7 +1223,10 @@ def test_java_native_dates() -> None:
 
 def test_ruby_native_dates() -> None:
     """Ruby language spec with native date formatting."""
-    spec = Ruby(date_format="ruby", datetime_format="ruby")
+    spec = Ruby(
+        date_format=Ruby.DateFormat.RUBY,
+        datetime_format=Ruby.DatetimeFormat.RUBY,
+    )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
@@ -1327,7 +1335,7 @@ def test_literalize_yaml_binary() -> None:
 
 def test_custom_format_bytes() -> None:
     """A custom format_bytes callable is used for bytes values."""
-    spec = Python(bytes_format="python")
+    spec = Python(bytes_format=Python.BytesFormat.PYTHON)
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
         language=spec,
@@ -2022,6 +2030,32 @@ def test_matlab_dict_key_with_quote() -> None:
         wrap=False,
     )
     assert result == "'hello \"world\"', 1"
+
+
+def test_toml_integer_dict_key() -> None:
+    """TOML dict entry with an integer key passes through without
+    modification.
+
+    Integer keys are not quoted strings, so the bare-key optimisation is
+    skipped and the raw formatted key is used directly.
+    """
+    result = literalize_yaml(
+        yaml_string="1: value\n",
+        language=TOML,
+        line_prefix="",
+        wrap=True,
+    )
+    assert '1 = "value"' in result
+
+
+def test_toml_non_quoted_dict_key() -> None:
+    """TOML format_dict_entry with a key that is not a quoted string.
+
+    When the key does not start with a double-quote character the
+    bare-key optimization is skipped and the key is used verbatim.
+    """
+    result = TOML.format_dict_entry("plain_key", '"value"')
+    assert result == 'plain_key = "value"'
 
 
 def test_cobol_string_control_characters() -> None:

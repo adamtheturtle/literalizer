@@ -25,6 +25,10 @@ extensions = [
 
 templates_path = ["_templates"]
 
+# Ambiguous cross-references from identically-named nested classes
+# (DateFormat, DatetimeFormat, BytesFormat) across language modules.
+suppress_warnings = ["ref.python"]
+
 project_copyright = f"%Y, {author}"
 
 copybutton_exclude = ".linenos, .gp"
