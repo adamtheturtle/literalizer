@@ -4,7 +4,6 @@ import json
 import textwrap
 
 import pytest
-from beartype import beartype
 
 from literalizer import (
     Language,
@@ -49,14 +48,6 @@ PYTHON = Python()
 RUBY = Ruby()
 RUST = Rust()
 TYPESCRIPT = TypeScript()
-
-
-@beartype
-def _format_test_omap_entry(key: str, value: str) -> str:
-    """Format an omap entry for use in custom Language test
-    fixtures.
-    """
-    return f"{key}: {value}"
 
 
 @pytest.mark.parametrize(
@@ -353,7 +344,7 @@ def test_custom_language() -> None:
         comment_suffix="",
         omap_open="{",
         omap_close="}",
-        format_omap_entry=_format_test_omap_entry,
+        format_omap_entry=lambda key, value: f"{key}: {value}",
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
