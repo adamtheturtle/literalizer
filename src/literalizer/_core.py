@@ -153,6 +153,28 @@ def _wrap_body(
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
+def _coerce_yaml_keys(*, data: object) -> Value:
+    """Recursively convert non-string dict keys to their string form.
+
+    YAML allows non-string mapping keys (e.g. integers); ``Value``
+    requires ``dict[str, Value]``, so we normalise before passing
+    loaded YAML data to :func:`_literalize`.
+
+    ``ordereddict`` (used for YAML ``!!omap`` nodes) is excluded from
+    key coercion so that omap detection in :func:`_literalize` is
+    preserved.
+    """
+    if isinstance(data, ordereddict):
+        return cast("Value", data)
+    if isinstance(data, dict):
+        raw: dict[object, object] = data
+        return {f"{k}": _coerce_yaml_keys(data=v) for k, v in raw.items()}
+    if isinstance(data, list):
+        items: list[object] = data
+        return [_coerce_yaml_keys(data=item) for item in items]
+    return cast("Value", data)
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize(
     *,
@@ -394,7 +416,7 @@ def literalize_yaml(
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
     base = _literalize(
-        data=data,
+        data=_coerce_yaml_keys(data=cast("object", data)),
         language=language,
         line_prefix=line_prefix,
         indent=indent,
