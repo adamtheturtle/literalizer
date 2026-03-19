@@ -1,6 +1,7 @@
-var _ = [
-    True,
-    "hi",
-    [1, 2],
-    None,
-]
+fn main():
+    var _ = [
+        True,
+        "hi",
+        [1, 2],
+        None,
+    ]

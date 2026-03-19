@@ -1,5 +1,6 @@
-var _ = [
-    True,
-    False,
-    True,
-]
+fn main():
+    var _ = [
+        True,
+        False,
+        True,
+    ]

@@ -1,5 +1,6 @@
-var _ = [
-    "apple",
-    "banana",
-    "cherry",
-]
+fn main():
+    var _ = [
+        "apple",
+        "banana",
+        "cherry",
+    ]

@@ -1,3 +1,4 @@
-var _ = [
-    {"key": "hello   world", "value": 1},
-]
+fn main():
+    var _ = [
+        {"key": "hello   world", "value": 1},
+    ]

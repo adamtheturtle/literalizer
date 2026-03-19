@@ -1,5 +1,6 @@
-var _ = [
-    "foo",
-    "bar",
-    "baz",
-]
+fn main():
+    var _ = [
+        "foo",
+        "bar",
+        "baz",
+    ]

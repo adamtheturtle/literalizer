@@ -1,3 +1,4 @@
-var my_data = [
-    {"key": "hello   world", "value": 1},
-]
+fn main():
+    var my_data = [
+        {"key": "hello   world", "value": 1},
+    ]

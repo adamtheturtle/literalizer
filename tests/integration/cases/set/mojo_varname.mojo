@@ -1,5 +1,6 @@
-var my_data = [
-    "apple",
-    "banana",
-    "cherry",
-]
+fn main():
+    var my_data = [
+        "apple",
+        "banana",
+        "cherry",
+    ]

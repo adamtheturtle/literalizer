@@ -1,4 +1,5 @@
-var _ = [
-    "price $10",
-    "$HOME",
-]
+fn main():
+    var _ = [
+        "price $10",
+        "$HOME",
+    ]

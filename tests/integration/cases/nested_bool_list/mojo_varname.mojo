@@ -1,4 +1,5 @@
-var my_data = [
-    [True, False],
-    [True, True],
-]
+fn main():
+    var my_data = [
+        [True, False],
+        [True, True],
+    ]

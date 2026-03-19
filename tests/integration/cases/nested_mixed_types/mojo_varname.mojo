@@ -1,4 +1,5 @@
-var my_data = [
-    [1, 2],
-    ["a", "b"],
-]
+fn main():
+    var my_data = [
+        [1, 2],
+        ["a", "b"],
+    ]

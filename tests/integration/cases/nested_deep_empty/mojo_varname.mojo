@@ -1,3 +1,4 @@
-var my_data = [
-    [[], []],
-]
+fn main():
+    var my_data = [
+        [[], []],
+    ]

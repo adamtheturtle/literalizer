@@ -1,6 +1,7 @@
-var my_data = [
-    # before apple
-    "apple",
-    "banana",  # banana inline
-    # trailing
-]
+fn main():
+    var my_data = [
+        # before apple
+        "apple",
+        "banana",  # banana inline
+        # trailing
+    ]
