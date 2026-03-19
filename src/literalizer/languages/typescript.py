@@ -1,8 +1,9 @@
 """TypeScript language specification."""
 
-import datetime
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from __future__ import annotations
+
+import enum
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -21,6 +22,9 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 
@@ -42,42 +46,43 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "js": format_date_js,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "js": format_datetime_js,
-}
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 class TypeScript:
     """TypeScript language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"js"`` — ``new Date(...)`` call,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"js"`` — ``new Date(...)`` call,
+            * ``DatetimeFormat.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date formatting options for TypeScript."""
+
+        ISO = enum.member(value=format_date_iso)
+        JS = enum.member(value=format_date_js)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime formatting options for TypeScript."""
+
+        ISO = enum.member(value=format_datetime_iso)
+        JS = enum.member(value=format_datetime_js)
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "js"] = "iso",
-        datetime_format: Literal["iso", "js"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize TypeScript language specification."""
         self.null_literal = "null"
@@ -97,13 +102,12 @@ class TypeScript:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
-        ]
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            datetime_format.value  # ty: ignore[invalid-assignment]
         )
-        self.format_string: Callable[[str], str] = _string_format
+
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "new Set(["

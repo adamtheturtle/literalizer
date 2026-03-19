@@ -115,6 +115,7 @@ struct
 subclasses
 subdirectory
 swiftc
+ty
 typeclass
 uv
 val_t

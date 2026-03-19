@@ -1,8 +1,9 @@
 """Ruby language specification."""
 
-import datetime
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from __future__ import annotations
+
+import enum
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -21,6 +22,9 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 
@@ -42,42 +46,43 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
-_date_formats: dict[str, Callable[[datetime.date], str]] = {
-    "iso": format_date_iso,
-    "ruby": format_date_ruby,
-}
-
-_datetime_formats: dict[str, Callable[[datetime.datetime], str]] = {
-    "iso": format_datetime_iso,
-    "ruby": format_datetime_ruby,
-}
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 class Ruby:
     """Ruby language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"ruby"`` — ``Date.new(...)`` call,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.RUBY`` — ``Date.new(...)`` call,
               e.g. ``Date.new(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"ruby"`` — ``Time.new(...)`` call,
+            * ``DatetimeFormat.RUBY`` — ``Time.new(...)`` call,
               e.g. ``Time.new(2024, 1, 15, 12, 30, 0)``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for Ruby."""
+
+        ISO = enum.member(value=format_date_iso)
+        RUBY = enum.member(value=format_date_ruby)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Ruby."""
+
+        ISO = enum.member(value=format_datetime_iso)
+        RUBY = enum.member(value=format_datetime_ruby)
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "ruby"] = "iso",
-        datetime_format: Literal["iso", "ruby"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Ruby language specification."""
         self.null_literal = "nil"
@@ -97,13 +102,12 @@ class Ruby:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
-        ]
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            datetime_format.value  # ty: ignore[invalid-assignment]
         )
-        self.format_string: Callable[[str], str] = _string_format
+
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
         self.set_open = "Set.new(["
