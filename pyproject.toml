@@ -377,6 +377,7 @@ ignore_names = [
     "rst_prolog",
     "source_suffix",
     "spelling_word_list_filename",
+    "suppress_warnings",
     "templates_path",
     "warning_is_error",
     # Used in documentation code examples
