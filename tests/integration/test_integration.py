@@ -979,13 +979,21 @@ def _wrap_julia_dates(content: str) -> str:
 
 @beartype
 def _wrap_vb(content: str) -> str:
-    """Wrap in a VB.NET Module with a Dim declaration."""
-    indented = content.replace("\n", "\n    ")
+    """Wrap in a VB.NET Module with a Dim declaration.
+
+    Leading comment lines (starting with ``'``) are hoisted before the
+    ``Dim`` statement so that the output remains valid VB.NET.
+    """
+    lines = content.split("\n")
+    comment_lines = []
+    while lines and lines[0].startswith("'"):
+        comment_lines.append("    " + lines.pop(0))
+    rest = "\n".join(lines)
+    rest_indented = rest.replace("\n", "\n    ")
+    dim_line = f"    Dim x As Object = {rest_indented}"
+    body = "\n".join([*comment_lines, dim_line]) if comment_lines else dim_line
     return (
-        "Imports System.Collections.Generic\n"
-        "Module Check\n"
-        f"    Dim x As Object = {indented}\n"
-        "End Module"
+        f"Imports System.Collections.Generic\nModule Check\n{body}\nEnd Module"
     )
 
 

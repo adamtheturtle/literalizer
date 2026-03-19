@@ -77,7 +77,15 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 class VisualBasic:
-    """Visual Basic (.NET) language specification."""
+    """Visual Basic (.NET) language specification.
+
+    VB.NET collection initializers (``New T() { ... }``,
+    ``New HashSet(Of T) From { ... }``, etc.) do not support comments
+    inside the ``{ ... }`` block.  YAML comments associated with
+    collection elements are therefore emitted as standalone comment lines
+    *before* the collection — or before the variable declaration when a
+    variable name is supplied.
+    """
 
     @beartype
     def __init__(self) -> None:
