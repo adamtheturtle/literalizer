@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_dict_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -98,7 +99,9 @@ class VisualBasic:
             fallback="New Object() {",
         )
         self.sequence_close = "}"
-        self.dict_open = "New Dictionary(Of String, Object) From {"
+        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
+            open_str="New Dictionary(Of String, Object) From {",
+        )
         self.dict_close = "}"
         self.format_dict_entry: Callable[[str, str], str] = (
             _format_vb_dict_entry
