@@ -1,0 +1,17 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+fn main() {
+    {
+        let my_data = vec![
+            vec![1.5, 2.5],
+            vec![3.5, 4.5],
+        ];
+        let _ = my_data;
+    }
+    let my_data;
+    my_data = vec![
+        vec![1.5, 2.5],
+        vec![3.5, 4.5],
+    ];
+    let _ = my_data;
+}
