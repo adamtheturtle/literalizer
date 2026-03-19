@@ -14,7 +14,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Octave
-        run: sudo apt-get install -y octave
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: octave
+          version: 1.0
       # Octave is a practical CI substitute, but it accepts some
       # double-quoted backslash escapes (e.g. \") that MATLAB rejects.
       - name: Check MATLAB syntax (Octave-compatible files)
