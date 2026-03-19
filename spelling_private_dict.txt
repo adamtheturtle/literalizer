@@ -24,12 +24,14 @@ FSet
 FSharp
 FStr
 HBool
+HCL
 HFloat
 HList
 HMap
 HNull
 HSet
 HStr
+HashiCorp
 JSONDecodeError
 Lua
 NEL
