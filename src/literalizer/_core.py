@@ -336,7 +336,7 @@ def literalize_json(
 
 
 @beartype
-def literalize_yaml(
+def literalize_yaml(  # noqa: PLR0912  # pylint: disable=too-many-branches
     *,
     yaml_string: str,
     language: Language,
@@ -406,18 +406,18 @@ def literalize_yaml(
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
         )
-        set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
-        result = apply_collection_comments(
-            collection_comments=set_comments,
-            base=base,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            wrap=wrap,
-            inline_comment_after_separator=getattr(
-                language, "inline_comment_after_separator", True
-            ),
-        )
+        if not getattr(language, "supports_collection_comments", True):
+            result = base
+        else:
+            set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
+            result = apply_collection_comments(
+                collection_comments=set_comments,
+                base=base,
+                comment_prefix=cp,
+                comment_suffix=cs,
+                comment_line_prefix=comment_line_prefix,
+                wrap=wrap,
+            )
     elif not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
@@ -466,17 +466,17 @@ def literalize_yaml(
                 trailing=(*pending, *collection_comments.trailing),
             )
 
-        result = apply_collection_comments(
-            collection_comments=collection_comments,
-            base=base,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            wrap=wrap,
-            inline_comment_after_separator=getattr(
-                language, "inline_comment_after_separator", True
-            ),
-        )
+        if not getattr(language, "supports_collection_comments", True):
+            result = base
+        else:
+            result = apply_collection_comments(
+                collection_comments=collection_comments,
+                base=base,
+                comment_prefix=cp,
+                comment_suffix=cs,
+                comment_line_prefix=comment_line_prefix,
+                wrap=wrap,
+            )
 
     if variable_name is not None:
         formatter = (

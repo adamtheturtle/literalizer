@@ -122,7 +122,7 @@ class VisualBasic:
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.inline_comment_after_separator = False
+        self.supports_collection_comments = False
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
         )
