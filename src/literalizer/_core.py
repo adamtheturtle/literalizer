@@ -337,7 +337,7 @@ def literalize_json(
 
 
 @beartype
-def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-branches,too-complex
+def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-branches,too-complex,too-many-statements
     *,
     yaml_string: str,
     language: Language,
