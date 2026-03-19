@@ -87,14 +87,14 @@ class R:
     class DateFormat(enum.Enum):
         """Date formatting options for R."""
 
-        ISO = "iso"
-        R = "r"
+        ISO = enum.member(format_date_iso)
+        R = enum.member(format_date_r)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for R."""
 
-        ISO = "iso"
-        R = "r"
+        ISO = enum.member(format_datetime_iso)
+        R = enum.member(format_datetime_r)
 
     @beartype
     def __init__(
@@ -121,16 +121,10 @@ class R:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        if date_format is R.DateFormat.R:
-            self.format_date: Callable[[datetime.date], str] = format_date_r
-        else:
-            self.format_date = format_date_iso
-        if datetime_format is R.DatetimeFormat.R:
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                format_datetime_r
-            )
-        else:
-            self.format_datetime = format_datetime_iso
+        self.format_date: Callable[[datetime.date], str] = date_format.value
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            datetime_format.value
+        )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None

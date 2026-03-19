@@ -103,14 +103,14 @@ class CSharp:
     class DateFormat(enum.Enum):
         """Date format options for C#."""
 
-        ISO = "iso"
-        CSHARP = "csharp"
+        ISO = enum.member(format_date_iso)
+        CSHARP = enum.member(format_date_csharp)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for C#."""
 
-        ISO = "iso"
-        CSHARP = "csharp"
+        ISO = enum.member(format_datetime_iso)
+        CSHARP = enum.member(format_datetime_csharp)
 
     @beartype
     def __init__(
@@ -138,19 +138,10 @@ class CSharp:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        if date_format is CSharp.DateFormat.CSHARP:
-            self.format_date: Callable[[datetime.date], str] = (
-                format_date_csharp
-            )
-        else:
-            self.format_date = format_date_iso
-
-        if datetime_format is CSharp.DatetimeFormat.CSHARP:
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                format_datetime_csharp
-            )
-        else:
-            self.format_datetime = format_datetime_iso
+        self.format_date: Callable[[datetime.date], str] = date_format.value
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            datetime_format.value
+        )
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = "Array.Empty<object>()"

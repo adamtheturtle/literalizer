@@ -79,21 +79,21 @@ class Python:
     class DateFormat(enum.Enum):
         """Date formatting options for Python."""
 
-        ISO = "iso"
-        PYTHON = "python"
+        ISO = enum.member(format_date_iso)
+        PYTHON = enum.member(format_date_python)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for Python."""
 
-        ISO = "iso"
-        PYTHON = "python"
-        EPOCH = "epoch"
+        ISO = enum.member(format_datetime_iso)
+        PYTHON = enum.member(format_datetime_python)
+        EPOCH = enum.member(format_datetime_epoch)
 
     class BytesFormat(enum.Enum):
         """Bytes formatting options for Python."""
 
-        HEX = "hex"
-        PYTHON = "python"
+        HEX = enum.member(format_bytes_hex)
+        PYTHON = enum.member(format_bytes_python)
 
     @beartype
     def __init__(
@@ -121,26 +121,11 @@ class Python:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = True
 
-        if bytes_format is Python.BytesFormat.PYTHON:
-            self.format_bytes: Callable[[bytes], str] = format_bytes_python
-        else:
-            self.format_bytes = format_bytes_hex
-
-        if date_format is Python.DateFormat.PYTHON:
-            self.format_date: Callable[[datetime.date], str] = (
-                format_date_python
-            )
-        else:
-            self.format_date = format_date_iso
-
-        if datetime_format is Python.DatetimeFormat.PYTHON:
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                format_datetime_python
-            )
-        elif datetime_format is Python.DatetimeFormat.EPOCH:
-            self.format_datetime = format_datetime_epoch
-        else:
-            self.format_datetime = format_datetime_iso
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value
+        self.format_date: Callable[[datetime.date], str] = date_format.value
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            datetime_format.value
+        )
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None

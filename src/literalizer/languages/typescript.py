@@ -68,14 +68,14 @@ class TypeScript:
     class DateFormat(enum.Enum):
         """Date formatting options for TypeScript."""
 
-        ISO = "iso"
-        JS = "js"
+        ISO = enum.member(format_date_iso)
+        JS = enum.member(format_date_js)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for TypeScript."""
 
-        ISO = "iso"
-        JS = "js"
+        ISO = enum.member(format_datetime_iso)
+        JS = enum.member(format_datetime_js)
 
     @beartype
     def __init__(
@@ -102,17 +102,10 @@ class TypeScript:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        if date_format is TypeScript.DateFormat.JS:
-            self.format_date: Callable[[datetime.date], str] = format_date_js
-        else:
-            self.format_date = format_date_iso
-
-        if datetime_format is TypeScript.DatetimeFormat.JS:
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                format_datetime_js
-            )
-        else:
-            self.format_datetime = format_datetime_iso
+        self.format_date: Callable[[datetime.date], str] = date_format.value
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            datetime_format.value
+        )
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None

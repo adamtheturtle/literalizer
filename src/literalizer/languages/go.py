@@ -114,14 +114,14 @@ class Go:
     class DateFormat(enum.Enum):
         """Date format options for Go."""
 
-        ISO = "iso"
-        GO = "go"
+        ISO = enum.member(format_date_iso)
+        GO = enum.member(format_date_go)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for Go."""
 
-        ISO = "iso"
-        GO = "go"
+        ISO = enum.member(format_datetime_iso)
+        GO = enum.member(format_datetime_go)
 
     @beartype
     def __init__(
@@ -149,17 +149,10 @@ class Go:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
-        if date_format is Go.DateFormat.GO:
-            self.format_date: Callable[[datetime.date], str] = format_date_go
-        else:
-            self.format_date = format_date_iso
-
-        if datetime_format is Go.DatetimeFormat.GO:
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                format_datetime_go
-            )
-        else:
-            self.format_datetime = format_datetime_iso
+        self.format_date: Callable[[datetime.date], str] = date_format.value
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            datetime_format.value
+        )
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
