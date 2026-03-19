@@ -412,7 +412,7 @@ def _wrap_racket(content: str) -> str:
 
     Trailing whitespace is stripped from each line because the
     ``(list ``/``(hash ``/``(set `` opening delimiters produce a
-    trailing space before the newline in multiline mode, which the
+    trailing space before the newline in multi-line mode, which the
     ``trim trailing whitespace`` pre-commit hook removes from the
     committed golden files.
     """
