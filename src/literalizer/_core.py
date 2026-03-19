@@ -84,12 +84,12 @@ def _coerce_heterogeneous(*, data: Value) -> Value:
     if isinstance(data, ordereddict):
         new_omap: ordereddict = ordereddict()
         for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            new_omap[k] = _coerce_heterogeneous(data=v)
+            new_omap[k] = _coerce_heterogeneous(data=v)  # pyright: ignore[reportUnknownArgumentType]
         omap_vals: list[Value] = list(new_omap.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
         if _all_scalars_heterogeneous(values=omap_vals):
-            for k in new_omap:
+            for k in new_omap:  # pyright: ignore[reportUnknownVariableType]
                 new_omap[k] = _coerce_scalar_to_str(
-                    value=new_omap[k],
+                    value=new_omap[k],  # pyright: ignore[reportUnknownArgumentType]
                 )
         return new_omap
 
