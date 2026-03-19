@@ -212,16 +212,17 @@ def _literalize(
     is_omap = isinstance(data, ordereddict)
     if is_omap or isinstance(data, dict):
         dict_data = cast("dict[str, Value]", data)
-        entries = [
-            (k, v)
+        filtered_dict: dict[str, Value] = {
+            k: v
             for k, v in dict_data.items()
             if not (spec.skip_null_dict_values and v is None)
-        ]
-        if not entries and wrap and dict_data:
+        }
+        if not filtered_dict and wrap and dict_data:
             empty_value: ordereddict | dict[str, Value] = (
                 ordereddict() if is_omap else {}
             )
             return _format_value(value=empty_value, spec=spec)
+        entries = list(filtered_dict.items())
         last_idx = len(entries) - 1
         for i, (k, v) in enumerate(iterable=entries):
             formatted_key = _format_value(value=k, spec=spec)
@@ -236,6 +237,7 @@ def _literalize(
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
+        data = filtered_dict
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
