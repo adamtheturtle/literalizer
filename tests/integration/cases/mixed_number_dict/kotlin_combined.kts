@@ -1,5 +1,5 @@
 fun _declaration() {
-    val my_data = mapOf<String, Double>(
+    val my_data = mapOf<String, Any?>(
         "a" to 1,
         "b" to 2.5,
         "c" to 3,
@@ -7,7 +7,7 @@ fun _declaration() {
 }
 fun _assignment() {
     var my_data: Any? = null
-    my_data = mapOf<String, Double>(
+    my_data = mapOf<String, Any?>(
         "a" to 1,
         "b" to 2.5,
         "c" to 3,

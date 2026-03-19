@@ -69,11 +69,6 @@ def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
             inner = _kotlin_schema_to_type(item_schema=nested)
             return f"Array<{inner}>" if inner is not None else None
         return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "Double"
     return None
 
 
