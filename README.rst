@@ -62,7 +62,7 @@ Use cases
 ---------
 
 * Generate test fixtures from JSON samples.
-* Convert API responses to language-native data structures for documentation.
+* Generate multi-language request/response examples for JSON API docs (see `guide <https://adamtheturtle.github.io/literalizer/json-api-use-case.html>`__).
 * Create type-safe literal data from JSON config files.
 
 Full documentation
