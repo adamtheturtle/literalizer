@@ -1,0 +1,8 @@
+(defparameter *my_data* (list
+    (list 1 "a")
+    (list 2 "b")
+))
+(setf *my_data* (list
+    (list 1 "a")
+    (list 2 "b")
+))
