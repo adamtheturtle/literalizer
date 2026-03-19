@@ -1332,8 +1332,8 @@ def test_custom_format_bytes() -> None:
 
 
 @pytest.mark.parametrize(
-    ("value", "expected"),
-    [
+    argnames=("value", "expected"),
+    argvalues=[
         pytest.param("", '""', id="empty"),
         pytest.param("hello", '"hello"', id="plain"),
         pytest.param('say "hi"', '"say ""hi"""', id="quotes"),
