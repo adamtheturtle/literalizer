@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import json
+from collections.abc import Sequence
 from io import StringIO
 from typing import cast
 
@@ -22,7 +23,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import JSONParseError, YAMLParseError
 
 
-def _scalar_type_bucket(value: Value) -> type | None:
+def _scalar_type_bucket(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
     collections.
     """
@@ -45,7 +46,7 @@ def _scalar_type_bucket(value: Value) -> type | None:
     return None
 
 
-def _coerce_scalar_to_str(value: Scalar) -> str:
+def _coerce_scalar_to_str(*, value: Value) -> str:
     """Convert a scalar to its string representation."""
     if isinstance(value, bool):
         return "True" if value else "False"
@@ -62,49 +63,58 @@ def _coerce_scalar_to_str(value: Scalar) -> str:
     return repr(value)
 
 
-def _all_scalars_heterogeneous(values: list[Value] | dict[str, Value]) -> bool:
+def _all_scalars_heterogeneous(
+    *,
+    values: Sequence[Value],
+) -> bool:
     """Check whether values are all scalars with more than one type."""
-    items = values.values() if isinstance(values, dict) else values
     buckets: set[type] = set()
-    for v in items:
-        bucket = _scalar_type_bucket(v)
+    for v in values:
+        bucket = _scalar_type_bucket(value=v)
         if bucket is None:
             return False
         buckets.add(bucket)
     return len(buckets) > 1
 
 
-def _coerce_heterogeneous(data: Value) -> Value:
+def _coerce_heterogeneous(*, data: Value) -> Value:
     """Recursively coerce heterogeneous all-scalar collections to
     strings.
     """
     if isinstance(data, ordereddict):
         new_omap: ordereddict = ordereddict()
         for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            new_omap[k] = _coerce_heterogeneous(v)
-        if _all_scalars_heterogeneous(new_omap):
+            new_omap[k] = _coerce_heterogeneous(data=v)
+        omap_vals: list[Value] = list(new_omap.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        if _all_scalars_heterogeneous(values=omap_vals):
             for k in new_omap:
-                new_omap[k] = _coerce_scalar_to_str(new_omap[k])
+                new_omap[k] = _coerce_scalar_to_str(
+                    value=new_omap[k],
+                )
         return new_omap
 
     if isinstance(data, dict):
-        new_dict = {k: _coerce_heterogeneous(v) for k, v in data.items()}
-        if _all_scalars_heterogeneous(new_dict):
+        new_dict: dict[str, Value] = {
+            k: _coerce_heterogeneous(data=v) for k, v in data.items()
+        }
+        if _all_scalars_heterogeneous(
+            values=list(new_dict.values()),
+        ):
             new_dict = {
-                k: _coerce_scalar_to_str(v) for k, v in new_dict.items()
+                k: _coerce_scalar_to_str(value=v) for k, v in new_dict.items()
             }
         return new_dict
 
     if isinstance(data, set):
-        items = list(data)
-        if _all_scalars_heterogeneous(items):
-            return {_coerce_scalar_to_str(v) for v in items}
+        items: list[Value] = list(data)
+        if _all_scalars_heterogeneous(values=items):
+            return {_coerce_scalar_to_str(value=v) for v in items}
         return data
 
     if isinstance(data, list):
-        new_list = [_coerce_heterogeneous(v) for v in data]
-        if _all_scalars_heterogeneous(new_list):
-            return [_coerce_scalar_to_str(v) for v in new_list]
+        new_list = [_coerce_heterogeneous(data=v) for v in data]
+        if _all_scalars_heterogeneous(values=new_list):
+            return [_coerce_scalar_to_str(value=v) for v in new_list]
         return new_list
 
     return data
@@ -276,7 +286,7 @@ def _literalize(
     """
     spec = language
     if spec.coerce_heterogeneous_to_strings:
-        data = _coerce_heterogeneous(data)
+        data = _coerce_heterogeneous(data=data)
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
