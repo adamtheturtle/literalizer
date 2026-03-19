@@ -1014,6 +1014,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_wrap_d_combined,
         date_variants=(),
     ),
+    "common_lisp": _LanguageConfig(
+        spec=literalizer.languages.CommonLisp(),
+        extension=".lisp",
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
     "clojure": _LanguageConfig(
         spec=literalizer.languages.Clojure(),
         extension=".clj",

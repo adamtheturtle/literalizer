@@ -96,6 +96,9 @@ jobs:
   lint-haskell:
     uses: ./.github/workflows/lint-haskell.yml
 
+  lint-common-lisp:
+    uses: ./.github/workflows/lint-common-lisp.yml
+
   lint-clojure:
     uses: ./.github/workflows/lint-clojure.yml
 
@@ -165,6 +168,7 @@ jobs:
       - lint-fsharp
       - lint-ocaml
       - lint-haskell
+      - lint-common-lisp
       - lint-clojure
       - lint-scala
       - lint-dart
