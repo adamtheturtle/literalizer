@@ -1,12 +1,24 @@
 """Functions for formatting scalars as language-specific literals."""
 
 import datetime
+import functools
 import re
 from collections.abc import Callable
+from typing import Any
 
 from beartype import beartype
+from json_to_schema import (  # pyright: ignore[reportMissingTypeStubs]
+    infer_schema,
+)
 
 from literalizer._types import Value
+
+# literalizer's Value type includes bytes, date, and datetime, which
+# exist in YAML but not in JSON.  json-to-schema has no representation
+# for these and misclassifies them as "string".  When any value of
+# these types is present we skip schema inference entirely and let the
+# language mapper fall through to its fallback opener.
+_NON_JSON_NATIVE_TYPES = (bytes, datetime.date, datetime.datetime)
 
 
 @beartype
@@ -521,3 +533,59 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
         return open_str
 
     return _open
+
+
+@beartype
+def _typed_sequence_open(
+    items: list[Value],
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
+) -> str:
+    """Infer an item schema and return the language-specific opener.
+
+    Uses ``json-to-schema`` to infer a JSON Schema from the list
+    values, then passes the ``items`` sub-schema to
+    *schema_to_opener* which returns the language-specific opening
+    delimiter.  When inference is not possible or *schema_to_opener*
+    returns ``None``, *fallback* is returned instead.
+
+    See ``_NON_JSON_NATIVE_TYPES`` for why we skip inference for
+    YAML-only types.
+    """
+    if any(isinstance(v, _NON_JSON_NATIVE_TYPES) for v in items):
+        return fallback
+    schema: dict[str, Any] = infer_schema(value=items)
+    item_schema: dict[str, Any] = schema.get("items", {})
+    return schema_to_opener(item_schema) or fallback
+
+
+@beartype
+def typed_sequence_open(
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
+) -> Callable[[list[Value]], str]:
+    """Return a ``sequence_open`` callable that infers an item schema and
+    delegates to *schema_to_opener*.
+
+    When inference is not possible or *schema_to_opener* returns
+    ``None``, *fallback* is used instead.
+
+    Example::
+
+        def my_opener(item_schema: dict[str, Any]) -> str | None:
+            if item_schema.get("type") == "string":
+                return "[]string{"
+            return None
+
+        sequence_open = typed_sequence_open(
+            schema_to_opener=my_opener,
+            fallback="[]any{",
+        )
+    """
+    return functools.partial(
+        _typed_sequence_open,
+        schema_to_opener=schema_to_opener,
+        fallback=fallback,
+    )

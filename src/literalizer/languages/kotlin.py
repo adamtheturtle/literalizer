@@ -2,7 +2,7 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from beartype import beartype
 
@@ -16,33 +16,27 @@ from literalizer._formatters import (
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_sequence_open,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _format_kotlin_collection_open(values: list[Any]) -> str:
-    """Return a typed Kotlin collection opener inferred from element types.
-
-    Returns ``"arrayOf("`` when all elements are strings,
-    ``"booleanArrayOf("`` when all elements are booleans,
-    ``"intArrayOf("`` when all elements are non-boolean integers,
-    ``"doubleArrayOf("`` when all elements are floats,
-    and ``"listOf<Any?>("`` otherwise.
-    """
-    if values and all(isinstance(v, str) for v in values):
-        return "arrayOf("
-    if values and all(isinstance(v, bool) for v in values):
-        return "booleanArrayOf("
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "intArrayOf("
-    if values and all(isinstance(v, float) for v in values):
-        return "doubleArrayOf("
-    return "listOf<Any?>("
+def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema item type to a Kotlin collection opener."""
+    match item_schema.get("type"):
+        case "string":
+            return "arrayOf("
+        case "boolean":
+            return "booleanArrayOf("
+        case "integer":
+            return "intArrayOf("
+        case "number":
+            return "doubleArrayOf("
+        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+            return "listOf<Any?>("
+        case _:
+            return None
 
 
 @beartype
@@ -104,8 +98,9 @@ class Kotlin:
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = (
-            _format_kotlin_collection_open
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            schema_to_opener=_kotlin_schema_to_opener,
+            fallback="listOf<Any?>(",
         )
         self.sequence_close = ")"
         self.dict_open = "mapOf<String, Any?>("

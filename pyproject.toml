@@ -27,6 +27,7 @@ dynamic = [
 ]
 dependencies = [
     "beartype==0.22.9",
+    "json-to-schema>=1.1.0",
     # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
     # which has a maximum ruamel.yaml version of 0.18.16.
     "ruamel-yaml>=0.18.16",

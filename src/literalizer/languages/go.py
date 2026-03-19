@@ -2,7 +2,7 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from beartype import beartype
 
@@ -15,40 +15,27 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
+    typed_sequence_open,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _format_go_collection_open(values: list[Any]) -> str:
-    """Return a typed Go slice opener inferred from element types.
-
-    Returns ``"[]string{"`` when all elements are strings,
-    ``"[]bool{"`` when all elements are booleans,
-    ``"[]int{"`` when all elements are non-boolean integers,
-    ``"[]float64{"`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"[]any{"`` otherwise.
-    """
-    if values and all(isinstance(v, str) for v in values):
-        return "[]string{"
-    if values and all(isinstance(v, bool) for v in values):
-        return "[]bool{"
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "[]int{"
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "[]float64{"
-    return "[]any{"
+def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema item type to a Go slice opener."""
+    match item_schema.get("type"):
+        case "string":
+            return "[]string{"
+        case "boolean":
+            return "[]bool{"
+        case "integer":
+            return "[]int{"
+        case "number":
+            return "[]float64{"
+        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+            return "[]float64{"
+        case _:
+            return None
 
 
 @beartype
@@ -120,8 +107,9 @@ class Go:
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = (
-            _format_go_collection_open
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            schema_to_opener=_go_schema_to_opener,
+            fallback="[]any{",
         )
         self.sequence_close = "}"
         self.dict_open = "map[string]any{"

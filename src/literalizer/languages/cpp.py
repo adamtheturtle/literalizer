@@ -2,7 +2,7 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from beartype import beartype
 
@@ -15,41 +15,27 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_sequence_open,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _format_cpp_collection_open(values: list[Any]) -> str:
-    """Return a typed C++ initializer-list opener inferred from element
-    types.
-
-    Returns ``"std::vector<std::string>{"`` when all elements are strings,
-    ``"std::vector<bool>{"`` when all elements are booleans,
-    ``"std::vector<int>{"`` when all elements are non-boolean integers,
-    ``"std::vector<double>{"`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"{"`` otherwise.
-    """
-    if values and all(isinstance(v, str) for v in values):
-        return "std::vector<std::string>{"
-    if values and all(isinstance(v, bool) for v in values):
-        return "std::vector<bool>{"
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "std::vector<int>{"
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "std::vector<double>{"
-    return "{"
+def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema item type to a C++ initializer-list opener."""
+    match item_schema.get("type"):
+        case "string":
+            return "std::vector<std::string>{"
+        case "boolean":
+            return "std::vector<bool>{"
+        case "integer":
+            return "std::vector<int>{"
+        case "number":
+            return "std::vector<double>{"
+        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+            return "std::vector<double>{"
+        case _:
+            return None
 
 
 @beartype
@@ -114,8 +100,9 @@ class Cpp:
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = (
-            _format_cpp_collection_open
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            schema_to_opener=_cpp_schema_to_opener,
+            fallback="{",
         )
         self.sequence_close = "}"
         self.dict_open = "{"

@@ -2,7 +2,7 @@
 
 import datetime
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from beartype import beartype
 
@@ -15,40 +15,27 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_sequence_open,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value  # noqa: TC001
 
 
 @beartype
-def _format_csharp_collection_open(values: list[Any]) -> str:
-    """Return a typed C# array opener inferred from element types.
-
-    Returns ``"new string[] {"`` when all elements are strings,
-    ``"new bool[] {"`` when all elements are booleans,
-    ``"new int[] {"`` when all elements are non-boolean integers,
-    ``"new double[] {"`` when all elements are non-boolean numeric
-    (float, or mixed int and float), and ``"new object[] {"`` otherwise.
-    """
-    if values and all(isinstance(v, str) for v in values):
-        return "new string[] {"
-    if values and all(isinstance(v, bool) for v in values):
-        return "new bool[] {"
-    if values and all(
-        isinstance(v, int) and not isinstance(v, bool) for v in values
-    ):
-        return "new int[] {"
-    if (
-        values
-        and all(
-            isinstance(v, (int, float)) and not isinstance(v, bool)
-            for v in values
-        )
-        and any(isinstance(v, float) for v in values)
-    ):
-        return "new double[] {"
-    return "new object[] {"
+def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
+    """Map a JSON Schema item type to a C# array opener."""
+    match item_schema.get("type"):
+        case "string":
+            return "new string[] {"
+        case "boolean":
+            return "new bool[] {"
+        case "integer":
+            return "new int[] {"
+        case "number":
+            return "new double[] {"
+        case list() as types if set(types) == {"integer", "number"}:  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+            return "new double[] {"
+        case _:
+            return None
 
 
 @beartype
@@ -110,8 +97,9 @@ class CSharp:
         self.null_literal = "(object?)null"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = (
-            _format_csharp_collection_open
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            schema_to_opener=_csharp_schema_to_opener,
+            fallback="new object[] {",
         )
         self.sequence_close = "}"
         self.dict_open = "new Dictionary<string, object> {"
