@@ -1,6 +1,6 @@
 object Check {
-val my_data = List(
-    List(1, "a"),
-    List(2, "b"),
+val my_data = List[AnyRef](
+    List[AnyRef](1, "a"),
+    List[AnyRef](2, "b"),
 )
 }

@@ -1,12 +1,12 @@
 object Declaration {
-  val my_data = Map(
+  val my_data = Map[String, AnyRef](
       "date" -> "2024-01-15",
       "datetime" -> "2024-01-15T12:30:00+00:00",
   )
 }
 object Assignment {
   var my_data: Any = null
-  my_data = Map(
+  my_data = Map[String, AnyRef](
       "date" -> "2024-01-15",
       "datetime" -> "2024-01-15T12:30:00+00:00",
   )

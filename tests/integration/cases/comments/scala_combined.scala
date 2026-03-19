@@ -1,5 +1,5 @@
 object Declaration {
-  val my_data = Map(
+  val my_data = Map[String, AnyRef](
       // Server configuration
       "host" -> "localhost",  // default host
       "port" -> 8080,
@@ -9,7 +9,7 @@ object Declaration {
 }
 object Assignment {
   var my_data: Any = null
-  my_data = Map(
+  my_data = Map[String, AnyRef](
       // Server configuration
       "host" -> "localhost",  // default host
       "port" -> 8080,

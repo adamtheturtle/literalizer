@@ -1,5 +1,5 @@
 object Check {
-val x: Any = List(
-    List(List(), List()),
+val x: Any = List[AnyRef](
+    List[AnyRef](List[AnyRef](), List[AnyRef]()),
 )
 }

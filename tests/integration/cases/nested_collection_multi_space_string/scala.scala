@@ -1,5 +1,5 @@
 object Check {
-val x: Any = List(
-    Map("key" -> "hello   world", "value" -> 1),
+val x: Any = List[AnyRef](
+    Map[String, AnyRef]("key" -> "hello   world", "value" -> 1),
 )
 }

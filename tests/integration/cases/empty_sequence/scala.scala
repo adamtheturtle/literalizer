@@ -1,6 +1,6 @@
 object Check {
-val x: Any = List(
-    List(),
-    Map(),
+val x: Any = List[AnyRef](
+    List[AnyRef](),
+    Map[String, AnyRef](),
 )
 }

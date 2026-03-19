@@ -1,13 +1,13 @@
 object Declaration {
-  val my_data = List(
-      List(),
-      Map(),
+  val my_data = List[AnyRef](
+      List[AnyRef](),
+      Map[String, AnyRef](),
   )
 }
 object Assignment {
   var my_data: Any = null
-  my_data = List(
-      List(),
-      Map(),
+  my_data = List[AnyRef](
+      List[AnyRef](),
+      Map[String, AnyRef](),
   )
 }

@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Map(
-    "level1" -> Map("level2" -> Map("level3" -> Map("level4" -> Map("value" -> "deep", "items" -> Array[String]("a", "b"))), "sibling" -> 42), "tags" -> List(Map("name" -> "tag1", "meta" -> Map("priority" -> 1, "labels" -> Array[String]("x", "y"))))),
+val x: Any = Map[String, AnyRef](
+    "level1" -> Map[String, AnyRef]("level2" -> Map[String, AnyRef]("level3" -> Map[String, AnyRef]("level4" -> Map[String, AnyRef]("value" -> "deep", "items" -> Array[String]("a", "b"))), "sibling" -> 42), "tags" -> List[AnyRef](Map[String, AnyRef]("name" -> "tag1", "meta" -> Map[String, AnyRef]("priority" -> 1, "labels" -> Array[String]("x", "y"))))),
 )
 }

@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Map(
+val x: Any = Map[String, AnyRef](
     // Server configuration
     "host" -> "localhost",  // default host
     "port" -> 8080,

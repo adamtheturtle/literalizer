@@ -90,10 +90,10 @@ class Scala:
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_scala_schema_to_opener,
-            fallback="List(",
+            fallback="List[AnyRef](",
         )
         self.sequence_close = ")"
-        self.dict_open = "Map("
+        self.dict_open = "Map[String, AnyRef]("
         self.dict_close = ")"
         self.format_dict_entry: Callable[[str, str], str] = (
             dict_entry_with_separator(separator=" -> ")
@@ -117,7 +117,7 @@ class Scala:
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "//"
         self.comment_suffix = ""
-        self.omap_open = "scala.collection.immutable.ListMap("
+        self.omap_open = "scala.collection.immutable.ListMap[String, AnyRef]("
         self.omap_close = ")"
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_scala_omap_entry

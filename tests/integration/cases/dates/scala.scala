@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Map(
+val x: Any = Map[String, AnyRef](
     "date" -> "2024-01-15",
     "datetime" -> "2024-01-15T12:30:00+00:00",
 )

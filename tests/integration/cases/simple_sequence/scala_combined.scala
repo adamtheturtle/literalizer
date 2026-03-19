@@ -1,5 +1,5 @@
 object Declaration {
-  val my_data = List(
+  val my_data = List[AnyRef](
       1,
       "hello",
       true,
@@ -8,7 +8,7 @@ object Declaration {
 }
 object Assignment {
   var my_data: Any = null
-  my_data = List(
+  my_data = List[AnyRef](
       1,
       "hello",
       true,
