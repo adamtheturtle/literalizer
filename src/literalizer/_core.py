@@ -409,7 +409,7 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
             stream=StringIO(initial_value=yaml_string),
         )
         set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
-        if not getattr(language, "supports_collection_comments", True):
+        if not language.supports_collection_comments:
             result = base
             pending_collection_comments = set_comments
         else:
@@ -469,7 +469,7 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
                 trailing=(*pending, *collection_comments.trailing),
             )
 
-        if not getattr(language, "supports_collection_comments", True):
+        if not language.supports_collection_comments:
             result = base
             pending_collection_comments = collection_comments
         else:

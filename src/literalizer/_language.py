@@ -136,6 +136,16 @@ class Language(Protocol):
     skip_null_dict_values: bool
     """Whether to omit dict entries whose value is ``None``."""
 
+    supports_collection_comments: bool
+    """Whether the language supports comments inside collection
+    initializers.
+
+    When ``False``, YAML comments on collection elements are emitted as
+    standalone comment lines immediately before the collection (or before
+    the variable declaration when a variable name is supplied) rather than
+    being placed inside the ``{...}`` block.
+    """
+
     @property
     def format_variable_declaration(self) -> Callable[[str, str], str]:
         """Callable that formats a new variable declaration."""
@@ -191,3 +201,4 @@ class LanguageSpec:
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
     format_string: Callable[[str], str]
+    supports_collection_comments: bool = True
