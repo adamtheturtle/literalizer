@@ -130,16 +130,24 @@ def _wrap_body(
     is_omap: bool,
     data: list[Value] | dict[str, Value] | set[Scalar],
     spec: Language,
+    line_prefix: str,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
     ci = spec.multiline_close_indent
+    close_prefix = f"{line_prefix}{ci}"
     if is_omap:
-        return f"{spec.omap_open}\n{body}\n{ci}{spec.omap_close}"
-    if isinstance(data, dict):
-        return f"{spec.dict_open}\n{body}\n{ci}{spec.dict_close}"
-    if isinstance(data, set):
-        return f"{spec.set_open}\n{body}\n{ci}{spec.set_close}"
-    return f"{spec.sequence_open(data)}\n{body}\n{ci}{spec.sequence_close}"
+        opening = f"{line_prefix}{spec.omap_open}"
+        closing = f"{close_prefix}{spec.omap_close}"
+    elif isinstance(data, dict):
+        opening = f"{line_prefix}{spec.dict_open}"
+        closing = f"{close_prefix}{spec.dict_close}"
+    elif isinstance(data, set):
+        opening = f"{line_prefix}{spec.set_open}"
+        closing = f"{close_prefix}{spec.set_close}"
+    else:
+        opening = f"{line_prefix}{spec.sequence_open(data)}"
+        closing = f"{close_prefix}{spec.sequence_close}"
+    return f"{opening}\n{body}\n{closing}"
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
@@ -147,6 +155,7 @@ def _literalize(
     *,
     data: Value,
     language: Language,
+    line_prefix: str,
     indent: str,
     wrap: bool,
 ) -> str:
@@ -166,8 +175,13 @@ def _literalize(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        indent: String to prepend to each output line (e.g. ``"        "``
-            for 8-space indent, or ``"\t\t"`` for 2-tab indent).
+        line_prefix: String to prepend to every output line
+            (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
+            for 2-tab margin).  Positions the generated block at
+            the right column in surrounding source code.
+        indent: Indentation step for elements inside delimiters when
+            *wrap* is ``True`` (e.g. ``"    "`` for 4-space indent).
+            Ignored when *wrap* is ``False``.
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
@@ -187,9 +201,9 @@ def _literalize(
         datetime.date,
     )
     if isinstance(data, scalar_types) or data is None:
-        return f"{indent}{_format_scalar(value=data, spec=spec)}"
+        return f"{line_prefix}{_format_scalar(value=data, spec=spec)}"
 
-    effective_indent = indent if not wrap else (indent or "    ")
+    body_prefix = line_prefix + indent if wrap else line_prefix
     lines: list[str] = []
 
     is_omap = isinstance(data, ordereddict)
@@ -218,7 +232,7 @@ def _literalize(
             )
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{effective_indent}{entry}{sep}")
+            lines.append(f"{body_prefix}{entry}{sep}")
     elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
@@ -227,7 +241,7 @@ def _literalize(
             entry = spec.format_set_entry(formatted)
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{effective_indent}{entry}{sep}")
+            lines.append(f"{body_prefix}{entry}{sep}")
     else:
         # At this point data must be a list (scalars/dict/set/omap handled)
         items: list[Value] = list(data)
@@ -238,14 +252,20 @@ def _literalize(
             )
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{effective_indent}{formatted}{sep}")
+            lines.append(f"{body_prefix}{formatted}{sep}")
 
     body = "\n".join(lines)
 
     if not wrap or not body:
         return body
 
-    return _wrap_body(body=body, is_omap=is_omap, data=data, spec=spec)
+    return _wrap_body(
+        body=body,
+        is_omap=is_omap,
+        data=data,
+        spec=spec,
+        line_prefix=line_prefix,
+    )
 
 
 @beartype
@@ -253,7 +273,8 @@ def literalize_json(
     *,
     json_string: str,
     language: Language,
-    indent: str,
+    line_prefix: str = "",
+    indent: str = "    ",
     wrap: bool,
     variable_name: str | None = None,
     new_variable: bool = True,
@@ -268,8 +289,13 @@ def literalize_json(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        indent: String to prepend to each output line (e.g. ``"        "``
-            for 8-space indent, or ``"\t\t"`` for 2-tab indent).
+        line_prefix: String to prepend to every output line
+            (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
+            for 2-tab margin).  Positions the generated block at
+            the right column in surrounding source code.
+        indent: Indentation step for elements inside delimiters when
+            *wrap* is ``True`` (e.g. ``"    "`` for 4-space indent).
+            Ignored when *wrap* is ``False``.
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
@@ -295,6 +321,7 @@ def literalize_json(
     result = _literalize(
         data=data,
         language=language,
+        line_prefix=line_prefix,
         indent=indent,
         wrap=wrap,
     )
@@ -313,7 +340,8 @@ def literalize_yaml(
     *,
     yaml_string: str,
     language: Language,
-    indent: str,
+    line_prefix: str = "",
+    indent: str = "    ",
     wrap: bool,
     variable_name: str | None = None,
     new_variable: bool = True,
@@ -331,8 +359,13 @@ def literalize_yaml(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        indent: String to prepend to each output line (e.g. ``"        "``
-            for 8-space indent, or ``"\t\t"`` for 2-tab indent).
+        line_prefix: String to prepend to every output line
+            (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
+            for 2-tab margin).  Positions the generated block at
+            the right column in surrounding source code.
+        indent: Indentation step for elements inside delimiters when
+            *wrap* is ``True`` (e.g. ``"    "`` for 4-space indent).
+            Ignored when *wrap* is ``False``.
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
@@ -358,12 +391,15 @@ def literalize_yaml(
     base = _literalize(
         data=data,
         language=language,
+        line_prefix=line_prefix,
         indent=indent,
         wrap=wrap,
     )
 
     cp = language.comment_prefix
     cs = language.comment_suffix
+
+    comment_line_prefix = line_prefix + indent if wrap else line_prefix
 
     result: str
     if isinstance(data, set):
@@ -376,7 +412,7 @@ def literalize_yaml(
             base=base,
             comment_prefix=cp,
             comment_suffix=cs,
-            indent=indent,
+            comment_line_prefix=comment_line_prefix,
             wrap=wrap,
         )
     elif not isinstance(data, (list, dict)):
@@ -388,7 +424,7 @@ def literalize_yaml(
             base=base,
             comment_prefix=cp,
             comment_suffix=cs,
-            indent=indent,
+            line_prefix=line_prefix,
         )
     elif not base:
         result = base
@@ -432,7 +468,7 @@ def literalize_yaml(
             base=base,
             comment_prefix=cp,
             comment_suffix=cs,
-            indent=indent,
+            comment_line_prefix=comment_line_prefix,
             wrap=wrap,
         )
 
