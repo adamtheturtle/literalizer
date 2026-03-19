@@ -1,8 +1,9 @@
 """Kotlin language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 from beartype import beartype
 
@@ -85,24 +86,37 @@ class Kotlin:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"kotlin"`` — ``LocalDate.of(...)`` call,
+            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * :attr:`DateFormat.KOTLIN` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"kotlin"`` — ``LocalDateTime.of(...)`` call,
+            * :attr:`DatetimeFormat.KOTLIN` — ``LocalDateTime.of(...)`` call,
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for Kotlin."""
+
+        ISO = "iso"
+        KOTLIN = "kotlin"
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Kotlin."""
+
+        ISO = "iso"
+        KOTLIN = "kotlin"
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "kotlin"] = "iso",
-        datetime_format: Literal["iso", "kotlin"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Kotlin language specification."""
         self.null_literal = "null"
@@ -124,10 +138,10 @@ class Kotlin:
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
         self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
+            date_format.value
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            _datetime_formats[datetime_format.value]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None

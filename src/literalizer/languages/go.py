@@ -1,8 +1,9 @@
 """Go language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 from beartype import beartype
 
@@ -102,25 +103,39 @@ class Go:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"go"`` — ``time.Date`` call,
-              e.g. ``time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)``.
+            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * :attr:`DateFormat.GO` — ``time.Date`` call,
+              e.g. ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
+              time.UTC)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"go"`` — ``time.Date`` call,
+            * :attr:`DatetimeFormat.GO` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
               time.UTC)``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for Go."""
+
+        ISO = "iso"
+        GO = "go"
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Go."""
+
+        ISO = "iso"
+        GO = "go"
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "go"] = "iso",
-        datetime_format: Literal["iso", "go"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Go language specification."""
         self.null_literal = "nil"
@@ -142,10 +157,10 @@ class Go:
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
         self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
+            date_format.value
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            _datetime_formats[datetime_format.value]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None

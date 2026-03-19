@@ -1,8 +1,9 @@
 """C++ language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 from beartype import beartype
 
@@ -93,27 +94,40 @@ class Cpp:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"cpp"`` — ``std::chrono::year_month_day`` literal,
+            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * :attr:`DateFormat.CPP` — ``std::chrono::year_month_day`` literal,
               e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
               std::chrono::month{1}, std::chrono::day{15}}``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"cpp"`` — ``std::chrono::sys_days`` with time-of-day
-              durations,
+            * :attr:`DatetimeFormat.CPP` — ``std::chrono::sys_days`` with
+              time-of-day durations,
               e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
               + std::chrono::minutes{30}``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for C++."""
+
+        ISO = "iso"
+        CPP = "cpp"
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for C++."""
+
+        ISO = "iso"
+        CPP = "cpp"
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "cpp"] = "iso",
-        datetime_format: Literal["iso", "cpp"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Cpp language specification."""
         self.null_literal = "nullptr"
@@ -135,10 +149,10 @@ class Cpp:
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
         self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
+            date_format.value
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            _datetime_formats[datetime_format.value]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None

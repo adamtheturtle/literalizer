@@ -1,8 +1,9 @@
 """C# language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 from beartype import beartype
 
@@ -93,24 +94,37 @@ class CSharp:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"csharp"`` — ``new DateOnly(...)`` call,
+            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * :attr:`DateFormat.CSHARP` — ``new DateOnly(...)`` call,
               e.g. ``new DateOnly(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"csharp"`` — ``new DateTime(...)`` call,
+            * :attr:`DatetimeFormat.CSHARP` — ``new DateTime(...)`` call,
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for C#."""
+
+        ISO = "iso"
+        CSHARP = "csharp"
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for C#."""
+
+        ISO = "iso"
+        CSHARP = "csharp"
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "csharp"] = "iso",
-        datetime_format: Literal["iso", "csharp"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize CSharp language specification."""
         self.null_literal = "(object?)null"
@@ -132,10 +146,10 @@ class CSharp:
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
         self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
+            date_format.value
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            _datetime_formats[datetime_format.value]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = "Array.Empty<object>()"

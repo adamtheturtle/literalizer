@@ -1,8 +1,9 @@
 """Python language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -68,32 +69,54 @@ class Python:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"python"`` — ``datetime.date`` constructor call,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.PYTHON`` — ``datetime.date`` constructor call,
               e.g. ``datetime.date(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"python"`` — ``datetime.datetime`` constructor call,
-              e.g. ``datetime.datetime(2024, 1, 15, 12, 30, 0)``.
-            * ``"epoch"`` — Unix epoch float, e.g. ``1705312200.0``.
+            * ``DatetimeFormat.PYTHON`` — ``datetime.datetime`` constructor
+              call, e.g. ``datetime.datetime(2024, 1, 15, 12, 30, 0)``.
+            * ``DatetimeFormat.EPOCH`` — Unix epoch float,
+              e.g. ``1705312200.0``.
 
         bytes_format: How to format :class:`bytes` values.
 
-            * ``"hex"`` (default) — lowercase hex string,
+            * ``BytesFormat.HEX`` (default) — lowercase hex string,
               e.g. ``"48656c6c6f"``.
-            * ``"python"`` — Python bytes literal, e.g. ``b'Hello'``.
+            * ``BytesFormat.PYTHON`` — Python bytes literal,
+              e.g. ``b'Hello'``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date formatting options for Python."""
+
+        ISO = "iso"
+        PYTHON = "python"
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime formatting options for Python."""
+
+        ISO = "iso"
+        PYTHON = "python"
+        EPOCH = "epoch"
+
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options for Python."""
+
+        HEX = "hex"
+        PYTHON = "python"
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "python"] = "iso",
-        datetime_format: Literal["iso", "python", "epoch"] = "iso",
-        bytes_format: Literal["hex", "python"] = "hex",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
+        bytes_format: BytesFormat = BytesFormat.HEX,
     ) -> None:
         """Initialize Python language specification."""
         self.null_literal = "None"
@@ -113,13 +136,13 @@ class Python:
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = _bytes_formats[
-            bytes_format
+            bytes_format.value
         ]
         self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
+            date_format.value
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            _datetime_formats[datetime_format.value]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None

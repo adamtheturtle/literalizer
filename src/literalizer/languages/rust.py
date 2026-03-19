@@ -1,8 +1,9 @@
 """Rust language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -65,25 +66,40 @@ class Rust:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"rust"`` — ``NaiveDate::from_ymd_opt(...)`` call,
+            * :attr:`DateFormat.ISO` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * :attr:`DateFormat.RUST` —
+              ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * :attr:`DatetimeFormat.ISO` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"rust"`` — ``NaiveDateTime::new(...)`` call, e.g.
+            * :attr:`DatetimeFormat.RUST` —
+              ``NaiveDateTime::new(...)`` call, e.g.
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date format options for Rust."""
+
+        ISO = "iso"
+        RUST = "rust"
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Rust."""
+
+        ISO = "iso"
+        RUST = "rust"
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "rust"] = "iso",
-        datetime_format: Literal["iso", "rust"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Rust language specification."""
         self.null_literal = "None"
@@ -104,10 +120,10 @@ class Rust:
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
         self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
+            date_format.value
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            _datetime_formats[datetime_format.value]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None

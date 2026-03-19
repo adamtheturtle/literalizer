@@ -1,8 +1,9 @@
 """Java language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 from beartype import beartype
 
@@ -96,27 +97,41 @@ class Java:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``"iso"`` (default) — ISO 8601 string, e.g. ``"2024-01-15"``.
-            * ``"java"`` — ``LocalDate.of(...)`` call,
+            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+              e.g. ``"2024-01-15"``.
+            * ``DateFormat.JAVA`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``"iso"`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``"instant"`` — ``Instant.parse(...)`` call,
+            * ``DatetimeFormat.INSTANT`` — ``Instant.parse(...)`` call,
               e.g. ``Instant.parse("2024-01-15T12:30:00")``.
-            * ``"zoned"`` — ``ZonedDateTime.of(...)`` call,
+            * ``DatetimeFormat.ZONED`` — ``ZonedDateTime.of(...)`` call,
               e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
               ZoneId.of("UTC"))``.
     """
+
+    class DateFormat(enum.Enum):
+        """Date formatting options for Java."""
+
+        ISO = "iso"
+        JAVA = "java"
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime formatting options for Java."""
+
+        ISO = "iso"
+        INSTANT = "instant"
+        ZONED = "zoned"
 
     @beartype
     def __init__(
         self,
         *,
-        date_format: Literal["iso", "java"] = "iso",
-        datetime_format: Literal["iso", "instant", "zoned"] = "iso",
+        date_format: DateFormat = DateFormat.ISO,
+        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
     ) -> None:
         """Initialize Java language specification."""
         self.null_literal = "null"
@@ -138,10 +153,10 @@ class Java:
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = format_bytes_hex
         self.format_date: Callable[[datetime.date], str] = _date_formats[
-            date_format
+            date_format.value
         ]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_formats[datetime_format]
+            _datetime_formats[datetime_format.value]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None
