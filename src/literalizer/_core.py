@@ -86,7 +86,7 @@ def _format_value(*, value: Value, spec: Language) -> str:
         return spec.omap_open + joined + spec.omap_close
 
     if isinstance(value, dict):
-        dict_items = {
+        dict_items: dict[str, Value] = {
             k: v
             for k, v in value.items()
             if not (spec.skip_null_dict_values and v is None)
@@ -102,7 +102,7 @@ def _format_value(*, value: Value, spec: Language) -> str:
             for k, v in dict_items.items()
         ]
         joined = spec.element_separator.join(pairs)
-        return spec.dict_open + joined + spec.dict_close
+        return spec.dict_open(dict_items) + joined + spec.dict_close
 
     if isinstance(value, set):
         return _format_set_value(value=value, spec=spec)
@@ -140,7 +140,7 @@ def _wrap_body(
         opening = f"{line_prefix}{spec.omap_open}"
         closing = f"{close_prefix}{spec.omap_close}"
     elif isinstance(data, dict):
-        opening = f"{line_prefix}{spec.dict_open}"
+        opening = f"{line_prefix}{spec.dict_open(data)}"
         closing = f"{close_prefix}{spec.dict_close}"
     elif isinstance(data, set):
         opening = f"{line_prefix}{spec.set_open}"

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
@@ -113,7 +114,9 @@ class FSharp:
             open_str="FList ["
         )
         self.sequence_close = "]"
-        self.dict_open = "FMap ["
+        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
+            open_str="FMap ["
+        )
         self.dict_close = "]"
         self.format_dict_entry: Callable[[str, str], str] = (
             _format_fsharp_dict_entry

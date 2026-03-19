@@ -43,8 +43,15 @@ class Language(Protocol):
     sequence_close: str
     """The closing delimiter for sequences."""
 
-    dict_open: str
-    """The opening delimiter for dict literals."""
+    @property
+    def dict_open(self) -> Callable[[dict[str, Value]], str]:
+        """Callable that returns the opening delimiter for a dict literal.
+
+        Receives the dict about to be formatted, so the delimiter can depend
+        on the value types when needed.  For a fixed delimiter use
+        :func:`~literalizer.fixed_dict_open`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     dict_close: str
     """The closing delimiter for dict literals."""
@@ -175,7 +182,7 @@ class LanguageSpec:
     false_literal: str
     sequence_open: Callable[[list[Value]], str]
     sequence_close: str
-    dict_open: str
+    dict_open: Callable[[dict[str, Value]], str]
     dict_close: str
     format_dict_entry: Callable[[str, str], str]
     multiline_trailing_comma: bool

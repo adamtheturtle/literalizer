@@ -619,6 +619,24 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
 
 
 @beartype
+def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
+    """Return a ``dict_open`` callable that always returns *open_str*.
+
+    Use this as ``dict_open`` when the opening delimiter for dicts
+    is a fixed string that does not depend on the dict contents.
+
+    Example: ``fixed_dict_open(open_str="{")({"a": 1})`` → ``"{"``.
+    """
+
+    @beartype
+    def _open(_items: dict[str, Value]) -> str:
+        """Return the fixed opening delimiter."""
+        return open_str
+
+    return _open
+
+
+@beartype
 def _typed_sequence_open(
     items: list[Value],
     *,
@@ -669,6 +687,63 @@ def typed_sequence_open(
     """
     return functools.partial(
         _typed_sequence_open,
+        schema_to_opener=schema_to_opener,
+        fallback=fallback,
+    )
+
+
+@beartype
+def _typed_dict_open(
+    items: dict[str, Value],
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
+) -> str:
+    """Infer a value schema and return the language-specific opener.
+
+    Uses ``json-to-schema`` to infer a JSON Schema from the dict
+    values (treated as a list), then passes the ``items`` sub-schema
+    to *schema_to_opener* which returns the language-specific opening
+    delimiter.  When inference is not possible or *schema_to_opener*
+    returns ``None``, *fallback* is returned instead.
+
+    See ``_JSON_NATIVE_TYPES`` for why we skip inference for
+    YAML-only types.
+    """
+    values = list(items.values())
+    if not _all_json_native(values=values):
+        return fallback
+    schema: dict[str, Any] = infer_schema(value=values)
+    value_schema: dict[str, Any] = schema.get("items", {})
+    return schema_to_opener(value_schema) or fallback
+
+
+@beartype
+def typed_dict_open(
+    *,
+    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    fallback: str,
+) -> Callable[[dict[str, Value]], str]:
+    """Return a ``dict_open`` callable that infers a value schema and
+    delegates to *schema_to_opener*.
+
+    When inference is not possible or *schema_to_opener* returns
+    ``None``, *fallback* is used instead.
+
+    Example::
+
+        def my_opener(value_schema: dict[str, Any]) -> str | None:
+            if value_schema.get("type") == "string":
+                return "map[string]string{"
+            return None
+
+        dict_open = typed_dict_open(
+            schema_to_opener=my_opener,
+            fallback="map[string]any{",
+        )
+    """
+    return functools.partial(
+        _typed_dict_open,
         schema_to_opener=schema_to_opener,
         fallback=fallback,
     )
