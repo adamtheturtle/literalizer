@@ -407,6 +407,18 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
+def _wrap_racket(content: str) -> str:
+    """Wrap in a Racket #lang racket module."""
+    return f"#lang racket\n{content}"
+
+
+@beartype
+def _wrap_racket_combined(declaration: str, assignment: str) -> str:
+    """Wrap Racket declaration and assignment in a #lang racket module."""
+    return f"#lang racket\n{declaration}\n{assignment}"
+
+
+@beartype
 def _wrap_perl(content: str) -> str:
     """Wrap in a Perl variable assignment."""
     return f"my $x = {content};"
@@ -1337,6 +1349,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
                 wrap=_wrap_r,
             ),
         ),
+    ),
+    "racket": _LanguageConfig(
+        spec=literalizer.languages.Racket(),
+        extension=".rkt",
+        wrap=_wrap_racket,
+        varname_wrap=_wrap_racket,
+        combined_wrap=_wrap_racket_combined,
+        date_variants=(),
     ),
     "crystal": _LanguageConfig(
         spec=literalizer.languages.Crystal(),

@@ -1,0 +1,5 @@
+#lang racket
+(list
+    (list 1.5 2.5)
+    (list 3.5 4.5)
+)
