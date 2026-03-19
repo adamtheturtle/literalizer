@@ -17,6 +17,7 @@ from .fsharp import FSharp
 from .go import Go
 from .groovy import Groovy
 from .haskell import Haskell
+from .hcl import Hcl
 from .java import Java
 from .javascript import JavaScript
 from .julia import Julia
@@ -31,6 +32,7 @@ from .php import Php
 from .powershell import PowerShell
 from .python import Python
 from .r import R
+from .racket import Racket
 from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
@@ -54,6 +56,7 @@ __all__ = [
     "Go",
     "Groovy",
     "Haskell",
+    "Hcl",
     "Java",
     "JavaScript",
     "Julia",
@@ -68,6 +71,7 @@ __all__ = [
     "PowerShell",
     "Python",
     "R",
+    "Racket",
     "Ruby",
     "Rust",
     "Scala",
