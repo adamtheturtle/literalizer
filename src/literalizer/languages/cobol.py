@@ -38,7 +38,7 @@ def _is_data_entry(s: str) -> bool:
     A DATA DIVISION entry starts with two decimal digits followed by a
     space (e.g. ``05 FILLER ...``).
     """
-    return bool(re.match(r"^\d{2} ", s))
+    return bool(re.match(pattern=r"^\d{2} ", string=s))
 
 
 @beartype
@@ -55,7 +55,7 @@ def _pic_from_value(value: str) -> str:
     if value.startswith('"') and value.endswith('"'):
         inner = value[1:-1].replace('""', '"')
         return f"PIC X({max(1, len(inner))})"
-    if re.match(r"^-?\d+$", value):
+    if re.match(pattern=r"^-?\d+$", string=value):
         return "PIC S9(18) COMP-5"
     # Float or other numeric
     return "COMP-2"
@@ -67,7 +67,7 @@ def _to_cobol_entry(value: str, name: str = "FILLER", level: int = 5) -> str:
 
     Example: ``"42"`` → ``"05 FILLER PIC S9(18) COMP-5 VALUE 42."``
     """
-    pic = _pic_from_value(value)
+    pic = _pic_from_value(value=value)
     return f"{level:02d} {name} {pic} VALUE {value}."
 
 
@@ -78,10 +78,10 @@ def _bump_levels(content: str) -> str:
     Only lines whose first non-space token is a two-digit level number
     are modified.
     """
-    lines = content.split("\n")
-    result = []
+    lines = content.split(sep="\n")
+    result: list[str] = []
     for line in lines:
-        m = re.match(r"^(\s*)(\d{2})(\s)", line)
+        m = re.match(pattern=r"^(\s*)(\d{2})(\s)", string=line)
         if m:
             new_level = int(m.group(2)) + 5
             result.append(
@@ -101,11 +101,11 @@ def _format_cobol_sequence_entry(item: str) -> str:
     a ``05 FILLER.`` group with inner level numbers bumped by 5.
     """
     if "\n" in item:
-        bumped = _bump_levels(item)
+        bumped = _bump_levels(content=item)
         return f"05 FILLER.\n{bumped}"
-    if _is_data_entry(item.strip()):
+    if _is_data_entry(s=item.strip()):
         return item.strip()
-    return _to_cobol_entry(item)
+    return _to_cobol_entry(value=item)
 
 
 @beartype
@@ -122,8 +122,8 @@ def _key_to_cobol_name(key_str: str) -> str:
     else:
         name = key_str
     name = name.upper()
-    name = re.sub(r"[^A-Z0-9]", "-", name)
-    name = re.sub(r"-+", "-", name).strip("-")
+    name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
+    name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
     name = name[:28] or "FILLER"
     return f"F-{name}"
 
@@ -138,12 +138,12 @@ def _format_cobol_dict_entry(key: str, value: str) -> str:
     """
     name = _key_to_cobol_name(key_str=key)
     if "\n" in value:
-        bumped = _bump_levels(value)
+        bumped = _bump_levels(content=value)
         return f"05 {name}.\n{bumped}"
-    if _is_data_entry(value.strip()):
-        bumped = _bump_levels(value.strip())
+    if _is_data_entry(s=value.strip()):
+        bumped = _bump_levels(content=value.strip())
         return f"05 {name}.\n{bumped}"
-    pic = _pic_from_value(value)
+    pic = _pic_from_value(value=value)
     return f"05 {name} {pic} VALUE {value}."
 
 
@@ -166,9 +166,9 @@ def _format_variable_declaration(name: str, value: str) -> str:
     cob_name = _to_cobol_name(python_name=name)
     stripped = value.strip("\n")
     scalar = stripped.strip()
-    if "\n" in stripped or _is_data_entry(scalar):
+    if "\n" in stripped or _is_data_entry(s=scalar):
         return f"01 {cob_name}.\n{stripped}"
-    pic = _pic_from_value(scalar)
+    pic = _pic_from_value(value=scalar)
     return f"01 {cob_name} {pic} VALUE {scalar}."
 
 
@@ -183,7 +183,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     cob_name = _to_cobol_name(python_name=name)
     stripped = value.strip("\n")
     scalar = stripped.strip()
-    if "\n" in stripped or _is_data_entry(scalar):
+    if "\n" in stripped or _is_data_entry(s=scalar):
         return f"INITIALIZE {cob_name}."
     return f"MOVE {scalar} TO {cob_name}."
 
