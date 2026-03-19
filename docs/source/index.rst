@@ -63,6 +63,7 @@ Reference
 .. toctree::
    :maxdepth: 3
 
+   json-api-use-case
    api-reference
    release-process
    changelog
