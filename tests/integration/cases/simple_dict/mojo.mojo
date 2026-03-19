@@ -1,7 +1,6 @@
-fn main():
-    var _ = {
-        "name": "Alice",
-        "age": 30,
-        "active": True,
-        "score": None,
-    }
+_ = {
+    "name": "Alice",
+    "age": 30,
+    "active": True,
+    "score": None,
+}

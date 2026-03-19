@@ -1,5 +1,4 @@
-fn main():
-    var _ = [
-        "price $10",
-        "$HOME",
-    ]
+_ = [
+    "price $10",
+    "$HOME",
+]

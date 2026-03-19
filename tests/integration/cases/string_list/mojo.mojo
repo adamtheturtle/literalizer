@@ -1,6 +1,5 @@
-fn main():
-    var _ = [
-        "foo",
-        "bar",
-        "baz",
-    ]
+_ = [
+    "foo",
+    "bar",
+    "baz",
+]

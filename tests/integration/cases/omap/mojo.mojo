@@ -1,6 +1,5 @@
-fn main():
-    var _ = [
-        ("name", "Alice"),
-        ("age", 30),
-        ("active", True),
-    ]
+_ = [
+    ("name", "Alice"),
+    ("age", 30),
+    ("active", True),
+]

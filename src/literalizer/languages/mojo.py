@@ -29,8 +29,10 @@ def _format_mojo_omap_entry(key: str, value: str) -> str:
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
-    """Format a Mojo ``var`` declaration."""
-    return f"var {name} = {value}"
+    """Format a Mojo variable declaration in Python-compatible script
+    style.
+    """
+    return f"{name} = {value}"
 
 
 @beartype

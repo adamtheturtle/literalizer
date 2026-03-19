@@ -1,7 +1,6 @@
-fn main():
-    var _ = [
-        # before apple
-        "apple",
-        "banana",  # banana inline
-        # trailing
-    ]
+_ = [
+    # before apple
+    "apple",
+    "banana",  # banana inline
+    # trailing
+]

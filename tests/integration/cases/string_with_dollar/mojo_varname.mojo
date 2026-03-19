@@ -1,5 +1,4 @@
-fn main():
-    var my_data = [
-        "price $10",
-        "$HOME",
-    ]
+my_data = [
+    "price $10",
+    "$HOME",
+]

@@ -1,2 +1,1 @@
-fn main():
-    var _ = "hello \"world\" -- not a comment"
+_ = "hello \"world\" -- not a comment"

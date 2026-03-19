@@ -1,5 +1,4 @@
-fn main():
-    var _ = [
-        [True, False],
-        [True, True],
-    ]
+_ = [
+    [True, False],
+    [True, True],
+]
