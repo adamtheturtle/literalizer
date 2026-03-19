@@ -297,7 +297,6 @@ plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
 
 [tool.pyrefly]
-enabled-ignores = [ "type", "pyrefly", "ty" ]
 errors.non-exhaustive-match = "error"
 project_excludes = [
     "tests/integration/cases",

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 from beartype import beartype
-from json_to_schema import (  # pyright: ignore[reportMissingTypeStubs]
+from json_to_schema import (  # pyright: ignore[reportMissingTypeStubs]  # pyrefly: ignore[missing-import]
     infer_schema,
 )
 
