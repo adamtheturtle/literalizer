@@ -1,5 +1,0 @@
-import json
-let _ = %*[
-    [],
-    []
-]

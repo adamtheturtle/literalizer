@@ -1,4 +1,0 @@
-x <- list(
-    list(),
-    list()
-)
