@@ -1,6 +1,7 @@
 """OCaml language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -109,8 +110,18 @@ _string_format: Callable[[str], str] = format_string_backslash
 class OCaml:
     """OCaml language specification."""
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for OCaml."""
+
+        LIST = "list"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize OCaml language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "ONull"
         self.true_literal = "OBool true"
         self.false_literal = "OBool false"

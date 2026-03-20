@@ -123,13 +123,20 @@ class Dart:
         ISO = enum.member(value=format_datetime_iso)
         DART = enum.member(value=format_datetime_dart)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Dart."""
+
+        LIST = "list"
+
     def __init__(
         self,
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Dart language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"

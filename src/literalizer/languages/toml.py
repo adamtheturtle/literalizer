@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 import re
 from typing import TYPE_CHECKING
 
@@ -98,8 +99,18 @@ class Toml:
     datetime literals, which are a distinct TOML type.
     """
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Toml."""
+
+        ARRAY = "array"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize TOML language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = '""'
         self.true_literal = "true"
         self.false_literal = "false"

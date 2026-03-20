@@ -122,7 +122,7 @@ class Python:
         SET = "set"
         FROZENSET = "frozenset"
 
-    def __init__(
+    def __init__(  # noqa: PLR0915
         self,
         *,
         date_format: DateFormat,
@@ -132,6 +132,7 @@ class Python:
         set_format: SetFormat,
     ) -> None:
         """Initialize Python language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"

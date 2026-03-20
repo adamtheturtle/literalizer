@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import enum
 from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
@@ -173,6 +174,11 @@ class Language(Protocol):
         """Callable that formats a string value as a quoted literal."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def sequence_format(self) -> enum.Enum:
+        """The sequence format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 @dataclasses.dataclass
 class LanguageSpec:
@@ -215,3 +221,4 @@ class LanguageSpec:
     format_variable_assignment: Callable[[str, str], str]
     format_string: Callable[[str], str]
     supports_collection_comments: bool
+    sequence_format: enum.Enum

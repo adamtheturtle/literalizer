@@ -72,6 +72,7 @@ class Elixir:
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Elixir language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"

@@ -78,13 +78,20 @@ class Ruby:
         ISO = enum.member(value=format_datetime_iso)
         RUBY = enum.member(value=format_datetime_ruby)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Ruby."""
+
+        ARRAY = "array"
+
     def __init__(
         self,
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Ruby language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"

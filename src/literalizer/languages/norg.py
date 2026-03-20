@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -59,9 +60,19 @@ class Norg:
     verbatim tag: ``* name`` then ``@code json`` / ``@end``.
     """
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Norg."""
+
+        ARRAY = "array"
+
     @beartype
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Norg language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"

@@ -93,6 +93,7 @@ class Julia:
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Julia language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "nothing"
         self.true_literal = "true"
         self.false_literal = "false"

@@ -110,6 +110,7 @@ class Rust:
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Rust language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "None"
         self.true_literal = "true"
         self.false_literal = "false"

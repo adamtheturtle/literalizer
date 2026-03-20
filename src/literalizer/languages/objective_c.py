@@ -1,6 +1,7 @@
 """Objective-C language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -117,9 +118,19 @@ _string_format: Callable[[str], str] = _format_objc_string
 class ObjectiveC:
     """Objective-C language specification."""
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for ObjectiveC."""
+
+        ARRAY = "array"
+
     @beartype
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Objective-C language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "[NSNull null]"
         self.true_literal = "@YES"
         self.false_literal = "@NO"

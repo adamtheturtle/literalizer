@@ -126,14 +126,21 @@ class R:
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for R."""
+
+        LIST = "list"
+
     def __init__(
         self,
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
         empty_dict_key: EmptyDictKey,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize R language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "NULL"
         self.true_literal = "TRUE"
         self.false_literal = "FALSE"

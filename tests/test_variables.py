@@ -33,41 +33,56 @@ from literalizer.languages import (
     TypeScript,
 )
 
-CLOJURE = Clojure()
+CLOJURE = Clojure(
+    sequence_format=Clojure.SequenceFormat.VECTOR,
+)
 CPP = Cpp(
     date_format=Cpp.DateFormat.ISO,
     datetime_format=Cpp.DatetimeFormat.ISO,
+    sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
 )
 CSHARP = CSharp(
     date_format=CSharp.DateFormat.ISO,
     datetime_format=CSharp.DatetimeFormat.ISO,
+    sequence_format=CSharp.SequenceFormat.ARRAY,
 )
 DART = Dart(
     date_format=Dart.DateFormat.ISO,
     datetime_format=Dart.DatetimeFormat.ISO,
+    sequence_format=Dart.SequenceFormat.LIST,
 )
 ELIXIR = Elixir(
     sequence_format=Elixir.SequenceFormat.LIST,
 )
-FSHARP = FSharp()
+FSHARP = FSharp(
+    sequence_format=FSharp.SequenceFormat.LIST,
+)
 GO = Go(
     date_format=Go.DateFormat.ISO,
     datetime_format=Go.DatetimeFormat.ISO,
+    sequence_format=Go.SequenceFormat.SLICE,
 )
-HASKELL = Haskell()
+HASKELL = Haskell(
+    sequence_format=Haskell.SequenceFormat.LIST,
+)
 JAVA = Java(
     date_format=Java.DateFormat.ISO,
     datetime_format=Java.DatetimeFormat.ISO,
+    sequence_format=Java.SequenceFormat.ARRAY,
 )
 JAVASCRIPT = JavaScript(
     date_format=JavaScript.DateFormat.ISO,
     datetime_format=JavaScript.DatetimeFormat.ISO,
+    sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 KOTLIN = Kotlin(
     date_format=Kotlin.DateFormat.ISO,
     datetime_format=Kotlin.DatetimeFormat.ISO,
+    sequence_format=Kotlin.SequenceFormat.LIST,
 )
-PHP = Php()
+PHP = Php(
+    sequence_format=Php.SequenceFormat.ARRAY,
+)
 PYTHON = Python(
     date_format=Python.DateFormat.ISO,
     datetime_format=Python.DatetimeFormat.ISO,
@@ -78,17 +93,23 @@ PYTHON = Python(
 RUBY = Ruby(
     date_format=Ruby.DateFormat.ISO,
     datetime_format=Ruby.DatetimeFormat.ISO,
+    sequence_format=Ruby.SequenceFormat.ARRAY,
 )
 RUST = Rust(
     date_format=Rust.DateFormat.ISO,
     datetime_format=Rust.DatetimeFormat.ISO,
     sequence_format=Rust.SequenceFormat.VEC,
 )
-SCALA = Scala()
-SWIFT = Swift()
+SCALA = Scala(
+    sequence_format=Scala.SequenceFormat.LIST,
+)
+SWIFT = Swift(
+    sequence_format=Swift.SequenceFormat.ARRAY,
+)
 TYPESCRIPT = TypeScript(
     date_format=TypeScript.DateFormat.ISO,
     datetime_format=TypeScript.DatetimeFormat.ISO,
+    sequence_format=TypeScript.SequenceFormat.ARRAY,
 )
 
 
@@ -160,6 +181,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        sequence_format=R.SequenceFormat.LIST,
     ): _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),
 }
 

@@ -1,6 +1,7 @@
 """Groovy language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -44,8 +45,18 @@ _string_format: Callable[[str], str] = format_string_backslash_dollar
 class Groovy:
     """Groovy language specification."""
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Groovy."""
+
+        LIST = "list"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Groovy language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"

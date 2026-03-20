@@ -125,13 +125,20 @@ class Cpp:
         ISO = enum.member(value=format_datetime_iso)
         CPP = enum.member(value=format_datetime_cpp)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Cpp."""
+
+        INITIALIZER_LIST = "initializer_list"
+
     def __init__(
         self,
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Cpp language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"

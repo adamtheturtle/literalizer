@@ -18,10 +18,12 @@ from literalizer.languages import (
 GO = Go(
     date_format=Go.DateFormat.ISO,
     datetime_format=Go.DatetimeFormat.ISO,
+    sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVASCRIPT = JavaScript(
     date_format=JavaScript.DateFormat.ISO,
     datetime_format=JavaScript.DatetimeFormat.ISO,
+    sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 PYTHON = Python(
     date_format=Python.DateFormat.ISO,
@@ -33,6 +35,7 @@ PYTHON = Python(
 RUBY = Ruby(
     date_format=Ruby.DateFormat.ISO,
     datetime_format=Ruby.DatetimeFormat.ISO,
+    sequence_format=Ruby.SequenceFormat.ARRAY,
 )
 
 
