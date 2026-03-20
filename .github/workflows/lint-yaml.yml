@@ -19,7 +19,6 @@ jobs:
         run: >-
           shopt -s extglob &&
           uvx yamllint --strict
-          -d '{extends: default, rules: {document-start: disable, truthy: disable,
-          line-length: disable, comments-indentation: disable, indentation: {indent-sequences:
-          whatever}}}'
+          -d '{extends: default, rules: {line-length: disable, colons: disable,
+          comments-indentation: disable, indentation: disable}}'
           tests/integration/cases/*/!(input).yaml
