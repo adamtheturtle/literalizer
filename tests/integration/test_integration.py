@@ -1167,8 +1167,10 @@ def _python_imports(content: str) -> str:
     imports: list[str] = []
     if "OrderedDict(" in content:
         imports.append("from collections import OrderedDict")
-    if "Any]" in content:
+    if "[Any" in content or "Any]" in content:
         imports.append("from typing import Any")
+    if "datetime." in content:
+        imports.append("import datetime")
     if not imports:
         return ""
     return "\n".join(imports) + "\n"
@@ -1185,12 +1187,6 @@ def _wrap_python_combined(declaration: str, assignment: str) -> str:
     """Join declaration and assignment with imports prepended."""
     combined = declaration + "\n" + assignment
     return _python_imports(content=combined) + combined
-
-
-@beartype
-def _wrap_python_datetime(content: str) -> str:
-    """Wrap with a datetime import for native Python date literals."""
-    return f"import datetime\n{content}"
 
 
 @beartype
@@ -1924,7 +1920,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
             variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
-        wrap=_wrap_python_datetime,
+        wrap=_wrap_python,
     ),
     "python_epoch": _DateVariant(
         spec=literalizer.languages.Python(
