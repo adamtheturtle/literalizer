@@ -226,7 +226,7 @@ class Cobol:
         SEQUENCE = "sequence"
 
     class SetFormat(enum.Enum):
-        """Set type options for Cobol."""
+        """Set type options for COBOL."""
 
         SET = "set"
 

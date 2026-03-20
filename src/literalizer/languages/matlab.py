@@ -121,7 +121,7 @@ class Matlab:
         CELL_ARRAY = "cell_array"
 
     class SetFormat(enum.Enum):
-        """Set type options for Matlab."""
+        """Set type options for MATLAB."""
 
         SET = "set"
 

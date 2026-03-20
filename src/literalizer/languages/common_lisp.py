@@ -56,7 +56,7 @@ class CommonLisp:
         LIST = "list"
 
     class SetFormat(enum.Enum):
-        """Set type options for CommonLisp."""
+        """Set type options for Common Lisp."""
 
         SET = "set"
 

@@ -105,7 +105,7 @@ class Toml:
         ARRAY = "array"
 
     class SetFormat(enum.Enum):
-        """Set type options for Toml."""
+        """Set type options for TOML."""
 
         SET = "set"
 

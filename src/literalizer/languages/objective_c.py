@@ -125,7 +125,7 @@ class ObjectiveC:
 
     @beartype
     class SetFormat(enum.Enum):
-        """Set type options for ObjectiveC."""
+        """Set type options for Objective-C."""
 
         SET = "set"
 

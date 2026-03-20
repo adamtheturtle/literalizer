@@ -78,7 +78,7 @@ class Yaml:
 
     @beartype
     class SetFormat(enum.Enum):
-        """Set type options for Yaml."""
+        """Set type options for YAML."""
 
         SET = "set"
 

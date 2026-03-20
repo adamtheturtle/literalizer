@@ -128,7 +128,7 @@ class CSharp:
         ARRAY = "array"
 
     class SetFormat(enum.Enum):
-        """Set type options for CSharp."""
+        """Set type options for C#."""
 
         HASH_SET = "hash_set"
 

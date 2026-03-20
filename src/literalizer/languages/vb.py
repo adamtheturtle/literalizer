@@ -96,7 +96,7 @@ class VisualBasic:
         ARRAY = "array"
 
     class SetFormat(enum.Enum):
-        """Set type options for VisualBasic."""
+        """Set type options for Visual Basic."""
 
         HASH_SET = "hash_set"
 
