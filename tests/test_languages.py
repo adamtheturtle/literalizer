@@ -400,16 +400,25 @@ def test_java_sequence_wrap_uses_braces() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("json_input", "expected_open"),
+    argnames=("json_input", "expected"),
     argvalues=[
-        ([1, 2, 3], "new int[]{"),
-        (["hello", "world"], "new String[]{"),
-        ([1, "hello", True], "new Object[]{"),
+        (
+            [1, 2, 3],
+            "new int[]{\n    1,\n    2,\n    3\n}",
+        ),
+        (
+            ["hello", "world"],
+            'new String[]{\n    "hello",\n    "world"\n}',
+        ),
+        (
+            [1, "hello", True],
+            'new Object[]{\n    1,\n    "hello",\n    true\n}',
+        ),
     ],
     ids=["all_int", "all_string", "mixed"],
 )
 def test_java_typed_array_opener(
-    *, json_input: list[object], expected_open: str
+    *, json_input: list[object], expected: str
 ) -> None:
     """Java uses typed array openers inferred from element types."""
     result = literalize_json(
@@ -422,7 +431,7 @@ def test_java_typed_array_opener(
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.startswith(expected_open)
+    assert result == expected
 
 
 def test_custom_language() -> None:
