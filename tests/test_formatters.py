@@ -199,36 +199,60 @@ def test_format_datetime_epoch() -> None:
 def test_format_date_cpp() -> None:
     """``format_date_cpp`` returns a year_month_day literal."""
     result = format_date_cpp(value=_SAMPLE_DATE)
-    assert "std::chrono::year{2024}" in result
-    assert "std::chrono::month{1}" in result
-    assert "std::chrono::day{15}" in result
+    expected = (
+        "std::chrono::year_month_day{"
+        "std::chrono::year{2024}, "
+        "std::chrono::month{1}, "
+        "std::chrono::day{15}}"
+    )
+    assert result == expected
 
 
 def test_format_datetime_cpp() -> None:
     """``format_datetime_cpp`` returns a sys_days expression."""
     result = format_datetime_cpp(value=_SAMPLE_DATETIME)
-    assert "std::chrono::sys_days" in result
-    assert "std::chrono::hours{12}" in result
-    assert "std::chrono::minutes{30}" in result
+    expected = (
+        "std::chrono::sys_days{"
+        "std::chrono::year_month_day{"
+        "std::chrono::year{2024}, "
+        "std::chrono::month{1}, "
+        "std::chrono::day{15}}}"
+        " + std::chrono::hours{12}"
+        " + std::chrono::minutes{30}"
+    )
+    assert result == expected
 
 
 def test_format_datetime_cpp_midnight() -> None:
     """``format_datetime_cpp`` at midnight omits zero time components."""
     midnight = datetime.datetime.fromisoformat("2024-01-15T00:00:00")
     result = format_datetime_cpp(value=midnight)
-    assert "std::chrono::sys_days" in result
-    assert "hours" not in result
-    assert "minutes" not in result
-    assert "seconds" not in result
-    assert "microseconds" not in result
+    expected = (
+        "std::chrono::sys_days{"
+        "std::chrono::year_month_day{"
+        "std::chrono::year{2024}, "
+        "std::chrono::month{1}, "
+        "std::chrono::day{15}}}"
+    )
+    assert result == expected
 
 
 def test_format_datetime_cpp_seconds_and_microseconds() -> None:
     """``format_datetime_cpp`` includes seconds and microseconds."""
     dt = datetime.datetime.fromisoformat("2024-01-15T12:30:45.123456")
     result = format_datetime_cpp(value=dt)
-    assert "std::chrono::seconds{45}" in result
-    assert "std::chrono::microseconds{123456}" in result
+    expected = (
+        "std::chrono::sys_days{"
+        "std::chrono::year_month_day{"
+        "std::chrono::year{2024}, "
+        "std::chrono::month{1}, "
+        "std::chrono::day{15}}}"
+        " + std::chrono::hours{12}"
+        " + std::chrono::minutes{30}"
+        " + std::chrono::seconds{45}"
+        " + std::chrono::microseconds{123456}"
+    )
+    assert result == expected
 
 
 def test_default_format_date_is_iso() -> None:
