@@ -374,8 +374,8 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
         language=MOJO,
         wrap=True,
     )
-    assert '"48656c6c6f"' in result
-    assert '"42"' in result
+    expected = '{\n    "key1": "48656c6c6f",\n    "key2": "42",\n}'
+    assert result == expected
 
 
 def test_coerce_heterogeneous_set() -> None:
@@ -392,8 +392,8 @@ def test_coerce_heterogeneous_set() -> None:
         language=MOJO,
         wrap=True,
     )
-    assert '"1"' in result
-    assert '"hello"' in result
+    expected = '[\n    "1",\n    "hello",\n]'
+    assert result == expected
 
 
 def test_coerce_homogeneous_omap_no_coercion() -> None:
@@ -410,5 +410,5 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
         language=MOJO,
         wrap=True,
     )
-    assert '"Alice"' in result
-    assert '"Paris"' in result
+    expected = '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
+    assert result == expected

@@ -68,6 +68,7 @@ erlc
 formatter
 formatters
 fromhex
+frozenset
 ghc
 gnatmake
 gofmt
