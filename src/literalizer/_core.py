@@ -89,28 +89,18 @@ def _has_heterogeneous(*, data: Value) -> bool:
     """Recursively check whether data contains any heterogeneous
     all-scalar collections.
     """
-    if isinstance(data, ordereddict):
-        omap_vals: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        return any(
-            _has_heterogeneous(data=v) for v in omap_vals
-        ) or _all_scalars_heterogeneous(values=omap_vals)
+    if isinstance(data, (ordereddict, dict)):
+        children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+    elif isinstance(data, list):
+        children = data
+    elif isinstance(data, set):
+        return _all_scalars_heterogeneous(values=list(data))
+    else:
+        return False
 
-    if isinstance(data, dict):
-        dict_vals = list(data.values())
-        return any(
-            _has_heterogeneous(data=v) for v in dict_vals
-        ) or _all_scalars_heterogeneous(values=dict_vals)
-
-    if isinstance(data, set):
-        items: list[Value] = list(data)
-        return _all_scalars_heterogeneous(values=items)
-
-    if isinstance(data, list):
-        return any(
-            _has_heterogeneous(data=v) for v in data
-        ) or _all_scalars_heterogeneous(values=data)
-
-    return False
+    return any(
+        _has_heterogeneous(data=v) for v in children
+    ) or _all_scalars_heterogeneous(values=children)
 
 
 @beartype
