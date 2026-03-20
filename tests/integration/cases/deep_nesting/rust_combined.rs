@@ -1,15 +1,34 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
+struct V;
+impl From<i32> for V { fn from(_: i32) -> Self { V } }
+impl From<i64> for V { fn from(_: i64) -> Self { V } }
+impl From<f64> for V { fn from(_: f64) -> Self { V } }
+impl From<bool> for V { fn from(_: bool) -> Self { V } }
+impl From<&str> for V { fn from(_: &str) -> Self { V } }
+impl<T> From<Option<T>> for V { fn from(_: Option<T>) -> Self { V } }
+impl<T> From<std::vec::Vec<T>> for V { fn from(_: std::vec::Vec<T>) -> Self { V } }
+impl<A, B> From<(A, B)> for V { fn from(_: (A, B)) -> Self { V } }
+macro_rules! vec {
+    () => { ::std::vec::Vec::<V>::new() };
+    ($($e:expr),+ $(,)?) => {{
+        let mut _v = ::std::vec::Vec::<V>::new();
+        $(_v.push(<V as From<_>>::from($e));)+
+        _v
+    }};
+}
+struct HashMap;
+impl HashMap {
+    fn from<T>(_: T) -> V { V }
+}
 fn main() {
     {
-        let my_data = HashMap::from([
-            ("level1", HashMap::from([("level2", HashMap::from([("level3", HashMap::from([("level4", HashMap::from([("value", "deep"), ("items", vec!["a", "b"])]))])), ("sibling", 42)])), ("tags", vec![HashMap::from([("name", "tag1"), ("meta", HashMap::from([("priority", 1), ("labels", vec!["x", "y"])]))])])])),
+        let my_data = HashMap::from(vec![
+            ("level1", HashMap::from(vec![("level2", HashMap::from(vec![("level3", HashMap::from(vec![("level4", HashMap::from(vec![("value", "deep"), ("items", vec!["a", "b"])]))])), ("sibling", 42)])), ("tags", vec![HashMap::from(vec![("name", "tag1"), ("meta", HashMap::from(vec![("priority", 1), ("labels", vec!["x", "y"])]))])])])),
         ]);
         let _ = my_data;
     }
     let my_data;
-    my_data = HashMap::from([
-        ("level1", HashMap::from([("level2", HashMap::from([("level3", HashMap::from([("level4", HashMap::from([("value", "deep"), ("items", vec!["a", "b"])]))])), ("sibling", 42)])), ("tags", vec![HashMap::from([("name", "tag1"), ("meta", HashMap::from([("priority", 1), ("labels", vec!["x", "y"])]))])])])),
+    my_data = HashMap::from(vec![
+        ("level1", HashMap::from(vec![("level2", HashMap::from(vec![("level3", HashMap::from(vec![("level4", HashMap::from(vec![("value", "deep"), ("items", vec!["a", "b"])]))])), ("sibling", 42)])), ("tags", vec![HashMap::from(vec![("name", "tag1"), ("meta", HashMap::from(vec![("priority", 1), ("labels", vec!["x", "y"])]))])])])),
     ]);
     let _ = my_data;
 }

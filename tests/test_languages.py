@@ -115,7 +115,7 @@ TYPESCRIPT = TypeScript(
         (CSHARP, 'new object[] {true, (object?)null, "hi", new int[] {1, 2}}'),
         (RUBY, '[true, nil, "hi", [1, 2]],'),
         (KOTLIN, 'listOf<Any?>(true, null, "hi", intArrayOf(1, 2)),'),
-        (RUST, 'vec![true, None, "hi", vec![1, 2]],'),
+        (RUST, 'vec![true, None::<()>, "hi", vec![1, 2]],'),
     ],
 )
 def test_language_sequence(*, language: Language, expected: str) -> None:
