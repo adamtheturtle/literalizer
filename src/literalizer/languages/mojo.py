@@ -118,6 +118,7 @@ class Mojo:
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.coerce_heterogeneous_to_strings = True
+        self.coerce_heterogeneous_lists_to_strings = True
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration

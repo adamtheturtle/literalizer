@@ -85,6 +85,40 @@ def _all_scalars_heterogeneous(
 
 
 @beartype
+def _coerce_heterogeneous_lists(*, data: Value) -> Value:
+    """Recursively coerce sibling lists with heterogeneous scalar
+    element types so that every inner element becomes a string.
+
+    For example, ``[[1, 2], ["a", "b"]]`` becomes
+    ``[["1", "2"], ["a", "b"]]``.
+    """
+    if isinstance(data, (dict, ordereddict)):
+        return type(data)(
+            {k: _coerce_heterogeneous_lists(data=v) for k, v in data.items()}  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType,reportUnknownVariableType]
+        )
+
+    if isinstance(data, list):
+        new_list = [_coerce_heterogeneous_lists(data=v) for v in data]
+        sublists: list[list[Value]] = [
+            v for v in new_list if isinstance(v, list)
+        ]
+        if (
+            len(sublists) == len(new_list)
+            and len(sublists) > 1
+            and _all_scalars_heterogeneous(
+                values=[e for sub in sublists for e in sub],
+            )
+        ):
+            return [
+                [_coerce_scalar_to_str(value=e) for e in sub]
+                for sub in sublists
+            ]
+        return new_list
+
+    return data
+
+
+@beartype
 def _has_heterogeneous(*, data: Value) -> bool:
     """Recursively check whether data contains any heterogeneous
     all-scalar collections.
@@ -314,6 +348,24 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     return cast("Value", data)
 
 
+@beartype
+def _apply_coercions(
+    *,
+    data: Value,
+    spec: Language,
+    error_on_coercion: bool,
+) -> Value:
+    """Apply heterogeneous-type coercions controlled by the language."""
+    if spec.coerce_heterogeneous_to_strings:
+        if error_on_coercion:
+            _check_heterogeneous(data=data)
+        else:
+            data = _coerce_heterogeneous(data=data)
+            if spec.coerce_heterogeneous_lists_to_strings:
+                data = _coerce_heterogeneous_lists(data=data)
+    return data
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize(
     *,
@@ -356,11 +408,11 @@ def _literalize(
             collections to strings.
     """
     spec = language
-    if spec.coerce_heterogeneous_to_strings:
-        if error_on_coercion:
-            _check_heterogeneous(data=data)
-        else:
-            data = _coerce_heterogeneous(data=data)
+    data = _apply_coercions(
+        data=data,
+        spec=spec,
+        error_on_coercion=error_on_coercion,
+    )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
