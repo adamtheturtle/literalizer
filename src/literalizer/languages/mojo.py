@@ -33,7 +33,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Mojo variable declaration in Python-compatible script
     style.
     """
-    return f"{name} = {value}"
+    return f"var {name} = {value}"
 
 
 @beartype

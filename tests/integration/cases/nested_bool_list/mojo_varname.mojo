@@ -1,4 +1,4 @@
-my_data = [
+var my_data = [
     [True, False],
     [True, True],
 ]
