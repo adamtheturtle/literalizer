@@ -56,11 +56,6 @@ class Mojo:
     scalar values of mixed types (e.g. ``[1, 2.5, 3]``), **all values
     are coerced to their string representations** so that the resulting
     literal is valid Mojo (e.g. ``["1", "2.5", "3"]``).
-
-    For sets, coercion is skipped when it would reduce the element count.
-    This can happen when distinct values of different types coerce to the
-    same string (e.g. ``{1, "1"}`` would both become ``"1"``).  In that
-    case the original uncoerced values are kept.
     """
 
     @beartype
