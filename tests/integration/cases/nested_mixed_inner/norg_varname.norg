@@ -1,6 +1,7 @@
-=my_data
+* my_data
+@code json
 [
     [1, "a"],
     [2, "b"]
 ]
-=end
+@end

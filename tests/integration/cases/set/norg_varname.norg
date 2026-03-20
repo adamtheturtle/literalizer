@@ -1,7 +1,8 @@
-=my_data
+* my_data
+@code json
 [
     "apple",
     "banana",
     "cherry"
 ]
-=end
+@end

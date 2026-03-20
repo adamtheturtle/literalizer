@@ -571,6 +571,12 @@ def _wrap_nim_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
+def _wrap_norg(content: str) -> str:
+    """Wrap in a Norg ranged verbatim tag."""
+    return f"@code json\n{content}\n@end"
+
+
+@beartype
 def _wrap_d(content: str) -> str:
     """Wrap in a D function with ``std.json`` imported."""
     typed = literalizer.languages.D().format_sequence_entry(content)
@@ -1417,7 +1423,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     "norg": _LanguageConfig(
         spec=literalizer.languages.Norg(),
         extension=".norg",
-        wrap=_wrap_identity,
+        wrap=_wrap_norg,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
     ),

@@ -1,5 +1,7 @@
+@code json
 [
     "apple",
     "banana",
     "cherry"
 ]
+@end

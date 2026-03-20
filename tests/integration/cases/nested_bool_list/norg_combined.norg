@@ -1,6 +1,7 @@
-=my_data
+* my_data
+@code json
 [
     [true, false],
     [true, true]
 ]
-=end
+@end

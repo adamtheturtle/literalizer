@@ -1,6 +1,8 @@
+@code json
 [
     % before apple%
     "apple",
     "banana"  % banana inline%
     % trailing%
 ]
+@end

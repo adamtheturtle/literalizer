@@ -1,4 +1,6 @@
+@code json
 [
     [],
     {}
 ]
+@end

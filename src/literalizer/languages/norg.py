@@ -27,23 +27,27 @@ if TYPE_CHECKING:
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
-    r"""Format a Norg macro definition as ``=name\nvalue\n=end``."""
-    return f"={name}\n{value}\n=end"
+    """Format a named Norg code block.
+
+    Uses a heading for the variable name followed by a ranged
+    verbatim tag (``@code json`` / ``@end``) for the value.
+    """
+    return f"* {name}\n@code json\n{value}\n@end"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
-    r"""Format a Norg macro definition as ``=name\nvalue\n=end``.
+    """Format a named Norg code block.
 
     Norg has no distinction between declaration and re-assignment;
     this produces the same output as
     :func:`_format_variable_declaration`.
     """
-    return f"={name}\n{value}\n=end"
+    return f"* {name}\n@code json\n{value}\n@end"
 
 
 class Norg:
-    r"""Norg markup language specification.
+    """Norg markup language specification.
 
     Produces data literals using Norg-compatible syntax — square
     brackets for sequences and sets, curly braces for mappings,
@@ -51,8 +55,8 @@ class Norg:
 
     Norg comments use the null attached modifier: ``% comment %``.
 
-    Variable declarations use Norg's macro syntax:
-    ``=name\nvalue\n=end``.
+    Variable declarations use a heading followed by a ranged
+    verbatim tag: ``* name`` then ``@code json`` / ``@end``.
     """
 
     @beartype

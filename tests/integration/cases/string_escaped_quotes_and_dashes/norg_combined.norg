@@ -1,3 +1,4 @@
-=my_data
+* my_data
+@code json
 "hello \"world\" -- not a comment"
-=end
+@end

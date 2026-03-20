@@ -1,6 +1,7 @@
-=my_data
+* my_data
+@code json
 [
     {"name": "Alice", "age": 30},
     {"name": "Bob", "age": 25}
 ]
-=end
+@end

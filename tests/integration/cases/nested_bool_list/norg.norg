@@ -1,4 +1,6 @@
+@code json
 [
     [true, false],
     [true, true]
 ]
+@end
