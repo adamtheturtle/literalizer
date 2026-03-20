@@ -17,10 +17,9 @@ jobs:
         uses: astral-sh/setup-uv@v7
       - name: Check YAML syntax
         run: >-
+          shopt -s extglob &&
           uvx yamllint --strict
           -d '{extends: default, rules: {document-start: disable, truthy: disable,
           line-length: disable, comments-indentation: disable, indentation: {indent-sequences:
           whatever}}}'
-          tests/integration/cases/*/yaml.yaml
-          tests/integration/cases/*/yaml_combined.yaml
-          tests/integration/cases/*/yaml_varname.yaml
+          tests/integration/cases/*/!(input).yaml
