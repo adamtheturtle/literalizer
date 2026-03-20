@@ -138,7 +138,7 @@ _RUST_HASHSET_STUB = (
 @beartype
 def _rust_preamble(content: str) -> str:
     """Build a Rust preamble with only the stubs needed by content."""
-    preamble = _RUST_VEC_PREAMBLE
+    preamble = _RUST_VEC_PREAMBLE if "vec!" in content else ""
     if "HashMap" in content:
         preamble += _RUST_HASHMAP_STUB
     if "HashSet" in content:

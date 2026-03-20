@@ -167,7 +167,7 @@ class Rust:
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.coerce_heterogeneous_to_strings: bool = (
-            sequence_format != Rust.SequenceFormat.TUPLE
+            sequence_format == Rust.SequenceFormat.ARRAY
         )
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
