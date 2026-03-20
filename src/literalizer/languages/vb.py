@@ -90,6 +90,11 @@ class VisualBasic:
     variable name is supplied.
     """
 
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
+
     class SequenceFormat(enum.Enum):
         """Sequence type options for Visual Basic."""
 
@@ -98,6 +103,7 @@ class VisualBasic:
     def __init__(
         self,
         *,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize VisualBasic language specification."""
@@ -119,7 +125,7 @@ class VisualBasic:
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = format_date_iso
         self.format_datetime: Callable[[datetime.datetime], str] = (
             format_datetime_iso

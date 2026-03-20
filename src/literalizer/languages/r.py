@@ -126,6 +126,11 @@ class R:
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
+
     class SequenceFormat(enum.Enum):
         """Sequence type options for R."""
 
@@ -137,6 +142,7 @@ class R:
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
         empty_dict_key: EmptyDictKey,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize R language specification."""
@@ -157,7 +163,7 @@ class R:
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]

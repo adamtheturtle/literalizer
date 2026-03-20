@@ -108,7 +108,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-_bytes_format: Callable[[bytes], str] = _format_objc_bytes
 _date_format: Callable[[datetime.date], str] = _format_objc_date
 _datetime_format: Callable[[datetime.datetime], str] = _format_objc_datetime
 _string_format: Callable[[str], str] = _format_objc_string
@@ -117,6 +116,11 @@ _string_format: Callable[[str], str] = _format_objc_string
 @beartype
 class ObjectiveC:
     """Objective-C language specification."""
+
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=_format_objc_bytes)
 
     class SequenceFormat(enum.Enum):
         """Sequence type options for Objective-C."""
@@ -127,6 +131,7 @@ class ObjectiveC:
     def __init__(
         self,
         *,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Objective-C language specification."""
@@ -147,7 +152,7 @@ class ObjectiveC:
         )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = _date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _datetime_format

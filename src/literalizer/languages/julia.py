@@ -79,6 +79,11 @@ class Julia:
         ISO = enum.member(value=format_datetime_iso)
         JULIA = enum.member(value=format_datetime_julia)
 
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
+
     class SequenceFormat(enum.Enum):
         """Sequence type options for Julia."""
 
@@ -90,6 +95,7 @@ class Julia:
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Julia language specification."""
@@ -116,7 +122,7 @@ class Julia:
             dict_entry_with_separator(separator=" => ")
         )
         self.multiline_trailing_comma = True
-        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
