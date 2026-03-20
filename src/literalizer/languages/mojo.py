@@ -49,7 +49,14 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 class Mojo:
-    """Mojo language specification."""
+    """Mojo language specification.
+
+    Mojo does not support heterogeneous collections — every element in a
+    list must share a single type.  When a collection contains scalar
+    values of mixed types (e.g. ``[1, 2.5, 3]``), **all values are
+    coerced to their string representations** so that the resulting
+    literal is valid Mojo (e.g. ``["1", "2.5", "3"]``).
+    """
 
     @beartype
     def __init__(self) -> None:
