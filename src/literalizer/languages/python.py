@@ -164,10 +164,13 @@ class Python:
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
+        self.set_open: str
+        self.set_close: str
+        self.empty_set: str | None
         if set_format == Python.SetFormat.FROZENSET:
             self.set_open = "frozenset({"
             self.set_close = "})"
-            self.empty_set: str | None = "frozenset()"
+            self.empty_set = "frozenset()"
         else:
             self.set_open = "{"
             self.set_close = "}"
