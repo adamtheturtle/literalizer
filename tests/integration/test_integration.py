@@ -667,6 +667,7 @@ def _wrap_matlab(content: str) -> str:
     return f"x = {content};"
 
 
+@beartype
 def _in_mojo_main(content: str) -> str:
     """Indent content and wrap in a Mojo ``def main():`` function."""
     indented = "\n".join(f"    {line}" for line in content.splitlines())
