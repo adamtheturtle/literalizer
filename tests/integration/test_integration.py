@@ -2035,3 +2035,78 @@ def test_set_format_golden_file(
         extension=variant.extension,
         fullpath=_SET_CASE_DIR / (variant_name + variant.extension),
     )
+
+
+@dataclasses.dataclass
+class _VariableTypeHintsVariant:
+    """A variable-type-hints formatting variant."""
+
+    spec: literalizer.Language
+    case_dir: Path
+    extension: str
+
+
+_VARIABLE_TYPE_HINTS_VARIANTS: dict[str, _VariableTypeHintsVariant] = {
+    "simple_dict": _VariableTypeHintsVariant(
+        spec=literalizer.languages.Python(
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
+        ),
+        case_dir=_CASES_DIR / "simple_dict",
+        extension=".py",
+    ),
+    "simple_sequence": _VariableTypeHintsVariant(
+        spec=literalizer.languages.Python(
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
+        ),
+        case_dir=_CASES_DIR / "simple_sequence",
+        extension=".py",
+    ),
+    "scalars": _VariableTypeHintsVariant(
+        spec=literalizer.languages.Python(
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
+        ),
+        case_dir=_CASES_DIR / "scalars",
+        extension=".py",
+    ),
+    "set": _VariableTypeHintsVariant(
+        spec=literalizer.languages.Python(
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
+        ),
+        case_dir=_CASES_DIR / "set",
+        extension=".py",
+    ),
+    "nested": _VariableTypeHintsVariant(
+        spec=literalizer.languages.Python(
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
+        ),
+        case_dir=_CASES_DIR / "nested",
+        extension=".py",
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    argnames=("_variant_name", "variant"),
+    argvalues=list(_VARIABLE_TYPE_HINTS_VARIANTS.items()),
+    ids=list(_VARIABLE_TYPE_HINTS_VARIANTS),
+)
+def test_variable_type_hints_golden_file(
+    _variant_name: str,
+    variant: _VariableTypeHintsVariant,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test Python inline type hints on variable declarations."""
+    yaml_string = (variant.case_dir / "input.yaml").read_text()
+    result = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=variant.spec,
+        line_prefix="",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+    )
+    file_regression.check(
+        contents=result + "\n",
+        extension=variant.extension,
+        fullpath=variant.case_dir
+        / ("python_inline_hints_varname" + variant.extension),
+    )

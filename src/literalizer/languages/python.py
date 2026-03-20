@@ -48,6 +48,79 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+_EXACT_TYPE_HINTS: dict[str, str] = {
+    "True": "bool",
+    "False": "bool",
+    "None": "None",
+    "set()": "set[Any]",
+}
+
+_PREFIX_TYPE_HINTS: tuple[tuple[str, str], ...] = (
+    ("b'", "bytes"),
+    ('b"', "bytes"),
+    ("datetime.datetime(", "datetime.datetime"),
+    ("datetime.date(", "datetime.date"),
+    ("OrderedDict(", "OrderedDict[str, Any]"),
+    ("frozenset(", "frozenset[Any]"),
+    ("[", "list[Any]"),
+    ("(", "tuple[Any, ...]"),
+    ('"', "str"),
+    ("'", "str"),
+)
+
+
+@beartype
+def _infer_python_type_hint(value: str) -> str:
+    """Infer a Python type hint string from a formatted value."""
+    if value in _EXACT_TYPE_HINTS:
+        return _EXACT_TYPE_HINTS[value]
+    for prefix, hint in _PREFIX_TYPE_HINTS:
+        if value.startswith(prefix):
+            return hint
+    if value.startswith("{"):
+        if _is_dict_literal(value=value):
+            return "dict[str, Any]"
+        return "set[Any]"
+    try:
+        int(value)
+    except ValueError:
+        pass
+    else:
+        return "int"
+    try:
+        float(value)
+    except ValueError:
+        pass
+    else:
+        return "float"
+    return "Any"
+
+
+@beartype
+def _is_dict_literal(*, value: str) -> bool:
+    """Check whether a ``{``-prefixed formatted value is a dict literal.
+
+    Dict entries use ``": "`` between key and value.  Set entries never
+    contain that pattern at the top level, so checking the first
+    non-whitespace content line for ``": `` reliably distinguishes the
+    two.
+    """
+    content = value[1:].lstrip()
+    if not content or content[0] == "}":
+        # ``{}`` — empty braces are always a dict in Python.
+        return True
+    # Check the first content line for the dict-entry separator.
+    first_line = content.split(sep="\n", maxsplit=1)[0].strip()
+    return '": ' in first_line or first_line.endswith('":')
+
+
+@beartype
+def _format_variable_declaration_inline_hint(name: str, value: str) -> str:
+    """Format a Python variable declaration with an inline type hint."""
+    hint = _infer_python_type_hint(value=value)
+    return f"{name}: {hint} = {value}"
+
+
 @beartype
 class Python:
     """Python language specification.
@@ -89,6 +162,14 @@ class Python:
               e.g. ``{1, 2, 3}``.
             * ``SetFormat.FROZENSET`` — immutable frozenset,
               e.g. ``frozenset({1, 2, 3})``.
+
+        variable_type_hints: Whether to add inline type hints to
+            variable declarations.
+
+            * ``VariableTypeHints.NONE`` (default) — bare assignment,
+              e.g. ``my_var = {...}``.
+            * ``VariableTypeHints.INLINE`` — with type annotation,
+              e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
     class DateFormat(enum.Enum):
@@ -122,6 +203,12 @@ class Python:
         SET = "set"
         FROZENSET = "frozenset"
 
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options for Python."""
+
+        NONE = "none"
+        INLINE = "inline"
+
     def __init__(
         self,
         *,
@@ -130,6 +217,7 @@ class Python:
         bytes_format: BytesFormat = BytesFormat.HEX,
         sequence_format: SequenceFormat = SequenceFormat.TUPLE,
         set_format: SetFormat = SetFormat.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Python language specification."""
         self.null_literal = "None"
@@ -192,7 +280,9 @@ class Python:
         self.coerce_heterogeneous_to_strings = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
-            _format_variable_declaration
+            _format_variable_declaration_inline_hint
+            if variable_type_hints == Python.VariableTypeHints.INLINE
+            else _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment

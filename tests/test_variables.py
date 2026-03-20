@@ -46,6 +46,9 @@ JAVASCRIPT = JavaScript()
 KOTLIN = Kotlin()
 PHP = Php()
 PYTHON = Python()
+PYTHON_INLINE_HINTS = Python(
+    variable_type_hints=Python.VariableTypeHints.INLINE,
+)
 RUBY = Ruby()
 RUST = Rust()
 SCALA = Scala()
@@ -214,3 +217,85 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("json_input", "expected"),
+    argvalues=[
+        ("42", "my_var: int = 42"),
+        ("3.14", "my_var: float = 3.14"),
+        ("true", "my_var: bool = True"),
+        ("false", "my_var: bool = False"),
+        ("null", "my_var: None = None"),
+        ('"hello"', 'my_var: str = "hello"'),
+    ],
+)
+def test_python_inline_type_hints_scalars(
+    *, json_input: str, expected: str
+) -> None:
+    """Python with INLINE variable_type_hints adds type annotations
+    for scalar values.
+    """
+    result = literalize_json(
+        json_string=json_input,
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        wrap=False,
+        variable_name="my_var",
+    )
+    assert result == expected
+
+
+def test_python_inline_type_hints_dict() -> None:
+    """Python INLINE hints infer dict type for wrapped dicts."""
+    result = literalize_json(
+        json_string='{"a": 1}',
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        wrap=True,
+        variable_name="my_var",
+    )
+    assert result.startswith("my_var: dict[str, Any] = {")
+
+
+def test_python_inline_type_hints_tuple() -> None:
+    """Python INLINE hints infer tuple type for wrapped sequences."""
+    result = literalize_json(
+        json_string="[1, 2]",
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        wrap=True,
+        variable_name="my_var",
+    )
+    assert result.startswith("my_var: tuple[Any, ...] = (")
+
+
+def test_python_inline_type_hints_list() -> None:
+    """Python INLINE hints infer list type when sequence_format is
+    LIST.
+    """
+    lang = Python(
+        sequence_format=Python.SequenceFormat.LIST,
+        variable_type_hints=Python.VariableTypeHints.INLINE,
+    )
+    result = literalize_json(
+        json_string="[1, 2]",
+        language=lang,
+        line_prefix="",
+        wrap=True,
+        variable_name="my_var",
+    )
+    assert result.startswith("my_var: list[Any] = [")
+
+
+def test_python_inline_type_hints_assignment_no_hint() -> None:
+    """Python INLINE hints do not add type hints for assignments."""
+    result = literalize_json(
+        json_string="42",
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        wrap=False,
+        variable_name="my_var",
+        new_variable=False,
+    )
+    assert result == "my_var = 42"
