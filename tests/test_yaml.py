@@ -40,14 +40,17 @@ from literalizer.languages import (
 GO = Go(
     date_format=Go.DateFormat.ISO,
     datetime_format=Go.DatetimeFormat.ISO,
+    bytes_format=Go.BytesFormat.HEX,
     sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVASCRIPT = JavaScript(
     date_format=JavaScript.DateFormat.ISO,
     datetime_format=JavaScript.DatetimeFormat.ISO,
+    bytes_format=JavaScript.BytesFormat.HEX,
     sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 MOJO = Mojo(
+    bytes_format=Mojo.BytesFormat.HEX,
     sequence_format=Mojo.SequenceFormat.LIST,
 )
 PYTHON = Python(
@@ -436,6 +439,7 @@ def test_java_native_dates() -> None:
     spec = Java(
         date_format=Java.DateFormat.JAVA,
         datetime_format=Java.DatetimeFormat.INSTANT,
+        bytes_format=Java.BytesFormat.HEX,
         sequence_format=Java.SequenceFormat.ARRAY,
     )
     result = literalize_yaml(
@@ -458,6 +462,7 @@ def test_ruby_native_dates() -> None:
     spec = Ruby(
         date_format=Ruby.DateFormat.RUBY,
         datetime_format=Ruby.DatetimeFormat.RUBY,
+        bytes_format=Ruby.BytesFormat.HEX,
         sequence_format=Ruby.SequenceFormat.ARRAY,
     )
     result = literalize_yaml(
@@ -647,6 +652,7 @@ def test_r_empty_dict_key_positional() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"": "value"}\n'
@@ -675,6 +681,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"": "value"}\n'
@@ -703,6 +710,7 @@ def test_r_empty_dict_key_error() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.ERROR,
+        bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"": "value"}\n'
@@ -725,6 +733,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.ERROR,
+        bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"key": "value"}\n'

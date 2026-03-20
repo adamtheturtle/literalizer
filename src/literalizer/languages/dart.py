@@ -123,6 +123,11 @@ class Dart:
         ISO = enum.member(value=format_datetime_iso)
         DART = enum.member(value=format_datetime_dart)
 
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
+
     class SequenceFormat(enum.Enum):
         """Sequence type options for Dart."""
 
@@ -138,6 +143,7 @@ class Dart:
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Dart language specification."""
@@ -160,7 +166,7 @@ class Dart:
         )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]

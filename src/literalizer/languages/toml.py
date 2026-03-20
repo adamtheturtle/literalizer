@@ -99,6 +99,11 @@ class Toml:
     datetime literals, which are a distinct TOML type.
     """
 
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
+
     class SequenceFormat(enum.Enum):
         """Sequence type options for TOML."""
 
@@ -112,6 +117,7 @@ class Toml:
     def __init__(
         self,
         *,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize TOML language specification."""
@@ -132,7 +138,7 @@ class Toml:
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = _format_toml_date
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _format_toml_datetime

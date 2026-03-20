@@ -60,6 +60,11 @@ class Norg:
     verbatim tag: ``* name`` then ``@code json`` / ``@end``.
     """
 
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
+
     class SequenceFormat(enum.Enum):
         """Sequence type options for Norg."""
 
@@ -74,6 +79,7 @@ class Norg:
     def __init__(
         self,
         *,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Norg language specification."""
@@ -94,7 +100,7 @@ class Norg:
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = format_bytes_hex
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = format_date_iso
         self.format_datetime: Callable[[datetime.datetime], str] = (
             format_datetime_iso

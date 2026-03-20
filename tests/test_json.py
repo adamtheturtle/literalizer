@@ -27,21 +27,25 @@ from literalizer.languages import (
 CPP = Cpp(
     date_format=Cpp.DateFormat.ISO,
     datetime_format=Cpp.DatetimeFormat.ISO,
+    bytes_format=Cpp.BytesFormat.HEX,
     sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
 )
 CSHARP = CSharp(
     date_format=CSharp.DateFormat.ISO,
     datetime_format=CSharp.DatetimeFormat.ISO,
+    bytes_format=CSharp.BytesFormat.HEX,
     sequence_format=CSharp.SequenceFormat.ARRAY,
 )
 GO = Go(
     date_format=Go.DateFormat.ISO,
     datetime_format=Go.DatetimeFormat.ISO,
+    bytes_format=Go.BytesFormat.HEX,
     sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVASCRIPT = JavaScript(
     date_format=JavaScript.DateFormat.ISO,
     datetime_format=JavaScript.DatetimeFormat.ISO,
+    bytes_format=JavaScript.BytesFormat.HEX,
     sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 PYTHON = Python(
@@ -55,6 +59,7 @@ PYTHON = Python(
 RUBY = Ruby(
     date_format=Ruby.DateFormat.ISO,
     datetime_format=Ruby.DatetimeFormat.ISO,
+    bytes_format=Ruby.BytesFormat.HEX,
     sequence_format=Ruby.SequenceFormat.ARRAY,
 )
 
@@ -495,6 +500,7 @@ def test_literalize_json_invalid_is_parse_error() -> None:
 
 
 MOJO = Mojo(
+    bytes_format=Mojo.BytesFormat.HEX,
     sequence_format=Mojo.SequenceFormat.LIST,
 )
 

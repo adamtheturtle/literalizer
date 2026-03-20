@@ -42,6 +42,7 @@ Usage
        language=Go(
            date_format=Go.DateFormat.ISO,
            datetime_format=Go.DatetimeFormat.ISO,
+           bytes_format=Go.BytesFormat.HEX,
            sequence_format=Go.SequenceFormat.SLICE,
        ),
        line_prefix="",

@@ -40,7 +40,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"(setf *{name}* {value})"
 
 
-_bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
@@ -49,6 +48,11 @@ _string_format: Callable[[str], str] = format_string_backslash
 @beartype
 class CommonLisp:
     """Common Lisp language specification."""
+
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
 
     class SequenceFormat(enum.Enum):
         """Sequence type options for Common Lisp."""
@@ -63,6 +67,7 @@ class CommonLisp:
     def __init__(
         self,
         *,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Common Lisp language specification."""
@@ -81,7 +86,7 @@ class CommonLisp:
         self.format_dict_entry: Callable[[str, str], str] = _format_cons_entry
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = _date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _datetime_format

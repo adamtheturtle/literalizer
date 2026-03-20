@@ -45,6 +45,7 @@ PYTHON = Python(
 JAVA = Java(
     date_format=Java.DateFormat.ISO,
     datetime_format=Java.DatetimeFormat.ISO,
+    bytes_format=Java.BytesFormat.HEX,
     sequence_format=Java.SequenceFormat.ARRAY,
 )
 

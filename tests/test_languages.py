@@ -40,39 +40,47 @@ from literalizer.languages import (
 )
 
 COBOL = Cobol(
+    bytes_format=Cobol.BytesFormat.HEX,
     sequence_format=Cobol.SequenceFormat.SEQUENCE,
 )
 CPP = Cpp(
     date_format=Cpp.DateFormat.ISO,
     datetime_format=Cpp.DatetimeFormat.ISO,
+    bytes_format=Cpp.BytesFormat.HEX,
     sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
 )
 FORTRAN = Fortran(
+    bytes_format=Fortran.BytesFormat.HEX,
     sequence_format=Fortran.SequenceFormat.LIST,
 )
 CSHARP = CSharp(
     date_format=CSharp.DateFormat.ISO,
     datetime_format=CSharp.DatetimeFormat.ISO,
+    bytes_format=CSharp.BytesFormat.HEX,
     sequence_format=CSharp.SequenceFormat.ARRAY,
 )
 GO = Go(
     date_format=Go.DateFormat.ISO,
     datetime_format=Go.DatetimeFormat.ISO,
+    bytes_format=Go.BytesFormat.HEX,
     sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVA = Java(
     date_format=Java.DateFormat.ISO,
     datetime_format=Java.DatetimeFormat.ISO,
+    bytes_format=Java.BytesFormat.HEX,
     sequence_format=Java.SequenceFormat.ARRAY,
 )
 JAVASCRIPT = JavaScript(
     date_format=JavaScript.DateFormat.ISO,
     datetime_format=JavaScript.DatetimeFormat.ISO,
+    bytes_format=JavaScript.BytesFormat.HEX,
     sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 KOTLIN = Kotlin(
     date_format=Kotlin.DateFormat.ISO,
     datetime_format=Kotlin.DatetimeFormat.ISO,
+    bytes_format=Kotlin.BytesFormat.HEX,
     sequence_format=Kotlin.SequenceFormat.LIST,
 )
 PYTHON = Python(
@@ -86,19 +94,23 @@ PYTHON = Python(
 RUBY = Ruby(
     date_format=Ruby.DateFormat.ISO,
     datetime_format=Ruby.DatetimeFormat.ISO,
+    bytes_format=Ruby.BytesFormat.HEX,
     sequence_format=Ruby.SequenceFormat.ARRAY,
 )
 RUST = Rust(
     date_format=Rust.DateFormat.ISO,
     datetime_format=Rust.DatetimeFormat.ISO,
+    bytes_format=Rust.BytesFormat.HEX,
     sequence_format=Rust.SequenceFormat.VEC,
 )
 TOML = Toml(
+    bytes_format=Toml.BytesFormat.HEX,
     sequence_format=Toml.SequenceFormat.ARRAY,
 )
 TYPESCRIPT = TypeScript(
     date_format=TypeScript.DateFormat.ISO,
     datetime_format=TypeScript.DatetimeFormat.ISO,
+    bytes_format=TypeScript.BytesFormat.HEX,
     sequence_format=TypeScript.SequenceFormat.ARRAY,
 )
 
@@ -512,7 +524,10 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
     """
     result = literalize_yaml(
         yaml_string=yaml_string,
-        language=Matlab(sequence_format=Matlab.SequenceFormat.CELL_ARRAY),
+        language=Matlab(
+            bytes_format=Matlab.BytesFormat.HEX,
+            sequence_format=Matlab.SequenceFormat.CELL_ARRAY,
+        ),
         line_prefix="",
         indent="    ",
         wrap=False,
@@ -532,7 +547,10 @@ def test_matlab_dict_key_with_quote() -> None:
     yaml_string = '{"hello \\"world\\"": 1}\n'
     result = literalize_yaml(
         yaml_string=yaml_string,
-        language=Matlab(sequence_format=Matlab.SequenceFormat.CELL_ARRAY),
+        language=Matlab(
+            bytes_format=Matlab.BytesFormat.HEX,
+            sequence_format=Matlab.SequenceFormat.CELL_ARRAY,
+        ),
         line_prefix="",
         indent="    ",
         wrap=False,

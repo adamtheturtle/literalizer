@@ -78,7 +78,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {_to_val(value=value)};"
 
 
-_bytes_format: Callable[[bytes], str] = format_bytes_hex
 _date_format: Callable[[datetime.date], str] = format_date_iso
 _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
@@ -87,6 +86,11 @@ _string_format: Callable[[str], str] = format_string_backslash
 @beartype
 class C:
     """C language specification."""
+
+    class BytesFormat(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
 
     class SequenceFormat(enum.Enum):
         """Sequence type options for C."""
@@ -101,6 +105,7 @@ class C:
     def __init__(
         self,
         *,
+        bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize C language specification."""
@@ -121,7 +126,7 @@ class C:
         )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = _bytes_format
+        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_date: Callable[[datetime.date], str] = _date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _datetime_format
