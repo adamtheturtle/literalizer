@@ -16,9 +16,6 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Check YAML syntax
-        run: >-
-          shopt -s extglob &&
-          uvx yamllint --strict
-          -d '{extends: default, rules: {line-length: disable, colons: disable,
-          comments-indentation: disable, indentation: disable}}'
-          tests/integration/cases/*/!(input).yaml
+        run: |-
+          find tests/integration/cases -name "*.yaml" ! -name "input.yaml" -print0 | \
+            xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' --

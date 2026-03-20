@@ -1,3 +1,6 @@
---- [apple, banana  # banana inline
+[
+    # before apple
+    "apple",
+    "banana"  # banana inline
     # trailing
 ]
