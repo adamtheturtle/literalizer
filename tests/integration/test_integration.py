@@ -1143,8 +1143,6 @@ def _python_imports(content: str) -> str:
     imports: list[str] = []
     if "OrderedDict(" in content:
         imports.append("from collections import OrderedDict")
-    if "datetime." in content:
-        imports.append("import datetime")
     if "Any" in content:
         imports.append("from typing import Any")
     if not imports:
