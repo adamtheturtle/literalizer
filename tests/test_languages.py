@@ -482,7 +482,13 @@ def test_custom_language() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == 'YES,\nNIL,\n"hi",'
+    expected = textwrap.dedent(
+        text="""\
+        YES,
+        NIL,
+        "hi","""
+    )
+    assert result == expected
 
 
 @pytest.mark.parametrize(
@@ -553,7 +559,12 @@ def test_toml_integer_dict_key() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '{\n    1 = "value"\n}'
+    expected = textwrap.dedent(
+        text="""\
+        {
+            1 = "value"
+        }"""
+    )
     assert result == expected
 
 

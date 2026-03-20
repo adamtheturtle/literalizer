@@ -409,7 +409,13 @@ def test_literalize_json_object() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '{\n    "a": 1,\n    "b": True,\n}'
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "a": 1,
+            "b": True,
+        }"""
+    )
     assert result == expected
 
 
@@ -520,4 +526,12 @@ def test_error_on_coercion_json_no_raise_homogeneous() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert result == "[\n    1,\n    2,\n    3,\n]"
+    expected = textwrap.dedent(
+        text="""\
+        [
+            1,
+            2,
+            3,
+        ]"""
+    )
+    assert result == expected

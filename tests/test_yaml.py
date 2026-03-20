@@ -113,7 +113,13 @@ def test_literalize_yaml_mapping() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '{\n    "a": 1,\n    "b": True,\n}'
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "a": 1,
+            "b": True,
+        }"""
+    )
     assert result == expected
 
 
@@ -508,7 +514,13 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '{\n    "key1": "48656c6c6f",\n    "key2": "42",\n}'
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "key1": "48656c6c6f",
+            "key2": "42",
+        }"""
+    )
     assert result == expected
 
 
@@ -531,7 +543,13 @@ def test_coerce_heterogeneous_set() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '[\n    "1",\n    "hello",\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "1",
+            "hello",
+        ]"""
+    )
     assert result == expected
 
 
@@ -553,7 +571,13 @@ def test_coerce_heterogeneous_date_in_collection() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '[\n    "2024-01-15",\n    "42",\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "2024-01-15",
+            "42",
+        ]"""
+    )
     assert result == expected
 
 
@@ -577,7 +601,13 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '[\n    "2024-01-15T12:30:00",\n    "42",\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "2024-01-15T12:30:00",
+            "42",
+        ]"""
+    )
     assert result == expected
 
 
@@ -600,7 +630,13 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            ("name", "Alice"),
+            ("city", "Paris"),
+        ]"""
+    )
     assert result == expected
 
 
@@ -623,7 +659,13 @@ def test_r_empty_dict_key_positional() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == 'list(\n    "value"\n)'
+    expected = textwrap.dedent(
+        text="""\
+        list(
+            "value"
+        )"""
+    )
+    assert result == expected
 
 
 def test_r_empty_dict_key_positional_is_default() -> None:
@@ -645,7 +687,13 @@ def test_r_empty_dict_key_positional_is_default() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == 'list(\n    "value"\n)'
+    expected = textwrap.dedent(
+        text="""\
+        list(
+            "value"
+        )"""
+    )
+    assert result == expected
 
 
 def test_r_empty_dict_key_error() -> None:
@@ -689,7 +737,13 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == 'list(\n    "key" = "value"\n)'
+    expected = textwrap.dedent(
+        text="""\
+        list(
+            "key" = "value"
+        )"""
+    )
+    assert result == expected
 
 
 def test_error_on_coercion_raises_for_heterogeneous_list() -> None:
@@ -744,7 +798,15 @@ def test_error_on_coercion_no_raise_for_homogeneous() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert result == "[\n    1,\n    2,\n    3,\n]"
+    expected = textwrap.dedent(
+        text="""\
+        [
+            1,
+            2,
+            3,
+        ]"""
+    )
+    assert result == expected
 
 
 def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
@@ -760,7 +822,15 @@ def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert result == "(\n    1,\n    2.5,\n    3,\n)"
+    expected = textwrap.dedent(
+        text="""\
+        (
+            1,
+            2.5,
+            3,
+        )"""
+    )
+    assert result == expected
 
 
 def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
@@ -848,7 +918,14 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert result == '{\n    "a": 1,\n    "b": 2,\n}'
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "a": 1,
+            "b": 2,
+        }"""
+    )
+    assert result == expected
 
 
 def test_error_on_coercion_no_raise_for_homogeneous_omap() -> None:
@@ -870,7 +947,14 @@ def test_error_on_coercion_no_raise_for_homogeneous_omap() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert result == '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
+    expected = textwrap.dedent(
+        text="""\
+        [
+            ("name", "Alice"),
+            ("city", "Paris"),
+        ]"""
+    )
+    assert result == expected
 
 
 def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
@@ -892,4 +976,11 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert result == "[\n    1,\n    2,\n]"
+    expected = textwrap.dedent(
+        text="""\
+        [
+            1,
+            2,
+        ]"""
+    )
+    assert result == expected
