@@ -147,12 +147,14 @@ def _rust_preamble(content: str) -> str:
 
 
 def _rust_array_spec() -> literalizer.languages.Rust:
-    """Create a Rust spec for array format."""
-    return literalizer.languages.Rust(
+    """Create a Rust spec for array format with heterogeneous coercion."""
+    spec = literalizer.languages.Rust(
         date_format=literalizer.languages.Rust.DateFormat.ISO,
         datetime_format=literalizer.languages.Rust.DatetimeFormat.ISO,
         sequence_format=literalizer.languages.Rust.SequenceFormat.ARRAY,
     )
+    spec.coerce_heterogeneous_to_strings = True
+    return spec
 
 
 @beartype
