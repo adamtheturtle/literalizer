@@ -81,6 +81,13 @@ class Python:
               e.g. ``(1, 2, 3)``.
             * ``SequenceFormat.LIST`` — list literal,
               e.g. ``[1, 2, 3]``.
+
+        set_format: Which Python set type to use.
+
+            * ``SetFormat.SET`` (default) — mutable set literal,
+              e.g. ``{1, 2, 3}``.
+            * ``SetFormat.FROZENSET`` — immutable frozenset,
+              e.g. ``frozenset({1, 2, 3})``.
     """
 
     class DateFormat(enum.Enum):
@@ -108,6 +115,12 @@ class Python:
         TUPLE = "tuple"
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Python."""
+
+        SET = "set"
+        FROZENSET = "frozenset"
+
     @beartype
     def __init__(
         self,
@@ -116,6 +129,7 @@ class Python:
         datetime_format: DatetimeFormat = DatetimeFormat.ISO,
         bytes_format: BytesFormat = BytesFormat.HEX,
         sequence_format: SequenceFormat = SequenceFormat.TUPLE,
+        set_format: SetFormat = SetFormat.SET,
     ) -> None:
         """Initialize Python language specification."""
         self.null_literal = "None"
@@ -150,9 +164,17 @@ class Python:
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
-        self.set_open = "{"
-        self.set_close = "}"
-        self.empty_set: str | None = "set()"
+        self.set_open: str
+        self.set_close: str
+        self.empty_set: str | None
+        if set_format == Python.SetFormat.FROZENSET:
+            self.set_open = "frozenset({"
+            self.set_close = "})"
+            self.empty_set = "frozenset()"
+        else:
+            self.set_open = "{"
+            self.set_close = "}"
+            self.empty_set = "set()"
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
