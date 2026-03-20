@@ -26,6 +26,7 @@ from literalizer.languages import (
     Cobol,
     Cpp,
     CSharp,
+    Fortran,
     Go,
     Java,
     JavaScript,
@@ -40,6 +41,7 @@ from literalizer.languages import (
 
 COBOL = Cobol()
 CPP = Cpp()
+FORTRAN = Fortran()
 CSHARP = CSharp()
 GO = Go()
 JAVA = Java()
@@ -509,3 +511,16 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         if stripped.startswith("05 F-"):
             name = stripped.split()[1]
             assert not name.endswith("-")
+
+
+def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
+    """Line continuation handles escaped quotes before inline comments."""
+    yaml_string = "host: it's here  # a comment\nport: 80  # another\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=FORTRAN,
+        variable_name="cfg",
+        wrap=True,
+    )
+    assert "'it''s here'" in result
+    assert "&  !" in result

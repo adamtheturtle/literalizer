@@ -15,6 +15,7 @@ from .d import D
 from .dart import Dart
 from .elixir import Elixir
 from .erlang import Erlang
+from .fortran import Fortran
 from .fsharp import FSharp
 from .go import Go
 from .groovy import Groovy
@@ -61,6 +62,7 @@ __all__ = [
     "Elixir",
     "Erlang",
     "FSharp",
+    "Fortran",
     "Go",
     "Groovy",
     "Haskell",
