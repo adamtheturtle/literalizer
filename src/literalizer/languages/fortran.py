@@ -104,14 +104,14 @@ def _add_continuation(value: str) -> str:
     if len(lines) <= 1:
         return value
     result: list[str] = []
-    for i, line in enumerate(lines):
+    for i, line in enumerate(iterable=lines):
         is_last = i == len(lines) - 1
         stripped = line.strip()
         is_pure_comment = not stripped or stripped.startswith("!")
         if is_last or is_pure_comment:
             result.append(line)
         else:
-            pos = _fortran_comment_pos(line)
+            pos = _fortran_comment_pos(line=line)
             if pos is not None:
                 result.append(line[:pos].rstrip() + " &  " + line[pos:])
             else:
@@ -135,7 +135,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
     ``"type(fval_t) :: x\nx = flist([fval_t :: fint(1)])"``
     """
     fval = _to_fval(value=value)
-    continued = _add_continuation(fval)
+    continued = _add_continuation(value=fval)
     return f"type(fval_t) :: {name}\n{name} = {continued}"
 
 
@@ -147,7 +147,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     ``"x = flist([fval_t :: fint(1)])"``
     """
     fval = _to_fval(value=value)
-    continued = _add_continuation(fval)
+    continued = _add_continuation(value=fval)
     return f"{name} = {continued}"
 
 

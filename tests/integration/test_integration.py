@@ -946,14 +946,14 @@ def _add_fortran_continuation(content: str) -> str:
     if len(lines) <= 1:
         return content
     result = []
-    for i, line in enumerate(lines):
+    for i, line in enumerate(iterable=lines):
         is_last = i == len(lines) - 1
         stripped = line.strip()
         is_pure_comment = not stripped or stripped.startswith("!")
         if is_last or is_pure_comment:
             result.append(line)
         else:
-            pos = _fortran_comment_pos(line)
+            pos = _fortran_comment_pos(line=line)
             if pos is not None:
                 result.append(line[:pos].rstrip() + " &  " + line[pos:])
             else:
@@ -967,7 +967,7 @@ def _wrap_fortran(content: str) -> str:
     module embedded.
     """
     typed = literalizer.languages.Fortran().format_sequence_entry(content)
-    continued = _add_fortran_continuation(typed)
+    continued = _add_fortran_continuation(content=typed)
     return (
         _FORTRAN_PREAMBLE + "program check\n"
         "  use fval_m\n"
