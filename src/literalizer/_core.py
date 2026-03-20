@@ -21,7 +21,11 @@ from literalizer._comments import (
 )
 from literalizer._language import Language
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import JSONParseError, YAMLParseError
+from literalizer.exceptions import (
+    HeterogeneousCoercionError,
+    JSONParseError,
+    YAMLParseError,
+)
 
 
 @beartype
@@ -39,7 +43,6 @@ def _scalar_type_bucket(*, value: Value) -> type | None:
         float,
         str,
         bytes,
-        datetime.datetime,
         datetime.date,
     )
     for bucket in _buckets:
@@ -113,6 +116,38 @@ def _coerce_heterogeneous_lists(*, data: Value) -> Value:
         return new_list
 
     return data
+
+
+@beartype
+def _has_heterogeneous(*, data: Value) -> bool:
+    """Recursively check whether data contains any heterogeneous
+    all-scalar collections.
+    """
+    if isinstance(data, (ordereddict, dict)):
+        children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+    elif isinstance(data, list):
+        children = data
+    elif isinstance(data, set):
+        return _all_scalars_heterogeneous(values=list(data))
+    else:
+        return False
+
+    return any(
+        _has_heterogeneous(data=v) for v in children
+    ) or _all_scalars_heterogeneous(values=children)
+
+
+@beartype
+def _check_heterogeneous(*, data: Value) -> None:
+    """Recursively check for heterogeneous all-scalar collections and
+    raise if found.
+    """
+    if _has_heterogeneous(data=data):
+        msg = (
+            "Collection contains heterogeneous scalar types "
+            "that would be coerced to strings"
+        )
+        raise HeterogeneousCoercionError(msg)
 
 
 @beartype
@@ -313,6 +348,24 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     return cast("Value", data)
 
 
+@beartype
+def _apply_coercions(
+    *,
+    data: Value,
+    spec: Language,
+    error_on_coercion: bool,
+) -> Value:
+    """Apply heterogeneous-type coercions controlled by the language."""
+    if spec.coerce_heterogeneous_to_strings:
+        if error_on_coercion:
+            _check_heterogeneous(data=data)
+        else:
+            data = _coerce_heterogeneous(data=data)
+            if spec.coerce_heterogeneous_lists_to_strings:
+                data = _coerce_heterogeneous_lists(data=data)
+    return data
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize(
     *,
@@ -321,6 +374,7 @@ def _literalize(
     line_prefix: str,
     indent: str,
     wrap: bool,
+    error_on_coercion: bool,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -348,12 +402,17 @@ def _literalize(
         wrap: If True, wrap the output in delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
+        error_on_coercion: If ``True``, raise
+            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
+            instead of silently coercing heterogeneous scalar
+            collections to strings.
     """
     spec = language
-    if spec.coerce_heterogeneous_to_strings:
-        data = _coerce_heterogeneous(data=data)
-    if spec.coerce_heterogeneous_lists_to_strings:
-        data = _coerce_heterogeneous_lists(data=data)
+    data = _apply_coercions(
+        data=data,
+        spec=spec,
+        error_on_coercion=error_on_coercion,
+    )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
@@ -445,6 +504,7 @@ def literalize_json(
     wrap: bool,
     variable_name: str | None,
     new_variable: bool,
+    error_on_coercion: bool,
 ) -> str:
     r"""Convert a JSON string to native language literal text.
 
@@ -474,9 +534,18 @@ def literalize_json(
             JavaScript).  If ``False``, use
             ``format_variable_assignment`` (e.g. ``x =``).  Only
             relevant when *variable_name* is given.
+        error_on_coercion: If ``True``, raise
+            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
+            instead of silently coercing heterogeneous scalar
+            collections to strings.  Only has an effect when the
+            language sets ``coerce_heterogeneous_to_strings`` to
+            ``True``.
 
     Raises:
         JSONParseError: If *json_string* is not valid JSON.
+        HeterogeneousCoercionError: If *error_on_coercion* is ``True``
+            and the data contains heterogeneous scalar collections
+            that would be coerced.
     """
     try:
         data = json.loads(s=json_string)
@@ -491,6 +560,7 @@ def literalize_json(
         line_prefix=line_prefix,
         indent=indent,
         wrap=wrap,
+        error_on_coercion=error_on_coercion,
     )
     if variable_name is not None:
         formatter = (
@@ -512,6 +582,7 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
     wrap: bool,
     variable_name: str | None,
     new_variable: bool,
+    error_on_coercion: bool,
 ) -> str:
     r"""Convert a YAML string to native language literal text.
 
@@ -544,9 +615,18 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
             JavaScript).  If ``False``, use
             ``format_variable_assignment`` (e.g. ``x =``).  Only
             relevant when *variable_name* is given.
+        error_on_coercion: If ``True``, raise
+            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
+            instead of silently coercing heterogeneous scalar
+            collections to strings.  Only has an effect when the
+            language sets ``coerce_heterogeneous_to_strings`` to
+            ``True``.
 
     Raises:
         YAMLParseError: If *yaml_string* is not valid YAML.
+        HeterogeneousCoercionError: If *error_on_coercion* is ``True``
+            and the data contains heterogeneous scalar collections
+            that would be coerced.
     """
     ruamel_yaml = YAML(typ="safe")
     try:
@@ -561,6 +641,7 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
         line_prefix=line_prefix,
         indent=indent,
         wrap=wrap,
+        error_on_coercion=error_on_coercion,
     )
 
     cp = language.comment_prefix

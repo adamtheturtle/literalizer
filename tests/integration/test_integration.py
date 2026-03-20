@@ -138,7 +138,7 @@ _RUST_HASHSET_STUB = (
 @beartype
 def _rust_preamble(content: str) -> str:
     """Build a Rust preamble with only the stubs needed by content."""
-    preamble = _RUST_VEC_PREAMBLE
+    preamble = _RUST_VEC_PREAMBLE if "vec!" in content else ""
     if "HashMap" in content:
         preamble += _RUST_HASHMAP_STUB
     if "HashSet" in content:
@@ -2198,6 +2198,7 @@ def test_golden_file(
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     wrapped = lang_config.wrap(result)
     file_regression.check(
@@ -2231,6 +2232,7 @@ def test_golden_file_with_variable_name(
         wrap=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
+        error_on_coercion=False,
     )
     wrapped = lang_config.varname_wrap(result)
     file_regression.check(
@@ -2266,6 +2268,7 @@ def test_golden_file_combined_variable_forms(
         wrap=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
+        error_on_coercion=False,
     )
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
@@ -2275,6 +2278,7 @@ def test_golden_file_combined_variable_forms(
         wrap=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,
+        error_on_coercion=False,
     )
     combined = lang_config.combined_wrap(declaration, assignment)
     file_regression.check(
@@ -2308,6 +2312,7 @@ def test_date_format_golden_file(
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     wrapped = variant.wrap(result)
     file_regression.check(
@@ -2340,6 +2345,7 @@ def test_sequence_format_golden_file(
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     wrapped = variant.wrap(result)
     file_regression.check(
@@ -2387,6 +2393,7 @@ def test_set_format_golden_file(
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     wrapped = variant.wrap(result)
     file_regression.check(
@@ -2443,6 +2450,7 @@ def test_variable_type_hints_golden_file(
         wrap=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
+        error_on_coercion=False,
     )
     wrapped = variant.wrap(result)
     file_regression.check(

@@ -23,6 +23,7 @@ from literalizer._formatters import (
 )
 from literalizer.exceptions import (
     EmptyDictKeyError,
+    HeterogeneousCoercionError,
     ParseError,
     YAMLParseError,
 )
@@ -77,6 +78,7 @@ def test_literalize_yaml_empty_sequence() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == ""
 
@@ -92,6 +94,7 @@ def test_literalize_yaml_sequence() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result == expected
@@ -108,6 +111,7 @@ def test_literalize_yaml_mapping() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '{\n    "a": 1,\n    "b": True,\n}'
     assert result == expected
@@ -124,6 +128,7 @@ def test_literalize_yaml_invalid() -> None:
             wrap=False,
             variable_name=None,
             new_variable=True,
+            error_on_coercion=False,
         )
 
 
@@ -138,6 +143,7 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
             wrap=False,
             variable_name=None,
             new_variable=True,
+            error_on_coercion=False,
         )
 
 
@@ -169,6 +175,7 @@ def test_literalize_yaml_scalar(
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -184,6 +191,7 @@ def test_literalize_yaml_date() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '"2024-01-15",'
 
@@ -201,6 +209,7 @@ def test_literalize_yaml_datetime() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '"2024-01-15T12:30:00",'
 
@@ -216,6 +225,7 @@ def test_literalize_yaml_binary() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '"48656c6c6f",'
 
@@ -232,6 +242,7 @@ def test_yaml_set_inline_in_sequence() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '{"a", "b"},'
 
@@ -246,6 +257,7 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == 'map[any]struct{}{"a": struct{}{}},'
 
@@ -260,6 +272,7 @@ def test_yaml_empty_set_inline() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "set(),"
 
@@ -284,6 +297,7 @@ def test_omap_nested_in_sequence() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -348,6 +362,7 @@ def test_omap_custom_language_spec() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -377,6 +392,7 @@ def test_custom_format_date() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "datetime.date(year=2024, month=1, day=15),"
 
@@ -399,6 +415,7 @@ def test_custom_format_datetime() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = (
         "datetime.datetime("
@@ -423,6 +440,7 @@ def test_java_native_dates() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     lines = result.split(sep="\n")
     assert lines[0] == "LocalDate.of(2024, 1, 15),"
@@ -444,6 +462,7 @@ def test_ruby_native_dates() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
 
@@ -466,6 +485,7 @@ def test_custom_format_bytes() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "b'Hello',"
 
@@ -487,6 +507,7 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '{\n    "key1": "48656c6c6f",\n    "key2": "42",\n}'
     assert result == expected
@@ -509,8 +530,55 @@ def test_coerce_heterogeneous_set() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '[\n    "1",\n    "hello",\n]'
+    assert result == expected
+
+
+def test_coerce_heterogeneous_date_in_collection() -> None:
+    """Dates in a heterogeneous collection are coerced to ISO strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15
+        - 42
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = '[\n    "2024-01-15",\n    "42",\n]'
+    assert result == expected
+
+
+def test_coerce_heterogeneous_datetime_in_collection() -> None:
+    """Datetimes in a heterogeneous collection are coerced to ISO
+    strings.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15T12:30:00
+        - 42
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = '[\n    "2024-01-15T12:30:00",\n    "42",\n]'
     assert result == expected
 
 
@@ -531,6 +599,7 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
     assert result == expected
@@ -553,6 +622,7 @@ def test_r_empty_dict_key_positional() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == 'list(\n    "value"\n)'
 
@@ -574,6 +644,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == 'list(\n    "value"\n)'
 
@@ -596,6 +667,7 @@ def test_r_empty_dict_key_error() -> None:
             wrap=True,
             variable_name=None,
             new_variable=True,
+            error_on_coercion=False,
         )
 
 
@@ -616,5 +688,209 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == 'list(\n    "key" = "value"\n)'
+
+
+def test_error_on_coercion_raises_for_heterogeneous_list() -> None:
+    """Error_on_coercion raises when a list has mixed scalar types."""
+    yaml_string = "- 1\n- 2.5\n- 3\n"
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_raises_for_heterogeneous_dict() -> None:
+    """Error_on_coercion raises when dict values have mixed scalar
+    types.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        a: 1
+        b: 2.5
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_no_raise_for_homogeneous() -> None:
+    """Error_on_coercion does not raise for homogeneous collections."""
+    yaml_string = "- 1\n- 2\n- 3\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == "[\n    1,\n    2,\n    3,\n]"
+
+
+def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
+    """Error_on_coercion has no effect when language doesn't coerce."""
+    yaml_string = "- 1\n- 2.5\n- 3\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == "(\n    1,\n    2.5,\n    3,\n)"
+
+
+def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
+    """Error_on_coercion raises for heterogeneous data nested in a
+    list.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - - 1
+          - "hello"
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_raises_for_heterogeneous_omap() -> None:
+    """Error_on_coercion raises for heterogeneous omap values."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!omap
+          - name: Alice
+          - age: 30
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
+    """Error_on_coercion raises for heterogeneous sets."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!set
+        ? 1
+        ? "hello"
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
+    """Error_on_coercion does not raise for homogeneous dict values."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        a: 1
+        b: 2
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == '{\n    "a": 1,\n    "b": 2,\n}'
+
+
+def test_error_on_coercion_no_raise_for_homogeneous_omap() -> None:
+    """Error_on_coercion does not raise for homogeneous omap values."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!omap
+          - name: Alice
+          - city: Paris
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
+
+
+def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
+    """Error_on_coercion does not raise for homogeneous sets."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!set
+        ? 1
+        ? 2
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == "[\n    1,\n    2,\n]"

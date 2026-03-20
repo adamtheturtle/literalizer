@@ -9,12 +9,17 @@ from literalizer import (
     Language,
     literalize_json,
 )
-from literalizer.exceptions import JSONParseError, ParseError
+from literalizer.exceptions import (
+    HeterogeneousCoercionError,
+    JSONParseError,
+    ParseError,
+)
 from literalizer.languages import (
     Cpp,
     CSharp,
     Go,
     JavaScript,
+    Mojo,
     Python,
     Ruby,
 )
@@ -65,6 +70,7 @@ def test_dict_python() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
@@ -79,6 +85,7 @@ def test_dict_wrap() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -101,6 +108,7 @@ def test_dict_empty(*, wrap: bool) -> None:
         wrap=wrap,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == ""
 
@@ -115,6 +123,7 @@ def test_integers() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -135,6 +144,7 @@ def test_floats() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -154,6 +164,7 @@ def test_string_escaping() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     lines = result.split(sep="\n")
     assert lines[0] == '"say \\"hi\\"",'
@@ -171,6 +182,7 @@ def test_nested_arrays() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "((1, 2), (3, 4)),"
 
@@ -185,6 +197,7 @@ def test_dicts() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '{"name": "alice", "age": 30},'
 
@@ -199,6 +212,7 @@ def test_nested_dict_in_sequence() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '("a", {"x": 1}),'
 
@@ -213,6 +227,7 @@ def test_nested_sequence_in_dict() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '{"items": (1, 2)},'
 
@@ -227,6 +242,7 @@ def test_indent_spaces() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "        True,\n        False,"
 
@@ -241,6 +257,7 @@ def test_indent_tabs() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "\t\ttrue,\n\t\tfalse,"
 
@@ -255,6 +272,7 @@ def test_wrap() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -276,6 +294,7 @@ def test_wrap_with_line_prefix() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '    (\n        ("a", 1.0),\n    )'
     assert result == expected
@@ -292,6 +311,7 @@ def test_empty_data(*, wrap: bool) -> None:
         wrap=wrap,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == ""
 
@@ -324,6 +344,7 @@ def test_scalar(
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -338,6 +359,7 @@ def test_scalar_with_indent() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "    42"
 
@@ -352,6 +374,7 @@ def test_scalar_wrap_ignored() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "42"
 
@@ -367,6 +390,7 @@ def test_literalize_json_array() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result == expected
@@ -383,6 +407,7 @@ def test_literalize_json_object() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '{\n    "a": 1,\n    "b": True,\n}'
     assert result == expected
@@ -399,6 +424,7 @@ def test_literalize_json_invalid() -> None:
             wrap=False,
             variable_name=None,
             new_variable=True,
+            error_on_coercion=False,
         )
 
 
@@ -418,6 +444,7 @@ def test_part1_sample_python() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected_lines = [
         '        ("user_1", 1000.0),',
@@ -439,6 +466,7 @@ def test_part2_sample_go() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     lines = result.split(sep="\n")
     assert lines[0] == '        []any{"user_1", 49, 1000.0},'
@@ -456,4 +484,40 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             wrap=False,
             variable_name=None,
             new_variable=True,
+            error_on_coercion=False,
         )
+
+
+MOJO = Mojo(
+    sequence_format=Mojo.SequenceFormat.LIST,
+)
+
+
+def test_error_on_coercion_json_raises() -> None:
+    """Error_on_coercion raises for heterogeneous JSON arrays."""
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_json(
+            json_string="[1, 2.5, 3]",
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_no_raise_homogeneous() -> None:
+    """Error_on_coercion does not raise for homogeneous JSON arrays."""
+    result = literalize_json(
+        json_string="[1, 2, 3]",
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == "[\n    1,\n    2,\n    3,\n]"

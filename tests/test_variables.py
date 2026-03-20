@@ -217,6 +217,7 @@ def test_variable_declaration_json(
         wrap=False,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -236,6 +237,7 @@ def test_variable_declaration_yaml(
         wrap=False,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -250,6 +252,7 @@ def test_variable_declaration_none_no_wrap() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "(\n    1,\n    2,\n)"
 
@@ -271,6 +274,7 @@ def test_existing_variable_assignment_json(
         wrap=False,
         variable_name="my_var",
         new_variable=False,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -292,6 +296,7 @@ def test_existing_variable_assignment_yaml(
         wrap=False,
         variable_name="my_var",
         new_variable=False,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -321,6 +326,7 @@ def test_python_inline_type_hints_scalars(
         wrap=False,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -335,8 +341,10 @@ def test_python_inline_type_hints_dict() -> None:
         wrap=True,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
-    assert result.startswith("my_var: dict[str, Any] = {")
+    expected = 'my_var: dict[str, Any] = {\n    "a": 1,\n}'
+    assert result == expected
 
 
 def test_python_inline_type_hints_tuple() -> None:
@@ -349,8 +357,10 @@ def test_python_inline_type_hints_tuple() -> None:
         wrap=True,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
-    assert result.startswith("my_var: tuple[Any, ...] = (")
+    expected = "my_var: tuple[Any, ...] = (\n    1,\n    2,\n)"
+    assert result == expected
 
 
 def test_python_inline_type_hints_list() -> None:
@@ -373,8 +383,10 @@ def test_python_inline_type_hints_list() -> None:
         wrap=True,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
-    assert result.startswith("my_var: list[Any] = [")
+    expected = "my_var: list[Any] = [\n    1,\n    2,\n]"
+    assert result == expected
 
 
 def test_python_inline_type_hints_assignment_no_hint() -> None:
@@ -387,6 +399,7 @@ def test_python_inline_type_hints_assignment_no_hint() -> None:
         wrap=False,
         variable_name="my_var",
         new_variable=False,
+        error_on_coercion=False,
     )
     assert result == "my_var = 42"
 
@@ -402,8 +415,10 @@ def test_python_inline_type_hints_set_with_colon_in_string() -> None:
         wrap=True,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
-    assert result.startswith("my_var: set[Any] = {")
+    expected = 'my_var: set[Any] = {\n    "a\\": b",\n}'
+    assert result == expected
 
 
 def test_python_inline_type_hints_set_of_integers() -> None:
@@ -417,5 +432,7 @@ def test_python_inline_type_hints_set_of_integers() -> None:
         wrap=True,
         variable_name="my_var",
         new_variable=True,
+        error_on_coercion=False,
     )
-    assert result.startswith("my_var: set[Any] = {")
+    expected = "my_var: set[Any] = {\n    1,\n    2,\n    3,\n}"
+    assert result == expected

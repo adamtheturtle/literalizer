@@ -128,6 +128,7 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -142,6 +143,7 @@ def test_ruby_dict() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '{"key" => nil},'
 
@@ -156,6 +158,7 @@ def test_dict_ruby() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '  "user_1" => "team_alpha",'
 
@@ -172,6 +175,7 @@ def test_java_dict_wrap_no_multiline_trailing_comma() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -194,6 +198,7 @@ def test_java_dict_skips_null_values() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -215,6 +220,7 @@ def test_java_dict_skips_null_values_no_wrap() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = 'Map.entry("b", 1)'
     assert result == expected
@@ -232,6 +238,7 @@ def test_java_dict_all_null_values_wrap() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "Map.ofEntries()"
 
@@ -247,6 +254,7 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -277,6 +285,7 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -307,6 +316,7 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -331,6 +341,7 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = "Map.ofEntries()\n    // trailing"
     assert result == expected
@@ -355,6 +366,7 @@ def test_java_yaml_omap_skips_null_values() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     omap_inline = (
         "new java.util.ArrayList<>(java.util.Arrays.asList("
@@ -374,6 +386,7 @@ def test_java_sequence_wrap_uses_braces() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -387,16 +400,25 @@ def test_java_sequence_wrap_uses_braces() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("json_input", "expected_open"),
+    argnames=("json_input", "expected"),
     argvalues=[
-        ([1, 2, 3], "new int[]{"),
-        (["hello", "world"], "new String[]{"),
-        ([1, "hello", True], "new Object[]{"),
+        (
+            [1, 2, 3],
+            "new int[]{\n    1,\n    2,\n    3\n}",
+        ),
+        (
+            ["hello", "world"],
+            'new String[]{\n    "hello",\n    "world"\n}',
+        ),
+        (
+            [1, "hello", True],
+            'new Object[]{\n    1,\n    "hello",\n    true\n}',
+        ),
     ],
     ids=["all_int", "all_string", "mixed"],
 )
 def test_java_typed_array_opener(
-    *, json_input: list[object], expected_open: str
+    *, json_input: list[object], expected: str
 ) -> None:
     """Java uses typed array openers inferred from element types."""
     result = literalize_json(
@@ -407,8 +429,9 @@ def test_java_typed_array_opener(
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
-    assert result.startswith(expected_open)
+    assert result == expected
 
 
 def test_custom_language() -> None:
@@ -458,6 +481,7 @@ def test_custom_language() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == 'YES,\nNIL,\n"hi",'
 
@@ -488,6 +512,7 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == expected
 
@@ -507,6 +532,7 @@ def test_matlab_dict_key_with_quote() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == "'hello \"world\"', 1"
 
@@ -526,6 +552,7 @@ def test_toml_integer_dict_key() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '{\n    1 = "value"\n}'
     assert result == expected
@@ -551,6 +578,7 @@ def test_cobol_string_control_characters() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '"line1 line2"'
 
@@ -565,6 +593,7 @@ def test_cobol_string_tab_characters() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     assert result == '"col1 col2"'
 
@@ -593,6 +622,7 @@ def test_cobol_level_number_cap() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = (
         "\n"
@@ -623,6 +653,7 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     for line in result.splitlines():
         stripped = line.strip()
@@ -642,6 +673,7 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         wrap=True,
         line_prefix="",
         new_variable=True,
+        error_on_coercion=False,
     )
     assert "'it''s here'" in result
     assert "&  !" in result

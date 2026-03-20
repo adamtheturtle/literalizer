@@ -169,12 +169,20 @@ class Language(Protocol):
 
     @property
     def format_variable_declaration(self) -> Callable[[str, str], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Called as ``format_variable_declaration(name, value)`` where *name* is
+        the variable name and *value* is the already-formatted literal value.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_variable_assignment(self) -> Callable[[str, str], str]:
-        """Callable that formats an assignment to an existing variable."""
+        """Callable that formats an assignment to an existing variable.
+
+        Called as ``format_variable_assignment(name, value)`` where *name* is
+        the variable name and *value* is the already-formatted literal value.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
@@ -227,7 +235,13 @@ class LanguageSpec:
     coerce_heterogeneous_to_strings: bool
     coerce_heterogeneous_lists_to_strings: bool
     format_variable_declaration: Callable[[str, str], str]
+    """Callable ``(name, value) -> str`` for a new variable
+    declaration.
+    """
     format_variable_assignment: Callable[[str, str], str]
+    """Callable ``(name, value) -> str`` for an assignment to an existing
+    variable.
+    """
     format_string: Callable[[str], str]
     supports_collection_comments: bool
     sequence_format: enum.Enum
