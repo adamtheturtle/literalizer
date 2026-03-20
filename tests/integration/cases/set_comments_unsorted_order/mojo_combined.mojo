@@ -1,12 +1,13 @@
-my_data = [
-    # before apple
-    "apple",
-    "banana",  # banana inline
-    # trailing
-]
-my_data = [
-    # before apple
-    "apple",
-    "banana",  # banana inline
-    # trailing
-]
+def main():
+    my_data = [
+        # before apple
+        "apple",
+        "banana",  # banana inline
+        # trailing
+    ]
+    my_data = [
+        # before apple
+        "apple",
+        "banana",  # banana inline
+        # trailing
+    ]

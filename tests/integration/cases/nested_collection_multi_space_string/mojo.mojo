@@ -1,3 +1,4 @@
-_ = [
-    {"key": "hello   world", "value": "1"},
-]
+def main():
+    _ = [
+        {"key": "hello   world", "value": "1"},
+    ]

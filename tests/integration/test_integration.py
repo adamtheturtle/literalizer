@@ -667,12 +667,30 @@ def _wrap_matlab(content: str) -> str:
     return f"x = {content};"
 
 
+def _in_mojo_main(content: str) -> str:
+    """Indent content and wrap in a Mojo ``def main():`` function."""
+    indented = "\n".join(f"    {line}" for line in content.splitlines())
+    return f"def main():\n{indented}"
+
+
 @beartype
 def _wrap_mojo(content: str) -> str:
-    """Wrap in a Python-compatible Mojo assignment for syntax
+    """Wrap in a Mojo main function with assignment for syntax
     validation.
     """
-    return f"_ = {content}"
+    return _in_mojo_main(f"_ = {content}")
+
+
+@beartype
+def _wrap_mojo_varname(content: str) -> str:
+    """Wrap a Mojo variable assignment in a main function."""
+    return _in_mojo_main(content)
+
+
+@beartype
+def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
+    """Wrap Mojo declaration and assignment in a main function."""
+    return _in_mojo_main(declaration + "\n" + assignment)
 
 
 @beartype
@@ -1404,8 +1422,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.Mojo(),
         extension=".mojo",
         wrap=_wrap_mojo,
-        varname_wrap=_wrap_identity,
-        combined_wrap=_wrap_combined_newline,
+        varname_wrap=_wrap_mojo_varname,
+        combined_wrap=_wrap_mojo_combined,
     ),
     "nim": _LanguageConfig(
         spec=literalizer.languages.Nim(),
