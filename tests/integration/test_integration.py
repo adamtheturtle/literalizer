@@ -679,19 +679,19 @@ def _wrap_mojo(content: str) -> str:
     """Wrap in a Mojo main function with assignment for syntax
     validation.
     """
-    return _in_mojo_main(f"_ = {content}")
+    return _in_mojo_main(content=f"_ = {content}")
 
 
 @beartype
 def _wrap_mojo_varname(content: str) -> str:
     """Wrap a Mojo variable assignment in a main function."""
-    return _in_mojo_main(content)
+    return _in_mojo_main(content=content)
 
 
 @beartype
 def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
     """Wrap Mojo declaration and assignment in a main function."""
-    return _in_mojo_main(declaration + "\n" + assignment)
+    return _in_mojo_main(content=declaration + "\n" + assignment)
 
 
 @beartype
