@@ -1,1 +1,2 @@
-_ = "hello \"world\" -- not a comment"
+def main():
+    _ = "hello \"world\" -- not a comment"

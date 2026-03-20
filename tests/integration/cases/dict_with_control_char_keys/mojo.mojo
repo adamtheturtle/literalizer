@@ -1,5 +1,6 @@
-_ = {
-    "key\nwith\nnewlines": "value1",
-    "key\twith\ttabs": "value2",
-    "": "value3",
-}
+def main():
+    _ = {
+        "key\nwith\nnewlines": "value1",
+        "key\twith\ttabs": "value2",
+        "": "value3",
+    }

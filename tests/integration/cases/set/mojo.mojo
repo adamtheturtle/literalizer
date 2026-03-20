@@ -1,5 +1,6 @@
-_ = [
-    "apple",
-    "banana",
-    "cherry",
-]
+def main():
+    _ = [
+        "apple",
+        "banana",
+        "cherry",
+    ]
