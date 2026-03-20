@@ -11,10 +11,10 @@ literalizer
 Supported languages
 -------------------
 
-Ada, Bash, C, C#, C++, Clojure, Crystal, D, Dart, Elixir, Erlang, F#, Go,
-Groovy, Haskell, Java, JavaScript, Julia, Kotlin, Lua, MATLAB, Nim, OCaml,
-Occam-pi, Perl, PHP, PowerShell, Python, R, Ruby, Rust, Scala, Swift,
-TypeScript, Zig.
+Ada, Bash, C, C#, C++, Clojure, COBOL, Common Lisp, Crystal, D, Dart, Elixir,
+Erlang, F#, Go, Groovy, Haskell, HCL, Java, JavaScript, Julia, Kotlin, Lua,
+MATLAB, Mojo, Nim, OCaml, Occam-pi, Perl, PHP, PowerShell, Python, R, Racket,
+Ruby, Rust, Scala, Swift, TOML, TypeScript, Visual Basic, Zig.
 
 Installation
 ------------
