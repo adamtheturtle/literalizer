@@ -12,7 +12,13 @@ from literalizer import literalize_json, literalize_yaml
 from literalizer._formatters import format_bytes_hex, format_bytes_python
 from literalizer.languages import Python
 
-PYTHON = Python()
+PYTHON = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+)
 
 type _JSONScalar = str | int | float | bool | None
 
@@ -68,7 +74,10 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
         json_string=json.dumps(obj=data),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     if not data:
         assert result == ""
@@ -84,7 +93,10 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
         json_string=json.dumps(obj=data),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     parsed = ast.literal_eval(node_or_string=result)
     assert parsed == data
@@ -102,7 +114,10 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
         json_string=json.dumps(obj=data),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     if not data:
         assert result == ""
@@ -136,6 +151,9 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert ast.literal_eval(node_or_string=result.rstrip(",")) == data.hex()

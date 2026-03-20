@@ -15,10 +15,25 @@ from literalizer.languages import (
     Ruby,
 )
 
-GO = Go()
-JAVASCRIPT = JavaScript()
-PYTHON = Python()
-RUBY = Ruby()
+GO = Go(
+    date_format=Go.DateFormat.ISO,
+    datetime_format=Go.DatetimeFormat.ISO,
+)
+JAVASCRIPT = JavaScript(
+    date_format=JavaScript.DateFormat.ISO,
+    datetime_format=JavaScript.DatetimeFormat.ISO,
+)
+PYTHON = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+)
+RUBY = Ruby(
+    date_format=Ruby.DateFormat.ISO,
+    datetime_format=Ruby.DatetimeFormat.ISO,
+)
 
 
 def test_yaml_comment_sequence_before() -> None:
@@ -28,7 +43,10 @@ def test_yaml_comment_sequence_before() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -49,7 +67,10 @@ def test_yaml_comment_sequence_inline() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -68,7 +89,10 @@ def test_yaml_comment_mapping() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -89,7 +113,10 @@ def test_yaml_comment_javascript_prefix() -> None:
         yaml_string=yaml_string,
         language=JAVASCRIPT,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -108,7 +135,10 @@ def test_yaml_comment_trailing() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -127,7 +157,10 @@ def test_yaml_comment_no_wrap() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="    ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '    # comment\n    "a",\n    "b",'
     assert result == expected
@@ -140,7 +173,10 @@ def test_yaml_comment_scalar() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = "# note\n42"
     assert result == expected
@@ -153,7 +189,10 @@ def test_yaml_comment_scalar_inline() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = "42  # note"
     assert result == expected
@@ -166,7 +205,10 @@ def test_yaml_no_comments_unchanged() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -185,7 +227,10 @@ def test_yaml_comment_multiple_before_lines() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -233,7 +278,10 @@ def test_yaml_comment_escaped_quote_in_value() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -251,7 +299,10 @@ def test_yaml_comment_scalar_quoted_with_hash() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '"hello # world"  # note'
     assert result == expected
@@ -264,7 +315,10 @@ def test_yaml_comment_double_hash() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -283,7 +337,10 @@ def test_yaml_comment_block_scalar_not_extracted() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -302,7 +359,10 @@ def test_yaml_comment_scalar_with_document_markers() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = "# note\n42"
     assert result == expected
@@ -315,7 +375,10 @@ def test_yaml_comment_empty_comment_line() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -335,7 +398,10 @@ def test_yaml_comment_more_body_lines_than_comments() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -355,7 +421,10 @@ def test_yaml_comment_scalar_only_comments() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = "# just a comment\nNone"
     assert result == expected
@@ -368,7 +437,10 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\

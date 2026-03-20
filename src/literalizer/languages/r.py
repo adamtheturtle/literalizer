@@ -129,9 +129,9 @@ class R:
     def __init__(
         self,
         *,
-        date_format: DateFormat = DateFormat.ISO,
-        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
-        empty_dict_key: EmptyDictKey = EmptyDictKey.POSITIONAL,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
+        empty_dict_key: EmptyDictKey,
     ) -> None:
         """Initialize R language specification."""
         self.null_literal = "NULL"

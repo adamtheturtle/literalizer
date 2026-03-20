@@ -125,8 +125,8 @@ class CSharp:
     def __init__(
         self,
         *,
-        date_format: DateFormat = DateFormat.ISO,
-        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
     ) -> None:
         """Initialize CSharp language specification."""
         self.null_literal = "(object?)null"

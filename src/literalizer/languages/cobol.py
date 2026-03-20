@@ -77,7 +77,7 @@ def _pic_from_value(value: str) -> str:
 
 
 @beartype
-def _to_cobol_entry(value: str, name: str = "FILLER", level: int = 5) -> str:
+def _to_cobol_entry(value: str, name: str, level: int) -> str:
     """Wrap a scalar literal in a COBOL DATA DIVISION entry.
 
     Example: ``"42"`` → ``"05 FILLER PIC S9(18) COMP-5 VALUE 42."``
@@ -120,7 +120,7 @@ def _format_cobol_sequence_entry(item: str) -> str:
         return f"05 FILLER.\n{bumped}"
     if _is_data_entry(s=item.strip()):
         return item.strip()
-    return _to_cobol_entry(value=item)
+    return _to_cobol_entry(value=item, name="FILLER", level=5)
 
 
 @beartype

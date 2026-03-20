@@ -214,4 +214,4 @@ class LanguageSpec:
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
     format_string: Callable[[str], str]
-    supports_collection_comments: bool = True
+    supports_collection_comments: bool
