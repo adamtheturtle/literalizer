@@ -205,7 +205,7 @@ class Python:
         NONE = "none"
         INLINE = "inline"
 
-    def __init__(  # noqa: PLR0915
+    def __init__(  # noqa: PLR0915  # pylint: disable=too-many-statements
         self,
         *,
         date_format: DateFormat,

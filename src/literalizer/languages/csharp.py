@@ -123,7 +123,7 @@ class CSharp:
         CSHARP = enum.member(value=format_datetime_csharp)
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for CSharp."""
+        """Sequence type options for C#."""
 
         ARRAY = "array"
 

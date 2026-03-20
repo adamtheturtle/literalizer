@@ -107,7 +107,7 @@ class FSharp:
     """F# language specification."""
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for FSharp."""
+        """Sequence type options for F#."""
 
         LIST = "list"
 

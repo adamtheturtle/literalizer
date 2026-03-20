@@ -62,7 +62,7 @@ class Php:
     """PHP language specification."""
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for Php."""
+        """Sequence type options for PHP."""
 
         ARRAY = "array"
 

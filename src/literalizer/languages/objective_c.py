@@ -119,7 +119,7 @@ class ObjectiveC:
     """Objective-C language specification."""
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for ObjectiveC."""
+        """Sequence type options for Objective-C."""
 
         ARRAY = "array"
 

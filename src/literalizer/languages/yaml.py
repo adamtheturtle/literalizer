@@ -72,7 +72,7 @@ class Yaml:
     """
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for Yaml."""
+        """Sequence type options for YAML."""
 
         SEQUENCE = "sequence"
 

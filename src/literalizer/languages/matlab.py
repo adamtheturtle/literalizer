@@ -116,7 +116,7 @@ class Matlab:
     """MATLAB language specification."""
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for Matlab."""
+        """Sequence type options for MATLAB."""
 
         CELL_ARRAY = "cell_array"
 

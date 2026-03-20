@@ -51,7 +51,7 @@ class CommonLisp:
     """Common Lisp language specification."""
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for CommonLisp."""
+        """Sequence type options for Common Lisp."""
 
         LIST = "list"
 

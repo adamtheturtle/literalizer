@@ -91,7 +91,7 @@ class VisualBasic:
     """
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for VisualBasic."""
+        """Sequence type options for Visual Basic."""
 
         ARRAY = "array"
 

@@ -126,7 +126,7 @@ class Cpp:
         CPP = enum.member(value=format_datetime_cpp)
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for Cpp."""
+        """Sequence type options for C++."""
 
         INITIALIZER_LIST = "initializer_list"
 

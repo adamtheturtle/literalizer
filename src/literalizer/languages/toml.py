@@ -100,7 +100,7 @@ class Toml:
     """
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for Toml."""
+        """Sequence type options for TOML."""
 
         ARRAY = "array"
 

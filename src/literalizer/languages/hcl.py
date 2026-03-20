@@ -48,7 +48,7 @@ class Hcl:
     """HCL (HashiCorp Configuration Language) language specification."""
 
     class SequenceFormat(enum.Enum):
-        """Sequence type options for Hcl."""
+        """Sequence type options for HCL."""
 
         LIST = "list"
 
