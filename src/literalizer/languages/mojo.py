@@ -61,11 +61,15 @@ class Mojo:
     than the input when distinct values of different types coerce to the
     same string (e.g. ``{1, "1"}`` both become ``"1"``).
 
-    Mojo does not support top-level code, so generated output must
-    be placed inside a function body.  Variable declarations
-    (``new_variable=True``) use the ``var`` keyword
-    (e.g. ``var x = [...]``).  Variable assignments
-    (``new_variable=False``) omit it (e.g. ``x = [...]``).
+    Mojo does not support top-level code — no statements, expressions,
+    or variable declarations are allowed at module scope.  Generated
+    output must be placed inside a function body (e.g. ``def main():``).
+
+    Inside a function, ``var`` is optional: both ``var x = [...]`` and
+    ``x = [...]`` are valid.  Declarations (``new_variable=True``)
+    include ``var`` for explicit variable binding; assignments
+    (``new_variable=False``) omit it.  The distinction is stylistic
+    since Mojo does not require ``var`` inside functions.
     """
 
     @beartype
