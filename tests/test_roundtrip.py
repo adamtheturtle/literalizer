@@ -18,6 +18,7 @@ PYTHON = Python(
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.NONE,
 )
 
 type _JSONScalar = str | int | float | bool | None

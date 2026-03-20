@@ -48,6 +48,75 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+_EXACT_TYPE_HINTS: dict[str, str] = {
+    "True": "bool",
+    "False": "bool",
+    "None": "None",
+    "set()": "set[Any]",
+}
+
+_PREFIX_TYPE_HINTS: tuple[tuple[str, str], ...] = (
+    ("b'", "bytes"),
+    ('b"', "bytes"),
+    ("datetime.datetime(", "datetime.datetime"),
+    ("datetime.date(", "datetime.date"),
+    ("OrderedDict(", "OrderedDict[str, Any]"),
+    ("frozenset(", "frozenset[Any]"),
+    ("[", "list[Any]"),
+    ("(", "tuple[Any, ...]"),
+    ('"', "str"),
+    ("'", "str"),
+)
+
+
+@beartype
+def _infer_python_type_hint(value: str) -> str:
+    """Infer a Python type hint string from a formatted value."""
+    if value in _EXACT_TYPE_HINTS:
+        return _EXACT_TYPE_HINTS[value]
+    for prefix, hint in _PREFIX_TYPE_HINTS:
+        if value.startswith(prefix):
+            return hint
+    if value.startswith("{"):
+        if _is_dict_literal(value=value):
+            return "dict[str, Any]"
+        return "set[Any]"
+    try:
+        int(value)
+    except ValueError:
+        return "float"
+    return "int"
+
+
+@beartype
+def _is_dict_literal(*, value: str) -> bool:
+    """Check whether a ``{``-prefixed formatted value is a dict literal.
+
+    In a dict, the first element is a quoted key followed by ``": "``.
+    In a set, the first element is a formatted value followed by ``,``
+    or ``}``.  To distinguish them we parse the first quoted string
+    (respecting backslash escapes) and check whether ``": "`` or
+    ``":`` immediately follows the closing quote.
+    """
+    content = value[1:].lstrip()
+    if not content or content[0] != '"':
+        return False
+    # Find the closing quote of the first key, skipping backslash escapes.
+    # In a dict, ``": "`` or ``":\n`` follows the closing quote.
+    i = 1
+    while content[i] == "\\" or content[i] != '"':
+        i += 1 + (content[i] == "\\")
+    rest = content[i + 1 :]
+    return rest.startswith((": ", ":\n"))
+
+
+@beartype
+def _format_variable_declaration_inline_hint(name: str, value: str) -> str:
+    """Format a Python variable declaration with an inline type hint."""
+    hint = _infer_python_type_hint(value=value)
+    return f"{name}: {hint} = {value}"
+
+
 @beartype
 class Python:
     """Python language specification.
@@ -89,6 +158,14 @@ class Python:
               e.g. ``{1, 2, 3}``.
             * ``SetFormat.FROZENSET`` — immutable frozenset,
               e.g. ``frozenset({1, 2, 3})``.
+
+        variable_type_hints: Whether to add inline type hints to
+            variable declarations.
+
+            * ``VariableTypeHints.NONE`` (default) — bare assignment,
+              e.g. ``my_var = {...}``.
+            * ``VariableTypeHints.INLINE`` — with type annotation,
+              e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
     class DateFormat(enum.Enum):
@@ -122,6 +199,12 @@ class Python:
         SET = "set"
         FROZENSET = "frozenset"
 
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options for Python."""
+
+        NONE = "none"
+        INLINE = "inline"
+
     def __init__(  # noqa: PLR0915
         self,
         *,
@@ -130,6 +213,7 @@ class Python:
         bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
         set_format: SetFormat,
+        variable_type_hints: VariableTypeHints,
     ) -> None:
         """Initialize Python language specification."""
         self.sequence_format = sequence_format
@@ -193,7 +277,9 @@ class Python:
         self.coerce_heterogeneous_to_strings = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
-            _format_variable_declaration
+            _format_variable_declaration_inline_hint
+            if variable_type_hints == Python.VariableTypeHints.INLINE
+            else _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment

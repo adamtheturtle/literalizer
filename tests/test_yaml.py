@@ -55,6 +55,7 @@ PYTHON = Python(
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.NONE,
 )
 
 
@@ -365,6 +366,7 @@ def test_custom_format_date() -> None:
         bytes_format=Python.BytesFormat.HEX,
         sequence_format=Python.SequenceFormat.TUPLE,
         set_format=Python.SetFormat.SET,
+        variable_type_hints=Python.VariableTypeHints.NONE,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
@@ -386,6 +388,7 @@ def test_custom_format_datetime() -> None:
         bytes_format=Python.BytesFormat.HEX,
         sequence_format=Python.SequenceFormat.TUPLE,
         set_format=Python.SetFormat.SET,
+        variable_type_hints=Python.VariableTypeHints.NONE,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -447,6 +450,7 @@ def test_custom_format_bytes() -> None:
         bytes_format=Python.BytesFormat.PYTHON,
         sequence_format=Python.SequenceFormat.TUPLE,
         set_format=Python.SetFormat.SET,
+        variable_type_hints=Python.VariableTypeHints.NONE,
     )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
