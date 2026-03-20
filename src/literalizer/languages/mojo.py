@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    omap_entry_tuple,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -23,17 +24,9 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_mojo_omap_entry(key: str, value: str) -> str:
-    """Format one Mojo ordered-map entry as a ``(key, value)`` tuple."""
-    return f"({key}, {value})"
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
-    """Format a Mojo variable declaration in Python-compatible script
-    style.
-    """
-    return f"{name} = {value}"
+    """Format a Mojo variable declaration with ``var`` keyword."""
+    return f"var {name} = {value}"
 
 
 @beartype
@@ -89,9 +82,7 @@ class Mojo:
         self.comment_suffix = ""
         self.omap_open = "["
         self.omap_close = "]"
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_mojo_omap_entry
-        )
+        self.format_omap_entry: Callable[[str, str], str] = omap_entry_tuple
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

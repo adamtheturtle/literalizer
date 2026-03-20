@@ -591,6 +591,18 @@ def format_string_vb(value: str) -> str:
 
 
 @beartype
+def omap_entry_tuple(key: str, value: str) -> str:
+    """Format an ordered-map entry as a ``(key, value)`` tuple.
+
+    Use this as ``format_omap_entry`` for languages that represent
+    ordered-map entries as plain tuples (e.g. Python, Mojo).
+
+    Example: ``omap_entry_tuple('"a"', '1')`` → ``'("a", 1)'``.
+    """
+    return f"({key}, {value})"
+
+
+@beartype
 def passthrough_set_entry(item: str) -> str:
     """Return *item* unchanged.
 

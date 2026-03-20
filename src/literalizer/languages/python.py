@@ -19,6 +19,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_datetime_python,
     format_string_backslash,
+    omap_entry_tuple,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -28,12 +29,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from literalizer._types import Value
-
-
-@beartype
-def _format_python_omap_entry(key: str, value: str) -> str:
-    """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
-    return f"({key}, {value})"
 
 
 @beartype
@@ -161,9 +156,7 @@ class Python:
         self.comment_suffix = ""
         self.omap_open = "OrderedDict(["
         self.omap_close = "])"
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_python_omap_entry
-        )
+        self.format_omap_entry: Callable[[str, str], str] = omap_entry_tuple
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
