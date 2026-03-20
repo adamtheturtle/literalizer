@@ -18,20 +18,20 @@ macro_rules! vec {
 fn main() {
     {
         let my_data = vec![
-            "42",
-            "3.14",
-            "True",
-            "False",
+            42,
+            3.14,
+            true,
+            false,
             "hello \"world\"",
         ];
         let _ = my_data;
     }
     let my_data;
     my_data = vec![
-        "42",
-        "3.14",
-        "True",
-        "False",
+        42,
+        3.14,
+        true,
+        false,
         "hello \"world\"",
     ];
     let _ = my_data;

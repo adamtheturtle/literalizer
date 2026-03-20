@@ -17,7 +17,7 @@ macro_rules! vec {
 }
 fn main() {
     let _ = vec![
-        vec!["1", "a"],
-        vec!["2", "b"],
+        vec![1, "a"],
+        vec![2, "b"],
     ];
 }
