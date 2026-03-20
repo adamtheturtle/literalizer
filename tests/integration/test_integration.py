@@ -1077,6 +1077,15 @@ class _SequenceVariant:
 
 
 @dataclasses.dataclass
+class _SetVariant:
+    """A set-type formatting variant for a language."""
+
+    spec: literalizer.Language
+    extension: str
+    wrap: Callable[[str], str]
+
+
+@dataclasses.dataclass
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
 
@@ -1461,6 +1470,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
     ),
+    "yaml": _LanguageConfig(
+        spec=literalizer.languages.Yaml(),
+        extension=".yaml",
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, _a: d,
+    ),
 }
 
 
@@ -1798,4 +1814,43 @@ def test_sequence_format_golden_file(
         contents=wrapped + "\n",
         extension=variant.extension,
         fullpath=_SEQUENCE_CASE_DIR / (variant_name + variant.extension),
+    )
+
+
+_SET_VARIANTS: dict[str, _SetVariant] = {
+    "python_frozenset": _SetVariant(
+        spec=literalizer.languages.Python(
+            set_format=literalizer.languages.Python.SetFormat.FROZENSET,
+        ),
+        extension=".py",
+        wrap=_wrap_identity,
+    ),
+}
+
+_SET_CASE_DIR = _CASES_DIR / "set"
+
+
+@pytest.mark.parametrize(
+    argnames=("variant_name", "variant"),
+    argvalues=list(_SET_VARIANTS.items()),
+    ids=list(_SET_VARIANTS),
+)
+def test_set_format_golden_file(
+    variant_name: str,
+    variant: _SetVariant,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test set type variants against golden files."""
+    yaml_string = (_SET_CASE_DIR / "input.yaml").read_text()
+    result = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=variant.spec,
+        line_prefix="",
+        wrap=True,
+    )
+    wrapped = variant.wrap(result)
+    file_regression.check(
+        contents=wrapped + "\n",
+        extension=variant.extension,
+        fullpath=_SET_CASE_DIR / (variant_name + variant.extension),
     )

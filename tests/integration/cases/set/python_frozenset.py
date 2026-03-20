@@ -1,0 +1,5 @@
+frozenset({
+    "apple",
+    "banana",
+    "cherry",
+})
