@@ -3,6 +3,7 @@ converter.
 """
 
 import dataclasses
+import textwrap
 
 import pytest
 
@@ -254,7 +255,14 @@ def test_variable_declaration_none_no_wrap() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "(\n    1,\n    2,\n)"
+    expected = textwrap.dedent(
+        text="""\
+        (
+            1,
+            2,
+        )"""
+    )
+    assert result == expected
 
 
 @pytest.mark.parametrize(
@@ -343,7 +351,12 @@ def test_python_inline_type_hints_dict() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = 'my_var: dict[str, Any] = {\n    "a": 1,\n}'
+    expected = textwrap.dedent(
+        text="""\
+        my_var: dict[str, Any] = {
+            "a": 1,
+        }"""
+    )
     assert result == expected
 
 
@@ -359,7 +372,13 @@ def test_python_inline_type_hints_tuple() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = "my_var: tuple[Any, ...] = (\n    1,\n    2,\n)"
+    expected = textwrap.dedent(
+        text="""\
+        my_var: tuple[Any, ...] = (
+            1,
+            2,
+        )"""
+    )
     assert result == expected
 
 
@@ -385,7 +404,13 @@ def test_python_inline_type_hints_list() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = "my_var: list[Any] = [\n    1,\n    2,\n]"
+    expected = textwrap.dedent(
+        text="""\
+        my_var: list[Any] = [
+            1,
+            2,
+        ]"""
+    )
     assert result == expected
 
 
@@ -417,7 +442,12 @@ def test_python_inline_type_hints_set_with_colon_in_string() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = 'my_var: set[Any] = {\n    "a\\": b",\n}'
+    expected = textwrap.dedent(
+        text="""\
+        my_var: set[Any] = {
+            "a\\": b",
+        }"""
+    )
     assert result == expected
 
 
@@ -434,5 +464,12 @@ def test_python_inline_type_hints_set_of_integers() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected = "my_var: set[Any] = {\n    1,\n    2,\n    3,\n}"
+    expected = textwrap.dedent(
+        text="""\
+        my_var: set[Any] = {
+            1,
+            2,
+            3,
+        }"""
+    )
     assert result == expected
