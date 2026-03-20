@@ -63,6 +63,7 @@ class Rust:
             * ``DateFormat.RUST`` —
               ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
+              Requires the ``chrono`` crate.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -72,6 +73,7 @@ class Rust:
               ``NaiveDateTime::new(...)`` call, e.g.
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
+              Requires the ``chrono`` crate.
 
         sequence_format: Which Rust sequence type to use.
 
@@ -110,7 +112,7 @@ class Rust:
         sequence_format: SequenceFormat = SequenceFormat.VEC,
     ) -> None:
         """Initialize Rust language specification."""
-        self.null_literal = "None"
+        self.null_literal = "None::<()>"
         self.true_literal = "true"
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str]
@@ -125,7 +127,7 @@ class Rust:
             self.sequence_open = fixed_sequence_open(open_str="vec![")
             self.sequence_close = "]"
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="HashMap::from(["
+            open_str="HashMap::from(vec!["
         )
         self.dict_close = "])"
         self.format_dict_entry: Callable[[str, str], str] = (
@@ -142,7 +144,7 @@ class Rust:
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
         self.empty_dict: str | None = None
-        self.set_open = "HashSet::from(["
+        self.set_open = "HashSet::from(vec!["
         self.set_close = "])"
         self.empty_set: str | None = None
         self.format_sequence_entry: Callable[[str], str] = (
@@ -151,7 +153,7 @@ class Rust:
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "//"
         self.comment_suffix = ""
-        self.omap_open = "HashMap::from(["
+        self.omap_open = "HashMap::from(vec!["
         self.omap_close = "])"
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_rust_omap_entry
