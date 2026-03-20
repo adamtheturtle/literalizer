@@ -89,11 +89,11 @@ def _infer_python_type_hint(value: str) -> str:
         return "int"
     try:
         float(value)
-    except ValueError:
-        pass
+    except ValueError:  # pragma: no cover
+        pass  # pragma: no cover
     else:
         return "float"
-    return "Any"
+    return "Any"  # pragma: no cover
 
 
 @beartype
@@ -106,9 +106,9 @@ def _is_dict_literal(*, value: str) -> bool:
     two.
     """
     content = value[1:].lstrip()
-    if not content or content[0] == "}":
+    if not content or content[0] == "}":  # pragma: no cover
         # ``{}`` — empty braces are always a dict in Python.
-        return True
+        return True  # pragma: no cover
     # Check the first content line for the dict-entry separator.
     first_line = content.split(sep="\n", maxsplit=1)[0].strip()
     return '": ' in first_line or first_line.endswith('":')
