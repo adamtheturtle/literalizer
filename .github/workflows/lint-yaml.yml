@@ -1,0 +1,22 @@
+---
+name: Lint YAML
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install yamllint
+        run: pip install yamllint
+      - name: Check YAML syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.yaml" ! -name "input.yaml" -print0 | \
+            xargs -0 yamllint --strict -d '{extends: default, rules: {document-start: disable, truthy: disable, line-length: disable, comments-indentation: disable, indentation: {indent-sequences: whatever}}}' --

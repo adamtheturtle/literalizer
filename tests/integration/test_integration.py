@@ -1442,6 +1442,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
     ),
+    "yaml": _LanguageConfig(
+        spec=literalizer.languages.Yaml(),
+        extension=".yaml",
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, _a: d,
+    ),
 }
 
 
