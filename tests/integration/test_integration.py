@@ -1414,6 +1414,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
     ),
+    "norg": _LanguageConfig(
+        spec=literalizer.languages.Norg(),
+        extension=".norg",
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=lambda d, _a: d,
+    ),
     "vb": _LanguageConfig(
         spec=literalizer.languages.VisualBasic(),
         extension=".vb",

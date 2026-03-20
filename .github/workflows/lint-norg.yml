@@ -1,0 +1,25 @@
+---
+name: Lint Norg
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-norg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Norg files are non-empty
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.norg" -print0 | \
+            while IFS= read -r -d '' f; do
+              if [ ! -s "$f" ]; then
+                echo "Empty file: $f" >&2
+                exit 1
+              fi
+            done

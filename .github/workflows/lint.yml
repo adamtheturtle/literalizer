@@ -153,6 +153,9 @@ jobs:
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
 
+  lint-norg:
+    uses: ./.github/workflows/lint-norg.yml
+
   lint-racket:
     uses: ./.github/workflows/lint-racket.yml
 
@@ -204,6 +207,7 @@ jobs:
       - lint-matlab
       - lint-mojo
       - lint-nim
+      - lint-norg
       - lint-racket
       - lint-zig
       - lint-toml
