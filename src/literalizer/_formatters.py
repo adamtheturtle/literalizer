@@ -59,9 +59,12 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 def format_date_python(value: datetime.date) -> str:
     """Format a date as a Python ``datetime.date(...)`` constructor call.
 
-    Example: ``datetime.date(2024, 1, 15)``.
+    Example: ``datetime.date(year=2024, month=1, day=15)``.
     """
-    return f"datetime.date({value.year}, {value.month}, {value.day})"
+    return (
+        f"datetime.date("
+        f"year={value.year}, month={value.month}, day={value.day})"
+    )
 
 
 @beartype
@@ -69,19 +72,20 @@ def format_datetime_python(value: datetime.datetime) -> str:
     """Format a datetime as a Python ``datetime.datetime(...)``
     constructor call.
 
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30, 0)``.
+    Example: ``datetime.datetime(year=2024, month=1, day=15,
+    hour=12, minute=30, second=0)``.
     """
     parts = [
-        value.year,
-        value.month,
-        value.day,
-        value.hour,
-        value.minute,
-        value.second,
+        f"year={value.year}",
+        f"month={value.month}",
+        f"day={value.day}",
+        f"hour={value.hour}",
+        f"minute={value.minute}",
+        f"second={value.second}",
     ]
     if value.microsecond:
-        parts.append(value.microsecond)
-    args = ", ".join(str(object=p) for p in parts)
+        parts.append(f"microsecond={value.microsecond}")
+    args = ", ".join(parts)
     return f"datetime.datetime({args})"
 
 

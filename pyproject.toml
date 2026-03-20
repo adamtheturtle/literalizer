@@ -291,10 +291,10 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
-    "tests/integration/cases",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
+overrides = [ { module = "tests.integration.cases.*", disable_error_code = [ "var-annotated" ] } ]
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"

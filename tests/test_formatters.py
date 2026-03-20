@@ -73,19 +73,24 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
         pytest.param(
             format_date_python,
             _SAMPLE_DATE,
-            "datetime.date(2024, 1, 15)",
+            "datetime.date(year=2024, month=1, day=15)",
             id="format_date_python",
         ),
         pytest.param(
             format_datetime_python,
             _SAMPLE_DATETIME,
-            "datetime.datetime(2024, 1, 15, 12, 30, 0)",
+            "datetime.datetime("
+            "year=2024, month=1, day=15, "
+            "hour=12, minute=30, second=0)",
             id="format_datetime_python",
         ),
         pytest.param(
             format_datetime_python,
             _SAMPLE_DATETIME_MICRO,
-            "datetime.datetime(2024, 1, 15, 12, 30, 0, 123456)",
+            "datetime.datetime("
+            "year=2024, month=1, day=15, "
+            "hour=12, minute=30, second=0, "
+            "microsecond=123456)",
             id="format_datetime_python_microsecond",
         ),
         pytest.param(
