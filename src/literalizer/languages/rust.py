@@ -80,7 +80,9 @@ class Rust:
             * ``SequenceFormat.VEC`` (default) — ``vec![]`` macro,
               e.g. ``vec![1, 2, 3]``.
             * ``SequenceFormat.ARRAY`` — fixed-size array literal,
-              e.g. ``[1, 2, 3]``.
+              e.g. ``[1, 2, 3]``.  Because Rust arrays are
+              homogeneous, mixed-type sequences have all elements
+              coerced to strings.
             * ``SequenceFormat.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
     """
@@ -161,7 +163,9 @@ class Rust:
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.coerce_heterogeneous_to_strings = False
+        self.coerce_heterogeneous_to_strings = (
+            sequence_format == Rust.SequenceFormat.ARRAY
+        )
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
