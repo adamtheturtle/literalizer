@@ -74,6 +74,15 @@ PYTHON = Python(
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.NONE,
+)
+PYTHON_INLINE_HINTS = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.INLINE,
 )
 RUBY = Ruby(
     date_format=Ruby.DateFormat.ISO,
@@ -263,3 +272,128 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
     )
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("json_input", "expected"),
+    argvalues=[
+        ("42", "my_var: int = 42"),
+        ("3.14", "my_var: float = 3.14"),
+        ("true", "my_var: bool = True"),
+        ("false", "my_var: bool = False"),
+        ("null", "my_var: None = None"),
+        ('"hello"', 'my_var: str = "hello"'),
+    ],
+)
+def test_python_inline_type_hints_scalars(
+    *, json_input: str, expected: str
+) -> None:
+    """Python with INLINE variable_type_hints adds type annotations
+    for scalar values.
+    """
+    result = literalize_json(
+        json_string=json_input,
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        wrap=False,
+        variable_name="my_var",
+        new_variable=True,
+    )
+    assert result == expected
+
+
+def test_python_inline_type_hints_dict() -> None:
+    """Python INLINE hints infer dict type for wrapped dicts."""
+    result = literalize_json(
+        json_string='{"a": 1}',
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name="my_var",
+        new_variable=True,
+    )
+    assert result.startswith("my_var: dict[str, Any] = {")
+
+
+def test_python_inline_type_hints_tuple() -> None:
+    """Python INLINE hints infer tuple type for wrapped sequences."""
+    result = literalize_json(
+        json_string="[1, 2]",
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name="my_var",
+        new_variable=True,
+    )
+    assert result.startswith("my_var: tuple[Any, ...] = (")
+
+
+def test_python_inline_type_hints_list() -> None:
+    """Python INLINE hints infer list type when sequence_format is
+    LIST.
+    """
+    lang = Python(
+        date_format=Python.DateFormat.ISO,
+        datetime_format=Python.DatetimeFormat.ISO,
+        bytes_format=Python.BytesFormat.HEX,
+        sequence_format=Python.SequenceFormat.LIST,
+        set_format=Python.SetFormat.SET,
+        variable_type_hints=Python.VariableTypeHints.INLINE,
+    )
+    result = literalize_json(
+        json_string="[1, 2]",
+        language=lang,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name="my_var",
+        new_variable=True,
+    )
+    assert result.startswith("my_var: list[Any] = [")
+
+
+def test_python_inline_type_hints_assignment_no_hint() -> None:
+    """Python INLINE hints do not add type hints for assignments."""
+    result = literalize_json(
+        json_string="42",
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        wrap=False,
+        variable_name="my_var",
+        new_variable=False,
+    )
+    assert result == "my_var = 42"
+
+
+def test_python_inline_type_hints_set_with_colon_in_string() -> None:
+    """A set element containing ``": `` is not misidentified as a dict."""
+    yaml_string = "!!set\n? 'a\": b'\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name="my_var",
+        new_variable=True,
+    )
+    assert result.startswith("my_var: set[Any] = {")
+
+
+def test_python_inline_type_hints_set_of_integers() -> None:
+    """A set of integers is correctly identified as set, not dict."""
+    yaml_string = "!!set\n? 1\n? 2\n? 3\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name="my_var",
+        new_variable=True,
+    )
+    assert result.startswith("my_var: set[Any] = {")

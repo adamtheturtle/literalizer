@@ -1469,6 +1469,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
             set_format=literalizer.languages.Python.SetFormat.SET,
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
         wrap=_wrap_identity,
@@ -1797,6 +1798,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
             set_format=literalizer.languages.Python.SetFormat.SET,
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
         wrap=_wrap_python_datetime,
@@ -1808,6 +1810,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
             set_format=literalizer.languages.Python.SetFormat.SET,
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
         wrap=_wrap_identity,
@@ -1930,6 +1933,7 @@ _SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.LIST,
             set_format=literalizer.languages.Python.SetFormat.SET,
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
         wrap=_wrap_identity,
@@ -2181,6 +2185,7 @@ _SET_VARIANTS: dict[str, _SetVariant] = {
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
             set_format=literalizer.languages.Python.SetFormat.FROZENSET,
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
         wrap=_wrap_identity,
@@ -2216,4 +2221,58 @@ def test_set_format_golden_file(
         contents=wrapped + "\n",
         extension=variant.extension,
         fullpath=_SET_CASE_DIR / (variant_name + variant.extension),
+    )
+
+
+@dataclasses.dataclass
+class _VariableTypeHintsVariant:
+    """A variable-type-hints formatting variant."""
+
+    spec: literalizer.Language
+    extension: str
+
+
+_VARIABLE_TYPE_HINTS_VARIANTS: dict[str, _VariableTypeHintsVariant] = {
+    "python_inline": _VariableTypeHintsVariant(
+        spec=literalizer.languages.Python(
+            date_format=literalizer.languages.Python.DateFormat.ISO,
+            datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
+            bytes_format=literalizer.languages.Python.BytesFormat.HEX,
+            sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
+            set_format=literalizer.languages.Python.SetFormat.SET,
+            variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
+        ),
+        extension=".py",
+    ),
+}
+
+_VARIABLE_TYPE_HINTS_CASE_DIR = _CASES_DIR / "simple_dict"
+
+
+@pytest.mark.parametrize(
+    argnames=("variant_name", "variant"),
+    argvalues=list(_VARIABLE_TYPE_HINTS_VARIANTS.items()),
+    ids=list(_VARIABLE_TYPE_HINTS_VARIANTS),
+)
+def test_variable_type_hints_golden_file(
+    variant_name: str,
+    variant: _VariableTypeHintsVariant,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test Python inline type hints on variable declarations."""
+    yaml_string = (_VARIABLE_TYPE_HINTS_CASE_DIR / "input.yaml").read_text()
+    result = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=variant.spec,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=True,
+    )
+    file_regression.check(
+        contents=result + "\n",
+        extension=variant.extension,
+        fullpath=_VARIABLE_TYPE_HINTS_CASE_DIR
+        / (variant_name + variant.extension),
     )

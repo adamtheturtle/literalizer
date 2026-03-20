@@ -41,6 +41,7 @@ PYTHON = Python(
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.NONE,
 )
 RUBY = Ruby(
     date_format=Ruby.DateFormat.ISO,
