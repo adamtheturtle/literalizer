@@ -26,12 +26,14 @@ from literalizer.languages import (
     Go,
     Java,
     JavaScript,
+    Mojo,
     Python,
     Ruby,
 )
 
 GO = Go()
 JAVASCRIPT = JavaScript()
+MOJO = Mojo()
 PYTHON = Python()
 
 
@@ -270,6 +272,7 @@ def test_omap_custom_language_spec() -> None:
         multiline_close_indent="",
         element_separator=", ",
         skip_null_dict_values=False,
+        coerce_heterogeneous_to_strings=False,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
     )
@@ -355,3 +358,57 @@ def test_custom_format_bytes() -> None:
         wrap=False,
     )
     assert result == "b'Hello',"
+
+
+def test_coerce_heterogeneous_bytes_in_collection() -> None:
+    """Bytes in a heterogeneous collection are coerced to hex strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        key1: !!binary |
+          SGVsbG8=
+        key2: 42
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        wrap=True,
+    )
+    assert '"48656c6c6f"' in result
+    assert '"42"' in result
+
+
+def test_coerce_heterogeneous_set() -> None:
+    """Heterogeneous sets are coerced to all strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!set
+        ? 1
+        ? "hello"
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        wrap=True,
+    )
+    assert '"1"' in result
+    assert '"hello"' in result
+
+
+def test_coerce_homogeneous_omap_no_coercion() -> None:
+    """Homogeneous ordereddict values are not coerced."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!omap
+          - name: Alice
+          - city: Paris
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        wrap=True,
+    )
+    assert '"Alice"' in result
+    assert '"Paris"' in result

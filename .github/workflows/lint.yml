@@ -147,6 +147,9 @@ jobs:
   lint-matlab:
     uses: ./.github/workflows/lint-matlab.yml
 
+  lint-mojo:
+    uses: ./.github/workflows/lint-mojo.yml
+
   lint-nim:
     uses: ./.github/workflows/lint-nim.yml
 
@@ -199,6 +202,7 @@ jobs:
       - lint-occam
       - lint-crystal
       - lint-matlab
+      - lint-mojo
       - lint-nim
       - lint-racket
       - lint-zig

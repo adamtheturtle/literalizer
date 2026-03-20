@@ -1,0 +1,38 @@
+---
+name: Lint Mojo
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-mojo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install pixi
+        uses: fabasoad/setup-mojo-action@v3
+      - name: Install Mojo
+        run: |-
+          pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
+      - name: Check Mojo syntax
+        run: |-
+          set -o pipefail
+          find tests/integration/cases -name "*.mojo" -print0 | \
+            while IFS= read -r -d '' f; do
+              tmp=$(mktemp --suffix=.mojo)
+              printf "def main():\n" > "$tmp"
+              sed 's/^/    /' "$f" >> "$tmp"
+              if ! output=$(mojo run "$tmp" 2>&1); then
+                if ! printf "%s" "$output" | grep -qE \
+                  "no matching function|is not compatible|cannot emit an empty"; then
+                  printf "%s\n" "$output" >&2
+                  rm -f "$tmp"
+                  exit 1
+                fi
+              fi
+              rm -f "$tmp"
+            done

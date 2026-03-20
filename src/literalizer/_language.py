@@ -143,6 +143,11 @@ class Language(Protocol):
     skip_null_dict_values: bool
     """Whether to omit dict entries whose value is ``None``."""
 
+    coerce_heterogeneous_to_strings: bool
+    """Whether to coerce all scalar values in heterogeneous collections
+    to strings so that every element shares a single type.
+    """
+
     supports_collection_comments: bool
     """Whether the language supports comments inside collection
     initializers.
@@ -205,6 +210,7 @@ class LanguageSpec:
     multiline_close_indent: str
     element_separator: str
     skip_null_dict_values: bool
+    coerce_heterogeneous_to_strings: bool
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
     format_string: Callable[[str], str]

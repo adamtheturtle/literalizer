@@ -668,6 +668,14 @@ def _wrap_matlab(content: str) -> str:
 
 
 @beartype
+def _wrap_mojo(content: str) -> str:
+    """Wrap in a Python-compatible Mojo assignment for syntax
+    validation.
+    """
+    return f"_ = {content}"
+
+
+@beartype
 def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
@@ -1603,6 +1611,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         spec=literalizer.languages.Matlab(),
         extension=".m",
         wrap=_wrap_matlab,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
+        date_variants=(),
+    ),
+    "mojo": _LanguageConfig(
+        spec=literalizer.languages.Mojo(),
+        extension=".mojo",
+        wrap=_wrap_mojo,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
         date_variants=(),

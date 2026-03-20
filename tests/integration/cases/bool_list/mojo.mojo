@@ -1,0 +1,5 @@
+_ = [
+    True,
+    False,
+    True,
+]

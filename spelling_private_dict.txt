@@ -52,6 +52,7 @@ ZKV
 ZVal
 Zig
 beartype
+bool
 booleans
 chrono
 commonjs
@@ -97,6 +98,7 @@ octave
 ofEntries
 omap
 optimisation
+ordereddict
 paren
 pragma
 pre
