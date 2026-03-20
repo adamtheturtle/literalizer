@@ -85,8 +85,7 @@ def _infer_python_type_hint(value: str) -> str:
         int(value)
     except ValueError:
         return "float"
-    else:
-        return "int"
+    return "int"
 
 
 @beartype
