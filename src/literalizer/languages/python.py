@@ -125,11 +125,11 @@ class Python:
     def __init__(
         self,
         *,
-        date_format: DateFormat = DateFormat.ISO,
-        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
-        bytes_format: BytesFormat = BytesFormat.HEX,
-        sequence_format: SequenceFormat = SequenceFormat.TUPLE,
-        set_format: SetFormat = SetFormat.SET,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
+        bytes_format: BytesFormat,
+        sequence_format: SequenceFormat,
+        set_format: SetFormat,
     ) -> None:
         """Initialize Python language specification."""
         self.null_literal = "None"

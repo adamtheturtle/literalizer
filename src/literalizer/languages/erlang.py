@@ -77,7 +77,7 @@ class Erlang:
     def __init__(
         self,
         *,
-        sequence_format: SequenceFormat = SequenceFormat.LIST,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Erlang language specification."""
         self.null_literal = "undefined"

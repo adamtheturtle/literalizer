@@ -404,11 +404,11 @@ def literalize_json(
     *,
     json_string: str,
     language: Language,
-    line_prefix: str = "",
-    indent: str = "    ",
+    line_prefix: str,
+    indent: str,
     wrap: bool,
-    variable_name: str | None = None,
-    new_variable: bool = True,
+    variable_name: str | None,
+    new_variable: bool,
 ) -> str:
     r"""Convert a JSON string to native language literal text.
 
@@ -471,11 +471,11 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
     *,
     yaml_string: str,
     language: Language,
-    line_prefix: str = "",
-    indent: str = "    ",
+    line_prefix: str,
+    indent: str,
     wrap: bool,
-    variable_name: str | None = None,
-    new_variable: bool = True,
+    variable_name: str | None,
+    new_variable: bool,
 ) -> str:
     r"""Convert a YAML string to native language literal text.
 

@@ -88,9 +88,9 @@ class Julia:
     def __init__(
         self,
         *,
-        date_format: DateFormat = DateFormat.ISO,
-        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
-        sequence_format: SequenceFormat = SequenceFormat.ARRAY,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Julia language specification."""
         self.null_literal = "nothing"

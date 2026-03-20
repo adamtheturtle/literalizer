@@ -36,10 +36,22 @@ from literalizer.languages import (
     Ruby,
 )
 
-GO = Go()
-JAVASCRIPT = JavaScript()
+GO = Go(
+    date_format=Go.DateFormat.ISO,
+    datetime_format=Go.DatetimeFormat.ISO,
+)
+JAVASCRIPT = JavaScript(
+    date_format=JavaScript.DateFormat.ISO,
+    datetime_format=JavaScript.DatetimeFormat.ISO,
+)
 MOJO = Mojo()
-PYTHON = Python()
+PYTHON = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+)
 
 
 @beartype
@@ -56,7 +68,10 @@ def test_literalize_yaml_empty_sequence() -> None:
         yaml_string="[]\n",
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == ""
 
@@ -68,7 +83,10 @@ def test_literalize_yaml_sequence() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="    ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result == expected
@@ -81,7 +99,10 @@ def test_literalize_yaml_mapping() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '{\n    "a": 1,\n    "b": True,\n}'
     assert result == expected
@@ -94,7 +115,10 @@ def test_literalize_yaml_invalid() -> None:
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
             line_prefix="",
+            indent="    ",
             wrap=False,
+            variable_name=None,
+            new_variable=True,
         )
 
 
@@ -105,7 +129,10 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
             line_prefix="",
+            indent="    ",
             wrap=False,
+            variable_name=None,
+            new_variable=True,
         )
 
 
@@ -133,7 +160,10 @@ def test_literalize_yaml_scalar(
         yaml_string=yaml_string,
         language=language,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == expected
 
@@ -145,7 +175,10 @@ def test_literalize_yaml_date() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '"2024-01-15",'
 
@@ -159,7 +192,10 @@ def test_literalize_yaml_datetime() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '"2024-01-15T12:30:00",'
 
@@ -171,7 +207,10 @@ def test_literalize_yaml_binary() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '"48656c6c6f",'
 
@@ -184,7 +223,10 @@ def test_yaml_set_inline_in_sequence() -> None:
         yaml_string="- !!set\n  ? a\n  ? b\n",
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '{"a", "b"},'
 
@@ -195,7 +237,10 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
         yaml_string="- !!set\n  ? a\n",
         language=GO,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == 'map[any]struct{}{"a": struct{}{}},'
 
@@ -206,7 +251,10 @@ def test_yaml_empty_set_inline() -> None:
         yaml_string="- !!set {}\n",
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "set(),"
 
@@ -227,7 +275,10 @@ def test_omap_nested_in_sequence() -> None:
         yaml_string=yaml_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -278,6 +329,7 @@ def test_omap_custom_language_spec() -> None:
         element_separator=", ",
         skip_null_dict_values=False,
         coerce_heterogeneous_to_strings=False,
+        supports_collection_comments=True,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
     )
@@ -285,7 +337,10 @@ def test_omap_custom_language_spec() -> None:
         yaml_string=yaml_string,
         language=custom,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -299,24 +354,42 @@ def test_omap_custom_language_spec() -> None:
 
 def test_custom_format_date() -> None:
     """A custom format_date callable is used for date values."""
-    spec = Python(date_format=Python.DateFormat.PYTHON)
+    spec = Python(
+        date_format=Python.DateFormat.PYTHON,
+        datetime_format=Python.DatetimeFormat.ISO,
+        bytes_format=Python.BytesFormat.HEX,
+        sequence_format=Python.SequenceFormat.TUPLE,
+        set_format=Python.SetFormat.SET,
+    )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n",
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "datetime.date(2024, 1, 15),"
 
 
 def test_custom_format_datetime() -> None:
     """A custom format_datetime callable is used for datetime values."""
-    spec = Python(datetime_format=Python.DatetimeFormat.PYTHON)
+    spec = Python(
+        date_format=Python.DateFormat.ISO,
+        datetime_format=Python.DatetimeFormat.PYTHON,
+        bytes_format=Python.BytesFormat.HEX,
+        sequence_format=Python.SequenceFormat.TUPLE,
+        set_format=Python.SetFormat.SET,
+    )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "datetime.datetime(2024, 1, 15, 12, 30, 0),"
 
@@ -331,7 +404,10 @@ def test_java_native_dates() -> None:
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     lines = result.split(sep="\n")
     assert lines[0] == "LocalDate.of(2024, 1, 15),"
@@ -348,19 +424,31 @@ def test_ruby_native_dates() -> None:
         yaml_string="- 2024-01-15T12:30:00\n",
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
 
 
 def test_custom_format_bytes() -> None:
     """A custom format_bytes callable is used for bytes values."""
-    spec = Python(bytes_format=Python.BytesFormat.PYTHON)
+    spec = Python(
+        date_format=Python.DateFormat.ISO,
+        datetime_format=Python.DatetimeFormat.ISO,
+        bytes_format=Python.BytesFormat.PYTHON,
+        sequence_format=Python.SequenceFormat.TUPLE,
+        set_format=Python.SetFormat.SET,
+    )
     result = literalize_yaml(
         yaml_string="- !!binary |\n    SGVsbG8=\n",
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "b'Hello',"
 
@@ -377,7 +465,11 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
+        line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '{\n    "key1": "48656c6c6f",\n    "key2": "42",\n}'
     assert result == expected
@@ -395,7 +487,11 @@ def test_coerce_heterogeneous_set() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
+        line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '[\n    "1",\n    "hello",\n]'
     assert result == expected
@@ -413,7 +509,11 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
+        line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
     assert result == expected
@@ -421,51 +521,79 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
 
 def test_r_empty_dict_key_positional() -> None:
     """R with POSITIONAL empty_dict_key emits unnamed list elements."""
-    spec = R(empty_dict_key=R.EmptyDictKey.POSITIONAL)
+    spec = R(
+        date_format=R.DateFormat.ISO,
+        datetime_format=R.DatetimeFormat.ISO,
+        empty_dict_key=R.EmptyDictKey.POSITIONAL,
+    )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == 'list(\n    "value"\n)'
 
 
 def test_r_empty_dict_key_positional_is_default() -> None:
     """R defaults to POSITIONAL for empty_dict_key."""
-    spec = R()
+    spec = R(
+        date_format=R.DateFormat.ISO,
+        datetime_format=R.DatetimeFormat.ISO,
+        empty_dict_key=R.EmptyDictKey.POSITIONAL,
+    )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == 'list(\n    "value"\n)'
 
 
 def test_r_empty_dict_key_error() -> None:
     """R with ERROR empty_dict_key raises EmptyDictKeyError."""
-    spec = R(empty_dict_key=R.EmptyDictKey.ERROR)
+    spec = R(
+        date_format=R.DateFormat.ISO,
+        datetime_format=R.DatetimeFormat.ISO,
+        empty_dict_key=R.EmptyDictKey.ERROR,
+    )
     yaml_string = '{"": "value"}\n'
     with pytest.raises(expected_exception=EmptyDictKeyError):
         literalize_yaml(
             yaml_string=yaml_string,
             language=spec,
             line_prefix="",
+            indent="    ",
             wrap=True,
+            variable_name=None,
+            new_variable=True,
         )
 
 
 def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     """R with ERROR empty_dict_key does not raise for non-empty keys."""
-    spec = R(empty_dict_key=R.EmptyDictKey.ERROR)
+    spec = R(
+        date_format=R.DateFormat.ISO,
+        datetime_format=R.DatetimeFormat.ISO,
+        empty_dict_key=R.EmptyDictKey.ERROR,
+    )
     yaml_string = '{"key": "value"}\n'
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == 'list(\n    "key" = "value"\n)'
