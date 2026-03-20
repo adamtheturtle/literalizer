@@ -72,6 +72,13 @@ class Rust:
               ``NaiveDateTime::new(...)`` call, e.g.
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
+
+        sequence_format: Which Rust sequence type to use.
+
+            * ``SequenceFormat.VEC`` (default) — ``vec![]`` macro,
+              e.g. ``vec![1, 2, 3]``.
+            * ``SequenceFormat.TUPLE`` — tuple literal,
+              e.g. ``(1, 2, 3)``.
     """
 
     class DateFormat(enum.Enum):
@@ -86,20 +93,31 @@ class Rust:
         ISO = enum.member(value=format_datetime_iso)
         RUST = enum.member(value=format_datetime_rust)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Rust."""
+
+        VEC = "vec"
+        TUPLE = "tuple"
+
     def __init__(
         self,
         *,
         date_format: DateFormat = DateFormat.ISO,
         datetime_format: DatetimeFormat = DatetimeFormat.ISO,
+        sequence_format: SequenceFormat = SequenceFormat.VEC,
     ) -> None:
         """Initialize Rust language specification."""
         self.null_literal = "None"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="vec!["
-        )
-        self.sequence_close = "]"
+        self.sequence_open: Callable[[list[Value]], str]
+        self.sequence_close: str
+        if sequence_format == Rust.SequenceFormat.TUPLE:
+            self.sequence_open = fixed_sequence_open(open_str="(")
+            self.sequence_close = ")"
+        else:
+            self.sequence_open = fixed_sequence_open(open_str="vec![")
+            self.sequence_close = "]"
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="HashMap::from(["
         )

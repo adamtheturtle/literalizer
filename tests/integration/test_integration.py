@@ -1813,6 +1813,13 @@ _SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
         extension=".cr",
         wrap=_wrap_crystal,
     ),
+    "rust_tuple": _SequenceVariant(
+        spec=literalizer.languages.Rust(
+            sequence_format=literalizer.languages.Rust.SequenceFormat.TUPLE,
+        ),
+        extension=".rs",
+        wrap=_wrap_rust,
+    ),
 }
 
 
