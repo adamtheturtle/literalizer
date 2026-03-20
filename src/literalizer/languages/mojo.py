@@ -62,9 +62,9 @@ class Mojo:
     same string (e.g. ``{1, "1"}`` both become ``"1"``).
 
     Variable declarations (``new_variable=True``) use the ``var``
-    keyword (e.g. ``var x = [...]``), which is required at module scope.
-    Variable assignments (``new_variable=False``) omit ``var``
-    (e.g. ``x = [...]``), which is only valid inside a function body.
+    keyword (e.g. ``var x = [...]``) and are valid in any scope.
+    Avoid ``new_variable=False`` outside a function body — Mojo does
+    not allow bare assignments (e.g. ``x = [...]``) at module scope.
     """
 
     @beartype
