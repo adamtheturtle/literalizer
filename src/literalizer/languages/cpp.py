@@ -130,6 +130,11 @@ class Cpp:
 
         INITIALIZER_LIST = "initializer_list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Cpp."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

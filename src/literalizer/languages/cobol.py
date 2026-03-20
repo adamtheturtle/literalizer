@@ -225,6 +225,11 @@ class Cobol:
 
         SEQUENCE = "sequence"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Cobol."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

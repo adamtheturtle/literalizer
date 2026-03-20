@@ -50,6 +50,11 @@ class Nim:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Nim."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

@@ -60,6 +60,11 @@ class Crystal:
         ARRAY = "array"
         TUPLE = "tuple"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Crystal."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

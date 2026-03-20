@@ -84,6 +84,11 @@ class Bash:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Bash."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

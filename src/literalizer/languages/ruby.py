@@ -83,6 +83,11 @@ class Ruby:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Ruby."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

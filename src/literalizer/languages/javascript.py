@@ -83,6 +83,11 @@ class JavaScript:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for JavaScript."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

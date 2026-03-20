@@ -50,6 +50,11 @@ class Clojure:
 
         VECTOR = "vector"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Clojure."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

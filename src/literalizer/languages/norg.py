@@ -66,6 +66,11 @@ class Norg:
         ARRAY = "array"
 
     @beartype
+    class SetFormat(enum.Enum):
+        """Set type options for Norg."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

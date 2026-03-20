@@ -66,6 +66,11 @@ class Elixir:
         LIST = "list"
         TUPLE = "tuple"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Elixir."""
+
+        MAP_SET = "map_set"
+
     def __init__(
         self,
         *,

@@ -104,6 +104,11 @@ class Toml:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Toml."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

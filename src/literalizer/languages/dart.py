@@ -128,6 +128,11 @@ class Dart:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Dart."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

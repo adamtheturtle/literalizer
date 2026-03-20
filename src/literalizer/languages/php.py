@@ -66,6 +66,11 @@ class Php:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Php."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

@@ -124,6 +124,11 @@ class Java:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Java."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,
