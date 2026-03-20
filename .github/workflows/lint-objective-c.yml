@@ -13,15 +13,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install GNUstep
-        run: sudo apt-get install -y gnustep-devel
       - name: Check Objective-C syntax
         run: |-
           set -o pipefail
-          GCC_VERSION=$(gcc -dumpversion | cut -d. -f1)
-          read -ra CFLAGS <<< "$(gnustep-config --objc-flags)"
-          CFLAGS+=("-I/usr/lib/gcc/x86_64-linux-gnu/${GCC_VERSION}/include")
           find tests/integration/cases -name "objective_c*.m" -print0 | \
             while IFS= read -r -d '' f; do
-              clang "${CFLAGS[@]}" -fsyntax-only "$f" || exit 1
+              clang -fsyntax-only "$f" || exit 1
             done
