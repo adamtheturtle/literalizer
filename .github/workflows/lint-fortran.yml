@@ -1,0 +1,20 @@
+---
+name: Lint Fortran
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-fortran:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install gfortran
+        run: sudo apt-get install -y gfortran
+      - name: Check Fortran syntax
+        run: find tests/integration/cases -name "*.f90" -exec gfortran -std=f2008
+          -ffree-line-length-none -fsyntax-only {} +

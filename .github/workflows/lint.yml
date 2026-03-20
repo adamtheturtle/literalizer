@@ -165,6 +165,9 @@ jobs:
   lint-vb:
     uses: ./.github/workflows/lint-vb.yml
 
+  lint-fortran:
+    uses: ./.github/workflows/lint-fortran.yml
+
   completion-lint:
     needs:
       - build
@@ -209,6 +212,7 @@ jobs:
       - lint-toml
       - lint-powershell
       - lint-vb
+      - lint-fortran
     runs-on: ubuntu-latest
     if: always()
     steps:

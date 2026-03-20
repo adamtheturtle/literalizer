@@ -591,6 +591,38 @@ def format_string_vb(value: str) -> str:
 
 
 @beartype
+def format_string_fortran(value: str) -> str:
+    r"""Format a string using Fortran single-quote string syntax.
+
+    Fortran strings use single quotes, with ``''`` for embedded single
+    quotes.  Control characters (code points 0-31) are emitted as
+    ``achar(N)`` expressions concatenated with ``//``.
+
+    Example: ``it's`` → ``'it''s'``.
+    Example: ``line1\nline2`` →
+    ``'line1' // achar(10) // 'line2'``.
+    """
+    _fortran_control_char_threshold = 32
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if (
+            len(segment) == 1
+            and ord(segment) < _fortran_control_char_threshold
+        ):
+            parts.append(f"achar({ord(segment)})")
+        else:
+            escaped = segment.replace("'", "''")
+            parts.append(f"'{escaped}'")
+    if not parts:
+        return "''"
+    if len(parts) == 1:
+        return parts[0]
+    return " // ".join(parts)
+
+
+@beartype
 def passthrough_set_entry(item: str) -> str:
     """Return *item* unchanged.
 

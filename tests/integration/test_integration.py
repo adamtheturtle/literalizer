@@ -875,6 +875,148 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     )
 
 
+_FORTRAN_PREAMBLE = (
+    "module fval_m\n"
+    "  implicit none\n"
+    "  type :: fval_t\n"
+    "    integer :: t = 0\n"
+    "  end type fval_t\n"
+    "contains\n"
+    "  function fnull() result(v)"
+    "; type(fval_t) :: v; end function\n"
+    "  function fbool(b) result(v)"
+    "; logical, intent(in) :: b"
+    "; type(fval_t) :: v; end function\n"
+    "  function fint(n) result(v)"
+    "; integer, intent(in) :: n"
+    "; type(fval_t) :: v; end function\n"
+    "  function freal(x) result(v)"
+    "; real, intent(in) :: x"
+    "; type(fval_t) :: v; end function\n"
+    "  function fstr(s) result(v)"
+    "; character(len=*), intent(in) :: s"
+    "; type(fval_t) :: v; end function\n"
+    "  function flist(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function\n"
+    "  function fmap(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function\n"
+    "  function fset(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function\n"
+    "  function fentry(k, u) result(v)"
+    "; character(len=*), intent(in) :: k"
+    "; type(fval_t), intent(in) :: u"
+    "; type(fval_t) :: v; end function\n"
+    "end module fval_m\n"
+)
+
+
+def _fortran_comment_pos(line: str) -> int | None:
+    """Return the index of the ``!`` comment in *line* outside strings."""
+    in_single_quote = False
+    in_double_quote = False
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if c == "'" and not in_double_quote:
+            if in_single_quote and i + 1 < len(line) and line[i + 1] == "'":
+                i += 2
+                continue
+            in_single_quote = not in_single_quote
+        elif c == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+        elif c == "!" and not in_single_quote and not in_double_quote:
+            return i
+        i += 1
+    return None
+
+
+@beartype
+def _add_fortran_continuation(content: str) -> str:
+    """Add Fortran ``&`` line-continuation to non-comment, non-last
+    lines.
+
+    Pure comment lines (blank or starting with ``!``) are transparent to
+    the Fortran continuation mechanism and receive no ``&``.  For lines
+    with inline comments the ``&`` is inserted before the ``!``.
+    """
+    lines = content.splitlines()
+    if len(lines) <= 1:
+        return content
+    result = []
+    for i, line in enumerate(lines):
+        is_last = i == len(lines) - 1
+        stripped = line.strip()
+        is_pure_comment = not stripped or stripped.startswith("!")
+        if is_last or is_pure_comment:
+            result.append(line)
+        else:
+            pos = _fortran_comment_pos(line)
+            if pos is not None:
+                result.append(line[:pos].rstrip() + " &  " + line[pos:])
+            else:
+                result.append(line + " &")
+    return "\n".join(result)
+
+
+@beartype
+def _wrap_fortran(content: str) -> str:
+    """Wrap in a self-contained Fortran program with the ``fval_m``
+    module embedded.
+    """
+    typed = literalizer.languages.Fortran().format_sequence_entry(content)
+    continued = _add_fortran_continuation(typed)
+    return (
+        _FORTRAN_PREAMBLE + "program check\n"
+        "  use fval_m\n"
+        "  implicit none\n"
+        "  type(fval_t) :: x\n"
+        f"  x = {continued}\n"
+        "end program check"
+    )
+
+
+@beartype
+def _wrap_fortran_varname(content: str) -> str:
+    """Wrap a Fortran variable declaration in a self-contained program."""
+    indented = "  " + content.replace("\n", "\n  ")
+    return (
+        _FORTRAN_PREAMBLE + "program check\n"
+        "  use fval_m\n"
+        "  implicit none\n"
+        f"{indented}\n"
+        "end program check"
+    )
+
+
+@beartype
+def _wrap_fortran_combined(declaration: str, assignment: str) -> str:
+    """Fortran: declaration in one subroutine, assignment in another."""
+    decl_indented = "  " + declaration.replace("\n", "\n  ")
+    assign_indented = "  " + assignment.replace("\n", "\n  ")
+    return (
+        _FORTRAN_PREAMBLE + "subroutine check_declaration()\n"
+        "  use fval_m\n"
+        "  implicit none\n"
+        f"{decl_indented}\n"
+        "end subroutine check_declaration\n"
+        "\n"
+        "subroutine check_assignment()\n"
+        "  use fval_m\n"
+        "  implicit none\n"
+        f"  type(fval_t) :: {_VARIABLE_NAME}\n"
+        f"{assign_indented}\n"
+        "end subroutine check_assignment\n"
+        "\n"
+        "program main\n"
+        "  call check_declaration()\n"
+        "  call check_assignment()\n"
+        "end program main"
+    )
+
+
 @beartype
 def _wrap_combined_newline(declaration: str, assignment: str) -> str:
     """Join declaration and assignment with a newline."""
@@ -1441,6 +1583,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_toml,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+    ),
+    "fortran": _LanguageConfig(
+        spec=literalizer.languages.Fortran(),
+        extension=".f90",
+        wrap=_wrap_fortran,
+        varname_wrap=_wrap_fortran_varname,
+        combined_wrap=_wrap_fortran_combined,
     ),
 }
 
