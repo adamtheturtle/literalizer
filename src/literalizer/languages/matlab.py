@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 _CONTROL_CHAR_THRESHOLD = 32
 
 
+@beartype
 def _decode_matlab_string_expr(expr: str) -> str:
     r"""Decode a MATLAB string expression back to its raw string value.
 
@@ -44,6 +45,7 @@ def _decode_matlab_string_expr(expr: str) -> str:
     return "".join(raw)
 
 
+@beartype
 def _matlab_char_key(s: str) -> str:
     """Build a MATLAB char-array expression for a struct key.
 
@@ -111,6 +113,7 @@ _string_format: Callable[[str], str] = format_string_matlab
 class Matlab:
     """MATLAB language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize Matlab language specification."""
         self.null_literal = "[]"

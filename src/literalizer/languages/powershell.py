@@ -35,6 +35,7 @@ def _format_sequence_entry(item: str) -> str:
     return item
 
 
+@beartype
 def _format_string(value: str) -> str:
     """Format a string using PowerShell back-tick escaping."""
     escaped = (
@@ -47,11 +48,13 @@ def _format_string(value: str) -> str:
     return f'"{escaped}"'
 
 
+@beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a PowerShell variable declaration."""
     return f"${name} = {value}"
 
 
+@beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a PowerShell variable assignment."""
     return f"${name} = {value}"
@@ -66,6 +69,7 @@ _string_format: Callable[[str], str] = _format_string
 class PowerShell:
     """PowerShell language specification."""
 
+    @beartype
     def __init__(self) -> None:
         """Initialize PowerShell language specification."""
         self.null_literal = "$null"

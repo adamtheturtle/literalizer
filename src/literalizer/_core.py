@@ -24,6 +24,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import JSONParseError, YAMLParseError
 
 
+@beartype
 def _scalar_type_bucket(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
     collections.
@@ -47,6 +48,7 @@ def _scalar_type_bucket(*, value: Value) -> type | None:
     return None
 
 
+@beartype
 def _coerce_scalar_to_str(*, value: Value) -> str:
     """Convert a scalar to its string representation."""
     if isinstance(value, bool):
@@ -64,6 +66,7 @@ def _coerce_scalar_to_str(*, value: Value) -> str:
     return repr(value)
 
 
+@beartype
 def _all_scalars_heterogeneous(
     *,
     values: Sequence[Value],
@@ -78,6 +81,7 @@ def _all_scalars_heterogeneous(
     return len(buckets) > 1
 
 
+@beartype
 def _coerce_heterogeneous(*, data: Value) -> Value:
     """Recursively coerce heterogeneous all-scalar collections to
     strings.
@@ -249,6 +253,7 @@ def _wrap_body(
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
+@beartype
 def _coerce_yaml_keys(*, data: object) -> Value:
     """Recursively convert non-string dict keys to their string form.
 
