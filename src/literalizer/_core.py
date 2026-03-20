@@ -43,7 +43,6 @@ def _scalar_type_bucket(*, value: Value) -> type | None:
         float,
         str,
         bytes,
-        datetime.datetime,
         datetime.date,
     )
     for bucket in _buckets:
