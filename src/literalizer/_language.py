@@ -144,12 +144,12 @@ class Language(Protocol):
     skip_null_dict_values: bool
     """Whether to omit dict entries whose value is ``None``."""
 
-    coerce_heterogeneous_to_strings: bool
+    coerce_heterogeneous_scalars_to_strings: bool
     """Whether to coerce all scalar values in heterogeneous collections
     to strings so that every element shares a single type.
     """
 
-    coerce_heterogeneous_lists_to_strings: bool
+    coerce_heterogeneous_sibling_lists_to_strings: bool
     """Whether to coerce sibling lists with heterogeneous scalar element
     types so that every inner element becomes a string.
 
@@ -232,8 +232,8 @@ class LanguageSpec:
     multiline_close_indent: str
     element_separator: str
     skip_null_dict_values: bool
-    coerce_heterogeneous_to_strings: bool
-    coerce_heterogeneous_lists_to_strings: bool
+    coerce_heterogeneous_scalars_to_strings: bool
+    coerce_heterogeneous_sibling_lists_to_strings: bool
     format_variable_declaration: Callable[[str, str], str]
     """Callable ``(name, value) -> str`` for a new variable
     declaration.
