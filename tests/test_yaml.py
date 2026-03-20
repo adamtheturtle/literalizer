@@ -714,8 +714,7 @@ def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert "1" in result
-    assert "2.5" in result
+    assert result == "(\n    1,\n    2.5,\n    3,\n)"
 
 
 def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
@@ -803,5 +802,4 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
         new_variable=True,
         error_on_coercion=True,
     )
-    assert '"a"' in result
-    assert '"b"' in result
+    assert result == '{\n    "a": 1,\n    "b": 2,\n}'
