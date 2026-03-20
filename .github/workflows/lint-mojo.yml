@@ -18,8 +18,9 @@ jobs:
       - name: Install Mojo
         run: |-
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
-      # Mojo 0.26.2.0 has a nondeterministic runtime crash
+      # Mojo has a nondeterministic runtime crash
       # (segfault in libKGENCompilerRTShared.so), so we retry.
+      # See https://github.com/modular/modular/issues/6187.
       - name: Check Mojo syntax
         uses: nick-fields/retry@v3
         with:
