@@ -739,3 +739,69 @@ def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
             new_variable=True,
             error_on_coercion=True,
         )
+
+
+def test_error_on_coercion_raises_for_heterogeneous_omap() -> None:
+    """Error_on_coercion raises for heterogeneous omap values."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!omap
+          - name: Alice
+          - age: 30
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
+    """Error_on_coercion raises for heterogeneous sets."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!set
+        ? 1
+        ? "hello"
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
+    """Error_on_coercion does not raise for homogeneous dict values."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        a: 1
+        b: 2
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert '"a"' in result
+    assert '"b"' in result
