@@ -17,10 +17,10 @@ macro_rules! vec {
 }
 fn main() {
     let my_data = vec![
-        1,
+        "1",
         "hello",
-        true,
-        None::<()>,
+        "True",
+        "None",
     ];
     let _ = my_data;
 }
