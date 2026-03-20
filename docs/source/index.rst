@@ -38,8 +38,15 @@ Usage
    """
    result = literalize_yaml(
        yaml_string=yaml_config,
-       language=Go(),
+       language=Go(
+           date_format=Go.DateFormat.ISO,
+           datetime_format=Go.DatetimeFormat.ISO,
+       ),
+       line_prefix="",
+       indent="    ",
        wrap=True,
+       variable_name=None,
+       new_variable=True,
    )
    # result:
    # map[string]any{

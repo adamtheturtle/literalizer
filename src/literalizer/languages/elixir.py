@@ -69,7 +69,7 @@ class Elixir:
     def __init__(
         self,
         *,
-        sequence_format: SequenceFormat = SequenceFormat.LIST,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Elixir language specification."""
         self.null_literal = "nil"

@@ -19,12 +19,33 @@ from literalizer.languages import (
     Ruby,
 )
 
-CPP = Cpp()
-CSHARP = CSharp()
-GO = Go()
-JAVASCRIPT = JavaScript()
-PYTHON = Python()
-RUBY = Ruby()
+CPP = Cpp(
+    date_format=Cpp.DateFormat.ISO,
+    datetime_format=Cpp.DatetimeFormat.ISO,
+)
+CSHARP = CSharp(
+    date_format=CSharp.DateFormat.ISO,
+    datetime_format=CSharp.DatetimeFormat.ISO,
+)
+GO = Go(
+    date_format=Go.DateFormat.ISO,
+    datetime_format=Go.DatetimeFormat.ISO,
+)
+JAVASCRIPT = JavaScript(
+    date_format=JavaScript.DateFormat.ISO,
+    datetime_format=JavaScript.DatetimeFormat.ISO,
+)
+PYTHON = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+)
+RUBY = Ruby(
+    date_format=Ruby.DateFormat.ISO,
+    datetime_format=Ruby.DatetimeFormat.ISO,
+)
 
 
 def test_dict_python() -> None:
@@ -34,7 +55,10 @@ def test_dict_python() -> None:
         json_string=json.dumps(obj=data),
         language=PYTHON,
         line_prefix="    ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
@@ -45,7 +69,10 @@ def test_dict_wrap() -> None:
         json_string=json.dumps(obj={"a": 1, "b": 2}),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -64,7 +91,10 @@ def test_dict_empty(*, wrap: bool) -> None:
         json_string=json.dumps(obj={}),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=wrap,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == ""
 
@@ -75,7 +105,10 @@ def test_integers() -> None:
         json_string=json.dumps(obj=[42, 0, -7]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -92,7 +125,10 @@ def test_floats() -> None:
         json_string=json.dumps(obj=[1000.0, 3.14]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -108,7 +144,10 @@ def test_string_escaping() -> None:
         json_string=json.dumps(obj=['say "hi"', "a\\b", "line1\nline2"]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     lines = result.split(sep="\n")
     assert lines[0] == '"say \\"hi\\"",'
@@ -122,7 +161,10 @@ def test_nested_arrays() -> None:
         json_string=json.dumps(obj=[[[1, 2], [3, 4]]]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "((1, 2), (3, 4)),"
 
@@ -133,7 +175,10 @@ def test_dicts() -> None:
         json_string=json.dumps(obj=[{"name": "alice", "age": 30}]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '{"name": "alice", "age": 30},'
 
@@ -144,7 +189,10 @@ def test_nested_dict_in_sequence() -> None:
         json_string=json.dumps(obj=[["a", {"x": 1}]]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '("a", {"x": 1}),'
 
@@ -155,7 +203,10 @@ def test_nested_sequence_in_dict() -> None:
         json_string=json.dumps(obj=[{"items": [1, 2]}]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '{"items": (1, 2)},'
 
@@ -166,7 +217,10 @@ def test_indent_spaces() -> None:
         json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
         line_prefix="        ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "        True,\n        False,"
 
@@ -177,7 +231,10 @@ def test_indent_tabs() -> None:
         json_string=json.dumps(obj=[True, False]),
         language=GO,
         line_prefix="\t\t",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "\t\ttrue,\n\t\tfalse,"
 
@@ -188,7 +245,10 @@ def test_wrap() -> None:
         json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -206,7 +266,10 @@ def test_wrap_with_line_prefix() -> None:
         json_string=json.dumps(obj=[["a", 1.0]]),
         language=PYTHON,
         line_prefix="    ",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '    (\n        ("a", 1.0),\n    )'
     assert result == expected
@@ -219,7 +282,10 @@ def test_empty_data(*, wrap: bool) -> None:
         json_string=json.dumps(obj=[]),
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=wrap,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == ""
 
@@ -245,7 +311,13 @@ def test_scalar(
 ) -> None:
     """Scalar values are formatted as native literals."""
     result = literalize_json(
-        json_string=json_string, language=language, line_prefix="", wrap=False
+        json_string=json_string,
+        language=language,
+        line_prefix="",
+        indent="    ",
+        wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == expected
 
@@ -253,7 +325,13 @@ def test_scalar(
 def test_scalar_with_indent() -> None:
     """Scalar values respect the prefix parameter."""
     result = literalize_json(
-        json_string="42", language=PYTHON, line_prefix="    ", wrap=False
+        json_string="42",
+        language=PYTHON,
+        line_prefix="    ",
+        indent="    ",
+        wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "    42"
 
@@ -261,7 +339,13 @@ def test_scalar_with_indent() -> None:
 def test_scalar_wrap_ignored() -> None:
     """Wrap is ignored for scalar values."""
     result = literalize_json(
-        json_string="42", language=PYTHON, line_prefix="", wrap=True
+        json_string="42",
+        language=PYTHON,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "42"
 
@@ -273,7 +357,10 @@ def test_literalize_json_array() -> None:
         json_string=json_string,
         language=PYTHON,
         line_prefix="    ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result == expected
@@ -286,7 +373,10 @@ def test_literalize_json_object() -> None:
         json_string=json_string,
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '{\n    "a": 1,\n    "b": True,\n}'
     assert result == expected
@@ -299,7 +389,10 @@ def test_literalize_json_invalid() -> None:
             json_string="not json",
             language=PYTHON,
             line_prefix="",
+            indent="    ",
             wrap=False,
+            variable_name=None,
+            new_variable=True,
         )
 
 
@@ -315,7 +408,10 @@ def test_part1_sample_python() -> None:
         json_string=json.dumps(obj=data),
         language=PYTHON,
         line_prefix="        ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected_lines = [
         '        ("user_1", 1000.0),',
@@ -333,7 +429,10 @@ def test_part2_sample_go() -> None:
         json_string=json.dumps(obj=data),
         language=GO,
         line_prefix="        ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     lines = result.split(sep="\n")
     assert lines[0] == '        []any{"user_1", 49, 1000.0},'
@@ -347,5 +446,8 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             json_string="not json",
             language=PYTHON,
             line_prefix="",
+            indent="    ",
             wrap=False,
+            variable_name=None,
+            new_variable=True,
         )

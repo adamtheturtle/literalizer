@@ -37,9 +37,18 @@ returns this response:
 
    request_literal = literalize_json(
        json_string=request_json,
-       language=Python(),
+       language=Python(
+           date_format=Python.DateFormat.ISO,
+           datetime_format=Python.DatetimeFormat.ISO,
+           bytes_format=Python.BytesFormat.HEX,
+           sequence_format=Python.SequenceFormat.TUPLE,
+           set_format=Python.SetFormat.SET,
+       ),
+       line_prefix="",
+       indent="    ",
        variable_name="request_body",
        wrap=True,
+       new_variable=True,
    )
    assert request_literal == (
        "request_body = {\n"
@@ -50,9 +59,18 @@ returns this response:
 
    response_literal = literalize_json(
        json_string=response_json,
-       language=Python(),
+       language=Python(
+           date_format=Python.DateFormat.ISO,
+           datetime_format=Python.DatetimeFormat.ISO,
+           bytes_format=Python.BytesFormat.HEX,
+           sequence_format=Python.SequenceFormat.TUPLE,
+           set_format=Python.SetFormat.SET,
+       ),
+       line_prefix="",
+       indent="    ",
        variable_name="response",
        wrap=True,
+       new_variable=True,
    )
    assert response_literal == (
        "response = {\n"

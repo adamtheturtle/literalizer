@@ -128,8 +128,8 @@ class Cpp:
     def __init__(
         self,
         *,
-        date_format: DateFormat = DateFormat.ISO,
-        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
     ) -> None:
         """Initialize Cpp language specification."""
         self.null_literal = "nullptr"
