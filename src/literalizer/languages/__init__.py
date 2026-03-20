@@ -43,6 +43,7 @@ from .swift import Swift
 from .toml import Toml
 from .typescript import TypeScript
 from .vb import VisualBasic
+from .yaml import Yaml
 from .zig import Zig
 
 __all__ = [
@@ -87,5 +88,6 @@ __all__ = [
     "Toml",
     "TypeScript",
     "VisualBasic",
+    "Yaml",
     "Zig",
 ]
