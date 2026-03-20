@@ -91,7 +91,7 @@ def _coerce_heterogeneous_lists(*, data: Value) -> Value:
     """
     if isinstance(data, (dict, ordereddict)):
         return type(data)(
-            {k: _coerce_heterogeneous_lists(data=v) for k, v in data.items()}  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType]
+            {k: _coerce_heterogeneous_lists(data=v) for k, v in data.items()}  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType,reportUnknownVariableType]
         )
 
     if isinstance(data, list):
