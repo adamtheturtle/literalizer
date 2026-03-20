@@ -83,7 +83,7 @@ def _all_scalars_heterogeneous(
 
 @beartype
 def _coerce_heterogeneous_list(*, new_list: list[Value]) -> list[Value]:
-    """Coerce a pre-recursed list when its elements are heterogeneous."""
+    """Coerce a list whose children have already been coerced."""
     if _all_scalars_heterogeneous(values=new_list):
         return [_coerce_scalar_to_str(value=v) for v in new_list]
     # When all elements are lists whose combined elements are
