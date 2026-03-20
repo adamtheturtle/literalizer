@@ -17,9 +17,9 @@ macro_rules! vec {
 }
 fn main() {
     let my_data = vec![
-        1,
-        2.5,
-        3,
+        "1",
+        "2.5",
+        "3",
     ];
     let _ = my_data;
 }

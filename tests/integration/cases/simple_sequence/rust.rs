@@ -17,9 +17,9 @@ macro_rules! vec {
 }
 fn main() {
     let _ = vec![
-        1,
+        "1",
         "hello",
-        true,
-        None::<()>,
+        "True",
+        "None",
     ];
 }

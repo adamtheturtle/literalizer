@@ -22,7 +22,7 @@ impl HashMap {
 fn main() {
     let _ = HashMap::from(vec![
         ("name", "Alice"),
-        ("score", None::<()>),
-        ("age", 30),
+        ("score", "None"),
+        ("age", "30"),
     ]);
 }
