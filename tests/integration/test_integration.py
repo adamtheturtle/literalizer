@@ -1397,26 +1397,8 @@ def _wrap_vb_combined(declaration: str, assignment: str) -> str:
 
 
 @dataclasses.dataclass
-class _DateVariant:
-    """A date/datetime formatting variant for a language."""
-
-    spec: literalizer.Language
-    extension: str
-    wrap: Callable[[str], str]
-
-
-@dataclasses.dataclass
-class _SequenceVariant:
-    """A sequence-type formatting variant for a language."""
-
-    spec: literalizer.Language
-    extension: str
-    wrap: Callable[[str], str]
-
-
-@dataclasses.dataclass
-class _SetVariant:
-    """A set-type formatting variant for a language."""
+class _Variant:
+    """A formatting variant for a language (date, sequence, set, etc.)."""
 
     spec: literalizer.Language
     extension: str
@@ -2010,8 +1992,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 }
 
 
-_DATE_VARIANTS: dict[str, _DateVariant] = {
-    "python_native": _DateVariant(
+_DATE_VARIANTS: dict[str, _Variant] = {
+    "python_native": _Variant(
         spec=literalizer.languages.Python(
             date_format=literalizer.languages.Python.DateFormat.PYTHON,
             datetime_format=literalizer.languages.Python.DatetimeFormat.PYTHON,
@@ -2023,7 +2005,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".py",
         wrap=_wrap_python,
     ),
-    "python_epoch": _DateVariant(
+    "python_epoch": _Variant(
         spec=literalizer.languages.Python(
             date_format=literalizer.languages.Python.DateFormat.ISO,
             datetime_format=literalizer.languages.Python.DatetimeFormat.EPOCH,
@@ -2035,7 +2017,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".py",
         wrap=_wrap_identity,
     ),
-    "js_native": _DateVariant(
+    "js_native": _Variant(
         spec=literalizer.languages.JavaScript(
             date_format=literalizer.languages.JavaScript.DateFormat.JS,
             datetime_format=literalizer.languages.JavaScript.DatetimeFormat.JS,
@@ -2045,7 +2027,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".js",
         wrap=_wrap_js,
     ),
-    "ts_native": _DateVariant(
+    "ts_native": _Variant(
         spec=literalizer.languages.TypeScript(
             date_format=literalizer.languages.TypeScript.DateFormat.JS,
             datetime_format=literalizer.languages.TypeScript.DatetimeFormat.JS,
@@ -2055,7 +2037,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".ts",
         wrap=_wrap_js,
     ),
-    "kotlin_native": _DateVariant(
+    "kotlin_native": _Variant(
         spec=literalizer.languages.Kotlin(
             date_format=literalizer.languages.Kotlin.DateFormat.KOTLIN,
             datetime_format=literalizer.languages.Kotlin.DatetimeFormat.KOTLIN,
@@ -2065,7 +2047,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".kts",
         wrap=_wrap_kotlin_time,
     ),
-    "ruby_native": _DateVariant(
+    "ruby_native": _Variant(
         spec=literalizer.languages.Ruby(
             date_format=literalizer.languages.Ruby.DateFormat.RUBY,
             datetime_format=literalizer.languages.Ruby.DatetimeFormat.RUBY,
@@ -2075,7 +2057,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".rb",
         wrap=_wrap_ruby_date,
     ),
-    "go_native": _DateVariant(
+    "go_native": _Variant(
         spec=literalizer.languages.Go(
             date_format=literalizer.languages.Go.DateFormat.GO,
             datetime_format=literalizer.languages.Go.DatetimeFormat.GO,
@@ -2085,7 +2067,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".go",
         wrap=_wrap_go_time,
     ),
-    "java_instant": _DateVariant(
+    "java_instant": _Variant(
         spec=literalizer.languages.Java(
             date_format=literalizer.languages.Java.DateFormat.JAVA,
             datetime_format=literalizer.languages.Java.DatetimeFormat.INSTANT,
@@ -2095,7 +2077,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".java",
         wrap=_wrap_java_time,
     ),
-    "java_zoned": _DateVariant(
+    "java_zoned": _Variant(
         spec=literalizer.languages.Java(
             date_format=literalizer.languages.Java.DateFormat.JAVA,
             datetime_format=literalizer.languages.Java.DatetimeFormat.ZONED,
@@ -2105,7 +2087,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".java",
         wrap=_wrap_java_time,
     ),
-    "csharp_native": _DateVariant(
+    "csharp_native": _Variant(
         spec=literalizer.languages.CSharp(
             date_format=literalizer.languages.CSharp.DateFormat.CSHARP,
             datetime_format=literalizer.languages.CSharp.DatetimeFormat.CSHARP,
@@ -2115,7 +2097,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".cs",
         wrap=_wrap_csharp_date,
     ),
-    "dart_native": _DateVariant(
+    "dart_native": _Variant(
         spec=literalizer.languages.Dart(
             date_format=literalizer.languages.Dart.DateFormat.DART,
             datetime_format=literalizer.languages.Dart.DatetimeFormat.DART,
@@ -2125,7 +2107,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".dart",
         wrap=_wrap_dart,
     ),
-    "cpp_native": _DateVariant(
+    "cpp_native": _Variant(
         spec=literalizer.languages.Cpp(
             date_format=literalizer.languages.Cpp.DateFormat.CPP,
             datetime_format=literalizer.languages.Cpp.DatetimeFormat.CPP,
@@ -2135,7 +2117,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".cpp",
         wrap=_wrap_cpp_chrono,
     ),
-    "rust_native": _DateVariant(
+    "rust_native": _Variant(
         spec=literalizer.languages.Rust(
             date_format=literalizer.languages.Rust.DateFormat.RUST,
             datetime_format=literalizer.languages.Rust.DatetimeFormat.RUST,
@@ -2145,7 +2127,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".rs",
         wrap=_wrap_rust_chrono,
     ),
-    "julia_native": _DateVariant(
+    "julia_native": _Variant(
         spec=literalizer.languages.Julia(
             date_format=literalizer.languages.Julia.DateFormat.JULIA,
             datetime_format=literalizer.languages.Julia.DatetimeFormat.JULIA,
@@ -2155,7 +2137,7 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
         extension=".jl",
         wrap=_wrap_julia_dates,
     ),
-    "r_native": _DateVariant(
+    "r_native": _Variant(
         spec=literalizer.languages.R(
             date_format=literalizer.languages.R.DateFormat.R,
             datetime_format=literalizer.languages.R.DatetimeFormat.R,
@@ -2169,8 +2151,8 @@ _DATE_VARIANTS: dict[str, _DateVariant] = {
 }
 
 
-_SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
-    "python_list": _SequenceVariant(
+_SEQUENCE_VARIANTS: dict[str, _Variant] = {
+    "python_list": _Variant(
         spec=literalizer.languages.Python(
             date_format=literalizer.languages.Python.DateFormat.ISO,
             datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
@@ -2182,7 +2164,7 @@ _SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
         extension=".py",
         wrap=_wrap_identity,
     ),
-    "julia_tuple": _SequenceVariant(
+    "julia_tuple": _Variant(
         spec=literalizer.languages.Julia(
             date_format=literalizer.languages.Julia.DateFormat.ISO,
             datetime_format=literalizer.languages.Julia.DatetimeFormat.ISO,
@@ -2192,7 +2174,7 @@ _SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
         extension=".jl",
         wrap=_wrap_identity,
     ),
-    "elixir_tuple": _SequenceVariant(
+    "elixir_tuple": _Variant(
         spec=literalizer.languages.Elixir(
             bytes_format=literalizer.languages.Elixir.BytesFormat.HEX,
             sequence_format=literalizer.languages.Elixir.SequenceFormat.TUPLE,
@@ -2200,7 +2182,7 @@ _SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
         extension=".ex",
         wrap=_wrap_elixir,
     ),
-    "erlang_tuple": _SequenceVariant(
+    "erlang_tuple": _Variant(
         spec=literalizer.languages.Erlang(
             bytes_format=literalizer.languages.Erlang.BytesFormat.BINARY,
             sequence_format=literalizer.languages.Erlang.SequenceFormat.TUPLE,
@@ -2208,7 +2190,7 @@ _SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
         extension=".erl",
         wrap=_wrap_erlang,
     ),
-    "crystal_tuple": _SequenceVariant(
+    "crystal_tuple": _Variant(
         spec=literalizer.languages.Crystal(
             bytes_format=literalizer.languages.Crystal.BytesFormat.HEX,
             sequence_format=literalizer.languages.Crystal.SequenceFormat.TUPLE,
@@ -2216,12 +2198,12 @@ _SEQUENCE_VARIANTS: dict[str, _SequenceVariant] = {
         extension=".cr",
         wrap=_wrap_crystal,
     ),
-    "rust_array": _SequenceVariant(
+    "rust_array": _Variant(
         spec=_rust_array_spec(),
         extension=".rs",
         wrap=_wrap_rust,
     ),
-    "rust_tuple": _SequenceVariant(
+    "rust_tuple": _Variant(
         spec=literalizer.languages.Rust(
             date_format=literalizer.languages.Rust.DateFormat.ISO,
             datetime_format=literalizer.languages.Rust.DatetimeFormat.ISO,
@@ -2372,7 +2354,7 @@ _DATES_CASE_DIR = _CASES_DIR / "dates"
 )
 def test_date_format_golden_file(
     variant_name: str,
-    variant: _DateVariant,
+    variant: _Variant,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test native date format variants against golden files."""
@@ -2405,7 +2387,7 @@ _SEQUENCE_CASE_DIR = _CASES_DIR / "simple_sequence"
 )
 def test_sequence_format_golden_file(
     variant_name: str,
-    variant: _SequenceVariant,
+    variant: _Variant,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test sequence type variants against golden files."""
@@ -2428,8 +2410,8 @@ def test_sequence_format_golden_file(
     )
 
 
-_SET_VARIANTS: dict[str, _SetVariant] = {
-    "python_frozenset": _SetVariant(
+_SET_VARIANTS: dict[str, _Variant] = {
+    "python_frozenset": _Variant(
         spec=literalizer.languages.Python(
             date_format=literalizer.languages.Python.DateFormat.ISO,
             datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
@@ -2453,7 +2435,7 @@ _SET_CASE_DIR = _CASES_DIR / "set"
 )
 def test_set_format_golden_file(
     variant_name: str,
-    variant: _SetVariant,
+    variant: _Variant,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test set type variants against golden files."""
@@ -2476,17 +2458,8 @@ def test_set_format_golden_file(
     )
 
 
-@dataclasses.dataclass
-class _VariableTypeHintsVariant:
-    """A variable-type-hints formatting variant."""
-
-    spec: literalizer.Language
-    extension: str
-    wrap: Callable[[str], str]
-
-
-_VARIABLE_TYPE_HINTS_VARIANTS: dict[str, _VariableTypeHintsVariant] = {
-    "python_inline": _VariableTypeHintsVariant(
+_VARIABLE_TYPE_HINTS_VARIANTS: dict[str, _Variant] = {
+    "python_inline": _Variant(
         spec=literalizer.languages.Python(
             date_format=literalizer.languages.Python.DateFormat.ISO,
             datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
@@ -2510,7 +2483,7 @@ _VARIABLE_TYPE_HINTS_CASE_DIR = _CASES_DIR / "simple_dict"
 )
 def test_variable_type_hints_golden_file(
     variant_name: str,
-    variant: _VariableTypeHintsVariant,
+    variant: _Variant,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test Python inline type hints on variable declarations."""
