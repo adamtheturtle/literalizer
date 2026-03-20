@@ -85,53 +85,45 @@ def _all_scalars_heterogeneous(
 
 
 @beartype
+def _has_heterogeneous(*, data: Value) -> bool:
+    """Recursively check whether data contains any heterogeneous
+    all-scalar collections.
+    """
+    if isinstance(data, ordereddict):
+        omap_vals: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        return any(
+            _has_heterogeneous(data=v) for v in omap_vals
+        ) or _all_scalars_heterogeneous(values=omap_vals)
+
+    if isinstance(data, dict):
+        dict_vals = list(data.values())
+        return any(
+            _has_heterogeneous(data=v) for v in dict_vals
+        ) or _all_scalars_heterogeneous(values=dict_vals)
+
+    if isinstance(data, set):
+        items: list[Value] = list(data)
+        return _all_scalars_heterogeneous(values=items)
+
+    if isinstance(data, list):
+        return any(
+            _has_heterogeneous(data=v) for v in data
+        ) or _all_scalars_heterogeneous(values=data)
+
+    return False
+
+
+@beartype
 def _check_heterogeneous(*, data: Value) -> None:
     """Recursively check for heterogeneous all-scalar collections and
     raise if found.
     """
-    if isinstance(data, ordereddict):
-        for v in data.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            _check_heterogeneous(data=v)  # pyright: ignore[reportUnknownArgumentType]
-        omap_vals: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        if _all_scalars_heterogeneous(values=omap_vals):
-            msg = (
-                "Collection contains heterogeneous scalar types "
-                "that would be coerced to strings"
-            )
-            raise HeterogeneousCoercionError(msg)
-        return
-
-    if isinstance(data, dict):
-        for v in data.values():
-            _check_heterogeneous(data=v)
-        if _all_scalars_heterogeneous(values=list(data.values())):
-            msg = (
-                "Collection contains heterogeneous scalar types "
-                "that would be coerced to strings"
-            )
-            raise HeterogeneousCoercionError(msg)
-        return
-
-    if isinstance(data, set):
-        items: list[Value] = list(data)
-        if _all_scalars_heterogeneous(values=items):
-            msg = (
-                "Collection contains heterogeneous scalar types "
-                "that would be coerced to strings"
-            )
-            raise HeterogeneousCoercionError(msg)
-        return
-
-    if isinstance(data, list):
-        for v in data:
-            _check_heterogeneous(data=v)
-        if _all_scalars_heterogeneous(values=data):
-            msg = (
-                "Collection contains heterogeneous scalar types "
-                "that would be coerced to strings"
-            )
-            raise HeterogeneousCoercionError(msg)
-        return
+    if _has_heterogeneous(data=data):
+        msg = (
+            "Collection contains heterogeneous scalar types "
+            "that would be coerced to strings"
+        )
+        raise HeterogeneousCoercionError(msg)
 
 
 @beartype
