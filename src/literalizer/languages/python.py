@@ -58,8 +58,8 @@ _EXACT_TYPE_HINTS: dict[str, str] = {
 _PREFIX_TYPE_HINTS: tuple[tuple[str, str], ...] = (
     ("b'", "bytes"),
     ('b"', "bytes"),
-    ("datetime.datetime(", "datetime.datetime"),
-    ("datetime.date(", "datetime.date"),
+    ("datetime.datetime(year=", "datetime.datetime"),
+    ("datetime.date(year=", "datetime.date"),
     ("OrderedDict(", "OrderedDict[str, Any]"),
     ("frozenset(", "frozenset[Any]"),
     ("[", "list[Any]"),

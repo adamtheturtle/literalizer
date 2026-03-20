@@ -1,5 +1,5 @@
 import datetime
 {
-    "date": datetime.date(2024, 1, 15),
-    "datetime": datetime.datetime(2024, 1, 15, 12, 30, 0),
+    "date": datetime.date(year=2024, month=1, day=15),
+    "datetime": datetime.datetime(year=2024, month=1, day=15, hour=12, minute=30, second=0),
 }

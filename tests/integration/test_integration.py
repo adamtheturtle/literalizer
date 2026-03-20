@@ -1138,6 +1138,34 @@ def _wrap_combined_newline(declaration: str, assignment: str) -> str:
 
 
 @beartype
+def _python_imports(content: str) -> str:
+    """Return import lines needed by the Python content."""
+    imports: list[str] = []
+    if "OrderedDict(" in content:
+        imports.append("from collections import OrderedDict")
+    if "datetime." in content:
+        imports.append("import datetime")
+    if "Any" in content:
+        imports.append("from typing import Any")
+    if not imports:
+        return ""
+    return "\n".join(imports) + "\n"
+
+
+@beartype
+def _wrap_python(content: str) -> str:
+    """Wrap with any imports needed by the generated Python code."""
+    return _python_imports(content=content) + content
+
+
+@beartype
+def _wrap_python_combined(declaration: str, assignment: str) -> str:
+    """Join declaration and assignment with imports prepended."""
+    combined = declaration + "\n" + assignment
+    return _python_imports(content=combined) + combined
+
+
+@beartype
 def _wrap_python_datetime(content: str) -> str:
     """Wrap with a datetime import for native Python date literals."""
     return f"import datetime\n{content}"
@@ -1472,9 +1500,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
-        wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
-        combined_wrap=_wrap_combined_newline,
+        wrap=_wrap_python,
+        varname_wrap=_wrap_python,
+        combined_wrap=_wrap_python_combined,
     ),
     "javascript": _LanguageConfig(
         spec=literalizer.languages.JavaScript(
@@ -2230,6 +2258,7 @@ class _VariableTypeHintsVariant:
 
     spec: literalizer.Language
     extension: str
+    wrap: Callable[[str], str]
 
 
 _VARIABLE_TYPE_HINTS_VARIANTS: dict[str, _VariableTypeHintsVariant] = {
@@ -2243,6 +2272,7 @@ _VARIABLE_TYPE_HINTS_VARIANTS: dict[str, _VariableTypeHintsVariant] = {
             variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
         ),
         extension=".py",
+        wrap=_wrap_python,
     ),
 }
 
@@ -2270,8 +2300,9 @@ def test_variable_type_hints_golden_file(
         variable_name=_VARIABLE_NAME,
         new_variable=True,
     )
+    wrapped = variant.wrap(result)
     file_regression.check(
-        contents=result + "\n",
+        contents=wrapped + "\n",
         extension=variant.extension,
         fullpath=_VARIABLE_TYPE_HINTS_CASE_DIR
         / (variant_name + variant.extension),
