@@ -52,10 +52,14 @@ class Mojo:
     """Mojo language specification.
 
     Mojo does not support heterogeneous collections — every element in a
-    list must share a single type.  When a collection contains scalar
-    values of mixed types (e.g. ``[1, 2.5, 3]``), **all values are
-    coerced to their string representations** so that the resulting
+    list or set must share a single type.  When a collection contains
+    scalar values of mixed types (e.g. ``[1, 2.5, 3]``), **all values
+    are coerced to their string representations** so that the resulting
     literal is valid Mojo (e.g. ``["1", "2.5", "3"]``).
+
+    For sets, this coercion can cause the output to have fewer elements
+    than the input when distinct values of different types coerce to the
+    same string (e.g. ``{1, "1"}`` both become ``"1"``).
     """
 
     @beartype
