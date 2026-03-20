@@ -56,6 +56,11 @@ class Mojo:
     values of mixed types (e.g. ``[1, 2.5, 3]``), **all values are
     coerced to their string representations** so that the resulting
     literal is valid Mojo (e.g. ``["1", "2.5", "3"]``).
+
+    Variable declarations (``new_variable=True``) use the ``var``
+    keyword (e.g. ``var x = [...]``), which is required at module scope.
+    Variable assignments (``new_variable=False``) omit ``var``
+    (e.g. ``x = [...]``), which is only valid inside a function body.
     """
 
     @beartype
