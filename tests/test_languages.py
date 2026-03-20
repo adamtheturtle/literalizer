@@ -40,18 +40,53 @@ from literalizer.languages import (
 )
 
 COBOL = Cobol()
-CPP = Cpp()
+CPP = Cpp(
+    date_format=Cpp.DateFormat.ISO,
+    datetime_format=Cpp.DatetimeFormat.ISO,
+)
 FORTRAN = Fortran()
-CSHARP = CSharp()
-GO = Go()
-JAVA = Java()
-JAVASCRIPT = JavaScript()
-KOTLIN = Kotlin()
-PYTHON = Python()
-RUBY = Ruby()
-RUST = Rust()
+CSHARP = CSharp(
+    date_format=CSharp.DateFormat.ISO,
+    datetime_format=CSharp.DatetimeFormat.ISO,
+)
+GO = Go(
+    date_format=Go.DateFormat.ISO,
+    datetime_format=Go.DatetimeFormat.ISO,
+)
+JAVA = Java(
+    date_format=Java.DateFormat.ISO,
+    datetime_format=Java.DatetimeFormat.ISO,
+)
+JAVASCRIPT = JavaScript(
+    date_format=JavaScript.DateFormat.ISO,
+    datetime_format=JavaScript.DatetimeFormat.ISO,
+)
+KOTLIN = Kotlin(
+    date_format=Kotlin.DateFormat.ISO,
+    datetime_format=Kotlin.DatetimeFormat.ISO,
+)
+PYTHON = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.NONE,
+)
+RUBY = Ruby(
+    date_format=Ruby.DateFormat.ISO,
+    datetime_format=Ruby.DatetimeFormat.ISO,
+)
+RUST = Rust(
+    date_format=Rust.DateFormat.ISO,
+    datetime_format=Rust.DatetimeFormat.ISO,
+    sequence_format=Rust.SequenceFormat.VEC,
+)
 TOML = Toml()
-TYPESCRIPT = TypeScript()
+TYPESCRIPT = TypeScript(
+    date_format=TypeScript.DateFormat.ISO,
+    datetime_format=TypeScript.DatetimeFormat.ISO,
+)
 
 
 @pytest.mark.parametrize(
@@ -75,7 +110,10 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
         json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
         language=language,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == expected
 
@@ -86,7 +124,10 @@ def test_ruby_dict() -> None:
         json_string=json.dumps(obj=[{"key": None}]),
         language=RUBY,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '{"key" => nil},'
 
@@ -97,7 +138,10 @@ def test_dict_ruby() -> None:
         json_string=json.dumps(obj={"user_1": "team_alpha"}),
         language=RUBY,
         line_prefix="  ",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '  "user_1" => "team_alpha",'
 
@@ -110,7 +154,10 @@ def test_java_dict_wrap_no_multiline_trailing_comma() -> None:
         json_string=json.dumps(obj={"name": "Alice", "age": 30}),
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -129,7 +176,10 @@ def test_java_dict_skips_null_values() -> None:
         json_string=json.dumps(obj=data),
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -147,7 +197,10 @@ def test_java_dict_skips_null_values_no_wrap() -> None:
         json_string=json.dumps(obj={"a": None, "b": 1}),
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     expected = 'Map.entry("b", 1)'
     assert result == expected
@@ -161,7 +214,10 @@ def test_java_dict_all_null_values_wrap() -> None:
         json_string=json.dumps(obj={"a": None, "b": None}),
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "Map.ofEntries()"
 
@@ -173,7 +229,10 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         yaml_string=yaml_string,
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -200,7 +259,10 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         yaml_string=yaml_string,
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -227,7 +289,10 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         yaml_string=yaml_string,
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -248,7 +313,10 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         yaml_string=yaml_string,
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = "Map.ofEntries()\n    // trailing"
     assert result == expected
@@ -269,7 +337,10 @@ def test_java_yaml_omap_skips_null_values() -> None:
         yaml_string=yaml_string,
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     omap_inline = (
         "new java.util.ArrayList<>(java.util.Arrays.asList("
@@ -285,7 +356,10 @@ def test_java_sequence_wrap_uses_braces() -> None:
         json_string=json.dumps(obj=[1, "hello", True]),
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -315,7 +389,10 @@ def test_java_typed_array_opener(
         json_string=json.dumps(obj=json_input),
         language=JAVA,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     assert result.startswith(expected_open)
 
@@ -353,6 +430,7 @@ def test_custom_language() -> None:
         element_separator=", ",
         skip_null_dict_values=False,
         coerce_heterogeneous_to_strings=False,
+        supports_collection_comments=True,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
     )
@@ -360,7 +438,10 @@ def test_custom_language() -> None:
         json_string=json.dumps(obj=[True, None, "hi"]),
         language=custom,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == 'YES,\nNIL,\n"hi",'
 
@@ -387,7 +468,10 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
         yaml_string=yaml_string,
         language=Matlab(),
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == expected
 
@@ -403,7 +487,10 @@ def test_matlab_dict_key_with_quote() -> None:
         yaml_string=yaml_string,
         language=Matlab(),
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == "'hello \"world\"', 1"
 
@@ -419,7 +506,10 @@ def test_toml_integer_dict_key() -> None:
         yaml_string="1: value\n",
         language=TOML,
         line_prefix="",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = '{\n    1 = "value"\n}'
     assert result == expected
@@ -441,7 +531,10 @@ def test_cobol_string_control_characters() -> None:
         yaml_string='"line1\\nline2"\n',
         language=COBOL,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '"line1 line2"'
 
@@ -452,7 +545,10 @@ def test_cobol_string_tab_characters() -> None:
         yaml_string='"col1\\tcol2"\n',
         language=COBOL,
         line_prefix="",
+        indent="    ",
         wrap=False,
+        variable_name=None,
+        new_variable=True,
     )
     assert result == '"col1 col2"'
 
@@ -477,7 +573,10 @@ def test_cobol_level_number_cap() -> None:
         yaml_string=yaml_string,
         language=COBOL,
         line_prefix="    ",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     expected = (
         "\n"
@@ -504,7 +603,10 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         yaml_string=yaml_string,
         language=COBOL,
         line_prefix="    ",
+        indent="    ",
         wrap=True,
+        variable_name=None,
+        new_variable=True,
     )
     for line in result.splitlines():
         stripped = line.strip()
@@ -520,7 +622,10 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         yaml_string=yaml_string,
         language=FORTRAN,
         variable_name="cfg",
+        indent="    ",
         wrap=True,
+        line_prefix="",
+        new_variable=True,
     )
     assert "'it''s here'" in result
     assert "&  !" in result

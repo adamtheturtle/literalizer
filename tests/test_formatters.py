@@ -34,8 +34,18 @@ from literalizer._formatters import (
 )
 from literalizer.languages import Java, Python
 
-PYTHON = Python()
-JAVA = Java()
+PYTHON = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.NONE,
+)
+JAVA = Java(
+    date_format=Java.DateFormat.ISO,
+    datetime_format=Java.DatetimeFormat.ISO,
+)
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
 _SAMPLE_DATETIME = datetime.datetime.fromisoformat("2024-01-15T12:30:00")

@@ -77,6 +77,8 @@ class Rust:
 
             * ``SequenceFormat.VEC`` (default) — ``vec![]`` macro,
               e.g. ``vec![1, 2, 3]``.
+            * ``SequenceFormat.ARRAY`` — fixed-size array literal,
+              e.g. ``[1, 2, 3]``.
             * ``SequenceFormat.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
     """
@@ -97,14 +99,15 @@ class Rust:
         """Sequence type options for Rust."""
 
         VEC = "vec"
+        ARRAY = "array"
         TUPLE = "tuple"
 
     def __init__(
         self,
         *,
-        date_format: DateFormat = DateFormat.ISO,
-        datetime_format: DatetimeFormat = DatetimeFormat.ISO,
-        sequence_format: SequenceFormat = SequenceFormat.VEC,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Rust language specification."""
         self.null_literal = "None"
@@ -115,6 +118,9 @@ class Rust:
         if sequence_format == Rust.SequenceFormat.TUPLE:
             self.sequence_open = fixed_sequence_open(open_str="(")
             self.sequence_close = ")"
+        elif sequence_format == Rust.SequenceFormat.ARRAY:
+            self.sequence_open = fixed_sequence_open(open_str="[")
+            self.sequence_close = "]"
         else:
             self.sequence_open = fixed_sequence_open(open_str="vec![")
             self.sequence_close = "]"

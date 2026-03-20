@@ -34,26 +34,71 @@ from literalizer.languages import (
 )
 
 CLOJURE = Clojure()
-CPP = Cpp()
-CSHARP = CSharp()
-DART = Dart()
-ELIXIR = Elixir()
+CPP = Cpp(
+    date_format=Cpp.DateFormat.ISO,
+    datetime_format=Cpp.DatetimeFormat.ISO,
+)
+CSHARP = CSharp(
+    date_format=CSharp.DateFormat.ISO,
+    datetime_format=CSharp.DatetimeFormat.ISO,
+)
+DART = Dart(
+    date_format=Dart.DateFormat.ISO,
+    datetime_format=Dart.DatetimeFormat.ISO,
+)
+ELIXIR = Elixir(
+    sequence_format=Elixir.SequenceFormat.LIST,
+)
 FSHARP = FSharp()
-GO = Go()
+GO = Go(
+    date_format=Go.DateFormat.ISO,
+    datetime_format=Go.DatetimeFormat.ISO,
+)
 HASKELL = Haskell()
-JAVA = Java()
-JAVASCRIPT = JavaScript()
-KOTLIN = Kotlin()
+JAVA = Java(
+    date_format=Java.DateFormat.ISO,
+    datetime_format=Java.DatetimeFormat.ISO,
+)
+JAVASCRIPT = JavaScript(
+    date_format=JavaScript.DateFormat.ISO,
+    datetime_format=JavaScript.DatetimeFormat.ISO,
+)
+KOTLIN = Kotlin(
+    date_format=Kotlin.DateFormat.ISO,
+    datetime_format=Kotlin.DatetimeFormat.ISO,
+)
 PHP = Php()
-PYTHON = Python()
+PYTHON = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
+    variable_type_hints=Python.VariableTypeHints.NONE,
+)
 PYTHON_INLINE_HINTS = Python(
+    date_format=Python.DateFormat.ISO,
+    datetime_format=Python.DatetimeFormat.ISO,
+    bytes_format=Python.BytesFormat.HEX,
+    sequence_format=Python.SequenceFormat.TUPLE,
+    set_format=Python.SetFormat.SET,
     variable_type_hints=Python.VariableTypeHints.INLINE,
 )
-RUBY = Ruby()
-RUST = Rust()
+RUBY = Ruby(
+    date_format=Ruby.DateFormat.ISO,
+    datetime_format=Ruby.DatetimeFormat.ISO,
+)
+RUST = Rust(
+    date_format=Rust.DateFormat.ISO,
+    datetime_format=Rust.DatetimeFormat.ISO,
+    sequence_format=Rust.SequenceFormat.VEC,
+)
 SCALA = Scala()
 SWIFT = Swift()
-TYPESCRIPT = TypeScript()
+TYPESCRIPT = TypeScript(
+    date_format=TypeScript.DateFormat.ISO,
+    datetime_format=TypeScript.DatetimeFormat.ISO,
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -120,9 +165,11 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     SCALA: _VariableSyntax(
         declaration="val my_var = 42", assignment="my_var = 42"
     ),
-    R(): _VariableSyntax(
-        declaration="my_var <- 42", assignment="my_var <- 42"
-    ),
+    R(
+        date_format=R.DateFormat.ISO,
+        datetime_format=R.DatetimeFormat.ISO,
+        empty_dict_key=R.EmptyDictKey.POSITIONAL,
+    ): _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),
 }
 
 _DECLARATION_PARAMS = [
@@ -144,8 +191,10 @@ def test_variable_declaration_json(
         json_string="42",
         language=language,
         line_prefix="",
+        indent="    ",
         wrap=False,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result == expected
 
@@ -161,8 +210,10 @@ def test_variable_declaration_yaml(
         yaml_string="42\n",
         language=language,
         line_prefix="",
+        indent="    ",
         wrap=False,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result == expected
 
@@ -173,8 +224,10 @@ def test_variable_declaration_none_no_wrap() -> None:
         json_string="[1, 2]",
         language=PYTHON,
         line_prefix="",
+        indent="    ",
         wrap=True,
         variable_name=None,
+        new_variable=True,
     )
     assert result == "(\n    1,\n    2,\n)"
 
@@ -192,6 +245,7 @@ def test_existing_variable_assignment_json(
         json_string="42",
         language=language,
         line_prefix="",
+        indent="    ",
         wrap=False,
         variable_name="my_var",
         new_variable=False,
@@ -212,6 +266,7 @@ def test_existing_variable_assignment_yaml(
         yaml_string="42\n",
         language=language,
         line_prefix="",
+        indent="    ",
         wrap=False,
         variable_name="my_var",
         new_variable=False,
@@ -240,8 +295,10 @@ def test_python_inline_type_hints_scalars(
         json_string=json_input,
         language=PYTHON_INLINE_HINTS,
         line_prefix="",
+        indent="    ",
         wrap=False,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result == expected
 
@@ -252,8 +309,10 @@ def test_python_inline_type_hints_dict() -> None:
         json_string='{"a": 1}',
         language=PYTHON_INLINE_HINTS,
         line_prefix="",
+        indent="    ",
         wrap=True,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result.startswith("my_var: dict[str, Any] = {")
 
@@ -264,8 +323,10 @@ def test_python_inline_type_hints_tuple() -> None:
         json_string="[1, 2]",
         language=PYTHON_INLINE_HINTS,
         line_prefix="",
+        indent="    ",
         wrap=True,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result.startswith("my_var: tuple[Any, ...] = (")
 
@@ -275,15 +336,21 @@ def test_python_inline_type_hints_list() -> None:
     LIST.
     """
     lang = Python(
+        date_format=Python.DateFormat.ISO,
+        datetime_format=Python.DatetimeFormat.ISO,
+        bytes_format=Python.BytesFormat.HEX,
         sequence_format=Python.SequenceFormat.LIST,
+        set_format=Python.SetFormat.SET,
         variable_type_hints=Python.VariableTypeHints.INLINE,
     )
     result = literalize_json(
         json_string="[1, 2]",
         language=lang,
         line_prefix="",
+        indent="    ",
         wrap=True,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result.startswith("my_var: list[Any] = [")
 
@@ -294,6 +361,7 @@ def test_python_inline_type_hints_assignment_no_hint() -> None:
         json_string="42",
         language=PYTHON_INLINE_HINTS,
         line_prefix="",
+        indent="    ",
         wrap=False,
         variable_name="my_var",
         new_variable=False,
@@ -308,8 +376,10 @@ def test_python_inline_type_hints_set_with_colon_in_string() -> None:
         yaml_string=yaml_string,
         language=PYTHON_INLINE_HINTS,
         line_prefix="",
+        indent="    ",
         wrap=True,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result.startswith("my_var: set[Any] = {")
 
@@ -321,7 +391,9 @@ def test_python_inline_type_hints_set_of_integers() -> None:
         yaml_string=yaml_string,
         language=PYTHON_INLINE_HINTS,
         line_prefix="",
+        indent="    ",
         wrap=True,
         variable_name="my_var",
+        new_variable=True,
     )
     assert result.startswith("my_var: set[Any] = {")

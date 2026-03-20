@@ -63,7 +63,7 @@ class Crystal:
     def __init__(
         self,
         *,
-        sequence_format: SequenceFormat = SequenceFormat.ARRAY,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Crystal language specification."""
         self.null_literal = "nil"

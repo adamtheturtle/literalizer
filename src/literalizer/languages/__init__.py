@@ -30,6 +30,7 @@ from .matlab import Matlab
 from .mojo import Mojo
 from .nim import Nim
 from .norg import Norg
+from .objective_c import ObjectiveC
 from .ocaml import OCaml
 from .occam import Occam
 from .perl import Perl
@@ -78,6 +79,7 @@ __all__ = [
     "Nim",
     "Norg",
     "OCaml",
+    "ObjectiveC",
     "Occam",
     "Perl",
     "Php",
