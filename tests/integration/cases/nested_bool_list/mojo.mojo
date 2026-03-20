@@ -1,4 +1,5 @@
-_ = [
-    [True, False],
-    [True, True],
-]
+def main():
+    _ = [
+        [True, False],
+        [True, True],
+    ]

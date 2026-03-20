@@ -419,7 +419,8 @@ def test_toml_integer_dict_key() -> None:
         line_prefix="",
         wrap=True,
     )
-    assert '1 = "value"' in result
+    expected = '{\n    1 = "value"\n}'
+    assert result == expected
 
 
 def test_toml_non_quoted_dict_key() -> None:
@@ -476,15 +477,21 @@ def test_cobol_level_number_cap() -> None:
         line_prefix="    ",
         wrap=True,
     )
-    # Level 49 is the max; deeper nesting stays at 49.
-    max_cobol_level = 49
-    assert "49 F-VALUE" in result
-    # No level number should exceed 49.
-    for line in result.splitlines():
-        stripped = line.lstrip()
-        if stripped and stripped[:2].isdigit():
-            level = int(stripped[:2])
-            assert level <= max_cobol_level
+    expected = (
+        "\n"
+        "        05 F-A.\n"
+        "10 F-B.\n"
+        "15 F-C.\n"
+        "20 F-D.\n"
+        "25 F-E.\n"
+        "30 F-F.\n"
+        "35 F-G.\n"
+        "40 F-H.\n"
+        "45 F-I.\n"
+        '49 F-VALUE PIC X(4) VALUE "deep".\n'
+        "    "
+    )
+    assert result == expected
 
 
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:

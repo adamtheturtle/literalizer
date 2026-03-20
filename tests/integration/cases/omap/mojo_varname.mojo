@@ -1,5 +1,6 @@
-my_data = [
-    ("name", "Alice"),
-    ("age", "30"),
-    ("active", "True"),
-]
+def main():
+    my_data = [
+        ("name", "Alice"),
+        ("age", "30"),
+        ("active", "True"),
+    ]
