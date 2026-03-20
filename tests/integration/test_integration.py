@@ -945,7 +945,7 @@ def _add_fortran_continuation(content: str) -> str:
     lines = content.splitlines()
     if len(lines) <= 1:
         return content
-    result = []
+    result: list[str] = []
     for i, line in enumerate(iterable=lines):
         is_last = i == len(lines) - 1
         stripped = line.strip()
