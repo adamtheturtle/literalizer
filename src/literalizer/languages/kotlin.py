@@ -144,6 +144,11 @@ class Kotlin:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Kotlin."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

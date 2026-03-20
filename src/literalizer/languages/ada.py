@@ -108,6 +108,11 @@ class Ada:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Ada."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

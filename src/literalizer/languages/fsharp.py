@@ -111,6 +111,11 @@ class FSharp:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for F#."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

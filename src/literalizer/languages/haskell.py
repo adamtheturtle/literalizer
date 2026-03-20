@@ -100,6 +100,11 @@ class Haskell:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Haskell."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

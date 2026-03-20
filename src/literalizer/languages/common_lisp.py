@@ -55,6 +55,11 @@ class CommonLisp:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Common Lisp."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

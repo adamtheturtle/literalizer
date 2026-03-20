@@ -74,6 +74,11 @@ class Erlang:
         LIST = "list"
         TUPLE = "tuple"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Erlang."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

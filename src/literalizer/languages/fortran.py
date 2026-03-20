@@ -167,6 +167,11 @@ class Fortran:
         LIST = "list"
 
     @beartype
+    class SetFormat(enum.Enum):
+        """Set type options for Fortran."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

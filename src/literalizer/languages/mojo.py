@@ -69,6 +69,11 @@ class Mojo:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Mojo."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

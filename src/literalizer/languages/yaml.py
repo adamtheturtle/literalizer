@@ -77,6 +77,11 @@ class Yaml:
         SEQUENCE = "sequence"
 
     @beartype
+    class SetFormat(enum.Enum):
+        """Set type options for YAML."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

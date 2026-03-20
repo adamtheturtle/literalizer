@@ -379,6 +379,9 @@ ignore_names = [
     "suppress_warnings",
     "templates_path",
     "warning_is_error",
+    # Enum members accessed by consumers iterating SetFormat
+    "HASH_SET",
+    "MAP_SET",
     # Used in documentation code examples
     "custom",
     "result",

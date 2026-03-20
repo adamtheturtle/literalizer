@@ -127,6 +127,11 @@ class CSharp:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for C#."""
+
+        HASH_SET = "hash_set"
+
     def __init__(
         self,
         *,

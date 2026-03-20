@@ -138,6 +138,11 @@ class Go:
 
         SLICE = "slice"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Go."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

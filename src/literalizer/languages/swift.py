@@ -56,6 +56,11 @@ class Swift:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Swift."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

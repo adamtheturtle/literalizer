@@ -131,6 +131,11 @@ class R:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for R."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

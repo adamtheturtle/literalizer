@@ -87,6 +87,11 @@ class Zig:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Zig."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

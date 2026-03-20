@@ -50,6 +50,11 @@ class Groovy:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Groovy."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

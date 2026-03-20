@@ -100,6 +100,11 @@ class Occam:
 
         LIST = "list"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Occam."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

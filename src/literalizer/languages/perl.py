@@ -50,6 +50,11 @@ class Perl:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Perl."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

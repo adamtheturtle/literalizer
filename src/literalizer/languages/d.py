@@ -111,6 +111,11 @@ class D:
 
         ARRAY = "array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for D."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

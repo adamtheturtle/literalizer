@@ -120,6 +120,11 @@ class Matlab:
 
         CELL_ARRAY = "cell_array"
 
+    class SetFormat(enum.Enum):
+        """Set type options for MATLAB."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

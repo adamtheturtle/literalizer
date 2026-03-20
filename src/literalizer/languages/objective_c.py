@@ -124,6 +124,11 @@ class ObjectiveC:
         ARRAY = "array"
 
     @beartype
+    class SetFormat(enum.Enum):
+        """Set type options for Objective-C."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,

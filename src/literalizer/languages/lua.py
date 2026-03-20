@@ -66,6 +66,11 @@ class Lua:
 
         TABLE = "table"
 
+    class SetFormat(enum.Enum):
+        """Set type options for Lua."""
+
+        SET = "set"
+
     def __init__(
         self,
         *,
