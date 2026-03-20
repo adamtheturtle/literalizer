@@ -85,7 +85,7 @@ def _all_scalars_heterogeneous(
 
 
 @beartype
-def _coerce_heterogeneous_lists(*, data: Value) -> Value:
+def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
     """Recursively coerce sibling lists with heterogeneous scalar
     element types so that every inner element becomes a string.
 
@@ -94,11 +94,14 @@ def _coerce_heterogeneous_lists(*, data: Value) -> Value:
     """
     if isinstance(data, (dict, ordereddict)):
         return type(data)(
-            {k: _coerce_heterogeneous_lists(data=v) for k, v in data.items()}  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType,reportUnknownVariableType]
+            {
+                k: _coerce_heterogeneous_sibling_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for k, v in data.items()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            }
         )
 
     if isinstance(data, list):
-        new_list = [_coerce_heterogeneous_lists(data=v) for v in data]
+        new_list = [_coerce_heterogeneous_sibling_lists(data=v) for v in data]
         sublists: list[list[Value]] = [
             v for v in new_list if isinstance(v, list)
         ]
@@ -151,14 +154,14 @@ def _check_heterogeneous(*, data: Value) -> None:
 
 
 @beartype
-def _coerce_heterogeneous(*, data: Value) -> Value:
+def _coerce_heterogeneous_scalars(*, data: Value) -> Value:
     """Recursively coerce heterogeneous all-scalar collections to
     strings.
     """
     if isinstance(data, ordereddict):
         new_omap: ordereddict = ordereddict()
         for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            new_omap[k] = _coerce_heterogeneous(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            new_omap[k] = _coerce_heterogeneous_scalars(data=v)  # pyright: ignore[reportUnknownArgumentType]
         omap_vals: list[Value] = list(new_omap.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
         if _all_scalars_heterogeneous(values=omap_vals):
             for k in new_omap:  # pyright: ignore[reportUnknownVariableType]
@@ -169,7 +172,7 @@ def _coerce_heterogeneous(*, data: Value) -> Value:
 
     if isinstance(data, dict):
         new_dict: dict[str, Value] = {
-            k: _coerce_heterogeneous(data=v) for k, v in data.items()
+            k: _coerce_heterogeneous_scalars(data=v) for k, v in data.items()
         }
         if _all_scalars_heterogeneous(
             values=list(new_dict.values()),
@@ -186,7 +189,7 @@ def _coerce_heterogeneous(*, data: Value) -> Value:
         return data
 
     if isinstance(data, list):
-        new_list = [_coerce_heterogeneous(data=v) for v in data]
+        new_list = [_coerce_heterogeneous_scalars(data=v) for v in data]
         if _all_scalars_heterogeneous(values=new_list):
             return [_coerce_scalar_to_str(value=v) for v in new_list]
         return new_list
@@ -356,13 +359,13 @@ def _apply_coercions(
     error_on_coercion: bool,
 ) -> Value:
     """Apply heterogeneous-type coercions controlled by the language."""
-    if spec.coerce_heterogeneous_to_strings:
+    if spec.coerce_heterogeneous_scalars_to_strings:
         if error_on_coercion:
             _check_heterogeneous(data=data)
         else:
-            data = _coerce_heterogeneous(data=data)
-            if spec.coerce_heterogeneous_lists_to_strings:
-                data = _coerce_heterogeneous_lists(data=data)
+            data = _coerce_heterogeneous_scalars(data=data)
+            if spec.coerce_heterogeneous_sibling_lists_to_strings:
+                data = _coerce_heterogeneous_sibling_lists(data=data)
     return data
 
 
@@ -538,7 +541,7 @@ def literalize_json(
             :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
             instead of silently coercing heterogeneous scalar
             collections to strings.  Only has an effect when the
-            language sets ``coerce_heterogeneous_to_strings`` to
+            language sets ``coerce_heterogeneous_scalars_to_strings`` to
             ``True``.
 
     Raises:
@@ -619,7 +622,7 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
             :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
             instead of silently coercing heterogeneous scalar
             collections to strings.  Only has an effect when the
-            language sets ``coerce_heterogeneous_to_strings`` to
+            language sets ``coerce_heterogeneous_scalars_to_strings`` to
             ``True``.
 
     Raises:
