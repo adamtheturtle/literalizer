@@ -82,6 +82,28 @@ def _all_scalars_heterogeneous(
 
 
 @beartype
+def _coerce_heterogeneous_list(*, new_list: list[Value]) -> list[Value]:
+    """Coerce a pre-recursed list when its elements are heterogeneous."""
+    if _all_scalars_heterogeneous(values=new_list):
+        return [_coerce_scalar_to_str(value=v) for v in new_list]
+    # When all elements are lists whose combined elements are
+    # heterogeneous scalars, coerce every inner element to a string
+    # so that the sibling lists share a common element type.
+    sublists: list[list[Value]] = [v for v in new_list if isinstance(v, list)]
+    if (
+        len(sublists) == len(new_list)
+        and len(sublists) > 1
+        and _all_scalars_heterogeneous(
+            values=[e for sub in sublists for e in sub],
+        )
+    ):
+        return [
+            [_coerce_scalar_to_str(value=e) for e in sub] for sub in sublists
+        ]
+    return new_list
+
+
+@beartype
 def _coerce_heterogeneous(*, data: Value) -> Value:
     """Recursively coerce heterogeneous all-scalar collections to
     strings.
@@ -118,9 +140,7 @@ def _coerce_heterogeneous(*, data: Value) -> Value:
 
     if isinstance(data, list):
         new_list = [_coerce_heterogeneous(data=v) for v in data]
-        if _all_scalars_heterogeneous(values=new_list):
-            return [_coerce_scalar_to_str(value=v) for v in new_list]
-        return new_list
+        return _coerce_heterogeneous_list(new_list=new_list)
 
     return data
 
