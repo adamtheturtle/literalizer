@@ -21,5 +21,5 @@ jobs:
           read -ra CFLAGS <<< "$(gnustep-config --objc-flags)"
           find tests/integration/cases -name "*.m" -print0 | \
             while IFS= read -r -d '' f; do
-              clang "${CFLAGS[@]}" -fobjc-arc -fsyntax-only "$f" || exit 1
+              clang "${CFLAGS[@]}" -fsyntax-only "$f" || exit 1
             done
