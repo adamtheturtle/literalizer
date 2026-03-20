@@ -44,7 +44,7 @@ def _check_file(path: Path) -> str | None:
     json_text = _strip_norg_comments(text=json_text)
 
     try:
-        json.loads(json_text)
+        json.loads(s=json_text)
     except json.JSONDecodeError as exc:
         return f"Invalid JSON payload: {exc}"
 
