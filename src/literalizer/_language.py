@@ -149,6 +149,14 @@ class Language(Protocol):
     to strings so that every element shares a single type.
     """
 
+    coerce_heterogeneous_lists_to_strings: bool
+    """Whether to coerce sibling lists with heterogeneous scalar element
+    types so that every inner element becomes a string.
+
+    For example, ``[[1, 2], ["a", "b"]]`` becomes
+    ``[["1", "2"], ["a", "b"]]``.
+    """
+
     supports_collection_comments: bool
     """Whether the language supports comments inside collection
     initializers.
@@ -217,6 +225,7 @@ class LanguageSpec:
     element_separator: str
     skip_null_dict_values: bool
     coerce_heterogeneous_to_strings: bool
+    coerce_heterogeneous_lists_to_strings: bool
     format_variable_declaration: Callable[[str, str], str]
     format_variable_assignment: Callable[[str, str], str]
     format_string: Callable[[str], str]
