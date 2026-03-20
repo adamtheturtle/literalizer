@@ -42,10 +42,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Hcl:
     """HCL (HashiCorp Configuration Language) language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize HCL language specification."""
         self.null_literal = "null"

@@ -47,6 +47,7 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Elixir:
     """Elixir language specification.
 
@@ -65,7 +66,6 @@ class Elixir:
         LIST = "list"
         TUPLE = "tuple"
 
-    @beartype
     def __init__(
         self,
         *,

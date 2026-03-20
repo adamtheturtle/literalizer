@@ -40,6 +40,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 class Julia:
     """Julia language specification.
 
@@ -84,7 +85,6 @@ class Julia:
         ARRAY = "array"
         TUPLE = "tuple"
 
-    @beartype
     def __init__(
         self,
         *,

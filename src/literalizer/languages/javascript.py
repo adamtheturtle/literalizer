@@ -46,6 +46,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
+@beartype
 class JavaScript:
     """JavaScript language specification.
 
@@ -77,7 +78,6 @@ class JavaScript:
         ISO = enum.member(value=format_datetime_iso)
         JS = enum.member(value=format_datetime_js)
 
-    @beartype
     def __init__(
         self,
         *,

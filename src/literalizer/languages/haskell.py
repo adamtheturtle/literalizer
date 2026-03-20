@@ -51,6 +51,7 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Haskell:
     """Haskell language specification.
 
@@ -93,7 +94,6 @@ class Haskell:
     let numeric literals resolve to ``HInt`` / ``HFloat``.
     """
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Haskell language specification."""
         self.null_literal = "HNull"

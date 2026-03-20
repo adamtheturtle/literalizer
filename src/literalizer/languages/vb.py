@@ -77,6 +77,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 class VisualBasic:
     """Visual Basic (.NET) language specification.
 
@@ -88,7 +89,6 @@ class VisualBasic:
     variable name is supplied.
     """
 
-    @beartype
     def __init__(self) -> None:
         """Initialize VisualBasic language specification."""
         self.null_literal = "Nothing"

@@ -90,6 +90,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
+@beartype
 class Cpp:
     """C++ language specification.
 
@@ -124,7 +125,6 @@ class Cpp:
         ISO = enum.member(value=format_datetime_iso)
         CPP = enum.member(value=format_datetime_cpp)
 
-    @beartype
     def __init__(
         self,
         *,

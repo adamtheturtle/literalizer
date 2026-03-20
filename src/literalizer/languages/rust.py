@@ -51,6 +51,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
+@beartype
 class Rust:
     """Rust language specification.
 
@@ -85,7 +86,6 @@ class Rust:
         ISO = enum.member(value=format_datetime_iso)
         RUST = enum.member(value=format_datetime_rust)
 
-    @beartype
     def __init__(
         self,
         *,

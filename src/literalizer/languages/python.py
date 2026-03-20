@@ -48,6 +48,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 class Python:
     """Python language specification.
 
@@ -121,7 +122,6 @@ class Python:
         SET = "set"
         FROZENSET = "frozenset"
 
-    @beartype
     def __init__(
         self,
         *,

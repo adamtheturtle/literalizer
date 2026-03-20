@@ -107,6 +107,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 class Kotlin:
     """Kotlin language specification.
 
@@ -138,7 +139,6 @@ class Kotlin:
         ISO = enum.member(value=format_datetime_iso)
         KOTLIN = enum.member(value=format_datetime_kotlin)
 
-    @beartype
     def __init__(
         self,
         *,

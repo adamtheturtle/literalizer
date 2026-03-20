@@ -99,6 +99,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 class Go:
     """Go language specification.
 
@@ -132,7 +133,6 @@ class Go:
         ISO = enum.member(value=format_datetime_iso)
         GO = enum.member(value=format_datetime_go)
 
-    @beartype
     def __init__(
         self,
         *,

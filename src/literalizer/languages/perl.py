@@ -40,10 +40,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Perl:
     """Perl language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Perl language specification."""
         self.null_literal = "undef"
