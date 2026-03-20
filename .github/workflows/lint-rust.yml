@@ -18,10 +18,10 @@ jobs:
           set -o pipefail
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          cargo init "$tmpdir/deps"
-          cargo add --manifest-path "$tmpdir/deps/Cargo.toml" chrono
-          cargo build --manifest-path "$tmpdir/deps/Cargo.toml"
-          deps="$tmpdir/deps/target/debug/deps"
+          cargo init "$tmpdir/chrono-check"
+          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
+          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
+          deps="$tmpdir/chrono-check/target/debug/deps"
           chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
           find tests/integration/cases -name "*.rs" -print0 | \
             while IFS= read -r -d '' f; do
