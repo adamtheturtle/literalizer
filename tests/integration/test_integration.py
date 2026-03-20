@@ -940,7 +940,8 @@ def _fortran_comment_pos(line: str) -> int | None:
     while i < len(line):
         c = line[i]
         if c == "'" and not in_double_quote:
-            if in_single_quote and i + 1 < len(line) and line[i + 1] == "'":
+            next_also_quote = i + 1 < len(line) and line[i + 1] == "'"
+            if in_single_quote and next_also_quote:  # pragma: no cover
                 i += 2
                 continue
             in_single_quote = not in_single_quote
