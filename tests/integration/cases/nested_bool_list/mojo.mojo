@@ -1,8 +1,5 @@
-var _ = [
-    [True, False],
-    [True, True],
-]
-
-
 def main():
-    pass
+    _ = [
+        [True, False],
+        [True, True],
+    ]

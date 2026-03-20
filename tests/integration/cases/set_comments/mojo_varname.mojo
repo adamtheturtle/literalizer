@@ -1,10 +1,7 @@
-var my_data = [
-    "apple",  # inline comment
-    # before banana
-    "banana",
-    # trailing
-]
-
-
 def main():
-    pass
+    var my_data = [
+        "apple",  # inline comment
+        # before banana
+        "banana",
+        # trailing
+    ]

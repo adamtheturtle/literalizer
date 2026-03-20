@@ -1,8 +1,5 @@
-var my_data = [
-    [True, False],
-    [True, True],
-]
-
-
 def main():
-    pass
+    var my_data = [
+        [True, False],
+        [True, True],
+    ]

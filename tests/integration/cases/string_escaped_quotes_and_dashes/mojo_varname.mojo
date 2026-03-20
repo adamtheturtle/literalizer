@@ -1,5 +1,2 @@
-var my_data = "hello \"world\" -- not a comment"
-
-
 def main():
-    pass
+    var my_data = "hello \"world\" -- not a comment"

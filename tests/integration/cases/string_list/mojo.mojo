@@ -1,9 +1,6 @@
-var _ = [
-    "foo",
-    "bar",
-    "baz",
-]
-
-
 def main():
-    pass
+    _ = [
+        "foo",
+        "bar",
+        "baz",
+    ]

@@ -1,8 +1,5 @@
-var _ = [
-    {"name": "Alice", "age": "30"},
-    {"name": "Bob", "age": "25"},
-]
-
-
 def main():
-    pass
+    _ = [
+        {"name": "Alice", "age": "30"},
+        {"name": "Bob", "age": "25"},
+    ]

@@ -1,10 +1,7 @@
-var my_data = {
-    "name": "Alice",
-    "age": "30",
-    "active": "True",
-    "score": "None",
-}
-
-
 def main():
-    pass
+    var my_data = {
+        "name": "Alice",
+        "age": "30",
+        "active": "True",
+        "score": "None",
+    }

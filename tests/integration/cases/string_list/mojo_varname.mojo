@@ -1,9 +1,6 @@
-var my_data = [
-    "foo",
-    "bar",
-    "baz",
-]
-
-
 def main():
-    pass
+    var my_data = [
+        "foo",
+        "bar",
+        "baz",
+    ]

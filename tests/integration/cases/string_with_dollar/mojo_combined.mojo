@@ -1,10 +1,8 @@
-var my_data = [
-    "price $10",
-    "$HOME",
-]
-
-
 def main():
+    var my_data = [
+        "price $10",
+        "$HOME",
+    ]
     my_data = [
         "price $10",
         "$HOME",

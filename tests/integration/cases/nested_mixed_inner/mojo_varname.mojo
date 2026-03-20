@@ -1,8 +1,5 @@
-var my_data = [
-    ["1", "a"],
-    ["2", "b"],
-]
-
-
 def main():
-    pass
+    var my_data = [
+        ["1", "a"],
+        ["2", "b"],
+    ]

@@ -18,6 +18,14 @@ jobs:
       - name: Install Mojo
         run: |-
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
+      - name: Check declarations use var keyword
+        run: |-
+          missing=$(grep -rL '\bvar\b' --include='*_varname.mojo' --include='*_combined.mojo' \
+            tests/integration/cases || true)
+          if [ -n "$missing" ]; then
+            printf "ERROR: missing 'var' keyword in:\n%s\n" "$missing" >&2
+            exit 1
+          fi
       - name: Check Mojo syntax
         run: |-
           set -o pipefail

@@ -1,10 +1,8 @@
-var my_data = [
-    [],
-    {},
-]
-
-
 def main():
+    var my_data = [
+        [],
+        {},
+    ]
     my_data = [
         [],
         {},

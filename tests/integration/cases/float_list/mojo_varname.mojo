@@ -1,9 +1,6 @@
-var my_data = [
-    1.1,
-    2.2,
-    3.3,
-]
-
-
 def main():
-    pass
+    var my_data = [
+        1.1,
+        2.2,
+        3.3,
+    ]
