@@ -1,5 +1,5 @@
 def main():
-    my_data = [
+    var my_data = [
         "foo",
         "bar",
         "baz",

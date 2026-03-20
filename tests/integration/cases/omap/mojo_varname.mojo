@@ -1,5 +1,5 @@
 def main():
-    my_data = [
+    var my_data = [
         ("name", "Alice"),
         ("age", "30"),
         ("active", "True"),

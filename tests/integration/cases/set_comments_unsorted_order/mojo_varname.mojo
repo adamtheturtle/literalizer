@@ -1,5 +1,5 @@
 def main():
-    my_data = [
+    var my_data = [
         # before apple
         "apple",
         "banana",  # banana inline
