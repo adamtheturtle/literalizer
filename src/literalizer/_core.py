@@ -94,9 +94,9 @@ def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
     """
     if isinstance(data, (dict, ordereddict)):
         return type(data)(
-            {  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType,reportUnknownVariableType]
-                k: _coerce_heterogeneous_sibling_lists(data=v)
-                for k, v in data.items()
+            {
+                k: _coerce_heterogeneous_sibling_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for k, v in data.items()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
             }
         )
 
