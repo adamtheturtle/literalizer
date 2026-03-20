@@ -669,7 +669,18 @@ def _wrap_matlab(content: str) -> str:
 
 @beartype
 def _in_mojo_main(content: str) -> str:
-    """Indent content and wrap in a Mojo ``def main():`` function."""
+    """Indent content and wrap in a Mojo ``def main():`` function.
+
+    Mojo does not support top-level code.  No statements, expressions,
+    or variable declarations are allowed at module scope, so generated
+    output must be placed inside a function body.
+
+    Inside a function, ``var`` is optional: both ``var x = [...]`` and
+    ``x = [...]`` are valid.  Declarations (``new_variable=True``)
+    include ``var`` for explicit variable binding; assignments
+    (``new_variable=False``) omit it.  The distinction is stylistic
+    since Mojo does not require ``var`` inside functions.
+    """
     indented = "\n".join(f"    {line}" for line in content.splitlines())
     return f"def main():\n{indented}"
 

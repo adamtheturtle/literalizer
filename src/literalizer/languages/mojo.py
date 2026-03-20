@@ -60,16 +60,6 @@ class Mojo:
     For sets, this coercion can cause the output to have fewer elements
     than the input when distinct values of different types coerce to the
     same string (e.g. ``{1, "1"}`` both become ``"1"``).
-
-    Mojo does not support top-level code.  No statements, expressions,
-    or variable declarations are allowed at module scope.  Generated
-    output must be placed inside a function body (e.g. ``def main():``).
-
-    Inside a function, ``var`` is optional: both ``var x = [...]`` and
-    ``x = [...]`` are valid.  Declarations (``new_variable=True``)
-    include ``var`` for explicit variable binding; assignments
-    (``new_variable=False``) omit it.  The distinction is stylistic
-    since Mojo does not require ``var`` inside functions.
     """
 
     @beartype
