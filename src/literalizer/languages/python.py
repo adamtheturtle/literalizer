@@ -84,34 +84,31 @@ def _infer_python_type_hint(value: str) -> str:
     try:
         int(value)
     except ValueError:
-        pass
+        return "float"
     else:
         return "int"
-    try:
-        float(value)
-    except ValueError:  # pragma: no cover
-        pass  # pragma: no cover
-    else:
-        return "float"
-    return "Any"  # pragma: no cover
 
 
 @beartype
 def _is_dict_literal(*, value: str) -> bool:
     """Check whether a ``{``-prefixed formatted value is a dict literal.
 
-    Dict entries use ``": "`` between key and value.  Set entries never
-    contain that pattern at the top level, so checking the first
-    non-whitespace content line for ``": `` reliably distinguishes the
-    two.
+    In a dict, the first element is a quoted key followed by ``": "``.
+    In a set, the first element is a formatted value followed by ``,``
+    or ``}``.  To distinguish them we parse the first quoted string
+    (respecting backslash escapes) and check whether ``": "`` or
+    ``":`` immediately follows the closing quote.
     """
     content = value[1:].lstrip()
-    if not content or content[0] == "}":  # pragma: no cover
-        # ``{}`` — empty braces are always a dict in Python.
-        return True  # pragma: no cover
-    # Check the first content line for the dict-entry separator.
-    first_line = content.split(sep="\n", maxsplit=1)[0].strip()
-    return '": ' in first_line or first_line.endswith('":')
+    if not content or content[0] != '"':
+        return False
+    # Find the closing quote of the first key, skipping backslash escapes.
+    # In a dict, ``": "`` or ``":\n`` follows the closing quote.
+    i = 1
+    while content[i] == "\\" or content[i] != '"':
+        i += 1 + (content[i] == "\\")
+    rest = content[i + 1 :]
+    return rest.startswith((": ", ":\n"))
 
 
 @beartype

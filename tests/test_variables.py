@@ -299,3 +299,29 @@ def test_python_inline_type_hints_assignment_no_hint() -> None:
         new_variable=False,
     )
     assert result == "my_var = 42"
+
+
+def test_python_inline_type_hints_set_with_colon_in_string() -> None:
+    """A set element containing ``": `` is not misidentified as a dict."""
+    yaml_string = "!!set\n? 'a\": b'\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        wrap=True,
+        variable_name="my_var",
+    )
+    assert result.startswith("my_var: set[Any] = {")
+
+
+def test_python_inline_type_hints_set_of_integers() -> None:
+    """A set of integers is correctly identified as set, not dict."""
+    yaml_string = "!!set\n? 1\n? 2\n? 3\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        wrap=True,
+        variable_name="my_var",
+    )
+    assert result.startswith("my_var: set[Any] = {")
