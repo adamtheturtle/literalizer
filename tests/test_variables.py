@@ -434,10 +434,5 @@ def test_python_inline_type_hints_set_of_integers() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected_prefix = "my_var: set[Any] = {\n"
-    expected_suffix = "\n}"
-    assert result.startswith(expected_prefix)
-    assert result.endswith(expected_suffix)
-    body = result[len(expected_prefix) : -len(expected_suffix)]
-    elements = {line.strip().rstrip(",") for line in body.splitlines()}
-    assert elements == {"1", "2", "3"}
+    expected = "my_var: set[Any] = {\n    1,\n    2,\n    3,\n}"
+    assert result == expected
