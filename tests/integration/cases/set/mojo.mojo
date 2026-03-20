@@ -1,6 +1,9 @@
+var _ = [
+    "apple",
+    "banana",
+    "cherry",
+]
+
+
 def main():
-    _ = [
-        "apple",
-        "banana",
-        "cherry",
-    ]
+    pass

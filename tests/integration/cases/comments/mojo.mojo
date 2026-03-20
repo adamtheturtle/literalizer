@@ -1,8 +1,11 @@
+var _ = {
+    # Server configuration
+    "host": "localhost",  # default host
+    "port": "8080",
+    # Enable debug mode
+    "debug": "True",
+}
+
+
 def main():
-    _ = {
-        # Server configuration
-        "host": "localhost",  # default host
-        "port": "8080",
-        # Enable debug mode
-        "debug": "True",
-    }
+    pass

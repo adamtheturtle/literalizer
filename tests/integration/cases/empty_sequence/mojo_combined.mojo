@@ -1,8 +1,10 @@
+my_data = [
+    [],
+    {},
+]
+
+
 def main():
-    my_data = [
-        [],
-        {},
-    ]
     my_data = [
         [],
         {},

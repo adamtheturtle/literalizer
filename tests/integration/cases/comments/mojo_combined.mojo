@@ -1,11 +1,13 @@
+my_data = {
+    # Server configuration
+    "host": "localhost",  # default host
+    "port": "8080",
+    # Enable debug mode
+    "debug": "True",
+}
+
+
 def main():
-    my_data = {
-        # Server configuration
-        "host": "localhost",  # default host
-        "port": "8080",
-        # Enable debug mode
-        "debug": "True",
-    }
     my_data = {
         # Server configuration
         "host": "localhost",  # default host

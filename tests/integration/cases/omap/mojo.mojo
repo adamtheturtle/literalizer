@@ -1,6 +1,9 @@
+var _ = [
+    ("name", "Alice"),
+    ("age", "30"),
+    ("active", "True"),
+]
+
+
 def main():
-    _ = [
-        ("name", "Alice"),
-        ("age", "30"),
-        ("active", "True"),
-    ]
+    pass

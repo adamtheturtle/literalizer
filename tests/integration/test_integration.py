@@ -668,30 +668,22 @@ def _wrap_matlab(content: str) -> str:
 
 
 @beartype
-def _in_mojo_main(content: str) -> str:
-    """Indent content and wrap in a Mojo ``def main():`` function."""
-    indented = "\n".join(f"    {line}" for line in content.splitlines())
-    return f"def main():\n{indented}"
-
-
-@beartype
 def _wrap_mojo(content: str) -> str:
-    """Wrap in a Mojo main function with assignment for syntax
-    validation.
-    """
-    return _in_mojo_main(content=f"_ = {content}")
+    """Place a Mojo literal at module scope for syntax validation."""
+    return f"var _ = {content}\n\n\ndef main():\n    pass"
 
 
 @beartype
 def _wrap_mojo_varname(content: str) -> str:
-    """Wrap a Mojo variable assignment in a main function."""
-    return _in_mojo_main(content=content)
+    """Place a Mojo variable declaration at module scope."""
+    return f"{content}\n\n\ndef main():\n    pass"
 
 
 @beartype
 def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
-    """Wrap Mojo declaration and assignment in a main function."""
-    return _in_mojo_main(content=declaration + "\n" + assignment)
+    """Place Mojo declaration at module scope, assignment in main."""
+    indented = "\n".join(f"    {line}" for line in assignment.splitlines())
+    return f"{declaration}\n\n\ndef main():\n{indented}"
 
 
 @beartype
