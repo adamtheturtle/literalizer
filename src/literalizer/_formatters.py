@@ -59,7 +59,7 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 def format_date_python(value: datetime.date) -> str:
     """Format a date as a Python ``datetime.date(...)`` constructor call.
 
-    Example: ``datetime.date(2024, 1, 15)``.
+    Example: ``datetime.date(year=2024, month=1, day=15)``.
     """
     return (
         f"datetime.date("
@@ -72,7 +72,8 @@ def format_datetime_python(value: datetime.datetime) -> str:
     """Format a datetime as a Python ``datetime.datetime(...)``
     constructor call.
 
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30, 0)``.
+    Example: ``datetime.datetime(year=2024, month=1, day=15,
+    hour=12, minute=30, second=0)``.
     """
     parts = [
         f"year={value.year}",

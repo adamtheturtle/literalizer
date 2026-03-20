@@ -372,7 +372,7 @@ def test_custom_format_date() -> None:
         variable_name=None,
         new_variable=True,
     )
-    assert result == "datetime.date(2024, 1, 15),"
+    assert result == "datetime.date(year=2024, month=1, day=15),"
 
 
 def test_custom_format_datetime() -> None:
@@ -394,7 +394,12 @@ def test_custom_format_datetime() -> None:
         variable_name=None,
         new_variable=True,
     )
-    assert result == "datetime.datetime(2024, 1, 15, 12, 30, 0),"
+    expected = (
+        "datetime.datetime("
+        "year=2024, month=1, day=15, "
+        "hour=12, minute=30, second=0),"
+    )
+    assert result == expected
 
 
 def test_java_native_dates() -> None:
