@@ -24,6 +24,7 @@ jobs:
       - name: Check Mojo syntax
         uses: nick-fields/retry@v3
         with:
+          timeout_minutes: 10
           max_attempts: 3
           command: |-
             set -o pipefail
