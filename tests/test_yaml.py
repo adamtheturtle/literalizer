@@ -39,12 +39,16 @@ from literalizer.languages import (
 GO = Go(
     date_format=Go.DateFormat.ISO,
     datetime_format=Go.DatetimeFormat.ISO,
+    sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVASCRIPT = JavaScript(
     date_format=JavaScript.DateFormat.ISO,
     datetime_format=JavaScript.DatetimeFormat.ISO,
+    sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
-MOJO = Mojo()
+MOJO = Mojo(
+    sequence_format=Mojo.SequenceFormat.LIST,
+)
 PYTHON = Python(
     date_format=Python.DateFormat.ISO,
     datetime_format=Python.DatetimeFormat.ISO,
@@ -333,6 +337,7 @@ def test_omap_custom_language_spec() -> None:
         supports_collection_comments=True,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        sequence_format=Python.SequenceFormat.TUPLE,
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -402,6 +407,7 @@ def test_java_native_dates() -> None:
     spec = Java(
         date_format=Java.DateFormat.JAVA,
         datetime_format=Java.DatetimeFormat.INSTANT,
+        sequence_format=Java.SequenceFormat.ARRAY,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
@@ -422,6 +428,7 @@ def test_ruby_native_dates() -> None:
     spec = Ruby(
         date_format=Ruby.DateFormat.RUBY,
         datetime_format=Ruby.DatetimeFormat.RUBY,
+        sequence_format=Ruby.SequenceFormat.ARRAY,
     )
     result = literalize_yaml(
         yaml_string="- 2024-01-15T12:30:00\n",
@@ -529,6 +536,7 @@ def test_r_empty_dict_key_positional() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
@@ -549,6 +557,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
@@ -569,6 +578,7 @@ def test_r_empty_dict_key_error() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.ERROR,
+        sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"": "value"}\n'
     with pytest.raises(expected_exception=EmptyDictKeyError):
@@ -589,6 +599,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         date_format=R.DateFormat.ISO,
         datetime_format=R.DatetimeFormat.ISO,
         empty_dict_key=R.EmptyDictKey.ERROR,
+        sequence_format=R.SequenceFormat.LIST,
     )
     yaml_string = '{"key": "value"}\n'
     result = literalize_yaml(

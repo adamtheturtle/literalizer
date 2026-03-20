@@ -45,6 +45,7 @@ PYTHON = Python(
 JAVA = Java(
     date_format=Java.DateFormat.ISO,
     datetime_format=Java.DatetimeFormat.ISO,
+    sequence_format=Java.SequenceFormat.ARRAY,
 )
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)

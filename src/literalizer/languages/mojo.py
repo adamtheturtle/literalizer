@@ -1,6 +1,7 @@
 """Mojo language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -63,8 +64,18 @@ class Mojo:
     same string (e.g. ``{1, "1"}`` both become ``"1"``).
     """
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Mojo."""
+
+        LIST = "list"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Mojo language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"

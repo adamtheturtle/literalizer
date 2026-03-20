@@ -39,31 +39,41 @@ from literalizer.languages import (
     TypeScript,
 )
 
-COBOL = Cobol()
+COBOL = Cobol(
+    sequence_format=Cobol.SequenceFormat.SEQUENCE,
+)
 CPP = Cpp(
     date_format=Cpp.DateFormat.ISO,
     datetime_format=Cpp.DatetimeFormat.ISO,
+    sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
 )
-FORTRAN = Fortran()
+FORTRAN = Fortran(
+    sequence_format=Fortran.SequenceFormat.LIST,
+)
 CSHARP = CSharp(
     date_format=CSharp.DateFormat.ISO,
     datetime_format=CSharp.DatetimeFormat.ISO,
+    sequence_format=CSharp.SequenceFormat.ARRAY,
 )
 GO = Go(
     date_format=Go.DateFormat.ISO,
     datetime_format=Go.DatetimeFormat.ISO,
+    sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVA = Java(
     date_format=Java.DateFormat.ISO,
     datetime_format=Java.DatetimeFormat.ISO,
+    sequence_format=Java.SequenceFormat.ARRAY,
 )
 JAVASCRIPT = JavaScript(
     date_format=JavaScript.DateFormat.ISO,
     datetime_format=JavaScript.DatetimeFormat.ISO,
+    sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 KOTLIN = Kotlin(
     date_format=Kotlin.DateFormat.ISO,
     datetime_format=Kotlin.DatetimeFormat.ISO,
+    sequence_format=Kotlin.SequenceFormat.LIST,
 )
 PYTHON = Python(
     date_format=Python.DateFormat.ISO,
@@ -76,16 +86,20 @@ PYTHON = Python(
 RUBY = Ruby(
     date_format=Ruby.DateFormat.ISO,
     datetime_format=Ruby.DatetimeFormat.ISO,
+    sequence_format=Ruby.SequenceFormat.ARRAY,
 )
 RUST = Rust(
     date_format=Rust.DateFormat.ISO,
     datetime_format=Rust.DatetimeFormat.ISO,
     sequence_format=Rust.SequenceFormat.VEC,
 )
-TOML = Toml()
+TOML = Toml(
+    sequence_format=Toml.SequenceFormat.ARRAY,
+)
 TYPESCRIPT = TypeScript(
     date_format=TypeScript.DateFormat.ISO,
     datetime_format=TypeScript.DatetimeFormat.ISO,
+    sequence_format=TypeScript.SequenceFormat.ARRAY,
 )
 
 
@@ -433,6 +447,7 @@ def test_custom_language() -> None:
         supports_collection_comments=True,
         format_variable_declaration=PYTHON.format_variable_declaration,
         format_variable_assignment=PYTHON.format_variable_assignment,
+        sequence_format=Python.SequenceFormat.TUPLE,
     )
     result = literalize_json(
         json_string=json.dumps(obj=[True, None, "hi"]),
@@ -466,7 +481,7 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
     """
     result = literalize_yaml(
         yaml_string=yaml_string,
-        language=Matlab(),
+        language=Matlab(sequence_format=Matlab.SequenceFormat.CELL_ARRAY),
         line_prefix="",
         indent="    ",
         wrap=False,
@@ -485,7 +500,7 @@ def test_matlab_dict_key_with_quote() -> None:
     yaml_string = '{"hello \\"world\\"": 1}\n'
     result = literalize_yaml(
         yaml_string=yaml_string,
-        language=Matlab(),
+        language=Matlab(sequence_format=Matlab.SequenceFormat.CELL_ARRAY),
         line_prefix="",
         indent="    ",
         wrap=False,

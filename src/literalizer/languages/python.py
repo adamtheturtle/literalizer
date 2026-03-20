@@ -205,7 +205,7 @@ class Python:
         NONE = "none"
         INLINE = "inline"
 
-    def __init__(
+    def __init__(  # noqa: PLR0915  # pylint: disable=too-many-statements
         self,
         *,
         date_format: DateFormat,
@@ -216,6 +216,7 @@ class Python:
         variable_type_hints: VariableTypeHints,
     ) -> None:
         """Initialize Python language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"

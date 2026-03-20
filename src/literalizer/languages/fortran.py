@@ -1,6 +1,7 @@
 """Fortran language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -160,9 +161,19 @@ _string_format: Callable[[str], str] = format_string_fortran
 class Fortran:
     """Fortran language specification."""
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Fortran."""
+
+        LIST = "list"
+
     @beartype
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Fortran language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "fnull()"
         self.true_literal = "fbool(.true.)"
         self.false_literal = "fbool(.false.)"
