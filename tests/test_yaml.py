@@ -449,7 +449,7 @@ def test_r_empty_dict_key_error() -> None:
     """R with ERROR empty_dict_key raises EmptyDictKeyError."""
     spec = R(empty_dict_key=R.EmptyDictKey.ERROR)
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(EmptyDictKeyError):
+    with pytest.raises(expected_exception=EmptyDictKeyError):
         literalize_yaml(
             yaml_string=yaml_string,
             language=spec,
