@@ -1,0 +1,16 @@
+#import <Foundation/Foundation.h>
+void _check(void) {
+id my_data = @[
+    @YES,
+    @"hi",
+    @[@(1), @(2)],
+    [NSNull null],
+];
+my_data = @[
+    @YES,
+    @"hi",
+    @[@(1), @(2)],
+    [NSNull null],
+];
+    (void)my_data;
+}

@@ -673,6 +673,46 @@ def _wrap_matlab(content: str) -> str:
     return f"x = {content};"
 
 
+_OBJC_PREAMBLE = "#import <Foundation/Foundation.h>\n"
+
+
+@beartype
+def _wrap_objc(content: str) -> str:
+    """Wrap in an Objective-C function with Foundation import."""
+    return (
+        _OBJC_PREAMBLE
+        + "void _check(void) {\n"
+        + f"    id _v = {content};\n"
+        + "    (void)_v;\n"
+        + "}"
+    )
+
+
+@beartype
+def _wrap_objc_varname(content: str) -> str:
+    """Wrap an Objective-C variable declaration in a function."""
+    return (
+        _OBJC_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{content}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
+@beartype
+def _wrap_objc_combined(declaration: str, assignment: str) -> str:
+    """Wrap Objective-C declaration and assignment in a function."""
+    return (
+        _OBJC_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{declaration}\n"
+        + f"{assignment}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
 @beartype
 def _in_mojo_main(content: str) -> str:
     """Indent content and wrap in a Mojo ``def main():`` function.
@@ -1636,6 +1676,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_toml,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+    ),
+    "objective_c": _LanguageConfig(
+        spec=literalizer.languages.ObjectiveC(),
+        extension=".m",
+        wrap=_wrap_objc,
+        varname_wrap=_wrap_objc_varname,
+        combined_wrap=_wrap_objc_combined,
     ),
     "fortran": _LanguageConfig(
         spec=literalizer.languages.Fortran(),

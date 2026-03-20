@@ -1,0 +1,25 @@
+---
+name: Lint Objective-C
+
+on:
+  workflow_call: {}
+
+permissions: {}
+
+jobs:
+  lint-objective-c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install GNUstep
+        run: sudo apt-get install -y gnustep-devel
+      - name: Check Objective-C syntax
+        run: |-
+          set -o pipefail
+          read -ra CFLAGS <<< "$(gnustep-config --objc-flags)"
+          find tests/integration/cases -name "*.m" -print0 | \
+            while IFS= read -r -d '' f; do
+              clang "${CFLAGS[@]}" -fobjc-arc -fsyntax-only "$f" || exit 1
+            done
