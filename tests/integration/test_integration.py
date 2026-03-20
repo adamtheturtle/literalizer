@@ -673,6 +673,83 @@ def _wrap_matlab(content: str) -> str:
     return f"x = {content};"
 
 
+_OBJC_PREAMBLE = (
+    "typedef signed char BOOL;\n"
+    "#define YES ((BOOL)1)\n"
+    "#define NO ((BOOL)0)\n"
+    "@interface NSObject\n"
+    "+ (instancetype)alloc;\n"
+    "- (instancetype)init;\n"
+    "@end\n"
+    "@interface NSString : NSObject\n"
+    "@end\n"
+    "@interface NSNumber : NSObject\n"
+    "+ (instancetype)numberWithBool:(BOOL)value;\n"
+    "+ (instancetype)numberWithChar:(signed char)value;\n"
+    "+ (instancetype)numberWithInt:(int)value;\n"
+    "+ (instancetype)numberWithUnsignedInt:(unsigned int)value;\n"
+    "+ (instancetype)numberWithLong:(long)value;\n"
+    "+ (instancetype)numberWithUnsignedLong:(unsigned long)value;\n"
+    "+ (instancetype)numberWithLongLong:(long long)value;\n"
+    "+ (instancetype)numberWithUnsignedLongLong:(unsigned long long)value;\n"
+    "+ (instancetype)numberWithFloat:(float)value;\n"
+    "+ (instancetype)numberWithDouble:(double)value;\n"
+    "@end\n"
+    "@interface NSArray : NSObject\n"
+    "+ (instancetype)arrayWithObjects:(const id [])objects"
+    " count:(unsigned long)cnt;\n"
+    "@end\n"
+    "@interface NSDictionary : NSObject\n"
+    "+ (instancetype)dictionaryWithObjects:(const id [])objects"
+    " forKeys:(const id [])keys count:(unsigned long)cnt;\n"
+    "@end\n"
+    "@interface NSNull : NSObject\n"
+    "+ (instancetype)null;\n"
+    "@end\n"
+    "@interface NSSet : NSObject\n"
+    "+ (instancetype)set;\n"
+    "+ (instancetype)setWithArray:(NSArray *)array;\n"
+    "@end\n"
+)
+
+
+@beartype
+def _wrap_objc(content: str) -> str:
+    """Wrap in an Objective-C function with Foundation import."""
+    return (
+        _OBJC_PREAMBLE
+        + "void _check(void) {\n"
+        + f"    id _v = {content};\n"
+        + "    (void)_v;\n"
+        + "}"
+    )
+
+
+@beartype
+def _wrap_objc_varname(content: str) -> str:
+    """Wrap an Objective-C variable declaration in a function."""
+    return (
+        _OBJC_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{content}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
+@beartype
+def _wrap_objc_combined(declaration: str, assignment: str) -> str:
+    """Wrap Objective-C declaration and assignment in a function."""
+    return (
+        _OBJC_PREAMBLE
+        + "void _check(void) {\n"
+        + f"{declaration}\n"
+        + f"{assignment}\n"
+        + f"    (void){_VARIABLE_NAME};\n"
+        + "}"
+    )
+
+
 @beartype
 def _in_mojo_main(content: str) -> str:
     """Indent content and wrap in a Mojo ``def main():`` function.
@@ -1636,6 +1713,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_toml,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+    ),
+    "objective_c": _LanguageConfig(
+        spec=literalizer.languages.ObjectiveC(),
+        extension=".m",
+        wrap=_wrap_objc,
+        varname_wrap=_wrap_objc_varname,
+        combined_wrap=_wrap_objc_combined,
     ),
     "fortran": _LanguageConfig(
         spec=literalizer.languages.Fortran(),

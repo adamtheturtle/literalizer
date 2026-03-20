@@ -174,6 +174,9 @@ jobs:
   lint-fortran:
     uses: ./.github/workflows/lint-fortran.yml
 
+  lint-objective-c:
+    uses: ./.github/workflows/lint-objective-c.yml
+
   completion-lint:
     needs:
       - build
@@ -221,6 +224,7 @@ jobs:
       - lint-powershell
       - lint-vb
       - lint-fortran
+      - lint-objective-c
     runs-on: ubuntu-latest
     if: always()
     steps:
