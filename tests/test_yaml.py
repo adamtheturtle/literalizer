@@ -535,6 +535,52 @@ def test_coerce_heterogeneous_set() -> None:
     assert result == expected
 
 
+def test_coerce_heterogeneous_date_in_collection() -> None:
+    """Dates in a heterogeneous collection are coerced to ISO strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15
+        - 42
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = '[\n    "2024-01-15",\n    "42",\n]'
+    assert result == expected
+
+
+def test_coerce_heterogeneous_datetime_in_collection() -> None:
+    """Datetimes in a heterogeneous collection are coerced to ISO
+    strings.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15T12:30:00
+        - 42
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = '[\n    "2024-01-15T12:30:00",\n    "42",\n]'
+    assert result == expected
+
+
 def test_coerce_homogeneous_omap_no_coercion() -> None:
     """Homogeneous ordereddict values are not coerced."""
     yaml_string = textwrap.dedent(
