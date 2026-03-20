@@ -65,6 +65,7 @@ Reference
 
    json-api-use-case
    api-reference
+   languages
    release-process
    changelog
    contributing
