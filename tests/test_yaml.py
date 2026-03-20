@@ -803,3 +803,47 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
         error_on_coercion=True,
     )
     assert result == '{\n    "a": 1,\n    "b": 2,\n}'
+
+
+def test_error_on_coercion_no_raise_for_homogeneous_omap() -> None:
+    """Error_on_coercion does not raise for homogeneous omap values."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!omap
+          - name: Alice
+          - city: Paris
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
+
+
+def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
+    """Error_on_coercion does not raise for homogeneous sets."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!set
+        ? 1
+        ? 2
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    assert result == "[\n    1,\n    2,\n]"
