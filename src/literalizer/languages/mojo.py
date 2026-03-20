@@ -61,7 +61,7 @@ class Mojo:
     than the input when distinct values of different types coerce to the
     same string (e.g. ``{1, "1"}`` both become ``"1"``).
 
-    Mojo does not support top-level code — no statements, expressions,
+    Mojo does not support top-level code.  No statements, expressions,
     or variable declarations are allowed at module scope.  Generated
     output must be placed inside a function body (e.g. ``def main():``).
 
