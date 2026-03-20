@@ -109,7 +109,9 @@ def _coerce_heterogeneous(*, data: Value) -> Value:
     if isinstance(data, set):
         items: list[Value] = list(data)
         if _all_scalars_heterogeneous(values=items):
-            coerced = {_coerce_scalar_to_str(value=v) for v in items}
+            coerced: set[Scalar] = {
+                _coerce_scalar_to_str(value=v) for v in items
+            }
             if len(coerced) == len(data):
                 return coerced
         return data
