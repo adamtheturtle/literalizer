@@ -82,6 +82,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 class Toml:
     """TOML language specification.
 
@@ -97,7 +98,6 @@ class Toml:
     datetime literals, which are a distinct TOML type.
     """
 
-    @beartype
     def __init__(self) -> None:
         """Initialize TOML language specification."""
         self.null_literal = '""'

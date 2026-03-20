@@ -90,6 +90,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
+@beartype
 class CSharp:
     """C# language specification.
 
@@ -121,7 +122,6 @@ class CSharp:
         ISO = enum.member(value=format_datetime_iso)
         CSHARP = enum.member(value=format_datetime_csharp)
 
-    @beartype
     def __init__(
         self,
         *,

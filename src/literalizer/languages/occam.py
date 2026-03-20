@@ -90,10 +90,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Occam:
     """Occam-pi language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Occam language specification."""
         self.null_literal = "MOBILE LIT(lit.null)"

@@ -55,6 +55,7 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Erlang:
     """Erlang language specification.
 
@@ -73,7 +74,6 @@ class Erlang:
         LIST = "list"
         TUPLE = "tuple"
 
-    @beartype
     def __init__(
         self,
         *,

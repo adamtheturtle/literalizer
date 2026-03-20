@@ -48,6 +48,7 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Mojo:
     """Mojo language specification.
 
@@ -62,7 +63,6 @@ class Mojo:
     same string (e.g. ``{1, "1"}`` both become ``"1"``).
     """
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Mojo language specification."""
         self.null_literal = "None"

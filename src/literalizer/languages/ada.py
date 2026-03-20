@@ -98,10 +98,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_ada
 
 
+@beartype
 class Ada:
     """Ada language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Ada language specification."""
         self.null_literal = "ANull"

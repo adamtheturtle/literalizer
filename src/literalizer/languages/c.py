@@ -83,10 +83,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class C:
     """C language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize C language specification."""
         self.null_literal = "((_CVal){.s = NULL})"

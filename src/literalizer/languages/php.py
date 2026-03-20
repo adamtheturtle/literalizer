@@ -56,10 +56,10 @@ _datetime_format: Callable[[datetime.datetime], str] = _format_datetime
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Php:
     """PHP language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Php language specification."""
         self.null_literal = "null"

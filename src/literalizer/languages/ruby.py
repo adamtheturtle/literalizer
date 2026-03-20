@@ -46,6 +46,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value}"
 
 
+@beartype
 class Ruby:
     """Ruby language specification.
 
@@ -77,7 +78,6 @@ class Ruby:
         ISO = enum.member(value=format_datetime_iso)
         RUBY = enum.member(value=format_datetime_ruby)
 
-    @beartype
     def __init__(
         self,
         *,

@@ -40,10 +40,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash_dollar
 
 
+@beartype
 class Groovy:
     """Groovy language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Groovy language specification."""
         self.null_literal = "null"

@@ -83,6 +83,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
+@beartype
 class Java:
     """Java language specification.
 
@@ -118,7 +119,6 @@ class Java:
         INSTANT = enum.member(value=format_datetime_java_instant)
         ZONED = enum.member(value=format_datetime_java_zoned)
 
-    @beartype
     def __init__(
         self,
         *,

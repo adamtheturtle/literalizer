@@ -40,10 +40,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+@beartype
 class Clojure:
     """Clojure language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize Clojure language specification."""
         self.null_literal = "nil"

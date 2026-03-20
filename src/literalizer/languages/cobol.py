@@ -210,6 +210,7 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = _format_string_cobol
 
 
+@beartype
 class Cobol:
     """GnuCOBOL free-format language specification.
 
@@ -218,7 +219,6 @@ class Cobol:
     sequences / dicts become group items with 05-level sub-items.
     """
 
-    @beartype
     def __init__(self) -> None:
         """Initialize COBOL language specification."""
         self.null_literal = "SPACES"

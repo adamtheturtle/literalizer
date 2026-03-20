@@ -66,10 +66,10 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = _format_string
 
 
+@beartype
 class PowerShell:
     """PowerShell language specification."""
 
-    @beartype
     def __init__(self) -> None:
         """Initialize PowerShell language specification."""
         self.null_literal = "$null"
