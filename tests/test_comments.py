@@ -51,6 +51,7 @@ def test_yaml_comment_sequence_before() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -75,6 +76,7 @@ def test_yaml_comment_sequence_inline() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -97,6 +99,7 @@ def test_yaml_comment_mapping() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -121,6 +124,7 @@ def test_yaml_comment_javascript_prefix() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -143,6 +147,7 @@ def test_yaml_comment_trailing() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -165,6 +170,7 @@ def test_yaml_comment_no_wrap() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '    # comment\n    "a",\n    "b",'
     assert result == expected
@@ -181,6 +187,7 @@ def test_yaml_comment_scalar() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = "# note\n42"
     assert result == expected
@@ -197,6 +204,7 @@ def test_yaml_comment_scalar_inline() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = "42  # note"
     assert result == expected
@@ -213,6 +221,7 @@ def test_yaml_no_comments_unchanged() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -235,6 +244,7 @@ def test_yaml_comment_multiple_before_lines() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -286,6 +296,7 @@ def test_yaml_comment_escaped_quote_in_value() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -307,6 +318,7 @@ def test_yaml_comment_scalar_quoted_with_hash() -> None:
         wrap=False,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = '"hello # world"  # note'
     assert result == expected
@@ -323,6 +335,7 @@ def test_yaml_comment_double_hash() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -345,6 +358,7 @@ def test_yaml_comment_block_scalar_not_extracted() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -367,6 +381,7 @@ def test_yaml_comment_scalar_with_document_markers() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = "# note\n42"
     assert result == expected
@@ -383,6 +398,7 @@ def test_yaml_comment_empty_comment_line() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -406,6 +422,7 @@ def test_yaml_comment_more_body_lines_than_comments() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -429,6 +446,7 @@ def test_yaml_comment_scalar_only_comments() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = "# just a comment\nNone"
     assert result == expected
@@ -445,6 +463,7 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
         wrap=True,
         variable_name=None,
         new_variable=True,
+        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\

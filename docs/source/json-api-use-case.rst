@@ -37,6 +37,7 @@ returns this response:
 
    request_literal = literalize_json(
        json_string=request_json,
+       error_on_coercion=False,
        language=Python(
            date_format=Python.DateFormat.ISO,
            datetime_format=Python.DatetimeFormat.ISO,
@@ -60,6 +61,7 @@ returns this response:
 
    response_literal = literalize_json(
        json_string=response_json,
+       error_on_coercion=False,
        language=Python(
            date_format=Python.DateFormat.ISO,
            datetime_format=Python.DatetimeFormat.ISO,

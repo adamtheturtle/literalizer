@@ -38,6 +38,7 @@ Usage
    """
    result = literalize_yaml(
        yaml_string=yaml_config,
+       error_on_coercion=False,
        language=Go(
            date_format=Go.DateFormat.ISO,
            datetime_format=Go.DatetimeFormat.ISO,
