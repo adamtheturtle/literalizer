@@ -1,0 +1,7 @@
+* my_data
+@code json
+[
+    "price $10",
+    "$HOME"
+]
+@end

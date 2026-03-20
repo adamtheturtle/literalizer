@@ -37,6 +37,7 @@ JSONDecodeError
 Lua
 NEL
 Nim
+Norg
 Num
 OBool
 OCaml

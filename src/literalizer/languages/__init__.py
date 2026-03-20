@@ -29,6 +29,7 @@ from .lua import Lua
 from .matlab import Matlab
 from .mojo import Mojo
 from .nim import Nim
+from .norg import Norg
 from .ocaml import OCaml
 from .occam import Occam
 from .perl import Perl
@@ -75,6 +76,7 @@ __all__ = [
     "Matlab",
     "Mojo",
     "Nim",
+    "Norg",
     "OCaml",
     "Occam",
     "Perl",

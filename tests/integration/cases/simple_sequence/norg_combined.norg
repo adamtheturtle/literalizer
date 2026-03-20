@@ -1,0 +1,9 @@
+* my_data
+@code json
+[
+    1,
+    "hello",
+    true,
+    null
+]
+@end

@@ -1,0 +1,7 @@
+@code json
+[
+    "foo",
+    "bar",
+    "baz"
+]
+@end
