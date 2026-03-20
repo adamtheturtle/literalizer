@@ -410,9 +410,14 @@ def test_coerce_heterogeneous_set_collision() -> None:
         language=MOJO,
         wrap=True,
     )
-    # Both elements should be preserved (coercion skipped).
-    assert "1" in result
-    assert '"1"' in result
+    expected = textwrap.dedent(
+        text="""\
+        [
+            1,
+            "1",
+        ]""",
+    )
+    assert result == expected
 
 
 def test_coerce_homogeneous_omap_no_coercion() -> None:
