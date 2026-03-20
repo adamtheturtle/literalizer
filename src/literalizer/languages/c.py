@@ -1,6 +1,7 @@
 """C language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -87,8 +88,18 @@ _string_format: Callable[[str], str] = format_string_backslash
 class C:
     """C language specification."""
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for C."""
+
+        ARRAY = "array"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize C language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "((_CVal){.s = NULL})"
         self.true_literal = "((_CVal){.b = true})"
         self.false_literal = "((_CVal){.b = false})"

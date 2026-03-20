@@ -41,6 +41,7 @@ Usage
        language=Go(
            date_format=Go.DateFormat.ISO,
            datetime_format=Go.DatetimeFormat.ISO,
+           sequence_format=Go.SequenceFormat.SLICE,
        ),
        line_prefix="",
        indent="    ",

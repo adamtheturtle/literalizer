@@ -119,13 +119,20 @@ class Java:
         INSTANT = enum.member(value=format_datetime_java_instant)
         ZONED = enum.member(value=format_datetime_java_zoned)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Java."""
+
+        ARRAY = "array"
+
     def __init__(
         self,
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Java language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"

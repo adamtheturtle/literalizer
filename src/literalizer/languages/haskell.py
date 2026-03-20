@@ -1,6 +1,7 @@
 """Haskell language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -94,8 +95,18 @@ class Haskell:
     let numeric literals resolve to ``HInt`` / ``HFloat``.
     """
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Haskell."""
+
+        LIST = "list"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Haskell language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "HNull"
         self.true_literal = "HBool True"
         self.false_literal = "HBool False"

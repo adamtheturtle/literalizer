@@ -66,6 +66,7 @@ class Crystal:
         sequence_format: SequenceFormat,
     ) -> None:
         """Initialize Crystal language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"

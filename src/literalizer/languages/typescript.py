@@ -78,13 +78,20 @@ class TypeScript:
         ISO = enum.member(value=format_datetime_iso)
         JS = enum.member(value=format_datetime_js)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for TypeScript."""
+
+        ARRAY = "array"
+
     def __init__(
         self,
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize TypeScript language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"

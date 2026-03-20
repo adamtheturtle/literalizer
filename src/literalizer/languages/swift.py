@@ -1,6 +1,7 @@
 """Swift language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -50,8 +51,18 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Swift:
     """Swift language specification."""
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Swift."""
+
+        ARRAY = "array"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Swift language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"

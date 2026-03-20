@@ -1,6 +1,7 @@
 """COBOL language specification (GnuCOBOL free-format)."""
 
 import datetime
+import enum
 import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING
@@ -219,8 +220,18 @@ class Cobol:
     sequences / dicts become group items with 05-level sub-items.
     """
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for COBOL."""
+
+        SEQUENCE = "sequence"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize COBOL language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "SPACES"
         self.true_literal = '"TRUE"'
         self.false_literal = '"FALSE"'

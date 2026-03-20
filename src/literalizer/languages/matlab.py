@@ -1,6 +1,7 @@
 """MATLAB language specification."""
 
 import datetime
+import enum
 import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING
@@ -114,8 +115,18 @@ _string_format: Callable[[str], str] = format_string_matlab
 class Matlab:
     """MATLAB language specification."""
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for MATLAB."""
+
+        CELL_ARRAY = "cell_array"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Matlab language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "[]"
         self.true_literal = "true"
         self.false_literal = "false"

@@ -122,13 +122,20 @@ class CSharp:
         ISO = enum.member(value=format_datetime_iso)
         CSHARP = enum.member(value=format_datetime_csharp)
 
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for C#."""
+
+        ARRAY = "array"
+
     def __init__(
         self,
         *,
         date_format: DateFormat,
         datetime_format: DatetimeFormat,
+        sequence_format: SequenceFormat,
     ) -> None:
         """Initialize CSharp language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "(object?)null"
         self.true_literal = "true"
         self.false_literal = "false"

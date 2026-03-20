@@ -1,6 +1,7 @@
 """Occam-pi language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -94,8 +95,18 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Occam:
     """Occam-pi language specification."""
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Occam."""
+
+        LIST = "list"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Occam language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "MOBILE LIT(lit.null)"
         self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
         self.false_literal = "MOBILE LIT(lit.bool; FALSE)"

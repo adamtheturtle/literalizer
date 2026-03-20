@@ -1,6 +1,7 @@
 """Perl language specification."""
 
 import datetime
+import enum
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -44,8 +45,18 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Perl:
     """Perl language specification."""
 
-    def __init__(self) -> None:
+    class SequenceFormat(enum.Enum):
+        """Sequence type options for Perl."""
+
+        ARRAY = "array"
+
+    def __init__(
+        self,
+        *,
+        sequence_format: SequenceFormat,
+    ) -> None:
         """Initialize Perl language specification."""
+        self.sequence_format = sequence_format
         self.null_literal = "undef"
         self.true_literal = "1"
         self.false_literal = "0"
