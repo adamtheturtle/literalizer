@@ -163,7 +163,7 @@ class Rust:
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.coerce_heterogeneous_to_strings = (
+        self.coerce_heterogeneous_to_strings: bool = (
             sequence_format == Rust.SequenceFormat.ARRAY
         )
         self.supports_collection_comments = True
