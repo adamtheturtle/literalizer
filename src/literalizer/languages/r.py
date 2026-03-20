@@ -19,6 +19,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
     import datetime
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_r_dict_entry(key: str, value: str) -> str:
+def _format_r_dict_entry_positional(key: str, value: str) -> str:
     """Format an R named list entry.
 
     R list syntax does not allow zero-length names (``"" = value`` is a
@@ -37,6 +38,19 @@ def _format_r_dict_entry(key: str, value: str) -> str:
     """
     if key == '""':
         return value
+    return f"{key} = {value}"
+
+
+@beartype
+def _format_r_dict_entry_error(key: str, value: str) -> str:
+    """Format an R named list entry, raising on empty-string keys."""
+    if key == '""':
+        msg = (
+            "R does not support empty-string dict keys. "
+            "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
+            "as unnamed list elements instead."
+        )
+        raise EmptyDictKeyError(msg)
     return f"{key} = {value}"
 
 
@@ -64,10 +78,8 @@ class R:
 
     Dicts are represented as named ``list()`` calls where each entry is
     written as ``"key" = value``.  R's parser rejects zero-length names, so
-    **dict keys that are empty strings are emitted as positional (unnamed)
-    list elements** rather than as ``"" = value``.  The name is lost in the
-    output; if you need to round-trip empty-string keys, use a different
-    target language.
+    by default **dict keys that are empty strings are emitted as positional
+    (unnamed) list elements** rather than as ``"" = value``.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
@@ -83,6 +95,13 @@ class R:
               e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.R`` — ``as.POSIXct(...)`` call,
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
+
+        empty_dict_key: How to handle empty-string dict keys.
+
+            * ``EmptyDictKey.POSITIONAL`` (default) — emit as an unnamed
+              positional list element.
+            * ``EmptyDictKey.ERROR`` — raise
+              :class:`~literalizer.exceptions.EmptyDictKeyError`.
     """
 
     class DateFormat(enum.Enum):
@@ -97,11 +116,22 @@ class R:
         ISO = enum.member(value=format_datetime_iso)
         R = enum.member(value=format_datetime_r)
 
+    class EmptyDictKey(enum.Enum):
+        """How to handle empty-string dict keys in R.
+
+        R's parser rejects zero-length names (``"" = value`` is a parse
+        error).
+        """
+
+        POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
+        ERROR = enum.member(value=_format_r_dict_entry_error)
+
     def __init__(
         self,
         *,
         date_format: DateFormat = DateFormat.ISO,
         datetime_format: DatetimeFormat = DatetimeFormat.ISO,
+        empty_dict_key: EmptyDictKey = EmptyDictKey.POSITIONAL,
     ) -> None:
         """Initialize R language specification."""
         self.null_literal = "NULL"
@@ -116,7 +146,7 @@ class R:
         )
         self.dict_close = ")"
         self.format_dict_entry: Callable[[str, str], str] = (
-            _format_r_dict_entry
+            empty_dict_key.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False

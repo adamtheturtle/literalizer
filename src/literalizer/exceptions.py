@@ -11,3 +11,9 @@ class JSONParseError(ParseError):
 
 class YAMLParseError(ParseError):
     """Raised when a YAML string cannot be parsed."""
+
+
+class EmptyDictKeyError(Exception):
+    """Raised when a dict contains an empty-string key and the language
+    specification is configured to reject them.
+    """

@@ -21,13 +21,18 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer.exceptions import ParseError, YAMLParseError
+from literalizer.exceptions import (
+    EmptyDictKeyError,
+    ParseError,
+    YAMLParseError,
+)
 from literalizer.languages import (
     Go,
     Java,
     JavaScript,
     Mojo,
     Python,
+    R,
     Ruby,
 )
 
@@ -412,3 +417,55 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
     )
     expected = '[\n    ("name", "Alice"),\n    ("city", "Paris"),\n]'
     assert result == expected
+
+
+def test_r_empty_dict_key_positional() -> None:
+    """R with POSITIONAL empty_dict_key emits unnamed list elements."""
+    spec = R(empty_dict_key=R.EmptyDictKey.POSITIONAL)
+    yaml_string = '{"": "value"}\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=spec,
+        line_prefix="",
+        wrap=True,
+    )
+    assert result == 'list(\n    "value"\n)'
+
+
+def test_r_empty_dict_key_positional_is_default() -> None:
+    """R defaults to POSITIONAL for empty_dict_key."""
+    spec = R()
+    yaml_string = '{"": "value"}\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=spec,
+        line_prefix="",
+        wrap=True,
+    )
+    assert result == 'list(\n    "value"\n)'
+
+
+def test_r_empty_dict_key_error() -> None:
+    """R with ERROR empty_dict_key raises EmptyDictKeyError."""
+    spec = R(empty_dict_key=R.EmptyDictKey.ERROR)
+    yaml_string = '{"": "value"}\n'
+    with pytest.raises(expected_exception=EmptyDictKeyError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=spec,
+            line_prefix="",
+            wrap=True,
+        )
+
+
+def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
+    """R with ERROR empty_dict_key does not raise for non-empty keys."""
+    spec = R(empty_dict_key=R.EmptyDictKey.ERROR)
+    yaml_string = '{"key": "value"}\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=spec,
+        line_prefix="",
+        wrap=True,
+    )
+    assert result == 'list(\n    "key" = "value"\n)'
