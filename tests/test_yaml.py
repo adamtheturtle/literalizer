@@ -396,6 +396,25 @@ def test_coerce_heterogeneous_set() -> None:
     assert '"hello"' in result
 
 
+def test_coerce_heterogeneous_set_collision() -> None:
+    """Coercion is skipped when it would reduce element count."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!set
+        ? 1
+        ? "1"
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        wrap=True,
+    )
+    # Both elements should be preserved (coercion skipped).
+    assert "1" in result
+    assert '"1"' in result
+
+
 def test_coerce_homogeneous_omap_no_coercion() -> None:
     """Homogeneous ordereddict values are not coerced."""
     yaml_string = textwrap.dedent(
