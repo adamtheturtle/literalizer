@@ -171,7 +171,7 @@ class Rust(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = (
             "Vec::<String>::new()"
-            if sequence_format == Rust.SequenceFormat.VEC
+            if sequence_format == Rust.sequence_formats.VEC
             else None
         )
         self.empty_dict: str | None = None
@@ -196,10 +196,10 @@ class Rust(metaclass=HasFormatEnums):
             sequence_format != Rust.sequence_formats.TUPLE
         )
         self.coerce_heterogeneous_dict_values_to_strings: bool = (
-            sequence_format != Rust.SequenceFormat.TUPLE
+            sequence_format != Rust.sequence_formats.TUPLE
         )
         self.coerce_heterogeneous_list_values_to_strings: bool = (
-            sequence_format != Rust.SequenceFormat.TUPLE
+            sequence_format != Rust.sequence_formats.TUPLE
         )
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
