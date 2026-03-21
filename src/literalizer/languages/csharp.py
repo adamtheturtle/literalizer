@@ -17,7 +17,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -135,14 +135,20 @@ class CSharp(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C#."""
 
-        ARRAY = "array"
+        ARRAY = SequenceFormatConfig(
+            open_str="new object[] {",
+            close="}",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence="Array.Empty<object>()",
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C#."""
@@ -168,11 +174,12 @@ class CSharp(metaclass=HasFormatEnums):
         self.null_literal = "(object?)null"
         self.true_literal = "true"
         self.false_literal = "false"
+        fmt = sequence_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_csharp_schema_to_opener,
-            fallback="new object[] {",
+            fallback=fmt.open_str,
         )
-        self.sequence_close = "}"
+        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
             schema_to_opener=_csharp_dict_schema_to_opener,
             fallback="new Dictionary<string, object> {",
@@ -182,7 +189,7 @@ class CSharp(metaclass=HasFormatEnums):
             _format_csharp_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma = False
+        self.single_element_trailing_comma = fmt.single_element_trailing_comma
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -190,7 +197,7 @@ class CSharp(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = "Array.Empty<object>()"
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
         self.set_open = "new HashSet<object> {"
         self.set_close = "}"

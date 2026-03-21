@@ -18,7 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -85,15 +85,27 @@ class Crystal(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Crystal."""
 
-        ARRAY = "array"
-        TUPLE = "tuple"
+        ARRAY = SequenceFormatConfig(
+            open_str="[",
+            close="]",
+            empty_sequence="[] of Nil",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+        )
+        TUPLE = SequenceFormatConfig(
+            open_str="{",
+            close="}",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Crystal."""
@@ -119,17 +131,12 @@ class Crystal(metaclass=HasFormatEnums):
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str]
-        self.sequence_close: str
-        self.empty_sequence: str | None
-        if sequence_format == Crystal.sequence_formats.TUPLE:
-            self.sequence_open = fixed_sequence_open(open_str="{")
-            self.sequence_close = "}"
-            self.empty_sequence = None
-        else:
-            self.sequence_open = fixed_sequence_open(open_str="[")
-            self.sequence_close = "]"
-            self.empty_sequence = "[] of Nil"
+        fmt = sequence_format.value
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str=fmt.open_str
+        )
+        self.sequence_close: str = fmt.close
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="{"
         )
@@ -138,7 +145,7 @@ class Crystal(metaclass=HasFormatEnums):
             dict_entry_with_separator(separator=" => ")
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
+        self.single_element_trailing_comma = fmt.single_element_trailing_comma
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

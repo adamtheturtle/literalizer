@@ -15,7 +15,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -119,14 +119,20 @@ class C(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C."""
 
-        ARRAY = "array"
+        ARRAY = SequenceFormatConfig(
+            open_str="((_CVal){.a = (_CVal[]){",
+            close="}})",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C."""
@@ -152,10 +158,11 @@ class C(metaclass=HasFormatEnums):
         self.null_literal = "((_CVal){.s = NULL})"
         self.true_literal = "((_CVal){.b = true})"
         self.false_literal = "((_CVal){.b = false})"
+        fmt = sequence_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="((_CVal){.a = (_CVal[]){"
+            open_str=fmt.open_str
         )
-        self.sequence_close = "}})"
+        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="((_CVal){.m = (_CKV[]){"
         )
@@ -164,14 +171,14 @@ class C(metaclass=HasFormatEnums):
             _format_c_dict_entry
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
+        self.single_element_trailing_comma = fmt.single_element_trailing_comma
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = None
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
         self.set_open = "((_CVal){.a = (_CVal[]){"
         self.set_close = "}})"

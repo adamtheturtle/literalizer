@@ -17,7 +17,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -146,14 +146,20 @@ class Go(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Go."""
 
-        SLICE = "slice"
+        SLICE = SequenceFormatConfig(
+            open_str="[]any{",
+            close="}",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Go."""
@@ -179,11 +185,12 @@ class Go(metaclass=HasFormatEnums):
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
+        fmt = sequence_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_go_schema_to_opener,
-            fallback="[]any{",
+            fallback=fmt.open_str,
         )
-        self.sequence_close = "}"
+        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
             schema_to_opener=_go_dict_schema_to_opener,
             fallback="map[string]any{",
@@ -193,7 +200,7 @@ class Go(metaclass=HasFormatEnums):
             dict_entry_with_separator(separator=": ")
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
+        self.single_element_trailing_comma = fmt.single_element_trailing_comma
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -201,7 +208,7 @@ class Go(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = None
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
         self.set_open = "map[any]struct{}{"
         self.set_close = "}"

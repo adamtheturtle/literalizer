@@ -17,7 +17,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -114,16 +114,34 @@ class Rust(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Rust."""
 
-        VEC = "vec"
-        ARRAY = "array"
-        TUPLE = "tuple"
+        VEC = SequenceFormatConfig(
+            open_str="vec![",
+            close="]",
+            supports_heterogeneity=False,
+            single_element_trailing_comma=False,
+            empty_sequence="Vec::<String>::new()",
+        )
+        ARRAY = SequenceFormatConfig(
+            open_str="[",
+            close="]",
+            supports_heterogeneity=False,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
+        TUPLE = SequenceFormatConfig(
+            open_str="(",
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.value == "tuple"
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Rust."""
@@ -149,17 +167,11 @@ class Rust(metaclass=HasFormatEnums):
         self.null_literal = "None::<()>"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str]
-        self.sequence_close: str
-        if sequence_format == Rust.sequence_formats.TUPLE:
-            self.sequence_open = fixed_sequence_open(open_str="(")
-            self.sequence_close = ")"
-        elif sequence_format == Rust.sequence_formats.ARRAY:
-            self.sequence_open = fixed_sequence_open(open_str="[")
-            self.sequence_close = "]"
-        else:
-            self.sequence_open = fixed_sequence_open(open_str="vec![")
-            self.sequence_close = "]"
+        fmt = sequence_format.value
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str=fmt.open_str
+        )
+        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="HashMap::from(["
         )
@@ -168,7 +180,7 @@ class Rust(metaclass=HasFormatEnums):
             _format_rust_dict_entry
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
+        self.single_element_trailing_comma = fmt.single_element_trailing_comma
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -176,11 +188,7 @@ class Rust(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = (
-            "Vec::<String>::new()"
-            if sequence_format == Rust.sequence_formats.VEC
-            else None
-        )
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
         self.set_open = "HashSet::from(["
         self.set_close = "])"
