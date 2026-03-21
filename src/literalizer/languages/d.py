@@ -17,6 +17,7 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DictFormatConfig,
     HasFormatEnums,
     OmapFormatConfig,
     SequenceFormatConfig,
@@ -193,12 +194,11 @@ class D(metaclass=HasFormatEnums):
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="JSONValue(["
-        )
-        self.dict_close = "])"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            _format_d_dict_entry
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="JSONValue(["),
+            close="])",
+            format_entry=_format_d_dict_entry,
+            empty_dict='parseJSON("{}")',
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -207,7 +207,6 @@ class D(metaclass=HasFormatEnums):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_dict: str | None = 'parseJSON("{}")'
         self.format_sequence_entry: Callable[[str], str] = (
             _format_d_sequence_entry
         )

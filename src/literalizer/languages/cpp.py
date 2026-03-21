@@ -19,6 +19,7 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DictFormatConfig,
     HasFormatEnums,
     OmapFormatConfig,
     SequenceFormatConfig,
@@ -195,13 +196,14 @@ class Cpp(metaclass=HasFormatEnums):
             schema_to_opener=_cpp_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
-            schema_to_opener=_cpp_dict_schema_to_opener,
-            fallback="{",
-        )
-        self.dict_close = "}"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            _format_cpp_dict_entry
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=typed_dict_open(
+                schema_to_opener=_cpp_dict_schema_to_opener,
+                fallback="{",
+            ),
+            close="}",
+            format_entry=_format_cpp_dict_entry,
+            empty_dict=None,
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -211,7 +213,6 @@ class Cpp(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_dict: str | None = None
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
