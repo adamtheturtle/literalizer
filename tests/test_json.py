@@ -544,7 +544,7 @@ def test_error_on_coercion_json_no_raise_homogeneous() -> None:
 
 
 def test_error_on_coercion_json_raises_sibling_lists() -> None:
-    """Error_on_coercion raises for heterogeneous sibling sublists."""
+    """Error_on_coercion raises for heterogeneous sibling sub-lists."""
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
         literalize_json(
             json_string='[[1, 2], ["a", "b"]]',
@@ -560,7 +560,7 @@ def test_error_on_coercion_json_raises_sibling_lists() -> None:
 
 def test_error_on_coercion_json_raises_nested_sibling_lists() -> None:
     """Error_on_coercion raises for nested heterogeneous sibling
-    sublists.
+    sub-lists.
     """
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
         literalize_json(

@@ -146,7 +146,7 @@ def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
     combined scalar elements are heterogeneous.
 
     For example, ``[[1, 2], ["a", "b"]]`` returns ``True`` because the
-    sibling sublists have differing element types when combined.
+    sibling sub-lists have differing element types when combined.
     """
     if isinstance(data, (dict, ordereddict)):
         return any(
