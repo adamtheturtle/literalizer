@@ -25,8 +25,8 @@ if TYPE_CHECKING:
 
 @beartype
 def _format_mojo_omap_entry(key: str, value: str) -> str:
-    """Format one Mojo ordered-map entry as a ``(key, value)`` tuple."""
-    return f"({key}, {value})"
+    """Format one Mojo ordered-map entry as a ``Tuple(key, value)``."""
+    return f"Tuple({key}, {value})"
 
 
 @beartype
