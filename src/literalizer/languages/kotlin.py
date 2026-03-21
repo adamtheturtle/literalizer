@@ -10,9 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
-    format_date_iso,
     format_date_kotlin,
-    format_datetime_iso,
     format_datetime_kotlin,
     format_string_backslash_dollar,
     passthrough_sequence_entry,
@@ -114,15 +112,11 @@ class Kotlin:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``DateFormat.KOTLIN`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.KOTLIN`` — ``LocalDateTime.of(...)`` call,
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
     """
@@ -130,13 +124,11 @@ class Kotlin:
     class DateFormat(enum.Enum):
         """Date format options for Kotlin."""
 
-        ISO = enum.member(value=format_date_iso)
         KOTLIN = enum.member(value=format_date_kotlin)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for Kotlin."""
 
-        ISO = enum.member(value=format_datetime_iso)
         KOTLIN = enum.member(value=format_datetime_kotlin)
 
     class BytesFormat(enum.Enum):

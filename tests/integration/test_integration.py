@@ -46,16 +46,39 @@ def _wrap_js(content: str) -> str:
 
 
 @beartype
+def _go_time_import(content: str) -> str:
+    """Return a Go time import block if the content uses time types."""
+    if "time." in content:
+        return '\nimport "time"'
+    return ""
+
+
+@beartype
 def _wrap_go(content: str) -> str:
     """Wrap in a Go package-level variable declaration."""
-    return f"package main\n\nvar _ = {content}"
+    time_import = _go_time_import(content=content)
+    return f"package main{time_import}\n\nvar _ = {content}"
+
+
+@beartype
+def _java_time_imports(content: str) -> str:
+    """Return java.time import lines if the content uses java.time
+    types.
+    """
+    types: list[str] = []
+    if "Instant" in content:
+        types.append("Instant")
+    if "LocalDate" in content:
+        types.append("LocalDate")
+    return "".join(f"import java.time.{t};\n" for t in types)
 
 
 @beartype
 def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
+    time_imports = _java_time_imports(content=content)
     return f"""\
-import java.util.Map;
+{time_imports}import java.util.Map;
 import java.util.Set;
 class Check {{
     Object x = {content};
@@ -63,9 +86,28 @@ class Check {{
 
 
 @beartype
+def _kotlin_time_imports(content: str) -> str:
+    """Return Kotlin java.time import lines if needed."""
+    imports = ""
+    if "LocalDate" in content:
+        imports += "import java.time.LocalDate\n"
+    if "LocalDateTime" in content:
+        imports += "import java.time.LocalDateTime\n"
+    return imports
+
+
+@beartype
 def _wrap_kotlin(content: str) -> str:
     """Wrap in a Kotlin variable assignment."""
-    return f"val x: Any? = {content}"
+    time_imports = _kotlin_time_imports(content=content)
+    return f"{time_imports}val x: Any? = {content}"
+
+
+@beartype
+def _wrap_kotlin_varname(content: str) -> str:
+    """Wrap a Kotlin variable declaration with time imports if needed."""
+    time_imports = _kotlin_time_imports(content=content)
+    return f"{time_imports}{content}"
 
 
 @beartype
@@ -73,7 +115,9 @@ def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
     """
+    chrono = "#include <chrono>\n" if "std::chrono" in content else ""
     return (
+        f"{chrono}"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
         "#include <map>\n"
@@ -98,8 +142,10 @@ def _wrap_swift(content: str) -> str:
 @beartype
 def _wrap_csharp(content: str) -> str:
     """Wrap in C# using statement and variable assignment."""
+    needs_system = "DateOnly" in content or "DateTime" in content
+    system = "using System;\n" if needs_system else ""
     return f"""\
-using System.Collections.Generic;
+{system}using System.Collections.Generic;
 var x = {content};"""
 
 
@@ -149,11 +195,19 @@ def _rust_preamble(content: str) -> str:
 def _rust_array_spec() -> literalizer.languages.Rust:
     """Create a Rust spec for array format."""
     return literalizer.languages.Rust(
-        date_format=literalizer.languages.Rust.DateFormat.ISO,
-        datetime_format=literalizer.languages.Rust.DatetimeFormat.ISO,
+        date_format=literalizer.languages.Rust.DateFormat.RUST,
+        datetime_format=literalizer.languages.Rust.DatetimeFormat.RUST,
         bytes_format=literalizer.languages.Rust.BytesFormat.HEX,
         sequence_format=literalizer.languages.Rust.SequenceFormat.ARRAY,
     )
+
+
+@beartype
+def _rust_chrono_use(content: str) -> str:
+    """Return a chrono use statement if the content uses chrono types."""
+    if "NaiveDate" in content:
+        return "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
+    return ""
 
 
 @beartype
@@ -161,7 +215,9 @@ def _wrap_rust(content: str) -> str:
     """Wrap in a Rust main function with necessary imports."""
     indented = content.replace("\n", "\n    ")
     return (
-        _rust_preamble(content=content) + "fn main() {\n"
+        _rust_preamble(content=content)
+        + _rust_chrono_use(content=content)
+        + "fn main() {\n"
         f"    let _ = {indented};\n"
         "}"
     )
@@ -336,15 +392,19 @@ _VARIABLE_NAME = "my_data"
 @beartype
 def _wrap_go_varname(content: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
+    time_import = _go_time_import(content=content)
     return (
-        f"package main\n\nfunc main() {{\n{content}\n_ = {_VARIABLE_NAME}\n}}"
+        f"package main{time_import}\n\nfunc main() {{\n{content}\n"
+        f"_ = {_VARIABLE_NAME}\n}}"
     )
 
 
 @beartype
 def _wrap_java_varname(content: str) -> str:
     """Wrap a Java var declaration in a static method."""
+    time_imports = _java_time_imports(content=content)
     return (
+        f"{time_imports}"
         "import java.util.Map;\n"
         "import java.util.Set;\n"
         "class Check {\n"
@@ -371,7 +431,9 @@ def _wrap_rust_chrono(content: str) -> str:
 @beartype
 def _wrap_csharp_varname(content: str) -> str:
     """Wrap a C# top-level variable declaration with required imports."""
-    return f"using System.Collections.Generic;\n{content}"
+    needs_system = "DateOnly" in content or "DateTime" in content
+    system = "using System;\n" if needs_system else ""
+    return f"{system}using System.Collections.Generic;\n{content}"
 
 
 @beartype
@@ -400,7 +462,9 @@ def _wrap_cpp_varname(content: str) -> str:
         if content.startswith(old_prefix)
         else content
     )
+    chrono = "#include <chrono>\n" if "std::chrono" in content else ""
     return (
+        f"{chrono}"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
         "#include <map>\n"
@@ -867,7 +931,9 @@ def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
     return (
-        _rust_preamble(content=content) + "fn main() {\n"
+        _rust_preamble(content=content)
+        + _rust_chrono_use(content=content)
+        + "fn main() {\n"
         f"    {indented}\n"
         f"    let _ = {_VARIABLE_NAME};\n"
         "}"
@@ -1019,7 +1085,10 @@ def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
     """Kotlin: val declaration in one fun, var + assignment in another."""
     decl_indented = "    " + declaration.replace("\n", "\n    ")
     assign_indented = "    " + assignment.replace("\n", "\n    ")
+    combined = declaration + assignment
+    time_imports = _kotlin_time_imports(content=combined)
     return (
+        f"{time_imports}"
         f"fun _declaration() {{\n"
         f"{decl_indented}\n"
         f"}}\n"
@@ -1051,7 +1120,9 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     assign_indented = "    " + assignment.replace("\n", "\n    ")
     combined = declaration + assignment
     return (
-        _rust_preamble(content=combined) + "fn main() {\n"
+        _rust_preamble(content=combined)
+        + _rust_chrono_use(content=combined)
+        + "fn main() {\n"
         "    {\n"
         f"{decl_indented}\n"
         f"        let _ = {_VARIABLE_NAME};\n"
@@ -1304,6 +1375,13 @@ def _wrap_csharp_date(content: str) -> str:
 
 
 @beartype
+def _wrap_ruby(content: str) -> str:
+    """Wrap with require 'date' when Ruby Date literals are present."""
+    prefix = "require 'date'\n" if "Date.new" in content else ""
+    return f"{prefix}{content}"
+
+
+@beartype
 def _wrap_ruby_date(content: str) -> str:
     """Wrap with require 'date' for Ruby Date literals."""
     return f"require 'date'\n{content}"
@@ -1337,6 +1415,14 @@ def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
     if "Set{" in combined:
         return f'require "set"\n{combined}'
     return combined
+
+
+@beartype
+def _wrap_julia(content: str) -> str:
+    """Wrap with ``using Dates`` when Julia date literals are present."""
+    needs_dates = "Date(" in content or "DateTime(" in content
+    prefix = "using Dates\n" if needs_dates else ""
+    return f"{prefix}{content}"
 
 
 @beartype
@@ -1572,8 +1658,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "python": _LanguageConfig(
         spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.DateFormat.ISO,
-            datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Python.DateFormat.PYTHON,
+            datetime_format=literalizer.languages.Python.DatetimeFormat.PYTHON,
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
             set_format=literalizer.languages.Python.SetFormat.SET,
@@ -1586,8 +1672,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "javascript": _LanguageConfig(
         spec=literalizer.languages.JavaScript(
-            date_format=literalizer.languages.JavaScript.DateFormat.ISO,
-            datetime_format=literalizer.languages.JavaScript.DatetimeFormat.ISO,
+            date_format=literalizer.languages.JavaScript.DateFormat.JS,
+            datetime_format=literalizer.languages.JavaScript.DatetimeFormat.JS,
             bytes_format=literalizer.languages.JavaScript.BytesFormat.HEX,
             sequence_format=literalizer.languages.JavaScript.SequenceFormat.ARRAY,
         ),
@@ -1598,8 +1684,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "typescript": _LanguageConfig(
         spec=literalizer.languages.TypeScript(
-            date_format=literalizer.languages.TypeScript.DateFormat.ISO,
-            datetime_format=literalizer.languages.TypeScript.DatetimeFormat.ISO,
+            date_format=literalizer.languages.TypeScript.DateFormat.JS,
+            datetime_format=literalizer.languages.TypeScript.DatetimeFormat.JS,
             bytes_format=literalizer.languages.TypeScript.BytesFormat.HEX,
             sequence_format=literalizer.languages.TypeScript.SequenceFormat.ARRAY,
         ),
@@ -1610,32 +1696,32 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "kotlin": _LanguageConfig(
         spec=literalizer.languages.Kotlin(
-            date_format=literalizer.languages.Kotlin.DateFormat.ISO,
-            datetime_format=literalizer.languages.Kotlin.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Kotlin.DateFormat.KOTLIN,
+            datetime_format=literalizer.languages.Kotlin.DatetimeFormat.KOTLIN,
             bytes_format=literalizer.languages.Kotlin.BytesFormat.HEX,
             sequence_format=literalizer.languages.Kotlin.SequenceFormat.LIST,
         ),
         extension=".kts",
         wrap=_wrap_kotlin,
-        varname_wrap=_wrap_identity,
+        varname_wrap=_wrap_kotlin_varname,
         combined_wrap=_wrap_kotlin_combined,
     ),
     "ruby": _LanguageConfig(
         spec=literalizer.languages.Ruby(
-            date_format=literalizer.languages.Ruby.DateFormat.ISO,
-            datetime_format=literalizer.languages.Ruby.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Ruby.DateFormat.RUBY,
+            datetime_format=literalizer.languages.Ruby.DatetimeFormat.RUBY,
             bytes_format=literalizer.languages.Ruby.BytesFormat.HEX,
             sequence_format=literalizer.languages.Ruby.SequenceFormat.ARRAY,
         ),
         extension=".rb",
-        wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
-        combined_wrap=_wrap_combined_newline,
+        wrap=_wrap_ruby,
+        varname_wrap=_wrap_ruby,
+        combined_wrap=lambda d, a: _wrap_ruby(content=d + "\n" + a),
     ),
     "go": _LanguageConfig(
         spec=literalizer.languages.Go(
-            date_format=literalizer.languages.Go.DateFormat.ISO,
-            datetime_format=literalizer.languages.Go.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Go.DateFormat.GO,
+            datetime_format=literalizer.languages.Go.DatetimeFormat.GO,
             bytes_format=literalizer.languages.Go.BytesFormat.HEX,
             sequence_format=literalizer.languages.Go.SequenceFormat.SLICE,
         ),
@@ -1646,8 +1732,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "java": _LanguageConfig(
         spec=literalizer.languages.Java(
-            date_format=literalizer.languages.Java.DateFormat.ISO,
-            datetime_format=literalizer.languages.Java.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Java.DateFormat.JAVA,
+            datetime_format=literalizer.languages.Java.DatetimeFormat.INSTANT,
             bytes_format=literalizer.languages.Java.BytesFormat.HEX,
             sequence_format=literalizer.languages.Java.SequenceFormat.ARRAY,
         ),
@@ -1658,8 +1744,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "csharp": _LanguageConfig(
         spec=literalizer.languages.CSharp(
-            date_format=literalizer.languages.CSharp.DateFormat.ISO,
-            datetime_format=literalizer.languages.CSharp.DatetimeFormat.ISO,
+            date_format=literalizer.languages.CSharp.DateFormat.CSHARP,
+            datetime_format=literalizer.languages.CSharp.DatetimeFormat.CSHARP,
             bytes_format=literalizer.languages.CSharp.BytesFormat.HEX,
             sequence_format=literalizer.languages.CSharp.SequenceFormat.ARRAY,
         ),
@@ -1670,8 +1756,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "dart": _LanguageConfig(
         spec=literalizer.languages.Dart(
-            date_format=literalizer.languages.Dart.DateFormat.ISO,
-            datetime_format=literalizer.languages.Dart.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Dart.DateFormat.DART,
+            datetime_format=literalizer.languages.Dart.DatetimeFormat.DART,
             bytes_format=literalizer.languages.Dart.BytesFormat.HEX,
             sequence_format=literalizer.languages.Dart.SequenceFormat.LIST,
         ),
@@ -1692,8 +1778,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "cpp": _LanguageConfig(
         spec=literalizer.languages.Cpp(
-            date_format=literalizer.languages.Cpp.DateFormat.ISO,
-            datetime_format=literalizer.languages.Cpp.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Cpp.DateFormat.CPP,
+            datetime_format=literalizer.languages.Cpp.DatetimeFormat.CPP,
             bytes_format=literalizer.languages.Cpp.BytesFormat.HEX,
             sequence_format=literalizer.languages.Cpp.SequenceFormat.INITIALIZER_LIST,
         ),
@@ -1704,8 +1790,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "rust": _LanguageConfig(
         spec=literalizer.languages.Rust(
-            date_format=literalizer.languages.Rust.DateFormat.ISO,
-            datetime_format=literalizer.languages.Rust.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Rust.DateFormat.RUST,
+            datetime_format=literalizer.languages.Rust.DatetimeFormat.RUST,
             bytes_format=literalizer.languages.Rust.BytesFormat.HEX,
             sequence_format=literalizer.languages.Rust.SequenceFormat.VEC,
         ),
@@ -1736,15 +1822,15 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "julia": _LanguageConfig(
         spec=literalizer.languages.Julia(
-            date_format=literalizer.languages.Julia.DateFormat.ISO,
-            datetime_format=literalizer.languages.Julia.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Julia.DateFormat.JULIA,
+            datetime_format=literalizer.languages.Julia.DatetimeFormat.JULIA,
             bytes_format=literalizer.languages.Julia.BytesFormat.HEX,
             sequence_format=literalizer.languages.Julia.SequenceFormat.ARRAY,
         ),
         extension=".jl",
-        wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
-        combined_wrap=_wrap_combined_newline,
+        wrap=_wrap_julia,
+        varname_wrap=_wrap_julia,
+        combined_wrap=lambda d, a: _wrap_julia(content=d + "\n" + a),
     ),
     "lua": _LanguageConfig(
         spec=literalizer.languages.Lua(
@@ -1848,8 +1934,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "r": _LanguageConfig(
         spec=literalizer.languages.R(
-            date_format=literalizer.languages.R.DateFormat.ISO,
-            datetime_format=literalizer.languages.R.DatetimeFormat.ISO,
+            date_format=literalizer.languages.R.DateFormat.R,
+            datetime_format=literalizer.languages.R.DatetimeFormat.R,
             empty_dict_key=literalizer.languages.R.EmptyDictKey.POSITIONAL,
             bytes_format=literalizer.languages.R.BytesFormat.HEX,
             sequence_format=literalizer.languages.R.SequenceFormat.LIST,
@@ -2007,7 +2093,7 @@ _DATE_VARIANTS: dict[str, _Variant] = {
     ),
     "python_epoch": _Variant(
         spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.DateFormat.ISO,
+            date_format=literalizer.languages.Python.DateFormat.PYTHON,
             datetime_format=literalizer.languages.Python.DatetimeFormat.EPOCH,
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
@@ -2015,7 +2101,7 @@ _DATE_VARIANTS: dict[str, _Variant] = {
             variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
-        wrap=_wrap_identity,
+        wrap=_wrap_python,
     ),
     "js_native": _Variant(
         spec=literalizer.languages.JavaScript(
@@ -2154,8 +2240,8 @@ _DATE_VARIANTS: dict[str, _Variant] = {
 _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     "python_list": _Variant(
         spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.DateFormat.ISO,
-            datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Python.DateFormat.PYTHON,
+            datetime_format=literalizer.languages.Python.DatetimeFormat.PYTHON,
             bytes_format=literalizer.languages.Python.BytesFormat.HEX,
             sequence_format=literalizer.languages.Python.SequenceFormat.LIST,
             set_format=literalizer.languages.Python.SetFormat.SET,
@@ -2166,8 +2252,8 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "julia_tuple": _Variant(
         spec=literalizer.languages.Julia(
-            date_format=literalizer.languages.Julia.DateFormat.ISO,
-            datetime_format=literalizer.languages.Julia.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Julia.DateFormat.JULIA,
+            datetime_format=literalizer.languages.Julia.DatetimeFormat.JULIA,
             bytes_format=literalizer.languages.Julia.BytesFormat.HEX,
             sequence_format=literalizer.languages.Julia.SequenceFormat.TUPLE,
         ),
@@ -2205,8 +2291,8 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "rust_tuple": _Variant(
         spec=literalizer.languages.Rust(
-            date_format=literalizer.languages.Rust.DateFormat.ISO,
-            datetime_format=literalizer.languages.Rust.DatetimeFormat.ISO,
+            date_format=literalizer.languages.Rust.DateFormat.RUST,
+            datetime_format=literalizer.languages.Rust.DatetimeFormat.RUST,
             bytes_format=literalizer.languages.Rust.BytesFormat.HEX,
             sequence_format=literalizer.languages.Rust.SequenceFormat.TUPLE,
         ),
@@ -2376,8 +2462,8 @@ def _build_variant_cases() -> list[_VariantCase]:
     set_variants: dict[str, _Variant] = {
         "python_frozenset": _Variant(
             spec=literalizer.languages.Python(
-                date_format=literalizer.languages.Python.DateFormat.ISO,
-                datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
+                date_format=literalizer.languages.Python.DateFormat.PYTHON,
+                datetime_format=literalizer.languages.Python.DatetimeFormat.PYTHON,
                 bytes_format=literalizer.languages.Python.BytesFormat.HEX,
                 sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
                 set_format=literalizer.languages.Python.SetFormat.FROZENSET,
@@ -2398,8 +2484,8 @@ def _build_variant_cases() -> list[_VariantCase]:
     variable_type_hints_variants: dict[str, _Variant] = {
         "python_inline": _Variant(
             spec=literalizer.languages.Python(
-                date_format=literalizer.languages.Python.DateFormat.ISO,
-                datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
+                date_format=literalizer.languages.Python.DateFormat.PYTHON,
+                datetime_format=literalizer.languages.Python.DatetimeFormat.PYTHON,
                 bytes_format=literalizer.languages.Python.BytesFormat.HEX,
                 sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
                 set_format=literalizer.languages.Python.SetFormat.SET,

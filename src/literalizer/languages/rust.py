@@ -11,9 +11,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_iso,
     format_date_rust,
-    format_datetime_iso,
     format_datetime_rust,
     format_string_backslash,
     passthrough_sequence_entry,
@@ -58,8 +56,6 @@ class Rust:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``DateFormat.RUST`` —
               ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
@@ -67,8 +63,6 @@ class Rust:
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.RUST`` —
               ``NaiveDateTime::new(...)`` call, e.g.
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
@@ -92,13 +86,11 @@ class Rust:
     class DateFormat(enum.Enum):
         """Date format options for Rust."""
 
-        ISO = enum.member(value=format_date_iso)
         RUST = enum.member(value=format_date_rust)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for Rust."""
 
-        ISO = enum.member(value=format_datetime_iso)
         RUST = enum.member(value=format_datetime_rust)
 
     class BytesFormat(enum.Enum):

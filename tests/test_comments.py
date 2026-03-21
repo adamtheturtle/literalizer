@@ -16,28 +16,28 @@ from literalizer.languages import (
 )
 
 GO = Go(
-    date_format=Go.DateFormat.ISO,
-    datetime_format=Go.DatetimeFormat.ISO,
+    date_format=Go.DateFormat.GO,
+    datetime_format=Go.DatetimeFormat.GO,
     bytes_format=Go.BytesFormat.HEX,
     sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.ISO,
-    datetime_format=JavaScript.DatetimeFormat.ISO,
+    date_format=JavaScript.DateFormat.JS,
+    datetime_format=JavaScript.DatetimeFormat.JS,
     bytes_format=JavaScript.BytesFormat.HEX,
     sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
+    date_format=Python.DateFormat.PYTHON,
+    datetime_format=Python.DatetimeFormat.PYTHON,
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 RUBY = Ruby(
-    date_format=Ruby.DateFormat.ISO,
-    datetime_format=Ruby.DatetimeFormat.ISO,
+    date_format=Ruby.DateFormat.RUBY,
+    datetime_format=Ruby.DatetimeFormat.RUBY,
     bytes_format=Ruby.BytesFormat.HEX,
     sequence_format=Ruby.SequenceFormat.ARRAY,
 )

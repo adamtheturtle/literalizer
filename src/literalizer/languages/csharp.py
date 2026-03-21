@@ -10,9 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     format_bytes_hex,
     format_date_csharp,
-    format_date_iso,
     format_datetime_csharp,
-    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -97,15 +95,11 @@ class CSharp:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``DateFormat.CSHARP`` — ``new DateOnly(...)`` call,
               e.g. ``new DateOnly(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.CSHARP`` — ``new DateTime(...)`` call,
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
     """
@@ -113,13 +107,11 @@ class CSharp:
     class DateFormat(enum.Enum):
         """Date format options for C#."""
 
-        ISO = enum.member(value=format_date_iso)
         CSHARP = enum.member(value=format_date_csharp)
 
     class DatetimeFormat(enum.Enum):
         """Datetime format options for C#."""
 
-        ISO = enum.member(value=format_datetime_iso)
         CSHARP = enum.member(value=format_datetime_csharp)
 
     class BytesFormat(enum.Enum):

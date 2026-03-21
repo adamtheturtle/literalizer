@@ -12,9 +12,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_iso,
     format_date_js,
-    format_datetime_iso,
     format_datetime_js,
     format_string_backslash,
     passthrough_sequence_entry,
@@ -53,15 +51,11 @@ class JavaScript:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``DateFormat.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.
     """
@@ -69,13 +63,11 @@ class JavaScript:
     class DateFormat(enum.Enum):
         """Date formatting options for JavaScript."""
 
-        ISO = enum.member(value=format_date_iso)
         JS = enum.member(value=format_date_js)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for JavaScript."""
 
-        ISO = enum.member(value=format_datetime_iso)
         JS = enum.member(value=format_datetime_js)
 
     class BytesFormat(enum.Enum):

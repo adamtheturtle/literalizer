@@ -10,9 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     format_bytes_hex,
-    format_date_iso,
     format_date_java,
-    format_datetime_iso,
     format_datetime_java_instant,
     format_datetime_java_zoned,
     format_string_backslash,
@@ -90,15 +88,11 @@ class Java:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``DateFormat.JAVA`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.INSTANT`` — ``Instant.parse(...)`` call,
               e.g. ``Instant.parse("2024-01-15T12:30:00")``.
             * ``DatetimeFormat.ZONED`` — ``ZonedDateTime.of(...)`` call,
@@ -109,13 +103,11 @@ class Java:
     class DateFormat(enum.Enum):
         """Date formatting options for Java."""
 
-        ISO = enum.member(value=format_date_iso)
         JAVA = enum.member(value=format_date_java)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for Java."""
 
-        ISO = enum.member(value=format_datetime_iso)
         INSTANT = enum.member(value=format_datetime_java_instant)
         ZONED = enum.member(value=format_datetime_java_zoned)
 

@@ -39,20 +39,20 @@ CLOJURE = Clojure(
     sequence_format=Clojure.SequenceFormat.VECTOR,
 )
 CPP = Cpp(
-    date_format=Cpp.DateFormat.ISO,
-    datetime_format=Cpp.DatetimeFormat.ISO,
+    date_format=Cpp.DateFormat.CPP,
+    datetime_format=Cpp.DatetimeFormat.CPP,
     bytes_format=Cpp.BytesFormat.HEX,
     sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
 )
 CSHARP = CSharp(
-    date_format=CSharp.DateFormat.ISO,
-    datetime_format=CSharp.DatetimeFormat.ISO,
+    date_format=CSharp.DateFormat.CSHARP,
+    datetime_format=CSharp.DatetimeFormat.CSHARP,
     bytes_format=CSharp.BytesFormat.HEX,
     sequence_format=CSharp.SequenceFormat.ARRAY,
 )
 DART = Dart(
-    date_format=Dart.DateFormat.ISO,
-    datetime_format=Dart.DatetimeFormat.ISO,
+    date_format=Dart.DateFormat.DART,
+    datetime_format=Dart.DatetimeFormat.DART,
     bytes_format=Dart.BytesFormat.HEX,
     sequence_format=Dart.SequenceFormat.LIST,
 )
@@ -65,8 +65,8 @@ FSHARP = FSharp(
     sequence_format=FSharp.SequenceFormat.LIST,
 )
 GO = Go(
-    date_format=Go.DateFormat.ISO,
-    datetime_format=Go.DatetimeFormat.ISO,
+    date_format=Go.DateFormat.GO,
+    datetime_format=Go.DatetimeFormat.GO,
     bytes_format=Go.BytesFormat.HEX,
     sequence_format=Go.SequenceFormat.SLICE,
 )
@@ -75,20 +75,20 @@ HASKELL = Haskell(
     sequence_format=Haskell.SequenceFormat.LIST,
 )
 JAVA = Java(
-    date_format=Java.DateFormat.ISO,
-    datetime_format=Java.DatetimeFormat.ISO,
+    date_format=Java.DateFormat.JAVA,
+    datetime_format=Java.DatetimeFormat.INSTANT,
     bytes_format=Java.BytesFormat.HEX,
     sequence_format=Java.SequenceFormat.ARRAY,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.ISO,
-    datetime_format=JavaScript.DatetimeFormat.ISO,
+    date_format=JavaScript.DateFormat.JS,
+    datetime_format=JavaScript.DatetimeFormat.JS,
     bytes_format=JavaScript.BytesFormat.HEX,
     sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 KOTLIN = Kotlin(
-    date_format=Kotlin.DateFormat.ISO,
-    datetime_format=Kotlin.DatetimeFormat.ISO,
+    date_format=Kotlin.DateFormat.KOTLIN,
+    datetime_format=Kotlin.DatetimeFormat.KOTLIN,
     bytes_format=Kotlin.BytesFormat.HEX,
     sequence_format=Kotlin.SequenceFormat.LIST,
 )
@@ -97,30 +97,30 @@ PHP = Php(
     sequence_format=Php.SequenceFormat.ARRAY,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
+    date_format=Python.DateFormat.PYTHON,
+    datetime_format=Python.DatetimeFormat.PYTHON,
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 PYTHON_INLINE_HINTS = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
+    date_format=Python.DateFormat.PYTHON,
+    datetime_format=Python.DatetimeFormat.PYTHON,
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
     variable_type_hints=Python.VariableTypeHints.INLINE,
 )
 RUBY = Ruby(
-    date_format=Ruby.DateFormat.ISO,
-    datetime_format=Ruby.DatetimeFormat.ISO,
+    date_format=Ruby.DateFormat.RUBY,
+    datetime_format=Ruby.DatetimeFormat.RUBY,
     bytes_format=Ruby.BytesFormat.HEX,
     sequence_format=Ruby.SequenceFormat.ARRAY,
 )
 RUST = Rust(
-    date_format=Rust.DateFormat.ISO,
-    datetime_format=Rust.DatetimeFormat.ISO,
+    date_format=Rust.DateFormat.RUST,
+    datetime_format=Rust.DatetimeFormat.RUST,
     bytes_format=Rust.BytesFormat.HEX,
     sequence_format=Rust.SequenceFormat.VEC,
 )
@@ -133,8 +133,8 @@ SWIFT = Swift(
     sequence_format=Swift.SequenceFormat.ARRAY,
 )
 TYPESCRIPT = TypeScript(
-    date_format=TypeScript.DateFormat.ISO,
-    datetime_format=TypeScript.DatetimeFormat.ISO,
+    date_format=TypeScript.DateFormat.JS,
+    datetime_format=TypeScript.DatetimeFormat.JS,
     bytes_format=TypeScript.BytesFormat.HEX,
     sequence_format=TypeScript.SequenceFormat.ARRAY,
 )
@@ -205,8 +205,8 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
         declaration="val my_var = 42", assignment="my_var = 42"
     ),
     R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.DateFormat.R,
+        datetime_format=R.DatetimeFormat.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
         bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
@@ -405,8 +405,8 @@ def test_python_inline_type_hints_list() -> None:
     LIST.
     """
     lang = Python(
-        date_format=Python.DateFormat.ISO,
-        datetime_format=Python.DatetimeFormat.ISO,
+        date_format=Python.DateFormat.PYTHON,
+        datetime_format=Python.DatetimeFormat.PYTHON,
         bytes_format=Python.BytesFormat.HEX,
         sequence_format=Python.SequenceFormat.LIST,
         set_format=Python.SetFormat.SET,
