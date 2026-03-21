@@ -4,7 +4,7 @@ import datetime
 import functools
 import re
 from collections.abc import Callable
-from typing import Any
+from typing import Any, TypeGuard
 
 from beartype import beartype
 from json_to_schema import infer_schema
@@ -19,6 +19,17 @@ from literalizer._types import Value
 # fallback opener.
 _JSON_NATIVE_TYPES = (str, int, float, bool, type(None), list, dict)
 
+# Recursive JSON value type matching json-to-schema's ``JsonValue``.
+type _JsonNative = (
+    None
+    | bool
+    | int
+    | float
+    | str
+    | list[_JsonNative]
+    | dict[str, _JsonNative]
+)
+
 
 @beartype
 def _all_json_native(values: Value) -> bool:
@@ -32,6 +43,15 @@ def _all_json_native(values: Value) -> bool:
     if isinstance(values, dict):
         return all(_all_json_native(values=v) for v in values.values())
     return isinstance(values, _JSON_NATIVE_TYPES)
+
+
+def _all_json_native_list(
+    values: list[Value],
+) -> TypeGuard[list[_JsonNative]]:
+    """Type-narrowing wrapper around :func:`_all_json_native` for
+    lists.
+    """
+    return _all_json_native(values=values)
 
 
 @beartype
@@ -690,7 +710,7 @@ def _typed_sequence_open(
     See ``_JSON_NATIVE_TYPES`` for why we skip inference for
     YAML-only types.
     """
-    if not _all_json_native(values=items):
+    if not _all_json_native_list(values=items):
         return fallback
     schema: dict[str, Any] = infer_schema(value=items)
     item_schema: dict[str, Any] = schema.get("items", {})
@@ -747,7 +767,7 @@ def _typed_dict_open(
     YAML-only types.
     """
     values = list(items.values())
-    if not _all_json_native(values=values):
+    if not _all_json_native_list(values=values):
         return fallback
     schema: dict[str, Any] = infer_schema(value=values)
     value_schema: dict[str, Any] = schema.get("items", {})
