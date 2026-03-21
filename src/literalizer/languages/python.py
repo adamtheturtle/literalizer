@@ -20,7 +20,11 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums, SequenceFormatConfig
+from literalizer._language import (
+    HasFormatEnums,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -221,8 +225,16 @@ class Python(metaclass=HasFormatEnums):
     class SetFormats(enum.Enum):
         """Set type options for Python."""
 
-        SET = "set"
-        FROZENSET = "frozenset"
+        SET = SetFormatConfig(
+            open_str="{",
+            close="}",
+            empty_set="set()",
+        )
+        FROZENSET = SetFormatConfig(
+            open_str="frozenset({",
+            close="})",
+            empty_set="frozenset()",
+        )
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""
@@ -277,17 +289,9 @@ class Python(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str
-        self.set_close: str
-        self.empty_set: str | None
-        if set_format == Python.set_formats.FROZENSET:
-            self.set_open = "frozenset({"
-            self.set_close = "})"
-            self.empty_set = "frozenset()"
-        else:
-            self.set_open = "{"
-            self.set_close = "}"
-            self.empty_set = "set()"
+        self.set_open: str = set_format.value.open_str
+        self.set_close: str = set_format.value.close
+        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

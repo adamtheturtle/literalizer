@@ -18,7 +18,11 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums, SequenceFormatConfig
+from literalizer._language import (
+    HasFormatEnums,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -109,7 +113,11 @@ class Ruby(metaclass=HasFormatEnums):
     class SetFormats(enum.Enum):
         """Set type options for Ruby."""
 
-        SET = "set"
+        SET = SetFormatConfig(
+            open_str="Set.new([",
+            close="])",
+            empty_set="Set.new",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -124,6 +132,7 @@ class Ruby(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.RUBY,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
+        set_format: SetFormats = SetFormats.SET,
     ) -> None:
         """Initialize Ruby language specification."""
         self.sequence_format = sequence_format
@@ -155,9 +164,9 @@ class Ruby(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open = "Set.new(["
-        self.set_close = "])"
-        self.empty_set: str | None = "Set.new"
+        self.set_open: str = set_format.value.open_str
+        self.set_close: str = set_format.value.close
+        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

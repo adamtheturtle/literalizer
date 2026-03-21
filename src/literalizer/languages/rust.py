@@ -17,7 +17,11 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums, SequenceFormatConfig
+from literalizer._language import (
+    HasFormatEnums,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -146,7 +150,11 @@ class Rust(metaclass=HasFormatEnums):
     class SetFormats(enum.Enum):
         """Set type options for Rust."""
 
-        HASH_SET = "hash_set"
+        HASH_SET = SetFormatConfig(
+            open_str="HashSet::from([",
+            close="])",
+            empty_set=None,
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -161,6 +169,7 @@ class Rust(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.RUST,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.VEC,
+        set_format: SetFormats = SetFormats.HASH_SET,
     ) -> None:
         """Initialize Rust language specification."""
         self.sequence_format = sequence_format
@@ -192,9 +201,9 @@ class Rust(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open = "HashSet::from(["
-        self.set_close = "])"
-        self.empty_set: str | None = None
+        self.set_open: str = set_format.value.open_str
+        self.set_close: str = set_format.value.close
+        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
