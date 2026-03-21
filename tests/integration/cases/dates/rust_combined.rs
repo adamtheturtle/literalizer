@@ -19,6 +19,7 @@ struct HashMap;
 impl HashMap {
     fn from<T>(_: T) -> V { V }
 }
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 fn main() {
     {
         let my_data = HashMap::from(vec![

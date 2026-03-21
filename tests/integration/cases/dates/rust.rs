@@ -19,6 +19,7 @@ struct HashMap;
 impl HashMap {
     fn from<T>(_: T) -> V { V }
 }
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 fn main() {
     let _ = HashMap::from(vec![
         ("date", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()),

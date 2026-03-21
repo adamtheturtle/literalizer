@@ -1,3 +1,5 @@
+import java.time.LocalDate
+import java.time.LocalDateTime
 fun _declaration() {
     val my_data = mapOf<String, Any?>(
         "date" to LocalDate.of(2024, 1, 15),
