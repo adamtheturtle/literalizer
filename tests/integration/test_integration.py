@@ -2194,7 +2194,7 @@ class _VariantCase:
     variant_name: str
     variant: _Variant
     case_dir: Path
-    variable_name: str | None = None
+    variable_name: str | None
 
 
 def _build_variant_cases() -> list[_VariantCase]:
@@ -2206,6 +2206,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=variant_name,
                 variant=variant,
                 case_dir=_CASES_DIR / "dates",
+                variable_name=None,
             )
         )
     for variant_name, variant in _SEQUENCE_VARIANTS.items():
@@ -2214,6 +2215,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=variant_name,
                 variant=variant,
                 case_dir=_CASES_DIR / "simple_sequence",
+                variable_name=None,
             )
         )
     for variant_name, variant in _SET_VARIANTS.items():
@@ -2222,6 +2224,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=variant_name,
                 variant=variant,
                 case_dir=_CASES_DIR / "set",
+                variable_name=None,
             )
         )
     variable_type_hints_variants: dict[str, _Variant] = {
