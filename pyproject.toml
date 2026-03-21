@@ -297,6 +297,10 @@ follow_untyped_imports = true
 overrides = [ { module = "tests.integration.cases.*", disable_error_code = [ "var-annotated" ] } ]
 
 [tool.pyrefly]
+# pyrefly treats nested enum classes as ClassVar, making them
+# incompatible with Protocol @property members.  mypy and pyright
+# handle this correctly, so we suppress the false positive here.
+errors.bad-argument-type = "ignore"
 errors.non-exhaustive-match = "error"
 project_excludes = [
     "tests/integration/cases",

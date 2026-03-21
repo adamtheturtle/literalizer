@@ -20,7 +20,6 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
-from literalizer._language import FormatEnum
 
 if TYPE_CHECKING:
     import datetime
@@ -99,63 +98,53 @@ class Dart:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
+            * ``date_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * ``DateFormat.DART`` — ``DateTime.parse(...)`` call,
+            * ``date_formats.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
+            * ``datetime_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``DatetimeFormat.DART`` — ``DateTime.parse(...)`` call,
+            * ``datetime_formats.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
     """
 
-    class DateFormat(enum.Enum):
+    class date_formats(enum.Enum):  # noqa: N801
         """Date formatting options for Dart."""
 
         ISO = enum.member(value=format_date_iso)
         DART = enum.member(value=format_date_dart)
 
-    class DatetimeFormat(enum.Enum):
+    class datetime_formats(enum.Enum):  # noqa: N801
         """Datetime formatting options for Dart."""
 
         ISO = enum.member(value=format_datetime_iso)
         DART = enum.member(value=format_datetime_dart)
 
-    class BytesFormat(enum.Enum):
+    class bytes_formats(enum.Enum):  # noqa: N801
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class SequenceFormat(enum.Enum):
+    class sequence_formats(enum.Enum):  # noqa: N801
         """Sequence type options for Dart."""
 
         LIST = "list"
 
-    class SetFormat(enum.Enum):
+    class set_formats(enum.Enum):  # noqa: N801
         """Set type options for Dart."""
 
         SET = "set"
 
-    bytes_formats = FormatEnum(name="BytesFormat")
-
-    set_formats = FormatEnum(name="SetFormat")
-
-    date_formats = FormatEnum(name="DateFormat")
-
-    datetime_formats = FormatEnum(name="DatetimeFormat")
-
-    sequence_formats = FormatEnum(name="SequenceFormat")
-
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: date_formats,
+        datetime_format: datetime_formats,
+        bytes_format: bytes_formats,
+        sequence_format: sequence_formats,
     ) -> None:
         """Initialize Dart language specification."""
         self.sequence_format = sequence_format

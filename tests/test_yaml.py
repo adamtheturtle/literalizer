@@ -23,29 +23,29 @@ from literalizer.languages import (
 )
 
 GO = Go(
-    date_format=Go.DateFormat.ISO,
-    datetime_format=Go.DatetimeFormat.ISO,
-    bytes_format=Go.BytesFormat.HEX,
-    sequence_format=Go.SequenceFormat.SLICE,
+    date_format=Go.date_formats.ISO,
+    datetime_format=Go.datetime_formats.ISO,
+    bytes_format=Go.bytes_formats.HEX,
+    sequence_format=Go.sequence_formats.SLICE,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.ISO,
-    datetime_format=JavaScript.DatetimeFormat.ISO,
-    bytes_format=JavaScript.BytesFormat.HEX,
-    sequence_format=JavaScript.SequenceFormat.ARRAY,
+    date_format=JavaScript.date_formats.ISO,
+    datetime_format=JavaScript.datetime_formats.ISO,
+    bytes_format=JavaScript.bytes_formats.HEX,
+    sequence_format=JavaScript.sequence_formats.ARRAY,
 )
 MOJO = Mojo(
-    date_format=Mojo.DateFormat.ISO,
-    datetime_format=Mojo.DatetimeFormat.ISO,
-    bytes_format=Mojo.BytesFormat.HEX,
-    sequence_format=Mojo.SequenceFormat.LIST,
+    date_format=Mojo.date_formats.ISO,
+    datetime_format=Mojo.datetime_formats.ISO,
+    bytes_format=Mojo.bytes_formats.HEX,
+    sequence_format=Mojo.sequence_formats.LIST,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.ISO,
+    datetime_format=Python.datetime_formats.ISO,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 
@@ -565,11 +565,11 @@ def test_coerce_mixed_omap_values() -> None:
 def test_r_empty_dict_key_positional() -> None:
     """R with POSITIONAL empty_dict_key emits unnamed list elements."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.date_formats.ISO,
+        datetime_format=R.datetime_formats.ISO,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
@@ -594,11 +594,11 @@ def test_r_empty_dict_key_positional() -> None:
 def test_r_empty_dict_key_positional_is_default() -> None:
     """R defaults to POSITIONAL for empty_dict_key."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.date_formats.ISO,
+        datetime_format=R.datetime_formats.ISO,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
@@ -623,11 +623,11 @@ def test_r_empty_dict_key_positional_is_default() -> None:
 def test_r_empty_dict_key_error() -> None:
     """R with ERROR empty_dict_key raises EmptyDictKeyError."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.date_formats.ISO,
+        datetime_format=R.datetime_formats.ISO,
         empty_dict_key=R.EmptyDictKey.ERROR,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
     with pytest.raises(expected_exception=EmptyDictKeyError):
@@ -646,11 +646,11 @@ def test_r_empty_dict_key_error() -> None:
 def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     """R with ERROR empty_dict_key does not raise for non-empty keys."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.date_formats.ISO,
+        datetime_format=R.datetime_formats.ISO,
         empty_dict_key=R.EmptyDictKey.ERROR,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"key": "value"}\n'
     result = literalize_yaml(

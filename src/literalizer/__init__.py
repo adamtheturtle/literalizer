@@ -5,10 +5,9 @@ from literalizer._core import (
     literalize_yaml,
 )
 from literalizer._formatters import fixed_dict_open, fixed_sequence_open
-from literalizer._language import FormatEnum, Language
+from literalizer._language import Language
 
 __all__ = [
-    "FormatEnum",
     "Language",
     "fixed_dict_open",
     "fixed_sequence_open",

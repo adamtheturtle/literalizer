@@ -20,7 +20,6 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
-from literalizer._language import FormatEnum
 
 if TYPE_CHECKING:
     import datetime
@@ -91,67 +90,57 @@ class Java:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
+            * ``date_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * ``DateFormat.JAVA`` — ``LocalDate.of(...)`` call,
+            * ``date_formats.JAVA`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
+            * ``datetime_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``DatetimeFormat.INSTANT`` — ``Instant.parse(...)`` call,
+            * ``datetime_formats.INSTANT`` — ``Instant.parse(...)`` call,
               e.g. ``Instant.parse("2024-01-15T12:30:00")``.
-            * ``DatetimeFormat.ZONED`` — ``ZonedDateTime.of(...)`` call,
+            * ``datetime_formats.ZONED`` — ``ZonedDateTime.of(...)`` call,
               e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
               ZoneId.of("UTC"))``.
     """
 
-    class DateFormat(enum.Enum):
+    class date_formats(enum.Enum):  # noqa: N801
         """Date formatting options for Java."""
 
         ISO = enum.member(value=format_date_iso)
         JAVA = enum.member(value=format_date_java)
 
-    class DatetimeFormat(enum.Enum):
+    class datetime_formats(enum.Enum):  # noqa: N801
         """Datetime formatting options for Java."""
 
         ISO = enum.member(value=format_datetime_iso)
         INSTANT = enum.member(value=format_datetime_java_instant)
         ZONED = enum.member(value=format_datetime_java_zoned)
 
-    class BytesFormat(enum.Enum):
+    class bytes_formats(enum.Enum):  # noqa: N801
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class SequenceFormat(enum.Enum):
+    class sequence_formats(enum.Enum):  # noqa: N801
         """Sequence type options for Java."""
 
         ARRAY = "array"
 
-    class SetFormat(enum.Enum):
+    class set_formats(enum.Enum):  # noqa: N801
         """Set type options for Java."""
 
         SET = "set"
 
-    bytes_formats = FormatEnum(name="BytesFormat")
-
-    set_formats = FormatEnum(name="SetFormat")
-
-    date_formats = FormatEnum(name="DateFormat")
-
-    datetime_formats = FormatEnum(name="DatetimeFormat")
-
-    sequence_formats = FormatEnum(name="SequenceFormat")
-
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: date_formats,
+        datetime_format: datetime_formats,
+        bytes_format: bytes_formats,
+        sequence_format: sequence_formats,
     ) -> None:
         """Initialize Java language specification."""
         self.sequence_format = sequence_format

@@ -18,7 +18,6 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import FormatEnum
 
 if TYPE_CHECKING:
     import datetime
@@ -62,48 +61,38 @@ class Norg:
     verbatim tag: ``* name`` then ``@code json`` / ``@end``.
     """
 
-    class DateFormat(enum.Enum):
+    class date_formats(enum.Enum):  # noqa: N801
         """Date format options for Norg."""
 
         ISO = enum.member(value=format_date_iso)
 
-    class DatetimeFormat(enum.Enum):
+    class datetime_formats(enum.Enum):  # noqa: N801
         """Datetime format options for Norg."""
 
         ISO = enum.member(value=format_datetime_iso)
 
-    class BytesFormat(enum.Enum):
+    class bytes_formats(enum.Enum):  # noqa: N801
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class SequenceFormat(enum.Enum):
+    class sequence_formats(enum.Enum):  # noqa: N801
         """Sequence type options for Norg."""
 
         ARRAY = "array"
 
-    class SetFormat(enum.Enum):
+    class set_formats(enum.Enum):  # noqa: N801
         """Set type options for Norg."""
 
         SET = "set"
 
-    bytes_formats = FormatEnum(name="BytesFormat")
-
-    set_formats = FormatEnum(name="SetFormat")
-
-    date_formats = FormatEnum(name="DateFormat")
-
-    datetime_formats = FormatEnum(name="DatetimeFormat")
-
-    sequence_formats = FormatEnum(name="SequenceFormat")
-
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: date_formats,
+        datetime_format: datetime_formats,
+        bytes_format: bytes_formats,
+        sequence_format: sequence_formats,
     ) -> None:
         """Initialize Norg language specification."""
         self.sequence_format = sequence_format

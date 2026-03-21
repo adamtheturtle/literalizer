@@ -22,7 +22,6 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import FormatEnum
 
 if TYPE_CHECKING:
     import datetime
@@ -125,40 +124,40 @@ class Python:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
+            * ``date_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * ``DateFormat.PYTHON`` — ``datetime.date`` constructor call,
+            * ``date_formats.PYTHON`` — ``datetime.date`` constructor call,
               e.g. ``datetime.date(year=2024, month=1, day=15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
+            * ``datetime_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``DatetimeFormat.PYTHON`` — ``datetime.datetime`` constructor
+            * ``datetime_formats.PYTHON`` — ``datetime.datetime`` constructor
               call, e.g. ``datetime.datetime(year=2024, month=1,
               day=15, hour=12, minute=30, second=0)``.
-            * ``DatetimeFormat.EPOCH`` — Unix epoch float,
+            * ``datetime_formats.EPOCH`` — Unix epoch float,
               e.g. ``1705312200.0``.
 
         bytes_format: How to format :class:`bytes` values.
 
-            * ``BytesFormat.HEX`` — lowercase hex string,
+            * ``bytes_formats.HEX`` — lowercase hex string,
               e.g. ``"48656c6c6f"``.
-            * ``BytesFormat.PYTHON`` — Python bytes literal,
+            * ``bytes_formats.PYTHON`` — Python bytes literal,
               e.g. ``b'Hello'``.
 
         sequence_format: Which Python sequence type to use.
 
-            * ``SequenceFormat.TUPLE`` — tuple literal,
+            * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
-            * ``SequenceFormat.LIST`` — list literal,
+            * ``sequence_formats.LIST`` — list literal,
               e.g. ``[1, 2, 3]``.
 
         set_format: Which Python set type to use.
 
-            * ``SetFormat.SET`` — mutable set literal,
+            * ``set_formats.SET`` — mutable set literal,
               e.g. ``{1, 2, 3}``.
-            * ``SetFormat.FROZENSET`` — immutable frozenset,
+            * ``set_formats.FROZENSET`` — immutable frozenset,
               e.g. ``frozenset({1, 2, 3})``.
 
         variable_type_hints: Whether to add inline type hints to
@@ -170,32 +169,32 @@ class Python:
               e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
-    class DateFormat(enum.Enum):
+    class date_formats(enum.Enum):  # noqa: N801
         """Date formatting options for Python."""
 
         ISO = enum.member(value=format_date_iso)
         PYTHON = enum.member(value=format_date_python)
 
-    class DatetimeFormat(enum.Enum):
+    class datetime_formats(enum.Enum):  # noqa: N801
         """Datetime formatting options for Python."""
 
         ISO = enum.member(value=format_datetime_iso)
         PYTHON = enum.member(value=format_datetime_python)
         EPOCH = enum.member(value=format_datetime_epoch)
 
-    class BytesFormat(enum.Enum):
+    class bytes_formats(enum.Enum):  # noqa: N801
         """Bytes formatting options for Python."""
 
         HEX = enum.member(value=format_bytes_hex)
         PYTHON = enum.member(value=format_bytes_python)
 
-    class SequenceFormat(enum.Enum):
+    class sequence_formats(enum.Enum):  # noqa: N801
         """Sequence type options for Python."""
 
         TUPLE = "tuple"
         LIST = "list"
 
-    class SetFormat(enum.Enum):
+    class set_formats(enum.Enum):  # noqa: N801
         """Set type options for Python."""
 
         SET = "set"
@@ -207,24 +206,14 @@ class Python:
         NONE = "none"
         INLINE = "inline"
 
-    bytes_formats = FormatEnum(name="BytesFormat")
-
-    set_formats = FormatEnum(name="SetFormat")
-
-    date_formats = FormatEnum(name="DateFormat")
-
-    datetime_formats = FormatEnum(name="DatetimeFormat")
-
-    sequence_formats = FormatEnum(name="SequenceFormat")
-
     def __init__(  # noqa: PLR0915  # pylint: disable=too-many-statements
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
-        set_format: SetFormat,
+        date_format: date_formats,
+        datetime_format: datetime_formats,
+        bytes_format: bytes_formats,
+        sequence_format: sequence_formats,
+        set_format: set_formats,
         variable_type_hints: VariableTypeHints,
     ) -> None:
         """Initialize Python language specification."""
@@ -235,7 +224,7 @@ class Python:
         self.sequence_open: Callable[[list[Value]], str]
         self.sequence_close: str
         self.single_element_trailing_comma: bool
-        if sequence_format == Python.SequenceFormat.LIST:
+        if sequence_format == Python.sequence_formats.LIST:
             self.sequence_open = fixed_sequence_open(open_str="[")
             self.sequence_close = "]"
             self.single_element_trailing_comma = False
@@ -264,7 +253,7 @@ class Python:
         self.set_open: str
         self.set_close: str
         self.empty_set: str | None
-        if set_format == Python.SetFormat.FROZENSET:
+        if set_format == Python.set_formats.FROZENSET:
             self.set_open = "frozenset({"
             self.set_close = "})"
             self.empty_set = "frozenset()"

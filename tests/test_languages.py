@@ -28,84 +28,84 @@ from literalizer.languages import (
 )
 
 COBOL = Cobol(
-    date_format=Cobol.DateFormat.ISO,
-    datetime_format=Cobol.DatetimeFormat.ISO,
-    bytes_format=Cobol.BytesFormat.HEX,
-    sequence_format=Cobol.SequenceFormat.SEQUENCE,
+    date_format=Cobol.date_formats.ISO,
+    datetime_format=Cobol.datetime_formats.ISO,
+    bytes_format=Cobol.bytes_formats.HEX,
+    sequence_format=Cobol.sequence_formats.SEQUENCE,
 )
 CPP = Cpp(
-    date_format=Cpp.DateFormat.ISO,
-    datetime_format=Cpp.DatetimeFormat.ISO,
-    bytes_format=Cpp.BytesFormat.HEX,
-    sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
+    date_format=Cpp.date_formats.ISO,
+    datetime_format=Cpp.datetime_formats.ISO,
+    bytes_format=Cpp.bytes_formats.HEX,
+    sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
 )
 FORTRAN = Fortran(
-    date_format=Fortran.DateFormat.ISO,
-    datetime_format=Fortran.DatetimeFormat.ISO,
-    bytes_format=Fortran.BytesFormat.HEX,
-    sequence_format=Fortran.SequenceFormat.LIST,
+    date_format=Fortran.date_formats.ISO,
+    datetime_format=Fortran.datetime_formats.ISO,
+    bytes_format=Fortran.bytes_formats.HEX,
+    sequence_format=Fortran.sequence_formats.LIST,
 )
 CSHARP = CSharp(
-    date_format=CSharp.DateFormat.ISO,
-    datetime_format=CSharp.DatetimeFormat.ISO,
-    bytes_format=CSharp.BytesFormat.HEX,
-    sequence_format=CSharp.SequenceFormat.ARRAY,
+    date_format=CSharp.date_formats.ISO,
+    datetime_format=CSharp.datetime_formats.ISO,
+    bytes_format=CSharp.bytes_formats.HEX,
+    sequence_format=CSharp.sequence_formats.ARRAY,
 )
 GO = Go(
-    date_format=Go.DateFormat.ISO,
-    datetime_format=Go.DatetimeFormat.ISO,
-    bytes_format=Go.BytesFormat.HEX,
-    sequence_format=Go.SequenceFormat.SLICE,
+    date_format=Go.date_formats.ISO,
+    datetime_format=Go.datetime_formats.ISO,
+    bytes_format=Go.bytes_formats.HEX,
+    sequence_format=Go.sequence_formats.SLICE,
 )
 JAVA = Java(
-    date_format=Java.DateFormat.ISO,
-    datetime_format=Java.DatetimeFormat.ISO,
-    bytes_format=Java.BytesFormat.HEX,
-    sequence_format=Java.SequenceFormat.ARRAY,
+    date_format=Java.date_formats.ISO,
+    datetime_format=Java.datetime_formats.ISO,
+    bytes_format=Java.bytes_formats.HEX,
+    sequence_format=Java.sequence_formats.ARRAY,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.ISO,
-    datetime_format=JavaScript.DatetimeFormat.ISO,
-    bytes_format=JavaScript.BytesFormat.HEX,
-    sequence_format=JavaScript.SequenceFormat.ARRAY,
+    date_format=JavaScript.date_formats.ISO,
+    datetime_format=JavaScript.datetime_formats.ISO,
+    bytes_format=JavaScript.bytes_formats.HEX,
+    sequence_format=JavaScript.sequence_formats.ARRAY,
 )
 KOTLIN = Kotlin(
-    date_format=Kotlin.DateFormat.ISO,
-    datetime_format=Kotlin.DatetimeFormat.ISO,
-    bytes_format=Kotlin.BytesFormat.HEX,
-    sequence_format=Kotlin.SequenceFormat.LIST,
+    date_format=Kotlin.date_formats.ISO,
+    datetime_format=Kotlin.datetime_formats.ISO,
+    bytes_format=Kotlin.bytes_formats.HEX,
+    sequence_format=Kotlin.sequence_formats.LIST,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.ISO,
+    datetime_format=Python.datetime_formats.ISO,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 RUBY = Ruby(
-    date_format=Ruby.DateFormat.ISO,
-    datetime_format=Ruby.DatetimeFormat.ISO,
-    bytes_format=Ruby.BytesFormat.HEX,
-    sequence_format=Ruby.SequenceFormat.ARRAY,
+    date_format=Ruby.date_formats.ISO,
+    datetime_format=Ruby.datetime_formats.ISO,
+    bytes_format=Ruby.bytes_formats.HEX,
+    sequence_format=Ruby.sequence_formats.ARRAY,
 )
 RUST = Rust(
-    date_format=Rust.DateFormat.ISO,
-    datetime_format=Rust.DatetimeFormat.ISO,
-    bytes_format=Rust.BytesFormat.HEX,
-    sequence_format=Rust.SequenceFormat.VEC,
+    date_format=Rust.date_formats.ISO,
+    datetime_format=Rust.datetime_formats.ISO,
+    bytes_format=Rust.bytes_formats.HEX,
+    sequence_format=Rust.sequence_formats.VEC,
 )
 TOML = Toml(
-    date_format=Toml.DateFormat.TOML,
-    datetime_format=Toml.DatetimeFormat.TOML,
-    bytes_format=Toml.BytesFormat.HEX,
-    sequence_format=Toml.SequenceFormat.ARRAY,
+    date_format=Toml.date_formats.TOML,
+    datetime_format=Toml.datetime_formats.TOML,
+    bytes_format=Toml.bytes_formats.HEX,
+    sequence_format=Toml.sequence_formats.ARRAY,
 )
 TYPESCRIPT = TypeScript(
-    date_format=TypeScript.DateFormat.ISO,
-    datetime_format=TypeScript.DatetimeFormat.ISO,
-    bytes_format=TypeScript.BytesFormat.HEX,
-    sequence_format=TypeScript.SequenceFormat.ARRAY,
+    date_format=TypeScript.date_formats.ISO,
+    datetime_format=TypeScript.datetime_formats.ISO,
+    bytes_format=TypeScript.bytes_formats.HEX,
+    sequence_format=TypeScript.sequence_formats.ARRAY,
 )
 
 
@@ -461,10 +461,10 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=Matlab(
-            date_format=Matlab.DateFormat.ISO,
-            datetime_format=Matlab.DatetimeFormat.ISO,
-            bytes_format=Matlab.BytesFormat.HEX,
-            sequence_format=Matlab.SequenceFormat.CELL_ARRAY,
+            date_format=Matlab.date_formats.ISO,
+            datetime_format=Matlab.datetime_formats.ISO,
+            bytes_format=Matlab.bytes_formats.HEX,
+            sequence_format=Matlab.sequence_formats.CELL_ARRAY,
         ),
         line_prefix="",
         indent="    ",
@@ -486,10 +486,10 @@ def test_matlab_dict_key_with_quote() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=Matlab(
-            date_format=Matlab.DateFormat.ISO,
-            datetime_format=Matlab.DatetimeFormat.ISO,
-            bytes_format=Matlab.BytesFormat.HEX,
-            sequence_format=Matlab.SequenceFormat.CELL_ARRAY,
+            date_format=Matlab.date_formats.ISO,
+            datetime_format=Matlab.datetime_formats.ISO,
+            bytes_format=Matlab.bytes_formats.HEX,
+            sequence_format=Matlab.sequence_formats.CELL_ARRAY,
         ),
         line_prefix="",
         indent="    ",

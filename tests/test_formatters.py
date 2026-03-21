@@ -35,18 +35,18 @@ from literalizer._formatters import (
 from literalizer.languages import Java, Python
 
 PYTHON = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.ISO,
+    datetime_format=Python.datetime_formats.ISO,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 JAVA = Java(
-    date_format=Java.DateFormat.ISO,
-    datetime_format=Java.DatetimeFormat.ISO,
-    bytes_format=Java.BytesFormat.HEX,
-    sequence_format=Java.SequenceFormat.ARRAY,
+    date_format=Java.date_formats.ISO,
+    datetime_format=Java.datetime_formats.ISO,
+    bytes_format=Java.bytes_formats.HEX,
+    sequence_format=Java.sequence_formats.ARRAY,
 )
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)

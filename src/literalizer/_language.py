@@ -12,42 +12,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-class FormatEnum:
-    """Descriptor that exposes a nested enum class at both class and
-    instance level.
-
-    Assign as a class variable in each language implementation::
-
-        class Python:
-            class SequenceFormat(enum.Enum):
-                TUPLE = "tuple"
-                LIST = "list"
-
-            sequence_formats = FormatEnum(name="SequenceFormat")
-
-    Consumers can then iterate the available formats via the class **or**
-    an instance::
-
-        for fmt in Python.sequence_formats:
-            ...
-    """
-
-    def __init__(self, name: str) -> None:
-        """Create a descriptor that returns the nested enum *name*."""
-        self._name = name
-
-    def __get__(
-        self,
-        obj: object,
-        objtype: type | None = None,
-    ) -> type[enum.Enum]:
-        """Return the nested enum class from *objtype* (or
-        ``type(obj)``).
-        """
-        cls = objtype if objtype is not None else type(obj)
-        return getattr(cls, self._name)  # type: ignore[no-any-return]
-
-
 @runtime_checkable
 class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
@@ -61,30 +25,40 @@ class Language(Protocol):
     required attributes.
     """
 
-    bytes_formats: type[enum.Enum]
-    """Enum class whose members list the bytes formats this language
-    supports.
-    """
+    @property
+    def bytes_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the bytes formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    sequence_formats: type[enum.Enum]
-    """Enum class whose members list the sequence formats this language
-    supports.
-    """
+    @property
+    def sequence_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the sequence formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    set_formats: type[enum.Enum]
-    """Enum class whose members list the set formats this language
-    supports.
-    """
+    @property
+    def set_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the set formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    date_formats: type[enum.Enum]
-    """Enum class whose members list the date formats this language
-    supports.
-    """
+    @property
+    def date_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the date formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    datetime_formats: type[enum.Enum]
-    """Enum class whose members list the datetime formats this language
-    supports.
-    """
+    @property
+    def datetime_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the datetime formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     null_literal: str
     """The literal representing null/None."""

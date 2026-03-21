@@ -19,7 +19,6 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import FormatEnum
 
 if TYPE_CHECKING:
     import datetime
@@ -59,18 +58,18 @@ class Rust:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` — ISO 8601 string,
+            * ``date_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
-            * ``DateFormat.RUST`` —
+            * ``date_formats.RUST`` —
               ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
               Requires the ``chrono`` crate.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` — ISO 8601 string,
+            * ``datetime_formats.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
-            * ``DatetimeFormat.RUST`` —
+            * ``datetime_formats.RUST`` —
               ``NaiveDateTime::new(...)`` call, e.g.
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
@@ -78,64 +77,54 @@ class Rust:
 
         sequence_format: Which Rust sequence type to use.
 
-            * ``SequenceFormat.VEC`` — ``vec![]`` macro,
+            * ``sequence_formats.VEC`` — ``vec![]`` macro,
               e.g. ``vec![1, 2, 3]``.  Because ``Vec`` is
               homogeneous, mixed-type sequences have all elements
               coerced to strings.
-            * ``SequenceFormat.ARRAY`` — fixed-size array literal,
+            * ``sequence_formats.ARRAY`` — fixed-size array literal,
               e.g. ``[1, 2, 3]``.  Because Rust arrays are
               homogeneous, mixed-type sequences have all elements
               coerced to strings.
-            * ``SequenceFormat.TUPLE`` — tuple literal,
+            * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
     """
 
-    class DateFormat(enum.Enum):
+    class date_formats(enum.Enum):  # noqa: N801
         """Date format options for Rust."""
 
         ISO = enum.member(value=format_date_iso)
         RUST = enum.member(value=format_date_rust)
 
-    class DatetimeFormat(enum.Enum):
+    class datetime_formats(enum.Enum):  # noqa: N801
         """Datetime format options for Rust."""
 
         ISO = enum.member(value=format_datetime_iso)
         RUST = enum.member(value=format_datetime_rust)
 
-    class BytesFormat(enum.Enum):
+    class bytes_formats(enum.Enum):  # noqa: N801
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class SequenceFormat(enum.Enum):
+    class sequence_formats(enum.Enum):  # noqa: N801
         """Sequence type options for Rust."""
 
         VEC = "vec"
         ARRAY = "array"
         TUPLE = "tuple"
 
-    class SetFormat(enum.Enum):
+    class set_formats(enum.Enum):  # noqa: N801
         """Set type options for Rust."""
 
         HASH_SET = "hash_set"
 
-    bytes_formats = FormatEnum(name="BytesFormat")
-
-    set_formats = FormatEnum(name="SetFormat")
-
-    date_formats = FormatEnum(name="DateFormat")
-
-    datetime_formats = FormatEnum(name="DatetimeFormat")
-
-    sequence_formats = FormatEnum(name="SequenceFormat")
-
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: date_formats,
+        datetime_format: datetime_formats,
+        bytes_format: bytes_formats,
+        sequence_format: sequence_formats,
     ) -> None:
         """Initialize Rust language specification."""
         self.sequence_format = sequence_format
@@ -144,10 +133,10 @@ class Rust:
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str]
         self.sequence_close: str
-        if sequence_format == Rust.SequenceFormat.TUPLE:
+        if sequence_format == Rust.sequence_formats.TUPLE:
             self.sequence_open = fixed_sequence_open(open_str="(")
             self.sequence_close = ")"
-        elif sequence_format == Rust.SequenceFormat.ARRAY:
+        elif sequence_format == Rust.sequence_formats.ARRAY:
             self.sequence_open = fixed_sequence_open(open_str="[")
             self.sequence_close = "]"
         else:
@@ -189,7 +178,7 @@ class Rust:
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.coerce_heterogeneous_scalars_to_strings: bool = (
-            sequence_format != Rust.SequenceFormat.TUPLE
+            sequence_format != Rust.sequence_formats.TUPLE
         )
         self.coerce_heterogeneous_sibling_lists_to_strings = False
         self.coerce_heterogeneous_dict_values_to_strings = False
