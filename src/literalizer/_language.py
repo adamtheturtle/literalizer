@@ -203,14 +203,6 @@ class Language(Protocol):
     to strings so that every element shares a single type.
     """
 
-    coerce_heterogeneous_sibling_lists_to_strings: bool
-    """Whether to coerce sibling lists with heterogeneous scalar element
-    types so that every inner element becomes a string.
-
-    For example, ``[[1, 2], ["a", "b"]]`` becomes
-    ``[["1", "2"], ["a", "b"]]``.
-    """
-
     coerce_heterogeneous_dict_values_to_strings: bool
     """Whether to coerce dict values that span multiple type families
     (e.g. strings and lists) to strings so every value shares a single

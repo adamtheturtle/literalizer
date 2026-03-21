@@ -178,9 +178,16 @@ def _rust_collections_use(content: str) -> str:
 @beartype
 def _rust_chrono_use(content: str) -> str:
     """Return a chrono use statement if the content uses chrono types."""
+    names: list[str] = []
     if "NaiveDate" in content:
-        return "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
-    return ""
+        names.append("NaiveDate")
+    if "NaiveDateTime" in content:
+        names.append("NaiveDateTime")
+    if "NaiveTime" in content:
+        names.append("NaiveTime")
+    if not names:
+        return ""
+    return f"use chrono::{{{', '.join(names)}}};\n"
 
 
 @beartype
@@ -400,8 +407,8 @@ def _wrap_rust_chrono(content: str) -> str:
     indented = content.replace("\n", "\n    ")
     return (
         _rust_collections_use(content=content)
-        + "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
-        "fn main() {\n"
+        + _rust_chrono_use(content=content)
+        + "fn main() {\n"
         f"    let _ = {indented};\n"
         "}"
     )

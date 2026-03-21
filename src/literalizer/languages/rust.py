@@ -195,9 +195,6 @@ class Rust(metaclass=HasFormatEnums):
         self.coerce_heterogeneous_scalars_to_strings: bool = (
             sequence_format != Rust.sequence_formats.TUPLE
         )
-        self.coerce_heterogeneous_sibling_lists_to_strings: bool = (
-            sequence_format != Rust.SequenceFormat.TUPLE
-        )
         self.coerce_heterogeneous_dict_values_to_strings: bool = (
             sequence_format != Rust.SequenceFormat.TUPLE
         )

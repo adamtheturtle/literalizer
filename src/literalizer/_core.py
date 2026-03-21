@@ -508,10 +508,7 @@ def _apply_coercions(
     if spec.coerce_heterogeneous_scalars_to_strings:
         if error_on_coercion:
             _check_heterogeneous(data=data)
-            if (
-                spec.coerce_heterogeneous_sibling_lists_to_strings
-                and _has_heterogeneous_sibling_lists(data=data)
-            ):
+            if _has_heterogeneous_sibling_lists(data=data):
                 msg = (
                     "Collection contains heterogeneous scalar types "
                     "that would be coerced to strings"
@@ -519,10 +516,7 @@ def _apply_coercions(
                 raise HeterogeneousCoercionError(msg)
         else:
             data = _coerce_heterogeneous_scalars(data=data)
-            if (  # pragma: no branch
-                spec.coerce_heterogeneous_sibling_lists_to_strings
-            ):
-                data = _coerce_heterogeneous_sibling_lists(data=data)
+            data = _coerce_heterogeneous_sibling_lists(data=data)
     if spec.coerce_heterogeneous_dict_values_to_strings:
         data = _coerce_mixed_dict_values(data=data)
     if spec.coerce_heterogeneous_list_values_to_strings:
