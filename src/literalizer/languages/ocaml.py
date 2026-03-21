@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 @beartype
 def _to_val(value: str) -> str:
     """Convert a value to an OCaml union type expression."""
@@ -65,12 +64,10 @@ def _to_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
-
 @beartype
 def _format_ocaml_dict_entry(key: str, value: str) -> str:
     """Format an OCaml dict entry as a ``(key, OXxx value)`` tuple."""
     return f"({key}, {_to_val(value=value)})"
-
 
 @beartype
 def _format_ocaml_omap_entry(key: str, value: str) -> str:
@@ -79,14 +76,12 @@ def _format_ocaml_omap_entry(key: str, value: str) -> str:
     """
     return f"({key}, {_to_val(value=value)})"
 
-
 @beartype
 def _format_ocaml_set_entry(item: str) -> str:
     """Format an OCaml set entry with the appropriate ``val_t``
     constructor.
     """
     return _to_val(value=item)
-
 
 @beartype
 def _format_ocaml_sequence_entry(item: str) -> str:
@@ -95,21 +90,17 @@ def _format_ocaml_sequence_entry(item: str) -> str:
     """
     return _to_val(value=item)
 
-
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an OCaml variable declaration."""
     return f"let {name} : val_t = {_to_val(value=value)}"
-
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an OCaml variable assignment."""
     return _format_variable_declaration(name=name, value=value)
 
-
 _string_format: Callable[[str], str] = format_string_backslash
-
 
 @beartype
 class OCaml(metaclass=HasFormatEnums):
@@ -190,10 +181,11 @@ class OCaml(metaclass=HasFormatEnums):
         self.true_literal = "OBool true"
         self.false_literal = "OBool false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="OMap ["
         )
@@ -202,20 +194,13 @@ class OCaml(metaclass=HasFormatEnums):
             _format_ocaml_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
         self.comment_prefix = "(*"
         self.comment_suffix = " *)"

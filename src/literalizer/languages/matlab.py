@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 
 _CONTROL_CHAR_THRESHOLD = 32
 
-
 @beartype
 def _decode_matlab_string_expr(expr: str) -> str:
     r"""Decode a MATLAB string expression back to its raw string value.
@@ -52,7 +51,6 @@ def _decode_matlab_string_expr(expr: str) -> str:
         else:
             raw.append(string_seg.replace('""', '"').replace("\\\\", "\\"))
     return "".join(raw)
-
 
 @beartype
 def _matlab_char_key(s: str) -> str:
@@ -78,7 +76,6 @@ def _matlab_char_key(s: str) -> str:
         return parts[0]
     return "[" + ", ".join(parts) + "]"
 
-
 @beartype
 def _format_matlab_dict_entry(key: str, value: str) -> str:
     """Format a MATLAB ``struct`` field as a ``'key', value`` pair.
@@ -100,21 +97,17 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
         value = f"{{{value}}}"
     return f"{key_expr}, {value}"
 
-
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a MATLAB variable declaration."""
     return f"{name} = {value};"
-
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a MATLAB variable assignment."""
     return f"{name} = {value};"
 
-
 _string_format: Callable[[str], str] = format_string_matlab
-
 
 @beartype
 class Matlab(metaclass=HasFormatEnums):
@@ -195,10 +188,11 @@ class Matlab(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="struct("
         )
@@ -207,20 +201,13 @@ class Matlab(metaclass=HasFormatEnums):
             _format_matlab_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = "struct()"
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

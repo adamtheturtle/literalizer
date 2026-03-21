@@ -32,24 +32,20 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 @beartype
 def _format_python_omap_entry(key: str, value: str) -> str:
     """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
     return f"({key}, {value})"
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Python variable declaration."""
     return f"{name} = {value}"
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Python variable assignment."""
     return f"{name} = {value}"
-
 
 _EXACT_TYPE_HINTS: dict[str, str] = {
     "True": "bool",
@@ -71,7 +67,6 @@ _PREFIX_TYPE_HINTS: tuple[tuple[str, str], ...] = (
     ("'", "str"),
 )
 
-
 @beartype
 def _infer_python_type_hint(value: str) -> str:
     """Infer a Python type hint string from a formatted value."""
@@ -89,7 +84,6 @@ def _infer_python_type_hint(value: str) -> str:
     except ValueError:
         return "float"
     return "int"
-
 
 @beartype
 def _is_dict_literal(*, value: str) -> bool:
@@ -112,13 +106,11 @@ def _is_dict_literal(*, value: str) -> bool:
     rest = content[i + 1 :]
     return rest.startswith((": ", ":\n"))
 
-
 @beartype
 def _format_variable_declaration_inline_hint(name: str, value: str) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _infer_python_type_hint(value=value)
     return f"{name}: {hint} = {value}"
-
 
 @beartype
 class Python(metaclass=HasFormatEnums):
@@ -264,12 +256,10 @@ class Python(metaclass=HasFormatEnums):
         self.true_literal = "True"
         self.false_literal = "False"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
-        )
-        self.sequence_close: str = fmt.close
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
         )
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="{"
@@ -287,11 +277,7 @@ class Python(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

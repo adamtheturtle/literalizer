@@ -36,7 +36,6 @@ _CSHARP_SCALAR_TYPES: dict[str, str] = {
     "number": "double",
 }
 
-
 @beartype
 def _csharp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a C# type name, recursively."""
@@ -56,7 +55,6 @@ def _csharp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "double"
     return None
 
-
 @beartype
 def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a C# array opener."""
@@ -64,7 +62,6 @@ def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"new {type_name}[] {{"
-
 
 @beartype
 def _csharp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
@@ -74,24 +71,20 @@ def _csharp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
         return None
     return f"new Dictionary<string, {type_name}> {{"
 
-
 @beartype
 def _format_csharp_dict_entry(key: str, value: str) -> str:
     """Format a C# dictionary indexer entry."""
     return f"[{key}] = {value}"
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a C# variable declaration."""
     return f"var {name} = {value};"
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a C# variable assignment."""
     return f"{name} = {value};"
-
 
 @beartype
 class CSharp(metaclass=HasFormatEnums):
@@ -184,11 +177,12 @@ class CSharp(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_csharp_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
             schema_to_opener=_csharp_dict_schema_to_opener,
             fallback="new Dictionary<string, object> {",
@@ -198,9 +192,6 @@ class CSharp(metaclass=HasFormatEnums):
             _format_csharp_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -208,11 +199,7 @@ class CSharp(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

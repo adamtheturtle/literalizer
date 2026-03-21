@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a named Norg code block.
@@ -39,7 +38,6 @@ def _format_variable_declaration(name: str, value: str) -> str:
     verbatim tag (``@code json`` / ``@end``) for the value.
     """
     return f"* {name}\n@code json\n{value}\n@end"
-
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
@@ -50,7 +48,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"* {name}\n@code json\n{value}\n@end"
-
 
 @beartype
 class Norg(metaclass=HasFormatEnums):
@@ -141,10 +138,11 @@ class Norg(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="{"
         )
@@ -153,20 +151,13 @@ class Norg(metaclass=HasFormatEnums):
             dict_entry_with_separator(separator=": ")
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

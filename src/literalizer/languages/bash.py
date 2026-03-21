@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 @beartype
 def _to_bash_value(item: str) -> str:
     """Quote an item if it is a nested array or dict expression.
@@ -47,18 +46,15 @@ def _to_bash_value(item: str) -> str:
         return f'"{escaped}"'
     return item
 
-
 @beartype
 def _format_bash_sequence_entry(item: str) -> str:
     """Format a Bash indexed-array element, quoting nested collections."""
     return _to_bash_value(item=item)
 
-
 @beartype
 def _format_bash_dict_entry(key: str, value: str) -> str:
     """Format a Bash associative-array entry as ``[key]=value``."""
     return f"[{key}]={_to_bash_value(item=value)}"
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -70,15 +66,12 @@ def _format_variable_declaration(name: str, value: str) -> str:
     )
     return f"declare{flag} {name}={value}"
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Bash variable assignment."""
     return f"{name}={value}"
 
-
 _string_format: Callable[[str], str] = format_string_backslash
-
 
 @beartype
 class Bash(metaclass=HasFormatEnums):
@@ -156,13 +149,14 @@ class Bash(metaclass=HasFormatEnums):
         """Initialize Bash language specification."""
         self.sequence_format = sequence_format
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.null_literal = '""'
         self.true_literal = "true"
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="("
         )
@@ -171,20 +165,13 @@ class Bash(metaclass=HasFormatEnums):
             _format_bash_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             _format_bash_sequence_entry
         )

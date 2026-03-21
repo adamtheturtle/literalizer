@@ -31,7 +31,6 @@ if TYPE_CHECKING:
 _BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
 _MIN_QUOTED_KEY_LENGTH = 2
 
-
 @beartype
 def _format_toml_dict_entry(key: str, value: str) -> str:
     """Format a TOML dict entry as ``key = value``.
@@ -50,7 +49,6 @@ def _format_toml_dict_entry(key: str, value: str) -> str:
             return f"{inner} = {value}"
     return f"{key} = {value}"
 
-
 @beartype
 def _format_toml_date(value: datetime.date) -> str:
     """Format a date as a TOML local date literal (unquoted).
@@ -58,7 +56,6 @@ def _format_toml_date(value: datetime.date) -> str:
     Example: ``datetime.date(2024, 1, 15)`` → ``2024-01-15``.
     """
     return value.isoformat()
-
 
 @beartype
 def _format_toml_datetime(value: datetime.datetime) -> str:
@@ -70,12 +67,10 @@ def _format_toml_datetime(value: datetime.datetime) -> str:
     """
     return value.isoformat()
 
-
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a TOML key-value assignment as ``name = value``."""
     return f"{name} = {value}"
-
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
@@ -86,7 +81,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"{name} = {value}"
-
 
 @beartype
 class Toml(metaclass=HasFormatEnums):
@@ -176,13 +170,14 @@ class Toml(metaclass=HasFormatEnums):
         """Initialize TOML language specification."""
         self.sequence_format = sequence_format
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.null_literal = '""'
         self.true_literal = "true"
         self.false_literal = "false"
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="{"
         )
@@ -191,20 +186,13 @@ class Toml(metaclass=HasFormatEnums):
             _format_toml_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

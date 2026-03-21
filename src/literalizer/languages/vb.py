@@ -35,7 +35,6 @@ _VB_SCALAR_TYPES: dict[str, str] = {
     "number": "Double",
 }
 
-
 @beartype
 def _vb_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a VB.NET type name, recursively."""
@@ -55,7 +54,6 @@ def _vb_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "Double"
     return None
 
-
 @beartype
 def _vb_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a VB.NET array opener."""
@@ -64,24 +62,20 @@ def _vb_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
         return None
     return f"New {type_name}() {{"
 
-
 @beartype
 def _format_vb_dict_entry(key: str, value: str) -> str:
     """Format a VB.NET dictionary initializer entry."""
     return f"{{{key}, {value}}}"
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a VB.NET variable declaration."""
     return f"Dim {name} = {value}"
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a VB.NET variable assignment."""
     return f"{name} = {value}"
-
 
 @beartype
 class VisualBasic(metaclass=HasFormatEnums):
@@ -170,11 +164,12 @@ class VisualBasic(metaclass=HasFormatEnums):
         self.true_literal = "True"
         self.false_literal = "False"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_vb_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="New Dictionary(Of String, Object) From {",
         )
@@ -183,20 +178,13 @@ class VisualBasic(metaclass=HasFormatEnums):
             _format_vb_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_vb
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

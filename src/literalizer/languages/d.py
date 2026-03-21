@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 @beartype
 def _to_val(value: str) -> str:
     """Wrap a pre-formatted value string in a D ``JSONValue(...)`` call.
@@ -63,18 +62,15 @@ def _to_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
-
 @beartype
 def _format_d_dict_entry(key: str, value: str) -> str:
     """Format a D associative-array entry as ``key: JSONValue(value)``."""
     return f"{key}: {_to_val(value=value)}"
 
-
 @beartype
 def _format_d_sequence_entry(item: str) -> str:
     """Format a D array entry as a ``JSONValue(item)`` call."""
     return _to_val(value=item)
-
 
 @beartype
 def _format_d_set_entry(item: str) -> str:
@@ -83,7 +79,6 @@ def _format_d_set_entry(item: str) -> str:
     """
     return _to_val(value=item)
 
-
 @beartype
 def _format_d_omap_entry(key: str, value: str) -> str:
     """Format a D ordered-map entry as a two-element ``JSONValue``
@@ -91,21 +86,17 @@ def _format_d_omap_entry(key: str, value: str) -> str:
     """
     return f"JSONValue([JSONValue({key}), {_to_val(value=value)}])"
 
-
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a D ``auto`` variable declaration using ``JSONValue``."""
     return f"auto {name} = {_to_val(value=value)};"
-
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a D assignment to an existing variable."""
     return f"{name} = {_to_val(value=value)};"
 
-
 _string_format: Callable[[str], str] = format_string_backslash
-
 
 @beartype
 class D(metaclass=HasFormatEnums):
@@ -186,10 +177,11 @@ class D(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="JSONValue(["
         )
@@ -198,20 +190,13 @@ class D(metaclass=HasFormatEnums):
             _format_d_dict_entry
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = 'parseJSON("{}")'
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             _format_d_sequence_entry
         )

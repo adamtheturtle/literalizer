@@ -37,7 +37,6 @@ _KOTLIN_SCALAR_OPENERS: dict[str, str] = {
     "number": "doubleArrayOf(",
 }
 
-
 @beartype
 def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Kotlin collection opener."""
@@ -57,14 +56,12 @@ def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
         return "listOf<Any?>("
     return None
 
-
 _KOTLIN_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
     "boolean": "Boolean",
     "integer": "Int",
     "number": "Double",
 }
-
 
 @beartype
 def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
@@ -80,7 +77,6 @@ def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return None
     return None
 
-
 @beartype
 def _kotlin_dict_schema_to_opener(
     value_schema: dict[str, Any],
@@ -91,24 +87,20 @@ def _kotlin_dict_schema_to_opener(
         return None
     return f"mapOf<String, {type_name}>("
 
-
 @beartype
 def _format_kotlin_omap_entry(key: str, value: str) -> str:
     """Format a Kotlin ordered-map entry."""
     return f"{key} to {value}"
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Kotlin variable declaration."""
     return f"val {name} = {value}"
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Kotlin variable assignment."""
     return f"{name} = {value}"
-
 
 @beartype
 class Kotlin(metaclass=HasFormatEnums):
@@ -201,11 +193,12 @@ class Kotlin(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_kotlin_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
             schema_to_opener=_kotlin_dict_schema_to_opener,
             fallback="mapOf<String, Any?>(",
@@ -215,9 +208,6 @@ class Kotlin(metaclass=HasFormatEnums):
             dict_entry_with_separator(separator=" to ")
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -227,11 +217,7 @@ class Kotlin(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = (
             format_string_backslash_dollar
         )
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

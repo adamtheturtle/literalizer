@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 @beartype
 def _format_yaml_date(value: datetime.date) -> str:
     """Format a date as a YAML native date literal (unquoted).
@@ -36,7 +35,6 @@ def _format_yaml_date(value: datetime.date) -> str:
     Example: ``datetime.date(2024, 1, 15)`` → ``2024-01-15``.
     """
     return value.isoformat()
-
 
 @beartype
 def _format_yaml_datetime(value: datetime.datetime) -> str:
@@ -47,12 +45,10 @@ def _format_yaml_datetime(value: datetime.datetime) -> str:
     """
     return value.isoformat()
 
-
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a YAML key-value assignment as ``name: value``."""
     return f"{name}: {value}"
-
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
@@ -63,7 +59,6 @@ def _format_variable_assignment(name: str, value: str) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"{name}: {value}"
-
 
 @beartype
 class Yaml(metaclass=HasFormatEnums):
@@ -152,10 +147,11 @@ class Yaml(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="{"
         )
@@ -164,20 +160,13 @@ class Yaml(metaclass=HasFormatEnums):
             dict_entry_with_separator(separator=": ")
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

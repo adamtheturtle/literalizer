@@ -36,7 +36,6 @@ _GO_SCALAR_TYPES: dict[str, str] = {
     "number": "float64",
 }
 
-
 @beartype
 def _go_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Go type name, recursively."""
@@ -56,7 +55,6 @@ def _go_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "float64"
     return None
 
-
 @beartype
 def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Go slice opener."""
@@ -64,7 +62,6 @@ def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"[]{type_name}{{"
-
 
 @beartype
 def _go_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
@@ -74,7 +71,6 @@ def _go_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
         return None
     return f"map[string]{type_name}{{"
 
-
 @beartype
 def _format_go_set_entry(item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
@@ -83,24 +79,20 @@ def _format_go_set_entry(item: str) -> str:
     """
     return f"{item}: struct{{}}{{}}"
 
-
 @beartype
 def _format_go_omap_entry(key: str, value: str) -> str:
     """Format a Go ordered-map entry as a ``{key, value}`` pair."""
     return f"{{{key}, {value}}}"
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Go variable declaration."""
     return f"{name} := {value}"
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Go variable assignment."""
     return f"{name} = {value}"
-
 
 @beartype
 class Go(metaclass=HasFormatEnums):
@@ -195,11 +187,12 @@ class Go(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_go_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
             schema_to_opener=_go_dict_schema_to_opener,
             fallback="map[string]any{",
@@ -209,9 +202,6 @@ class Go(metaclass=HasFormatEnums):
             dict_entry_with_separator(separator=": ")
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -219,11 +209,7 @@ class Go(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 _COBOL_CONTROL_CHAR_REPLACEMENTS: dict[str, str] = {
     "\n": " ",
     "\r": " ",
@@ -35,7 +34,6 @@ _COBOL_CONTROL_CHAR_REPLACEMENTS: dict[str, str] = {
 }
 
 _MAX_COBOL_LEVEL: int = 49
-
 
 @beartype
 def _format_string_cobol(value: str) -> str:
@@ -54,7 +52,6 @@ def _format_string_cobol(value: str) -> str:
     escaped = cleaned.replace('"', '""')
     return f'"{escaped}"'
 
-
 @beartype
 def _is_data_entry(s: str) -> bool:
     """Return True if *s* looks like a COBOL DATA DIVISION entry.
@@ -63,7 +60,6 @@ def _is_data_entry(s: str) -> bool:
     space (e.g. ``05 FILLER ...``).
     """
     return bool(re.match(pattern=r"^\d{2} ", string=s))
-
 
 @beartype
 def _pic_from_value(value: str) -> str:
@@ -84,7 +80,6 @@ def _pic_from_value(value: str) -> str:
     # Float or other numeric
     return "COMP-2"
 
-
 @beartype
 def _to_cobol_entry(value: str, name: str, level: int) -> str:
     """Wrap a scalar literal in a COBOL DATA DIVISION entry.
@@ -93,7 +88,6 @@ def _to_cobol_entry(value: str, name: str, level: int) -> str:
     """
     pic = _pic_from_value(value=value)
     return f"{level:02d} {name} {pic} VALUE {value}."
-
 
 @beartype
 def _bump_levels(content: str) -> str:
@@ -115,7 +109,6 @@ def _bump_levels(content: str) -> str:
             result.append(line)
     return "\n".join(result)
 
-
 @beartype
 def _format_cobol_sequence_entry(item: str) -> str:
     """Format a sequence item as a COBOL DATA DIVISION entry.
@@ -130,7 +123,6 @@ def _format_cobol_sequence_entry(item: str) -> str:
     if _is_data_entry(s=item.strip()):
         return item.strip()
     return _to_cobol_entry(value=item, name="FILLER", level=5)
-
 
 @beartype
 def _key_to_cobol_name(key_str: str) -> str:
@@ -152,7 +144,6 @@ def _key_to_cobol_name(key_str: str) -> str:
     name = name[:28].strip("-") or "FILLER"
     return f"F-{name}"
 
-
 @beartype
 def _format_cobol_dict_entry(key: str, value: str) -> str:
     """Format a COBOL DATA DIVISION entry for a dict key-value pair.
@@ -171,7 +162,6 @@ def _format_cobol_dict_entry(key: str, value: str) -> str:
     pic = _pic_from_value(value=value)
     return f"05 {name} {pic} VALUE {value}."
 
-
 @beartype
 def _to_cobol_name(python_name: str) -> str:
     """Convert a Python-style identifier to a COBOL data name.
@@ -179,7 +169,6 @@ def _to_cobol_name(python_name: str) -> str:
     Converts the name to upper case and replaces underscores with hyphens.
     """
     return python_name.upper().replace("_", "-")
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -196,7 +185,6 @@ def _format_variable_declaration(name: str, value: str) -> str:
     pic = _pic_from_value(value=scalar)
     return f"01 {cob_name} {pic} VALUE {scalar}."
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a COBOL PROCEDURE DIVISION assignment statement.
@@ -212,9 +200,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
         return f"INITIALIZE {cob_name}."
     return f"MOVE {scalar} TO {cob_name}."
 
-
 _string_format: Callable[[str], str] = _format_string_cobol
-
 
 @beartype
 class Cobol(metaclass=HasFormatEnums):
@@ -298,12 +284,13 @@ class Cobol(metaclass=HasFormatEnums):
         self.sequence_format = sequence_format
         self.null_literal = "SPACES"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.true_literal = '"TRUE"'
         self.false_literal = '"FALSE"'
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str=""
         )
@@ -312,20 +299,13 @@ class Cobol(metaclass=HasFormatEnums):
             _format_cobol_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = "05 FILLER PIC X(1) VALUE SPACES."
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             _format_cobol_sequence_entry
         )

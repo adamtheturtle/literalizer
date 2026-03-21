@@ -36,7 +36,6 @@ _SCALA_SCALAR_TYPES: dict[str, str] = {
     "number": "Double",
 }
 
-
 @beartype
 def _scala_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Scala type name, recursively."""
@@ -56,7 +55,6 @@ def _scala_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "Double"
     return None
 
-
 @beartype
 def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Scala collection opener."""
@@ -64,7 +62,6 @@ def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"Array[{type_name}]("
-
 
 @beartype
 def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
@@ -74,27 +71,22 @@ def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
         return None
     return f"Map[String, {type_name}]("
 
-
 @beartype
 def _format_scala_omap_entry(key: str, value: str) -> str:
     """Format a Scala ``ListMap`` entry as a ``key -> value`` pair."""
     return f"{key} -> {value}"
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Scala variable declaration."""
     return f"val {name} = {value}"
 
-
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Scala variable assignment."""
     return f"{name} = {value}"
 
-
 _string_format: Callable[[str], str] = format_string_backslash
-
 
 @beartype
 class Scala(metaclass=HasFormatEnums):
@@ -175,11 +167,12 @@ class Scala(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_scala_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
             schema_to_opener=_scala_dict_schema_to_opener,
             fallback="Map(",
@@ -189,20 +182,13 @@ class Scala(metaclass=HasFormatEnums):
             dict_entry_with_separator(separator=" -> ")
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

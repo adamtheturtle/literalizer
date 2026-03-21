@@ -374,13 +374,14 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 @beartype
 def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     """Format a set value as a native language literal."""
-    if not value and spec.empty_set is not None:
-        return spec.empty_set
+    if not value and spec.set_format_config.empty_set is not None:
+        return spec.set_format_config.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [spec.format_set_entry(item) for item in formatted]
     joined = spec.element_separator.join(entries)
-    return spec.set_open + joined + spec.set_close
+    set_cfg = spec.set_format_config
+    return set_cfg.open_str + joined + set_cfg.close
 
 
 @beartype
@@ -428,8 +429,9 @@ def _format_value(*, value: Value, spec: Language) -> str:
         return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
-        if not value and spec.empty_sequence is not None:
-            return spec.empty_sequence
+        seq_cfg = spec.sequence_format_config
+        if not value and seq_cfg.empty_sequence is not None:
+            return seq_cfg.empty_sequence
         items = [
             spec.format_sequence_entry(_format_value(value=v, spec=spec))
             for v in value
@@ -437,9 +439,9 @@ def _format_value(*, value: Value, spec: Language) -> str:
         joined = spec.element_separator.join(items)
         # Some languages (e.g. Python) require a trailing comma on
         # single-element sequences to avoid syntactic ambiguity.
-        if len(items) == 1 and spec.single_element_trailing_comma:
+        if len(items) == 1 and seq_cfg.single_element_trailing_comma:
             joined += spec.element_separator.strip()
-        return f"{spec.sequence_open(value)}{joined}{spec.sequence_close}"
+        return f"{spec.sequence_open(value)}{joined}{seq_cfg.close}"
 
     return _format_scalar(value=value, spec=spec)
 
@@ -463,11 +465,11 @@ def _wrap_body(
         opening = f"{line_prefix}{spec.dict_open(data)}"
         closing = f"{close_prefix}{spec.dict_close}"
     elif isinstance(data, set):
-        opening = f"{line_prefix}{spec.set_open}"
-        closing = f"{close_prefix}{spec.set_close}"
+        opening = f"{line_prefix}{spec.set_format_config.open_str}"
+        closing = f"{close_prefix}{spec.set_format_config.close}"
     else:
         opening = f"{line_prefix}{spec.sequence_open(data)}"
-        closing = f"{close_prefix}{spec.sequence_close}"
+        closing = f"{close_prefix}{spec.sequence_format_config.close}"
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 

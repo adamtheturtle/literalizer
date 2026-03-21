@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 @beartype
 def _to_val(value: str) -> str:
     """Convert a value to an occam-pi MOBILE LIT expression."""
@@ -55,7 +54,6 @@ def _to_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
-
 @beartype
 def _format_occam_dict_entry(key: str, value: str) -> str:
     """Format an occam-pi dict or omap entry as a ``MOBILE LIT(lit.pair;
@@ -64,14 +62,12 @@ def _format_occam_dict_entry(key: str, value: str) -> str:
     val = _to_val(value=value)
     return f"MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {val})"
 
-
 @beartype
 def _format_occam_list_entry(item: str) -> str:
     """Format an occam-pi list entry with the appropriate ``LIT``
     constructor.
     """
     return _to_val(value=item)
-
 
 @beartype
 def _format_occam_set_entry(item: str) -> str:
@@ -80,21 +76,17 @@ def _format_occam_set_entry(item: str) -> str:
     """
     return _to_val(value=item)
 
-
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an occam-pi variable declaration."""
     return f"VAL MOBILE LIT {name} IS {value}:"
-
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an occam-pi variable assignment."""
     return f"{name} := {value}"
 
-
 _string_format: Callable[[str], str] = format_string_backslash
-
 
 @beartype
 class Occam(metaclass=HasFormatEnums):
@@ -175,10 +167,11 @@ class Occam(metaclass=HasFormatEnums):
         self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
         self.false_literal = "MOBILE LIT(lit.bool; FALSE)"
         fmt = sequence_format.value
+        self.sequence_format_config = fmt
+        self.set_format_config = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT ["
         )
@@ -187,20 +180,13 @@ class Occam(metaclass=HasFormatEnums):
             _format_occam_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             _format_occam_list_entry
         )
