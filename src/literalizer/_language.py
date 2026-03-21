@@ -71,6 +71,16 @@ class Language(Protocol):
     required attributes.
     """
 
+    # Each language class defines PascalCase nested Enum classes
+    # (``DateFormats``, ``SequenceFormats``, …) and snake_case class
+    # attributes that alias them (``date_formats = DateFormats``, …).
+    # The aliases look redundant but are required: nested classes are
+    # class-level (ClassVar) attributes, while Protocol properties are
+    # instance-level.  No single declaration style (``@property``,
+    # ``ClassVar``, or plain annotation) satisfies mypy, pyright, *and*
+    # pyrefly simultaneously for PascalCase names that shadow nested
+    # classes.  The snake_case aliases sidestep the issue entirely.
+
     @property
     def bytes_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the bytes formats this language
