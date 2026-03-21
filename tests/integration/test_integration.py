@@ -2344,23 +2344,107 @@ def test_golden_file_combined_variable_forms(
     )
 
 
-@beartype
-def _check_format_variant_golden_file(
-    variant_name: str,
-    variant: _Variant,
-    case_dir: Path,
+@dataclasses.dataclass
+class _VariantCase:
+    """A format-variant golden-file test case."""
+
+    variant_name: str
+    variant: _Variant
+    case_dir: Path
+    variable_name: str | None = None
+
+
+def _build_variant_cases() -> list[_VariantCase]:
+    """Collect all format-variant golden-file test cases."""
+    cases: list[_VariantCase] = []
+    for variant_name, variant in _DATE_VARIANTS.items():
+        cases.append(
+            _VariantCase(
+                variant_name=variant_name,
+                variant=variant,
+                case_dir=_CASES_DIR / "dates",
+            )
+        )
+    for variant_name, variant in _SEQUENCE_VARIANTS.items():
+        cases.append(
+            _VariantCase(
+                variant_name=variant_name,
+                variant=variant,
+                case_dir=_CASES_DIR / "simple_sequence",
+            )
+        )
+    set_variants: dict[str, _Variant] = {
+        "python_frozenset": _Variant(
+            spec=literalizer.languages.Python(
+                date_format=literalizer.languages.Python.DateFormat.ISO,
+                datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
+                bytes_format=literalizer.languages.Python.BytesFormat.HEX,
+                sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
+                set_format=literalizer.languages.Python.SetFormat.FROZENSET,
+                variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
+            ),
+            extension=".py",
+            wrap=_wrap_identity,
+        ),
+    }
+    for variant_name, variant in set_variants.items():
+        cases.append(
+            _VariantCase(
+                variant_name=variant_name,
+                variant=variant,
+                case_dir=_CASES_DIR / "set",
+            )
+        )
+    variable_type_hints_variants: dict[str, _Variant] = {
+        "python_inline": _Variant(
+            spec=literalizer.languages.Python(
+                date_format=literalizer.languages.Python.DateFormat.ISO,
+                datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
+                bytes_format=literalizer.languages.Python.BytesFormat.HEX,
+                sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
+                set_format=literalizer.languages.Python.SetFormat.SET,
+                variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
+            ),
+            extension=".py",
+            wrap=_wrap_python,
+        ),
+    }
+    for variant_name, variant in variable_type_hints_variants.items():
+        cases.append(
+            _VariantCase(
+                variant_name=variant_name,
+                variant=variant,
+                case_dir=_CASES_DIR / "simple_dict",
+                variable_name=_VARIABLE_NAME,
+            )
+        )
+    return cases
+
+
+_FORMAT_VARIANT_CASES = _build_variant_cases()
+
+
+@pytest.mark.parametrize(
+    argnames="variant_case",
+    argvalues=_FORMAT_VARIANT_CASES,
+    ids=[c.variant_name for c in _FORMAT_VARIANT_CASES],
+)
+def test_format_variant_golden_file(
+    variant_case: _VariantCase,
     file_regression: FileRegressionFixture,
-    variable_name: str | None = None,
 ) -> None:
-    """Run a format-variant golden-file check."""
-    yaml_string = (case_dir / "input.yaml").read_text()
+    """Test format-variant options (dates, sequences, sets, type hints)
+    against golden files.
+    """
+    variant = variant_case.variant
+    yaml_string = (variant_case.case_dir / "input.yaml").read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=variant.spec,
         line_prefix="",
         indent="    ",
         wrap=True,
-        variable_name=variable_name,
+        variable_name=variant_case.variable_name,
         new_variable=True,
         error_on_coercion=False,
     )
@@ -2368,124 +2452,6 @@ def _check_format_variant_golden_file(
     file_regression.check(
         contents=wrapped + "\n",
         extension=variant.extension,
-        fullpath=case_dir / (variant_name + variant.extension),
-    )
-
-
-_DATES_CASE_DIR = _CASES_DIR / "dates"
-
-
-@pytest.mark.parametrize(
-    argnames=("variant_name", "variant"),
-    argvalues=list(_DATE_VARIANTS.items()),
-    ids=list(_DATE_VARIANTS),
-)
-def test_date_format_golden_file(
-    variant_name: str,
-    variant: _Variant,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Test native date format variants against golden files."""
-    _check_format_variant_golden_file(
-        variant_name=variant_name,
-        variant=variant,
-        case_dir=_DATES_CASE_DIR,
-        file_regression=file_regression,
-    )
-
-
-_SEQUENCE_CASE_DIR = _CASES_DIR / "simple_sequence"
-
-
-@pytest.mark.parametrize(
-    argnames=("variant_name", "variant"),
-    argvalues=list(_SEQUENCE_VARIANTS.items()),
-    ids=list(_SEQUENCE_VARIANTS),
-)
-def test_sequence_format_golden_file(
-    variant_name: str,
-    variant: _Variant,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Test sequence type variants against golden files."""
-    _check_format_variant_golden_file(
-        variant_name=variant_name,
-        variant=variant,
-        case_dir=_SEQUENCE_CASE_DIR,
-        file_regression=file_regression,
-    )
-
-
-_SET_VARIANTS: dict[str, _Variant] = {
-    "python_frozenset": _Variant(
-        spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.DateFormat.ISO,
-            datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
-            bytes_format=literalizer.languages.Python.BytesFormat.HEX,
-            sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
-            set_format=literalizer.languages.Python.SetFormat.FROZENSET,
-            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
-        ),
-        extension=".py",
-        wrap=_wrap_identity,
-    ),
-}
-
-_SET_CASE_DIR = _CASES_DIR / "set"
-
-
-@pytest.mark.parametrize(
-    argnames=("variant_name", "variant"),
-    argvalues=list(_SET_VARIANTS.items()),
-    ids=list(_SET_VARIANTS),
-)
-def test_set_format_golden_file(
-    variant_name: str,
-    variant: _Variant,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Test set type variants against golden files."""
-    _check_format_variant_golden_file(
-        variant_name=variant_name,
-        variant=variant,
-        case_dir=_SET_CASE_DIR,
-        file_regression=file_regression,
-    )
-
-
-_VARIABLE_TYPE_HINTS_VARIANTS: dict[str, _Variant] = {
-    "python_inline": _Variant(
-        spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.DateFormat.ISO,
-            datetime_format=literalizer.languages.Python.DatetimeFormat.ISO,
-            bytes_format=literalizer.languages.Python.BytesFormat.HEX,
-            sequence_format=literalizer.languages.Python.SequenceFormat.TUPLE,
-            set_format=literalizer.languages.Python.SetFormat.SET,
-            variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
-        ),
-        extension=".py",
-        wrap=_wrap_python,
-    ),
-}
-
-_VARIABLE_TYPE_HINTS_CASE_DIR = _CASES_DIR / "simple_dict"
-
-
-@pytest.mark.parametrize(
-    argnames=("variant_name", "variant"),
-    argvalues=list(_VARIABLE_TYPE_HINTS_VARIANTS.items()),
-    ids=list(_VARIABLE_TYPE_HINTS_VARIANTS),
-)
-def test_variable_type_hints_golden_file(
-    variant_name: str,
-    variant: _Variant,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Test Python inline type hints on variable declarations."""
-    _check_format_variant_golden_file(
-        variant_name=variant_name,
-        variant=variant,
-        case_dir=_VARIABLE_TYPE_HINTS_CASE_DIR,
-        file_regression=file_regression,
-        variable_name=_VARIABLE_NAME,
+        fullpath=variant_case.case_dir
+        / (variant_case.variant_name + variant.extension),
     )
