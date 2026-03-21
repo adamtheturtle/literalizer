@@ -106,7 +106,7 @@ class Go:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
             * ``DateFormat.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
@@ -114,7 +114,7 @@ class Go:
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 12, 30, 0, 0,

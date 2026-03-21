@@ -84,21 +84,21 @@ class R:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
             * ``DateFormat.R`` — ``as.Date(...)`` call,
               e.g. ``as.Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.R`` — ``as.POSIXct(...)`` call,
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
 
         empty_dict_key: How to handle empty-string dict keys.
 
-            * ``EmptyDictKey.POSITIONAL`` (default) — emit as an unnamed
+            * ``EmptyDictKey.POSITIONAL`` — emit as an unnamed
               positional list element.
             * ``EmptyDictKey.ERROR`` — raise
               :class:`~literalizer.exceptions.EmptyDictKeyError`.

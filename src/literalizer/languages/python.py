@@ -124,14 +124,14 @@ class Python:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
             * ``DateFormat.PYTHON`` — ``datetime.date`` constructor call,
               e.g. ``datetime.date(year=2024, month=1, day=15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.PYTHON`` — ``datetime.datetime`` constructor
               call, e.g. ``datetime.datetime(year=2024, month=1,
@@ -141,21 +141,21 @@ class Python:
 
         bytes_format: How to format :class:`bytes` values.
 
-            * ``BytesFormat.HEX`` (default) — lowercase hex string,
+            * ``BytesFormat.HEX`` — lowercase hex string,
               e.g. ``"48656c6c6f"``.
             * ``BytesFormat.PYTHON`` — Python bytes literal,
               e.g. ``b'Hello'``.
 
         sequence_format: Which Python sequence type to use.
 
-            * ``SequenceFormat.TUPLE`` (default) — tuple literal,
+            * ``SequenceFormat.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
             * ``SequenceFormat.LIST`` — list literal,
               e.g. ``[1, 2, 3]``.
 
         set_format: Which Python set type to use.
 
-            * ``SetFormat.SET`` (default) — mutable set literal,
+            * ``SetFormat.SET`` — mutable set literal,
               e.g. ``{1, 2, 3}``.
             * ``SetFormat.FROZENSET`` — immutable frozenset,
               e.g. ``frozenset({1, 2, 3})``.
@@ -163,7 +163,7 @@ class Python:
         variable_type_hints: Whether to add inline type hints to
             variable declarations.
 
-            * ``VariableTypeHints.NONE`` (default) — bare assignment,
+            * ``VariableTypeHints.NONE`` — bare assignment,
               e.g. ``my_var = {...}``.
             * ``VariableTypeHints.INLINE`` — with type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.

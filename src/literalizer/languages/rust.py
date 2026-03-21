@@ -58,7 +58,7 @@ class Rust:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
             * ``DateFormat.RUST`` —
               ``NaiveDate::from_ymd_opt(...)`` call,
@@ -67,7 +67,7 @@ class Rust:
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.RUST`` —
               ``NaiveDateTime::new(...)`` call, e.g.
@@ -77,7 +77,7 @@ class Rust:
 
         sequence_format: Which Rust sequence type to use.
 
-            * ``SequenceFormat.VEC`` (default) — ``vec![]`` macro,
+            * ``SequenceFormat.VEC`` — ``vec![]`` macro,
               e.g. ``vec![1, 2, 3]``.  Because ``Vec`` is
               homogeneous, mixed-type sequences have all elements
               coerced to strings.

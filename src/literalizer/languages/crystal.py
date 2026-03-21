@@ -47,7 +47,7 @@ class Crystal:
     Args:
         sequence_format: Which Crystal sequence type to use.
 
-            * ``SequenceFormat.ARRAY`` (default) — array literal,
+            * ``SequenceFormat.ARRAY`` — array literal,
               e.g. ``[1, 2, 3]``.
             * ``SequenceFormat.TUPLE`` — tuple literal,
               e.g. ``{1, 2, 3}``.
