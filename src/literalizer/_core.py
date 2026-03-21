@@ -517,9 +517,8 @@ def _apply_coercions(
         else:
             data = _coerce_heterogeneous_scalars(data=data)
             data = _coerce_heterogeneous_sibling_lists(data=data)
-    if spec.coerce_heterogeneous_dict_values_to_strings:
+    if spec.coerce_heterogeneous_collection_values_to_strings:
         data = _coerce_mixed_dict_values(data=data)
-    if spec.coerce_heterogeneous_list_values_to_strings:
         data = _coerce_mixed_list_values(data=data)
     return data
 

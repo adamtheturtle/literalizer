@@ -203,22 +203,14 @@ class Language(Protocol):
     to strings so that every element shares a single type.
     """
 
-    coerce_heterogeneous_dict_values_to_strings: bool
-    """Whether to coerce dict values that span multiple type families
-    (e.g. strings and lists) to strings so every value shares a single
+    coerce_heterogeneous_collection_values_to_strings: bool
+    """Whether to coerce dict values and list elements that span
+    multiple type families to strings so every value shares a single
     type.
 
     For example, ``{"name": "Bob", "tags": ["admin"]}`` becomes
-    ``{"name": "Bob", "tags": "[\"admin\"]"}``.
-    """
-
-    coerce_heterogeneous_list_values_to_strings: bool
-    """Whether to coerce list elements that span multiple type families
-    (e.g. scalars and nested collections) to strings so every element
-    shares a single type.
-
-    For example, ``[true, "hi", [1, 2]]`` becomes
-    ``["True", "hi", "[1, 2]"]``.
+    ``{"name": "Bob", "tags": "[\"admin\"]"}``, and
+    ``[true, "hi", [1, 2]]`` becomes ``["True", "hi", "[1, 2]"]``.
     """
 
     supports_collection_comments: bool
