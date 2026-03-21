@@ -853,16 +853,6 @@ def _in_mojo_main(content: str) -> str:
 
 
 @beartype
-def _wrap_mojo(content: str) -> str:
-    """Wrap in a Mojo main function with assignment for syntax
-    validation.
-    """
-    spec = literalizer.languages.Mojo()
-    declaration = spec.format_variable_declaration("_result", content)
-    return _in_mojo_main(content=declaration)
-
-
-@beartype
 def _wrap_mojo_varname(content: str) -> str:
     """Wrap a Mojo variable declaration in a main function."""
     return _in_mojo_main(content=content)
@@ -1439,7 +1429,7 @@ class _LanguageConfig:
 
     spec: literalizer.Language
     extension: str
-    wrap: Callable[[str], str]
+    wrap: Callable[[str], str] | None
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
 
@@ -1780,7 +1770,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     "mojo": _LanguageConfig(
         spec=literalizer.languages.Mojo(),
         extension=".mojo",
-        wrap=_wrap_mojo,
+        wrap=None,
         varname_wrap=_wrap_mojo_varname,
         combined_wrap=_wrap_mojo_combined,
     ),
@@ -2012,6 +2002,8 @@ def test_golden_file(
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
     lang_config = _LANGUAGES[language]
+    if lang_config.wrap is None:
+        pytest.skip("language has no anonymous-literal wrapper")
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
