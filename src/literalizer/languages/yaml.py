@@ -87,6 +87,23 @@ class Yaml:
 
         SET = "set"
 
+    @property
+    def bytes_formats(self) -> type[BytesFormat]:
+        """Enum class whose members list the available bytes formats."""
+        return type(self).BytesFormat
+
+    @property
+    def set_formats(self) -> type[SetFormat]:
+        """Enum class whose members list the available set formats."""
+        return type(self).SetFormat
+
+    @property
+    def sequence_formats(self) -> type[SequenceFormat]:
+        """Enum class whose members list the available sequence
+        formats.
+        """
+        return type(self).SequenceFormat
+
     def __init__(
         self,
         *,

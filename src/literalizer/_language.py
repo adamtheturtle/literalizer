@@ -21,6 +21,27 @@ class Language(Protocol):
     required attributes.
     """
 
+    @property
+    def bytes_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the bytes formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def sequence_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the sequence formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def set_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the set formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     null_literal: str
     """The literal representing null/None."""
 
