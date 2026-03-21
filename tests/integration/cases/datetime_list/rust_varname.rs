@@ -16,6 +16,8 @@ macro_rules! vec {
     }};
 }
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+impl From<NaiveDate> for V { fn from(_: NaiveDate) -> Self { V } }
+impl From<NaiveDateTime> for V { fn from(_: NaiveDateTime) -> Self { V } }
 fn main() {
     let my_data = vec![
         NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap()),

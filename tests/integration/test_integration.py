@@ -204,9 +204,17 @@ def _rust_array_spec() -> literalizer.languages.Rust:
 
 @beartype
 def _rust_chrono_use(content: str) -> str:
-    """Return a chrono use statement if the content uses chrono types."""
+    """Return chrono use statement and From impls if content uses chrono
+    types.
+    """
     if "NaiveDate" in content:
-        return "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
+        return (
+            "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
+            "impl From<NaiveDate> for V "
+            "{ fn from(_: NaiveDate) -> Self { V } }\n"
+            "impl From<NaiveDateTime> for V "
+            "{ fn from(_: NaiveDateTime) -> Self { V } }\n"
+        )
     return ""
 
 
