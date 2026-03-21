@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class SequenceFormat(Protocol):
-    """Protocol for sequence format enum members."""
+    """Protocol for sequence format Enum members."""
 
     @property
     def supports_heterogeneity(self) -> bool:

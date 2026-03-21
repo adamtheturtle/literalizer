@@ -224,7 +224,7 @@ class Python(metaclass=HasFormatEnums):
     sequence_formats = SequenceFormats
     set_formats = SetFormats
 
-    def __init__(  # pylint: disable=too-many-statements
+    def __init__(
         self,
         *,
         date_format: DateFormats = DateFormats.PYTHON,
