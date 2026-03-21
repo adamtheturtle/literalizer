@@ -5,11 +5,10 @@ from literalizer._core import (
     literalize_yaml,
 )
 from literalizer._formatters import fixed_dict_open, fixed_sequence_open
-from literalizer._language import Language, LanguageType
+from literalizer._language import Language
 
 __all__ = [
     "Language",
-    "LanguageType",
     "fixed_dict_open",
     "fixed_sequence_open",
     "literalize_json",

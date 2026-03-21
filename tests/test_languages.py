@@ -6,6 +6,7 @@ import textwrap
 
 import pytest
 
+import literalizer.languages
 from literalizer import (
     Language,
     literalize_json,
@@ -834,6 +835,13 @@ def test_language_class_has_bytes_format_enum(
     assert len(format_enum) >= 1
 
 
+def test_bytes_formats_covers_all_languages() -> None:
+    """_BYTES_FORMATS includes an entry for every language in __all__."""
+    covered = {fmt.__qualname__.split(".")[0] for fmt in _BYTES_FORMATS}
+    expected = set(literalizer.languages.__all__)
+    assert covered == expected
+
+
 @pytest.mark.parametrize(
     argnames="format_enum",
     argvalues=_SEQUENCE_FORMATS,
@@ -849,6 +857,15 @@ def test_language_class_has_sequence_format_enum(
     assert len(format_enum) >= 1
 
 
+def test_sequence_formats_covers_all_languages() -> None:
+    """_SEQUENCE_FORMATS includes an entry for every language in
+    __all__.
+    """
+    covered = {fmt.__qualname__.split(".")[0] for fmt in _SEQUENCE_FORMATS}
+    expected = set(literalizer.languages.__all__)
+    assert covered == expected
+
+
 @pytest.mark.parametrize(
     argnames="format_enum",
     argvalues=_SET_FORMATS,
@@ -862,3 +879,10 @@ def test_language_class_has_set_format_enum(
     """
     assert issubclass(format_enum, enum.Enum)
     assert len(format_enum) >= 1
+
+
+def test_set_formats_covers_all_languages() -> None:
+    """_SET_FORMATS includes an entry for every language in __all__."""
+    covered = {fmt.__qualname__.split(".")[0] for fmt in _SET_FORMATS}
+    expected = set(literalizer.languages.__all__)
+    assert covered == expected

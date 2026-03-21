@@ -3,7 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable
-from typing import ClassVar, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from literalizer._types import Value
 
@@ -193,21 +193,3 @@ class Language(Protocol):
     def sequence_format(self) -> enum.Enum:
         """The sequence format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
-
-
-class LanguageType(Protocol):
-    """Protocol for language *classes* (not instances).
-
-    Declares the class-level format enums that every language class exposes.
-    Use ``type[LanguageType]`` when you need typed access to
-    ``SomeLang.SetFormat``, ``SomeLang.BytesFormat``, etc.
-    """
-
-    BytesFormat: ClassVar[type[enum.Enum]]
-    """Enum of bytes formatting options for this language."""
-
-    SequenceFormat: ClassVar[type[enum.Enum]]
-    """Enum of sequence type options for this language."""
-
-    SetFormat: ClassVar[type[enum.Enum]]
-    """Enum of set type options for this language."""
