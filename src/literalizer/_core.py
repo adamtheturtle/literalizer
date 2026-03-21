@@ -519,7 +519,9 @@ def _apply_coercions(
                 raise HeterogeneousCoercionError(msg)
         else:
             data = _coerce_heterogeneous_scalars(data=data)
-            if spec.coerce_heterogeneous_sibling_lists_to_strings:
+            if (  # pragma: no branch
+                spec.coerce_heterogeneous_sibling_lists_to_strings
+            ):
                 data = _coerce_heterogeneous_sibling_lists(data=data)
     if spec.coerce_heterogeneous_dict_values_to_strings:
         data = _coerce_mixed_dict_values(data=data)
