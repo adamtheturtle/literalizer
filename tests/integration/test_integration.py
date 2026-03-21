@@ -17,7 +17,7 @@ from __future__ import annotations
 import dataclasses
 import enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from beartype import beartype
@@ -1428,13 +1428,14 @@ class _Variant:
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
 
+    lang_cls: type[Any]
     spec: literalizer.Language
     extension: str
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
-    date_wrap: Callable[[str], str] | None = None
-    set_wrap: Callable[[str], str] | None = None
+    date_wrap: Callable[[str], str] | None
+    set_wrap: Callable[[str], str] | None
 
 
 @beartype
@@ -1519,55 +1520,77 @@ def _wrap_cobol_combined(declaration: str, assignment: str) -> str:
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
+        lang_cls=literalizer.languages.Ada,
         spec=literalizer.languages.Ada(),
         extension=".adb",
         wrap=_wrap_ada,
         varname_wrap=_wrap_ada_varname,
         combined_wrap=_wrap_ada_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "bash": _LanguageConfig(
+        lang_cls=literalizer.languages.Bash,
         spec=literalizer.languages.Bash(),
         extension=".sh",
         wrap=_wrap_bash,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "c": _LanguageConfig(
+        lang_cls=literalizer.languages.C,
         spec=literalizer.languages.C(),
         extension=".c",
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
         combined_wrap=_wrap_c_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "cobol": _LanguageConfig(
+        lang_cls=literalizer.languages.Cobol,
         spec=literalizer.languages.Cobol(),
         extension=".cob",
         wrap=_wrap_cobol,
         varname_wrap=_wrap_cobol_varname,
         combined_wrap=_wrap_cobol_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "d": _LanguageConfig(
+        lang_cls=literalizer.languages.D,
         spec=literalizer.languages.D(),
         extension=".d",
         wrap=_wrap_d,
         varname_wrap=_wrap_d_varname,
         combined_wrap=_wrap_d_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "common_lisp": _LanguageConfig(
+        lang_cls=literalizer.languages.CommonLisp,
         spec=literalizer.languages.CommonLisp(),
         extension=".lisp",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "clojure": _LanguageConfig(
+        lang_cls=literalizer.languages.Clojure,
         spec=literalizer.languages.Clojure(),
         extension=".clj",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "python": _LanguageConfig(
+        lang_cls=literalizer.languages.Python,
         spec=literalizer.languages.Python(),
         extension=".py",
         wrap=_wrap_python,
@@ -1577,282 +1600,384 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         set_wrap=_wrap_identity,
     ),
     "javascript": _LanguageConfig(
+        lang_cls=literalizer.languages.JavaScript,
         spec=literalizer.languages.JavaScript(),
         extension=".js",
         wrap=_wrap_js,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_js_combined,
         date_wrap=_wrap_js,
+        set_wrap=None,
     ),
     "typescript": _LanguageConfig(
+        lang_cls=literalizer.languages.TypeScript,
         spec=literalizer.languages.TypeScript(),
         extension=".ts",
         wrap=_wrap_js,
         varname_wrap=_wrap_ts_varname,
         combined_wrap=_wrap_ts_combined,
         date_wrap=_wrap_js,
+        set_wrap=None,
     ),
     "kotlin": _LanguageConfig(
+        lang_cls=literalizer.languages.Kotlin,
         spec=literalizer.languages.Kotlin(),
         extension=".kts",
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_kotlin_varname,
         combined_wrap=_wrap_kotlin_combined,
         date_wrap=_wrap_kotlin_time,
+        set_wrap=None,
     ),
     "ruby": _LanguageConfig(
+        lang_cls=literalizer.languages.Ruby,
         spec=literalizer.languages.Ruby(),
         extension=".rb",
         wrap=_wrap_ruby,
         varname_wrap=_wrap_ruby,
         combined_wrap=lambda d, a: _wrap_ruby(content=d + "\n" + a),
         date_wrap=_wrap_ruby_date,
+        set_wrap=None,
     ),
     "go": _LanguageConfig(
+        lang_cls=literalizer.languages.Go,
         spec=literalizer.languages.Go(),
         extension=".go",
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
         combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
         date_wrap=_wrap_go_time,
+        set_wrap=None,
     ),
     "java": _LanguageConfig(
+        lang_cls=literalizer.languages.Java,
         spec=literalizer.languages.Java(),
         extension=".java",
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
         combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
         date_wrap=_wrap_java_time,
+        set_wrap=None,
     ),
     "csharp": _LanguageConfig(
+        lang_cls=literalizer.languages.CSharp,
         spec=literalizer.languages.CSharp(),
         extension=".cs",
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
         combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
         date_wrap=_wrap_csharp_date,
+        set_wrap=None,
     ),
     "dart": _LanguageConfig(
+        lang_cls=literalizer.languages.Dart,
         spec=literalizer.languages.Dart(),
         extension=".dart",
         wrap=_wrap_dart,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_dart_combined,
         date_wrap=_wrap_dart,
+        set_wrap=None,
     ),
     "swift": _LanguageConfig(
+        lang_cls=literalizer.languages.Swift,
         spec=literalizer.languages.Swift(),
         extension=".swift",
         wrap=_wrap_swift,
         varname_wrap=_wrap_swift_varname,
         combined_wrap=_wrap_swift_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "cpp": _LanguageConfig(
+        lang_cls=literalizer.languages.Cpp,
         spec=literalizer.languages.Cpp(),
         extension=".cpp",
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
         combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
         date_wrap=_wrap_cpp_chrono,
+        set_wrap=None,
     ),
     "rust": _LanguageConfig(
+        lang_cls=literalizer.languages.Rust,
         spec=literalizer.languages.Rust(),
         extension=".rs",
         wrap=_wrap_rust,
         varname_wrap=_wrap_rust_varname,
         combined_wrap=_wrap_rust_combined,
         date_wrap=_wrap_rust,
+        set_wrap=None,
     ),
     "haskell": _LanguageConfig(
+        lang_cls=literalizer.languages.Haskell,
         spec=literalizer.languages.Haskell(),
         extension=".hs",
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
         combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
+        date_wrap=None,
+        set_wrap=None,
     ),
     "hcl": _LanguageConfig(
+        lang_cls=literalizer.languages.Hcl,
         spec=literalizer.languages.Hcl(),
         extension=".hcl",
         wrap=_wrap_hcl,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "julia": _LanguageConfig(
+        lang_cls=literalizer.languages.Julia,
         spec=literalizer.languages.Julia(),
         extension=".jl",
         wrap=_wrap_julia,
         varname_wrap=_wrap_julia,
         combined_wrap=lambda d, a: _wrap_julia(content=d + "\n" + a),
         date_wrap=_wrap_julia_dates,
+        set_wrap=None,
     ),
     "lua": _LanguageConfig(
+        lang_cls=literalizer.languages.Lua,
         spec=literalizer.languages.Lua(),
         extension=".lua",
         wrap=_wrap_lua,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "perl": _LanguageConfig(
+        lang_cls=literalizer.languages.Perl,
         spec=literalizer.languages.Perl(),
         extension=".pl",
         wrap=_wrap_perl,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "php": _LanguageConfig(
+        lang_cls=literalizer.languages.Php,
         spec=literalizer.languages.Php(),
         extension=".php",
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
         combined_wrap=lambda d, a: _wrap_php_varname(content=d + "\n" + a),
+        date_wrap=None,
+        set_wrap=None,
     ),
     "elixir": _LanguageConfig(
+        lang_cls=literalizer.languages.Elixir,
         spec=literalizer.languages.Elixir(),
         extension=".ex",
         wrap=_wrap_elixir,
         varname_wrap=_wrap_elixir_varname,
         combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
+        date_wrap=None,
+        set_wrap=None,
     ),
     "erlang": _LanguageConfig(
+        lang_cls=literalizer.languages.Erlang,
         spec=literalizer.languages.Erlang(),
         extension=".erl",
         wrap=_wrap_erlang,
         varname_wrap=_wrap_erlang_varname,
         combined_wrap=lambda d, _a: _wrap_erlang_varname(content=d),
+        date_wrap=None,
+        set_wrap=None,
     ),
     "fsharp": _LanguageConfig(
+        lang_cls=literalizer.languages.FSharp,
         spec=literalizer.languages.FSharp(),
         extension=".fs",
         wrap=_wrap_fsharp,
         varname_wrap=_wrap_fsharp_varname,
         combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
+        date_wrap=None,
+        set_wrap=None,
     ),
     "ocaml": _LanguageConfig(
+        lang_cls=literalizer.languages.OCaml,
         spec=literalizer.languages.OCaml(),
         extension=".ml",
         wrap=_wrap_ocaml,
         varname_wrap=_wrap_ocaml_varname,
         combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
+        date_wrap=None,
+        set_wrap=None,
     ),
     "occam": _LanguageConfig(
+        lang_cls=literalizer.languages.Occam,
         spec=literalizer.languages.Occam(),
         extension=".occ",
         wrap=_wrap_occam,
         varname_wrap=_wrap_occam_varname,
         combined_wrap=lambda d, _a: _wrap_occam_varname(content=d),
+        date_wrap=None,
+        set_wrap=None,
     ),
     "groovy": _LanguageConfig(
+        lang_cls=literalizer.languages.Groovy,
         spec=literalizer.languages.Groovy(),
         extension=".groovy",
         wrap=_wrap_groovy,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "scala": _LanguageConfig(
+        lang_cls=literalizer.languages.Scala,
         spec=literalizer.languages.Scala(),
         extension=".scala",
         wrap=_wrap_scala,
         varname_wrap=_wrap_scala_varname,
         combined_wrap=_wrap_scala_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "r": _LanguageConfig(
+        lang_cls=literalizer.languages.R,
         spec=literalizer.languages.R(),
         extension=".R",
         wrap=_wrap_r,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
         date_wrap=_wrap_r,
+        set_wrap=None,
     ),
     "racket": _LanguageConfig(
+        lang_cls=literalizer.languages.Racket,
         spec=literalizer.languages.Racket(),
         extension=".rkt",
         wrap=_wrap_racket,
         varname_wrap=_wrap_racket,
         combined_wrap=_wrap_racket_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "crystal": _LanguageConfig(
+        lang_cls=literalizer.languages.Crystal,
         spec=literalizer.languages.Crystal(),
         extension=".cr",
         wrap=_wrap_crystal,
         varname_wrap=_wrap_crystal_varname,
         combined_wrap=_wrap_crystal_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "matlab": _LanguageConfig(
+        lang_cls=literalizer.languages.Matlab,
         spec=literalizer.languages.Matlab(),
         extension=".m",
         wrap=_wrap_matlab,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "mojo": _LanguageConfig(
+        lang_cls=literalizer.languages.Mojo,
         spec=literalizer.languages.Mojo(),
         extension=".mojo",
         wrap=_wrap_mojo,
         varname_wrap=_wrap_mojo_varname,
         combined_wrap=_wrap_mojo_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "nim": _LanguageConfig(
+        lang_cls=literalizer.languages.Nim,
         spec=literalizer.languages.Nim(),
         extension=".nim",
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "norg": _LanguageConfig(
+        lang_cls=literalizer.languages.Norg,
         spec=literalizer.languages.Norg(),
         extension=".norg",
         wrap=_wrap_norg,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "vb": _LanguageConfig(
+        lang_cls=literalizer.languages.VisualBasic,
         spec=literalizer.languages.VisualBasic(),
         extension=".vb",
         wrap=_wrap_vb,
         varname_wrap=_wrap_vb_varname,
         combined_wrap=_wrap_vb_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "zig": _LanguageConfig(
+        lang_cls=literalizer.languages.Zig,
         spec=literalizer.languages.Zig(),
         extension=".zig",
         wrap=_wrap_zig,
         varname_wrap=_wrap_zig_varname,
         combined_wrap=_wrap_zig_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "powershell": _LanguageConfig(
+        lang_cls=literalizer.languages.PowerShell,
         spec=literalizer.languages.PowerShell(),
         extension=".ps1",
         wrap=_wrap_powershell,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "toml": _LanguageConfig(
+        lang_cls=literalizer.languages.Toml,
         spec=literalizer.languages.Toml(),
         extension=".toml",
         wrap=_wrap_toml,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "objective_c": _LanguageConfig(
+        lang_cls=literalizer.languages.ObjectiveC,
         spec=literalizer.languages.ObjectiveC(),
         extension=".m",
         wrap=_wrap_objc,
         varname_wrap=_wrap_objc_varname,
         combined_wrap=_wrap_objc_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "fortran": _LanguageConfig(
+        lang_cls=literalizer.languages.Fortran,
         spec=literalizer.languages.Fortran(),
         extension=".f90",
         wrap=_wrap_fortran,
         varname_wrap=_wrap_fortran_varname,
         combined_wrap=_wrap_fortran_combined,
+        date_wrap=None,
+        set_wrap=None,
     ),
     "yaml": _LanguageConfig(
+        lang_cls=literalizer.languages.Yaml,
         spec=literalizer.languages.Yaml(),
         extension=".yaml",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+        date_wrap=None,
+        set_wrap=None,
     ),
 }
 
@@ -1868,11 +1993,10 @@ def _build_date_variants() -> dict[str, _Variant]:
         if lang_config.date_wrap is None:
             continue
         spec = lang_config.spec
-        lang_cls = cast("Any", type(spec))
         for fmt in list(spec.datetime_formats):
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
-                spec=lang_cls(datetime_format=fmt),
+                spec=lang_config.lang_cls(datetime_format=fmt),
                 extension=lang_config.extension,
                 wrap=lang_config.date_wrap,
             )
@@ -1897,9 +2021,8 @@ def _build_sequence_variants() -> dict[str, _Variant]:
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
-            lang_cls = cast("Any", type(spec))
             variants[variant_key] = _Variant(
-                spec=lang_cls(sequence_format=fmt),
+                spec=lang_config.lang_cls(sequence_format=fmt),
                 extension=lang_config.extension,
                 wrap=lang_config.wrap,
             )
@@ -1921,13 +2044,12 @@ def _build_set_variants() -> dict[str, _Variant]:
             continue
         spec = lang_config.spec
         default_config = spec.set_format_config
-        lang_cls = cast("Any", type(spec))
         for fmt in list(spec.set_formats):
             if fmt.value is default_config:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
-                spec=lang_cls(set_format=fmt),
+                spec=lang_config.lang_cls(set_format=fmt),
                 extension=lang_config.extension,
                 wrap=lang_config.set_wrap,
             )
