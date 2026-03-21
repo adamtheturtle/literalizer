@@ -368,7 +368,7 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
 @beartype
 def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
     """Format a single dict key-value entry using the language spec."""
-    return spec.format_dict_entry(key_str, val_str)
+    return spec.dict_format_config.format_entry(key_str, val_str)
 
 
 @beartype
@@ -413,8 +413,9 @@ def _format_value(*, value: Value, spec: Language) -> str:
             for k, v in value.items()
             if not (spec.skip_null_dict_values and v is None)
         }
-        if not dict_items and spec.empty_dict is not None:
-            return spec.empty_dict
+        dict_cfg = spec.dict_format_config
+        if not dict_items and dict_cfg.empty_dict is not None:
+            return dict_cfg.empty_dict
         pairs = [
             _build_dict_entry(
                 key_str=_format_value(value=k, spec=spec),
@@ -424,7 +425,7 @@ def _format_value(*, value: Value, spec: Language) -> str:
             for k, v in dict_items.items()
         ]
         joined = spec.element_separator.join(pairs)
-        return spec.dict_open(dict_items) + joined + spec.dict_close
+        return dict_cfg.open_fn(dict_items) + joined + dict_cfg.close
 
     if isinstance(value, set):
         return _format_set_value(value=value, spec=spec)
@@ -464,8 +465,9 @@ def _wrap_body(
         opening = f"{line_prefix}{ordered_map_cfg.open_str}"
         closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
-        opening = f"{line_prefix}{spec.dict_open(data)}"
-        closing = f"{close_prefix}{spec.dict_close}"
+        dict_cfg = spec.dict_format_config
+        opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
+        closing = f"{close_prefix}{dict_cfg.close}"
     elif isinstance(data, set):
         opening = f"{line_prefix}{spec.set_format_config.open_str}"
         closing = f"{close_prefix}{spec.set_format_config.close}"

@@ -20,6 +20,7 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DictFormatConfig,
     HasFormatEnums,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -202,12 +203,11 @@ class Matlab(metaclass=HasFormatEnums):
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="struct("
-        )
-        self.dict_close = ")"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            _format_matlab_dict_entry
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="struct("),
+            close=")",
+            format_entry=_format_matlab_dict_entry,
+            empty_dict="struct()",
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -216,7 +216,6 @@ class Matlab(metaclass=HasFormatEnums):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_dict: str | None = "struct()"
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

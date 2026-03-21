@@ -533,7 +533,7 @@ def test_toml_non_quoted_dict_key() -> None:
     When the key does not start with a double-quote character the
     bare-key optimization is skipped and the key is used verbatim.
     """
-    result = TOML.format_dict_entry("plain_key", '"value"')
+    result = TOML.dict_format_config.format_entry("plain_key", '"value"')
     assert result == 'plain_key = "value"'
 
 

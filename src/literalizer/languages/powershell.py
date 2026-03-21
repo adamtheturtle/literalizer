@@ -18,6 +18,7 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DictFormatConfig,
     HasFormatEnums,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -158,12 +159,11 @@ class PowerShell(metaclass=HasFormatEnums):
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="@{"
-        )
-        self.dict_close = "}"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            dict_entry_with_separator(separator=" = ")
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="@{"),
+            close="}",
+            format_entry=dict_entry_with_separator(separator=" = "),
+            empty_dict=None,
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -172,7 +172,6 @@ class PowerShell(metaclass=HasFormatEnums):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_dict: str | None = None
         self.format_sequence_entry: Callable[[str], str] = (
             _format_sequence_entry
         )

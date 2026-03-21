@@ -20,6 +20,7 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DictFormatConfig,
     HasFormatEnums,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -209,13 +210,14 @@ class Kotlin(metaclass=HasFormatEnums):
             schema_to_opener=_kotlin_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
-            schema_to_opener=_kotlin_dict_schema_to_opener,
-            fallback="mapOf<String, Any?>(",
-        )
-        self.dict_close = ")"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            dict_entry_with_separator(separator=" to ")
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=typed_dict_open(
+                schema_to_opener=_kotlin_dict_schema_to_opener,
+                fallback="mapOf<String, Any?>(",
+            ),
+            close=")",
+            format_entry=dict_entry_with_separator(separator=" to "),
+            empty_dict=None,
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -227,7 +229,6 @@ class Kotlin(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = (
             format_string_backslash_dollar
         )
-        self.empty_dict: str | None = None
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

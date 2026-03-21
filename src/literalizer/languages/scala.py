@@ -20,6 +20,7 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DictFormatConfig,
     HasFormatEnums,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -183,13 +184,14 @@ class Scala(metaclass=HasFormatEnums):
             schema_to_opener=_scala_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
-            schema_to_opener=_scala_dict_schema_to_opener,
-            fallback="Map(",
-        )
-        self.dict_close = ")"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            dict_entry_with_separator(separator=" -> ")
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=typed_dict_open(
+                schema_to_opener=_scala_dict_schema_to_opener,
+                fallback="Map(",
+            ),
+            close=")",
+            format_entry=dict_entry_with_separator(separator=" -> "),
+            empty_dict=None,
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -198,7 +200,6 @@ class Scala(metaclass=HasFormatEnums):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_dict: str | None = None
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
