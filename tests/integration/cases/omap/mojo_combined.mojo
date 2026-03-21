@@ -1,11 +1,11 @@
 def main():
     var my_data = [
-        ("name", "Alice"),
-        ("age", "30"),
-        ("active", "True"),
+        Tuple("name", "Alice"),
+        Tuple("age", "30"),
+        Tuple("active", "True"),
     ]
     my_data = [
-        ("name", "Alice"),
-        ("age", "30"),
-        ("active", "True"),
+        Tuple("name", "Alice"),
+        Tuple("age", "30"),
+        Tuple("active", "True"),
     ]

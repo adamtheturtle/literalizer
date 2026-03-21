@@ -639,8 +639,8 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
     expected = textwrap.dedent(
         text="""\
         [
-            ("name", "Alice"),
-            ("city", "Paris"),
+            Tuple("name", "Alice"),
+            Tuple("city", "Paris"),
         ]"""
     )
     assert result == expected
@@ -960,8 +960,8 @@ def test_error_on_coercion_no_raise_for_homogeneous_omap() -> None:
     expected = textwrap.dedent(
         text="""\
         [
-            ("name", "Alice"),
-            ("city", "Paris"),
+            Tuple("name", "Alice"),
+            Tuple("city", "Paris"),
         ]"""
     )
     assert result == expected
