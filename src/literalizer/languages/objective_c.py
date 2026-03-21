@@ -127,7 +127,6 @@ class ObjectiveC:
 
         ARRAY = "array"
 
-    @beartype
     class SetFormat(enum.Enum):
         """Set type options for Objective-C."""
 
