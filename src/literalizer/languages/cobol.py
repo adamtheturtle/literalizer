@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-
 _COBOL_CONTROL_CHAR_REPLACEMENTS: dict[str, str] = {
     "\n": " ",
     "\r": " ",
@@ -298,12 +297,13 @@ class Cobol(metaclass=HasFormatEnums):
         self.sequence_format = sequence_format
         self.null_literal = "SPACES"
         fmt = sequence_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.true_literal = '"TRUE"'
         self.false_literal = '"FALSE"'
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str=""
         )
@@ -312,20 +312,13 @@ class Cobol(metaclass=HasFormatEnums):
             _format_cobol_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = "05 FILLER PIC X(1) VALUE SPACES."
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             _format_cobol_sequence_entry
         )

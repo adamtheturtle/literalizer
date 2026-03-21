@@ -125,8 +125,8 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    sequence_close: str
-    """The closing delimiter for sequences."""
+    sequence_format_config: SequenceFormatConfig
+    """Configuration for the chosen sequence format."""
 
     @property
     def dict_open(self) -> Callable[[dict[str, Value]], str]:
@@ -151,9 +151,6 @@ class Language(Protocol):
     multiline_trailing_comma: bool
     """Whether to append a trailing comma after the last entry."""
 
-    single_element_trailing_comma: bool
-    """Whether a single-element sequence requires a trailing comma."""
-
     @property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a :class:`bytes` value as a string
@@ -175,20 +172,11 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    empty_sequence: str | None
-    """Override for empty sequence literals, or ``None``."""
-
     empty_dict: str | None
     """Override for empty dict literals, or ``None``."""
 
-    set_open: str
-    """The opening delimiter for set literals."""
-
-    set_close: str
-    """The closing delimiter for set literals."""
-
-    empty_set: str | None
-    """Override for empty set literals, or ``None``."""
+    set_format_config: SetFormatConfig
+    """Configuration for the chosen set format."""
 
     @property
     def format_sequence_entry(self) -> Callable[[str], str]:

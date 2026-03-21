@@ -184,11 +184,12 @@ class CSharp(metaclass=HasFormatEnums):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             schema_to_opener=_csharp_schema_to_opener,
             fallback=fmt.open_str,
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = typed_dict_open(
             schema_to_opener=_csharp_dict_schema_to_opener,
             fallback="new Dictionary<string, object> {",
@@ -198,9 +199,6 @@ class CSharp(metaclass=HasFormatEnums):
             _format_csharp_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -208,11 +206,7 @@ class CSharp(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

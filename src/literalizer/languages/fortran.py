@@ -242,10 +242,11 @@ class Fortran(metaclass=HasFormatEnums):
         self.true_literal = "fbool(.true.)"
         self.false_literal = "fbool(.false.)"
         fmt = sequence_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="fmap([fval_t :: "
         )
@@ -254,20 +255,13 @@ class Fortran(metaclass=HasFormatEnums):
             _format_fortran_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma: bool = (
-            fmt.single_element_trailing_comma
-        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open: str = set_format.value.open_str
-        self.set_close: str = set_format.value.close
-        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval
         self.comment_prefix = "!"
