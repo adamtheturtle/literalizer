@@ -34,6 +34,7 @@ HNull
 HSet
 HStr
 HashiCorp
+Hcl
 JSONDecodeError
 Lua
 NEL
@@ -49,7 +50,9 @@ OMap
 ONull
 OSet
 OStr
+ObjectiveC
 Php
+Toml
 YAMLError
 ZKV
 ZVal

@@ -7,10 +7,6 @@ from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
-if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable
-
 from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
@@ -23,6 +19,10 @@ from literalizer._formatters import (
     typed_sequence_open,
 )
 from literalizer._types import Value  # noqa: TC001
+
+if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
 
 _SCALA_SCALAR_TYPES: dict[str, str] = {
     "string": "String",

@@ -419,6 +419,66 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
     assert result == expected
 
 
+def test_homogeneous_date_list_mojo() -> None:
+    """A homogeneous list of dates is formatted via
+    date_formats.__call__.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15
+        - 2024-01-16
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "2024-01-15",
+            "2024-01-16",
+        ]"""
+    )
+    assert result == expected
+
+
+def test_homogeneous_datetime_list_mojo() -> None:
+    """A homogeneous list of datetimes is formatted via
+    datetime_formats.__call__.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15T12:30:00
+        - 2024-01-16T08:00:00
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "2024-01-15T12:30:00",
+            "2024-01-16T08:00:00",
+        ]"""
+    )
+    assert result == expected
+
+
 def test_coerce_homogeneous_omap_no_coercion() -> None:
     """Homogeneous ordereddict values are not coerced."""
     yaml_string = textwrap.dedent(
