@@ -671,90 +671,194 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     assert "&  !" in result
 
 
-_LANGUAGE_CLASSES: list[type[object]] = [
-    Ada,
-    Bash,
-    C,
-    Clojure,
-    Cobol,
-    CommonLisp,
-    Cpp,
-    Crystal,
-    CSharp,
-    D,
-    Dart,
-    Elixir,
-    Erlang,
-    Fortran,
-    FSharp,
-    Go,
-    Groovy,
-    Haskell,
-    Hcl,
-    Java,
-    JavaScript,
-    Julia,
-    Kotlin,
-    Lua,
-    Matlab,
-    Mojo,
-    Nim,
-    Norg,
-    ObjectiveC,
-    OCaml,
-    Occam,
-    Perl,
-    Php,
-    PowerShell,
-    Python,
-    R,
-    Racket,
-    Ruby,
-    Rust,
-    Scala,
-    Swift,
-    Toml,
-    TypeScript,
-    VisualBasic,
-    Yaml,
-    Zig,
+_BYTES_FORMATS: list[type[enum.Enum]] = [
+    Ada.BytesFormat,
+    Bash.BytesFormat,
+    C.BytesFormat,
+    Clojure.BytesFormat,
+    Cobol.BytesFormat,
+    CommonLisp.BytesFormat,
+    Cpp.BytesFormat,
+    Crystal.BytesFormat,
+    CSharp.BytesFormat,
+    D.BytesFormat,
+    Dart.BytesFormat,
+    Elixir.BytesFormat,
+    Erlang.BytesFormat,
+    Fortran.BytesFormat,
+    FSharp.BytesFormat,
+    Go.BytesFormat,
+    Groovy.BytesFormat,
+    Haskell.BytesFormat,
+    Hcl.BytesFormat,
+    Java.BytesFormat,
+    JavaScript.BytesFormat,
+    Julia.BytesFormat,
+    Kotlin.BytesFormat,
+    Lua.BytesFormat,
+    Matlab.BytesFormat,
+    Mojo.BytesFormat,
+    Nim.BytesFormat,
+    Norg.BytesFormat,
+    ObjectiveC.BytesFormat,
+    OCaml.BytesFormat,
+    Occam.BytesFormat,
+    Perl.BytesFormat,
+    Php.BytesFormat,
+    PowerShell.BytesFormat,
+    Python.BytesFormat,
+    R.BytesFormat,
+    Racket.BytesFormat,
+    Ruby.BytesFormat,
+    Rust.BytesFormat,
+    Scala.BytesFormat,
+    Swift.BytesFormat,
+    Toml.BytesFormat,
+    TypeScript.BytesFormat,
+    VisualBasic.BytesFormat,
+    Yaml.BytesFormat,
+    Zig.BytesFormat,
+]
+
+_SEQUENCE_FORMATS: list[type[enum.Enum]] = [
+    Ada.SequenceFormat,
+    Bash.SequenceFormat,
+    C.SequenceFormat,
+    Clojure.SequenceFormat,
+    Cobol.SequenceFormat,
+    CommonLisp.SequenceFormat,
+    Cpp.SequenceFormat,
+    Crystal.SequenceFormat,
+    CSharp.SequenceFormat,
+    D.SequenceFormat,
+    Dart.SequenceFormat,
+    Elixir.SequenceFormat,
+    Erlang.SequenceFormat,
+    Fortran.SequenceFormat,
+    FSharp.SequenceFormat,
+    Go.SequenceFormat,
+    Groovy.SequenceFormat,
+    Haskell.SequenceFormat,
+    Hcl.SequenceFormat,
+    Java.SequenceFormat,
+    JavaScript.SequenceFormat,
+    Julia.SequenceFormat,
+    Kotlin.SequenceFormat,
+    Lua.SequenceFormat,
+    Matlab.SequenceFormat,
+    Mojo.SequenceFormat,
+    Nim.SequenceFormat,
+    Norg.SequenceFormat,
+    ObjectiveC.SequenceFormat,
+    OCaml.SequenceFormat,
+    Occam.SequenceFormat,
+    Perl.SequenceFormat,
+    Php.SequenceFormat,
+    PowerShell.SequenceFormat,
+    Python.SequenceFormat,
+    R.SequenceFormat,
+    Racket.SequenceFormat,
+    Ruby.SequenceFormat,
+    Rust.SequenceFormat,
+    Scala.SequenceFormat,
+    Swift.SequenceFormat,
+    Toml.SequenceFormat,
+    TypeScript.SequenceFormat,
+    VisualBasic.SequenceFormat,
+    Yaml.SequenceFormat,
+    Zig.SequenceFormat,
+]
+
+_SET_FORMATS: list[type[enum.Enum]] = [
+    Ada.SetFormat,
+    Bash.SetFormat,
+    C.SetFormat,
+    Clojure.SetFormat,
+    Cobol.SetFormat,
+    CommonLisp.SetFormat,
+    Cpp.SetFormat,
+    Crystal.SetFormat,
+    CSharp.SetFormat,
+    D.SetFormat,
+    Dart.SetFormat,
+    Elixir.SetFormat,
+    Erlang.SetFormat,
+    Fortran.SetFormat,
+    FSharp.SetFormat,
+    Go.SetFormat,
+    Groovy.SetFormat,
+    Haskell.SetFormat,
+    Hcl.SetFormat,
+    Java.SetFormat,
+    JavaScript.SetFormat,
+    Julia.SetFormat,
+    Kotlin.SetFormat,
+    Lua.SetFormat,
+    Matlab.SetFormat,
+    Mojo.SetFormat,
+    Nim.SetFormat,
+    Norg.SetFormat,
+    ObjectiveC.SetFormat,
+    OCaml.SetFormat,
+    Occam.SetFormat,
+    Perl.SetFormat,
+    Php.SetFormat,
+    PowerShell.SetFormat,
+    Python.SetFormat,
+    R.SetFormat,
+    Racket.SetFormat,
+    Ruby.SetFormat,
+    Rust.SetFormat,
+    Scala.SetFormat,
+    Swift.SetFormat,
+    Toml.SetFormat,
+    TypeScript.SetFormat,
+    VisualBasic.SetFormat,
+    Yaml.SetFormat,
+    Zig.SetFormat,
 ]
 
 
 @pytest.mark.parametrize(
-    argnames="language_class",
-    argvalues=_LANGUAGE_CLASSES,
+    argnames="format_enum",
+    argvalues=_BYTES_FORMATS,
 )
 def test_language_class_has_bytes_format_enum(
     *,
-    language_class: type[object],
+    format_enum: type[enum.Enum],
 ) -> None:
-    """Every language class exposes BytesFormat as an enum type."""
-    assert issubclass(language_class.BytesFormat, enum.Enum)  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
-    assert len(language_class.BytesFormat) >= 1  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
+    """Every language class exposes BytesFormat as an enum with at least
+    one member.
+    """
+    assert issubclass(format_enum, enum.Enum)
+    assert len(format_enum) >= 1
 
 
 @pytest.mark.parametrize(
-    argnames="language_class",
-    argvalues=_LANGUAGE_CLASSES,
+    argnames="format_enum",
+    argvalues=_SEQUENCE_FORMATS,
 )
 def test_language_class_has_sequence_format_enum(
     *,
-    language_class: type[object],
+    format_enum: type[enum.Enum],
 ) -> None:
-    """Every language class exposes SequenceFormat as an enum type."""
-    assert issubclass(language_class.SequenceFormat, enum.Enum)  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
-    assert len(language_class.SequenceFormat) >= 1  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
+    """Every language class exposes SequenceFormat as an enum with at
+    least one member.
+    """
+    assert issubclass(format_enum, enum.Enum)
+    assert len(format_enum) >= 1
 
 
 @pytest.mark.parametrize(
-    argnames="language_class",
-    argvalues=_LANGUAGE_CLASSES,
+    argnames="format_enum",
+    argvalues=_SET_FORMATS,
 )
 def test_language_class_has_set_format_enum(
     *,
-    language_class: type[object],
+    format_enum: type[enum.Enum],
 ) -> None:
-    """Every language class exposes SetFormat as an enum type."""
-    assert issubclass(language_class.SetFormat, enum.Enum)  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
-    assert len(language_class.SetFormat) >= 1  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
+    """Every language class exposes SetFormat as an enum with at least
+    one member.
+    """
+    assert issubclass(format_enum, enum.Enum)
+    assert len(format_enum) >= 1
