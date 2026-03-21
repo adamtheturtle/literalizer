@@ -78,7 +78,9 @@ def _java_time_imports(content: str) -> str:
 
 @beartype
 def _java_collection_imports(content: str) -> str:
-    """Return java.util import lines only for collection types used."""
+    """Return ``java.util`` import lines only for collection types
+    used.
+    """
     imports = ""
     if "Map" in content:
         imports += "import java.util.Map;\n"
