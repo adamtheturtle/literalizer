@@ -725,16 +725,36 @@ _LANGUAGE_CLASSES: list[type[object]] = [
     argnames="language_class",
     argvalues=_LANGUAGE_CLASSES,
 )
-@pytest.mark.parametrize(
-    argnames="attr",
-    argvalues=["BytesFormat", "SequenceFormat", "SetFormat"],
-)
-def test_language_class_has_format_enum(
-    *, language_class: type[object], attr: str
+def test_language_class_has_bytes_format_enum(
+    *,
+    language_class: type[object],
 ) -> None:
-    """Every language class exposes BytesFormat, SequenceFormat, and
-    SetFormat as enum types with at least one member.
-    """
-    format_enum = getattr(language_class, attr)
-    assert issubclass(format_enum, enum.Enum)
-    assert len(format_enum) >= 1
+    """Every language class exposes BytesFormat as an enum type."""
+    assert issubclass(language_class.BytesFormat, enum.Enum)  # type: ignore[attr-defined]
+    assert len(language_class.BytesFormat) >= 1  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
+    argnames="language_class",
+    argvalues=_LANGUAGE_CLASSES,
+)
+def test_language_class_has_sequence_format_enum(
+    *,
+    language_class: type[object],
+) -> None:
+    """Every language class exposes SequenceFormat as an enum type."""
+    assert issubclass(language_class.SequenceFormat, enum.Enum)  # type: ignore[attr-defined]
+    assert len(language_class.SequenceFormat) >= 1  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
+    argnames="language_class",
+    argvalues=_LANGUAGE_CLASSES,
+)
+def test_language_class_has_set_format_enum(
+    *,
+    language_class: type[object],
+) -> None:
+    """Every language class exposes SetFormat as an enum type."""
+    assert issubclass(language_class.SetFormat, enum.Enum)  # type: ignore[attr-defined]
+    assert len(language_class.SetFormat) >= 1  # type: ignore[attr-defined]
