@@ -122,6 +122,10 @@ class ObjectiveC:
 
         HEX = enum.member(value=_format_objc_bytes)
 
+        def __call__(self, data: bytes, /) -> str:
+            """Format bytes."""
+            return self.value(value=data)
+
     class SequenceFormat(enum.Enum):
         """Sequence type options for Objective-C."""
 
@@ -156,7 +160,7 @@ class ObjectiveC:
         )
         self.multiline_trailing_comma = True
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+        self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = _date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             _datetime_format
