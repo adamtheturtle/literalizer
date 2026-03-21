@@ -19,7 +19,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -76,7 +76,7 @@ def _format_ocaml_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_ocaml_omap_entry(key: str, value: str) -> str:
+def _format_ocaml_ordered_map_entry(key: str, value: str) -> str:
     """Format an OCaml ordered-map entry as a ``(key, OXxx value)``
     tuple.
     """
@@ -216,12 +216,14 @@ class OCaml(metaclass=HasFormatEnums):
             prefix="(*",
             suffix=" *)",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="OMap [",
-            close="]",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="OMap [",
+                close="]",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_ocaml_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_ocaml_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False

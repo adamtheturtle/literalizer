@@ -353,6 +353,7 @@ def prepend_collection_comments(
     Returns *base* unchanged when there are no comments.
     """
 
+    @beartype
     def _fmt(text: str) -> str:
         """Format *text* as a comment line using the outer parameters."""
         return _format_comment(

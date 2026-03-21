@@ -1108,6 +1108,7 @@ _FORTRAN_PREAMBLE = (
 )
 
 
+@beartype
 def _fortran_comment_pos(line: str) -> int | None:
     """Return the index of the ``!`` comment in *line* outside strings."""
     in_single_quote = False
@@ -1982,6 +1983,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 }
 
 
+@beartype
 def _build_date_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for all languages with date wrapping.
 
@@ -2006,6 +2008,7 @@ def _build_date_variants() -> dict[str, _Variant]:
 _DATE_VARIANTS: dict[str, _Variant] = _build_date_variants()
 
 
+@beartype
 def _build_sequence_variants() -> dict[str, _Variant]:
     """Build sequence-format variants for all languages with multiple
     formats.
@@ -2032,6 +2035,7 @@ def _build_sequence_variants() -> dict[str, _Variant]:
 _SEQUENCE_VARIANTS: dict[str, _Variant] = _build_sequence_variants()
 
 
+@beartype
 def _build_set_variants() -> dict[str, _Variant]:
     """Build set-format variants for all languages with multiple formats.
 
@@ -2198,9 +2202,10 @@ class _VariantCase:
     variant_name: str
     variant: _Variant
     case_dir_name: str
-    variable_name: str | None = None
+    variable_name: str | None
 
 
+@beartype
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
@@ -2210,6 +2215,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=variant_name,
                 variant=variant,
                 case_dir_name="dates",
+                variable_name=None,
             )
         )
     for variant_name, variant in _SEQUENCE_VARIANTS.items():
@@ -2218,6 +2224,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=variant_name,
                 variant=variant,
                 case_dir_name="simple_sequence",
+                variable_name=None,
             )
         )
     for variant_name, variant in _SET_VARIANTS.items():
@@ -2226,6 +2233,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=variant_name,
                 variant=variant,
                 case_dir_name="set",
+                variable_name=None,
             )
         )
     variable_type_hints_variants: dict[str, _Variant] = {
