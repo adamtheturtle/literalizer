@@ -607,7 +607,7 @@ def test_coerce_mixed_dict_values_set_with_string() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    # Set is converted to a sorted JSON array before stringification.
+    # Set is converted to a sorted JSON array before string conversion.
     expected = textwrap.dedent(
         text="""\
         {

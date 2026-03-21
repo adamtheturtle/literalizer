@@ -247,7 +247,7 @@ _TYPE_FAMILY_CHECKS: tuple[tuple[type, str], ...] = (
 def _value_type_family(*, value: Value) -> str:
     """Return a broad type family label for a value.
 
-    Used to decide whether a dict's values are homogeneous enough for
+    Used to decide whether values in a dict are homogeneous enough for
     languages that require a single value type (e.g. Mojo).
     """
     if value is None:
@@ -288,7 +288,7 @@ def _coerce_mixed_dict_values(*, data: Value) -> Value:
     """Recursively coerce dicts whose values span multiple type families.
 
     When a dict has values of mixed types (e.g. strings and lists),
-    all values are stringified so the dict becomes homogeneous.
+    all values are converted to strings so the dict becomes homogeneous.
     """
     if isinstance(data, ordereddict):
         new_omap: ordereddict = ordereddict()
