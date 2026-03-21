@@ -95,7 +95,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Occam:
     """Occam-pi language specification."""
 
-    class date_formats(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date format options for Occam."""
 
         ISO = enum.member(value=format_date_iso)
@@ -104,7 +104,7 @@ class Occam:
             """Format a date."""
             return self.value(value=date_value)
 
-    class datetime_formats(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime format options for Occam."""
 
         ISO = enum.member(value=format_datetime_iso)
@@ -113,7 +113,7 @@ class Occam:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class bytes_formats(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -122,23 +122,29 @@ class Occam:
             """Format bytes."""
             return self.value(value=data)
 
-    class sequence_formats(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Occam."""
 
         LIST = "list"
 
-    class set_formats(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for Occam."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: date_formats,
-        datetime_format: datetime_formats,
-        bytes_format: bytes_formats,
-        sequence_format: sequence_formats,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize Occam language specification."""
         self.sequence_format = sequence_format

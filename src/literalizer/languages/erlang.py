@@ -68,7 +68,7 @@ class Erlang:
               e.g. ``{1, 2, 3}``.
     """
 
-    class date_formats(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date format options for Erlang."""
 
         ISO = enum.member(value=format_date_iso)
@@ -77,7 +77,7 @@ class Erlang:
             """Format a date."""
             return self.value(value=date_value)
 
-    class datetime_formats(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime format options for Erlang."""
 
         ISO = enum.member(value=format_datetime_iso)
@@ -86,7 +86,7 @@ class Erlang:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class bytes_formats(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         BINARY = enum.member(value=_format_bytes)
@@ -95,24 +95,30 @@ class Erlang:
             """Format bytes."""
             return self.value(value=data)
 
-    class sequence_formats(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Erlang."""
 
         LIST = "list"
         TUPLE = "tuple"
 
-    class set_formats(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for Erlang."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: date_formats,
-        datetime_format: datetime_formats,
-        bytes_format: bytes_formats,
-        sequence_format: sequence_formats,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize Erlang language specification."""
         self.sequence_format = sequence_format

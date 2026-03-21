@@ -163,7 +163,7 @@ class Python:
               e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
-    class date_formats(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date formatting options for Python."""
 
         PYTHON = enum.member(value=format_date_python)
@@ -172,7 +172,7 @@ class Python:
             """Format a date."""
             return self.value(value=date_value)
 
-    class datetime_formats(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Python."""
 
         PYTHON = enum.member(value=format_datetime_python)
@@ -182,7 +182,7 @@ class Python:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class bytes_formats(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options for Python."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -192,13 +192,13 @@ class Python:
             """Format bytes."""
             return self.value(value=data)
 
-    class sequence_formats(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Python."""
 
         TUPLE = "tuple"
         LIST = "list"
 
-    class set_formats(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for Python."""
 
         SET = "set"
@@ -210,14 +210,20 @@ class Python:
         NONE = "none"
         INLINE = "inline"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(  # noqa: PLR0915  # pylint: disable=too-many-statements
         self,
         *,
-        date_format: date_formats,
-        datetime_format: datetime_formats,
-        bytes_format: bytes_formats,
-        sequence_format: sequence_formats,
-        set_format: set_formats,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
+        set_format: SetFormats,
         variable_type_hints: VariableTypeHints,
     ) -> None:
         """Initialize Python language specification."""

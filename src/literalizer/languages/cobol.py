@@ -220,7 +220,7 @@ class Cobol:
     sequences / dicts become group items with 05-level sub-items.
     """
 
-    class date_formats(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date format options for Cobol."""
 
         ISO = enum.member(value=format_date_iso)
@@ -229,7 +229,7 @@ class Cobol:
             """Format a date."""
             return self.value(value=date_value)
 
-    class datetime_formats(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime format options for Cobol."""
 
         ISO = enum.member(value=format_datetime_iso)
@@ -238,7 +238,7 @@ class Cobol:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class bytes_formats(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -247,23 +247,29 @@ class Cobol:
             """Format bytes."""
             return self.value(value=data)
 
-    class sequence_formats(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for COBOL."""
 
         SEQUENCE = "sequence"
 
-    class set_formats(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for COBOL."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: date_formats,
-        datetime_format: datetime_formats,
-        bytes_format: bytes_formats,
-        sequence_format: sequence_formats,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize COBOL language specification."""
         self.sequence_format = sequence_format

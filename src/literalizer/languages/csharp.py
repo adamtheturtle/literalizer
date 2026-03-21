@@ -104,7 +104,7 @@ class CSharp:
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
     """
 
-    class date_formats(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date format options for C#."""
 
         CSHARP = enum.member(value=format_date_csharp)
@@ -113,7 +113,7 @@ class CSharp:
             """Format a date."""
             return self.value(value=date_value)
 
-    class datetime_formats(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime format options for C#."""
 
         CSHARP = enum.member(value=format_datetime_csharp)
@@ -122,7 +122,7 @@ class CSharp:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class bytes_formats(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -131,23 +131,29 @@ class CSharp:
             """Format bytes."""
             return self.value(value=data)
 
-    class sequence_formats(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for C#."""
 
         ARRAY = "array"
 
-    class set_formats(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for C#."""
 
         HASH_SET = "hash_set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: date_formats,
-        datetime_format: datetime_formats,
-        bytes_format: bytes_formats,
-        sequence_format: sequence_formats,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize CSharp language specification."""
         self.sequence_format = sequence_format
