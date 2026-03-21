@@ -393,6 +393,8 @@ ignore_names = [
     # ruamel.yaml configuration attributes
     "default_flow_style",
     "sort_base_mapping_type_on_output",
+    # Used in cast() for mypy, inside TYPE_CHECKING block
+    "JsonValue",
 ]
 # Duplicate some of .gitignore
 exclude = [
