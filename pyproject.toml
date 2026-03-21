@@ -230,6 +230,10 @@ MESSAGES-CONTROL.disable = [
 # - We want to use generated module names, which may not be valid, but are never seen.
 # - We want to use global variables in documentation, which may not be uppercase
 MESSAGES-CONTROL.per-file-ignores = [
+    # Format enum classes use snake_case names (e.g. sequence_formats) so
+    # they match the Language Protocol property names and are accessible at
+    # both class and instance level.
+    "src/literalizer/languages/*.py:invalid-name",
     "docs/source/conf.py:invalid-name",
     "docs/source/doccmd_*.py:invalid-name",
     "doccmd_README_rst_*.py:invalid-name",
