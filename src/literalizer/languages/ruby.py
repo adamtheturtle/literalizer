@@ -12,9 +12,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_iso,
     format_date_ruby,
-    format_datetime_iso,
     format_datetime_ruby,
     format_string_backslash,
     passthrough_sequence_entry,
@@ -53,15 +51,11 @@ class Ruby:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``date_formats.RUBY`` — ``Date.new(...)`` call,
               e.g. ``Date.new(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``datetime_formats.RUBY`` — ``Time.new(...)`` call,
               e.g. ``Time.new(2024, 1, 15, 12, 30, 0)``.
     """
@@ -69,13 +63,11 @@ class Ruby:
     class date_formats(enum.Enum):
         """Date format options for Ruby."""
 
-        ISO = enum.member(value=format_date_iso)
         RUBY = enum.member(value=format_date_ruby)
 
     class datetime_formats(enum.Enum):
         """Datetime format options for Ruby."""
 
-        ISO = enum.member(value=format_datetime_iso)
         RUBY = enum.member(value=format_datetime_ruby)
 
     class bytes_formats(enum.Enum):

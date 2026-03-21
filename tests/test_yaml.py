@@ -23,14 +23,14 @@ from literalizer.languages import (
 )
 
 GO = Go(
-    date_format=Go.date_formats.ISO,
-    datetime_format=Go.datetime_formats.ISO,
+    date_format=Go.date_formats.GO,
+    datetime_format=Go.datetime_formats.GO,
     bytes_format=Go.bytes_formats.HEX,
     sequence_format=Go.sequence_formats.SLICE,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.date_formats.ISO,
-    datetime_format=JavaScript.datetime_formats.ISO,
+    date_format=JavaScript.date_formats.JS,
+    datetime_format=JavaScript.datetime_formats.JS,
     bytes_format=JavaScript.bytes_formats.HEX,
     sequence_format=JavaScript.sequence_formats.ARRAY,
 )
@@ -41,8 +41,8 @@ MOJO = Mojo(
     sequence_format=Mojo.sequence_formats.LIST,
 )
 PYTHON = Python(
-    date_format=Python.date_formats.ISO,
-    datetime_format=Python.datetime_formats.ISO,
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
@@ -169,7 +169,9 @@ def test_literalize_yaml_scalar(
 
 
 def test_literalize_yaml_date() -> None:
-    """``literalize_yaml`` formats date values as ISO string literals."""
+    """``literalize_yaml`` formats date values using the language
+    format.
+    """
     yaml_string = "- 2024-01-15\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -181,12 +183,12 @@ def test_literalize_yaml_date() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '"2024-01-15",'
+    assert result == "datetime.date(year=2024, month=1, day=15),"
 
 
 def test_literalize_yaml_datetime() -> None:
-    """``literalize_yaml`` formats datetime values as ISO string
-    literals.
+    """``literalize_yaml`` formats datetime values using the language
+    format.
     """
     yaml_string = "- 2024-01-15T12:30:00\n"
     result = literalize_yaml(
@@ -199,7 +201,12 @@ def test_literalize_yaml_datetime() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '"2024-01-15T12:30:00",'
+    expected = (
+        "datetime.datetime("
+        "year=2024, month=1, day=15, "
+        "hour=12, minute=30, second=0),"
+    )
+    assert result == expected
 
 
 def test_literalize_yaml_binary() -> None:
@@ -565,8 +572,8 @@ def test_coerce_mixed_omap_values() -> None:
 def test_r_empty_dict_key_positional() -> None:
     """R with POSITIONAL empty_dict_key emits unnamed list elements."""
     spec = R(
-        date_format=R.date_formats.ISO,
-        datetime_format=R.datetime_formats.ISO,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
@@ -594,8 +601,8 @@ def test_r_empty_dict_key_positional() -> None:
 def test_r_empty_dict_key_positional_is_default() -> None:
     """R defaults to POSITIONAL for empty_dict_key."""
     spec = R(
-        date_format=R.date_formats.ISO,
-        datetime_format=R.datetime_formats.ISO,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
@@ -623,8 +630,8 @@ def test_r_empty_dict_key_positional_is_default() -> None:
 def test_r_empty_dict_key_error() -> None:
     """R with ERROR empty_dict_key raises EmptyDictKeyError."""
     spec = R(
-        date_format=R.date_formats.ISO,
-        datetime_format=R.datetime_formats.ISO,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.ERROR,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
@@ -646,8 +653,8 @@ def test_r_empty_dict_key_error() -> None:
 def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     """R with ERROR empty_dict_key does not raise for non-empty keys."""
     spec = R(
-        date_format=R.date_formats.ISO,
-        datetime_format=R.datetime_formats.ISO,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.ERROR,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,

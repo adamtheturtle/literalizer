@@ -1,6 +1,7 @@
 package main
+import "time"
 
 var _ = map[string]any{
-    "date": "2024-01-15",
-    "datetime": "2024-01-15T12:30:00+00:00",
+    "date": time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC),
+    "datetime": time.Date(2024, time.January, 15, 12, 30, 0, 0, time.UTC),
 }

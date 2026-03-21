@@ -10,9 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     format_bytes_hex,
     format_date_cpp,
-    format_date_iso,
     format_datetime_cpp,
-    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -97,16 +95,12 @@ class Cpp:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``date_formats.CPP`` — ``std::chrono::year_month_day`` literal,
               e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
               std::chrono::month{1}, std::chrono::day{15}}``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``datetime_formats.CPP`` — ``std::chrono::sys_days`` with
               time-of-day durations,
               e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
@@ -116,13 +110,11 @@ class Cpp:
     class date_formats(enum.Enum):
         """Date format options for C++."""
 
-        ISO = enum.member(value=format_date_iso)
         CPP = enum.member(value=format_date_cpp)
 
     class datetime_formats(enum.Enum):
         """Datetime format options for C++."""
 
-        ISO = enum.member(value=format_datetime_iso)
         CPP = enum.member(value=format_datetime_cpp)
 
     class bytes_formats(enum.Enum):

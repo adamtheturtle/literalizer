@@ -11,9 +11,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_dart,
-    format_date_iso,
     format_datetime_dart,
-    format_datetime_iso,
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -98,15 +96,11 @@ class Dart:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``date_formats.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``datetime_formats.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
     """
@@ -114,13 +108,11 @@ class Dart:
     class date_formats(enum.Enum):
         """Date formatting options for Dart."""
 
-        ISO = enum.member(value=format_date_iso)
         DART = enum.member(value=format_date_dart)
 
     class datetime_formats(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        ISO = enum.member(value=format_datetime_iso)
         DART = enum.member(value=format_datetime_dart)
 
     class bytes_formats(enum.Enum):

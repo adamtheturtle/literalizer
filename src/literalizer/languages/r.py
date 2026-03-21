@@ -11,9 +11,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_iso,
     format_date_r,
-    format_datetime_iso,
     format_datetime_r,
     format_string_backslash,
     passthrough_sequence_entry,
@@ -84,15 +82,11 @@ class R:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``date_formats.R`` — ``as.Date(...)`` call,
               e.g. ``as.Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``datetime_formats.R`` — ``as.POSIXct(...)`` call,
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
 
@@ -107,13 +101,11 @@ class R:
     class date_formats(enum.Enum):
         """Date formatting options for R."""
 
-        ISO = enum.member(value=format_date_iso)
         R = enum.member(value=format_date_r)
 
     class datetime_formats(enum.Enum):
         """Datetime formatting options for R."""
 
-        ISO = enum.member(value=format_datetime_iso)
         R = enum.member(value=format_datetime_r)
 
     class EmptyDictKey(enum.Enum):

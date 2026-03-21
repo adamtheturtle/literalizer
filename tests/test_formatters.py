@@ -11,7 +11,6 @@ from literalizer._formatters import (
     format_date_cpp,
     format_date_csharp,
     format_date_go,
-    format_date_iso,
     format_date_java,
     format_date_js,
     format_date_kotlin,
@@ -22,7 +21,6 @@ from literalizer._formatters import (
     format_datetime_csharp,
     format_datetime_epoch,
     format_datetime_go,
-    format_datetime_iso,
     format_datetime_java_instant,
     format_datetime_java_zoned,
     format_datetime_js,
@@ -35,16 +33,16 @@ from literalizer._formatters import (
 from literalizer.languages import Java, Python
 
 PYTHON = Python(
-    date_format=Python.date_formats.ISO,
-    datetime_format=Python.datetime_formats.ISO,
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 JAVA = Java(
-    date_format=Java.date_formats.ISO,
-    datetime_format=Java.datetime_formats.ISO,
+    date_format=Java.date_formats.JAVA,
+    datetime_format=Java.datetime_formats.INSTANT,
     bytes_format=Java.bytes_formats.HEX,
     sequence_format=Java.sequence_formats.ARRAY,
 )
@@ -59,18 +57,6 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
 @pytest.mark.parametrize(
     argnames=("func", "value", "expected"),
     argvalues=[
-        pytest.param(
-            format_date_iso,
-            _SAMPLE_DATE,
-            '"2024-01-15"',
-            id="format_date_iso",
-        ),
-        pytest.param(
-            format_datetime_iso,
-            _SAMPLE_DATETIME,
-            '"2024-01-15T12:30:00"',
-            id="format_datetime_iso",
-        ),
         pytest.param(
             format_date_python,
             _SAMPLE_DATE,
@@ -270,18 +256,6 @@ def test_format_datetime_cpp_seconds_and_microseconds() -> None:
         " + std::chrono::microseconds{123456}"
     )
     assert result == expected
-
-
-def test_default_format_date_is_iso() -> None:
-    """The default format_date is ISO format."""
-    assert PYTHON.format_date is format_date_iso
-    assert JAVA.format_date is format_date_iso
-
-
-def test_default_format_datetime_is_iso() -> None:
-    """The default format_datetime is ISO format."""
-    assert PYTHON.format_datetime is format_datetime_iso
-    assert JAVA.format_datetime is format_datetime_iso
 
 
 @pytest.mark.parametrize(

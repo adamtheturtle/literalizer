@@ -13,10 +13,8 @@ from literalizer._formatters import (
     fixed_sequence_open,
     format_bytes_hex,
     format_bytes_python,
-    format_date_iso,
     format_date_python,
     format_datetime_epoch,
-    format_datetime_iso,
     format_datetime_python,
     format_string_backslash,
     passthrough_sequence_entry,
@@ -124,15 +122,11 @@ class Python:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``date_formats.PYTHON`` — ``datetime.date`` constructor call,
               e.g. ``datetime.date(year=2024, month=1, day=15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.ISO`` — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``datetime_formats.PYTHON`` — ``datetime.datetime`` constructor
               call, e.g. ``datetime.datetime(year=2024, month=1,
               day=15, hour=12, minute=30, second=0)``.
@@ -172,13 +166,11 @@ class Python:
     class date_formats(enum.Enum):
         """Date formatting options for Python."""
 
-        ISO = enum.member(value=format_date_iso)
         PYTHON = enum.member(value=format_date_python)
 
     class datetime_formats(enum.Enum):
         """Datetime formatting options for Python."""
 
-        ISO = enum.member(value=format_datetime_iso)
         PYTHON = enum.member(value=format_datetime_python)
         EPOCH = enum.member(value=format_datetime_epoch)
 
