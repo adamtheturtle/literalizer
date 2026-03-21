@@ -379,12 +379,6 @@ ignore_names = [
     "suppress_warnings",
     "templates_path",
     "warning_is_error",
-    # Format-enumeration properties on Language protocol and implementations
-    "bytes_formats",
-    "date_formats",
-    "datetime_formats",
-    "sequence_formats",
-    "set_formats",
     # Enum members accessed by consumers iterating SetFormat
     "HASH_SET",
     "MAP_SET",

@@ -15,6 +15,7 @@ To regenerate all golden files after changing output::
 from __future__ import annotations
 
 import dataclasses
+import enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -2455,3 +2456,25 @@ def test_format_variant_golden_file(
         fullpath=variant_case.case_dir
         / (variant_case.variant_name + variant.extension),
     )
+
+
+@pytest.mark.parametrize(
+    argnames="lang_config",
+    argvalues=_LANGUAGES.values(),
+    ids=list(_LANGUAGES),
+)
+def test_format_enumeration_properties(lang_config: _LanguageConfig) -> None:
+    """Every language exposes iterable format-enumeration properties."""
+    spec = lang_config.spec
+    assert issubclass(spec.bytes_formats, enum.Enum)
+    assert len(spec.bytes_formats) >= 1
+    assert issubclass(spec.sequence_formats, enum.Enum)
+    assert len(spec.sequence_formats) >= 1
+    assert issubclass(spec.set_formats, enum.Enum)
+    assert len(spec.set_formats) >= 1
+    if hasattr(spec, "date_formats"):
+        assert issubclass(spec.date_formats, enum.Enum)
+        assert len(spec.date_formats) >= 1
+    if hasattr(spec, "datetime_formats"):
+        assert issubclass(spec.datetime_formats, enum.Enum)
+        assert len(spec.datetime_formats) >= 1
