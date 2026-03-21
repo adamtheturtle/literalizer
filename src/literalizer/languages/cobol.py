@@ -15,6 +15,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -212,7 +213,7 @@ _string_format: Callable[[str], str] = _format_string_cobol
 
 
 @beartype
-class Cobol:
+class Cobol(metaclass=HasFormatEnums):
     """GnuCOBOL free-format language specification.
 
     Data is represented as COBOL WORKING-STORAGE SECTION level items:

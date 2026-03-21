@@ -17,6 +17,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
+from literalizer._language import HasFormatEnums
 from literalizer._types import Value  # noqa: TC001
 
 if TYPE_CHECKING:
@@ -79,7 +80,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class VisualBasic:
+class VisualBasic(metaclass=HasFormatEnums):
     """Visual Basic (.NET) language specification.
 
     VB.NET collection initializers (``New T() { ... }``,

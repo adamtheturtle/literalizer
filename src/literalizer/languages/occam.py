@@ -15,6 +15,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -92,7 +93,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Occam:
+class Occam(metaclass=HasFormatEnums):
     """Occam-pi language specification."""
 
     class DateFormats(enum.Enum):

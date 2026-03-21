@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -82,7 +83,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Java:
+class Java(metaclass=HasFormatEnums):
     """Java language specification.
 
     Args:

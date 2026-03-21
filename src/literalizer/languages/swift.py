@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -48,7 +49,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Swift:
+class Swift(metaclass=HasFormatEnums):
     """Swift language specification."""
 
     class DateFormats(enum.Enum):

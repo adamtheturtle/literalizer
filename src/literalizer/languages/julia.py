@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -39,7 +40,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-class Julia:
+class Julia(metaclass=HasFormatEnums):
     """Julia language specification.
 
     Args:

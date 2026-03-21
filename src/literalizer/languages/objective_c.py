@@ -11,6 +11,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -115,7 +116,7 @@ _string_format: Callable[[str], str] = _format_objc_string
 
 
 @beartype
-class ObjectiveC:
+class ObjectiveC(metaclass=HasFormatEnums):
     """Objective-C language specification."""
 
     class DateFormats(enum.Enum):

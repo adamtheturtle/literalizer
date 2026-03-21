@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -112,7 +113,7 @@ _string_format: Callable[[str], str] = format_string_matlab
 
 
 @beartype
-class Matlab:
+class Matlab(metaclass=HasFormatEnums):
     """MATLAB language specification."""
 
     class DateFormats(enum.Enum):

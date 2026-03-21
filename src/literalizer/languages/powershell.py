@@ -16,6 +16,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -68,7 +69,7 @@ _string_format: Callable[[str], str] = _format_string
 
 
 @beartype
-class PowerShell:
+class PowerShell(metaclass=HasFormatEnums):
     """PowerShell language specification."""
 
     class DateFormats(enum.Enum):

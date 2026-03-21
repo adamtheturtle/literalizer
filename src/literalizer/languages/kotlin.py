@@ -18,6 +18,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -106,7 +107,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Kotlin:
+class Kotlin(metaclass=HasFormatEnums):
     """Kotlin language specification.
 
     Args:

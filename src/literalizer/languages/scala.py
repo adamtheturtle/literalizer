@@ -18,6 +18,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
+from literalizer._language import HasFormatEnums
 from literalizer._types import Value  # noqa: TC001
 
 if TYPE_CHECKING:
@@ -92,7 +93,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Scala:
+class Scala(metaclass=HasFormatEnums):
     """Scala language specification."""
 
     class DateFormats(enum.Enum):

@@ -17,6 +17,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
@@ -71,7 +72,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class R:
+class R(metaclass=HasFormatEnums):
     """R language specification.
 
     Dicts are represented as named ``list()`` calls where each entry is

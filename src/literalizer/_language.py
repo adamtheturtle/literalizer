@@ -12,6 +12,22 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+class HasFormatEnums(type):
+    """Meta-class that declares the nested format Enum class attributes.
+
+    Language classes use ``metaclass=HasFormatEnums`` so that downstream
+    code can write ``dict[str, HasFormatEnums]`` and access
+    ``cls.DateFormats``, ``cls.SequenceFormats``, etc. without ``cast``
+    or ``type: ignore``.
+    """
+
+    DateFormats: type[enum.Enum]
+    DatetimeFormats: type[enum.Enum]
+    BytesFormats: type[enum.Enum]
+    SequenceFormats: type[enum.Enum]
+    SetFormats: type[enum.Enum]
+
+
 @runtime_checkable
 class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
