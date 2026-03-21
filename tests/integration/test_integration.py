@@ -408,7 +408,7 @@ _HASKELL_FRACTIONAL_INSTANCE = (
 @beartype
 def _haskell_preamble(content: str) -> str:
     """Build a Haskell module preamble with only the parts needed."""
-    stripped = _QUOTED_STRING_RE.sub("", content)
+    stripped = _QUOTED_STRING_RE.sub(repl="", string=content)
     needs_strings = '"' in content
     needs_fractional = bool(re.search(pattern=r"\d\.\d", string=stripped))
     needs_num = needs_fractional or bool(
