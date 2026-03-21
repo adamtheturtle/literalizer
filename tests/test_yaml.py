@@ -559,6 +559,127 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
     assert result == expected
 
 
+def test_coerce_mixed_dict_values_none_with_list() -> None:
+    """Dicts with None alongside a list are coerced to strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        tags:
+          - admin
+        extra:
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "tags": "[\\"admin\\"]",
+            "extra": "None",
+        }"""
+    )
+    assert result == expected
+
+
+def test_coerce_mixed_dict_values_set_with_string() -> None:
+    """Dicts with a set alongside a string are coerced to strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        name: Alice
+        roles: !!set
+          ? admin
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    # Set is converted to a sorted JSON array before stringification.
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "name": "Alice",
+            "roles": "[\\"admin\\"]",
+        }"""
+    )
+    assert result == expected
+
+
+def test_coerce_mixed_dict_values_with_list() -> None:
+    """Dicts with string and list values are coerced to all strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        name: Bob
+        tags:
+          - admin
+          - user
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "name": "Bob",
+            "tags": "[\\"admin\\", \\"user\\"]",
+        }"""
+    )
+    assert result == expected
+
+
+def test_coerce_mixed_omap_values() -> None:
+    """Ordered maps with mixed value types are coerced to strings."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!omap
+          - name: Alice
+          - score: 42
+          - tags:
+            - admin
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        [
+            Tuple("name", "Alice"),
+            Tuple("score", "42"),
+            Tuple("tags", "[\\"admin\\"]"),
+        ]"""
+    )
+    assert result == expected
+
+
 def test_r_empty_dict_key_positional() -> None:
     """R with POSITIONAL empty_dict_key emits unnamed list elements."""
     spec = R(

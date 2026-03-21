@@ -277,6 +277,9 @@ def _coerce_value_to_str(*, value: Value) -> str:
     bucket = _scalar_type_bucket(value=value)
     if bucket is not None or value is None:
         return _coerce_scalar_to_str(value=value)
+    if isinstance(value, set):
+        sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+        return json.dumps(obj=sorted_items, default=str)
     return json.dumps(obj=value, default=str, sort_keys=False)
 
 
