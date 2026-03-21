@@ -29,7 +29,7 @@ import literalizer.languages
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-_CASES_DIR = Path(__file__).parent / "cases"
+_CASES_REL = Path("tests") / "integration" / "cases"
 
 
 @beartype
@@ -2060,14 +2060,12 @@ _SET_VARIANTS: dict[str, _Variant] = _build_set_variants()
 
 
 @beartype
-def _discover_cases() -> list[tuple[str, str, Path]]:
-    """Return ``(case_name, language, input_path)`` tuples."""
-    cases: list[tuple[str, str, Path]] = []
-    for case_dir in sorted(_CASES_DIR.iterdir()):
-        cases.extend(
-            (case_dir.name, lang_name, case_dir / "input.yaml")
-            for lang_name in _LANGUAGES
-        )
+def _discover_cases() -> list[tuple[str, str]]:
+    """Return ``(case_name, language)`` tuples."""
+    cases_dir = Path(__file__).parent / "cases"
+    cases: list[tuple[str, str]] = []
+    for case_dir in sorted(cases_dir.iterdir()):
+        cases.extend((case_dir.name, lang_name) for lang_name in _LANGUAGES)
     return cases
 
 
@@ -2075,17 +2073,19 @@ _CASES = _discover_cases()
 
 
 @pytest.mark.parametrize(
-    argnames=("_case_name", "language", "input_path"),
+    argnames=("_case_name", "language"),
     argvalues=_CASES,
     ids=[f"{c[0]}/{c[1]}" for c in _CASES],
 )
 def test_golden_file(
     _case_name: str,
     language: str,
-    input_path: Path,
+    request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
+    cases_dir = Path(request.config.rootdir) / _CASES_REL
+    input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
@@ -2107,19 +2107,21 @@ def test_golden_file(
 
 
 @pytest.mark.parametrize(
-    argnames=("_case_name", "language", "input_path"),
+    argnames=("_case_name", "language"),
     argvalues=_CASES,
     ids=[f"{c[0]}/{c[1]}" for c in _CASES],
 )
 def test_golden_file_with_variable_name(
     _case_name: str,
     language: str,
-    input_path: Path,
+    request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml with variable_name matches golden
     file.
     """
+    cases_dir = Path(request.config.rootdir) / _CASES_REL
+    input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
@@ -2142,20 +2144,22 @@ def test_golden_file_with_variable_name(
 
 
 @pytest.mark.parametrize(
-    argnames=("_case_name", "language", "input_path"),
+    argnames=("_case_name", "language"),
     argvalues=_CASES,
     ids=[f"{c[0]}/{c[1]}" for c in _CASES],
 )
 def test_golden_file_combined_variable_forms(
     _case_name: str,
     language: str,
-    input_path: Path,
+    request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml with new_variable=True (declaration) and
     new_variable=False (assignment to existing variable) produce expected
     golden output, combined in one file to show the difference in syntax.
     """
+    cases_dir = Path(request.config.rootdir) / _CASES_REL
+    input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
     declaration = literalizer.literalize_yaml(
@@ -2193,7 +2197,7 @@ class _VariantCase:
 
     variant_name: str
     variant: _Variant
-    case_dir: Path
+    case_dir_name: str
     variable_name: str | None = None
 
 
@@ -2205,7 +2209,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             _VariantCase(
                 variant_name=variant_name,
                 variant=variant,
-                case_dir=_CASES_DIR / "dates",
+                case_dir_name="dates",
             )
         )
     for variant_name, variant in _SEQUENCE_VARIANTS.items():
@@ -2213,7 +2217,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             _VariantCase(
                 variant_name=variant_name,
                 variant=variant,
-                case_dir=_CASES_DIR / "simple_sequence",
+                case_dir_name="simple_sequence",
             )
         )
     for variant_name, variant in _SET_VARIANTS.items():
@@ -2221,7 +2225,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             _VariantCase(
                 variant_name=variant_name,
                 variant=variant,
-                case_dir=_CASES_DIR / "set",
+                case_dir_name="set",
             )
         )
     variable_type_hints_variants: dict[str, _Variant] = {
@@ -2238,7 +2242,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             _VariantCase(
                 variant_name=variant_name,
                 variant=variant,
-                case_dir=_CASES_DIR / "simple_dict",
+                case_dir_name="simple_dict",
                 variable_name=_VARIABLE_NAME,
             )
         )
@@ -2255,13 +2259,17 @@ _FORMAT_VARIANT_CASES = _build_variant_cases()
 )
 def test_format_variant_golden_file(
     variant_case: _VariantCase,
+    request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test format-variant options (dates, sequences, sets, type hints)
     against golden files.
     """
+    case_dir = (
+        Path(request.config.rootdir) / _CASES_REL / variant_case.case_dir_name
+    )
     variant = variant_case.variant
-    yaml_string = (variant_case.case_dir / "input.yaml").read_text()
+    yaml_string = (case_dir / "input.yaml").read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=variant.spec,
@@ -2276,8 +2284,7 @@ def test_format_variant_golden_file(
     file_regression.check(
         contents=wrapped + "\n",
         extension=variant.extension,
-        fullpath=variant_case.case_dir
-        / (variant_case.variant_name + variant.extension),
+        fullpath=case_dir / (variant_case.variant_name + variant.extension),
     )
 
 
