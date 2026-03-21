@@ -730,8 +730,8 @@ def test_language_class_has_bytes_format_enum(
     language_class: type[object],
 ) -> None:
     """Every language class exposes BytesFormat as an enum type."""
-    assert issubclass(language_class.BytesFormat, enum.Enum)  # type: ignore[attr-defined]
-    assert len(language_class.BytesFormat) >= 1  # type: ignore[attr-defined]
+    assert issubclass(language_class.BytesFormat, enum.Enum)  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
+    assert len(language_class.BytesFormat) >= 1  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
 
 
 @pytest.mark.parametrize(
@@ -743,8 +743,8 @@ def test_language_class_has_sequence_format_enum(
     language_class: type[object],
 ) -> None:
     """Every language class exposes SequenceFormat as an enum type."""
-    assert issubclass(language_class.SequenceFormat, enum.Enum)  # type: ignore[attr-defined]
-    assert len(language_class.SequenceFormat) >= 1  # type: ignore[attr-defined]
+    assert issubclass(language_class.SequenceFormat, enum.Enum)  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
+    assert len(language_class.SequenceFormat) >= 1  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
 
 
 @pytest.mark.parametrize(
@@ -756,5 +756,5 @@ def test_language_class_has_set_format_enum(
     language_class: type[object],
 ) -> None:
     """Every language class exposes SetFormat as an enum type."""
-    assert issubclass(language_class.SetFormat, enum.Enum)  # type: ignore[attr-defined]
-    assert len(language_class.SetFormat) >= 1  # type: ignore[attr-defined]
+    assert issubclass(language_class.SetFormat, enum.Enum)  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
+    assert len(language_class.SetFormat) >= 1  # pyright: ignore[reportAttributeAccessIssue]  # ty: ignore[unresolved-attribute]
