@@ -220,6 +220,15 @@ class Language(Protocol):
     ``{"name": "Bob", "tags": "[\"admin\"]"}``.
     """
 
+    coerce_heterogeneous_list_values_to_strings: bool
+    """Whether to coerce list elements that span multiple type families
+    (e.g. scalars and nested collections) to strings so every element
+    shares a single type.
+
+    For example, ``[true, "hi", [1, 2]]`` becomes
+    ``["True", "hi", "[1, 2]"]``.
+    """
+
     supports_collection_comments: bool
     """Whether the language supports comments inside collection
     initializers.

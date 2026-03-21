@@ -161,6 +161,21 @@ def _rust_array_spec() -> literalizer.languages.Rust:
 
 
 @beartype
+def _rust_collections_use(content: str) -> str:
+    """Return a use statement for std::collections types used in
+    content.
+    """
+    names: list[str] = []
+    if "HashMap" in content:
+        names.append("HashMap")
+    if "HashSet" in content:
+        names.append("HashSet")
+    if not names:
+        return ""
+    return f"use std::collections::{{{', '.join(names)}}};\n"
+
+
+@beartype
 def _rust_chrono_use(content: str) -> str:
     """Return a chrono use statement if the content uses chrono types."""
     if "NaiveDate" in content:
@@ -173,7 +188,9 @@ def _wrap_rust(content: str) -> str:
     """Wrap in a Rust main function with necessary imports."""
     indented = content.replace("\n", "\n    ")
     return (
-        _rust_chrono_use(content=content) + "fn main() {\n"
+        _rust_collections_use(content=content)
+        + _rust_chrono_use(content=content)
+        + "fn main() {\n"
         f"    let _ = {indented};\n"
         "}"
     )
@@ -382,7 +399,8 @@ def _wrap_rust_chrono(content: str) -> str:
     """Wrap in a Rust main function with chrono imports."""
     indented = content.replace("\n", "\n    ")
     return (
-        "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
+        _rust_collections_use(content=content)
+        + "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
         "fn main() {\n"
         f"    let _ = {indented};\n"
         "}"
@@ -898,7 +916,9 @@ def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
     return (
-        _rust_chrono_use(content=content) + "fn main() {\n"
+        _rust_collections_use(content=content)
+        + _rust_chrono_use(content=content)
+        + "fn main() {\n"
         f"    {indented}\n"
         f"    let _ = {_VARIABLE_NAME};\n"
         "}"
@@ -1087,7 +1107,9 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     assign_indented = "    " + assignment.replace("\n", "\n    ")
     combined = declaration + assignment
     return (
-        _rust_chrono_use(content=combined) + "fn main() {\n"
+        _rust_collections_use(content=combined)
+        + _rust_chrono_use(content=combined)
+        + "fn main() {\n"
         "    {\n"
         f"{decl_indented}\n"
         f"        let _ = {_VARIABLE_NAME};\n"

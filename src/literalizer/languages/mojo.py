@@ -162,6 +162,7 @@ class Mojo(metaclass=HasFormatEnums):
         self.coerce_heterogeneous_scalars_to_strings = True
         self.coerce_heterogeneous_sibling_lists_to_strings = True
         self.coerce_heterogeneous_dict_values_to_strings = True
+        self.coerce_heterogeneous_list_values_to_strings = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration

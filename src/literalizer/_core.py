@@ -319,6 +319,31 @@ def _coerce_mixed_dict_values(*, data: Value) -> Value:
 
 
 @beartype
+def _coerce_mixed_list_values(*, data: Value) -> Value:
+    """Recursively coerce lists whose elements span multiple type families.
+
+    When a list has elements of mixed types (e.g. scalars and nested
+    collections), all elements are converted to strings so the list
+    becomes homogeneous.
+    """
+    if isinstance(data, (ordereddict, dict)):
+        if isinstance(data, ordereddict):
+            new_omap: ordereddict = ordereddict()
+            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                new_omap[k] = _coerce_mixed_list_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            return new_omap
+        return {k: _coerce_mixed_list_values(data=v) for k, v in data.items()}
+
+    if isinstance(data, list):
+        new_list = [_coerce_mixed_list_values(data=v) for v in data]
+        if _dict_values_mixed_types(values=new_list):
+            return [_coerce_value_to_str(value=v) for v in new_list]
+        return new_list
+
+    return data
+
+
+@beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     if value is None:
@@ -498,6 +523,8 @@ def _apply_coercions(
                 data = _coerce_heterogeneous_sibling_lists(data=data)
     if spec.coerce_heterogeneous_dict_values_to_strings:
         data = _coerce_mixed_dict_values(data=data)
+    if spec.coerce_heterogeneous_list_values_to_strings:
+        data = _coerce_mixed_list_values(data=data)
     return data
 
 

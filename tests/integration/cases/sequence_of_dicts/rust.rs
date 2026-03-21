@@ -1,6 +1,7 @@
+use std::collections::{HashMap};
 fn main() {
     let _ = vec![
-        HashMap::from(vec![("name", "Alice"), ("age", "30")]),
-        HashMap::from(vec![("name", "Bob"), ("age", "25")]),
+        HashMap::from([("name", "Alice"), ("age", "30")]),
+        HashMap::from([("name", "Bob"), ("age", "25")]),
     ];
 }

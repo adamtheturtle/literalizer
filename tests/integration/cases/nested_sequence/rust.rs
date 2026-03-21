@@ -1,8 +1,8 @@
 fn main() {
     let _ = vec![
-        true,
+        "True",
         "hi",
-        vec![1, 2],
-        None::<()>,
+        "[1, 2]",
+        "None",
     ];
 }

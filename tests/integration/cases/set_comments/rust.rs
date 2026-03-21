@@ -1,5 +1,6 @@
+use std::collections::{HashSet};
 fn main() {
-    let _ = HashSet::from(vec![
+    let _ = HashSet::from([
         "apple",  // inline comment
         // before banana
         "banana",

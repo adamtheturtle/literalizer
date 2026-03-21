@@ -1,6 +1,7 @@
+use std::collections::{HashMap};
 fn main() {
     {
-        let my_data = HashMap::from(vec![
+        let my_data = HashMap::from([
             // Server configuration
             ("host", "localhost"),  // default host
             ("port", "8080"),
@@ -10,7 +11,7 @@ fn main() {
         let _ = my_data;
     }
     let my_data;
-    my_data = HashMap::from(vec![
+    my_data = HashMap::from([
         // Server configuration
         ("host", "localhost"),  // default host
         ("port", "8080"),

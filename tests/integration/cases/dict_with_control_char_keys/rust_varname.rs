@@ -1,5 +1,6 @@
+use std::collections::{HashMap};
 fn main() {
-    let my_data = HashMap::from(vec![
+    let my_data = HashMap::from([
         ("key\nwith\nnewlines", "value1"),
         ("key\twith\ttabs", "value2"),
         ("", "value3"),

@@ -1,6 +1,7 @@
+use std::collections::{HashSet};
 fn main() {
     {
-        let my_data = HashSet::from(vec![
+        let my_data = HashSet::from([
             "apple",
             "banana",
             "cherry",
@@ -8,7 +9,7 @@ fn main() {
         let _ = my_data;
     }
     let my_data;
-    my_data = HashSet::from(vec![
+    my_data = HashSet::from([
         "apple",
         "banana",
         "cherry",

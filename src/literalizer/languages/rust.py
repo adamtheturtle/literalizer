@@ -154,7 +154,7 @@ class Rust(metaclass=HasFormatEnums):
             self.sequence_open = fixed_sequence_open(open_str="vec![")
             self.sequence_close = "]"
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="HashMap::from(vec!["
+            open_str="HashMap::from(["
         )
         self.dict_close = "])"
         self.format_dict_entry: Callable[[str, str], str] = (
@@ -169,9 +169,13 @@ class Rust(metaclass=HasFormatEnums):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = None
+        self.empty_sequence: str | None = (
+            "Vec::<String>::new()"
+            if sequence_format == Rust.SequenceFormat.VEC
+            else None
+        )
         self.empty_dict: str | None = None
-        self.set_open = "HashSet::from(vec!["
+        self.set_open = "HashSet::from(["
         self.set_close = "])"
         self.empty_set: str | None = None
         self.format_sequence_entry: Callable[[str], str] = (
@@ -180,7 +184,7 @@ class Rust(metaclass=HasFormatEnums):
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "//"
         self.comment_suffix = ""
-        self.omap_open = "HashMap::from(vec!["
+        self.omap_open = "HashMap::from(["
         self.omap_close = "])"
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_rust_omap_entry
@@ -191,8 +195,13 @@ class Rust(metaclass=HasFormatEnums):
         self.coerce_heterogeneous_scalars_to_strings: bool = (
             sequence_format != Rust.sequence_formats.TUPLE
         )
-        self.coerce_heterogeneous_sibling_lists_to_strings = False
+        self.coerce_heterogeneous_sibling_lists_to_strings: bool = (
+            sequence_format != Rust.SequenceFormat.TUPLE
+        )
         self.coerce_heterogeneous_dict_values_to_strings: bool = (
+            sequence_format != Rust.SequenceFormat.TUPLE
+        )
+        self.coerce_heterogeneous_list_values_to_strings: bool = (
             sequence_format != Rust.SequenceFormat.TUPLE
         )
         self.supports_collection_comments = True
