@@ -165,10 +165,10 @@ class ObjectiveC(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.OBJC,
+        datetime_format: DatetimeFormats = DatetimeFormats.OBJC,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
     ) -> None:
         """Initialize Objective-C language specification."""
         self.sequence_format = sequence_format

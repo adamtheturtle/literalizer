@@ -107,10 +107,10 @@ class Ruby(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.RUBY,
+        datetime_format: DatetimeFormats = DatetimeFormats.RUBY,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
     ) -> None:
         """Initialize Ruby language specification."""
         self.sequence_format = sequence_format

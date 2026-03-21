@@ -220,12 +220,12 @@ class Python(metaclass=HasFormatEnums):
     def __init__(  # noqa: PLR0915  # pylint: disable=too-many-statements
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
-        set_format: SetFormats,
-        variable_type_hints: VariableTypeHints,
+        date_format: DateFormats = DateFormats.PYTHON,
+        datetime_format: DatetimeFormats = DatetimeFormats.PYTHON,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.TUPLE,
+        set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Python language specification."""
         self.sequence_format = sequence_format
