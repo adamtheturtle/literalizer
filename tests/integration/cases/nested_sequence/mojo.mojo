@@ -1,7 +1,7 @@
 def main():
     _ = [
-        True,
+        "True",
         "hi",
-        [1, 2],
-        None,
+        "[1, 2]",
+        "None",
     ]
