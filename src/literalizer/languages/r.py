@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_r_dict_entry_positional(key: str, value: str) -> str:
     """Format an R named list entry.
@@ -41,6 +42,7 @@ def _format_r_dict_entry_positional(key: str, value: str) -> str:
     if key == '""':
         return value
     return f"{key} = {value}"
+
 
 @beartype
 def _format_r_dict_entry_error(key: str, value: str) -> str:
@@ -54,20 +56,24 @@ def _format_r_dict_entry_error(key: str, value: str) -> str:
         raise EmptyDictKeyError(msg)
     return f"{key} = {value}"
 
+
 @beartype
 def _format_r_omap_entry(key: str, value: str) -> str:
     """Format an R named list entry for an ordered map."""
     return f"{key} = {value}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an R variable declaration."""
     return f"{name} <- {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an R variable assignment."""
     return f"{name} <- {value}"
+
 
 @beartype
 class R(metaclass=HasFormatEnums):

@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _to_ada_val(value: str) -> str:
     """Wrap a pre-formatted value string in an Ada ``A_Val`` constructor.
@@ -71,12 +72,14 @@ def _to_ada_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
+
 @beartype
 def _format_ada_dict_entry(key: str, value: str) -> str:
     """Format an Ada dict/map entry as an ``AEntry (key, AVal value)``
     call.
     """
     return f"AEntry ({key}, {_to_ada_val(value=value)})"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -87,6 +90,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
     """
     return f"{name} : A_Val := {_to_ada_val(value=value)};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an Ada assignment statement to an existing variable.
@@ -96,7 +100,9 @@ def _format_variable_assignment(name: str, value: str) -> str:
     """
     return f"{name} := {_to_ada_val(value=value)};"
 
+
 _string_format: Callable[[str], str] = format_string_ada
+
 
 @beartype
 class Ada(metaclass=HasFormatEnums):

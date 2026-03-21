@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _to_val(value: str) -> str:
     """Wrap a pre-formatted value string in a D ``JSONValue(...)`` call.
@@ -62,15 +63,18 @@ def _to_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
+
 @beartype
 def _format_d_dict_entry(key: str, value: str) -> str:
     """Format a D associative-array entry as ``key: JSONValue(value)``."""
     return f"{key}: {_to_val(value=value)}"
 
+
 @beartype
 def _format_d_sequence_entry(item: str) -> str:
     """Format a D array entry as a ``JSONValue(item)`` call."""
     return _to_val(value=item)
+
 
 @beartype
 def _format_d_set_entry(item: str) -> str:
@@ -79,6 +83,7 @@ def _format_d_set_entry(item: str) -> str:
     """
     return _to_val(value=item)
 
+
 @beartype
 def _format_d_omap_entry(key: str, value: str) -> str:
     """Format a D ordered-map entry as a two-element ``JSONValue``
@@ -86,17 +91,21 @@ def _format_d_omap_entry(key: str, value: str) -> str:
     """
     return f"JSONValue([JSONValue({key}), {_to_val(value=value)}])"
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a D ``auto`` variable declaration using ``JSONValue``."""
     return f"auto {name} = {_to_val(value=value)};"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a D assignment to an existing variable."""
     return f"{name} = {_to_val(value=value)};"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class D(metaclass=HasFormatEnums):

@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_lua_dict_entry(key: str, value: str) -> str:
     """Format a Lua table entry with a string key.
@@ -35,6 +36,7 @@ def _format_lua_dict_entry(key: str, value: str) -> str:
     Example: ``'"name"'`` and ``'"Alice"'`` → ``'["name"] = "Alice"'``.
     """
     return f"[{key}] = {value}"
+
 
 @beartype
 def _format_lua_set_entry(item: str) -> str:
@@ -44,17 +46,21 @@ def _format_lua_set_entry(item: str) -> str:
     """
     return f"[{item}] = true"
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Lua variable declaration."""
     return f"local {name} = {value}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Lua variable assignment."""
     return f"{name} = {value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Lua(metaclass=HasFormatEnums):

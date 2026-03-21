@@ -30,10 +30,12 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_mojo_omap_entry(key: str, value: str) -> str:
     """Format one Mojo ordered-map entry as a ``Tuple(key, value)``."""
     return f"Tuple({key}, {value})"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -42,12 +44,15 @@ def _format_variable_declaration(name: str, value: str) -> str:
     """
     return f"var {name} = {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Mojo variable assignment."""
     return f"{name} = {value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Mojo(metaclass=HasFormatEnums):

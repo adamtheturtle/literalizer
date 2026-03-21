@@ -30,10 +30,12 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_java_dict_entry(key: str, value: str) -> str:
     """Format a Java ``Map.entry(key, value)`` call."""
     return f"Map.entry({key}, {value})"
+
 
 _JAVA_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
@@ -41,6 +43,7 @@ _JAVA_SCALAR_TYPES: dict[str, str] = {
     "integer": "int",
     "number": "double",
 }
+
 
 @beartype
 def _java_schema_to_type(item_schema: dict[str, Any]) -> str | None:
@@ -61,6 +64,7 @@ def _java_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "double"
     return None
 
+
 @beartype
 def _java_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Java array opener."""
@@ -69,15 +73,18 @@ def _java_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
         return None
     return f"new {type_name}[]{{"
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Java variable declaration."""
     return f"var {name} = {value};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Java variable assignment."""
     return f"{name} = {value};"
+
 
 @beartype
 class Java(metaclass=HasFormatEnums):

@@ -29,22 +29,27 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_cons_entry(key: str, value: str) -> str:
     """Format a Common Lisp association-list entry as a ``cons`` pair."""
     return f"(cons {key} {value})"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Common Lisp special-variable declaration with earmuffs."""
     return f"(defparameter *{name}* {value})"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Common Lisp special-variable assignment with earmuffs."""
     return f"(setf *{name}* {value})"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class CommonLisp(metaclass=HasFormatEnums):

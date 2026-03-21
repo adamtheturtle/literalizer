@@ -36,6 +36,7 @@ _GO_SCALAR_TYPES: dict[str, str] = {
     "number": "float64",
 }
 
+
 @beartype
 def _go_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Go type name, recursively."""
@@ -55,6 +56,7 @@ def _go_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "float64"
     return None
 
+
 @beartype
 def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Go slice opener."""
@@ -62,6 +64,7 @@ def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"[]{type_name}{{"
+
 
 @beartype
 def _go_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
@@ -71,6 +74,7 @@ def _go_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
         return None
     return f"map[string]{type_name}{{"
 
+
 @beartype
 def _format_go_set_entry(item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
@@ -79,20 +83,24 @@ def _format_go_set_entry(item: str) -> str:
     """
     return f"{item}: struct{{}}{{}}"
 
+
 @beartype
 def _format_go_omap_entry(key: str, value: str) -> str:
     """Format a Go ordered-map entry as a ``{key, value}`` pair."""
     return f"{{{key}, {value}}}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Go variable declaration."""
     return f"{name} := {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Go variable assignment."""
     return f"{name} = {value}"
+
 
 @beartype
 class Go(metaclass=HasFormatEnums):

@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _to_val(value: str) -> str:
     """Convert a value to an OCaml union type expression."""
@@ -64,10 +65,12 @@ def _to_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
+
 @beartype
 def _format_ocaml_dict_entry(key: str, value: str) -> str:
     """Format an OCaml dict entry as a ``(key, OXxx value)`` tuple."""
     return f"({key}, {_to_val(value=value)})"
+
 
 @beartype
 def _format_ocaml_omap_entry(key: str, value: str) -> str:
@@ -76,12 +79,14 @@ def _format_ocaml_omap_entry(key: str, value: str) -> str:
     """
     return f"({key}, {_to_val(value=value)})"
 
+
 @beartype
 def _format_ocaml_set_entry(item: str) -> str:
     """Format an OCaml set entry with the appropriate ``val_t``
     constructor.
     """
     return _to_val(value=item)
+
 
 @beartype
 def _format_ocaml_sequence_entry(item: str) -> str:
@@ -90,17 +95,21 @@ def _format_ocaml_sequence_entry(item: str) -> str:
     """
     return _to_val(value=item)
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an OCaml variable declaration."""
     return f"let {name} : val_t = {_to_val(value=value)}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an OCaml variable assignment."""
     return _format_variable_declaration(name=name, value=value)
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class OCaml(metaclass=HasFormatEnums):

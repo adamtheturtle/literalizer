@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _to_val(value: str) -> str:
     """Wrap a pre-formatted value string in a Zig ``ZVal`` union literal.
@@ -48,32 +49,39 @@ def _to_val(value: str) -> str:
         return f".{{ .float = {value} }}"
     return f".{{ .int = {value} }}"
 
+
 @beartype
 def _format_zig_dict_entry(key: str, value: str) -> str:
     """Format a Zig dict entry as a ``ZKV`` anonymous struct literal."""
     return f".{{ .key = {key}, .val = {_to_val(value=value)} }}"
+
 
 @beartype
 def _format_zig_sequence_entry(item: str) -> str:
     """Format a Zig sequence entry as a ``ZVal`` union literal."""
     return _to_val(value=item)
 
+
 @beartype
 def _format_zig_set_entry(item: str) -> str:
     """Format a Zig set entry as a ``ZVal`` union literal."""
     return _to_val(value=item)
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
     return f"const {name}: ZVal = {_to_val(value=value)};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Zig assignment to an existing ``ZVal`` variable."""
     return f"{name} = {_to_val(value=value)};"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Zig(metaclass=HasFormatEnums):

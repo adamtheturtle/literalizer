@@ -35,6 +35,7 @@ _VB_SCALAR_TYPES: dict[str, str] = {
     "number": "Double",
 }
 
+
 @beartype
 def _vb_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a VB.NET type name, recursively."""
@@ -54,6 +55,7 @@ def _vb_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "Double"
     return None
 
+
 @beartype
 def _vb_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a VB.NET array opener."""
@@ -62,20 +64,24 @@ def _vb_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
         return None
     return f"New {type_name}() {{"
 
+
 @beartype
 def _format_vb_dict_entry(key: str, value: str) -> str:
     """Format a VB.NET dictionary initializer entry."""
     return f"{{{key}, {value}}}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a VB.NET variable declaration."""
     return f"Dim {name} = {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a VB.NET variable assignment."""
     return f"{name} = {value}"
+
 
 @beartype
 class VisualBasic(metaclass=HasFormatEnums):

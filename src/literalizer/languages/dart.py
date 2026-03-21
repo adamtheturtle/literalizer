@@ -37,6 +37,7 @@ _DART_SCALAR_TYPES: dict[str, str] = {
     "number": "double",
 }
 
+
 @beartype
 def _dart_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Dart type name, recursively."""
@@ -56,6 +57,7 @@ def _dart_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "double"
     return None
 
+
 @beartype
 def _dart_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Dart list opener."""
@@ -63,6 +65,7 @@ def _dart_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"<{type_name}>["
+
 
 @beartype
 def _dart_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
@@ -72,20 +75,24 @@ def _dart_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
         return None
     return f"<String, {type_name}>{{"
 
+
 @beartype
 def _format_dart_omap_entry(key: str, value: str) -> str:
     """Format a Dart map entry."""
     return f"{key}: {value}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Dart variable declaration."""
     return f"final {name} = {value};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Dart variable assignment."""
     return f"{name} = {value};"
+
 
 @beartype
 class Dart(metaclass=HasFormatEnums):

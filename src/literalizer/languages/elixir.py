@@ -30,22 +30,27 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_elixir_omap_entry(key: str, value: str) -> str:
     """Format an Elixir ordered-map entry as a ``{key, value}`` tuple."""
     return f"{{{key}, {value}}}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an Elixir variable declaration."""
     return f"{name} = {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an Elixir variable assignment."""
     return f"{name} = {value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Elixir(metaclass=HasFormatEnums):

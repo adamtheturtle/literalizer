@@ -30,20 +30,24 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_ts_omap_entry(key: str, value: str) -> str:
     """Format a TypeScript ordered-map entry."""
     return f"{key}: {value}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a TypeScript variable declaration."""
     return f"const {name} = {value};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a TypeScript variable assignment."""
     return f"{name} = {value};"
+
 
 @beartype
 class TypeScript(metaclass=HasFormatEnums):

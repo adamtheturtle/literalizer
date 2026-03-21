@@ -30,15 +30,18 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_julia_omap_entry(key: str, value: str) -> str:
     """Format a Julia ordered-map entry as a pair arrow expression."""
     return f"{key} => {value}"
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Julia variable declaration."""
     return f"{name} = {value}"
+
 
 @beartype
 class Julia(metaclass=HasFormatEnums):

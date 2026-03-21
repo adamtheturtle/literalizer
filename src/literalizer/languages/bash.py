@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _to_bash_value(item: str) -> str:
     """Quote an item if it is a nested array or dict expression.
@@ -46,15 +47,18 @@ def _to_bash_value(item: str) -> str:
         return f'"{escaped}"'
     return item
 
+
 @beartype
 def _format_bash_sequence_entry(item: str) -> str:
     """Format a Bash indexed-array element, quoting nested collections."""
     return _to_bash_value(item=item)
 
+
 @beartype
 def _format_bash_dict_entry(key: str, value: str) -> str:
     """Format a Bash associative-array entry as ``[key]=value``."""
     return f"[{key}]={_to_bash_value(item=value)}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -66,12 +70,15 @@ def _format_variable_declaration(name: str, value: str) -> str:
     )
     return f"declare{flag} {name}={value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Bash variable assignment."""
     return f"{name}={value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Bash(metaclass=HasFormatEnums):

@@ -30,20 +30,24 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_ruby_omap_entry(key: str, value: str) -> str:
     """Format a Ruby ordered-map entry."""
     return f"{key} => {value}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Ruby variable declaration."""
     return f"{name} = {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Ruby variable assignment."""
     return f"{name} = {value}"
+
 
 @beartype
 class Ruby(metaclass=HasFormatEnums):

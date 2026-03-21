@@ -32,20 +32,24 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_python_omap_entry(key: str, value: str) -> str:
     """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
     return f"({key}, {value})"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Python variable declaration."""
     return f"{name} = {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Python variable assignment."""
     return f"{name} = {value}"
+
 
 _EXACT_TYPE_HINTS: dict[str, str] = {
     "True": "bool",
@@ -67,6 +71,7 @@ _PREFIX_TYPE_HINTS: tuple[tuple[str, str], ...] = (
     ("'", "str"),
 )
 
+
 @beartype
 def _infer_python_type_hint(value: str) -> str:
     """Infer a Python type hint string from a formatted value."""
@@ -84,6 +89,7 @@ def _infer_python_type_hint(value: str) -> str:
     except ValueError:
         return "float"
     return "int"
+
 
 @beartype
 def _is_dict_literal(*, value: str) -> bool:
@@ -106,11 +112,13 @@ def _is_dict_literal(*, value: str) -> bool:
     rest = content[i + 1 :]
     return rest.startswith((": ", ":\n"))
 
+
 @beartype
 def _format_variable_declaration_inline_hint(name: str, value: str) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _infer_python_type_hint(value=value)
     return f"{name}: {hint} = {value}"
+
 
 @beartype
 class Python(metaclass=HasFormatEnums):

@@ -29,10 +29,12 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_erlang_omap_entry(key: str, value: str) -> str:
     """Format an Erlang ordered-map entry as a ``{key, value}`` tuple."""
     return f"{{{key}, {value}}}"
+
 
 @beartype
 def _format_bytes(value: bytes) -> str:
@@ -40,11 +42,13 @@ def _format_bytes(value: bytes) -> str:
     parts = ", ".join(f"{b}" for b in value)
     return f"<<{parts}>>"
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an Erlang variable declaration."""
     erlang_name = name[0].upper() + name[1:]
     return f"{erlang_name} = {value}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
@@ -52,7 +56,9 @@ def _format_variable_assignment(name: str, value: str) -> str:
     erlang_name = name[0].upper() + name[1:]
     return f"{erlang_name} = {value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Erlang(metaclass=HasFormatEnums):

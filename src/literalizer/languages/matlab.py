@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 _CONTROL_CHAR_THRESHOLD = 32
 
+
 @beartype
 def _decode_matlab_string_expr(expr: str) -> str:
     r"""Decode a MATLAB string expression back to its raw string value.
@@ -51,6 +52,7 @@ def _decode_matlab_string_expr(expr: str) -> str:
         else:
             raw.append(string_seg.replace('""', '"').replace("\\\\", "\\"))
     return "".join(raw)
+
 
 @beartype
 def _matlab_char_key(s: str) -> str:
@@ -76,6 +78,7 @@ def _matlab_char_key(s: str) -> str:
         return parts[0]
     return "[" + ", ".join(parts) + "]"
 
+
 @beartype
 def _format_matlab_dict_entry(key: str, value: str) -> str:
     """Format a MATLAB ``struct`` field as a ``'key', value`` pair.
@@ -97,17 +100,21 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
         value = f"{{{value}}}"
     return f"{key_expr}, {value}"
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a MATLAB variable declaration."""
     return f"{name} = {value};"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a MATLAB variable assignment."""
     return f"{name} = {value};"
 
+
 _string_format: Callable[[str], str] = format_string_matlab
+
 
 @beartype
 class Matlab(metaclass=HasFormatEnums):

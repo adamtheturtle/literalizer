@@ -39,6 +39,7 @@ _FVAL_PREFIXES = (
     "fentry(",
 )
 
+
 @beartype
 def _to_fval(value: str) -> str:
     """Convert a pre-formatted value string to an ``fval_t`` constructor.
@@ -74,6 +75,7 @@ def _to_fval(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
+
 def _fortran_comment_pos(line: str) -> int | None:
     """Return the index of the ``!`` comment character in *line* that
     lies outside any string literal, or ``None`` if there is no comment.
@@ -94,6 +96,7 @@ def _fortran_comment_pos(line: str) -> int | None:
             return i
         i += 1
     return None
+
 
 @beartype
 def _add_continuation(value: str) -> str:
@@ -124,12 +127,14 @@ def _add_continuation(value: str) -> str:
                 result.append(line + " &")
     return "\n".join(result)
 
+
 @beartype
 def _format_fortran_dict_entry(key: str, value: str) -> str:
     """Format a Fortran dict entry as an ``fentry(key, fval_t value)``
     call.
     """
     return f"fentry({key}, {_to_fval(value=value)})"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
@@ -142,6 +147,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
     continued = _add_continuation(value=fval)
     return f"type(fval_t) :: {name}\n{name} = {continued}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Fortran assignment to an existing ``fval_t`` variable.
@@ -153,7 +159,9 @@ def _format_variable_assignment(name: str, value: str) -> str:
     continued = _add_continuation(value=fval)
     return f"{name} = {continued}"
 
+
 _string_format: Callable[[str], str] = format_string_fortran
+
 
 @beartype
 class Fortran(metaclass=HasFormatEnums):

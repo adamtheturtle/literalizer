@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _to_val(value: str) -> str:
     """Convert a value to a C union cast expression."""
@@ -54,32 +55,39 @@ def _to_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
+
 @beartype
 def _format_c_dict_entry(key: str, value: str) -> str:
     """Format a C dict entry as a ``_CKV`` compound literal."""
     return f"{{{key}, {_to_val(value=value)}}}"
+
 
 @beartype
 def _format_c_list_entry(item: str) -> str:
     """Format a C list entry as a ``_CVal`` compound literal."""
     return _to_val(value=item)
 
+
 @beartype
 def _format_c_set_entry(item: str) -> str:
     """Format a C set entry as a ``_CVal`` compound literal."""
     return _to_val(value=item)
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a C variable declaration."""
     return f"_CVal {name} = {_to_val(value=value)};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a C variable assignment."""
     return f"{name} = {_to_val(value=value)};"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class C(metaclass=HasFormatEnums):

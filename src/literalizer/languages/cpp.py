@@ -36,6 +36,7 @@ _CPP_SCALAR_TYPES: dict[str, str] = {
     "number": "double",
 }
 
+
 @beartype
 def _cpp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a C++ type name, recursively."""
@@ -55,6 +56,7 @@ def _cpp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "double"
     return None
 
+
 @beartype
 def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a C++ initializer-list opener."""
@@ -62,6 +64,7 @@ def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"std::vector<{type_name}>{{"
+
 
 @beartype
 def _cpp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
@@ -71,20 +74,24 @@ def _cpp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
         return None
     return f"std::map<std::string, {type_name}>{{"
 
+
 @beartype
 def _format_cpp_dict_entry(key: str, value: str) -> str:
     """Format a C++ dict entry as a brace-enclosed pair."""
     return f"{{{key}, {value}}}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a C++ variable declaration."""
     return f"auto {name} = {value};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a C++ variable assignment."""
     return f"{name} = {value};"
+
 
 @beartype
 class Cpp(metaclass=HasFormatEnums):

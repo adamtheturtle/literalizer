@@ -30,17 +30,21 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Nim ``var`` declaration using ``%*`` for JSON nodes."""
     return f"var {name} = %*{value}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Nim assignment to an existing variable using ``%*``."""
     return f"{name} = %*{value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Nim(metaclass=HasFormatEnums):

@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a named Norg code block.
@@ -38,6 +39,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
     verbatim tag (``@code json`` / ``@end``) for the value.
     """
     return f"* {name}\n@code json\n{value}\n@end"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
@@ -48,6 +50,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"* {name}\n@code json\n{value}\n@end"
+
 
 @beartype
 class Norg(metaclass=HasFormatEnums):

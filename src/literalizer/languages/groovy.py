@@ -30,17 +30,21 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Groovy variable declaration."""
     return f"def {name} = {value}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Groovy variable assignment."""
     return f"{name} = {value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash_dollar
+
 
 @beartype
 class Groovy(metaclass=HasFormatEnums):

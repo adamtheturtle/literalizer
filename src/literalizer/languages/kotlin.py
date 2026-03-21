@@ -37,6 +37,7 @@ _KOTLIN_SCALAR_OPENERS: dict[str, str] = {
     "number": "doubleArrayOf(",
 }
 
+
 @beartype
 def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Kotlin collection opener."""
@@ -56,12 +57,14 @@ def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
         return "listOf<Any?>("
     return None
 
+
 _KOTLIN_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
     "boolean": "Boolean",
     "integer": "Int",
     "number": "Double",
 }
+
 
 @beartype
 def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
@@ -77,6 +80,7 @@ def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return None
     return None
 
+
 @beartype
 def _kotlin_dict_schema_to_opener(
     value_schema: dict[str, Any],
@@ -87,20 +91,24 @@ def _kotlin_dict_schema_to_opener(
         return None
     return f"mapOf<String, {type_name}>("
 
+
 @beartype
 def _format_kotlin_omap_entry(key: str, value: str) -> str:
     """Format a Kotlin ordered-map entry."""
     return f"{key} to {value}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Kotlin variable declaration."""
     return f"val {name} = {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Kotlin variable assignment."""
     return f"{name} = {value}"
+
 
 @beartype
 class Kotlin(metaclass=HasFormatEnums):

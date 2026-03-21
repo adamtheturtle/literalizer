@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 _BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
 _MIN_QUOTED_KEY_LENGTH = 2
 
+
 @beartype
 def _format_toml_dict_entry(key: str, value: str) -> str:
     """Format a TOML dict entry as ``key = value``.
@@ -49,6 +50,7 @@ def _format_toml_dict_entry(key: str, value: str) -> str:
             return f"{inner} = {value}"
     return f"{key} = {value}"
 
+
 @beartype
 def _format_toml_date(value: datetime.date) -> str:
     """Format a date as a TOML local date literal (unquoted).
@@ -56,6 +58,7 @@ def _format_toml_date(value: datetime.date) -> str:
     Example: ``datetime.date(2024, 1, 15)`` → ``2024-01-15``.
     """
     return value.isoformat()
+
 
 @beartype
 def _format_toml_datetime(value: datetime.datetime) -> str:
@@ -67,10 +70,12 @@ def _format_toml_datetime(value: datetime.datetime) -> str:
     """
     return value.isoformat()
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a TOML key-value assignment as ``name = value``."""
     return f"{name} = {value}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
@@ -81,6 +86,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"{name} = {value}"
+
 
 @beartype
 class Toml(metaclass=HasFormatEnums):

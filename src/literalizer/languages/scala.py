@@ -36,6 +36,7 @@ _SCALA_SCALAR_TYPES: dict[str, str] = {
     "number": "Double",
 }
 
+
 @beartype
 def _scala_schema_to_type(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Scala type name, recursively."""
@@ -55,6 +56,7 @@ def _scala_schema_to_type(item_schema: dict[str, Any]) -> str | None:
         return "Double"
     return None
 
+
 @beartype
 def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     """Map a JSON Schema item type to a Scala collection opener."""
@@ -62,6 +64,7 @@ def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"Array[{type_name}]("
+
 
 @beartype
 def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
@@ -71,22 +74,27 @@ def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
         return None
     return f"Map[String, {type_name}]("
 
+
 @beartype
 def _format_scala_omap_entry(key: str, value: str) -> str:
     """Format a Scala ``ListMap`` entry as a ``key -> value`` pair."""
     return f"{key} -> {value}"
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Scala variable declaration."""
     return f"val {name} = {value}"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Scala variable assignment."""
     return f"{name} = {value}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class Scala(metaclass=HasFormatEnums):

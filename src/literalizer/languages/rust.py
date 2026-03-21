@@ -29,25 +29,30 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_rust_dict_entry(key: str, value: str) -> str:
     """Format a Rust HashMap entry as a tuple ``(key, value)``."""
     return f"({key}, {value})"
+
 
 @beartype
 def _format_rust_omap_entry(key: str, value: str) -> str:
     """Format a Rust ordered-map entry as a tuple ``(key, value)``."""
     return f"({key}, {value})"
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Rust variable declaration."""
     return f"let {name} = {value};"
 
+
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Rust variable assignment."""
     return f"{name} = {value};"
+
 
 @beartype
 class Rust(metaclass=HasFormatEnums):

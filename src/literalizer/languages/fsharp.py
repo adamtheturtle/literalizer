@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _to_val(value: str) -> str:
     """Convert a value to an F# union type expression."""
@@ -64,20 +65,24 @@ def _to_val(value: str) -> str:
         return float_result
     return value  # pragma: no cover
 
+
 @beartype
 def _format_fsharp_dict_entry(key: str, value: str) -> str:
     """Format an F# dict entry as a ``(key, FVal value)`` tuple."""
     return f"({key}, {_to_val(value=value)})"
+
 
 @beartype
 def _format_fsharp_omap_entry(key: str, value: str) -> str:
     """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
     return f"({key}, {_to_val(value=value)})"
 
+
 @beartype
 def _format_fsharp_set_entry(item: str) -> str:
     """Format an F# set entry with the appropriate ``Val`` constructor."""
     return _to_val(value=item)
+
 
 @beartype
 def _format_fsharp_sequence_entry(item: str) -> str:
@@ -86,17 +91,21 @@ def _format_fsharp_sequence_entry(item: str) -> str:
     """
     return _to_val(value=item)
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format an F# variable declaration."""
     return f"let {name}: Val = {_to_val(value=value)}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an F# variable assignment."""
     return f"let {name}: Val = {_to_val(value=value)}"
 
+
 _string_format: Callable[[str], str] = format_string_backslash
+
 
 @beartype
 class FSharp(metaclass=HasFormatEnums):

@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+
 @beartype
 def _format_yaml_date(value: datetime.date) -> str:
     """Format a date as a YAML native date literal (unquoted).
@@ -35,6 +36,7 @@ def _format_yaml_date(value: datetime.date) -> str:
     Example: ``datetime.date(2024, 1, 15)`` → ``2024-01-15``.
     """
     return value.isoformat()
+
 
 @beartype
 def _format_yaml_datetime(value: datetime.datetime) -> str:
@@ -45,10 +47,12 @@ def _format_yaml_datetime(value: datetime.datetime) -> str:
     """
     return value.isoformat()
 
+
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a YAML key-value assignment as ``name: value``."""
     return f"{name}: {value}"
+
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
@@ -59,6 +63,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"{name}: {value}"
+
 
 @beartype
 class Yaml(metaclass=HasFormatEnums):
