@@ -150,49 +150,6 @@ def _wrap_csharp(content: str) -> str:
 var x = {content};"""
 
 
-_RUST_VEC_PREAMBLE = (
-    "struct V;\n"
-    "impl From<i32> for V { fn from(_: i32) -> Self { V } }\n"
-    "impl From<i64> for V { fn from(_: i64) -> Self { V } }\n"
-    "impl From<f64> for V { fn from(_: f64) -> Self { V } }\n"
-    "impl From<bool> for V { fn from(_: bool) -> Self { V } }\n"
-    "impl From<&str> for V { fn from(_: &str) -> Self { V } }\n"
-    "impl<T> From<Option<T>> for V "
-    "{ fn from(_: Option<T>) -> Self { V } }\n"
-    "impl<T> From<std::vec::Vec<T>> for V "
-    "{ fn from(_: std::vec::Vec<T>) -> Self { V } }\n"
-    "impl<A, B> From<(A, B)> for V "
-    "{ fn from(_: (A, B)) -> Self { V } }\n"
-    "macro_rules! vec {\n"
-    "    () => { ::std::vec::Vec::<V>::new() };\n"
-    "    ($($e:expr),+ $(,)?) => {{\n"
-    "        let mut _v = ::std::vec::Vec::<V>::new();\n"
-    "        $(_v.push(<V as From<_>>::from($e));)+\n"
-    "        _v\n"
-    "    }};\n"
-    "}\n"
-)
-
-_RUST_HASHMAP_STUB = (
-    "struct HashMap;\nimpl HashMap {\n    fn from<T>(_: T) -> V { V }\n}\n"
-)
-
-_RUST_HASHSET_STUB = (
-    "struct HashSet;\nimpl HashSet {\n    fn from<T>(_: T) -> V { V }\n}\n"
-)
-
-
-@beartype
-def _rust_preamble(content: str) -> str:
-    """Build a Rust preamble with only the stubs needed by content."""
-    preamble = _RUST_VEC_PREAMBLE if "vec!" in content else ""
-    if "HashMap" in content:
-        preamble += _RUST_HASHMAP_STUB
-    if "HashSet" in content:
-        preamble += _RUST_HASHSET_STUB
-    return preamble
-
-
 def _rust_array_spec() -> literalizer.languages.Rust:
     """Create a Rust spec for array format."""
     return literalizer.languages.Rust(
@@ -216,9 +173,7 @@ def _wrap_rust(content: str) -> str:
     """Wrap in a Rust main function with necessary imports."""
     indented = content.replace("\n", "\n    ")
     return (
-        _rust_preamble(content=content)
-        + _rust_chrono_use(content=content)
-        + "fn main() {\n"
+        _rust_chrono_use(content=content) + "fn main() {\n"
         f"    let _ = {indented};\n"
         "}"
     )
@@ -427,8 +382,7 @@ def _wrap_rust_chrono(content: str) -> str:
     """Wrap in a Rust main function with chrono imports."""
     indented = content.replace("\n", "\n    ")
     return (
-        _rust_preamble(content=content)
-        + "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
+        "use chrono::{NaiveDate, NaiveDateTime, NaiveTime};\n"
         "fn main() {\n"
         f"    let _ = {indented};\n"
         "}"
@@ -944,9 +898,7 @@ def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
     return (
-        _rust_preamble(content=content)
-        + _rust_chrono_use(content=content)
-        + "fn main() {\n"
+        _rust_chrono_use(content=content) + "fn main() {\n"
         f"    {indented}\n"
         f"    let _ = {_VARIABLE_NAME};\n"
         "}"
@@ -1135,9 +1087,7 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     assign_indented = "    " + assignment.replace("\n", "\n    ")
     combined = declaration + assignment
     return (
-        _rust_preamble(content=combined)
-        + _rust_chrono_use(content=combined)
-        + "fn main() {\n"
+        _rust_chrono_use(content=combined) + "fn main() {\n"
         "    {\n"
         f"{decl_indented}\n"
         f"        let _ = {_VARIABLE_NAME};\n"
