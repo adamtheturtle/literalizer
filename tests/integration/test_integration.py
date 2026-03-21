@@ -2015,7 +2015,7 @@ _DATE_VARIANTS: dict[str, _Variant] = {
             variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
-        wrap=_wrap_identity,
+        wrap=_wrap_python,
     ),
     "js_native": _Variant(
         spec=literalizer.languages.JavaScript(
