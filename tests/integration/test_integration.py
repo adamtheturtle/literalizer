@@ -2084,7 +2084,7 @@ def test_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
-    cases_dir = Path(request.config.rootdir) / _CASES_REL
+    cases_dir = request.config.rootpath / _CASES_REL
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
@@ -2120,7 +2120,7 @@ def test_golden_file_with_variable_name(
     """Test that literalize_yaml with variable_name matches golden
     file.
     """
-    cases_dir = Path(request.config.rootdir) / _CASES_REL
+    cases_dir = request.config.rootpath / _CASES_REL
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
@@ -2158,7 +2158,7 @@ def test_golden_file_combined_variable_forms(
     new_variable=False (assignment to existing variable) produce expected
     golden output, combined in one file to show the difference in syntax.
     """
-    cases_dir = Path(request.config.rootdir) / _CASES_REL
+    cases_dir = request.config.rootpath / _CASES_REL
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
@@ -2266,7 +2266,7 @@ def test_format_variant_golden_file(
     against golden files.
     """
     case_dir = (
-        Path(request.config.rootdir) / _CASES_REL / variant_case.case_dir_name
+        request.config.rootpath / _CASES_REL / variant_case.case_dir_name
     )
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
