@@ -1,0 +1,21 @@
+void _declaration() {
+  final my_data = [
+      DateTime.parse("2024-01-15"),
+      DateTime.parse("2024-06-30"),
+      DateTime.parse("2024-12-25"),
+  ];
+  my_data.hashCode;
+}
+void _assignment() {
+  dynamic my_data;
+  my_data = [
+      DateTime.parse("2024-01-15"),
+      DateTime.parse("2024-06-30"),
+      DateTime.parse("2024-12-25"),
+  ];
+  my_data.hashCode;
+}
+void main() {
+  _declaration();
+  _assignment();
+}

@@ -1,0 +1,14 @@
+import std.json;
+
+void _check() {
+auto my_data = JSONValue([
+    JSONValue("2024-01-15T12:30:00+00:00"),
+    JSONValue("2024-06-30T08:00:00+00:00"),
+    JSONValue("2024-12-25T18:45:00+00:00"),
+]);
+my_data = JSONValue([
+    JSONValue("2024-01-15T12:30:00+00:00"),
+    JSONValue("2024-06-30T08:00:00+00:00"),
+    JSONValue("2024-12-25T18:45:00+00:00"),
+]);
+}
