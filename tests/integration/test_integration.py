@@ -65,7 +65,7 @@ def _java_time_imports(content: str) -> str:
     """Return java.time import lines if the content uses java.time
     types.
     """
-    types = []
+    types: list[str] = []
     if "Instant" in content:
         types.append("Instant")
     if "LocalDate" in content:
