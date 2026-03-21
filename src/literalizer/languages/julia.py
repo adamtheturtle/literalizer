@@ -55,7 +55,7 @@ class Julia:
 
         sequence_format: Which Julia sequence type to use.
 
-            * ``SequenceFormat.ARRAY`` (default) — array literal,
+            * ``SequenceFormat.ARRAY`` — array literal,
               e.g. ``[1, 2, 3]``.
             * ``SequenceFormat.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
@@ -146,6 +146,7 @@ class Julia:
         self.skip_null_dict_values = False
         self.coerce_heterogeneous_scalars_to_strings = False
         self.coerce_heterogeneous_sibling_lists_to_strings = False
+        self.coerce_heterogeneous_dict_values_to_strings = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration

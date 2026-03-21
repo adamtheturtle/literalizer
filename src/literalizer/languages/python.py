@@ -135,21 +135,21 @@ class Python:
 
         bytes_format: How to format :class:`bytes` values.
 
-            * ``BytesFormat.HEX`` (default) — lowercase hex string,
+            * ``BytesFormat.HEX`` — lowercase hex string,
               e.g. ``"48656c6c6f"``.
             * ``BytesFormat.PYTHON`` — Python bytes literal,
               e.g. ``b'Hello'``.
 
         sequence_format: Which Python sequence type to use.
 
-            * ``SequenceFormat.TUPLE`` (default) — tuple literal,
+            * ``SequenceFormat.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
             * ``SequenceFormat.LIST`` — list literal,
               e.g. ``[1, 2, 3]``.
 
         set_format: Which Python set type to use.
 
-            * ``SetFormat.SET`` (default) — mutable set literal,
+            * ``SetFormat.SET`` — mutable set literal,
               e.g. ``{1, 2, 3}``.
             * ``SetFormat.FROZENSET`` — immutable frozenset,
               e.g. ``frozenset({1, 2, 3})``.
@@ -157,7 +157,7 @@ class Python:
         variable_type_hints: Whether to add inline type hints to
             variable declarations.
 
-            * ``VariableTypeHints.NONE`` (default) — bare assignment,
+            * ``VariableTypeHints.NONE`` — bare assignment,
               e.g. ``my_var = {...}``.
             * ``VariableTypeHints.INLINE`` — with type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
@@ -269,6 +269,7 @@ class Python:
         self.skip_null_dict_values = False
         self.coerce_heterogeneous_scalars_to_strings = False
         self.coerce_heterogeneous_sibling_lists_to_strings = False
+        self.coerce_heterogeneous_dict_values_to_strings = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration_inline_hint

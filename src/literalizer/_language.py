@@ -156,6 +156,15 @@ class Language(Protocol):
     ``[["1", "2"], ["a", "b"]]``.
     """
 
+    coerce_heterogeneous_dict_values_to_strings: bool
+    """Whether to coerce dict values that span multiple type families
+    (e.g. strings and lists) to strings so every value shares a single
+    type.
+
+    For example, ``{"name": "Bob", "tags": ["admin"]}`` becomes
+    ``{"name": "Bob", "tags": "[\"admin\"]"}``.
+    """
+
     supports_collection_comments: bool
     """Whether the language supports comments inside collection
     initializers.

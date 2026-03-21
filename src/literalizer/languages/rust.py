@@ -71,7 +71,7 @@ class Rust:
 
         sequence_format: Which Rust sequence type to use.
 
-            * ``SequenceFormat.VEC`` (default) — ``vec![]`` macro,
+            * ``SequenceFormat.VEC`` — ``vec![]`` macro,
               e.g. ``vec![1, 2, 3]``.  Because ``Vec`` is
               homogeneous, mixed-type sequences have all elements
               coerced to strings.
@@ -173,6 +173,7 @@ class Rust:
             sequence_format != Rust.SequenceFormat.TUPLE
         )
         self.coerce_heterogeneous_sibling_lists_to_strings = False
+        self.coerce_heterogeneous_dict_values_to_strings = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration

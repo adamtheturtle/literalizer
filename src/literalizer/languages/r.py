@@ -92,7 +92,7 @@ class R:
 
         empty_dict_key: How to handle empty-string dict keys.
 
-            * ``EmptyDictKey.POSITIONAL`` (default) — emit as an unnamed
+            * ``EmptyDictKey.POSITIONAL`` — emit as an unnamed
               positional list element.
             * ``EmptyDictKey.ERROR`` — raise
               :class:`~literalizer.exceptions.EmptyDictKeyError`.
@@ -187,6 +187,7 @@ class R:
         self.skip_null_dict_values = False
         self.coerce_heterogeneous_scalars_to_strings = False
         self.coerce_heterogeneous_sibling_lists_to_strings = False
+        self.coerce_heterogeneous_dict_values_to_strings = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
