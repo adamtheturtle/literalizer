@@ -104,6 +104,13 @@ def _wrap_kotlin(content: str) -> str:
 
 
 @beartype
+def _wrap_kotlin_varname(content: str) -> str:
+    """Wrap a Kotlin variable declaration with time imports if needed."""
+    time_imports = _kotlin_time_imports(content=content)
+    return f"{time_imports}{content}"
+
+
+@beartype
 def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
@@ -1696,7 +1703,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         ),
         extension=".kts",
         wrap=_wrap_kotlin,
-        varname_wrap=_wrap_identity,
+        varname_wrap=_wrap_kotlin_varname,
         combined_wrap=_wrap_kotlin_combined,
     ),
     "ruby": _LanguageConfig(

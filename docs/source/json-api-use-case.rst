@@ -39,8 +39,8 @@ returns this response:
        json_string=request_json,
        error_on_coercion=False,
        language=Python(
-           date_format=Python.DateFormat.ISO,
-           datetime_format=Python.DatetimeFormat.ISO,
+           date_format=Python.DateFormat.PYTHON,
+           datetime_format=Python.DatetimeFormat.PYTHON,
            bytes_format=Python.BytesFormat.HEX,
            sequence_format=Python.SequenceFormat.TUPLE,
            set_format=Python.SetFormat.SET,
@@ -63,8 +63,8 @@ returns this response:
        json_string=response_json,
        error_on_coercion=False,
        language=Python(
-           date_format=Python.DateFormat.ISO,
-           datetime_format=Python.DatetimeFormat.ISO,
+           date_format=Python.DateFormat.PYTHON,
+           datetime_format=Python.DatetimeFormat.PYTHON,
            bytes_format=Python.BytesFormat.HEX,
            sequence_format=Python.SequenceFormat.TUPLE,
            set_format=Python.SetFormat.SET,

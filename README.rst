@@ -48,8 +48,8 @@ Usage
        yaml_string=yaml_config,
        error_on_coercion=False,
        language=Go(
-           date_format=Go.DateFormat.ISO,
-           datetime_format=Go.DatetimeFormat.ISO,
+           date_format=Go.DateFormat.GO,
+           datetime_format=Go.DatetimeFormat.GO,
            bytes_format=Go.BytesFormat.HEX,
            sequence_format=Go.SequenceFormat.SLICE,
        ),
