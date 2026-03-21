@@ -13,9 +13,21 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |-
+            relevant:
+              - 'tests/integration/cases/**'
+              - '**/*.yml'
+              - '**/*.toml'
       - name: Install Julia
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         uses: julia-actions/setup-julia@v2
       - name: Check Julia syntax
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.jl" -print0 | \

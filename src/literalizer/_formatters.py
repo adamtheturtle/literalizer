@@ -4,12 +4,15 @@ import datetime
 import functools
 import re
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from beartype import beartype
 from json_to_schema import infer_schema
 
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from json_to_schema.core import JsonValue
 
 # JSON-native Python types that json-to-schema can represent accurately.
 # literalizer's Value type also includes bytes, date, and datetime, which
@@ -692,7 +695,7 @@ def _typed_sequence_open(
     """
     if not _all_json_native(values=items):
         return fallback
-    schema: dict[str, Any] = infer_schema(value=items)
+    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", items))
     item_schema: dict[str, Any] = schema.get("items", {})
     return schema_to_opener(item_schema) or fallback
 
@@ -749,7 +752,7 @@ def _typed_dict_open(
     values = list(items.values())
     if not _all_json_native(values=values):
         return fallback
-    schema: dict[str, Any] = infer_schema(value=values)
+    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", values))
     value_schema: dict[str, Any] = schema.get("items", {})
     return schema_to_opener(value_schema) or fallback
 
