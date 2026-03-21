@@ -4,6 +4,8 @@ Changelog
 Next
 ----
 
+- Removed ``LanguageSpec`` dataclass. Use the ``Language`` protocol directly to define custom languages.
+
 2026.03.20.3
 ------------
 
@@ -32,7 +34,7 @@ Next
 ----------
 
 
-- Added ``format_sequence_entry`` to the ``Language`` protocol and ``LanguageSpec`` dataclass, mirroring the existing ``format_set_entry`` field. All built-in languages use the new ``passthrough_sequence_entry`` formatter.
+- Added ``format_sequence_entry`` to the ``Language`` protocol, mirroring the existing ``format_set_entry`` field. All built-in languages use the new ``passthrough_sequence_entry`` formatter.
 
 2026.03.17.2
 ------------

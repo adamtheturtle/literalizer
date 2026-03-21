@@ -7,20 +7,8 @@ import pytest
 
 from literalizer import (
     Language,
-    LanguageSpec,
     literalize_json,
     literalize_yaml,
-)
-from literalizer._formatters import (
-    dict_entry_with_separator,
-    fixed_dict_open,
-    fixed_sequence_open,
-    format_bytes_hex,
-    format_date_iso,
-    format_datetime_iso,
-    format_string_backslash,
-    passthrough_sequence_entry,
-    passthrough_set_entry,
 )
 from literalizer.languages import (
     Cobol,
@@ -442,64 +430,6 @@ def test_java_typed_array_opener(
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
-    )
-    assert result == expected
-
-
-def test_custom_language() -> None:
-    """A custom Language works as a language."""
-    custom = LanguageSpec(
-        null_literal="NIL",
-        true_literal="YES",
-        false_literal="NO",
-        sequence_open=fixed_sequence_open(open_str="<"),
-        sequence_close=">",
-        dict_open=fixed_dict_open(open_str="{"),
-        dict_close="}",
-        format_dict_entry=dict_entry_with_separator(separator=" -> "),
-        multiline_trailing_comma=True,
-        single_element_trailing_comma=False,
-        format_string=format_string_backslash,
-        format_bytes=format_bytes_hex,
-        format_date=format_date_iso,
-        format_datetime=format_datetime_iso,
-        empty_sequence=None,
-        empty_dict=None,
-        set_open="<",
-        set_close=">",
-        empty_set=None,
-        format_sequence_entry=passthrough_sequence_entry,
-        format_set_entry=passthrough_set_entry,
-        comment_prefix="//",
-        comment_suffix="",
-        omap_open="{",
-        omap_close="}",
-        format_omap_entry=lambda key, value: f"{key}: {value}",
-        multiline_close_indent="",
-        element_separator=", ",
-        skip_null_dict_values=False,
-        coerce_heterogeneous_scalars_to_strings=False,
-        coerce_heterogeneous_sibling_lists_to_strings=False,
-        supports_collection_comments=True,
-        format_variable_declaration=PYTHON.format_variable_declaration,
-        format_variable_assignment=PYTHON.format_variable_assignment,
-        sequence_format=Python.SequenceFormat.TUPLE,
-    )
-    result = literalize_json(
-        json_string=json.dumps(obj=[True, None, "hi"]),
-        language=custom,
-        line_prefix="",
-        indent="    ",
-        wrap=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        YES,
-        NIL,
-        "hi","""
     )
     assert result == expected
 
