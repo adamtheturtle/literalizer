@@ -384,9 +384,12 @@ ignore_names = [
     "warning_is_error",
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
-    # Enum members accessed by consumers iterating SetFormat
+    # Enum members accessed by consumers iterating format enums
     "HASH_SET",
     "MAP_SET",
+    "EPOCH",
+    "FROZENSET",
+    "ZONED",
     # Used in documentation code examples
     "custom",
     "result",
