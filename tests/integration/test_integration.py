@@ -2344,6 +2344,34 @@ def test_golden_file_combined_variable_forms(
     )
 
 
+@beartype
+def _check_format_variant_golden_file(
+    variant_name: str,
+    variant: _Variant,
+    case_dir: Path,
+    file_regression: FileRegressionFixture,
+    variable_name: str | None = None,
+) -> None:
+    """Run a format-variant golden-file check."""
+    yaml_string = (case_dir / "input.yaml").read_text()
+    result = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=variant.spec,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=variable_name,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    wrapped = variant.wrap(result)
+    file_regression.check(
+        contents=wrapped + "\n",
+        extension=variant.extension,
+        fullpath=case_dir / (variant_name + variant.extension),
+    )
+
+
 _DATES_CASE_DIR = _CASES_DIR / "dates"
 
 
@@ -2358,22 +2386,11 @@ def test_date_format_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test native date format variants against golden files."""
-    yaml_string = (_DATES_CASE_DIR / "input.yaml").read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=variant.spec,
-        line_prefix="",
-        indent="    ",
-        wrap=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    wrapped = variant.wrap(result)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=variant.extension,
-        fullpath=_DATES_CASE_DIR / (variant_name + variant.extension),
+    _check_format_variant_golden_file(
+        variant_name=variant_name,
+        variant=variant,
+        case_dir=_DATES_CASE_DIR,
+        file_regression=file_regression,
     )
 
 
@@ -2391,22 +2408,11 @@ def test_sequence_format_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test sequence type variants against golden files."""
-    yaml_string = (_SEQUENCE_CASE_DIR / "input.yaml").read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=variant.spec,
-        line_prefix="",
-        indent="    ",
-        wrap=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    wrapped = variant.wrap(result)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=variant.extension,
-        fullpath=_SEQUENCE_CASE_DIR / (variant_name + variant.extension),
+    _check_format_variant_golden_file(
+        variant_name=variant_name,
+        variant=variant,
+        case_dir=_SEQUENCE_CASE_DIR,
+        file_regression=file_regression,
     )
 
 
@@ -2439,22 +2445,11 @@ def test_set_format_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test set type variants against golden files."""
-    yaml_string = (_SET_CASE_DIR / "input.yaml").read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=variant.spec,
-        line_prefix="",
-        indent="    ",
-        wrap=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    wrapped = variant.wrap(result)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=variant.extension,
-        fullpath=_SET_CASE_DIR / (variant_name + variant.extension),
+    _check_format_variant_golden_file(
+        variant_name=variant_name,
+        variant=variant,
+        case_dir=_SET_CASE_DIR,
+        file_regression=file_regression,
     )
 
 
@@ -2487,21 +2482,10 @@ def test_variable_type_hints_golden_file(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test Python inline type hints on variable declarations."""
-    yaml_string = (_VARIABLE_TYPE_HINTS_CASE_DIR / "input.yaml").read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=variant.spec,
-        line_prefix="",
-        indent="    ",
-        wrap=True,
+    _check_format_variant_golden_file(
+        variant_name=variant_name,
+        variant=variant,
+        case_dir=_VARIABLE_TYPE_HINTS_CASE_DIR,
+        file_regression=file_regression,
         variable_name=_VARIABLE_NAME,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    wrapped = variant.wrap(result)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=variant.extension,
-        fullpath=_VARIABLE_TYPE_HINTS_CASE_DIR
-        / (variant_name + variant.extension),
     )
