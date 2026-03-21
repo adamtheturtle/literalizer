@@ -22,12 +22,14 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Initialize .NET runtime
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
       - name: Check F# syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases \( -name "*.fs" -o -name "*.fsi" \) -print0 | \

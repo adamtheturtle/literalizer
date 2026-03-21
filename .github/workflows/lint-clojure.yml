@@ -22,12 +22,14 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install clj-kondo
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: latest
       - name: Check Clojure syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: >-
           find tests/integration/cases -name "*.clj" -print0 |
           xargs -0 clj-kondo --lint

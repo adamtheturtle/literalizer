@@ -22,11 +22,13 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - uses: haskell-actions/setup@v2
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         with:
           ghc-version: latest
       - name: Check Haskell syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           set -o pipefail

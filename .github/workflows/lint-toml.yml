@@ -22,13 +22,15 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install taplo
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-linux-x86_64.gz \
             | gzip -d - \
             | install -m 755 /dev/stdin /usr/local/bin/taplo
       - name: Check TOML syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.toml" -print0 | \

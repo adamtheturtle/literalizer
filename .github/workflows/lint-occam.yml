@@ -21,14 +21,17 @@ jobs:
               - 'tests/integration/cases/**'
               - '**/*.yml'
               - '**/*.toml'
+              - 'check_occam_golden_syntax.py'
       - name: Install uv
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: >-
           find tests/integration/cases -name "*.occ" -print0 |
           xargs -0 uv run python check_occam_golden_syntax.py

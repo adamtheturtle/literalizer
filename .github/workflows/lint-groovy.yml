@@ -22,12 +22,14 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install Groovy
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         uses: wtfjoke/setup-groovy@v3
         with:
           groovy-version: 4.x
       - name: Check Groovy syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.groovy" -print0 | \

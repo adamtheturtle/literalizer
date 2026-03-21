@@ -22,9 +22,11 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install gfortran
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: sudo apt-get install -y gfortran
       - name: Check Fortran syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: find tests/integration/cases -name "*.f90" -exec gfortran -std=f2008
           -ffree-line-length-none -fsyntax-only {} +

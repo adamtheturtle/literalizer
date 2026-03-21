@@ -22,12 +22,14 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install Octave
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: sudo apt-get update && sudo apt-get install -y octave
       # Octave is a practical CI substitute, but it accepts some
       # double-quoted backslash escapes (e.g. \") that MATLAB rejects.
       - name: Check MATLAB syntax (Octave-compatible files)
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "matlab*.m" -print0 | \

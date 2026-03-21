@@ -22,10 +22,12 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install tree-sitter CLI
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: npm install tree-sitter-cli
       - name: Build tree-sitter-norg parser
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           git clone --depth=1 https://github.com/nvim-neorg/tree-sitter-norg.git /tmp/tree-sitter-norg
           cc -shared -fPIC -o /tmp/norg.so \
@@ -34,7 +36,8 @@ jobs:
             -x c++ /tmp/tree-sitter-norg/src/scanner.cc \
             -lstdc++
       - name: Check Norg syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: >-
           find tests/integration/cases -name "*.norg" -print0 |
           xargs -0 npx tree-sitter parse

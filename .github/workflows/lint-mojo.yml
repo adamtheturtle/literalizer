@@ -22,14 +22,17 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install pixi
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         uses: fabasoad/setup-mojo-action@v3
       - name: Install Mojo
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
       - name: Check Mojo syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.mojo" -print0 | \

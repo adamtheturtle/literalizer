@@ -22,7 +22,8 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Check PowerShell syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.ps1" -print0 | \

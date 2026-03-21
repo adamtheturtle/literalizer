@@ -22,5 +22,6 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Check Bash syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: find tests/integration/cases -name "*.sh" -exec bash -n {} +

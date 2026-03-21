@@ -22,6 +22,7 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Check C++ syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: find tests/integration/cases -name "*.cpp" -exec clang++ -fsyntax-only
           -std=c++20 {} +

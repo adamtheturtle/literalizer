@@ -22,12 +22,14 @@ jobs:
               - '**/*.yml'
               - '**/*.toml'
       - name: Install Swift
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         uses: SwiftyLab/setup-swift@v1
         with:
           cache-snapshot: true
       - name: Check Swift syntax
-        if: steps.changes.outputs.relevant == 'true'
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.swift" -print0 | \
