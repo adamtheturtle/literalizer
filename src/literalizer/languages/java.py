@@ -185,7 +185,9 @@ class Java(metaclass=HasFormatEnums):
             _format_java_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma = fmt.single_element_trailing_comma
+        self.single_element_trailing_comma: bool = (
+            fmt.single_element_trailing_comma
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
