@@ -1,13 +1,13 @@
 fun _declaration() {
     val my_data = mapOf<String, Any?>(
-        "date" to "2024-01-15",
-        "datetime" to "2024-01-15T12:30:00+00:00",
+        "date" to LocalDate.of(2024, 1, 15),
+        "datetime" to LocalDateTime.of(2024, 1, 15, 12, 30, 0),
     )
 }
 fun _assignment() {
     var my_data: Any? = null
     my_data = mapOf<String, Any?>(
-        "date" to "2024-01-15",
-        "datetime" to "2024-01-15T12:30:00+00:00",
+        "date" to LocalDate.of(2024, 1, 15),
+        "datetime" to LocalDateTime.of(2024, 1, 15, 12, 30, 0),
     )
 }

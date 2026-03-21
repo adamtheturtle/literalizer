@@ -21,8 +21,8 @@ impl HashMap {
 }
 fn main() {
     let my_data = HashMap::from(vec![
-        ("date", "2024-01-15"),
-        ("datetime", "2024-01-15T12:30:00+00:00"),
+        ("date", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()),
+        ("datetime", NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())),
     ]);
     let _ = my_data;
 }

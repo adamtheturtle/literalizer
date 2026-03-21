@@ -23,14 +23,14 @@ from literalizer.languages import (
 )
 
 GO = Go(
-    date_format=Go.DateFormat.ISO,
-    datetime_format=Go.DatetimeFormat.ISO,
+    date_format=Go.DateFormat.GO,
+    datetime_format=Go.DatetimeFormat.GO,
     bytes_format=Go.BytesFormat.HEX,
     sequence_format=Go.SequenceFormat.SLICE,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.ISO,
-    datetime_format=JavaScript.DatetimeFormat.ISO,
+    date_format=JavaScript.DateFormat.JS,
+    datetime_format=JavaScript.DatetimeFormat.JS,
     bytes_format=JavaScript.BytesFormat.HEX,
     sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
@@ -39,8 +39,8 @@ MOJO = Mojo(
     sequence_format=Mojo.SequenceFormat.LIST,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
+    date_format=Python.DateFormat.PYTHON,
+    datetime_format=Python.DatetimeFormat.PYTHON,
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,
@@ -167,7 +167,9 @@ def test_literalize_yaml_scalar(
 
 
 def test_literalize_yaml_date() -> None:
-    """``literalize_yaml`` formats date values as ISO string literals."""
+    """``literalize_yaml`` formats date values using the language
+    format.
+    """
     yaml_string = "- 2024-01-15\n"
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -179,12 +181,12 @@ def test_literalize_yaml_date() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '"2024-01-15",'
+    assert result == "datetime.date(year=2024, month=1, day=15),"
 
 
 def test_literalize_yaml_datetime() -> None:
-    """``literalize_yaml`` formats datetime values as ISO string
-    literals.
+    """``literalize_yaml`` formats datetime values using the language
+    format.
     """
     yaml_string = "- 2024-01-15T12:30:00\n"
     result = literalize_yaml(
@@ -197,7 +199,12 @@ def test_literalize_yaml_datetime() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '"2024-01-15T12:30:00",'
+    expected = (
+        "datetime.datetime("
+        "year=2024, month=1, day=15, "
+        "hour=12, minute=30, second=0),"
+    )
+    assert result == expected
 
 
 def test_literalize_yaml_binary() -> None:
@@ -442,8 +449,8 @@ def test_coerce_homogeneous_omap_no_coercion() -> None:
 def test_r_empty_dict_key_positional() -> None:
     """R with POSITIONAL empty_dict_key emits unnamed list elements."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.DateFormat.R,
+        datetime_format=R.DatetimeFormat.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
         bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
@@ -471,8 +478,8 @@ def test_r_empty_dict_key_positional() -> None:
 def test_r_empty_dict_key_positional_is_default() -> None:
     """R defaults to POSITIONAL for empty_dict_key."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.DateFormat.R,
+        datetime_format=R.DatetimeFormat.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
         bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
@@ -500,8 +507,8 @@ def test_r_empty_dict_key_positional_is_default() -> None:
 def test_r_empty_dict_key_error() -> None:
     """R with ERROR empty_dict_key raises EmptyDictKeyError."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.DateFormat.R,
+        datetime_format=R.DatetimeFormat.R,
         empty_dict_key=R.EmptyDictKey.ERROR,
         bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,
@@ -523,8 +530,8 @@ def test_r_empty_dict_key_error() -> None:
 def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     """R with ERROR empty_dict_key does not raise for non-empty keys."""
     spec = R(
-        date_format=R.DateFormat.ISO,
-        datetime_format=R.DatetimeFormat.ISO,
+        date_format=R.DateFormat.R,
+        datetime_format=R.DatetimeFormat.R,
         empty_dict_key=R.EmptyDictKey.ERROR,
         bytes_format=R.BytesFormat.HEX,
         sequence_format=R.SequenceFormat.LIST,

@@ -13,8 +13,8 @@ from literalizer._formatters import format_bytes_hex, format_bytes_python
 from literalizer.languages import Python
 
 PYTHON = Python(
-    date_format=Python.DateFormat.ISO,
-    datetime_format=Python.DatetimeFormat.ISO,
+    date_format=Python.DateFormat.PYTHON,
+    datetime_format=Python.DatetimeFormat.PYTHON,
     bytes_format=Python.BytesFormat.HEX,
     sequence_format=Python.SequenceFormat.TUPLE,
     set_format=Python.SetFormat.SET,

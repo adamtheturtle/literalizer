@@ -1,4 +1,4 @@
 my_data <- list(
-    "date" = "2024-01-15",
-    "datetime" = "2024-01-15T12:30:00+00:00"
+    "date" = as.Date("2024-01-15"),
+    "datetime" = as.POSIXct("2024-01-15T12:30:00+00:00")
 )

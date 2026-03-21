@@ -12,9 +12,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_iso,
     format_date_julia,
-    format_datetime_iso,
     format_datetime_julia,
     format_string_backslash,
     passthrough_sequence_entry,
@@ -47,15 +45,11 @@ class Julia:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` (default) — ISO 8601 string,
-              e.g. ``"2024-01-15"``.
             * ``DateFormat.JULIA`` — ``Date(...)`` constructor call,
               e.g. ``Date(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
-              e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.JULIA`` — ``DateTime(...)`` constructor
               call, e.g. ``DateTime(2024, 1, 15, 12, 30, 0)``.
 
@@ -70,13 +64,11 @@ class Julia:
     class DateFormat(enum.Enum):
         """Date formatting options for Julia."""
 
-        ISO = enum.member(value=format_date_iso)
         JULIA = enum.member(value=format_date_julia)
 
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for Julia."""
 
-        ISO = enum.member(value=format_datetime_iso)
         JULIA = enum.member(value=format_datetime_julia)
 
     class BytesFormat(enum.Enum):

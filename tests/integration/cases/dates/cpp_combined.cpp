@@ -9,11 +9,11 @@ struct _Any {
 };
 void _check() {
 _Any my_data = {
-    {"date", "2024-01-15"},
-    {"datetime", "2024-01-15T12:30:00+00:00"},
+    {"date", std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}}},
+    {"datetime", std::chrono::sys_days{std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}}} + std::chrono::hours{12} + std::chrono::minutes{30}},
 };
 my_data = {
-    {"date", "2024-01-15"},
-    {"datetime", "2024-01-15T12:30:00+00:00"},
+    {"date", std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}}},
+    {"datetime", std::chrono::sys_days{std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}}} + std::chrono::hours{12} + std::chrono::minutes{30}},
 };
 }
