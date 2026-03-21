@@ -10,7 +10,7 @@ from literalizer._language import (
     DictFormatConfig,
     HasFormatEnums,
     Language,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -20,7 +20,7 @@ __all__ = [
     "DictFormatConfig",
     "HasFormatEnums",
     "Language",
-    "OmapFormatConfig",
+    "OrderedMapFormatConfig",
     "SequenceFormatConfig",
     "SetFormatConfig",
     "fixed_dict_open",

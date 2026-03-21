@@ -21,7 +21,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -88,7 +88,7 @@ def _format_go_set_entry(item: str) -> str:
 
 
 @beartype
-def _format_go_omap_entry(key: str, value: str) -> str:
+def _format_go_ordered_map_entry(key: str, value: str) -> str:
     """Format a Go ordered-map entry as a ``{key, value}`` pair."""
     return f"{{{key}, {value}}}"
 
@@ -229,12 +229,14 @@ class Go(metaclass=HasFormatEnums):
             prefix="//",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="[][2]any{",
-            close="}",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="[][2]any{",
+                close="}",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_go_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_go_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

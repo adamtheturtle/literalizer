@@ -21,7 +21,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -40,7 +40,7 @@ def _format_rust_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_rust_omap_entry(key: str, value: str) -> str:
+def _format_rust_ordered_map_entry(key: str, value: str) -> str:
     """Format a Rust ordered-map entry as a tuple ``(key, value)``."""
     return f"({key}, {value})"
 
@@ -207,12 +207,14 @@ class Rust(metaclass=HasFormatEnums):
             prefix="//",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="HashMap::from([",
-            close="])",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="HashMap::from([",
+                close="])",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_rust_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_rust_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
