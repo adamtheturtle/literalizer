@@ -17,7 +17,11 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
 )
-from literalizer._language import HasFormatEnums, SequenceFormatConfig
+from literalizer._language import (
+    HasFormatEnums,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 from literalizer._types import Value  # noqa: TC001
 
 if TYPE_CHECKING:
@@ -139,7 +143,11 @@ class VisualBasic(metaclass=HasFormatEnums):
     class SetFormats(enum.Enum):
         """Set type options for Visual Basic."""
 
-        HASH_SET = "hash_set"
+        HASH_SET = SetFormatConfig(
+            open_str="New HashSet(Of Object) From {",
+            close="}",
+            empty_set="New HashSet(Of Object)()",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -154,6 +162,7 @@ class VisualBasic(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
+        set_format: SetFormats = SetFormats.HASH_SET,
     ) -> None:
         """Initialize VisualBasic language specification."""
         self.sequence_format = sequence_format
@@ -185,9 +194,9 @@ class VisualBasic(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = format_string_vb
         self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open = "New HashSet(Of Object) From {"
-        self.set_close = "}"
-        self.empty_set: str | None = "New HashSet(Of Object)()"
+        self.set_open: str = set_format.value.open_str
+        self.set_close: str = set_format.value.close
+        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

@@ -18,7 +18,11 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums, SequenceFormatConfig
+from literalizer._language import (
+    HasFormatEnums,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -94,7 +98,11 @@ class Groovy(metaclass=HasFormatEnums):
     class SetFormats(enum.Enum):
         """Set type options for Groovy."""
 
-        SET = "set"
+        SET = SetFormatConfig(
+            open_str="[",
+            close="] as Set<Object>",
+            empty_set="[] as Set<Object>",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -109,6 +117,7 @@ class Groovy(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
+        set_format: SetFormats = SetFormats.SET,
     ) -> None:
         """Initialize Groovy language specification."""
         self.sequence_format = sequence_format
@@ -139,9 +148,9 @@ class Groovy(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = "[:]"
-        self.set_open = "["
-        self.set_close = "] as Set<Object>"
-        self.empty_set: str | None = "[] as Set<Object>"
+        self.set_open: str = set_format.value.open_str
+        self.set_close: str = set_format.value.close
+        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

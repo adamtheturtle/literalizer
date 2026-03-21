@@ -15,7 +15,11 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
-from literalizer._language import HasFormatEnums, SequenceFormatConfig
+from literalizer._language import (
+    HasFormatEnums,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -159,7 +163,11 @@ class OCaml(metaclass=HasFormatEnums):
     class SetFormats(enum.Enum):
         """Set type options for OCaml."""
 
-        SET = "set"
+        SET = SetFormatConfig(
+            open_str="OSet [",
+            close="]",
+            empty_set=None,
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -174,6 +182,7 @@ class OCaml(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
+        set_format: SetFormats = SetFormats.SET,
     ) -> None:
         """Initialize OCaml language specification."""
         self.sequence_format = sequence_format
@@ -204,9 +213,9 @@ class OCaml(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open = "OSet ["
-        self.set_close = "]"
-        self.empty_set: str | None = None
+        self.set_open: str = set_format.value.open_str
+        self.set_close: str = set_format.value.close
+        self.empty_set: str | None = set_format.value.empty_set
         self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
         self.comment_prefix = "(*"
         self.comment_suffix = " *)"

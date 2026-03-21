@@ -24,6 +24,15 @@ class SequenceFormatConfig:
     empty_sequence: str | None
 
 
+@dataclasses.dataclass(frozen=True)
+class SetFormatConfig:
+    """Configuration for a single set format."""
+
+    open_str: str
+    close: str
+    empty_set: str | None
+
+
 class SequenceFormat(Protocol):
     """Protocol for sequence format Enum members."""
 

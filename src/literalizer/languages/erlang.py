@@ -17,7 +17,11 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums, SequenceFormatConfig
+from literalizer._language import (
+    HasFormatEnums,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -124,7 +128,11 @@ class Erlang(metaclass=HasFormatEnums):
     class SetFormats(enum.Enum):
         """Set type options for Erlang."""
 
-        SET = "set"
+        SET = SetFormatConfig(
+            open_str="sets:from_list([",
+            close="])",
+            empty_set="sets:from_list([])",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -139,6 +147,7 @@ class Erlang(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.BINARY,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
+        set_format: SetFormats = SetFormats.SET,
     ) -> None:
         """Initialize Erlang language specification."""
         self.sequence_format = sequence_format
@@ -169,9 +178,9 @@ class Erlang(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
-        self.set_open = "sets:from_list(["
-        self.set_close = "])"
-        self.empty_set: str | None = "sets:from_list([])"
+        self.set_open: str = set_format.value.open_str
+        self.set_close: str = set_format.value.close
+        self.empty_set: str | None = set_format.value.empty_set
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
