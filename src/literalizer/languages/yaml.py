@@ -119,10 +119,10 @@ class Yaml(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.YAML,
+        datetime_format: DatetimeFormats = DatetimeFormats.YAML,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.SEQUENCE,
     ) -> None:
         """Initialize YAML language specification."""
         self.sequence_format = sequence_format

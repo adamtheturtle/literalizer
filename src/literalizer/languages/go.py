@@ -162,10 +162,10 @@ class Go(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.GO,
+        datetime_format: DatetimeFormats = DatetimeFormats.GO,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.SLICE,
     ) -> None:
         """Initialize Go language specification."""
         self.sequence_format = sequence_format

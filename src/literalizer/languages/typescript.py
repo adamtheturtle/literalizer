@@ -107,10 +107,10 @@ class TypeScript(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.JS,
+        datetime_format: DatetimeFormats = DatetimeFormats.JS,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
     ) -> None:
         """Initialize TypeScript language specification."""
         self.sequence_format = sequence_format

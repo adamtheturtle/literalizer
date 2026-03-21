@@ -153,9 +153,6 @@ var x = {content};"""
 def _rust_array_spec() -> literalizer.languages.Rust:
     """Create a Rust spec for array format."""
     return literalizer.languages.Rust(
-        date_format=literalizer.languages.Rust.date_formats.RUST,
-        datetime_format=literalizer.languages.Rust.datetime_formats.RUST,
-        bytes_format=literalizer.languages.Rust.bytes_formats.HEX,
         sequence_format=literalizer.languages.Rust.sequence_formats.ARRAY,
     )
 
@@ -246,12 +243,7 @@ _OCCAM_LIT_TYPE = (
 @beartype
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
-    fsharp = literalizer.languages.FSharp(
-        date_format=literalizer.languages.FSharp.date_formats.ISO,
-        datetime_format=literalizer.languages.FSharp.datetime_formats.ISO,
-        bytes_format=literalizer.languages.FSharp.bytes_formats.HEX,
-        sequence_format=literalizer.languages.FSharp.sequence_formats.LIST,
-    )
+    fsharp = literalizer.languages.FSharp()
     typed = fsharp.format_sequence_entry(content)
     return (
         "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {typed}"
@@ -261,12 +253,7 @@ def _wrap_fsharp(content: str) -> str:
 @beartype
 def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a custom val_t variant type."""
-    ocaml = literalizer.languages.OCaml(
-        date_format=literalizer.languages.OCaml.date_formats.ISO,
-        datetime_format=literalizer.languages.OCaml.datetime_formats.ISO,
-        bytes_format=literalizer.languages.OCaml.bytes_formats.HEX,
-        sequence_format=literalizer.languages.OCaml.sequence_formats.LIST,
-    )
+    ocaml = literalizer.languages.OCaml()
     typed = ocaml.format_sequence_entry(content)
     return (
         "module Check = struct\n\n"
@@ -294,12 +281,7 @@ def _wrap_ocaml_varname(content: str) -> str:
 @beartype
 def _wrap_occam(content: str) -> str:
     """Wrap in an occam-pi PROC with a custom ``LIT`` mobile data type."""
-    occam = literalizer.languages.Occam(
-        date_format=literalizer.languages.Occam.date_formats.ISO,
-        datetime_format=literalizer.languages.Occam.datetime_formats.ISO,
-        bytes_format=literalizer.languages.Occam.bytes_formats.HEX,
-        sequence_format=literalizer.languages.Occam.sequence_formats.LIST,
-    )
+    occam = literalizer.languages.Occam()
     typed = occam.format_sequence_entry(content)
     return (
         _OCCAM_LIT_TYPE
@@ -598,12 +580,7 @@ def _wrap_groovy(content: str) -> str:
 @beartype
 def _wrap_ada(content: str) -> str:
     """Wrap in an Ada procedure with a local variable assignment."""
-    ada = literalizer.languages.Ada(
-        date_format=literalizer.languages.Ada.date_formats.ISO,
-        datetime_format=literalizer.languages.Ada.datetime_formats.ISO,
-        bytes_format=literalizer.languages.Ada.bytes_formats.HEX,
-        sequence_format=literalizer.languages.Ada.sequence_formats.LIST,
-    )
+    ada = literalizer.languages.Ada()
     typed = ada.format_sequence_entry(content)
     indented = typed.replace("\n", "\n   ")
     return (
@@ -684,12 +661,7 @@ def _wrap_norg(content: str) -> str:
 @beartype
 def _wrap_d(content: str) -> str:
     """Wrap in a D function with ``std.json`` imported."""
-    d_lang = literalizer.languages.D(
-        date_format=literalizer.languages.D.date_formats.ISO,
-        datetime_format=literalizer.languages.D.datetime_formats.ISO,
-        bytes_format=literalizer.languages.D.bytes_formats.HEX,
-        sequence_format=literalizer.languages.D.sequence_formats.ARRAY,
-    )
+    d_lang = literalizer.languages.D()
     typed = d_lang.format_sequence_entry(content)
     return f"import std.json;\n\nvoid _check() {{\n    auto _v = {typed};\n}}"
 
@@ -743,12 +715,7 @@ _C_PREAMBLE = (
 @beartype
 def _wrap_c(content: str) -> str:
     """Wrap in a C function with the _CVal/_CKV type definitions."""
-    c_lang = literalizer.languages.C(
-        date_format=literalizer.languages.C.date_formats.ISO,
-        datetime_format=literalizer.languages.C.datetime_formats.ISO,
-        bytes_format=literalizer.languages.C.bytes_formats.HEX,
-        sequence_format=literalizer.languages.C.sequence_formats.ARRAY,
-    )
+    c_lang = literalizer.languages.C()
     typed = c_lang.format_sequence_entry(content)
     return (
         _C_PREAMBLE
@@ -973,12 +940,7 @@ def _wrap_zig(content: str) -> str:
     """Wrap in a Zig main function with ``ZVal``/``ZKV`` type
     definitions.
     """
-    zig = literalizer.languages.Zig(
-        date_format=literalizer.languages.Zig.date_formats.ISO,
-        datetime_format=literalizer.languages.Zig.datetime_formats.ISO,
-        bytes_format=literalizer.languages.Zig.bytes_formats.HEX,
-        sequence_format=literalizer.languages.Zig.sequence_formats.ARRAY,
-    )
+    zig = literalizer.languages.Zig()
     typed = zig.format_sequence_entry(content)
     indented = typed.replace("\n", "\n    ")
     return (
@@ -1207,12 +1169,7 @@ def _wrap_fortran(content: str) -> str:
     """Wrap in a self-contained Fortran program with the ``fval_m``
     module embedded.
     """
-    fortran = literalizer.languages.Fortran(
-        date_format=literalizer.languages.Fortran.date_formats.ISO,
-        datetime_format=literalizer.languages.Fortran.datetime_formats.ISO,
-        bytes_format=literalizer.languages.Fortran.bytes_formats.HEX,
-        sequence_format=literalizer.languages.Fortran.sequence_formats.LIST,
-    )
+    fortran = literalizer.languages.Fortran()
     typed = fortran.format_sequence_entry(content)
     continued = _add_fortran_continuation(content=typed)
     return (
@@ -1535,12 +1492,7 @@ def _wrap_cobol(content: str) -> str:
         data_body = stripped
     else:
         # Scalar literal - convert to a DATA entry
-        cobol = literalizer.languages.Cobol(
-            date_format=literalizer.languages.Cobol.date_formats.ISO,
-            datetime_format=literalizer.languages.Cobol.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Cobol.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Cobol.sequence_formats.SEQUENCE,
-        )
+        cobol = literalizer.languages.Cobol()
         entry = cobol.format_sequence_entry(scalar)
         data_body = f"    {entry}"
     return (
@@ -1572,555 +1524,322 @@ def _wrap_cobol_combined(declaration: str, assignment: str) -> str:
 
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
-        spec=literalizer.languages.Ada(
-            date_format=literalizer.languages.Ada.date_formats.ISO,
-            datetime_format=literalizer.languages.Ada.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Ada.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Ada.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Ada(),
         extension=".adb",
         wrap=_wrap_ada,
         varname_wrap=_wrap_ada_varname,
         combined_wrap=_wrap_ada_combined,
     ),
     "bash": _LanguageConfig(
-        spec=literalizer.languages.Bash(
-            date_format=literalizer.languages.Bash.date_formats.ISO,
-            datetime_format=literalizer.languages.Bash.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Bash.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Bash.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Bash(),
         extension=".sh",
         wrap=_wrap_bash,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "c": _LanguageConfig(
-        spec=literalizer.languages.C(
-            date_format=literalizer.languages.C.date_formats.ISO,
-            datetime_format=literalizer.languages.C.datetime_formats.ISO,
-            bytes_format=literalizer.languages.C.bytes_formats.HEX,
-            sequence_format=literalizer.languages.C.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.C(),
         extension=".c",
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
         combined_wrap=_wrap_c_combined,
     ),
     "cobol": _LanguageConfig(
-        spec=literalizer.languages.Cobol(
-            date_format=literalizer.languages.Cobol.date_formats.ISO,
-            datetime_format=literalizer.languages.Cobol.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Cobol.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Cobol.sequence_formats.SEQUENCE,
-        ),
+        spec=literalizer.languages.Cobol(),
         extension=".cob",
         wrap=_wrap_cobol,
         varname_wrap=_wrap_cobol_varname,
         combined_wrap=_wrap_cobol_combined,
     ),
     "d": _LanguageConfig(
-        spec=literalizer.languages.D(
-            date_format=literalizer.languages.D.date_formats.ISO,
-            datetime_format=literalizer.languages.D.datetime_formats.ISO,
-            bytes_format=literalizer.languages.D.bytes_formats.HEX,
-            sequence_format=literalizer.languages.D.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.D(),
         extension=".d",
         wrap=_wrap_d,
         varname_wrap=_wrap_d_varname,
         combined_wrap=_wrap_d_combined,
     ),
     "common_lisp": _LanguageConfig(
-        spec=literalizer.languages.CommonLisp(
-            date_format=literalizer.languages.CommonLisp.date_formats.ISO,
-            datetime_format=literalizer.languages.CommonLisp.datetime_formats.ISO,
-            bytes_format=literalizer.languages.CommonLisp.bytes_formats.HEX,
-            sequence_format=literalizer.languages.CommonLisp.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.CommonLisp(),
         extension=".lisp",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "clojure": _LanguageConfig(
-        spec=literalizer.languages.Clojure(
-            date_format=literalizer.languages.Clojure.date_formats.ISO,
-            datetime_format=literalizer.languages.Clojure.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Clojure.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Clojure.sequence_formats.VECTOR,
-        ),
+        spec=literalizer.languages.Clojure(),
         extension=".clj",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "python": _LanguageConfig(
-        spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.date_formats.PYTHON,
-            datetime_format=literalizer.languages.Python.datetime_formats.PYTHON,
-            bytes_format=literalizer.languages.Python.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Python.sequence_formats.TUPLE,
-            set_format=literalizer.languages.Python.set_formats.SET,
-            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
-        ),
+        spec=literalizer.languages.Python(),
         extension=".py",
         wrap=_wrap_python,
         varname_wrap=_wrap_python,
         combined_wrap=_wrap_python_combined,
     ),
     "javascript": _LanguageConfig(
-        spec=literalizer.languages.JavaScript(
-            date_format=literalizer.languages.JavaScript.date_formats.JS,
-            datetime_format=literalizer.languages.JavaScript.datetime_formats.JS,
-            bytes_format=literalizer.languages.JavaScript.bytes_formats.HEX,
-            sequence_format=literalizer.languages.JavaScript.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.JavaScript(),
         extension=".js",
         wrap=_wrap_js,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_js_combined,
     ),
     "typescript": _LanguageConfig(
-        spec=literalizer.languages.TypeScript(
-            date_format=literalizer.languages.TypeScript.date_formats.JS,
-            datetime_format=literalizer.languages.TypeScript.datetime_formats.JS,
-            bytes_format=literalizer.languages.TypeScript.bytes_formats.HEX,
-            sequence_format=literalizer.languages.TypeScript.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.TypeScript(),
         extension=".ts",
         wrap=_wrap_js,
         varname_wrap=_wrap_ts_varname,
         combined_wrap=_wrap_ts_combined,
     ),
     "kotlin": _LanguageConfig(
-        spec=literalizer.languages.Kotlin(
-            date_format=literalizer.languages.Kotlin.date_formats.KOTLIN,
-            datetime_format=literalizer.languages.Kotlin.datetime_formats.KOTLIN,
-            bytes_format=literalizer.languages.Kotlin.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Kotlin.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Kotlin(),
         extension=".kts",
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_kotlin_varname,
         combined_wrap=_wrap_kotlin_combined,
     ),
     "ruby": _LanguageConfig(
-        spec=literalizer.languages.Ruby(
-            date_format=literalizer.languages.Ruby.date_formats.RUBY,
-            datetime_format=literalizer.languages.Ruby.datetime_formats.RUBY,
-            bytes_format=literalizer.languages.Ruby.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Ruby.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Ruby(),
         extension=".rb",
         wrap=_wrap_ruby,
         varname_wrap=_wrap_ruby,
         combined_wrap=lambda d, a: _wrap_ruby(content=d + "\n" + a),
     ),
     "go": _LanguageConfig(
-        spec=literalizer.languages.Go(
-            date_format=literalizer.languages.Go.date_formats.GO,
-            datetime_format=literalizer.languages.Go.datetime_formats.GO,
-            bytes_format=literalizer.languages.Go.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Go.sequence_formats.SLICE,
-        ),
+        spec=literalizer.languages.Go(),
         extension=".go",
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
         combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
     ),
     "java": _LanguageConfig(
-        spec=literalizer.languages.Java(
-            date_format=literalizer.languages.Java.date_formats.JAVA,
-            datetime_format=literalizer.languages.Java.datetime_formats.INSTANT,
-            bytes_format=literalizer.languages.Java.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Java.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Java(),
         extension=".java",
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
         combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
     ),
     "csharp": _LanguageConfig(
-        spec=literalizer.languages.CSharp(
-            date_format=literalizer.languages.CSharp.date_formats.CSHARP,
-            datetime_format=literalizer.languages.CSharp.datetime_formats.CSHARP,
-            bytes_format=literalizer.languages.CSharp.bytes_formats.HEX,
-            sequence_format=literalizer.languages.CSharp.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.CSharp(),
         extension=".cs",
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
         combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
     ),
     "dart": _LanguageConfig(
-        spec=literalizer.languages.Dart(
-            date_format=literalizer.languages.Dart.date_formats.DART,
-            datetime_format=literalizer.languages.Dart.datetime_formats.DART,
-            bytes_format=literalizer.languages.Dart.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Dart.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Dart(),
         extension=".dart",
         wrap=_wrap_dart,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_dart_combined,
     ),
     "swift": _LanguageConfig(
-        spec=literalizer.languages.Swift(
-            date_format=literalizer.languages.Swift.date_formats.ISO,
-            datetime_format=literalizer.languages.Swift.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Swift.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Swift.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Swift(),
         extension=".swift",
         wrap=_wrap_swift,
         varname_wrap=_wrap_swift_varname,
         combined_wrap=_wrap_swift_combined,
     ),
     "cpp": _LanguageConfig(
-        spec=literalizer.languages.Cpp(
-            date_format=literalizer.languages.Cpp.date_formats.CPP,
-            datetime_format=literalizer.languages.Cpp.datetime_formats.CPP,
-            bytes_format=literalizer.languages.Cpp.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Cpp.sequence_formats.INITIALIZER_LIST,
-        ),
+        spec=literalizer.languages.Cpp(),
         extension=".cpp",
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
         combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
     ),
     "rust": _LanguageConfig(
-        spec=literalizer.languages.Rust(
-            date_format=literalizer.languages.Rust.date_formats.RUST,
-            datetime_format=literalizer.languages.Rust.datetime_formats.RUST,
-            bytes_format=literalizer.languages.Rust.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Rust.sequence_formats.VEC,
-        ),
+        spec=literalizer.languages.Rust(),
         extension=".rs",
         wrap=_wrap_rust,
         varname_wrap=_wrap_rust_varname,
         combined_wrap=_wrap_rust_combined,
     ),
     "haskell": _LanguageConfig(
-        spec=literalizer.languages.Haskell(
-            date_format=literalizer.languages.Haskell.date_formats.ISO,
-            datetime_format=literalizer.languages.Haskell.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Haskell.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Haskell.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Haskell(),
         extension=".hs",
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
         combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
     ),
     "hcl": _LanguageConfig(
-        spec=literalizer.languages.Hcl(
-            date_format=literalizer.languages.Hcl.date_formats.ISO,
-            datetime_format=literalizer.languages.Hcl.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Hcl.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Hcl.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Hcl(),
         extension=".hcl",
         wrap=_wrap_hcl,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
     ),
     "julia": _LanguageConfig(
-        spec=literalizer.languages.Julia(
-            date_format=literalizer.languages.Julia.date_formats.JULIA,
-            datetime_format=literalizer.languages.Julia.datetime_formats.JULIA,
-            bytes_format=literalizer.languages.Julia.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Julia.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Julia(),
         extension=".jl",
         wrap=_wrap_julia,
         varname_wrap=_wrap_julia,
         combined_wrap=lambda d, a: _wrap_julia(content=d + "\n" + a),
     ),
     "lua": _LanguageConfig(
-        spec=literalizer.languages.Lua(
-            date_format=literalizer.languages.Lua.date_formats.ISO,
-            datetime_format=literalizer.languages.Lua.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Lua.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Lua.sequence_formats.TABLE,
-        ),
+        spec=literalizer.languages.Lua(),
         extension=".lua",
         wrap=_wrap_lua,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "perl": _LanguageConfig(
-        spec=literalizer.languages.Perl(
-            date_format=literalizer.languages.Perl.date_formats.ISO,
-            datetime_format=literalizer.languages.Perl.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Perl.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Perl.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Perl(),
         extension=".pl",
         wrap=_wrap_perl,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "php": _LanguageConfig(
-        spec=literalizer.languages.Php(
-            date_format=literalizer.languages.Php.date_formats.PHP,
-            datetime_format=literalizer.languages.Php.datetime_formats.PHP,
-            bytes_format=literalizer.languages.Php.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Php.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Php(),
         extension=".php",
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
         combined_wrap=lambda d, a: _wrap_php_varname(content=d + "\n" + a),
     ),
     "elixir": _LanguageConfig(
-        spec=literalizer.languages.Elixir(
-            date_format=literalizer.languages.Elixir.date_formats.ISO,
-            datetime_format=literalizer.languages.Elixir.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Elixir.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Elixir.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Elixir(),
         extension=".ex",
         wrap=_wrap_elixir,
         varname_wrap=_wrap_elixir_varname,
         combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
     ),
     "erlang": _LanguageConfig(
-        spec=literalizer.languages.Erlang(
-            date_format=literalizer.languages.Erlang.date_formats.ISO,
-            datetime_format=literalizer.languages.Erlang.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Erlang.bytes_formats.BINARY,
-            sequence_format=literalizer.languages.Erlang.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Erlang(),
         extension=".erl",
         wrap=_wrap_erlang,
         varname_wrap=_wrap_erlang_varname,
         combined_wrap=lambda d, _a: _wrap_erlang_varname(content=d),
     ),
     "fsharp": _LanguageConfig(
-        spec=literalizer.languages.FSharp(
-            date_format=literalizer.languages.FSharp.date_formats.ISO,
-            datetime_format=literalizer.languages.FSharp.datetime_formats.ISO,
-            bytes_format=literalizer.languages.FSharp.bytes_formats.HEX,
-            sequence_format=literalizer.languages.FSharp.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.FSharp(),
         extension=".fs",
         wrap=_wrap_fsharp,
         varname_wrap=_wrap_fsharp_varname,
         combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
     ),
     "ocaml": _LanguageConfig(
-        spec=literalizer.languages.OCaml(
-            date_format=literalizer.languages.OCaml.date_formats.ISO,
-            datetime_format=literalizer.languages.OCaml.datetime_formats.ISO,
-            bytes_format=literalizer.languages.OCaml.bytes_formats.HEX,
-            sequence_format=literalizer.languages.OCaml.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.OCaml(),
         extension=".ml",
         wrap=_wrap_ocaml,
         varname_wrap=_wrap_ocaml_varname,
         combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
     ),
     "occam": _LanguageConfig(
-        spec=literalizer.languages.Occam(
-            date_format=literalizer.languages.Occam.date_formats.ISO,
-            datetime_format=literalizer.languages.Occam.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Occam.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Occam.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Occam(),
         extension=".occ",
         wrap=_wrap_occam,
         varname_wrap=_wrap_occam_varname,
         combined_wrap=lambda d, _a: _wrap_occam_varname(content=d),
     ),
     "groovy": _LanguageConfig(
-        spec=literalizer.languages.Groovy(
-            date_format=literalizer.languages.Groovy.date_formats.ISO,
-            datetime_format=literalizer.languages.Groovy.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Groovy.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Groovy.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Groovy(),
         extension=".groovy",
         wrap=_wrap_groovy,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "scala": _LanguageConfig(
-        spec=literalizer.languages.Scala(
-            date_format=literalizer.languages.Scala.date_formats.ISO,
-            datetime_format=literalizer.languages.Scala.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Scala.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Scala.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Scala(),
         extension=".scala",
         wrap=_wrap_scala,
         varname_wrap=_wrap_scala_varname,
         combined_wrap=_wrap_scala_combined,
     ),
     "r": _LanguageConfig(
-        spec=literalizer.languages.R(
-            date_format=literalizer.languages.R.date_formats.R,
-            datetime_format=literalizer.languages.R.datetime_formats.R,
-            empty_dict_key=literalizer.languages.R.EmptyDictKey.POSITIONAL,
-            bytes_format=literalizer.languages.R.bytes_formats.HEX,
-            sequence_format=literalizer.languages.R.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.R(),
         extension=".R",
         wrap=_wrap_r,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "racket": _LanguageConfig(
-        spec=literalizer.languages.Racket(
-            date_format=literalizer.languages.Racket.date_formats.ISO,
-            datetime_format=literalizer.languages.Racket.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Racket.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Racket.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Racket(),
         extension=".rkt",
         wrap=_wrap_racket,
         varname_wrap=_wrap_racket,
         combined_wrap=_wrap_racket_combined,
     ),
     "crystal": _LanguageConfig(
-        spec=literalizer.languages.Crystal(
-            date_format=literalizer.languages.Crystal.date_formats.ISO,
-            datetime_format=literalizer.languages.Crystal.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Crystal.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Crystal.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Crystal(),
         extension=".cr",
         wrap=_wrap_crystal,
         varname_wrap=_wrap_crystal_varname,
         combined_wrap=_wrap_crystal_combined,
     ),
     "matlab": _LanguageConfig(
-        spec=literalizer.languages.Matlab(
-            date_format=literalizer.languages.Matlab.date_formats.ISO,
-            datetime_format=literalizer.languages.Matlab.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Matlab.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Matlab.sequence_formats.CELL_ARRAY,
-        ),
+        spec=literalizer.languages.Matlab(),
         extension=".m",
         wrap=_wrap_matlab,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "mojo": _LanguageConfig(
-        spec=literalizer.languages.Mojo(
-            date_format=literalizer.languages.Mojo.date_formats.ISO,
-            datetime_format=literalizer.languages.Mojo.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Mojo.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Mojo.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Mojo(),
         extension=".mojo",
         wrap=_wrap_mojo,
         varname_wrap=_wrap_mojo_varname,
         combined_wrap=_wrap_mojo_combined,
     ),
     "nim": _LanguageConfig(
-        spec=literalizer.languages.Nim(
-            date_format=literalizer.languages.Nim.date_formats.ISO,
-            datetime_format=literalizer.languages.Nim.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Nim.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Nim.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Nim(),
         extension=".nim",
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
     ),
     "norg": _LanguageConfig(
-        spec=literalizer.languages.Norg(
-            date_format=literalizer.languages.Norg.date_formats.ISO,
-            datetime_format=literalizer.languages.Norg.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Norg.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Norg.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Norg(),
         extension=".norg",
         wrap=_wrap_norg,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
     ),
     "vb": _LanguageConfig(
-        spec=literalizer.languages.VisualBasic(
-            date_format=literalizer.languages.VisualBasic.date_formats.ISO,
-            datetime_format=literalizer.languages.VisualBasic.datetime_formats.ISO,
-            bytes_format=literalizer.languages.VisualBasic.bytes_formats.HEX,
-            sequence_format=literalizer.languages.VisualBasic.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.VisualBasic(),
         extension=".vb",
         wrap=_wrap_vb,
         varname_wrap=_wrap_vb_varname,
         combined_wrap=_wrap_vb_combined,
     ),
     "zig": _LanguageConfig(
-        spec=literalizer.languages.Zig(
-            date_format=literalizer.languages.Zig.date_formats.ISO,
-            datetime_format=literalizer.languages.Zig.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Zig.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Zig.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Zig(),
         extension=".zig",
         wrap=_wrap_zig,
         varname_wrap=_wrap_zig_varname,
         combined_wrap=_wrap_zig_combined,
     ),
     "powershell": _LanguageConfig(
-        spec=literalizer.languages.PowerShell(
-            date_format=literalizer.languages.PowerShell.date_formats.ISO,
-            datetime_format=literalizer.languages.PowerShell.datetime_formats.ISO,
-            bytes_format=literalizer.languages.PowerShell.bytes_formats.HEX,
-            sequence_format=literalizer.languages.PowerShell.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.PowerShell(),
         extension=".ps1",
         wrap=_wrap_powershell,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     "toml": _LanguageConfig(
-        spec=literalizer.languages.Toml(
-            date_format=literalizer.languages.Toml.date_formats.TOML,
-            datetime_format=literalizer.languages.Toml.datetime_formats.TOML,
-            bytes_format=literalizer.languages.Toml.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Toml.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Toml(),
         extension=".toml",
         wrap=_wrap_toml,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
     ),
     "objective_c": _LanguageConfig(
-        spec=literalizer.languages.ObjectiveC(
-            date_format=literalizer.languages.ObjectiveC.date_formats.OBJC,
-            datetime_format=literalizer.languages.ObjectiveC.datetime_formats.OBJC,
-            bytes_format=literalizer.languages.ObjectiveC.bytes_formats.HEX,
-            sequence_format=literalizer.languages.ObjectiveC.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.ObjectiveC(),
         extension=".m",
         wrap=_wrap_objc,
         varname_wrap=_wrap_objc_varname,
         combined_wrap=_wrap_objc_combined,
     ),
     "fortran": _LanguageConfig(
-        spec=literalizer.languages.Fortran(
-            date_format=literalizer.languages.Fortran.date_formats.ISO,
-            datetime_format=literalizer.languages.Fortran.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Fortran.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Fortran.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Fortran(),
         extension=".f90",
         wrap=_wrap_fortran,
         varname_wrap=_wrap_fortran_varname,
         combined_wrap=_wrap_fortran_combined,
     ),
     "yaml": _LanguageConfig(
-        spec=literalizer.languages.Yaml(
-            date_format=literalizer.languages.Yaml.date_formats.YAML,
-            datetime_format=literalizer.languages.Yaml.datetime_formats.YAML,
-            bytes_format=literalizer.languages.Yaml.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Yaml.sequence_formats.SEQUENCE,
-        ),
+        spec=literalizer.languages.Yaml(),
         extension=".yaml",
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
@@ -2131,157 +1850,81 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 
 _DATE_VARIANTS: dict[str, _Variant] = {
     "python_native": _Variant(
-        spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.date_formats.PYTHON,
-            datetime_format=literalizer.languages.Python.datetime_formats.PYTHON,
-            bytes_format=literalizer.languages.Python.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Python.sequence_formats.TUPLE,
-            set_format=literalizer.languages.Python.set_formats.SET,
-            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
-        ),
+        spec=literalizer.languages.Python(),
         extension=".py",
         wrap=_wrap_python,
     ),
     "python_epoch": _Variant(
         spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.date_formats.PYTHON,
             datetime_format=literalizer.languages.Python.datetime_formats.EPOCH,
-            bytes_format=literalizer.languages.Python.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Python.sequence_formats.TUPLE,
-            set_format=literalizer.languages.Python.set_formats.SET,
-            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
         wrap=_wrap_python,
     ),
     "js_native": _Variant(
-        spec=literalizer.languages.JavaScript(
-            date_format=literalizer.languages.JavaScript.date_formats.JS,
-            datetime_format=literalizer.languages.JavaScript.datetime_formats.JS,
-            bytes_format=literalizer.languages.JavaScript.bytes_formats.HEX,
-            sequence_format=literalizer.languages.JavaScript.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.JavaScript(),
         extension=".js",
         wrap=_wrap_js,
     ),
     "ts_native": _Variant(
-        spec=literalizer.languages.TypeScript(
-            date_format=literalizer.languages.TypeScript.date_formats.JS,
-            datetime_format=literalizer.languages.TypeScript.datetime_formats.JS,
-            bytes_format=literalizer.languages.TypeScript.bytes_formats.HEX,
-            sequence_format=literalizer.languages.TypeScript.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.TypeScript(),
         extension=".ts",
         wrap=_wrap_js,
     ),
     "kotlin_native": _Variant(
-        spec=literalizer.languages.Kotlin(
-            date_format=literalizer.languages.Kotlin.date_formats.KOTLIN,
-            datetime_format=literalizer.languages.Kotlin.datetime_formats.KOTLIN,
-            bytes_format=literalizer.languages.Kotlin.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Kotlin.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Kotlin(),
         extension=".kts",
         wrap=_wrap_kotlin_time,
     ),
     "ruby_native": _Variant(
-        spec=literalizer.languages.Ruby(
-            date_format=literalizer.languages.Ruby.date_formats.RUBY,
-            datetime_format=literalizer.languages.Ruby.datetime_formats.RUBY,
-            bytes_format=literalizer.languages.Ruby.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Ruby.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Ruby(),
         extension=".rb",
         wrap=_wrap_ruby_date,
     ),
     "go_native": _Variant(
-        spec=literalizer.languages.Go(
-            date_format=literalizer.languages.Go.date_formats.GO,
-            datetime_format=literalizer.languages.Go.datetime_formats.GO,
-            bytes_format=literalizer.languages.Go.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Go.sequence_formats.SLICE,
-        ),
+        spec=literalizer.languages.Go(),
         extension=".go",
         wrap=_wrap_go_time,
     ),
     "java_instant": _Variant(
-        spec=literalizer.languages.Java(
-            date_format=literalizer.languages.Java.date_formats.JAVA,
-            datetime_format=literalizer.languages.Java.datetime_formats.INSTANT,
-            bytes_format=literalizer.languages.Java.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Java.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Java(),
         extension=".java",
         wrap=_wrap_java_time,
     ),
     "java_zoned": _Variant(
         spec=literalizer.languages.Java(
-            date_format=literalizer.languages.Java.date_formats.JAVA,
             datetime_format=literalizer.languages.Java.datetime_formats.ZONED,
-            bytes_format=literalizer.languages.Java.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Java.sequence_formats.ARRAY,
         ),
         extension=".java",
         wrap=_wrap_java_time,
     ),
     "csharp_native": _Variant(
-        spec=literalizer.languages.CSharp(
-            date_format=literalizer.languages.CSharp.date_formats.CSHARP,
-            datetime_format=literalizer.languages.CSharp.datetime_formats.CSHARP,
-            bytes_format=literalizer.languages.CSharp.bytes_formats.HEX,
-            sequence_format=literalizer.languages.CSharp.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.CSharp(),
         extension=".cs",
         wrap=_wrap_csharp_date,
     ),
     "dart_native": _Variant(
-        spec=literalizer.languages.Dart(
-            date_format=literalizer.languages.Dart.date_formats.DART,
-            datetime_format=literalizer.languages.Dart.datetime_formats.DART,
-            bytes_format=literalizer.languages.Dart.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Dart.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.Dart(),
         extension=".dart",
         wrap=_wrap_dart,
     ),
     "cpp_native": _Variant(
-        spec=literalizer.languages.Cpp(
-            date_format=literalizer.languages.Cpp.date_formats.CPP,
-            datetime_format=literalizer.languages.Cpp.datetime_formats.CPP,
-            bytes_format=literalizer.languages.Cpp.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Cpp.sequence_formats.INITIALIZER_LIST,
-        ),
+        spec=literalizer.languages.Cpp(),
         extension=".cpp",
         wrap=_wrap_cpp_chrono,
     ),
     "rust_native": _Variant(
-        spec=literalizer.languages.Rust(
-            date_format=literalizer.languages.Rust.date_formats.RUST,
-            datetime_format=literalizer.languages.Rust.datetime_formats.RUST,
-            bytes_format=literalizer.languages.Rust.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Rust.sequence_formats.VEC,
-        ),
+        spec=literalizer.languages.Rust(),
         extension=".rs",
         wrap=_wrap_rust,
     ),
     "julia_native": _Variant(
-        spec=literalizer.languages.Julia(
-            date_format=literalizer.languages.Julia.date_formats.JULIA,
-            datetime_format=literalizer.languages.Julia.datetime_formats.JULIA,
-            bytes_format=literalizer.languages.Julia.bytes_formats.HEX,
-            sequence_format=literalizer.languages.Julia.sequence_formats.ARRAY,
-        ),
+        spec=literalizer.languages.Julia(),
         extension=".jl",
         wrap=_wrap_julia_dates,
     ),
     "r_native": _Variant(
-        spec=literalizer.languages.R(
-            date_format=literalizer.languages.R.date_formats.R,
-            datetime_format=literalizer.languages.R.datetime_formats.R,
-            empty_dict_key=literalizer.languages.R.EmptyDictKey.POSITIONAL,
-            bytes_format=literalizer.languages.R.bytes_formats.HEX,
-            sequence_format=literalizer.languages.R.sequence_formats.LIST,
-        ),
+        spec=literalizer.languages.R(),
         extension=".R",
         wrap=_wrap_r,
     ),
@@ -2291,21 +1934,13 @@ _DATE_VARIANTS: dict[str, _Variant] = {
 _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     "python_list": _Variant(
         spec=literalizer.languages.Python(
-            date_format=literalizer.languages.Python.date_formats.PYTHON,
-            datetime_format=literalizer.languages.Python.datetime_formats.PYTHON,
-            bytes_format=literalizer.languages.Python.bytes_formats.HEX,
             sequence_format=literalizer.languages.Python.sequence_formats.LIST,
-            set_format=literalizer.languages.Python.set_formats.SET,
-            variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
         ),
         extension=".py",
         wrap=_wrap_identity,
     ),
     "julia_tuple": _Variant(
         spec=literalizer.languages.Julia(
-            date_format=literalizer.languages.Julia.date_formats.JULIA,
-            datetime_format=literalizer.languages.Julia.datetime_formats.JULIA,
-            bytes_format=literalizer.languages.Julia.bytes_formats.HEX,
             sequence_format=literalizer.languages.Julia.sequence_formats.TUPLE,
         ),
         extension=".jl",
@@ -2313,9 +1948,6 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "elixir_tuple": _Variant(
         spec=literalizer.languages.Elixir(
-            date_format=literalizer.languages.Elixir.date_formats.ISO,
-            datetime_format=literalizer.languages.Elixir.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Elixir.bytes_formats.HEX,
             sequence_format=literalizer.languages.Elixir.sequence_formats.TUPLE,
         ),
         extension=".ex",
@@ -2323,9 +1955,6 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "erlang_tuple": _Variant(
         spec=literalizer.languages.Erlang(
-            date_format=literalizer.languages.Erlang.date_formats.ISO,
-            datetime_format=literalizer.languages.Erlang.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Erlang.bytes_formats.BINARY,
             sequence_format=literalizer.languages.Erlang.sequence_formats.TUPLE,
         ),
         extension=".erl",
@@ -2333,9 +1962,6 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "crystal_tuple": _Variant(
         spec=literalizer.languages.Crystal(
-            date_format=literalizer.languages.Crystal.date_formats.ISO,
-            datetime_format=literalizer.languages.Crystal.datetime_formats.ISO,
-            bytes_format=literalizer.languages.Crystal.bytes_formats.HEX,
             sequence_format=literalizer.languages.Crystal.sequence_formats.TUPLE,
         ),
         extension=".cr",
@@ -2348,9 +1974,6 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "rust_tuple": _Variant(
         spec=literalizer.languages.Rust(
-            date_format=literalizer.languages.Rust.date_formats.RUST,
-            datetime_format=literalizer.languages.Rust.datetime_formats.RUST,
-            bytes_format=literalizer.languages.Rust.bytes_formats.HEX,
             sequence_format=literalizer.languages.Rust.sequence_formats.TUPLE,
         ),
         extension=".rs",
@@ -2519,12 +2142,7 @@ def _build_variant_cases() -> list[_VariantCase]:
     set_variants: dict[str, _Variant] = {
         "python_frozenset": _Variant(
             spec=literalizer.languages.Python(
-                date_format=literalizer.languages.Python.date_formats.PYTHON,
-                datetime_format=literalizer.languages.Python.datetime_formats.PYTHON,
-                bytes_format=literalizer.languages.Python.bytes_formats.HEX,
-                sequence_format=literalizer.languages.Python.sequence_formats.TUPLE,
                 set_format=literalizer.languages.Python.set_formats.FROZENSET,
-                variable_type_hints=literalizer.languages.Python.VariableTypeHints.NONE,
             ),
             extension=".py",
             wrap=_wrap_identity,
@@ -2541,11 +2159,6 @@ def _build_variant_cases() -> list[_VariantCase]:
     variable_type_hints_variants: dict[str, _Variant] = {
         "python_inline": _Variant(
             spec=literalizer.languages.Python(
-                date_format=literalizer.languages.Python.date_formats.PYTHON,
-                datetime_format=literalizer.languages.Python.datetime_formats.PYTHON,
-                bytes_format=literalizer.languages.Python.bytes_formats.HEX,
-                sequence_format=literalizer.languages.Python.sequence_formats.TUPLE,
-                set_format=literalizer.languages.Python.set_formats.SET,
                 variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
             ),
             extension=".py",

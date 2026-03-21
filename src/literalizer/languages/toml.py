@@ -146,10 +146,10 @@ class Toml(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.TOML,
+        datetime_format: DatetimeFormats = DatetimeFormats.TOML,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
     ) -> None:
         """Initialize TOML language specification."""
         self.sequence_format = sequence_format

@@ -159,11 +159,11 @@ class R(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        empty_dict_key: EmptyDictKey,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.R,
+        datetime_format: DatetimeFormats = DatetimeFormats.R,
+        empty_dict_key: EmptyDictKey = EmptyDictKey.POSITIONAL,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.LIST,
     ) -> None:
         """Initialize R language specification."""
         self.sequence_format = sequence_format

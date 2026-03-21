@@ -132,10 +132,10 @@ class Rust(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.RUST,
+        datetime_format: DatetimeFormats = DatetimeFormats.RUST,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.VEC,
     ) -> None:
         """Initialize Rust language specification."""
         self.sequence_format = sequence_format

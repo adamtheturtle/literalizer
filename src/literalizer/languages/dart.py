@@ -152,10 +152,10 @@ class Dart(metaclass=HasFormatEnums):
     def __init__(
         self,
         *,
-        date_format: DateFormats,
-        datetime_format: DatetimeFormats,
-        bytes_format: BytesFormats,
-        sequence_format: SequenceFormats,
+        date_format: DateFormats = DateFormats.DART,
+        datetime_format: DatetimeFormats = DatetimeFormats.DART,
+        bytes_format: BytesFormats = BytesFormats.HEX,
+        sequence_format: SequenceFormats = SequenceFormats.LIST,
     ) -> None:
         """Initialize Dart language specification."""
         self.sequence_format = sequence_format
