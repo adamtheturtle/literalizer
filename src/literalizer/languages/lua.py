@@ -167,8 +167,11 @@ class Lua(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_lua_set_entry
-        self.comment_config = CommentConfig(prefix="--", suffix="")
-        self.omap_format_config = OmapFormatConfig(
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="--",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="{",
             close="}",
         )

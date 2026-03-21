@@ -266,8 +266,11 @@ class Fortran(metaclass=HasFormatEnums):
         self.empty_dict: str | None = None
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval
-        self.comment_config = CommentConfig(prefix="!", suffix="")
-        self.omap_format_config = OmapFormatConfig(
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="!",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="fmap([fval_t :: ",
             close="])",
         )

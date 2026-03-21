@@ -207,8 +207,11 @@ class Ada(metaclass=HasFormatEnums):
         self.empty_dict: str | None = "AMap'(1 .. 0 => ANull)"
         self.format_sequence_entry: Callable[[str], str] = _to_ada_val
         self.format_set_entry: Callable[[str], str] = _to_ada_val
-        self.comment_config = CommentConfig(prefix="--", suffix="")
-        self.omap_format_config = OmapFormatConfig(
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="--",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="AMap'(",
             close=")",
         )

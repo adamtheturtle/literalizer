@@ -201,8 +201,11 @@ class Occam(metaclass=HasFormatEnums):
             _format_occam_list_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_occam_set_entry
-        self.comment_config = CommentConfig(prefix="--", suffix="")
-        self.omap_format_config = OmapFormatConfig(
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="--",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
             close="])",
         )
