@@ -141,6 +141,36 @@ def _has_heterogeneous(*, data: Value) -> bool:
 
 
 @beartype
+def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
+    """Recursively check whether data contains sibling lists whose
+    combined scalar elements are heterogeneous.
+
+    For example, ``[[1, 2], ["a", "b"]]`` returns ``True`` because the
+    sibling sublists have differing element types when combined.
+    """
+    if isinstance(data, (dict, ordereddict)):
+        return any(
+            _has_heterogeneous_sibling_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        )
+
+    if isinstance(data, list):
+        if any(_has_heterogeneous_sibling_lists(data=v) for v in data):
+            return True
+        sublists: list[list[Value]] = [v for v in data if isinstance(v, list)]
+        if (
+            len(sublists) == len(data)
+            and len(sublists) > 1
+            and _all_scalars_heterogeneous(
+                values=[e for sub in sublists for e in sub],
+            )
+        ):
+            return True
+
+    return False
+
+
+@beartype
 def _check_heterogeneous(*, data: Value) -> None:
     """Recursively check for heterogeneous all-scalar collections and
     raise if found.
@@ -362,6 +392,15 @@ def _apply_coercions(
     if spec.coerce_heterogeneous_scalars_to_strings:
         if error_on_coercion:
             _check_heterogeneous(data=data)
+            if (
+                spec.coerce_heterogeneous_sibling_lists_to_strings
+                and _has_heterogeneous_sibling_lists(data=data)
+            ):
+                msg = (
+                    "Collection contains heterogeneous scalar types "
+                    "that would be coerced to strings"
+                )
+                raise HeterogeneousCoercionError(msg)
         else:
             data = _coerce_heterogeneous_scalars(data=data)
             if spec.coerce_heterogeneous_sibling_lists_to_strings:
