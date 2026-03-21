@@ -42,6 +42,20 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def date_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the date formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def datetime_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the datetime formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     null_literal: str
     """The literal representing null/None."""
 

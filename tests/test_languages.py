@@ -28,6 +28,8 @@ from literalizer.languages import (
 )
 
 COBOL = Cobol(
+    date_format=Cobol.DateFormat.ISO,
+    datetime_format=Cobol.DatetimeFormat.ISO,
     bytes_format=Cobol.BytesFormat.HEX,
     sequence_format=Cobol.SequenceFormat.SEQUENCE,
 )
@@ -38,6 +40,8 @@ CPP = Cpp(
     sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
 )
 FORTRAN = Fortran(
+    date_format=Fortran.DateFormat.ISO,
+    datetime_format=Fortran.DatetimeFormat.ISO,
     bytes_format=Fortran.BytesFormat.HEX,
     sequence_format=Fortran.SequenceFormat.LIST,
 )
@@ -92,6 +96,8 @@ RUST = Rust(
     sequence_format=Rust.SequenceFormat.VEC,
 )
 TOML = Toml(
+    date_format=Toml.DateFormat.TOML,
+    datetime_format=Toml.DatetimeFormat.TOML,
     bytes_format=Toml.BytesFormat.HEX,
     sequence_format=Toml.SequenceFormat.ARRAY,
 )
@@ -455,6 +461,8 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=Matlab(
+            date_format=Matlab.DateFormat.ISO,
+            datetime_format=Matlab.DatetimeFormat.ISO,
             bytes_format=Matlab.BytesFormat.HEX,
             sequence_format=Matlab.SequenceFormat.CELL_ARRAY,
         ),
@@ -478,6 +486,8 @@ def test_matlab_dict_key_with_quote() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=Matlab(
+            date_format=Matlab.DateFormat.ISO,
+            datetime_format=Matlab.DatetimeFormat.ISO,
             bytes_format=Matlab.BytesFormat.HEX,
             sequence_format=Matlab.SequenceFormat.CELL_ARRAY,
         ),

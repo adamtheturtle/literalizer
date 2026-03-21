@@ -35,6 +35,8 @@ JAVASCRIPT = JavaScript(
     sequence_format=JavaScript.SequenceFormat.ARRAY,
 )
 MOJO = Mojo(
+    date_format=Mojo.DateFormat.ISO,
+    datetime_format=Mojo.DatetimeFormat.ISO,
     bytes_format=Mojo.BytesFormat.HEX,
     sequence_format=Mojo.SequenceFormat.LIST,
 )

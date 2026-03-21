@@ -61,6 +61,16 @@ class Norg:
     verbatim tag: ``* name`` then ``@code json`` / ``@end``.
     """
 
+    class DateFormat(enum.Enum):
+        """Date format options for Norg."""
+
+        ISO = enum.member(value=format_date_iso)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Norg."""
+
+        ISO = enum.member(value=format_datetime_iso)
+
     class BytesFormat(enum.Enum):
         """Bytes formatting options."""
 
@@ -87,6 +97,18 @@ class Norg:
         return type(self).SetFormat
 
     @property
+    def date_formats(self) -> type[DateFormat]:
+        """Enum class whose members list the available date formats."""
+        return type(self).DateFormat
+
+    @property
+    def datetime_formats(self) -> type[DatetimeFormat]:
+        """Enum class whose members list the available datetime
+        formats.
+        """
+        return type(self).DatetimeFormat
+
+    @property
     def sequence_formats(self) -> type[SequenceFormat]:
         """Enum class whose members list the available sequence
         formats.
@@ -96,6 +118,8 @@ class Norg:
     def __init__(
         self,
         *,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
         bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
@@ -118,9 +142,9 @@ class Norg:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        self.format_date: Callable[[datetime.date], str] = format_date_iso
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            format_datetime_iso
+            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None

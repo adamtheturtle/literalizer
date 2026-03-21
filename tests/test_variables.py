@@ -35,6 +35,8 @@ from literalizer.languages import (
 )
 
 CLOJURE = Clojure(
+    date_format=Clojure.DateFormat.ISO,
+    datetime_format=Clojure.DatetimeFormat.ISO,
     bytes_format=Clojure.BytesFormat.HEX,
     sequence_format=Clojure.SequenceFormat.VECTOR,
 )
@@ -57,10 +59,14 @@ DART = Dart(
     sequence_format=Dart.SequenceFormat.LIST,
 )
 ELIXIR = Elixir(
+    date_format=Elixir.DateFormat.ISO,
+    datetime_format=Elixir.DatetimeFormat.ISO,
     bytes_format=Elixir.BytesFormat.HEX,
     sequence_format=Elixir.SequenceFormat.LIST,
 )
 FSHARP = FSharp(
+    date_format=FSharp.DateFormat.ISO,
+    datetime_format=FSharp.DatetimeFormat.ISO,
     bytes_format=FSharp.BytesFormat.HEX,
     sequence_format=FSharp.SequenceFormat.LIST,
 )
@@ -71,6 +77,8 @@ GO = Go(
     sequence_format=Go.SequenceFormat.SLICE,
 )
 HASKELL = Haskell(
+    date_format=Haskell.DateFormat.ISO,
+    datetime_format=Haskell.DatetimeFormat.ISO,
     bytes_format=Haskell.BytesFormat.HEX,
     sequence_format=Haskell.SequenceFormat.LIST,
 )
@@ -93,6 +101,8 @@ KOTLIN = Kotlin(
     sequence_format=Kotlin.SequenceFormat.LIST,
 )
 PHP = Php(
+    date_format=Php.DateFormat.PHP,
+    datetime_format=Php.DatetimeFormat.PHP,
     bytes_format=Php.BytesFormat.HEX,
     sequence_format=Php.SequenceFormat.ARRAY,
 )
@@ -125,10 +135,14 @@ RUST = Rust(
     sequence_format=Rust.SequenceFormat.VEC,
 )
 SCALA = Scala(
+    date_format=Scala.DateFormat.ISO,
+    datetime_format=Scala.DatetimeFormat.ISO,
     bytes_format=Scala.BytesFormat.HEX,
     sequence_format=Scala.SequenceFormat.LIST,
 )
 SWIFT = Swift(
+    date_format=Swift.DateFormat.ISO,
+    datetime_format=Swift.DatetimeFormat.ISO,
     bytes_format=Swift.BytesFormat.HEX,
     sequence_format=Swift.SequenceFormat.ARRAY,
 )

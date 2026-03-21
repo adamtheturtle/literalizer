@@ -500,6 +500,8 @@ def test_literalize_json_invalid_is_parse_error() -> None:
 
 
 MOJO = Mojo(
+    date_format=Mojo.DateFormat.ISO,
+    datetime_format=Mojo.DatetimeFormat.ISO,
     bytes_format=Mojo.BytesFormat.HEX,
     sequence_format=Mojo.SequenceFormat.LIST,
 )

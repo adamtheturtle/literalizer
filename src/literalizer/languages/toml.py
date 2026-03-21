@@ -99,6 +99,16 @@ class Toml:
     datetime literals, which are a distinct TOML type.
     """
 
+    class DateFormat(enum.Enum):
+        """Date format options for Toml."""
+
+        TOML = enum.member(value=_format_toml_date)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Toml."""
+
+        TOML = enum.member(value=_format_toml_datetime)
+
     class BytesFormat(enum.Enum):
         """Bytes formatting options."""
 
@@ -125,6 +135,18 @@ class Toml:
         return type(self).SetFormat
 
     @property
+    def date_formats(self) -> type[DateFormat]:
+        """Enum class whose members list the available date formats."""
+        return type(self).DateFormat
+
+    @property
+    def datetime_formats(self) -> type[DatetimeFormat]:
+        """Enum class whose members list the available datetime
+        formats.
+        """
+        return type(self).DatetimeFormat
+
+    @property
     def sequence_formats(self) -> type[SequenceFormat]:
         """Enum class whose members list the available sequence
         formats.
@@ -134,6 +156,8 @@ class Toml:
     def __init__(
         self,
         *,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
         bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
@@ -156,9 +180,9 @@ class Toml:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        self.format_date: Callable[[datetime.date], str] = _format_toml_date
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _format_toml_datetime
+            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None

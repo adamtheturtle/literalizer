@@ -212,6 +212,8 @@ _OCCAM_LIT_TYPE = (
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
     fsharp = literalizer.languages.FSharp(
+        date_format=literalizer.languages.FSharp.DateFormat.ISO,
+        datetime_format=literalizer.languages.FSharp.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.FSharp.BytesFormat.HEX,
         sequence_format=literalizer.languages.FSharp.SequenceFormat.LIST,
     )
@@ -225,6 +227,8 @@ def _wrap_fsharp(content: str) -> str:
 def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a custom val_t variant type."""
     ocaml = literalizer.languages.OCaml(
+        date_format=literalizer.languages.OCaml.DateFormat.ISO,
+        datetime_format=literalizer.languages.OCaml.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.OCaml.BytesFormat.HEX,
         sequence_format=literalizer.languages.OCaml.SequenceFormat.LIST,
     )
@@ -256,6 +260,8 @@ def _wrap_ocaml_varname(content: str) -> str:
 def _wrap_occam(content: str) -> str:
     """Wrap in an occam-pi PROC with a custom ``LIT`` mobile data type."""
     occam = literalizer.languages.Occam(
+        date_format=literalizer.languages.Occam.DateFormat.ISO,
+        datetime_format=literalizer.languages.Occam.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.Occam.BytesFormat.HEX,
         sequence_format=literalizer.languages.Occam.SequenceFormat.LIST,
     )
@@ -563,6 +569,8 @@ def _wrap_groovy(content: str) -> str:
 def _wrap_ada(content: str) -> str:
     """Wrap in an Ada procedure with a local variable assignment."""
     ada = literalizer.languages.Ada(
+        date_format=literalizer.languages.Ada.DateFormat.ISO,
+        datetime_format=literalizer.languages.Ada.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.Ada.BytesFormat.HEX,
         sequence_format=literalizer.languages.Ada.SequenceFormat.LIST,
     )
@@ -647,6 +655,8 @@ def _wrap_norg(content: str) -> str:
 def _wrap_d(content: str) -> str:
     """Wrap in a D function with ``std.json`` imported."""
     d_lang = literalizer.languages.D(
+        date_format=literalizer.languages.D.DateFormat.ISO,
+        datetime_format=literalizer.languages.D.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.D.BytesFormat.HEX,
         sequence_format=literalizer.languages.D.SequenceFormat.ARRAY,
     )
@@ -704,6 +714,8 @@ _C_PREAMBLE = (
 def _wrap_c(content: str) -> str:
     """Wrap in a C function with the _CVal/_CKV type definitions."""
     c_lang = literalizer.languages.C(
+        date_format=literalizer.languages.C.DateFormat.ISO,
+        datetime_format=literalizer.languages.C.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.C.BytesFormat.HEX,
         sequence_format=literalizer.languages.C.SequenceFormat.ARRAY,
     )
@@ -930,6 +942,8 @@ def _wrap_zig(content: str) -> str:
     definitions.
     """
     zig = literalizer.languages.Zig(
+        date_format=literalizer.languages.Zig.DateFormat.ISO,
+        datetime_format=literalizer.languages.Zig.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.Zig.BytesFormat.HEX,
         sequence_format=literalizer.languages.Zig.SequenceFormat.ARRAY,
     )
@@ -1157,6 +1171,8 @@ def _wrap_fortran(content: str) -> str:
     module embedded.
     """
     fortran = literalizer.languages.Fortran(
+        date_format=literalizer.languages.Fortran.DateFormat.ISO,
+        datetime_format=literalizer.languages.Fortran.DatetimeFormat.ISO,
         bytes_format=literalizer.languages.Fortran.BytesFormat.HEX,
         sequence_format=literalizer.languages.Fortran.SequenceFormat.LIST,
     )
@@ -1468,6 +1484,8 @@ def _wrap_cobol(content: str) -> str:
     else:
         # Scalar literal - convert to a DATA entry
         cobol = literalizer.languages.Cobol(
+            date_format=literalizer.languages.Cobol.DateFormat.ISO,
+            datetime_format=literalizer.languages.Cobol.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Cobol.BytesFormat.HEX,
             sequence_format=literalizer.languages.Cobol.SequenceFormat.SEQUENCE,
         )
@@ -1503,6 +1521,8 @@ def _wrap_cobol_combined(declaration: str, assignment: str) -> str:
 _LANGUAGES: dict[str, _LanguageConfig] = {
     "ada": _LanguageConfig(
         spec=literalizer.languages.Ada(
+            date_format=literalizer.languages.Ada.DateFormat.ISO,
+            datetime_format=literalizer.languages.Ada.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Ada.BytesFormat.HEX,
             sequence_format=literalizer.languages.Ada.SequenceFormat.LIST,
         ),
@@ -1513,6 +1533,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "bash": _LanguageConfig(
         spec=literalizer.languages.Bash(
+            date_format=literalizer.languages.Bash.DateFormat.ISO,
+            datetime_format=literalizer.languages.Bash.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Bash.BytesFormat.HEX,
             sequence_format=literalizer.languages.Bash.SequenceFormat.ARRAY,
         ),
@@ -1523,6 +1545,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "c": _LanguageConfig(
         spec=literalizer.languages.C(
+            date_format=literalizer.languages.C.DateFormat.ISO,
+            datetime_format=literalizer.languages.C.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.C.BytesFormat.HEX,
             sequence_format=literalizer.languages.C.SequenceFormat.ARRAY,
         ),
@@ -1533,6 +1557,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "cobol": _LanguageConfig(
         spec=literalizer.languages.Cobol(
+            date_format=literalizer.languages.Cobol.DateFormat.ISO,
+            datetime_format=literalizer.languages.Cobol.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Cobol.BytesFormat.HEX,
             sequence_format=literalizer.languages.Cobol.SequenceFormat.SEQUENCE,
         ),
@@ -1543,6 +1569,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "d": _LanguageConfig(
         spec=literalizer.languages.D(
+            date_format=literalizer.languages.D.DateFormat.ISO,
+            datetime_format=literalizer.languages.D.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.D.BytesFormat.HEX,
             sequence_format=literalizer.languages.D.SequenceFormat.ARRAY,
         ),
@@ -1553,6 +1581,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "common_lisp": _LanguageConfig(
         spec=literalizer.languages.CommonLisp(
+            date_format=literalizer.languages.CommonLisp.DateFormat.ISO,
+            datetime_format=literalizer.languages.CommonLisp.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.CommonLisp.BytesFormat.HEX,
             sequence_format=literalizer.languages.CommonLisp.SequenceFormat.LIST,
         ),
@@ -1563,6 +1593,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "clojure": _LanguageConfig(
         spec=literalizer.languages.Clojure(
+            date_format=literalizer.languages.Clojure.DateFormat.ISO,
+            datetime_format=literalizer.languages.Clojure.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Clojure.BytesFormat.HEX,
             sequence_format=literalizer.languages.Clojure.SequenceFormat.VECTOR,
         ),
@@ -1683,6 +1715,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "swift": _LanguageConfig(
         spec=literalizer.languages.Swift(
+            date_format=literalizer.languages.Swift.DateFormat.ISO,
+            datetime_format=literalizer.languages.Swift.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Swift.BytesFormat.HEX,
             sequence_format=literalizer.languages.Swift.SequenceFormat.ARRAY,
         ),
@@ -1717,6 +1751,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "haskell": _LanguageConfig(
         spec=literalizer.languages.Haskell(
+            date_format=literalizer.languages.Haskell.DateFormat.ISO,
+            datetime_format=literalizer.languages.Haskell.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Haskell.BytesFormat.HEX,
             sequence_format=literalizer.languages.Haskell.SequenceFormat.LIST,
         ),
@@ -1727,6 +1763,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "hcl": _LanguageConfig(
         spec=literalizer.languages.Hcl(
+            date_format=literalizer.languages.Hcl.DateFormat.ISO,
+            datetime_format=literalizer.languages.Hcl.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Hcl.BytesFormat.HEX,
             sequence_format=literalizer.languages.Hcl.SequenceFormat.LIST,
         ),
@@ -1749,6 +1787,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "lua": _LanguageConfig(
         spec=literalizer.languages.Lua(
+            date_format=literalizer.languages.Lua.DateFormat.ISO,
+            datetime_format=literalizer.languages.Lua.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Lua.BytesFormat.HEX,
             sequence_format=literalizer.languages.Lua.SequenceFormat.TABLE,
         ),
@@ -1759,6 +1799,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "perl": _LanguageConfig(
         spec=literalizer.languages.Perl(
+            date_format=literalizer.languages.Perl.DateFormat.ISO,
+            datetime_format=literalizer.languages.Perl.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Perl.BytesFormat.HEX,
             sequence_format=literalizer.languages.Perl.SequenceFormat.ARRAY,
         ),
@@ -1769,6 +1811,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "php": _LanguageConfig(
         spec=literalizer.languages.Php(
+            date_format=literalizer.languages.Php.DateFormat.PHP,
+            datetime_format=literalizer.languages.Php.DatetimeFormat.PHP,
             bytes_format=literalizer.languages.Php.BytesFormat.HEX,
             sequence_format=literalizer.languages.Php.SequenceFormat.ARRAY,
         ),
@@ -1779,6 +1823,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "elixir": _LanguageConfig(
         spec=literalizer.languages.Elixir(
+            date_format=literalizer.languages.Elixir.DateFormat.ISO,
+            datetime_format=literalizer.languages.Elixir.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Elixir.BytesFormat.HEX,
             sequence_format=literalizer.languages.Elixir.SequenceFormat.LIST,
         ),
@@ -1789,6 +1835,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "erlang": _LanguageConfig(
         spec=literalizer.languages.Erlang(
+            date_format=literalizer.languages.Erlang.DateFormat.ISO,
+            datetime_format=literalizer.languages.Erlang.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Erlang.BytesFormat.BINARY,
             sequence_format=literalizer.languages.Erlang.SequenceFormat.LIST,
         ),
@@ -1799,6 +1847,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "fsharp": _LanguageConfig(
         spec=literalizer.languages.FSharp(
+            date_format=literalizer.languages.FSharp.DateFormat.ISO,
+            datetime_format=literalizer.languages.FSharp.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.FSharp.BytesFormat.HEX,
             sequence_format=literalizer.languages.FSharp.SequenceFormat.LIST,
         ),
@@ -1809,6 +1859,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "ocaml": _LanguageConfig(
         spec=literalizer.languages.OCaml(
+            date_format=literalizer.languages.OCaml.DateFormat.ISO,
+            datetime_format=literalizer.languages.OCaml.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.OCaml.BytesFormat.HEX,
             sequence_format=literalizer.languages.OCaml.SequenceFormat.LIST,
         ),
@@ -1819,6 +1871,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "occam": _LanguageConfig(
         spec=literalizer.languages.Occam(
+            date_format=literalizer.languages.Occam.DateFormat.ISO,
+            datetime_format=literalizer.languages.Occam.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Occam.BytesFormat.HEX,
             sequence_format=literalizer.languages.Occam.SequenceFormat.LIST,
         ),
@@ -1829,6 +1883,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "groovy": _LanguageConfig(
         spec=literalizer.languages.Groovy(
+            date_format=literalizer.languages.Groovy.DateFormat.ISO,
+            datetime_format=literalizer.languages.Groovy.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Groovy.BytesFormat.HEX,
             sequence_format=literalizer.languages.Groovy.SequenceFormat.LIST,
         ),
@@ -1839,6 +1895,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "scala": _LanguageConfig(
         spec=literalizer.languages.Scala(
+            date_format=literalizer.languages.Scala.DateFormat.ISO,
+            datetime_format=literalizer.languages.Scala.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Scala.BytesFormat.HEX,
             sequence_format=literalizer.languages.Scala.SequenceFormat.LIST,
         ),
@@ -1862,6 +1920,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "racket": _LanguageConfig(
         spec=literalizer.languages.Racket(
+            date_format=literalizer.languages.Racket.DateFormat.ISO,
+            datetime_format=literalizer.languages.Racket.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Racket.BytesFormat.HEX,
             sequence_format=literalizer.languages.Racket.SequenceFormat.LIST,
         ),
@@ -1872,6 +1932,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "crystal": _LanguageConfig(
         spec=literalizer.languages.Crystal(
+            date_format=literalizer.languages.Crystal.DateFormat.ISO,
+            datetime_format=literalizer.languages.Crystal.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Crystal.BytesFormat.HEX,
             sequence_format=literalizer.languages.Crystal.SequenceFormat.ARRAY,
         ),
@@ -1882,6 +1944,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "matlab": _LanguageConfig(
         spec=literalizer.languages.Matlab(
+            date_format=literalizer.languages.Matlab.DateFormat.ISO,
+            datetime_format=literalizer.languages.Matlab.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Matlab.BytesFormat.HEX,
             sequence_format=literalizer.languages.Matlab.SequenceFormat.CELL_ARRAY,
         ),
@@ -1892,6 +1956,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "mojo": _LanguageConfig(
         spec=literalizer.languages.Mojo(
+            date_format=literalizer.languages.Mojo.DateFormat.ISO,
+            datetime_format=literalizer.languages.Mojo.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Mojo.BytesFormat.HEX,
             sequence_format=literalizer.languages.Mojo.SequenceFormat.LIST,
         ),
@@ -1902,6 +1968,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "nim": _LanguageConfig(
         spec=literalizer.languages.Nim(
+            date_format=literalizer.languages.Nim.DateFormat.ISO,
+            datetime_format=literalizer.languages.Nim.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Nim.BytesFormat.HEX,
             sequence_format=literalizer.languages.Nim.SequenceFormat.ARRAY,
         ),
@@ -1912,6 +1980,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "norg": _LanguageConfig(
         spec=literalizer.languages.Norg(
+            date_format=literalizer.languages.Norg.DateFormat.ISO,
+            datetime_format=literalizer.languages.Norg.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Norg.BytesFormat.HEX,
             sequence_format=literalizer.languages.Norg.SequenceFormat.ARRAY,
         ),
@@ -1922,6 +1992,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "vb": _LanguageConfig(
         spec=literalizer.languages.VisualBasic(
+            date_format=literalizer.languages.VisualBasic.DateFormat.ISO,
+            datetime_format=literalizer.languages.VisualBasic.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.VisualBasic.BytesFormat.HEX,
             sequence_format=literalizer.languages.VisualBasic.SequenceFormat.ARRAY,
         ),
@@ -1932,6 +2004,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "zig": _LanguageConfig(
         spec=literalizer.languages.Zig(
+            date_format=literalizer.languages.Zig.DateFormat.ISO,
+            datetime_format=literalizer.languages.Zig.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Zig.BytesFormat.HEX,
             sequence_format=literalizer.languages.Zig.SequenceFormat.ARRAY,
         ),
@@ -1942,6 +2016,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "powershell": _LanguageConfig(
         spec=literalizer.languages.PowerShell(
+            date_format=literalizer.languages.PowerShell.DateFormat.ISO,
+            datetime_format=literalizer.languages.PowerShell.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.PowerShell.BytesFormat.HEX,
             sequence_format=literalizer.languages.PowerShell.SequenceFormat.ARRAY,
         ),
@@ -1952,6 +2028,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "toml": _LanguageConfig(
         spec=literalizer.languages.Toml(
+            date_format=literalizer.languages.Toml.DateFormat.TOML,
+            datetime_format=literalizer.languages.Toml.DatetimeFormat.TOML,
             bytes_format=literalizer.languages.Toml.BytesFormat.HEX,
             sequence_format=literalizer.languages.Toml.SequenceFormat.ARRAY,
         ),
@@ -1962,6 +2040,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "objective_c": _LanguageConfig(
         spec=literalizer.languages.ObjectiveC(
+            date_format=literalizer.languages.ObjectiveC.DateFormat.OBJC,
+            datetime_format=literalizer.languages.ObjectiveC.DatetimeFormat.OBJC,
             bytes_format=literalizer.languages.ObjectiveC.BytesFormat.HEX,
             sequence_format=literalizer.languages.ObjectiveC.SequenceFormat.ARRAY,
         ),
@@ -1972,6 +2052,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "fortran": _LanguageConfig(
         spec=literalizer.languages.Fortran(
+            date_format=literalizer.languages.Fortran.DateFormat.ISO,
+            datetime_format=literalizer.languages.Fortran.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Fortran.BytesFormat.HEX,
             sequence_format=literalizer.languages.Fortran.SequenceFormat.LIST,
         ),
@@ -1982,6 +2064,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     "yaml": _LanguageConfig(
         spec=literalizer.languages.Yaml(
+            date_format=literalizer.languages.Yaml.DateFormat.YAML,
+            datetime_format=literalizer.languages.Yaml.DatetimeFormat.YAML,
             bytes_format=literalizer.languages.Yaml.BytesFormat.HEX,
             sequence_format=literalizer.languages.Yaml.SequenceFormat.SEQUENCE,
         ),
@@ -2177,6 +2261,8 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "elixir_tuple": _Variant(
         spec=literalizer.languages.Elixir(
+            date_format=literalizer.languages.Elixir.DateFormat.ISO,
+            datetime_format=literalizer.languages.Elixir.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Elixir.BytesFormat.HEX,
             sequence_format=literalizer.languages.Elixir.SequenceFormat.TUPLE,
         ),
@@ -2185,6 +2271,8 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "erlang_tuple": _Variant(
         spec=literalizer.languages.Erlang(
+            date_format=literalizer.languages.Erlang.DateFormat.ISO,
+            datetime_format=literalizer.languages.Erlang.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Erlang.BytesFormat.BINARY,
             sequence_format=literalizer.languages.Erlang.SequenceFormat.TUPLE,
         ),
@@ -2193,6 +2281,8 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
     ),
     "crystal_tuple": _Variant(
         spec=literalizer.languages.Crystal(
+            date_format=literalizer.languages.Crystal.DateFormat.ISO,
+            datetime_format=literalizer.languages.Crystal.DatetimeFormat.ISO,
             bytes_format=literalizer.languages.Crystal.BytesFormat.HEX,
             sequence_format=literalizer.languages.Crystal.SequenceFormat.TUPLE,
         ),
@@ -2472,9 +2562,7 @@ def test_format_enumeration_properties(lang_config: _LanguageConfig) -> None:
     assert len(spec.sequence_formats) >= 1
     assert issubclass(spec.set_formats, enum.Enum)
     assert len(spec.set_formats) >= 1
-    if hasattr(spec, "date_formats"):
-        assert issubclass(spec.date_formats, enum.Enum)
-        assert len(spec.date_formats) >= 1
-    if hasattr(spec, "datetime_formats"):
-        assert issubclass(spec.datetime_formats, enum.Enum)
-        assert len(spec.datetime_formats) >= 1
+    assert issubclass(spec.date_formats, enum.Enum)
+    assert len(spec.date_formats) >= 1
+    assert issubclass(spec.datetime_formats, enum.Enum)
+    assert len(spec.datetime_formats) >= 1

@@ -1,9 +1,9 @@
 """MATLAB language specification."""
 
-import datetime
+from __future__ import annotations
+
 import enum
 import re
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -20,6 +20,9 @@ from literalizer._formatters import (
 )
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 _CONTROL_CHAR_THRESHOLD = 32
@@ -105,14 +108,22 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {value};"
 
 
-_date_format: Callable[[datetime.date], str] = format_date_iso
-_datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_matlab
 
 
 @beartype
 class Matlab:
     """MATLAB language specification."""
+
+    class DateFormat(enum.Enum):
+        """Date format options for Matlab."""
+
+        ISO = enum.member(value=format_date_iso)
+
+    class DatetimeFormat(enum.Enum):
+        """Datetime format options for Matlab."""
+
+        ISO = enum.member(value=format_datetime_iso)
 
     class BytesFormat(enum.Enum):
         """Bytes formatting options."""
@@ -140,6 +151,18 @@ class Matlab:
         return type(self).SetFormat
 
     @property
+    def date_formats(self) -> type[DateFormat]:
+        """Enum class whose members list the available date formats."""
+        return type(self).DateFormat
+
+    @property
+    def datetime_formats(self) -> type[DatetimeFormat]:
+        """Enum class whose members list the available datetime
+        formats.
+        """
+        return type(self).DatetimeFormat
+
+    @property
     def sequence_formats(self) -> type[SequenceFormat]:
         """Enum class whose members list the available sequence
         formats.
@@ -149,6 +172,8 @@ class Matlab:
     def __init__(
         self,
         *,
+        date_format: DateFormat,
+        datetime_format: DatetimeFormat,
         bytes_format: BytesFormat,
         sequence_format: SequenceFormat,
     ) -> None:
@@ -171,9 +196,9 @@ class Matlab:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        self.format_date: Callable[[datetime.date], str] = _date_format
+        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_format
+            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = "{}"
