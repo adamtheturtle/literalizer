@@ -13,9 +13,28 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Check for relevant changes
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |-
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "should-lint=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changes=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          if echo "$changes" | grep -qE '(^tests/integration/cases/|\.yml$|\.toml$)'; then
+            echo "should-lint=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should-lint=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install Julia
+        if: steps.changes.outputs.should-lint == 'true'
         uses: julia-actions/setup-julia@v2
       - name: Check Julia syntax
+        if: steps.changes.outputs.should-lint == 'true'
         run: |-
           set -o pipefail
           find tests/integration/cases -name "*.jl" -print0 | \
