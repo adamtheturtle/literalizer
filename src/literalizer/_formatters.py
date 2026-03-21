@@ -47,6 +47,7 @@ def _all_json_native(values: Value) -> bool:
 
 def _all_json_native_list(
     values: list[Value],
+    /,
 ) -> TypeGuard[list[_JsonNative]]:
     """Type-narrowing wrapper around :func:`_all_json_native` for
     lists.
