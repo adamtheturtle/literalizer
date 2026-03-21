@@ -402,19 +402,6 @@ def _wrap_java_varname(content: str) -> str:
 
 
 @beartype
-def _wrap_rust_chrono(content: str) -> str:
-    """Wrap in a Rust main function with chrono imports."""
-    indented = content.replace("\n", "\n    ")
-    return (
-        _rust_collections_use(content=content)
-        + _rust_chrono_use(content=content)
-        + "fn main() {\n"
-        f"    let _ = {indented};\n"
-        "}"
-    )
-
-
-@beartype
 def _wrap_csharp_varname(content: str) -> str:
     """Wrap a C# top-level variable declaration with required imports."""
     needs_system = "DateOnly" in content or "DateTime" in content
@@ -2275,7 +2262,7 @@ _DATE_VARIANTS: dict[str, _Variant] = {
             sequence_format=literalizer.languages.Rust.sequence_formats.VEC,
         ),
         extension=".rs",
-        wrap=_wrap_rust_chrono,
+        wrap=_wrap_rust,
     ),
     "julia_native": _Variant(
         spec=literalizer.languages.Julia(
