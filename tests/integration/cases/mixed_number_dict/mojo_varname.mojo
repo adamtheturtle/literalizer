@@ -1,6 +1,6 @@
 def main():
-    var my_data = {
+    var my_data = Dict({
         "a": "1",
         "b": "2.5",
         "c": "3",
-    }
+    })

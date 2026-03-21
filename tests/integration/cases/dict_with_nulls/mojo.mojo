@@ -1,6 +1,6 @@
 def main():
-    _ = {
+    _ = Dict({
         "name": "Alice",
         "score": "None",
         "age": "30",
-    }
+    })

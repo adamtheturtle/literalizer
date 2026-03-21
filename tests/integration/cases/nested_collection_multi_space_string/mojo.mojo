@@ -1,4 +1,4 @@
 def main():
     _ = [
-        {"key": "hello   world", "value": "1"},
+        Dict({"key": "hello   world", "value": "1"}),
     ]
