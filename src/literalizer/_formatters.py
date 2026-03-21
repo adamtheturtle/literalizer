@@ -8,6 +8,7 @@ from typing import Any, TypeGuard
 
 from beartype import beartype
 from json_to_schema import infer_schema
+from json_to_schema.core import JsonValue
 
 from literalizer._types import Value
 
@@ -18,17 +19,6 @@ from literalizer._types import Value
 # inference entirely and let the language mapper fall through to its
 # fallback opener.
 _JSON_NATIVE_TYPES = (str, int, float, bool, type(None), list, dict)
-
-# Recursive JSON value type matching json-to-schema's ``JsonValue``.
-type _JsonNative = (
-    None
-    | bool
-    | int
-    | float
-    | str
-    | list[_JsonNative]
-    | dict[str, _JsonNative]
-)
 
 
 @beartype
@@ -48,7 +38,7 @@ def _all_json_native(values: Value) -> bool:
 def _all_json_native_list(
     values: list[Value],
     /,
-) -> TypeGuard[list[_JsonNative]]:
+) -> TypeGuard[list[JsonValue]]:
     """Type-narrowing wrapper around :func:`_all_json_native` for
     lists.
     """
