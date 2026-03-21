@@ -71,17 +71,17 @@ class _HasFormatEnums(Protocol):
     """
 
     @property
-    def BytesFormat(self) -> type[enum.Enum]:  # noqa: N802
+    def BytesFormat(self) -> type[enum.Enum]:  # noqa: N802  # pylint: disable=invalid-name
         """Enum of bytes formatting options."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def SequenceFormat(self) -> type[enum.Enum]:  # noqa: N802
+    def SequenceFormat(self) -> type[enum.Enum]:  # noqa: N802  # pylint: disable=invalid-name
         """Enum of sequence type options."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def SetFormat(self) -> type[enum.Enum]:  # noqa: N802
+    def SetFormat(self) -> type[enum.Enum]:  # noqa: N802  # pylint: disable=invalid-name
         """Enum of set type options."""
         ...  # pylint: disable=unnecessary-ellipsis
 
