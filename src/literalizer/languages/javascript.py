@@ -53,14 +53,14 @@ class JavaScript:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.ISO`` (default) — ISO 8601 string,
+            * ``DateFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15"``.
             * ``DateFormat.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.ISO`` (default) — ISO 8601 string,
+            * ``DatetimeFormat.ISO`` — ISO 8601 string,
               e.g. ``"2024-01-15T12:30:00"``.
             * ``DatetimeFormat.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.

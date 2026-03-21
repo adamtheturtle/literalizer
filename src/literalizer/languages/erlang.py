@@ -61,7 +61,7 @@ class Erlang:
     Args:
         sequence_format: Which Erlang sequence type to use.
 
-            * ``SequenceFormat.LIST`` (default) — list literal,
+            * ``SequenceFormat.LIST`` — list literal,
               e.g. ``[1, 2, 3]``.
             * ``SequenceFormat.TUPLE`` — tuple literal,
               e.g. ``{1, 2, 3}``.
