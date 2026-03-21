@@ -121,29 +121,29 @@ class Go:
               time.UTC)``.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for Go."""
 
         ISO = enum.member(value=format_date_iso)
         GO = enum.member(value=format_date_go)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for Go."""
 
         ISO = enum.member(value=format_datetime_iso)
         GO = enum.member(value=format_datetime_go)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Go."""
 
         SLICE = "slice"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Go."""
 
         SET = "set"

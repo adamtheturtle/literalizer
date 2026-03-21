@@ -103,27 +103,27 @@ _string_format: Callable[[str], str] = format_string_ada
 class Ada:
     """Ada language specification."""
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for Ada."""
 
         ISO = enum.member(value=format_date_iso)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for Ada."""
 
         ISO = enum.member(value=format_datetime_iso)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Ada."""
 
         LIST = "list"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Ada."""
 
         SET = "set"

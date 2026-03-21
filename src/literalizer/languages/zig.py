@@ -82,27 +82,27 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Zig:
     """Zig language specification."""
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for Zig."""
 
         ISO = enum.member(value=format_date_iso)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for Zig."""
 
         ISO = enum.member(value=format_datetime_iso)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Zig."""
 
         ARRAY = "array"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Zig."""
 
         SET = "set"

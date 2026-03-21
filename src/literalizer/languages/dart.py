@@ -111,29 +111,29 @@ class Dart:
               e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date formatting options for Dart."""
 
         ISO = enum.member(value=format_date_iso)
         DART = enum.member(value=format_date_dart)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime formatting options for Dart."""
 
         ISO = enum.member(value=format_datetime_iso)
         DART = enum.member(value=format_datetime_dart)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Dart."""
 
         LIST = "list"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Dart."""
 
         SET = "set"

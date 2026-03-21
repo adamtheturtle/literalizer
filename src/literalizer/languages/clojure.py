@@ -45,27 +45,27 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Clojure:
     """Clojure language specification."""
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for Clojure."""
 
         ISO = enum.member(value=format_date_iso)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for Clojure."""
 
         ISO = enum.member(value=format_datetime_iso)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Clojure."""
 
         VECTOR = "vector"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Clojure."""
 
         SET = "set"

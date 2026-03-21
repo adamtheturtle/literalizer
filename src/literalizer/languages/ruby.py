@@ -66,29 +66,29 @@ class Ruby:
               e.g. ``Time.new(2024, 1, 15, 12, 30, 0)``.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for Ruby."""
 
         ISO = enum.member(value=format_date_iso)
         RUBY = enum.member(value=format_date_ruby)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for Ruby."""
 
         ISO = enum.member(value=format_datetime_iso)
         RUBY = enum.member(value=format_datetime_ruby)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Ruby."""
 
         ARRAY = "array"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Ruby."""
 
         SET = "set"

@@ -99,27 +99,27 @@ class Toml:
     datetime literals, which are a distinct TOML type.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for Toml."""
 
         TOML = enum.member(value=_format_toml_date)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for Toml."""
 
         TOML = enum.member(value=_format_toml_datetime)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for TOML."""
 
         ARRAY = "array"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for TOML."""
 
         SET = "set"

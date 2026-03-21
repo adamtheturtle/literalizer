@@ -119,6 +119,12 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow asserts in docs.
     "S101",
 ]
+lint.per-file-ignores."src/literalizer/languages/*.py" = [
+    # Format enum classes use snake_case names (e.g. sequence_formats) so
+    # they match the Language Protocol property names and are accessible at
+    # both class and instance level.
+    "N801",
+]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [ "ALL" ]
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.

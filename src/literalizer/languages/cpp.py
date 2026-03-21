@@ -113,29 +113,29 @@ class Cpp:
               + std::chrono::minutes{30}``.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for C++."""
 
         ISO = enum.member(value=format_date_iso)
         CPP = enum.member(value=format_date_cpp)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for C++."""
 
         ISO = enum.member(value=format_datetime_iso)
         CPP = enum.member(value=format_datetime_cpp)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for C++."""
 
         INITIALIZER_LIST = "initializer_list"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for C++."""
 
         SET = "set"

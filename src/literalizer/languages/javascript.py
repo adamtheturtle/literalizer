@@ -66,29 +66,29 @@ class JavaScript:
               e.g. ``new Date("2024-01-15T12:30:00")``.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date formatting options for JavaScript."""
 
         ISO = enum.member(value=format_date_iso)
         JS = enum.member(value=format_date_js)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime formatting options for JavaScript."""
 
         ISO = enum.member(value=format_datetime_iso)
         JS = enum.member(value=format_datetime_js)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for JavaScript."""
 
         ARRAY = "array"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for JavaScript."""
 
         SET = "set"

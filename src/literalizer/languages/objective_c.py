@@ -118,27 +118,27 @@ _string_format: Callable[[str], str] = _format_objc_string
 class ObjectiveC:
     """Objective-C language specification."""
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date format options for ObjectiveC."""
 
         OBJC = enum.member(value=_format_objc_date)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime format options for ObjectiveC."""
 
         OBJC = enum.member(value=_format_objc_datetime)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=_format_objc_bytes)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Objective-C."""
 
         ARRAY = "array"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Objective-C."""
 
         SET = "set"

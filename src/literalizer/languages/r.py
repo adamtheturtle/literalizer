@@ -104,13 +104,13 @@ class R:
               :class:`~literalizer.exceptions.EmptyDictKeyError`.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date formatting options for R."""
 
         ISO = enum.member(value=format_date_iso)
         R = enum.member(value=format_date_r)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime formatting options for R."""
 
         ISO = enum.member(value=format_datetime_iso)
@@ -126,17 +126,17 @@ class R:
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for R."""
 
         LIST = "list"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for R."""
 
         SET = "set"

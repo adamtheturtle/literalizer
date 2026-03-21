@@ -106,30 +106,30 @@ class Java:
               ZoneId.of("UTC"))``.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date formatting options for Java."""
 
         ISO = enum.member(value=format_date_iso)
         JAVA = enum.member(value=format_date_java)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime formatting options for Java."""
 
         ISO = enum.member(value=format_datetime_iso)
         INSTANT = enum.member(value=format_datetime_java_instant)
         ZONED = enum.member(value=format_datetime_java_zoned)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Java."""
 
         ARRAY = "array"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Java."""
 
         SET = "set"

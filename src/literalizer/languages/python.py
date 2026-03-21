@@ -169,32 +169,32 @@ class Python:
               e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
-    class date_formats(enum.Enum):  # noqa: N801
+    class date_formats(enum.Enum):
         """Date formatting options for Python."""
 
         ISO = enum.member(value=format_date_iso)
         PYTHON = enum.member(value=format_date_python)
 
-    class datetime_formats(enum.Enum):  # noqa: N801
+    class datetime_formats(enum.Enum):
         """Datetime formatting options for Python."""
 
         ISO = enum.member(value=format_datetime_iso)
         PYTHON = enum.member(value=format_datetime_python)
         EPOCH = enum.member(value=format_datetime_epoch)
 
-    class bytes_formats(enum.Enum):  # noqa: N801
+    class bytes_formats(enum.Enum):
         """Bytes formatting options for Python."""
 
         HEX = enum.member(value=format_bytes_hex)
         PYTHON = enum.member(value=format_bytes_python)
 
-    class sequence_formats(enum.Enum):  # noqa: N801
+    class sequence_formats(enum.Enum):
         """Sequence type options for Python."""
 
         TUPLE = "tuple"
         LIST = "list"
 
-    class set_formats(enum.Enum):  # noqa: N801
+    class set_formats(enum.Enum):
         """Set type options for Python."""
 
         SET = "set"
