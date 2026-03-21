@@ -23,7 +23,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_python_omap_entry(key: str, value: str) -> str:
+def _format_python_ordered_map_entry(key: str, value: str) -> str:
     """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
     return f"({key}, {value})"
 
@@ -296,12 +296,14 @@ class Python(metaclass=HasFormatEnums):
             prefix="#",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="OrderedDict([",
-            close="])",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="OrderedDict([",
+                close="])",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_python_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_python_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

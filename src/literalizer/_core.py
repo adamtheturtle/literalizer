@@ -189,16 +189,16 @@ def _coerce_heterogeneous_scalars(*, data: Value) -> Value:
     strings.
     """
     if isinstance(data, ordereddict):
-        new_omap: ordereddict = ordereddict()
+        new_ordered_map: ordereddict = ordereddict()
         for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            new_omap[k] = _coerce_heterogeneous_scalars(data=v)  # pyright: ignore[reportUnknownArgumentType]
-        omap_vals: list[Value] = list(new_omap.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        if _all_scalars_heterogeneous(values=omap_vals):
-            for k in new_omap:  # pyright: ignore[reportUnknownVariableType]
-                new_omap[k] = _coerce_scalar_to_str(
-                    value=new_omap[k],  # pyright: ignore[reportUnknownArgumentType]
+            new_ordered_map[k] = _coerce_heterogeneous_scalars(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        ordered_map_vals: list[Value] = list(new_ordered_map.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        if _all_scalars_heterogeneous(values=ordered_map_vals):
+            for k in new_ordered_map:  # pyright: ignore[reportUnknownVariableType]
+                new_ordered_map[k] = _coerce_scalar_to_str(
+                    value=new_ordered_map[k],  # pyright: ignore[reportUnknownArgumentType]
                 )
-        return new_omap
+        return new_ordered_map
 
     if isinstance(data, dict):
         new_dict: dict[str, Value] = {
@@ -291,16 +291,16 @@ def _coerce_mixed_dict_values(*, data: Value) -> Value:
     all values are converted to strings so the dict becomes homogeneous.
     """
     if isinstance(data, ordereddict):
-        new_omap: ordereddict = ordereddict()
+        new_ordered_map: ordereddict = ordereddict()
         for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            new_omap[k] = _coerce_mixed_dict_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
-        omap_vals: list[Value] = list(new_omap.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        if _dict_values_mixed_types(values=omap_vals):
-            for k in new_omap:  # pyright: ignore[reportUnknownVariableType]
-                new_omap[k] = _coerce_value_to_str(
-                    value=new_omap[k],  # pyright: ignore[reportUnknownArgumentType]
+            new_ordered_map[k] = _coerce_mixed_dict_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        ordered_map_vals: list[Value] = list(new_ordered_map.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        if _dict_values_mixed_types(values=ordered_map_vals):
+            for k in new_ordered_map:  # pyright: ignore[reportUnknownVariableType]
+                new_ordered_map[k] = _coerce_value_to_str(
+                    value=new_ordered_map[k],  # pyright: ignore[reportUnknownArgumentType]
                 )
-        return new_omap
+        return new_ordered_map
 
     if isinstance(data, dict):
         new_dict: dict[str, Value] = {
@@ -328,10 +328,10 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
     """
     if isinstance(data, (ordereddict, dict)):
         if isinstance(data, ordereddict):
-            new_omap: ordereddict = ordereddict()
+            new_ordered_map: ordereddict = ordereddict()
             for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                new_omap[k] = _coerce_mixed_list_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            return new_omap
+                new_ordered_map[k] = _coerce_mixed_list_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            return new_ordered_map
         return {k: _coerce_mixed_list_values(data=v) for k, v in data.items()}
 
     if isinstance(data, list):
@@ -391,21 +391,21 @@ def _format_value(*, value: Value, spec: Language) -> str:
     Handles scalars, lists (recursively), dicts, and sets.
     """
     if isinstance(value, ordereddict):
-        omap_items: list[tuple[str, Value]] = [
+        ordered_map_items: list[tuple[str, Value]] = [
             (k, v)
             for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
             if not (spec.skip_null_dict_values and v is None)
         ]
         pairs = [
-            spec.format_omap_entry(
+            spec.format_ordered_map_entry(
                 _format_value(value=k, spec=spec),
                 _format_value(value=v, spec=spec),
             )
-            for k, v in omap_items
+            for k, v in ordered_map_items
         ]
         joined = spec.element_separator.join(pairs)
-        omap_cfg = spec.omap_format_config
-        return omap_cfg.open_str + joined + omap_cfg.close
+        ordered_map_cfg = spec.ordered_map_format_config
+        return ordered_map_cfg.open_str + joined + ordered_map_cfg.close
 
     if isinstance(value, dict):
         dict_items: dict[str, Value] = {
@@ -451,7 +451,7 @@ def _format_value(*, value: Value, spec: Language) -> str:
 def _wrap_body(
     *,
     body: str,
-    is_omap: bool,
+    is_ordered_map: bool,
     data: list[Value] | dict[str, Value] | set[Scalar],
     spec: Language,
     line_prefix: str,
@@ -459,10 +459,10 @@ def _wrap_body(
     """Wrap ``body`` in the language's open/close delimiters."""
     ci = spec.multiline_close_indent
     close_prefix = f"{line_prefix}{ci}"
-    if is_omap:
-        omap_cfg = spec.omap_format_config
-        opening = f"{line_prefix}{omap_cfg.open_str}"
-        closing = f"{close_prefix}{omap_cfg.close}"
+    if is_ordered_map:
+        ordered_map_cfg = spec.ordered_map_format_config
+        opening = f"{line_prefix}{ordered_map_cfg.open_str}"
+        closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
         opening = f"{line_prefix}{spec.dict_open(data)}"
         closing = f"{close_prefix}{spec.dict_close}"
@@ -484,7 +484,7 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     loaded YAML data to :func:`_literalize`.
 
     ``ordereddict`` (used for YAML ``!!omap`` nodes) is excluded from
-    key coercion so that omap detection in :func:`_literalize` is
+    key coercion so that ordered-map detection in :func:`_literalize` is
     preserved.
     """
     if isinstance(data, ordereddict):
@@ -594,8 +594,8 @@ def _literalize(
     body_prefix = line_prefix + indent if wrap else line_prefix
     lines: list[str] = []
 
-    is_omap = isinstance(data, ordereddict)
-    if is_omap or isinstance(data, dict):
+    is_ordered_map = isinstance(data, ordereddict)
+    if is_ordered_map or isinstance(data, dict):
         dict_data = cast("dict[str, Value]", data)
         entries = [
             (k, v)
@@ -604,7 +604,7 @@ def _literalize(
         ]
         if not entries and wrap and dict_data:
             empty_value: ordereddict | dict[str, Value] = (
-                ordereddict() if is_omap else {}
+                ordereddict() if is_ordered_map else {}
             )
             return _format_value(value=empty_value, spec=spec)
         last_idx = len(entries) - 1
@@ -612,8 +612,8 @@ def _literalize(
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             entry = (
-                spec.format_omap_entry(formatted_key, formatted_val)
-                if is_omap
+                spec.format_ordered_map_entry(formatted_key, formatted_val)
+                if is_ordered_map
                 else _build_dict_entry(
                     key_str=formatted_key, val_str=formatted_val, spec=spec
                 )
@@ -631,7 +631,7 @@ def _literalize(
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
     else:
-        # At this point data must be a list (scalars/dict/set/omap handled)
+        # data must be a list (other types handled above)
         items: list[Value] = list(data)
         last_idx = len(items) - 1
         for i, element in enumerate(iterable=items):
@@ -649,7 +649,7 @@ def _literalize(
 
     return _wrap_body(
         body=body,
-        is_omap=is_omap,
+        is_ordered_map=is_ordered_map,
         data=data,
         spec=spec,
         line_prefix=line_prefix,

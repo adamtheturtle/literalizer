@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -79,7 +79,7 @@ def _dart_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
 
 
 @beartype
-def _format_dart_omap_entry(key: str, value: str) -> str:
+def _format_dart_ordered_map_entry(key: str, value: str) -> str:
     """Format a Dart map entry."""
     return f"{key}: {value}"
 
@@ -219,12 +219,14 @@ class Dart(metaclass=HasFormatEnums):
             prefix="//",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="{",
-            close="}",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="{",
+                close="}",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_dart_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_dart_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

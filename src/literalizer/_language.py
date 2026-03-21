@@ -42,7 +42,7 @@ class CommentConfig:
 
 
 @dataclasses.dataclass(frozen=True)
-class OmapFormatConfig:
+class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
 
     open_str: str
@@ -217,11 +217,11 @@ class Language(Protocol):
     comment_config: CommentConfig
     """Configuration for the language's comment syntax."""
 
-    omap_format_config: OmapFormatConfig
+    ordered_map_format_config: OrderedMapFormatConfig
     """Configuration for ordered-map formatting."""
 
     @property
-    def format_omap_entry(self) -> Callable[[str, str], str]:
+    def format_ordered_map_entry(self) -> Callable[[str, str], str]:
         """Callable that formats one ordered-map entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 

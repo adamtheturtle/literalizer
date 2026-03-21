@@ -9,7 +9,7 @@ from literalizer._language import (
     CommentConfig,
     HasFormatEnums,
     Language,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -18,7 +18,7 @@ __all__ = [
     "CommentConfig",
     "HasFormatEnums",
     "Language",
-    "OmapFormatConfig",
+    "OrderedMapFormatConfig",
     "SequenceFormatConfig",
     "SetFormatConfig",
     "fixed_dict_open",

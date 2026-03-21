@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -60,7 +60,8 @@ def _to_val(value: str) -> str:
 
 @beartype
 def _format_occam_dict_entry(key: str, value: str) -> str:
-    """Format an occam-pi dict or omap entry as a ``MOBILE LIT(lit.pair;
+    """Format an occam-pi dict or ordered-map entry as a ``MOBILE
+    LIT(lit.pair;
     ...)`` constructor.
     """
     val = _to_val(value=value)
@@ -205,11 +206,13 @@ class Occam(metaclass=HasFormatEnums):
             prefix="--",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
-            close="])",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
+                close="])",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
             _format_occam_dict_entry
         )
         self.multiline_close_indent = ""

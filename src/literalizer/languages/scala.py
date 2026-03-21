@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -78,7 +78,7 @@ def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
 
 
 @beartype
-def _format_scala_omap_entry(key: str, value: str) -> str:
+def _format_scala_ordered_map_entry(key: str, value: str) -> str:
     """Format a Scala ``ListMap`` entry as a ``key -> value`` pair."""
     return f"{key} -> {value}"
 
@@ -207,12 +207,14 @@ class Scala(metaclass=HasFormatEnums):
             prefix="//",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="scala.collection.immutable.ListMap(",
-            close=")",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="scala.collection.immutable.ListMap(",
+                close=")",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_scala_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_scala_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

@@ -353,8 +353,8 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
     assert result == expected
 
 
-def test_java_yaml_omap_skips_null_values() -> None:
-    """Java YAML omap nested in a list filters null values."""
+def test_java_yaml_ordered_map_skips_null_values() -> None:
+    """Java YAML ordered map nested in a list filters null values."""
     yaml_string = textwrap.dedent(
         text="""\
         ---
@@ -374,11 +374,11 @@ def test_java_yaml_omap_skips_null_values() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    omap_inline = (
+    ordered_map_inline = (
         "new java.util.ArrayList<>(java.util.Arrays.asList("
         'Map.entry("name", "Alice"), Map.entry("age", 30)))'
     )
-    expected = f"new Object[]{{\n    {omap_inline}\n}}"
+    expected = f"new Object[]{{\n    {ordered_map_inline}\n}}"
     assert result == expected
 
 

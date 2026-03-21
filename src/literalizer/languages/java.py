@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -212,11 +212,13 @@ class Java(metaclass=HasFormatEnums):
             prefix="//",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="new java.util.ArrayList<>(java.util.Arrays.asList(",
-            close="))",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="new java.util.ArrayList<>(java.util.Arrays.asList(",
+                close="))",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
             _format_java_dict_entry
         )
         self.multiline_close_indent = ""

@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -75,7 +75,7 @@ def _format_fsharp_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_fsharp_omap_entry(key: str, value: str) -> str:
+def _format_fsharp_ordered_map_entry(key: str, value: str) -> str:
     """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
     return f"({key}, {_to_val(value=value)})"
 
@@ -213,12 +213,14 @@ class FSharp(metaclass=HasFormatEnums):
             prefix="//",
             suffix="",
         )
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="FMap [",
-            close="]",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="FMap [",
+                close="]",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_fsharp_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_fsharp_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False
