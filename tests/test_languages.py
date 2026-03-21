@@ -1,5 +1,6 @@
 """Language-specific tests for literalizer converter."""
 
+import enum
 import json
 import textwrap
 
@@ -11,20 +12,52 @@ from literalizer import (
     literalize_yaml,
 )
 from literalizer.languages import (
+    Ada,
+    Bash,
+    C,
+    Clojure,
     Cobol,
+    CommonLisp,
     Cpp,
+    Crystal,
     CSharp,
+    D,
+    Dart,
+    Elixir,
+    Erlang,
     Fortran,
+    FSharp,
     Go,
+    Groovy,
+    Haskell,
+    Hcl,
     Java,
     JavaScript,
+    Julia,
     Kotlin,
+    Lua,
     Matlab,
+    Mojo,
+    Nim,
+    Norg,
+    ObjectiveC,
+    OCaml,
+    Occam,
+    Perl,
+    Php,
+    PowerShell,
     Python,
+    R,
+    Racket,
     Ruby,
     Rust,
+    Scala,
+    Swift,
     Toml,
     TypeScript,
+    VisualBasic,
+    Yaml,
+    Zig,
 )
 
 COBOL = Cobol(
@@ -636,3 +669,72 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     )
     assert "'it''s here'" in result
     assert "&  !" in result
+
+
+_LANGUAGE_CLASSES: list[type[object]] = [
+    Ada,
+    Bash,
+    C,
+    Clojure,
+    Cobol,
+    CommonLisp,
+    Cpp,
+    Crystal,
+    CSharp,
+    D,
+    Dart,
+    Elixir,
+    Erlang,
+    Fortran,
+    FSharp,
+    Go,
+    Groovy,
+    Haskell,
+    Hcl,
+    Java,
+    JavaScript,
+    Julia,
+    Kotlin,
+    Lua,
+    Matlab,
+    Mojo,
+    Nim,
+    Norg,
+    ObjectiveC,
+    OCaml,
+    Occam,
+    Perl,
+    Php,
+    PowerShell,
+    Python,
+    R,
+    Racket,
+    Ruby,
+    Rust,
+    Scala,
+    Swift,
+    Toml,
+    TypeScript,
+    VisualBasic,
+    Yaml,
+    Zig,
+]
+
+
+@pytest.mark.parametrize(
+    argnames="language_class",
+    argvalues=_LANGUAGE_CLASSES,
+)
+@pytest.mark.parametrize(
+    argnames="attr",
+    argvalues=["BytesFormat", "SequenceFormat", "SetFormat"],
+)
+def test_language_class_has_format_enum(
+    *, language_class: type[object], attr: str
+) -> None:
+    """Every language class exposes BytesFormat, SequenceFormat, and
+    SetFormat as enum types with at least one member.
+    """
+    format_enum = getattr(language_class, attr)
+    assert issubclass(format_enum, enum.Enum)
+    assert len(format_enum) >= 1
