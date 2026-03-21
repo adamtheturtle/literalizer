@@ -18,7 +18,9 @@ from literalizer._formatters import (
     passthrough_set_entry,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -152,10 +154,14 @@ class CommonLisp(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        self.comment_prefix = ";"
-        self.comment_suffix = ""
-        self.omap_open = "(list "
-        self.omap_close = ")"
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix=";",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
+            open_str="(list ",
+            close=")",
+        )
         self.format_omap_entry: Callable[[str, str], str] = _format_cons_entry
         self.multiline_close_indent = ""
         self.element_separator = " "

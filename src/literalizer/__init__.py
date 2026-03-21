@@ -6,15 +6,19 @@ from literalizer._core import (
 )
 from literalizer._formatters import fixed_dict_open, fixed_sequence_open
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
     Language,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
 
 __all__ = [
+    "CommentConfig",
     "HasFormatEnums",
     "Language",
+    "OmapFormatConfig",
     "SequenceFormatConfig",
     "SetFormatConfig",
     "fixed_dict_open",

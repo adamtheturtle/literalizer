@@ -16,7 +16,9 @@ from literalizer._formatters import (
     format_datetime_iso,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -325,10 +327,14 @@ class Cobol(metaclass=HasFormatEnums):
         self.format_set_entry: Callable[[str], str] = (
             _format_cobol_sequence_entry
         )
-        self.comment_prefix = "*>"
-        self.comment_suffix = ""
-        self.omap_open = ""
-        self.omap_close = ""
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="*>",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
+            open_str="",
+            close="",
+        )
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_cobol_dict_entry
         )

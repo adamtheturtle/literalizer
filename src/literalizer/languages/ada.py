@@ -16,7 +16,9 @@ from literalizer._formatters import (
     format_string_ada,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -205,10 +207,14 @@ class Ada(metaclass=HasFormatEnums):
         self.empty_dict: str | None = "AMap'(1 .. 0 => ANull)"
         self.format_sequence_entry: Callable[[str], str] = _to_ada_val
         self.format_set_entry: Callable[[str], str] = _to_ada_val
-        self.comment_prefix = "--"
-        self.comment_suffix = ""
-        self.omap_open = "AMap'("
-        self.omap_close = ")"
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="--",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
+            open_str="AMap'(",
+            close=")",
+        )
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_ada_dict_entry
         )

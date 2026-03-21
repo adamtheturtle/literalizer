@@ -16,7 +16,9 @@ from literalizer._formatters import (
     format_string_fortran,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -264,10 +266,14 @@ class Fortran(metaclass=HasFormatEnums):
         self.empty_dict: str | None = None
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval
-        self.comment_prefix = "!"
-        self.comment_suffix = ""
-        self.omap_open = "fmap([fval_t :: "
-        self.omap_close = "])"
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="!",
+            suffix="",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
+            open_str="fmap([fval_t :: ",
+            close="])",
+        )
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_fortran_dict_entry
         )

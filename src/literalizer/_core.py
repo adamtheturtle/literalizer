@@ -404,7 +404,8 @@ def _format_value(*, value: Value, spec: Language) -> str:
             for k, v in omap_items
         ]
         joined = spec.element_separator.join(pairs)
-        return spec.omap_open + joined + spec.omap_close
+        omap_cfg = spec.omap_format_config
+        return omap_cfg.open_str + joined + omap_cfg.close
 
     if isinstance(value, dict):
         dict_items: dict[str, Value] = {
@@ -459,8 +460,9 @@ def _wrap_body(
     ci = spec.multiline_close_indent
     close_prefix = f"{line_prefix}{ci}"
     if is_omap:
-        opening = f"{line_prefix}{spec.omap_open}"
-        closing = f"{close_prefix}{spec.omap_close}"
+        omap_cfg = spec.omap_format_config
+        opening = f"{line_prefix}{omap_cfg.open_str}"
+        closing = f"{close_prefix}{omap_cfg.close}"
     elif isinstance(data, dict):
         opening = f"{line_prefix}{spec.dict_open(data)}"
         closing = f"{close_prefix}{spec.dict_close}"
@@ -804,8 +806,9 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
         error_on_coercion=error_on_coercion,
     )
 
-    cp = language.comment_prefix
-    cs = language.comment_suffix
+    comment_cfg = language.comment_config
+    cp = comment_cfg.prefix
+    cs = comment_cfg.suffix
 
     comment_line_prefix = line_prefix + indent if wrap else line_prefix
 

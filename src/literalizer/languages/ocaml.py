@@ -16,7 +16,9 @@ from literalizer._formatters import (
     format_string_backslash,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -211,10 +213,14 @@ class OCaml(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = _string_format
         self.empty_dict: str | None = None
         self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
-        self.comment_prefix = "(*"
-        self.comment_suffix = " *)"
-        self.omap_open = "OMap ["
-        self.omap_close = "]"
+        self.comment_config: CommentConfig = CommentConfig(
+            prefix="(*",
+            suffix=" *)",
+        )
+        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
+            open_str="OMap [",
+            close="]",
+        )
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_ocaml_omap_entry
         )
