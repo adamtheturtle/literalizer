@@ -1,13 +1,13 @@
 def main():
     var my_data = [
-        True,
+        "True",
         "hi",
-        [1, 2],
-        None,
+        "[1, 2]",
+        "None",
     ]
     my_data = [
-        True,
+        "True",
         "hi",
-        [1, 2],
-        None,
+        "[1, 2]",
+        "None",
     ]
