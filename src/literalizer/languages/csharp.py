@@ -18,7 +18,9 @@ from literalizer._formatters import (
     typed_sequence_open,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -211,10 +213,11 @@ class CSharp(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        self.comment_prefix = "//"
-        self.comment_suffix = ""
-        self.omap_open = "new Dictionary<string, object> {"
-        self.omap_close = "}"
+        self.comment_config = CommentConfig(prefix="//", suffix="")
+        self.omap_format_config = OmapFormatConfig(
+            open_str="new Dictionary<string, object> {",
+            close="}",
+        )
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_csharp_dict_entry
         )

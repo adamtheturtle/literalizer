@@ -18,7 +18,9 @@ from literalizer._formatters import (
     typed_sequence_open,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -222,10 +224,11 @@ class Go(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_go_set_entry
-        self.comment_prefix = "//"
-        self.comment_suffix = ""
-        self.omap_open = "[][2]any{"
-        self.omap_close = "}"
+        self.comment_config = CommentConfig(prefix="//", suffix="")
+        self.omap_format_config = OmapFormatConfig(
+            open_str="[][2]any{",
+            close="}",
+        )
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_go_omap_entry
         )

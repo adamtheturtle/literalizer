@@ -12,7 +12,9 @@ from literalizer._formatters import (
     fixed_sequence_open,
 )
 from literalizer._language import (
+    CommentConfig,
     HasFormatEnums,
+    OmapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -220,10 +222,11 @@ class ObjectiveC(metaclass=HasFormatEnums):
         self.empty_dict: str | None = "@{}"
         self.format_sequence_entry: Callable[[str], str] = _to_objc_val
         self.format_set_entry: Callable[[str], str] = _to_objc_val
-        self.comment_prefix = "//"
-        self.comment_suffix = ""
-        self.omap_open = "@{"
-        self.omap_close = "}"
+        self.comment_config = CommentConfig(prefix="//", suffix="")
+        self.omap_format_config = OmapFormatConfig(
+            open_str="@{",
+            close="}",
+        )
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_objc_dict_entry
         )

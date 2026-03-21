@@ -33,6 +33,22 @@ class SetFormatConfig:
     empty_set: str | None
 
 
+@dataclasses.dataclass(frozen=True)
+class CommentConfig:
+    """Configuration for language comment syntax."""
+
+    prefix: str
+    suffix: str
+
+
+@dataclasses.dataclass(frozen=True)
+class OmapFormatConfig:
+    """Configuration for ordered-map formatting."""
+
+    open_str: str
+    close: str
+
+
 class SequenceFormat(Protocol):
     """Protocol for sequence format Enum members."""
 
@@ -188,17 +204,11 @@ class Language(Protocol):
         """Callable that formats a set entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    comment_prefix: str
-    """The comment prefix for the language."""
+    comment_config: CommentConfig
+    """Configuration for the language's comment syntax."""
 
-    comment_suffix: str
-    """The comment suffix for the language."""
-
-    omap_open: str
-    """The opening delimiter for ordered-map literals."""
-
-    omap_close: str
-    """The closing delimiter for ordered-map literals."""
+    omap_format_config: OmapFormatConfig
+    """Configuration for ordered-map formatting."""
 
     @property
     def format_omap_entry(self) -> Callable[[str, str], str]:
