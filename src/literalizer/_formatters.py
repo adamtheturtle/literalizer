@@ -710,7 +710,7 @@ def _typed_sequence_open(
     See ``_JSON_NATIVE_TYPES`` for why we skip inference for
     YAML-only types.
     """
-    if not _all_json_native_list(values=items):
+    if not _all_json_native_list(items):
         return fallback
     schema: dict[str, Any] = infer_schema(value=items)
     item_schema: dict[str, Any] = schema.get("items", {})
@@ -767,7 +767,7 @@ def _typed_dict_open(
     YAML-only types.
     """
     values = list(items.values())
-    if not _all_json_native_list(values=values):
+    if not _all_json_native_list(values):
         return fallback
     schema: dict[str, Any] = infer_schema(value=values)
     value_schema: dict[str, Any] = schema.get("items", {})
