@@ -115,10 +115,18 @@ class OCaml:
 
         ISO = enum.member(value=format_date_iso)
 
+        def __call__(self, date_value: datetime.date, /) -> str:
+            """Format a date."""
+            return self.value(value=date_value)
+
     class datetime_formats(enum.Enum):
         """Datetime format options for OCaml."""
 
         ISO = enum.member(value=format_datetime_iso)
+
+        def __call__(self, dt_value: datetime.datetime, /) -> str:
+            """Format a datetime."""
+            return self.value(value=dt_value)
 
     class bytes_formats(enum.Enum):
         """Bytes formatting options."""
