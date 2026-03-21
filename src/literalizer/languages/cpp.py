@@ -17,6 +17,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -89,25 +90,25 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Cpp:
+class Cpp(metaclass=HasFormatEnums):
     """C++ language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.CPP`` — ``std::chrono::year_month_day`` literal,
+            * ``date_formats.CPP`` — ``std::chrono::year_month_day`` literal,
               e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
               std::chrono::month{1}, std::chrono::day{15}}``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.CPP`` — ``std::chrono::sys_days`` with
+            * ``datetime_formats.CPP`` — ``std::chrono::sys_days`` with
               time-of-day durations,
               e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
               + std::chrono::minutes{30}``.
     """
 
-    class DateFormat(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date format options for C++."""
 
         CPP = enum.member(value=format_date_cpp)
@@ -116,7 +117,7 @@ class Cpp:
             """Format a date."""
             return self.value(value=date_value)
 
-    class DatetimeFormat(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime format options for C++."""
 
         CPP = enum.member(value=format_datetime_cpp)
@@ -125,7 +126,7 @@ class Cpp:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class BytesFormat(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -134,23 +135,29 @@ class Cpp:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for C++."""
 
         INITIALIZER_LIST = "initializer_list"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for C++."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize Cpp language specification."""
         self.sequence_format = sequence_format

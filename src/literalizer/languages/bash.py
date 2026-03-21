@@ -1,8 +1,8 @@
 """Bash language specification."""
 
-import datetime
+from __future__ import annotations
+
 import enum
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -16,8 +16,12 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Callable
+
     from literalizer._types import Value
 
 
@@ -69,16 +73,32 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name}={value}"
 
 
-_date_format: Callable[[datetime.date], str] = format_date_iso
-_datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Bash:
+class Bash(metaclass=HasFormatEnums):
     """Bash language specification."""
 
-    class BytesFormat(enum.Enum):
+    class DateFormats(enum.Enum):
+        """Date format options for Bash."""
+
+        ISO = enum.member(value=format_date_iso)
+
+        def __call__(self, date_value: datetime.date, /) -> str:
+            """Format a date."""
+            return self.value(value=date_value)
+
+    class DatetimeFormats(enum.Enum):
+        """Datetime format options for Bash."""
+
+        ISO = enum.member(value=format_datetime_iso)
+
+        def __call__(self, dt_value: datetime.datetime, /) -> str:
+            """Format a datetime."""
+            return self.value(value=dt_value)
+
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -87,21 +107,29 @@ class Bash:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Bash."""
 
         ARRAY = "array"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for Bash."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize Bash language specification."""
         self.sequence_format = sequence_format
@@ -122,9 +150,9 @@ class Bash:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = _date_format
+        self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _datetime_format
+            datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None

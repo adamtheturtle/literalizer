@@ -17,6 +17,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -98,24 +99,24 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Go:
+class Go(metaclass=HasFormatEnums):
     """Go language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.GO`` — ``time.Date`` call,
+            * ``date_formats.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
               time.UTC)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.GO`` — ``time.Date`` call,
+            * ``datetime_formats.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
               time.UTC)``.
     """
 
-    class DateFormat(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date format options for Go."""
 
         GO = enum.member(value=format_date_go)
@@ -124,7 +125,7 @@ class Go:
             """Format a date."""
             return self.value(value=date_value)
 
-    class DatetimeFormat(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime format options for Go."""
 
         GO = enum.member(value=format_datetime_go)
@@ -133,7 +134,7 @@ class Go:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class BytesFormat(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -142,23 +143,29 @@ class Go:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Go."""
 
         SLICE = "slice"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for Go."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize Go language specification."""
         self.sequence_format = sequence_format

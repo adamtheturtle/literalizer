@@ -17,6 +17,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
@@ -71,7 +72,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class R:
+class R(metaclass=HasFormatEnums):
     """R language specification.
 
     Dicts are represented as named ``list()`` calls where each entry is
@@ -82,12 +83,12 @@ class R:
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.R`` — ``as.Date(...)`` call,
+            * ``date_formats.R`` — ``as.Date(...)`` call,
               e.g. ``as.Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.R`` — ``as.POSIXct(...)`` call,
+            * ``datetime_formats.R`` — ``as.POSIXct(...)`` call,
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
 
         empty_dict_key: How to handle empty-string dict keys.
@@ -98,7 +99,7 @@ class R:
               :class:`~literalizer.exceptions.EmptyDictKeyError`.
     """
 
-    class DateFormat(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date formatting options for R."""
 
         R = enum.member(value=format_date_r)
@@ -107,7 +108,7 @@ class R:
             """Format a date."""
             return self.value(value=date_value)
 
-    class DatetimeFormat(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime formatting options for R."""
 
         R = enum.member(value=format_datetime_r)
@@ -130,7 +131,7 @@ class R:
             """Format a dict entry."""
             return self.value(key=key, value=value)
 
-    class BytesFormat(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -139,24 +140,30 @@ class R:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for R."""
 
         LIST = "list"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for R."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
         empty_dict_key: EmptyDictKey,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize R language specification."""
         self.sequence_format = sequence_format

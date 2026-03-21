@@ -1,11 +1,31 @@
 """Language protocol and internal spec dataclass."""
 
-import datetime
-import enum
-from collections.abc import Callable
-from typing import Protocol, runtime_checkable
+from __future__ import annotations
 
-from literalizer._types import Value
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    import datetime
+    import enum
+    from collections.abc import Callable
+
+    from literalizer._types import Value
+
+
+class HasFormatEnums(type):
+    """Meta-class that declares the nested format Enum class attributes.
+
+    Language classes use ``metaclass=HasFormatEnums`` so that downstream
+    code can write ``dict[str, HasFormatEnums]`` and access
+    ``cls.DateFormats``, ``cls.SequenceFormats``, etc. without ``cast``
+    or ``type: ignore``.
+    """
+
+    DateFormats: type[enum.Enum]
+    DatetimeFormats: type[enum.Enum]
+    BytesFormats: type[enum.Enum]
+    SequenceFormats: type[enum.Enum]
+    SetFormats: type[enum.Enum]
 
 
 @runtime_checkable
@@ -20,6 +40,41 @@ class Language(Protocol):
     languages or override defaults, write a class that provides all the
     required attributes.
     """
+
+    @property
+    def bytes_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the bytes formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def sequence_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the sequence formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def set_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the set formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def date_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the date formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def datetime_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the datetime formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     null_literal: str
     """The literal representing null/None."""

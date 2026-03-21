@@ -35,108 +35,122 @@ from literalizer.languages import (
 )
 
 CLOJURE = Clojure(
-    bytes_format=Clojure.BytesFormat.HEX,
-    sequence_format=Clojure.SequenceFormat.VECTOR,
+    date_format=Clojure.date_formats.ISO,
+    datetime_format=Clojure.datetime_formats.ISO,
+    bytes_format=Clojure.bytes_formats.HEX,
+    sequence_format=Clojure.sequence_formats.VECTOR,
 )
 CPP = Cpp(
-    date_format=Cpp.DateFormat.CPP,
-    datetime_format=Cpp.DatetimeFormat.CPP,
-    bytes_format=Cpp.BytesFormat.HEX,
-    sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
+    date_format=Cpp.date_formats.CPP,
+    datetime_format=Cpp.datetime_formats.CPP,
+    bytes_format=Cpp.bytes_formats.HEX,
+    sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
 )
 CSHARP = CSharp(
-    date_format=CSharp.DateFormat.CSHARP,
-    datetime_format=CSharp.DatetimeFormat.CSHARP,
-    bytes_format=CSharp.BytesFormat.HEX,
-    sequence_format=CSharp.SequenceFormat.ARRAY,
+    date_format=CSharp.date_formats.CSHARP,
+    datetime_format=CSharp.datetime_formats.CSHARP,
+    bytes_format=CSharp.bytes_formats.HEX,
+    sequence_format=CSharp.sequence_formats.ARRAY,
 )
 DART = Dart(
-    date_format=Dart.DateFormat.DART,
-    datetime_format=Dart.DatetimeFormat.DART,
-    bytes_format=Dart.BytesFormat.HEX,
-    sequence_format=Dart.SequenceFormat.LIST,
+    date_format=Dart.date_formats.DART,
+    datetime_format=Dart.datetime_formats.DART,
+    bytes_format=Dart.bytes_formats.HEX,
+    sequence_format=Dart.sequence_formats.LIST,
 )
 ELIXIR = Elixir(
-    bytes_format=Elixir.BytesFormat.HEX,
-    sequence_format=Elixir.SequenceFormat.LIST,
+    date_format=Elixir.date_formats.ISO,
+    datetime_format=Elixir.datetime_formats.ISO,
+    bytes_format=Elixir.bytes_formats.HEX,
+    sequence_format=Elixir.sequence_formats.LIST,
 )
 FSHARP = FSharp(
-    bytes_format=FSharp.BytesFormat.HEX,
-    sequence_format=FSharp.SequenceFormat.LIST,
+    date_format=FSharp.date_formats.ISO,
+    datetime_format=FSharp.datetime_formats.ISO,
+    bytes_format=FSharp.bytes_formats.HEX,
+    sequence_format=FSharp.sequence_formats.LIST,
 )
 GO = Go(
-    date_format=Go.DateFormat.GO,
-    datetime_format=Go.DatetimeFormat.GO,
-    bytes_format=Go.BytesFormat.HEX,
-    sequence_format=Go.SequenceFormat.SLICE,
+    date_format=Go.date_formats.GO,
+    datetime_format=Go.datetime_formats.GO,
+    bytes_format=Go.bytes_formats.HEX,
+    sequence_format=Go.sequence_formats.SLICE,
 )
 HASKELL = Haskell(
-    bytes_format=Haskell.BytesFormat.HEX,
-    sequence_format=Haskell.SequenceFormat.LIST,
+    date_format=Haskell.date_formats.ISO,
+    datetime_format=Haskell.datetime_formats.ISO,
+    bytes_format=Haskell.bytes_formats.HEX,
+    sequence_format=Haskell.sequence_formats.LIST,
 )
 JAVA = Java(
-    date_format=Java.DateFormat.JAVA,
-    datetime_format=Java.DatetimeFormat.INSTANT,
-    bytes_format=Java.BytesFormat.HEX,
-    sequence_format=Java.SequenceFormat.ARRAY,
+    date_format=Java.date_formats.JAVA,
+    datetime_format=Java.datetime_formats.INSTANT,
+    bytes_format=Java.bytes_formats.HEX,
+    sequence_format=Java.sequence_formats.ARRAY,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.JS,
-    datetime_format=JavaScript.DatetimeFormat.JS,
-    bytes_format=JavaScript.BytesFormat.HEX,
-    sequence_format=JavaScript.SequenceFormat.ARRAY,
+    date_format=JavaScript.date_formats.JS,
+    datetime_format=JavaScript.datetime_formats.JS,
+    bytes_format=JavaScript.bytes_formats.HEX,
+    sequence_format=JavaScript.sequence_formats.ARRAY,
 )
 KOTLIN = Kotlin(
-    date_format=Kotlin.DateFormat.KOTLIN,
-    datetime_format=Kotlin.DatetimeFormat.KOTLIN,
-    bytes_format=Kotlin.BytesFormat.HEX,
-    sequence_format=Kotlin.SequenceFormat.LIST,
+    date_format=Kotlin.date_formats.KOTLIN,
+    datetime_format=Kotlin.datetime_formats.KOTLIN,
+    bytes_format=Kotlin.bytes_formats.HEX,
+    sequence_format=Kotlin.sequence_formats.LIST,
 )
 PHP = Php(
-    bytes_format=Php.BytesFormat.HEX,
-    sequence_format=Php.SequenceFormat.ARRAY,
+    date_format=Php.date_formats.PHP,
+    datetime_format=Php.datetime_formats.PHP,
+    bytes_format=Php.bytes_formats.HEX,
+    sequence_format=Php.sequence_formats.ARRAY,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.PYTHON,
-    datetime_format=Python.DatetimeFormat.PYTHON,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 PYTHON_INLINE_HINTS = Python(
-    date_format=Python.DateFormat.PYTHON,
-    datetime_format=Python.DatetimeFormat.PYTHON,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.INLINE,
 )
 RUBY = Ruby(
-    date_format=Ruby.DateFormat.RUBY,
-    datetime_format=Ruby.DatetimeFormat.RUBY,
-    bytes_format=Ruby.BytesFormat.HEX,
-    sequence_format=Ruby.SequenceFormat.ARRAY,
+    date_format=Ruby.date_formats.RUBY,
+    datetime_format=Ruby.datetime_formats.RUBY,
+    bytes_format=Ruby.bytes_formats.HEX,
+    sequence_format=Ruby.sequence_formats.ARRAY,
 )
 RUST = Rust(
-    date_format=Rust.DateFormat.RUST,
-    datetime_format=Rust.DatetimeFormat.RUST,
-    bytes_format=Rust.BytesFormat.HEX,
-    sequence_format=Rust.SequenceFormat.VEC,
+    date_format=Rust.date_formats.RUST,
+    datetime_format=Rust.datetime_formats.RUST,
+    bytes_format=Rust.bytes_formats.HEX,
+    sequence_format=Rust.sequence_formats.VEC,
 )
 SCALA = Scala(
-    bytes_format=Scala.BytesFormat.HEX,
-    sequence_format=Scala.SequenceFormat.LIST,
+    date_format=Scala.date_formats.ISO,
+    datetime_format=Scala.datetime_formats.ISO,
+    bytes_format=Scala.bytes_formats.HEX,
+    sequence_format=Scala.sequence_formats.LIST,
 )
 SWIFT = Swift(
-    bytes_format=Swift.BytesFormat.HEX,
-    sequence_format=Swift.SequenceFormat.ARRAY,
+    date_format=Swift.date_formats.ISO,
+    datetime_format=Swift.datetime_formats.ISO,
+    bytes_format=Swift.bytes_formats.HEX,
+    sequence_format=Swift.sequence_formats.ARRAY,
 )
 TYPESCRIPT = TypeScript(
-    date_format=TypeScript.DateFormat.JS,
-    datetime_format=TypeScript.DatetimeFormat.JS,
-    bytes_format=TypeScript.BytesFormat.HEX,
-    sequence_format=TypeScript.SequenceFormat.ARRAY,
+    date_format=TypeScript.date_formats.JS,
+    datetime_format=TypeScript.datetime_formats.JS,
+    bytes_format=TypeScript.bytes_formats.HEX,
+    sequence_format=TypeScript.sequence_formats.ARRAY,
 )
 
 
@@ -152,7 +166,7 @@ class _VariableSyntax:
 # scalar integer. Both _DECLARATION_PARAMS and _ASSIGNMENT_PARAMS are derived
 # from this single source of truth so that adding a language to one
 # automatically adds it to the other.
-_VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
+_VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-assignment]
     PYTHON: _VariableSyntax(
         declaration="my_var = 42", assignment="my_var = 42"
     ),
@@ -205,11 +219,11 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
         declaration="val my_var = 42", assignment="my_var = 42"
     ),
     R(
-        date_format=R.DateFormat.R,
-        datetime_format=R.DatetimeFormat.R,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     ): _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),
 }
 
@@ -405,11 +419,11 @@ def test_python_inline_type_hints_list() -> None:
     LIST.
     """
     lang = Python(
-        date_format=Python.DateFormat.PYTHON,
-        datetime_format=Python.DatetimeFormat.PYTHON,
-        bytes_format=Python.BytesFormat.HEX,
-        sequence_format=Python.SequenceFormat.LIST,
-        set_format=Python.SetFormat.SET,
+        date_format=Python.date_formats.PYTHON,
+        datetime_format=Python.datetime_formats.PYTHON,
+        bytes_format=Python.bytes_formats.HEX,
+        sequence_format=Python.sequence_formats.LIST,
+        set_format=Python.set_formats.SET,
         variable_type_hints=Python.VariableTypeHints.INLINE,
     )
     result = literalize_json(

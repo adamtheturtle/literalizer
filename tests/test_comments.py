@@ -16,30 +16,30 @@ from literalizer.languages import (
 )
 
 GO = Go(
-    date_format=Go.DateFormat.GO,
-    datetime_format=Go.DatetimeFormat.GO,
-    bytes_format=Go.BytesFormat.HEX,
-    sequence_format=Go.SequenceFormat.SLICE,
+    date_format=Go.date_formats.GO,
+    datetime_format=Go.datetime_formats.GO,
+    bytes_format=Go.bytes_formats.HEX,
+    sequence_format=Go.sequence_formats.SLICE,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.JS,
-    datetime_format=JavaScript.DatetimeFormat.JS,
-    bytes_format=JavaScript.BytesFormat.HEX,
-    sequence_format=JavaScript.SequenceFormat.ARRAY,
+    date_format=JavaScript.date_formats.JS,
+    datetime_format=JavaScript.datetime_formats.JS,
+    bytes_format=JavaScript.bytes_formats.HEX,
+    sequence_format=JavaScript.sequence_formats.ARRAY,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.PYTHON,
-    datetime_format=Python.DatetimeFormat.PYTHON,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 RUBY = Ruby(
-    date_format=Ruby.DateFormat.RUBY,
-    datetime_format=Ruby.DatetimeFormat.RUBY,
-    bytes_format=Ruby.BytesFormat.HEX,
-    sequence_format=Ruby.SequenceFormat.ARRAY,
+    date_format=Ruby.date_formats.RUBY,
+    datetime_format=Ruby.datetime_formats.RUBY,
+    bytes_format=Ruby.bytes_formats.HEX,
+    sequence_format=Ruby.sequence_formats.ARRAY,
 )
 
 

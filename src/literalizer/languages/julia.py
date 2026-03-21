@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -39,29 +40,29 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-class Julia:
+class Julia(metaclass=HasFormatEnums):
     """Julia language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.JULIA`` — ``Date(...)`` constructor call,
+            * ``date_formats.JULIA`` — ``Date(...)`` constructor call,
               e.g. ``Date(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.JULIA`` — ``DateTime(...)`` constructor
+            * ``datetime_formats.JULIA`` — ``DateTime(...)`` constructor
               call, e.g. ``DateTime(2024, 1, 15, 12, 30, 0)``.
 
         sequence_format: Which Julia sequence type to use.
 
-            * ``SequenceFormat.ARRAY`` — array literal,
+            * ``sequence_formats.ARRAY`` — array literal,
               e.g. ``[1, 2, 3]``.
-            * ``SequenceFormat.TUPLE`` — tuple literal,
+            * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
     """
 
-    class DateFormat(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date formatting options for Julia."""
 
         JULIA = enum.member(value=format_date_julia)
@@ -70,7 +71,7 @@ class Julia:
             """Format a date."""
             return self.value(value=date_value)
 
-    class DatetimeFormat(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Julia."""
 
         JULIA = enum.member(value=format_datetime_julia)
@@ -79,7 +80,7 @@ class Julia:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class BytesFormat(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -88,24 +89,30 @@ class Julia:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Julia."""
 
         ARRAY = "array"
         TUPLE = "tuple"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for Julia."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize Julia language specification."""
         self.sequence_format = sequence_format
@@ -115,7 +122,7 @@ class Julia:
         self.sequence_open: Callable[[list[Value]], str]
         self.sequence_close: str
         self.single_element_trailing_comma: bool
-        if sequence_format == Julia.SequenceFormat.TUPLE:
+        if sequence_format == Julia.sequence_formats.TUPLE:
             self.sequence_open = fixed_sequence_open(open_str="(")
             self.sequence_close = ")"
             self.single_element_trailing_comma = True

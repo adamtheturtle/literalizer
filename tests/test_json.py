@@ -25,42 +25,42 @@ from literalizer.languages import (
 )
 
 CPP = Cpp(
-    date_format=Cpp.DateFormat.CPP,
-    datetime_format=Cpp.DatetimeFormat.CPP,
-    bytes_format=Cpp.BytesFormat.HEX,
-    sequence_format=Cpp.SequenceFormat.INITIALIZER_LIST,
+    date_format=Cpp.date_formats.CPP,
+    datetime_format=Cpp.datetime_formats.CPP,
+    bytes_format=Cpp.bytes_formats.HEX,
+    sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
 )
 CSHARP = CSharp(
-    date_format=CSharp.DateFormat.CSHARP,
-    datetime_format=CSharp.DatetimeFormat.CSHARP,
-    bytes_format=CSharp.BytesFormat.HEX,
-    sequence_format=CSharp.SequenceFormat.ARRAY,
+    date_format=CSharp.date_formats.CSHARP,
+    datetime_format=CSharp.datetime_formats.CSHARP,
+    bytes_format=CSharp.bytes_formats.HEX,
+    sequence_format=CSharp.sequence_formats.ARRAY,
 )
 GO = Go(
-    date_format=Go.DateFormat.GO,
-    datetime_format=Go.DatetimeFormat.GO,
-    bytes_format=Go.BytesFormat.HEX,
-    sequence_format=Go.SequenceFormat.SLICE,
+    date_format=Go.date_formats.GO,
+    datetime_format=Go.datetime_formats.GO,
+    bytes_format=Go.bytes_formats.HEX,
+    sequence_format=Go.sequence_formats.SLICE,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.JS,
-    datetime_format=JavaScript.DatetimeFormat.JS,
-    bytes_format=JavaScript.BytesFormat.HEX,
-    sequence_format=JavaScript.SequenceFormat.ARRAY,
+    date_format=JavaScript.date_formats.JS,
+    datetime_format=JavaScript.datetime_formats.JS,
+    bytes_format=JavaScript.bytes_formats.HEX,
+    sequence_format=JavaScript.sequence_formats.ARRAY,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.PYTHON,
-    datetime_format=Python.DatetimeFormat.PYTHON,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 RUBY = Ruby(
-    date_format=Ruby.DateFormat.RUBY,
-    datetime_format=Ruby.DatetimeFormat.RUBY,
-    bytes_format=Ruby.BytesFormat.HEX,
-    sequence_format=Ruby.SequenceFormat.ARRAY,
+    date_format=Ruby.date_formats.RUBY,
+    datetime_format=Ruby.datetime_formats.RUBY,
+    bytes_format=Ruby.bytes_formats.HEX,
+    sequence_format=Ruby.sequence_formats.ARRAY,
 )
 
 
@@ -500,8 +500,10 @@ def test_literalize_json_invalid_is_parse_error() -> None:
 
 
 MOJO = Mojo(
-    bytes_format=Mojo.BytesFormat.HEX,
-    sequence_format=Mojo.SequenceFormat.LIST,
+    date_format=Mojo.date_formats.ISO,
+    datetime_format=Mojo.datetime_formats.ISO,
+    bytes_format=Mojo.bytes_formats.HEX,
+    sequence_format=Mojo.sequence_formats.LIST,
 )
 
 

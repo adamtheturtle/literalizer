@@ -14,6 +14,7 @@ CPP
 CSharp
 Changelog
 Cpp
+Enum
 FBool
 FFloat
 FInt
@@ -33,6 +34,7 @@ HNull
 HSet
 HStr
 HashiCorp
+Hcl
 JSONDecodeError
 Lua
 NEL
@@ -48,7 +50,9 @@ OMap
 ONull
 OSet
 OStr
+ObjectiveC
 Php
+Toml
 YAMLError
 ZKV
 ZVal

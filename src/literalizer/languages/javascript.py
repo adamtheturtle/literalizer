@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -45,22 +46,22 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class JavaScript:
+class JavaScript(metaclass=HasFormatEnums):
     """JavaScript language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``DateFormat.JS`` — ``new Date(...)`` call,
+            * ``date_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15")``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``DatetimeFormat.JS`` — ``new Date(...)`` call,
+            * ``datetime_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.
     """
 
-    class DateFormat(enum.Enum):
+    class DateFormats(enum.Enum):
         """Date formatting options for JavaScript."""
 
         JS = enum.member(value=format_date_js)
@@ -69,7 +70,7 @@ class JavaScript:
             """Format a date."""
             return self.value(value=date_value)
 
-    class DatetimeFormat(enum.Enum):
+    class DatetimeFormats(enum.Enum):
         """Datetime formatting options for JavaScript."""
 
         JS = enum.member(value=format_datetime_js)
@@ -78,7 +79,7 @@ class JavaScript:
             """Format a datetime."""
             return self.value(value=dt_value)
 
-    class BytesFormat(enum.Enum):
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -87,23 +88,29 @@ class JavaScript:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for JavaScript."""
 
         ARRAY = "array"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for JavaScript."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        date_format: DateFormat,
-        datetime_format: DatetimeFormat,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize JavaScript language specification."""
         self.sequence_format = sequence_format

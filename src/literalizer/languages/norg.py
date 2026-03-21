@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -48,7 +49,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Norg:
+class Norg(metaclass=HasFormatEnums):
     """Norg markup language specification.
 
     Produces data literals using Norg-compatible syntax — square
@@ -61,7 +62,25 @@ class Norg:
     verbatim tag: ``* name`` then ``@code json`` / ``@end``.
     """
 
-    class BytesFormat(enum.Enum):
+    class DateFormats(enum.Enum):
+        """Date format options for Norg."""
+
+        ISO = enum.member(value=format_date_iso)
+
+        def __call__(self, date_value: datetime.date, /) -> str:
+            """Format a date."""
+            return self.value(value=date_value)
+
+    class DatetimeFormats(enum.Enum):
+        """Datetime format options for Norg."""
+
+        ISO = enum.member(value=format_datetime_iso)
+
+        def __call__(self, dt_value: datetime.datetime, /) -> str:
+            """Format a datetime."""
+            return self.value(value=dt_value)
+
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -70,21 +89,29 @@ class Norg:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Norg."""
 
         ARRAY = "array"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for Norg."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize Norg language specification."""
         self.sequence_format = sequence_format
@@ -105,9 +132,9 @@ class Norg:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = format_date_iso
+        self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            format_datetime_iso
+            datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None

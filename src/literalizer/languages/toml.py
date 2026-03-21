@@ -16,6 +16,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
+from literalizer._language import HasFormatEnums
 
 if TYPE_CHECKING:
     import datetime
@@ -84,7 +85,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Toml:
+class Toml(metaclass=HasFormatEnums):
     """TOML language specification.
 
     Produces TOML inline values — inline tables for mappings, and
@@ -99,7 +100,25 @@ class Toml:
     datetime literals, which are a distinct TOML type.
     """
 
-    class BytesFormat(enum.Enum):
+    class DateFormats(enum.Enum):
+        """Date format options for Toml."""
+
+        TOML = enum.member(value=_format_toml_date)
+
+        def __call__(self, date_value: datetime.date, /) -> str:
+            """Format a date."""
+            return self.value(value=date_value)
+
+    class DatetimeFormats(enum.Enum):
+        """Datetime format options for Toml."""
+
+        TOML = enum.member(value=_format_toml_datetime)
+
+        def __call__(self, dt_value: datetime.datetime, /) -> str:
+            """Format a datetime."""
+            return self.value(value=dt_value)
+
+    class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
@@ -108,21 +127,29 @@ class Toml:
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormat(enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for TOML."""
 
         ARRAY = "array"
 
-    class SetFormat(enum.Enum):
+    class SetFormats(enum.Enum):
         """Set type options for TOML."""
 
         SET = "set"
 
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+
     def __init__(
         self,
         *,
-        bytes_format: BytesFormat,
-        sequence_format: SequenceFormat,
+        date_format: DateFormats,
+        datetime_format: DatetimeFormats,
+        bytes_format: BytesFormats,
+        sequence_format: SequenceFormats,
     ) -> None:
         """Initialize TOML language specification."""
         self.sequence_format = sequence_format
@@ -143,9 +170,9 @@ class Toml:
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = _format_toml_date
+        self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            _format_toml_datetime
+            datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None

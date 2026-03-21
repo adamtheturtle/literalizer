@@ -23,27 +23,29 @@ from literalizer.languages import (
 )
 
 GO = Go(
-    date_format=Go.DateFormat.GO,
-    datetime_format=Go.DatetimeFormat.GO,
-    bytes_format=Go.BytesFormat.HEX,
-    sequence_format=Go.SequenceFormat.SLICE,
+    date_format=Go.date_formats.GO,
+    datetime_format=Go.datetime_formats.GO,
+    bytes_format=Go.bytes_formats.HEX,
+    sequence_format=Go.sequence_formats.SLICE,
 )
 JAVASCRIPT = JavaScript(
-    date_format=JavaScript.DateFormat.JS,
-    datetime_format=JavaScript.DatetimeFormat.JS,
-    bytes_format=JavaScript.BytesFormat.HEX,
-    sequence_format=JavaScript.SequenceFormat.ARRAY,
+    date_format=JavaScript.date_formats.JS,
+    datetime_format=JavaScript.datetime_formats.JS,
+    bytes_format=JavaScript.bytes_formats.HEX,
+    sequence_format=JavaScript.sequence_formats.ARRAY,
 )
 MOJO = Mojo(
-    bytes_format=Mojo.BytesFormat.HEX,
-    sequence_format=Mojo.SequenceFormat.LIST,
+    date_format=Mojo.date_formats.ISO,
+    datetime_format=Mojo.datetime_formats.ISO,
+    bytes_format=Mojo.bytes_formats.HEX,
+    sequence_format=Mojo.sequence_formats.LIST,
 )
 PYTHON = Python(
-    date_format=Python.DateFormat.PYTHON,
-    datetime_format=Python.DatetimeFormat.PYTHON,
-    bytes_format=Python.BytesFormat.HEX,
-    sequence_format=Python.SequenceFormat.TUPLE,
-    set_format=Python.SetFormat.SET,
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
+    bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
     variable_type_hints=Python.VariableTypeHints.NONE,
 )
 
@@ -417,6 +419,66 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
     assert result == expected
 
 
+def test_homogeneous_date_list_mojo() -> None:
+    """A homogeneous list of dates is formatted via
+    date_formats.__call__.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15
+        - 2024-01-16
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "2024-01-15",
+            "2024-01-16",
+        ]"""
+    )
+    assert result == expected
+
+
+def test_homogeneous_datetime_list_mojo() -> None:
+    """A homogeneous list of datetimes is formatted via
+    datetime_formats.__call__.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - 2024-01-15T12:30:00
+        - 2024-01-16T08:00:00
+    """,
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=MOJO,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        [
+            "2024-01-15T12:30:00",
+            "2024-01-16T08:00:00",
+        ]"""
+    )
+    assert result == expected
+
+
 def test_coerce_homogeneous_omap_no_coercion() -> None:
     """Homogeneous ordereddict values are not coerced."""
     yaml_string = textwrap.dedent(
@@ -570,11 +632,11 @@ def test_coerce_mixed_omap_values() -> None:
 def test_r_empty_dict_key_positional() -> None:
     """R with POSITIONAL empty_dict_key emits unnamed list elements."""
     spec = R(
-        date_format=R.DateFormat.R,
-        datetime_format=R.DatetimeFormat.R,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
@@ -599,11 +661,11 @@ def test_r_empty_dict_key_positional() -> None:
 def test_r_empty_dict_key_positional_is_default() -> None:
     """R defaults to POSITIONAL for empty_dict_key."""
     spec = R(
-        date_format=R.DateFormat.R,
-        datetime_format=R.DatetimeFormat.R,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.POSITIONAL,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
     result = literalize_yaml(
@@ -628,11 +690,11 @@ def test_r_empty_dict_key_positional_is_default() -> None:
 def test_r_empty_dict_key_error() -> None:
     """R with ERROR empty_dict_key raises EmptyDictKeyError."""
     spec = R(
-        date_format=R.DateFormat.R,
-        datetime_format=R.DatetimeFormat.R,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.ERROR,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
     with pytest.raises(expected_exception=EmptyDictKeyError):
@@ -651,11 +713,11 @@ def test_r_empty_dict_key_error() -> None:
 def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     """R with ERROR empty_dict_key does not raise for non-empty keys."""
     spec = R(
-        date_format=R.DateFormat.R,
-        datetime_format=R.DatetimeFormat.R,
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
         empty_dict_key=R.EmptyDictKey.ERROR,
-        bytes_format=R.BytesFormat.HEX,
-        sequence_format=R.SequenceFormat.LIST,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"key": "value"}\n'
     result = literalize_yaml(
