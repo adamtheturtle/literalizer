@@ -12,6 +12,15 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+class SequenceFormat(Protocol):
+    """Protocol for sequence format enum members."""
+
+    @property
+    def supports_heterogeneity(self) -> bool:
+        """Whether this sequence format supports mixed-type elements."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 class HasFormatEnums(type):
     """Meta-class that declares the nested format Enum class attributes.
 
@@ -198,21 +207,6 @@ class Language(Protocol):
     skip_null_dict_values: bool
     """Whether to omit dict entries whose value is ``None``."""
 
-    coerce_heterogeneous_scalars_to_strings: bool
-    """Whether to coerce all scalar values in heterogeneous collections
-    to strings so that every element shares a single type.
-    """
-
-    coerce_heterogeneous_collection_values_to_strings: bool
-    """Whether to coerce dict values and list elements that span
-    multiple type families to strings so every value shares a single
-    type.
-
-    For example, ``{"name": "Bob", "tags": ["admin"]}`` becomes
-    ``{"name": "Bob", "tags": "[\"admin\"]"}``, and
-    ``[true, "hi", [1, 2]]`` becomes ``["True", "hi", "[1, 2]"]``.
-    """
-
     supports_collection_comments: bool
     """Whether the language supports comments inside collection
     initializers.
@@ -247,6 +241,6 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def sequence_format(self) -> enum.Enum:
+    def sequence_format(self) -> SequenceFormat:
         """The sequence format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis

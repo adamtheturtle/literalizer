@@ -118,6 +118,13 @@ class Rust(metaclass=HasFormatEnums):
         ARRAY = "array"
         TUPLE = "tuple"
 
+        @property
+        def supports_heterogeneity(self) -> bool:
+            """Whether this sequence format supports mixed-type
+            elements.
+            """
+            return self.value == "tuple"
+
     class SetFormats(enum.Enum):
         """Set type options for Rust."""
 
@@ -192,12 +199,6 @@ class Rust(metaclass=HasFormatEnums):
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.coerce_heterogeneous_scalars_to_strings: bool = (
-            sequence_format != Rust.sequence_formats.TUPLE
-        )
-        self.coerce_heterogeneous_collection_values_to_strings: bool = (
-            sequence_format != Rust.sequence_formats.TUPLE
-        )
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration

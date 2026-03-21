@@ -504,8 +504,10 @@ def _apply_coercions(
     spec: Language,
     error_on_coercion: bool,
 ) -> Value:
-    """Apply heterogeneous-type coercions controlled by the language."""
-    if spec.coerce_heterogeneous_scalars_to_strings:
+    """Apply heterogeneous-type coercions controlled by the sequence
+    format.
+    """
+    if not spec.sequence_format.supports_heterogeneity:
         if error_on_coercion:
             _check_heterogeneous(data=data)
             if _has_heterogeneous_sibling_lists(data=data):
@@ -517,7 +519,6 @@ def _apply_coercions(
         else:
             data = _coerce_heterogeneous_scalars(data=data)
             data = _coerce_heterogeneous_sibling_lists(data=data)
-    if spec.coerce_heterogeneous_collection_values_to_strings:
         data = _coerce_mixed_dict_values(data=data)
         data = _coerce_mixed_list_values(data=data)
     return data
@@ -695,8 +696,8 @@ def literalize_json(
             :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
             instead of silently coercing heterogeneous scalar
             collections to strings.  Only has an effect when the
-            language sets ``coerce_heterogeneous_scalars_to_strings`` to
-            ``True``.
+            the language's sequence format does not support
+            heterogeneity.
 
     Raises:
         JSONParseError: If *json_string* is not valid JSON.
@@ -776,8 +777,8 @@ def literalize_yaml(  # noqa: PLR0912,C901,PLR0915  # pylint: disable=too-many-b
             :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
             instead of silently coercing heterogeneous scalar
             collections to strings.  Only has an effect when the
-            language sets ``coerce_heterogeneous_scalars_to_strings`` to
-            ``True``.
+            the language's sequence format does not support
+            heterogeneity.
 
     Raises:
         YAMLParseError: If *yaml_string* is not valid YAML.

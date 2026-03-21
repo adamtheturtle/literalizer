@@ -123,6 +123,13 @@ class VisualBasic(metaclass=HasFormatEnums):
 
         ARRAY = "array"
 
+        @property
+        def supports_heterogeneity(self) -> bool:
+            """Whether this sequence format supports mixed-type
+            elements.
+            """
+            return True
+
     class SetFormats(enum.Enum):
         """Set type options for Visual Basic."""
 
@@ -186,8 +193,6 @@ class VisualBasic(metaclass=HasFormatEnums):
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
-        self.coerce_heterogeneous_scalars_to_strings = False
-        self.coerce_heterogeneous_collection_values_to_strings = False
         self.supports_collection_comments = False
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
