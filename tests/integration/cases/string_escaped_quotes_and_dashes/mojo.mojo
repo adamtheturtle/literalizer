@@ -1,2 +1,2 @@
 def main():
-    _ = "hello \"world\" -- not a comment"
+    var _result = "hello \"world\" -- not a comment"

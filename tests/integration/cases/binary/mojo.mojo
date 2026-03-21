@@ -1,4 +1,4 @@
 def main():
-    _ = [
+    var _result = [
         "48656c6c6f",
     ]

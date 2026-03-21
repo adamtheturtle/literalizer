@@ -857,7 +857,7 @@ def _wrap_mojo(content: str) -> str:
     """Wrap in a Mojo main function with assignment for syntax
     validation.
     """
-    return _in_mojo_main(content=f"_ = {content}")
+    return _in_mojo_main(content=f"var _result = {content}")
 
 
 @beartype

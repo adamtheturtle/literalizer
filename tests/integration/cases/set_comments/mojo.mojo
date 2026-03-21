@@ -1,5 +1,5 @@
 def main():
-    _ = [
+    var _result = [
         "apple",  # inline comment
         # before banana
         "banana",

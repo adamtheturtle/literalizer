@@ -1,4 +1,4 @@
 def main():
-    _ = [
+    var _result = [
         {"key": "hello   world", "value": "1"},
     ]
