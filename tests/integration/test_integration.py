@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
-_QUOTED_STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
+_QUOTED_STRING_RE = re.compile(pattern=r'"(?:[^"\\]|\\.)*"')
 
 
 @beartype
@@ -410,8 +410,10 @@ def _haskell_preamble(content: str) -> str:
     """Build a Haskell module preamble with only the parts needed."""
     stripped = _QUOTED_STRING_RE.sub("", content)
     needs_strings = '"' in content
-    needs_fractional = bool(re.search(r"\d\.\d", stripped))
-    needs_num = needs_fractional or bool(re.search(r"\d", stripped))
+    needs_fractional = bool(re.search(pattern=r"\d\.\d", string=stripped))
+    needs_num = needs_fractional or bool(
+        re.search(pattern=r"\d", string=stripped)
+    )
 
     parts: list[str] = []
     if needs_strings:
