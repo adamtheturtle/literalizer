@@ -1433,6 +1433,8 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
+    date_wrap: Callable[[str], str] | None = None
+    set_wrap: Callable[[str], str] | None = None
 
 
 @beartype
@@ -1571,6 +1573,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_python,
         varname_wrap=_wrap_python,
         combined_wrap=_wrap_python_combined,
+        date_wrap=_wrap_python,
+        set_wrap=_wrap_identity,
     ),
     "javascript": _LanguageConfig(
         spec=literalizer.languages.JavaScript(),
@@ -1578,6 +1582,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_js,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_js_combined,
+        date_wrap=_wrap_js,
     ),
     "typescript": _LanguageConfig(
         spec=literalizer.languages.TypeScript(),
@@ -1585,6 +1590,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_js,
         varname_wrap=_wrap_ts_varname,
         combined_wrap=_wrap_ts_combined,
+        date_wrap=_wrap_js,
     ),
     "kotlin": _LanguageConfig(
         spec=literalizer.languages.Kotlin(),
@@ -1592,6 +1598,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_kotlin_varname,
         combined_wrap=_wrap_kotlin_combined,
+        date_wrap=_wrap_kotlin_time,
     ),
     "ruby": _LanguageConfig(
         spec=literalizer.languages.Ruby(),
@@ -1599,6 +1606,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_ruby,
         varname_wrap=_wrap_ruby,
         combined_wrap=lambda d, a: _wrap_ruby(content=d + "\n" + a),
+        date_wrap=_wrap_ruby_date,
     ),
     "go": _LanguageConfig(
         spec=literalizer.languages.Go(),
@@ -1606,6 +1614,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
         combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
+        date_wrap=_wrap_go_time,
     ),
     "java": _LanguageConfig(
         spec=literalizer.languages.Java(),
@@ -1613,6 +1622,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
         combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
+        date_wrap=_wrap_java_time,
     ),
     "csharp": _LanguageConfig(
         spec=literalizer.languages.CSharp(),
@@ -1620,6 +1630,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
         combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
+        date_wrap=_wrap_csharp_date,
     ),
     "dart": _LanguageConfig(
         spec=literalizer.languages.Dart(),
@@ -1627,6 +1638,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_dart,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_dart_combined,
+        date_wrap=_wrap_dart,
     ),
     "swift": _LanguageConfig(
         spec=literalizer.languages.Swift(),
@@ -1641,6 +1653,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
         combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
+        date_wrap=_wrap_cpp_chrono,
     ),
     "rust": _LanguageConfig(
         spec=literalizer.languages.Rust(),
@@ -1648,6 +1661,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_rust,
         varname_wrap=_wrap_rust_varname,
         combined_wrap=_wrap_rust_combined,
+        date_wrap=_wrap_rust,
     ),
     "haskell": _LanguageConfig(
         spec=literalizer.languages.Haskell(),
@@ -1669,6 +1683,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_julia,
         varname_wrap=_wrap_julia,
         combined_wrap=lambda d, a: _wrap_julia(content=d + "\n" + a),
+        date_wrap=_wrap_julia_dates,
     ),
     "lua": _LanguageConfig(
         spec=literalizer.languages.Lua(),
@@ -1746,6 +1761,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_r,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        date_wrap=_wrap_r,
     ),
     "racket": _LanguageConfig(
         spec=literalizer.languages.Racket(),
@@ -1841,87 +1857,29 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 }
 
 
-_DATE_VARIANTS: dict[str, _Variant] = {
-    "python_native": _Variant(
-        spec=literalizer.languages.Python(),
-        extension=".py",
-        wrap=_wrap_python,
-    ),
-    "python_epoch": _Variant(
-        spec=literalizer.languages.Python(
-            datetime_format=literalizer.languages.Python.datetime_formats.EPOCH,
-        ),
-        extension=".py",
-        wrap=_wrap_python,
-    ),
-    "js_native": _Variant(
-        spec=literalizer.languages.JavaScript(),
-        extension=".js",
-        wrap=_wrap_js,
-    ),
-    "ts_native": _Variant(
-        spec=literalizer.languages.TypeScript(),
-        extension=".ts",
-        wrap=_wrap_js,
-    ),
-    "kotlin_native": _Variant(
-        spec=literalizer.languages.Kotlin(),
-        extension=".kts",
-        wrap=_wrap_kotlin_time,
-    ),
-    "ruby_native": _Variant(
-        spec=literalizer.languages.Ruby(),
-        extension=".rb",
-        wrap=_wrap_ruby_date,
-    ),
-    "go_native": _Variant(
-        spec=literalizer.languages.Go(),
-        extension=".go",
-        wrap=_wrap_go_time,
-    ),
-    "java_instant": _Variant(
-        spec=literalizer.languages.Java(),
-        extension=".java",
-        wrap=_wrap_java_time,
-    ),
-    "java_zoned": _Variant(
-        spec=literalizer.languages.Java(
-            datetime_format=literalizer.languages.Java.datetime_formats.ZONED,
-        ),
-        extension=".java",
-        wrap=_wrap_java_time,
-    ),
-    "csharp_native": _Variant(
-        spec=literalizer.languages.CSharp(),
-        extension=".cs",
-        wrap=_wrap_csharp_date,
-    ),
-    "dart_native": _Variant(
-        spec=literalizer.languages.Dart(),
-        extension=".dart",
-        wrap=_wrap_dart,
-    ),
-    "cpp_native": _Variant(
-        spec=literalizer.languages.Cpp(),
-        extension=".cpp",
-        wrap=_wrap_cpp_chrono,
-    ),
-    "rust_native": _Variant(
-        spec=literalizer.languages.Rust(),
-        extension=".rs",
-        wrap=_wrap_rust,
-    ),
-    "julia_native": _Variant(
-        spec=literalizer.languages.Julia(),
-        extension=".jl",
-        wrap=_wrap_julia_dates,
-    ),
-    "r_native": _Variant(
-        spec=literalizer.languages.R(),
-        extension=".R",
-        wrap=_wrap_r,
-    ),
-}
+def _build_date_variants() -> dict[str, _Variant]:
+    """Build datetime-format variants for all languages with date wrapping.
+
+    For each language that has a ``date_wrap`` callback, create a variant
+    for every datetime format.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        if lang_config.date_wrap is None:
+            continue
+        spec = lang_config.spec
+        lang_cls = cast("Any", type(spec))
+        for fmt in list(spec.datetime_formats):
+            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variants[variant_key] = _Variant(
+                spec=lang_cls(datetime_format=fmt),
+                extension=lang_config.extension,
+                wrap=lang_config.date_wrap,
+            )
+    return variants
+
+
+_DATE_VARIANTS: dict[str, _Variant] = _build_date_variants()
 
 
 def _build_sequence_variants() -> dict[str, _Variant]:
@@ -1949,6 +1907,34 @@ def _build_sequence_variants() -> dict[str, _Variant]:
 
 
 _SEQUENCE_VARIANTS: dict[str, _Variant] = _build_sequence_variants()
+
+
+def _build_set_variants() -> dict[str, _Variant]:
+    """Build set-format variants for all languages with multiple formats.
+
+    For each language that has a ``set_wrap`` callback, create a variant
+    for every non-default set format.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        if lang_config.set_wrap is None:
+            continue
+        spec = lang_config.spec
+        default_config = spec.set_format_config
+        lang_cls = cast("Any", type(spec))
+        for fmt in list(spec.set_formats):
+            if fmt.value is default_config:
+                continue
+            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variants[variant_key] = _Variant(
+                spec=lang_cls(set_format=fmt),
+                extension=lang_config.extension,
+                wrap=lang_config.set_wrap,
+            )
+    return variants
+
+
+_SET_VARIANTS: dict[str, _Variant] = _build_set_variants()
 
 
 @beartype
@@ -2108,16 +2094,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 case_dir=_CASES_DIR / "simple_sequence",
             )
         )
-    set_variants: dict[str, _Variant] = {
-        "python_frozenset": _Variant(
-            spec=literalizer.languages.Python(
-                set_format=literalizer.languages.Python.set_formats.FROZENSET,
-            ),
-            extension=".py",
-            wrap=_wrap_identity,
-        ),
-    }
-    for variant_name, variant in set_variants.items():
+    for variant_name, variant in _SET_VARIANTS.items():
         cases.append(
             _VariantCase(
                 variant_name=variant_name,
