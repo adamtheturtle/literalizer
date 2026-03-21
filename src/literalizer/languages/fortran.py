@@ -79,6 +79,7 @@ def _to_fval(value: str) -> str:
     return value  # pragma: no cover
 
 
+@beartype
 def _fortran_comment_pos(line: str) -> int | None:
     """Return the index of the ``!`` comment character in *line* that
     lies outside any string literal, or ``None`` if there is no comment.
