@@ -3,6 +3,7 @@
 import enum
 import json
 import textwrap
+from typing import TYPE_CHECKING, Protocol
 
 import pytest
 
@@ -60,6 +61,84 @@ from literalizer.languages import (
     Yaml,
     Zig,
 )
+
+
+class _HasFormatEnums(Protocol):
+    """Protocol to verify language classes expose format enums.
+
+    Used only for static type checking — see the ``TYPE_CHECKING``
+    block below.
+    """
+
+    @property
+    def BytesFormat(self) -> type[enum.Enum]:  # noqa: N802
+        """Enum of bytes formatting options."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def SequenceFormat(self) -> type[enum.Enum]:  # noqa: N802
+        """Enum of sequence type options."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def SetFormat(self) -> type[enum.Enum]:  # noqa: N802
+        """Enum of set type options."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+if TYPE_CHECKING:
+    # Static conformance check: a type error here means a language
+    # class is missing a format enum (BytesFormat, SequenceFormat,
+    # or SetFormat).
+    _FORMAT_ENUM_CONFORMANCE: list[type[_HasFormatEnums]] = [  # pyrefly: ignore[bad-assignment]
+        Ada,
+        Bash,
+        C,
+        Clojure,
+        Cobol,
+        CommonLisp,
+        Cpp,
+        Crystal,
+        CSharp,
+        D,
+        Dart,
+        Elixir,
+        Erlang,
+        Fortran,
+        FSharp,
+        Go,
+        Groovy,
+        Haskell,
+        Hcl,
+        Java,
+        JavaScript,
+        Julia,
+        Kotlin,
+        Lua,
+        Matlab,
+        Mojo,
+        Nim,
+        Norg,
+        ObjectiveC,
+        OCaml,
+        Occam,
+        Perl,
+        Php,
+        PowerShell,
+        Python,
+        R,
+        Racket,
+        Ruby,
+        Rust,
+        Scala,
+        Swift,
+        Toml,
+        TypeScript,
+        VisualBasic,
+        Yaml,
+        Zig,
+    ]
+
 
 COBOL = Cobol(
     bytes_format=Cobol.BytesFormat.HEX,
