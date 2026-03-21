@@ -114,6 +114,10 @@ class Toml:
 
         HEX = enum.member(value=format_bytes_hex)
 
+        def __call__(self, data: bytes, /) -> str:
+            """Format bytes."""
+            return self.value(value=data)
+
     class sequence_formats(enum.Enum):
         """Sequence type options for TOML."""
 
@@ -150,10 +154,10 @@ class Toml:
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+        self.format_bytes: Callable[[bytes], str] = bytes_format
+        self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+            datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None

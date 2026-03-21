@@ -83,6 +83,10 @@ class Erlang:
 
         BINARY = enum.member(value=_format_bytes)
 
+        def __call__(self, data: bytes, /) -> str:
+            """Format bytes."""
+            return self.value(value=data)
+
     class sequence_formats(enum.Enum):
         """Sequence type options for Erlang."""
 
@@ -124,10 +128,10 @@ class Erlang:
         )
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+        self.format_bytes: Callable[[bytes], str] = bytes_format
+        self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+            datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
         self.empty_sequence: str | None = None

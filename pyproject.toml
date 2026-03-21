@@ -393,6 +393,8 @@ ignore_names = [
     "suppress_warnings",
     "templates_path",
     "warning_is_error",
+    # Enum __call__ used implicitly when enum members are passed as callables
+    "__call__",
     # Enum members accessed by consumers iterating SetFormat
     "HASH_SET",
     "MAP_SET",

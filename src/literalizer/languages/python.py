@@ -168,17 +168,29 @@ class Python:
 
         PYTHON = enum.member(value=format_date_python)
 
+        def __call__(self, date_value: datetime.date, /) -> str:
+            """Format a date."""
+            return self.value(value=date_value)
+
     class datetime_formats(enum.Enum):
         """Datetime formatting options for Python."""
 
         PYTHON = enum.member(value=format_datetime_python)
         EPOCH = enum.member(value=format_datetime_epoch)
 
+        def __call__(self, dt_value: datetime.datetime, /) -> str:
+            """Format a datetime."""
+            return self.value(value=dt_value)
+
     class bytes_formats(enum.Enum):
         """Bytes formatting options for Python."""
 
         HEX = enum.member(value=format_bytes_hex)
         PYTHON = enum.member(value=format_bytes_python)
+
+        def __call__(self, data: bytes, /) -> str:
+            """Format bytes."""
+            return self.value(value=data)
 
     class sequence_formats(enum.Enum):
         """Sequence type options for Python."""
@@ -233,10 +245,10 @@ class Python:
         )
         self.multiline_trailing_comma = True
 
-        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+        self.format_bytes: Callable[[bytes], str] = bytes_format
+        self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+            datetime_format
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
