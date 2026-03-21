@@ -224,11 +224,20 @@ class Fortran(metaclass=HasFormatEnums):
             empty_set=None,
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        EXCLAMATION = CommentConfig(
+            prefix="!",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -238,6 +247,7 @@ class Fortran(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.EXCLAMATION,
     ) -> None:
         """Initialize Fortran language specification."""
         self.sequence_format = sequence_format
@@ -265,10 +275,7 @@ class Fortran(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = _string_format
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="!",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="fmap([fval_t :: ",
             close="])",

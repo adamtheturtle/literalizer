@@ -281,11 +281,20 @@ class Cobol(metaclass=HasFormatEnums):
             empty_set="05 FILLER PIC X(1) VALUE SPACES.",
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        STAR_ANGLE = CommentConfig(
+            prefix="*>",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -295,6 +304,7 @@ class Cobol(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.SEQUENCE,
         set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.STAR_ANGLE,
     ) -> None:
         """Initialize COBOL language specification."""
         self.sequence_format = sequence_format
@@ -326,10 +336,7 @@ class Cobol(metaclass=HasFormatEnums):
         self.format_set_entry: Callable[[str], str] = (
             _format_cobol_sequence_entry
         )
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="*>",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="",
             close="",

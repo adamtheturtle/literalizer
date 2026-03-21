@@ -2059,6 +2059,32 @@ def _build_set_variants() -> dict[str, _Variant]:
 _SET_VARIANTS: dict[str, _Variant] = _build_set_variants()
 
 
+def _build_comment_variants() -> dict[str, _Variant]:
+    """Build comment-format variants for all languages with multiple
+    formats.
+
+    For each language that has more than one comment format, create a variant
+    for every non-default format.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.spec
+        default_config = spec.comment_config
+        for fmt in list(spec.comment_formats):
+            if fmt.value is default_config:
+                continue
+            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(comment_format=fmt),
+                extension=lang_config.extension,
+                wrap=lang_config.wrap,
+            )
+    return variants
+
+
+_COMMENT_VARIANTS: dict[str, _Variant] = _build_comment_variants()
+
+
 @beartype
 def _discover_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples."""
@@ -2224,6 +2250,14 @@ def _build_variant_cases() -> list[_VariantCase]:
                 case_dir=_CASES_DIR / "set",
             )
         )
+    for variant_name, variant in _COMMENT_VARIANTS.items():
+        cases.append(
+            _VariantCase(
+                variant_name=variant_name,
+                variant=variant,
+                case_dir=_CASES_DIR / "comments",
+            )
+        )
     variable_type_hints_variants: dict[str, _Variant] = {
         "python_inline": _Variant(
             spec=literalizer.languages.Python(
@@ -2299,3 +2333,5 @@ def test_format_enumeration_properties(lang_config: _LanguageConfig) -> None:
     assert len(spec.date_formats) >= 1
     assert issubclass(spec.datetime_formats, enum.Enum)
     assert len(spec.datetime_formats) >= 1
+    assert issubclass(spec.comment_formats, enum.Enum)
+    assert len(spec.comment_formats) >= 1

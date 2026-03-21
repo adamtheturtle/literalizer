@@ -113,11 +113,20 @@ class Swift(metaclass=HasFormatEnums):
             empty_set="Set<AnyHashable>()",
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_SLASH = CommentConfig(
+            prefix="//",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -127,6 +136,7 @@ class Swift(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize Swift language specification."""
         self.sequence_format = sequence_format
@@ -156,10 +166,7 @@ class Swift(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="//",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="[",
             close="]",

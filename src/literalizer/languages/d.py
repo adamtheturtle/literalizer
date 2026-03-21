@@ -168,11 +168,20 @@ class D(metaclass=HasFormatEnums):
             empty_set='parseJSON("[]")',
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_SLASH = CommentConfig(
+            prefix="//",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -182,6 +191,7 @@ class D(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize D language specification."""
         self.sequence_format = sequence_format
@@ -211,10 +221,7 @@ class D(metaclass=HasFormatEnums):
             _format_d_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_d_set_entry
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="//",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="JSONValue([",
             close="])",

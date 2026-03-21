@@ -123,11 +123,20 @@ class Lua(metaclass=HasFormatEnums):
             empty_set=None,
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_DASH = CommentConfig(
+            prefix="--",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -137,6 +146,7 @@ class Lua(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.TABLE,
         set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.DOUBLE_DASH,
     ) -> None:
         """Initialize Lua language specification."""
         self.sequence_format = sequence_format
@@ -166,10 +176,7 @@ class Lua(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_lua_set_entry
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="--",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="{",
             close="}",

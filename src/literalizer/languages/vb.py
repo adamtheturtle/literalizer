@@ -152,11 +152,20 @@ class VisualBasic(metaclass=HasFormatEnums):
             empty_set="New HashSet(Of Object)()",
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        APOSTROPHE = CommentConfig(
+            prefix="'",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -166,6 +175,7 @@ class VisualBasic(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.HASH_SET,
+        comment_format: CommentFormats = CommentFormats.APOSTROPHE,
     ) -> None:
         """Initialize VisualBasic language specification."""
         self.sequence_format = sequence_format
@@ -198,10 +208,7 @@ class VisualBasic(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="'",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="New Dictionary(Of String, Object) From {",
             close="}",

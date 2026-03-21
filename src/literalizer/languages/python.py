@@ -245,11 +245,20 @@ class Python(metaclass=HasFormatEnums):
         NONE = "none"
         INLINE = "inline"
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        HASH = CommentConfig(
+            prefix="#",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -260,6 +269,7 @@ class Python(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.TUPLE,
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        comment_format: CommentFormats = CommentFormats.HASH,
     ) -> None:
         """Initialize Python language specification."""
         self.sequence_format = sequence_format
@@ -291,10 +301,7 @@ class Python(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="#",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
             open_str="OrderedDict([",
             close="])",
