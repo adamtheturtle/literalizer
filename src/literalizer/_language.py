@@ -193,3 +193,18 @@ class Language(Protocol):
     def sequence_format(self) -> enum.Enum:
         """The sequence format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def BytesFormat(self) -> type[enum.Enum]:  # noqa: N802
+        """Enum of bytes formatting options for this language."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def SequenceFormat(self) -> type[enum.Enum]:  # noqa: N802
+        """Enum of sequence type options for this language."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def SetFormat(self) -> type[enum.Enum]:  # noqa: N802
+        """Enum of set type options for this language."""
+        ...  # pylint: disable=unnecessary-ellipsis
