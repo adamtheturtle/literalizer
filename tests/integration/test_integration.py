@@ -1428,7 +1428,7 @@ class _Variant:
 class _LanguageConfig:
     """Language configuration with spec, file extension, and wrapper."""
 
-    lang_cls: type[Any]
+    lang_cls: literalizer.HasFormatEnums
     spec: literalizer.Language
     extension: str
     wrap: Callable[[str], str]
