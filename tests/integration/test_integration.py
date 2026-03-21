@@ -17,7 +17,7 @@ from __future__ import annotations
 import dataclasses
 import enum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from beartype import beartype
@@ -148,13 +148,6 @@ def _wrap_csharp(content: str) -> str:
     return f"""\
 {system}using System.Collections.Generic;
 var x = {content};"""
-
-
-def _rust_array_spec() -> literalizer.languages.Rust:
-    """Create a Rust spec for array format."""
-    return literalizer.languages.Rust(
-        sequence_format=literalizer.languages.Rust.sequence_formats.ARRAY,
-    )
 
 
 @beartype
@@ -1931,55 +1924,31 @@ _DATE_VARIANTS: dict[str, _Variant] = {
 }
 
 
-_SEQUENCE_VARIANTS: dict[str, _Variant] = {
-    "python_list": _Variant(
-        spec=literalizer.languages.Python(
-            sequence_format=literalizer.languages.Python.sequence_formats.LIST,
-        ),
-        extension=".py",
-        wrap=_wrap_identity,
-    ),
-    "julia_tuple": _Variant(
-        spec=literalizer.languages.Julia(
-            sequence_format=literalizer.languages.Julia.sequence_formats.TUPLE,
-        ),
-        extension=".jl",
-        wrap=_wrap_identity,
-    ),
-    "elixir_tuple": _Variant(
-        spec=literalizer.languages.Elixir(
-            sequence_format=literalizer.languages.Elixir.sequence_formats.TUPLE,
-        ),
-        extension=".ex",
-        wrap=_wrap_elixir,
-    ),
-    "erlang_tuple": _Variant(
-        spec=literalizer.languages.Erlang(
-            sequence_format=literalizer.languages.Erlang.sequence_formats.TUPLE,
-        ),
-        extension=".erl",
-        wrap=_wrap_erlang,
-    ),
-    "crystal_tuple": _Variant(
-        spec=literalizer.languages.Crystal(
-            sequence_format=literalizer.languages.Crystal.sequence_formats.TUPLE,
-        ),
-        extension=".cr",
-        wrap=_wrap_crystal,
-    ),
-    "rust_array": _Variant(
-        spec=_rust_array_spec(),
-        extension=".rs",
-        wrap=_wrap_rust,
-    ),
-    "rust_tuple": _Variant(
-        spec=literalizer.languages.Rust(
-            sequence_format=literalizer.languages.Rust.sequence_formats.TUPLE,
-        ),
-        extension=".rs",
-        wrap=_wrap_rust,
-    ),
-}
+def _build_sequence_variants() -> dict[str, _Variant]:
+    """Build sequence-format variants for all languages with multiple
+    formats.
+
+    For each language that has more than one sequence format, create a variant
+    for every non-default format.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.spec
+        default_format: Any = spec.sequence_format
+        for fmt in list(spec.sequence_formats):
+            if fmt is default_format:
+                continue
+            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            lang_cls = cast("Any", type(spec))
+            variants[variant_key] = _Variant(
+                spec=lang_cls(sequence_format=fmt),
+                extension=lang_config.extension,
+                wrap=lang_config.wrap,
+            )
+    return variants
+
+
+_SEQUENCE_VARIANTS: dict[str, _Variant] = _build_sequence_variants()
 
 
 @beartype
