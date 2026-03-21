@@ -1,0 +1,6 @@
+import std.json;
+
+void _check() {
+auto my_data = JSONValue("2024-01-15");
+my_data = JSONValue("2024-01-15");
+}

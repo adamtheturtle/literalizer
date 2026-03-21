@@ -1,0 +1,6 @@
+void (function() {
+const my_data = new Date("2024-01-15");
+})();
+var my_data;
+my_data = new Date("2024-01-15");
+export {};
