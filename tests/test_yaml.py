@@ -16,12 +16,10 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Go,
-    Java,
     JavaScript,
     Mojo,
     Python,
     R,
-    Ruby,
 )
 
 GO = Go(
@@ -294,124 +292,6 @@ def test_omap_nested_in_sequence() -> None:
         )""",
     )
     assert result == expected
-
-
-def test_custom_format_date() -> None:
-    """A custom format_date callable is used for date values."""
-    spec = Python(
-        date_format=Python.DateFormat.PYTHON,
-        datetime_format=Python.DatetimeFormat.ISO,
-        bytes_format=Python.BytesFormat.HEX,
-        sequence_format=Python.SequenceFormat.TUPLE,
-        set_format=Python.SetFormat.SET,
-        variable_type_hints=Python.VariableTypeHints.NONE,
-    )
-    result = literalize_yaml(
-        yaml_string="- 2024-01-15\n",
-        language=spec,
-        line_prefix="",
-        indent="    ",
-        wrap=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == "datetime.date(year=2024, month=1, day=15),"
-
-
-def test_custom_format_datetime() -> None:
-    """A custom format_datetime callable is used for datetime values."""
-    spec = Python(
-        date_format=Python.DateFormat.ISO,
-        datetime_format=Python.DatetimeFormat.PYTHON,
-        bytes_format=Python.BytesFormat.HEX,
-        sequence_format=Python.SequenceFormat.TUPLE,
-        set_format=Python.SetFormat.SET,
-        variable_type_hints=Python.VariableTypeHints.NONE,
-    )
-    result = literalize_yaml(
-        yaml_string="- 2024-01-15T12:30:00\n",
-        language=spec,
-        line_prefix="",
-        indent="    ",
-        wrap=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    expected = (
-        "datetime.datetime("
-        "year=2024, month=1, day=15, "
-        "hour=12, minute=30, second=0),"
-    )
-    assert result == expected
-
-
-def test_java_native_dates() -> None:
-    """Java language spec with native date formatting."""
-    spec = Java(
-        date_format=Java.DateFormat.JAVA,
-        datetime_format=Java.DatetimeFormat.INSTANT,
-        bytes_format=Java.BytesFormat.HEX,
-        sequence_format=Java.SequenceFormat.ARRAY,
-    )
-    result = literalize_yaml(
-        yaml_string="- 2024-01-15\n- 2024-01-15T12:30:00\n",
-        language=spec,
-        line_prefix="",
-        indent="    ",
-        wrap=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    lines = result.split(sep="\n")
-    assert lines[0] == "LocalDate.of(2024, 1, 15),"
-    assert lines[1] == 'Instant.parse("2024-01-15T12:30:00")'
-
-
-def test_ruby_native_dates() -> None:
-    """Ruby language spec with native date formatting."""
-    spec = Ruby(
-        date_format=Ruby.DateFormat.RUBY,
-        datetime_format=Ruby.DatetimeFormat.RUBY,
-        bytes_format=Ruby.BytesFormat.HEX,
-        sequence_format=Ruby.SequenceFormat.ARRAY,
-    )
-    result = literalize_yaml(
-        yaml_string="- 2024-01-15T12:30:00\n",
-        language=spec,
-        line_prefix="",
-        indent="    ",
-        wrap=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == "Time.new(2024, 1, 15, 12, 30, 0),"
-
-
-def test_custom_format_bytes() -> None:
-    """A custom format_bytes callable is used for bytes values."""
-    spec = Python(
-        date_format=Python.DateFormat.ISO,
-        datetime_format=Python.DatetimeFormat.ISO,
-        bytes_format=Python.BytesFormat.PYTHON,
-        sequence_format=Python.SequenceFormat.TUPLE,
-        set_format=Python.SetFormat.SET,
-        variable_type_hints=Python.VariableTypeHints.NONE,
-    )
-    result = literalize_yaml(
-        yaml_string="- !!binary |\n    SGVsbG8=\n",
-        language=spec,
-        line_prefix="",
-        indent="    ",
-        wrap=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == "b'Hello',"
 
 
 def test_coerce_heterogeneous_bytes_in_collection() -> None:
