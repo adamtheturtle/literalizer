@@ -103,10 +103,18 @@ class R:
 
         R = enum.member(value=format_date_r)
 
+        def __call__(self, date_value: datetime.date, /) -> str:
+            """Format a date."""
+            return self.value(value=date_value)
+
     class DatetimeFormat(enum.Enum):
         """Datetime formatting options for R."""
 
         R = enum.member(value=format_datetime_r)
+
+        def __call__(self, dt_value: datetime.datetime, /) -> str:
+            """Format a datetime."""
+            return self.value(value=dt_value)
 
     class EmptyDictKey(enum.Enum):
         """How to handle empty-string dict keys in R.
@@ -118,10 +126,18 @@ class R:
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
+        def __call__(self, key: str, value: str, /) -> str:
+            """Format a dict entry."""
+            return self.value(key=key, value=value)
+
     class BytesFormat(enum.Enum):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
+
+        def __call__(self, data: bytes, /) -> str:
+            """Format bytes."""
+            return self.value(value=data)
 
     class SequenceFormat(enum.Enum):
         """Sequence type options for R."""
@@ -155,15 +171,13 @@ class R:
             open_str="list("
         )
         self.dict_close = ")"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            empty_dict_key.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        )
+        self.format_dict_entry: Callable[[str, str], str] = empty_dict_key
         self.multiline_trailing_comma = False
         self.single_element_trailing_comma = False
-        self.format_bytes: Callable[[bytes], str] = bytes_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
-        self.format_date: Callable[[datetime.date], str] = date_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+        self.format_bytes: Callable[[bytes], str] = bytes_format
+        self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format.value  # ty: ignore[invalid-assignment]  # pyrefly: ignore[bad-assignment]
+            datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.empty_sequence: str | None = None
