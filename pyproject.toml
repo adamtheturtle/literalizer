@@ -298,9 +298,6 @@ overrides = [ { module = "tests.integration.cases.*", disable_error_code = [ "va
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
-project_excludes = [
-    "tests/integration/cases",
-]
 
 [tool.pyright]
 enableTypeIgnoreComments = false

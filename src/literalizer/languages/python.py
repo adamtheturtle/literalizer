@@ -30,8 +30,8 @@ if TYPE_CHECKING:
 
 @beartype
 def _format_python_omap_entry(key: str, value: str) -> str:
-    """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
-    return f"({key}, {value})"
+    """Format one Python ``OrderedDict`` entry as a dict entry."""
+    return f"{key}: {value}"
 
 
 @beartype
@@ -271,8 +271,8 @@ class Python:
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_prefix = "#"
         self.comment_suffix = ""
-        self.omap_open = "OrderedDict(["
-        self.omap_close = "])"
+        self.omap_open = "OrderedDict({"
+        self.omap_close = "})"
         self.format_omap_entry: Callable[[str, str], str] = (
             _format_python_omap_entry
         )
