@@ -1,6 +1,5 @@
 """Language protocol and internal spec dataclass."""
 
-import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -19,7 +18,7 @@ class Language(Protocol):
     :data:`~literalizer.languages.PYTHON`,
     :data:`~literalizer.languages.JAVASCRIPT`). To support additional
     languages or override defaults, write a class that provides all the
-    required attributes, or use :class:`~literalizer.LanguageSpec`.
+    required attributes.
     """
 
     null_literal: str
@@ -194,54 +193,3 @@ class Language(Protocol):
     def sequence_format(self) -> enum.Enum:
         """The sequence format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
-
-
-@dataclasses.dataclass
-class LanguageSpec:
-    """Dataclass implementing :class:`Language`.
-
-    Use this to build fully custom language specifications without
-    writing a dedicated class.
-    """
-
-    null_literal: str
-    true_literal: str
-    false_literal: str
-    sequence_open: Callable[[list[Value]], str]
-    sequence_close: str
-    dict_open: Callable[[dict[str, Value]], str]
-    dict_close: str
-    format_dict_entry: Callable[[str, str], str]
-    multiline_trailing_comma: bool
-    single_element_trailing_comma: bool
-    format_bytes: Callable[[bytes], str]
-    format_date: Callable[[datetime.date], str]
-    format_datetime: Callable[[datetime.datetime], str]
-    empty_sequence: str | None
-    empty_dict: str | None
-    set_open: str
-    set_close: str
-    empty_set: str | None
-    format_sequence_entry: Callable[[str], str]
-    format_set_entry: Callable[[str], str]
-    comment_prefix: str
-    comment_suffix: str
-    omap_open: str
-    omap_close: str
-    format_omap_entry: Callable[[str, str], str]
-    multiline_close_indent: str
-    element_separator: str
-    skip_null_dict_values: bool
-    coerce_heterogeneous_scalars_to_strings: bool
-    coerce_heterogeneous_sibling_lists_to_strings: bool
-    format_variable_declaration: Callable[[str, str], str]
-    """Callable ``(name, value) -> str`` for a new variable
-    declaration.
-    """
-    format_variable_assignment: Callable[[str, str], str]
-    """Callable ``(name, value) -> str`` for an assignment to an existing
-    variable.
-    """
-    format_string: Callable[[str], str]
-    supports_collection_comments: bool
-    sequence_format: enum.Enum
