@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.03.21
+----------
+
+
 - Removed ``LanguageSpec`` dataclass. Use the ``Language`` protocol directly to define custom languages.
 
 2026.03.20.3
