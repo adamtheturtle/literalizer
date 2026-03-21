@@ -264,8 +264,8 @@ class Python(metaclass=HasFormatEnums):
         self.true_literal = "True"
         self.false_literal = "False"
         fmt = sequence_format.value
-        self.sequence_format_config = fmt
-        self.set_format_config = set_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )

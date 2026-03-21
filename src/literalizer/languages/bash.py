@@ -156,8 +156,8 @@ class Bash(metaclass=HasFormatEnums):
         """Initialize Bash language specification."""
         self.sequence_format = sequence_format
         fmt = sequence_format.value
-        self.sequence_format_config = fmt
-        self.set_format_config = set_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.null_literal = '""'
         self.true_literal = "true"
         self.false_literal = "false"
