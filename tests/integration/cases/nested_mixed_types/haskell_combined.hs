@@ -13,9 +13,6 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
     negate (HFloat f) = HFloat (negate f)
     negate _ = error "not implemented"
-instance Fractional Val where
-    fromRational r = HFloat (realToFrac r)
-    a / b = error "not implemented"
 my_data :: Val
 my_data = HList [
     HList [1, 2],

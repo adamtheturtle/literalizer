@@ -22,16 +22,6 @@ typedef signed char BOOL;
 @interface NSArray : NSObject
 + (instancetype)arrayWithObjects:(const id [])objects count:(unsigned long)cnt;
 @end
-@interface NSDictionary : NSObject
-+ (instancetype)dictionaryWithObjects:(const id [])objects forKeys:(const id [])keys count:(unsigned long)cnt;
-@end
-@interface NSNull : NSObject
-+ (instancetype)null;
-@end
-@interface NSSet : NSObject
-+ (instancetype)set;
-+ (instancetype)setWithArray:(NSArray *)array;
-@end
 void _check(void) {
 id my_data = @[
     @[@(1), @(2)],

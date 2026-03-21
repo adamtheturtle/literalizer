@@ -15,6 +15,7 @@ To regenerate all golden files after changing output::
 from __future__ import annotations
 
 import dataclasses
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -29,6 +30,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _CASES_DIR = Path(__file__).parent / "cases"
+
+_QUOTED_STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
 
 
 @beartype
@@ -74,13 +77,23 @@ def _java_time_imports(content: str) -> str:
 
 
 @beartype
+def _java_collection_imports(content: str) -> str:
+    """Return java.util import lines only for collection types used."""
+    imports = ""
+    if "Map" in content:
+        imports += "import java.util.Map;\n"
+    if "Set" in content:
+        imports += "import java.util.Set;\n"
+    return imports
+
+
+@beartype
 def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     time_imports = _java_time_imports(content=content)
+    collection_imports = _java_collection_imports(content=content)
     return f"""\
-{time_imports}import java.util.Map;
-import java.util.Set;
-class Check {{
+{time_imports}{collection_imports}class Check {{
     Object x = {content};
 }}"""
 
@@ -111,23 +124,37 @@ def _wrap_kotlin_varname(content: str) -> str:
 
 
 @beartype
+def _cpp_includes(content: str) -> str:
+    """Return only the C++ ``#include`` directives needed by *content*."""
+    includes = ""
+    if "std::chrono" in content:
+        includes += "#include <chrono>\n"
+    includes += "#include <initializer_list>\n"
+    includes += "#include <cstddef>\n"
+    if "std::map" in content:
+        includes += "#include <map>\n"
+    if "std::string" in content:
+        includes += "#include <string>\n"
+    if "std::vector" in content:
+        includes += "#include <vector>\n"
+    return includes
+
+
+_CPP_ANY_STRUCT = (
+    "struct _Any {\n"
+    "    template<class T> _Any(T&&) noexcept {}\n"
+    "    _Any(std::initializer_list<_Any>) noexcept {}\n"
+    "};\n"
+)
+
+
+@beartype
 def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
     """
-    chrono = "#include <chrono>\n" if "std::chrono" in content else ""
     return (
-        f"{chrono}"
-        "#include <initializer_list>\n"
-        "#include <cstddef>\n"
-        "#include <map>\n"
-        "#include <string>\n"
-        "#include <vector>\n"
-        "struct _Any {\n"
-        "    template<class T> _Any(T&&) noexcept {}\n"
-        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-        "};\n"
-        "void _check() {\n"
+        _cpp_includes(content=content) + _CPP_ANY_STRUCT + "void _check() {\n"
         f"    [[maybe_unused]] _Any _v = {content};\n"
         "}"
     )
@@ -350,34 +377,64 @@ def _wrap_fsharp_varname(content: str) -> str:
     return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
 
 
+_HASKELL_VAL_TYPE = (
+    "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
+    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+)
+
+_HASKELL_IS_STRING_INSTANCE = (
+    "instance IsString Val where\n    fromString = HStr\n"
+)
+
+_HASKELL_NUM_INSTANCE = (
+    "instance Num Val where\n"
+    "    fromInteger = HInt\n"
+    '    a + b = error "not implemented"\n'
+    '    a * b = error "not implemented"\n'
+    '    abs a = error "not implemented"\n'
+    '    signum a = error "not implemented"\n'
+    "    negate (HInt n) = HInt (negate n)\n"
+    "    negate (HFloat f) = HFloat (negate f)\n"
+    '    negate _ = error "not implemented"\n'
+)
+
+_HASKELL_FRACTIONAL_INSTANCE = (
+    "instance Fractional Val where\n"
+    "    fromRational r = HFloat (realToFrac r)\n"
+    '    a / b = error "not implemented"\n'
+)
+
+
+@beartype
+def _haskell_preamble(content: str) -> str:
+    """Build a Haskell module preamble with only the parts needed."""
+    stripped = _QUOTED_STRING_RE.sub("", content)
+    needs_strings = '"' in content
+    needs_fractional = bool(re.search(r"\d\.\d", stripped))
+    needs_num = needs_fractional or bool(re.search(r"\d", stripped))
+
+    parts: list[str] = []
+    if needs_strings:
+        parts.append("{-# LANGUAGE OverloadedStrings #-}\n")
+    parts.append("module Check where\n")
+    if needs_strings:
+        parts.append("import Data.String (IsString(fromString))\n")
+    parts.append(_HASKELL_VAL_TYPE)
+    if needs_strings:
+        parts.append(_HASKELL_IS_STRING_INSTANCE)
+    if needs_num:
+        parts.append(_HASKELL_NUM_INSTANCE)
+    if needs_fractional:
+        parts.append(_HASKELL_FRACTIONAL_INSTANCE)
+    return "".join(parts)
+
+
 @beartype
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a custom Val ADT that accepts mixed
     types.
     """
-    return (
-        "{-# LANGUAGE OverloadedStrings #-}\n"
-        "module Check where\n"
-        "import Data.String (IsString(fromString))\n"
-        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
-        "instance IsString Val where\n"
-        "    fromString = HStr\n"
-        "instance Num Val where\n"
-        "    fromInteger = HInt\n"
-        '    a + b = error "not implemented"\n'
-        '    a * b = error "not implemented"\n'
-        '    abs a = error "not implemented"\n'
-        '    signum a = error "not implemented"\n'
-        "    negate (HInt n) = HInt (negate n)\n"
-        "    negate (HFloat f) = HFloat (negate f)\n"
-        '    negate _ = error "not implemented"\n'
-        "instance Fractional Val where\n"
-        "    fromRational r = HFloat (realToFrac r)\n"
-        '    a / b = error "not implemented"\n'
-        "x :: Val\n"
-        f"x = {content}"
-    )
+    return _haskell_preamble(content=content) + "x :: Val\n" + f"x = {content}"
 
 
 @beartype
@@ -403,10 +460,10 @@ def _wrap_go_varname(content: str) -> str:
 def _wrap_java_varname(content: str) -> str:
     """Wrap a Java var declaration in a static method."""
     time_imports = _java_time_imports(content=content)
+    collection_imports = _java_collection_imports(content=content)
     return (
         f"{time_imports}"
-        "import java.util.Map;\n"
-        "import java.util.Set;\n"
+        f"{collection_imports}"
         "class Check {\n"
         "    public static void check() {\n"
         f"{content}\n"
@@ -462,19 +519,8 @@ def _wrap_cpp_varname(content: str) -> str:
         if content.startswith(old_prefix)
         else content
     )
-    chrono = "#include <chrono>\n" if "std::chrono" in content else ""
     return (
-        f"{chrono}"
-        "#include <initializer_list>\n"
-        "#include <cstddef>\n"
-        "#include <map>\n"
-        "#include <string>\n"
-        "#include <vector>\n"
-        "struct _Any {\n"
-        "    template<class T> _Any(T&&) noexcept {}\n"
-        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-        "};\n"
-        "void _check() {\n"
+        _cpp_includes(content=content) + _CPP_ANY_STRUCT + "void _check() {\n"
         f"{content_adapted}\n"
         "}"
     )
@@ -707,35 +753,40 @@ def _wrap_norg(content: str) -> str:
 
 
 @beartype
+def _d_json_import(content: str) -> str:
+    """Return the ``std.json`` import line if needed by *content*."""
+    if "JSONValue" in content or "parseJSON" in content:
+        return "import std.json;\n\n"
+    return ""
+
+
+@beartype
 def _wrap_d(content: str) -> str:
-    """Wrap in a D function with ``std.json`` imported."""
+    """Wrap in a D function with ``std.json`` imported if needed."""
     d_lang = literalizer.languages.D(
         bytes_format=literalizer.languages.D.BytesFormat.HEX,
         sequence_format=literalizer.languages.D.SequenceFormat.ARRAY,
     )
     typed = d_lang.format_sequence_entry(content)
-    return f"import std.json;\n\nvoid _check() {{\n    auto _v = {typed};\n}}"
+    json_import = _d_json_import(content=typed)
+    return f"{json_import}void _check() {{\n    auto _v = {typed};\n}}"
 
 
 @beartype
 def _wrap_d_varname(content: str) -> str:
     """Wrap a D ``auto`` declaration in a function with ``std.json``
-    imported.
+    imported if needed.
     """
-    return f"import std.json;\n\nvoid _check() {{\n{content}\n}}"
+    json_import = _d_json_import(content=content)
+    return f"{json_import}void _check() {{\n{content}\n}}"
 
 
 @beartype
 def _wrap_d_combined(declaration: str, assignment: str) -> str:
     """Wrap D declaration and assignment together in one function."""
-    return (
-        "import std.json;\n"
-        "\n"
-        "void _check() {\n"
-        f"{declaration}\n"
-        f"{assignment}\n"
-        "}"
-    )
+    combined = declaration + assignment
+    json_import = _d_json_import(content=combined)
+    return f"{json_import}void _check() {{\n{declaration}\n{assignment}\n}}"
 
 
 @beartype
@@ -811,16 +862,20 @@ def _wrap_matlab(content: str) -> str:
     return f"x = {content};"
 
 
-_OBJC_PREAMBLE = (
-    "typedef signed char BOOL;\n"
-    "#define YES ((BOOL)1)\n"
-    "#define NO ((BOOL)0)\n"
+_OBJC_BOOL_DEFS = (
+    "typedef signed char BOOL;\n#define YES ((BOOL)1)\n#define NO ((BOOL)0)\n"
+)
+
+_OBJC_NSOBJECT = (
     "@interface NSObject\n"
     "+ (instancetype)alloc;\n"
     "- (instancetype)init;\n"
     "@end\n"
-    "@interface NSString : NSObject\n"
-    "@end\n"
+)
+
+_OBJC_NSSTRING = "@interface NSString : NSObject\n@end\n"
+
+_OBJC_NSNUMBER = (
     "@interface NSNumber : NSObject\n"
     "+ (instancetype)numberWithBool:(BOOL)value;\n"
     "+ (instancetype)numberWithChar:(signed char)value;\n"
@@ -833,17 +888,25 @@ _OBJC_PREAMBLE = (
     "+ (instancetype)numberWithFloat:(float)value;\n"
     "+ (instancetype)numberWithDouble:(double)value;\n"
     "@end\n"
+)
+
+_OBJC_NSARRAY = (
     "@interface NSArray : NSObject\n"
     "+ (instancetype)arrayWithObjects:(const id [])objects"
     " count:(unsigned long)cnt;\n"
     "@end\n"
+)
+
+_OBJC_NSDICT = (
     "@interface NSDictionary : NSObject\n"
     "+ (instancetype)dictionaryWithObjects:(const id [])objects"
     " forKeys:(const id [])keys count:(unsigned long)cnt;\n"
     "@end\n"
-    "@interface NSNull : NSObject\n"
-    "+ (instancetype)null;\n"
-    "@end\n"
+)
+
+_OBJC_NSNULL = "@interface NSNull : NSObject\n+ (instancetype)null;\n@end\n"
+
+_OBJC_NSSET = (
     "@interface NSSet : NSObject\n"
     "+ (instancetype)set;\n"
     "+ (instancetype)setWithArray:(NSArray *)array;\n"
@@ -852,10 +915,52 @@ _OBJC_PREAMBLE = (
 
 
 @beartype
+def _objc_preamble(content: str) -> str:
+    """Build an Objective-C preamble with only the stubs needed."""
+    needs_string = '@"' in content
+    needs_number = "@(" in content or "@YES" in content or "@NO" in content
+    needs_array = "@[" in content
+    needs_dict = "@{" in content
+    needs_null = "NSNull" in content
+    needs_set = "NSSet" in content
+    # NSSet's setWithArray: references NSArray.
+    if needs_set:
+        needs_array = True
+
+    needs_any = (
+        needs_string
+        or needs_number
+        or needs_array
+        or needs_dict
+        or needs_null
+        or needs_set
+    )
+
+    parts: list[str] = []
+    if needs_number:
+        parts.append(_OBJC_BOOL_DEFS)
+    if needs_any:
+        parts.append(_OBJC_NSOBJECT)
+    if needs_string:
+        parts.append(_OBJC_NSSTRING)
+    if needs_number:
+        parts.append(_OBJC_NSNUMBER)
+    if needs_array:
+        parts.append(_OBJC_NSARRAY)
+    if needs_dict:
+        parts.append(_OBJC_NSDICT)
+    if needs_null:
+        parts.append(_OBJC_NSNULL)
+    if needs_set:
+        parts.append(_OBJC_NSSET)
+    return "".join(parts)
+
+
+@beartype
 def _wrap_objc(content: str) -> str:
     """Wrap in an Objective-C function with Foundation import."""
     return (
-        _OBJC_PREAMBLE
+        _objc_preamble(content=content)
         + "void _check(void) {\n"
         + f"    id _v = {content};\n"
         + "    (void)_v;\n"
@@ -867,7 +972,7 @@ def _wrap_objc(content: str) -> str:
 def _wrap_objc_varname(content: str) -> str:
     """Wrap an Objective-C variable declaration in a function."""
     return (
-        _OBJC_PREAMBLE
+        _objc_preamble(content=content)
         + "void _check(void) {\n"
         + f"{content}\n"
         + f"    (void){_VARIABLE_NAME};\n"
@@ -878,8 +983,9 @@ def _wrap_objc_varname(content: str) -> str:
 @beartype
 def _wrap_objc_combined(declaration: str, assignment: str) -> str:
     """Wrap Objective-C declaration and assignment in a function."""
+    combined = declaration + assignment
     return (
-        _OBJC_PREAMBLE
+        _objc_preamble(content=combined)
         + "void _check(void) {\n"
         + f"{declaration}\n"
         + f"{assignment}\n"
@@ -944,27 +1050,9 @@ def _wrap_rust_varname(content: str) -> str:
 def _wrap_haskell_varname(content: str) -> str:
     """Wrap a Haskell variable binding in module boilerplate."""
     return (
-        "{-# LANGUAGE OverloadedStrings #-}\n"
-        "module Check where\n"
-        "import Data.String (IsString(fromString))\n"
-        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
-        "instance IsString Val where\n"
-        "    fromString = HStr\n"
-        "instance Num Val where\n"
-        "    fromInteger = HInt\n"
-        '    a + b = error "not implemented"\n'
-        '    a * b = error "not implemented"\n'
-        '    abs a = error "not implemented"\n'
-        '    signum a = error "not implemented"\n'
-        "    negate (HInt n) = HInt (negate n)\n"
-        "    negate (HFloat f) = HFloat (negate f)\n"
-        '    negate _ = error "not implemented"\n'
-        "instance Fractional Val where\n"
-        "    fromRational r = HFloat (realToFrac r)\n"
-        '    a / b = error "not implemented"\n'
-        f"{_VARIABLE_NAME} :: Val\n"
-        f"{content}"
+        _haskell_preamble(content=content)
+        + f"{_VARIABLE_NAME} :: Val\n"
+        + f"{content}"
     )
 
 
@@ -1350,17 +1438,7 @@ def _wrap_go_time(content: str) -> str:
 def _wrap_cpp_chrono(content: str) -> str:
     """Wrap in C++ with the chrono header included."""
     return (
-        "#include <chrono>\n"
-        "#include <initializer_list>\n"
-        "#include <cstddef>\n"
-        "#include <map>\n"
-        "#include <string>\n"
-        "#include <vector>\n"
-        "struct _Any {\n"
-        "    template<class T> _Any(T&&) noexcept {}\n"
-        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-        "};\n"
-        "void _check() {\n"
+        _cpp_includes(content=content) + _CPP_ANY_STRUCT + "void _check() {\n"
         f"    [[maybe_unused]] _Any _v = {content};\n"
         "}"
     )

@@ -25,13 +25,6 @@ typedef signed char BOOL;
 @interface NSDictionary : NSObject
 + (instancetype)dictionaryWithObjects:(const id [])objects forKeys:(const id [])keys count:(unsigned long)cnt;
 @end
-@interface NSNull : NSObject
-+ (instancetype)null;
-@end
-@interface NSSet : NSObject
-+ (instancetype)set;
-+ (instancetype)setWithArray:(NSArray *)array;
-@end
 void _check(void) {
 id my_data = @{
     @"level1": @{@"level2": @{@"level3": @{@"level4": @{@"value": @"deep", @"items": @[@"a", @"b"]}}, @"sibling": @(42)}, @"tags": @[@{@"name": @"tag1", @"meta": @{@"priority": @(1), @"labels": @[@"x", @"y"]}}]},

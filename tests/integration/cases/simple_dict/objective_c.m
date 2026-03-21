@@ -19,18 +19,11 @@ typedef signed char BOOL;
 + (instancetype)numberWithFloat:(float)value;
 + (instancetype)numberWithDouble:(double)value;
 @end
-@interface NSArray : NSObject
-+ (instancetype)arrayWithObjects:(const id [])objects count:(unsigned long)cnt;
-@end
 @interface NSDictionary : NSObject
 + (instancetype)dictionaryWithObjects:(const id [])objects forKeys:(const id [])keys count:(unsigned long)cnt;
 @end
 @interface NSNull : NSObject
 + (instancetype)null;
-@end
-@interface NSSet : NSObject
-+ (instancetype)set;
-+ (instancetype)setWithArray:(NSArray *)array;
 @end
 void _check(void) {
     id _v = @{

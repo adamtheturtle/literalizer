@@ -5,8 +5,6 @@ typedef signed char BOOL;
 + (instancetype)alloc;
 - (instancetype)init;
 @end
-@interface NSString : NSObject
-@end
 @interface NSNumber : NSObject
 + (instancetype)numberWithBool:(BOOL)value;
 + (instancetype)numberWithChar:(signed char)value;
@@ -21,16 +19,6 @@ typedef signed char BOOL;
 @end
 @interface NSArray : NSObject
 + (instancetype)arrayWithObjects:(const id [])objects count:(unsigned long)cnt;
-@end
-@interface NSDictionary : NSObject
-+ (instancetype)dictionaryWithObjects:(const id [])objects forKeys:(const id [])keys count:(unsigned long)cnt;
-@end
-@interface NSNull : NSObject
-+ (instancetype)null;
-@end
-@interface NSSet : NSObject
-+ (instancetype)set;
-+ (instancetype)setWithArray:(NSArray *)array;
 @end
 void _check(void) {
 id my_data = @[
