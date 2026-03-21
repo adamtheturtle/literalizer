@@ -47,6 +47,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"* {name}\n@code json\n{value}\n@end"
 
 
+@beartype
 class Norg:
     """Norg markup language specification.
 
@@ -70,7 +71,6 @@ class Norg:
 
         ARRAY = "array"
 
-    @beartype
     class SetFormat(enum.Enum):
         """Set type options for Norg."""
 

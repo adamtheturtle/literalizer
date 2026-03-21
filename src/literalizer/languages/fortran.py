@@ -157,6 +157,7 @@ _datetime_format: Callable[[datetime.datetime], str] = format_datetime_iso
 _string_format: Callable[[str], str] = format_string_fortran
 
 
+@beartype
 class Fortran:
     """Fortran language specification."""
 
@@ -170,7 +171,6 @@ class Fortran:
 
         LIST = "list"
 
-    @beartype
     class SetFormat(enum.Enum):
         """Set type options for Fortran."""
 

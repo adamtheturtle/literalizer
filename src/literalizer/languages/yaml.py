@@ -60,6 +60,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name}: {value}"
 
 
+@beartype
 class Yaml:
     """YAML language specification.
 
@@ -81,7 +82,6 @@ class Yaml:
 
         SEQUENCE = "sequence"
 
-    @beartype
     class SetFormat(enum.Enum):
         """Set type options for YAML."""
 
