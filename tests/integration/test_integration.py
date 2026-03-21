@@ -1429,9 +1429,10 @@ class _LanguageConfig:
 
     spec: literalizer.Language
     extension: str
-    wrap: Callable[[str], str] | None
+    wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
+    supports_anonymous_literal: bool = True
 
 
 @beartype
@@ -1770,9 +1771,10 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     "mojo": _LanguageConfig(
         spec=literalizer.languages.Mojo(),
         extension=".mojo",
-        wrap=None,
+        wrap=_in_mojo_main,
         varname_wrap=_wrap_mojo_varname,
         combined_wrap=_wrap_mojo_combined,
+        supports_anonymous_literal=False,
     ),
     "nim": _LanguageConfig(
         spec=literalizer.languages.Nim(),
@@ -2002,8 +2004,8 @@ def test_golden_file(
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
     lang_config = _LANGUAGES[language]
-    if lang_config.wrap is None:
-        pytest.skip("language has no anonymous-literal wrapper")
+    if not lang_config.supports_anonymous_literal:
+        pytest.skip("language does not support anonymous literals")
     yaml_string = input_path.read_text()
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
