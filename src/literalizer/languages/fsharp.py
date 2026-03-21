@@ -15,7 +15,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -137,14 +137,20 @@ class FSharp(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for F#."""
 
-        LIST = "list"
+        LIST = SequenceFormatConfig(
+            open_str="FList [",
+            close="]",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for F#."""
@@ -170,10 +176,11 @@ class FSharp(metaclass=HasFormatEnums):
         self.null_literal = "FNull"
         self.true_literal = "FBool true"
         self.false_literal = "FBool false"
+        fmt = sequence_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="FList ["
+            open_str=fmt.open_str
         )
-        self.sequence_close = "]"
+        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="FMap ["
         )
@@ -182,14 +189,16 @@ class FSharp(metaclass=HasFormatEnums):
             _format_fsharp_dict_entry
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma = False
+        self.single_element_trailing_comma: bool = (
+            fmt.single_element_trailing_comma
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = None
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = None
         self.set_open = "FSet ["
         self.set_close = "]"

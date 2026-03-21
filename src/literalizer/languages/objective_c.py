@@ -11,7 +11,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -149,14 +149,20 @@ class ObjectiveC(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Objective-C."""
 
-        ARRAY = "array"
+        ARRAY = SequenceFormatConfig(
+            open_str="@[",
+            close="]",
+            empty_sequence="@[]",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Objective-C."""
@@ -182,10 +188,11 @@ class ObjectiveC(metaclass=HasFormatEnums):
         self.null_literal = "[NSNull null]"
         self.true_literal = "@YES"
         self.false_literal = "@NO"
+        fmt = sequence_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="@["
+            open_str=fmt.open_str
         )
-        self.sequence_close = "]"
+        self.sequence_close: str = fmt.close
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="@{"
         )
@@ -194,14 +201,16 @@ class ObjectiveC(metaclass=HasFormatEnums):
             _format_objc_dict_entry
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
+        self.single_element_trailing_comma: bool = (
+            fmt.single_element_trailing_comma
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = "@[]"
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = "@{}"
         self.set_open = "[NSSet setWithArray:@["
         self.set_close = "]]"

@@ -18,7 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import HasFormatEnums, SequenceFormatConfig
 
 if TYPE_CHECKING:
     import datetime
@@ -92,15 +92,27 @@ class Julia(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Julia."""
 
-        ARRAY = "array"
-        TUPLE = "tuple"
+        ARRAY = SequenceFormatConfig(
+            open_str="[",
+            close="]",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
+        TUPLE = SequenceFormatConfig(
+            open_str="(",
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=True,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Julia."""
@@ -126,17 +138,14 @@ class Julia(metaclass=HasFormatEnums):
         self.null_literal = "nothing"
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str]
-        self.sequence_close: str
-        self.single_element_trailing_comma: bool
-        if sequence_format == Julia.sequence_formats.TUPLE:
-            self.sequence_open = fixed_sequence_open(open_str="(")
-            self.sequence_close = ")"
-            self.single_element_trailing_comma = True
-        else:
-            self.sequence_open = fixed_sequence_open(open_str="[")
-            self.sequence_close = "]"
-            self.single_element_trailing_comma = False
+        fmt = sequence_format.value
+        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
+            open_str=fmt.open_str
+        )
+        self.sequence_close: str = fmt.close
+        self.single_element_trailing_comma: bool = (
+            fmt.single_element_trailing_comma
+        )
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
             open_str="Dict("
         )
@@ -151,7 +160,7 @@ class Julia(metaclass=HasFormatEnums):
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.empty_sequence: str | None = None
+        self.empty_sequence: str | None = fmt.empty_sequence
         self.empty_dict: str | None = "Dict()"
         self.set_open = "Set(["
         self.set_close = "])"

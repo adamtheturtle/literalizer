@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
@@ -10,6 +11,17 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from literalizer._types import Value
+
+
+@dataclasses.dataclass(frozen=True)
+class SequenceFormatConfig:
+    """Configuration for a single sequence format."""
+
+    open_str: str
+    close: str
+    supports_heterogeneity: bool
+    single_element_trailing_comma: bool
+    empty_sequence: str | None
 
 
 class SequenceFormat(Protocol):
