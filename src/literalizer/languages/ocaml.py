@@ -17,6 +17,7 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DictFormatConfig,
     HasFormatEnums,
     OmapFormatConfig,
     SequenceFormatConfig,
@@ -197,12 +198,11 @@ class OCaml(metaclass=HasFormatEnums):
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
             open_str=fmt.open_str
         )
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="OMap ["
-        )
-        self.dict_close = "]"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            _format_ocaml_dict_entry
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="OMap ["),
+            close="]",
+            format_entry=_format_ocaml_dict_entry,
+            empty_dict=None,
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -211,7 +211,6 @@ class OCaml(metaclass=HasFormatEnums):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_dict: str | None = None
         self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
         self.comment_config: CommentConfig = CommentConfig(
             prefix="(*",

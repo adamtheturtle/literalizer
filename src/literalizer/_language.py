@@ -42,6 +42,16 @@ class CommentConfig:
 
 
 @dataclasses.dataclass(frozen=True)
+class DictFormatConfig:
+    """Configuration for dict formatting."""
+
+    open_fn: Callable[[dict[str, Value]], str]
+    close: str
+    format_entry: Callable[[str, str], str]
+    empty_dict: str | None
+
+
+@dataclasses.dataclass(frozen=True)
 class OmapFormatConfig:
     """Configuration for ordered-map formatting."""
 
@@ -154,25 +164,8 @@ class Language(Protocol):
     sequence_format_config: SequenceFormatConfig
     """Configuration for the chosen sequence format."""
 
-    @property
-    def dict_open(self) -> Callable[[dict[str, Value]], str]:
-        """Callable that returns the opening delimiter for a dict literal.
-
-        Receives the dict about to be formatted, so the delimiter can depend
-        on the value types when needed.  For a fixed delimiter use
-        :func:`~literalizer.fixed_dict_open`.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    dict_close: str
-    """The closing delimiter for dict literals."""
-
-    @property
-    def format_dict_entry(self) -> Callable[[str, str], str]:
-        """Callable that formats a dict entry from a pre-formatted key and
-        value string.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
+    dict_format_config: DictFormatConfig
+    """Configuration for dict formatting."""
 
     multiline_trailing_comma: bool
     """Whether to append a trailing comma after the last entry."""
@@ -197,9 +190,6 @@ class Language(Protocol):
         literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis
-
-    empty_dict: str | None
-    """Override for empty dict literals, or ``None``."""
 
     set_format_config: SetFormatConfig
     """Configuration for the chosen set format."""
