@@ -227,6 +227,94 @@ def _coerce_heterogeneous_scalars(*, data: Value) -> Value:
     return data
 
 
+_TYPE_FAMILY_CHECKS: tuple[tuple[type, str], ...] = (
+    # Check bool before int (bool is a subclass of int), and
+    # datetime before date (datetime is a subclass of date).
+    (bool, "bool"),
+    (int, "int"),
+    (float, "float"),
+    (str, "str"),
+    (bytes, "bytes"),
+    (datetime.datetime, "datetime"),
+    (datetime.date, "date"),
+    (list, "list"),
+    (ordereddict, "dict"),
+    (dict, "dict"),
+)
+
+
+@beartype
+def _value_type_family(*, value: Value) -> str:
+    """Return a broad type family label for a value.
+
+    Used to decide whether a dict's values are homogeneous enough for
+    languages that require a single value type (e.g. Mojo).
+    """
+    if value is None:
+        return "none"
+    for check_type, family in _TYPE_FAMILY_CHECKS:
+        if isinstance(value, check_type):
+            return family
+    return "set"
+
+
+@beartype
+def _dict_values_mixed_types(*, values: Sequence[Value]) -> bool:
+    """Check whether dict values span more than one type family."""
+    if len(values) <= 1:
+        return False
+    families: set[str] = set()
+    for v in values:
+        families.add(_value_type_family(value=v))
+    return len(families) > 1
+
+
+@beartype
+def _coerce_value_to_str(*, value: Value) -> str:
+    """Convert any value (scalar or collection) to a string."""
+    if isinstance(value, str):
+        return value
+    bucket = _scalar_type_bucket(value=value)
+    if bucket is not None or value is None:
+        return _coerce_scalar_to_str(value=value)
+    return json.dumps(obj=value, default=str, sort_keys=False)
+
+
+@beartype
+def _coerce_mixed_dict_values(*, data: Value) -> Value:
+    """Recursively coerce dicts whose values span multiple type families.
+
+    When a dict has values of mixed types (e.g. strings and lists),
+    all values are stringified so the dict becomes homogeneous.
+    """
+    if isinstance(data, ordereddict):
+        new_omap: ordereddict = ordereddict()
+        for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            new_omap[k] = _coerce_mixed_dict_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        omap_vals: list[Value] = list(new_omap.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        if _dict_values_mixed_types(values=omap_vals):
+            for k in new_omap:  # pyright: ignore[reportUnknownVariableType]
+                new_omap[k] = _coerce_value_to_str(
+                    value=new_omap[k],  # pyright: ignore[reportUnknownArgumentType]
+                )
+        return new_omap
+
+    if isinstance(data, dict):
+        new_dict: dict[str, Value] = {
+            k: _coerce_mixed_dict_values(data=v) for k, v in data.items()
+        }
+        if _dict_values_mixed_types(values=list(new_dict.values())):
+            new_dict = {
+                k: _coerce_value_to_str(value=v) for k, v in new_dict.items()
+            }
+        return new_dict
+
+    if isinstance(data, list):
+        return [_coerce_mixed_dict_values(data=v) for v in data]
+
+    return data
+
+
 @beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
@@ -405,6 +493,8 @@ def _apply_coercions(
             data = _coerce_heterogeneous_scalars(data=data)
             if spec.coerce_heterogeneous_sibling_lists_to_strings:
                 data = _coerce_heterogeneous_sibling_lists(data=data)
+    if spec.coerce_heterogeneous_dict_values_to_strings:
+        data = _coerce_mixed_dict_values(data=data)
     return data
 
 

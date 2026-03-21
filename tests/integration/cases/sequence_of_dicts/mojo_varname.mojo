@@ -1,5 +1,5 @@
 def main():
     var my_data = [
-        Dict({"name": "Alice", "age": "30"}),
-        Dict({"name": "Bob", "age": "25"}),
+        {"name": "Alice", "age": "30"},
+        {"name": "Bob", "age": "25"},
     ]

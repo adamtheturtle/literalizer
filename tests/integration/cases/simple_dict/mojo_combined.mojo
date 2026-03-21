@@ -1,13 +1,13 @@
 def main():
-    var my_data = Dict({
+    var my_data = {
         "name": "Alice",
         "age": "30",
         "active": "True",
         "score": "None",
-    })
-    my_data = Dict({
+    }
+    my_data = {
         "name": "Alice",
         "age": "30",
         "active": "True",
         "score": "None",
-    })
+    }

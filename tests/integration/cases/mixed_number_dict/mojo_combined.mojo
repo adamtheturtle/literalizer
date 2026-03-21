@@ -1,11 +1,11 @@
 def main():
-    var my_data = Dict({
+    var my_data = {
         "a": "1",
         "b": "2.5",
         "c": "3",
-    })
-    my_data = Dict({
+    }
+    my_data = {
         "a": "1",
         "b": "2.5",
         "c": "3",
-    })
+    }

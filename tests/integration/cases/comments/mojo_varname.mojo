@@ -1,8 +1,8 @@
 def main():
-    var my_data = Dict({
+    var my_data = {
         # Server configuration
         "host": "localhost",  # default host
         "port": "8080",
         # Enable debug mode
         "debug": "True",
-    })
+    }

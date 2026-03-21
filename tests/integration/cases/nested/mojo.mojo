@@ -1,4 +1,4 @@
 def main():
-    _ = Dict({
-        "users": [Dict({"name": "Bob", "tags": ["admin", "user"]}), Dict({"name": "Carol", "tags": ["guest"]})],
-    })
+    _ = {
+        "users": [{"name": "Bob", "tags": "[\"admin\", \"user\"]"}, {"name": "Carol", "tags": "[\"guest\"]"}],
+    }

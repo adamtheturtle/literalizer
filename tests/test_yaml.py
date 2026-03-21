@@ -435,10 +435,10 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        Dict({
+        {
             "key1": "48656c6c6f",
             "key2": "42",
-        })"""
+        }"""
     )
     assert result == expected
 
@@ -843,10 +843,10 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        Dict({
+        {
             "a": 1,
             "b": 2,
-        })"""
+        }"""
     )
     assert result == expected
 

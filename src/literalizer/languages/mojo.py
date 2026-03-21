@@ -94,9 +94,9 @@ class Mojo:
         )
         self.sequence_close = "]"
         self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="Dict({"
+            open_str="{"
         )
-        self.dict_close = "})"
+        self.dict_close = "}"
         self.format_dict_entry: Callable[[str, str], str] = (
             dict_entry_with_separator(separator=": ")
         )
@@ -129,6 +129,7 @@ class Mojo:
         self.skip_null_dict_values = False
         self.coerce_heterogeneous_scalars_to_strings = True
         self.coerce_heterogeneous_sibling_lists_to_strings = True
+        self.coerce_heterogeneous_dict_values_to_strings = True
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration
