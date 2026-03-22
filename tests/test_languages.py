@@ -4,7 +4,9 @@ import json
 import textwrap
 
 import pytest
-from pygments.lexers import get_lexer_by_name
+from pygments.lexers import (
+    get_lexer_by_name,  # pyright: ignore[reportUnknownVariableType]
+)
 
 import literalizer.languages
 from literalizer import (
