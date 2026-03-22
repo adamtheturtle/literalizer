@@ -8,7 +8,6 @@ from beartype import beartype
 
 from literalizer._formatters import (
     fixed_dict_open,
-    fixed_sequence_open,
     format_bytes_hex,
     format_date_java,
     format_datetime_java_instant,
@@ -245,14 +244,14 @@ class Java(metaclass=HasFormatEnums):
         self.set_format_config: SetFormatConfig = set_format.value
         if sequence_format is Java.SequenceFormats.LIST:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
             self.sequence_open: Callable[[list[Value]], str] = _list_of_open
-        elif fmt.schema_to_opener is not None:
-            self.sequence_open = typed_sequence_open(
-                schema_to_opener=fmt.schema_to_opener,
-                fallback=fmt.open_str,
-            )
         else:
-            self.sequence_open = fixed_sequence_open(
-                open_str=fmt.open_str,
+            schema_to_opener = fmt.schema_to_opener
+            if schema_to_opener is None:  # pragma: no cover
+                msg = "ARRAY format must have schema_to_opener"
+                raise TypeError(msg)
+            self.sequence_open = typed_sequence_open(
+                schema_to_opener=schema_to_opener,
+                fallback=fmt.open_str,
             )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),

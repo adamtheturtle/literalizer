@@ -649,6 +649,32 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     assert "&  !" in result
 
 
+def test_java_list_format() -> None:
+    """Java LIST format uses ``List.of(...)`` for non-null sequences."""
+    spec = Java(
+        sequence_format=Java.SequenceFormats.LIST,  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportAttributeAccessIssue]
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj=[1, "hello", True]),
+        language=spec,
+        line_prefix="",
+        indent="    ",
+        wrap=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        List.of(
+            1,
+            "hello",
+            true
+        )"""
+    )
+    assert result == expected
+
+
 def test_java_list_rejects_null_elements() -> None:
     """Java's ``List.of()`` does not accept null elements."""
     spec = Java(
