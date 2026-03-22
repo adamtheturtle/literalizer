@@ -202,10 +202,11 @@ class OCaml(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.PAREN_STAR,
     ) -> None:
         """Initialize OCaml language specification."""
-        self.variable_type_hints = self.VariableTypeHints.NONE
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "ONull"
         self.true_literal = "OBool true"
