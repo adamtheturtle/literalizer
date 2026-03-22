@@ -1086,12 +1086,6 @@ def _wrap_python(content: str) -> str:
 
 
 @beartype
-def _wrap_python_combined(declaration: str, assignment: str) -> str:
-    """Join declaration and assignment with a newline."""
-    return declaration + "\n" + assignment
-
-
-@beartype
 def _wrap_ruby(content: str) -> str:
     """Pass through Ruby content unchanged."""
     return content
@@ -1330,7 +1324,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Python,
         wrap=_wrap_python,
         varname_wrap=_wrap_python,
-        combined_wrap=_wrap_python_combined,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
