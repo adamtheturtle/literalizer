@@ -131,7 +131,7 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
         language=language,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -146,7 +146,7 @@ def test_ruby_dict() -> None:
         language=RUBY,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -161,7 +161,7 @@ def test_dict_ruby() -> None:
         language=RUBY,
         line_prefix="  ",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -169,7 +169,7 @@ def test_dict_ruby() -> None:
     assert result == '  "user_1" => "team_alpha",'
 
 
-def test_java_dict_wrap_no_multiline_trailing_comma() -> None:
+def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
     """Java Map.ofEntries() must not have a trailing comma before the
     closing paren.
     """
@@ -178,7 +178,7 @@ def test_java_dict_wrap_no_multiline_trailing_comma() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -201,7 +201,7 @@ def test_java_dict_skips_null_values() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -216,14 +216,14 @@ def test_java_dict_skips_null_values() -> None:
     assert result == expected
 
 
-def test_java_dict_skips_null_values_no_wrap() -> None:
-    """Java dict omits null entries even without wrap."""
+def test_java_dict_skips_null_values_no_include_delimiters() -> None:
+    """Java dict omits null entries even without include_delimiters."""
     result = literalize_json(
         json_string=json.dumps(obj={"a": None, "b": 1}),
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -232,7 +232,7 @@ def test_java_dict_skips_null_values_no_wrap() -> None:
     assert result == expected
 
 
-def test_java_dict_all_null_values_wrap() -> None:
+def test_java_dict_all_null_values_include_delimiters() -> None:
     """Java dict where all values are null produces empty
     Map.ofEntries().
     """
@@ -241,7 +241,7 @@ def test_java_dict_all_null_values_wrap() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -257,7 +257,7 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -288,7 +288,7 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -319,7 +319,7 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -344,7 +344,7 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -369,7 +369,7 @@ def test_java_yaml_ordered_map_skips_null_values() -> None:
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -382,14 +382,14 @@ def test_java_yaml_ordered_map_skips_null_values() -> None:
     assert result == expected
 
 
-def test_java_sequence_wrap_uses_braces() -> None:
+def test_java_sequence_include_delimiters_uses_braces() -> None:
     """Java wrapped sequences use ``new Object[]{…}``."""
     result = literalize_json(
         json_string=json.dumps(obj=[1, "hello", True]),
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -432,7 +432,7 @@ def test_java_typed_array_opener(
         language=JAVA,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -468,7 +468,7 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
         ),
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -493,7 +493,7 @@ def test_matlab_dict_key_with_quote() -> None:
         ),
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -513,7 +513,7 @@ def test_toml_integer_dict_key() -> None:
         language=TOML,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -544,7 +544,7 @@ def test_cobol_string_control_characters() -> None:
         language=COBOL,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -559,7 +559,7 @@ def test_cobol_string_tab_characters() -> None:
         language=COBOL,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -588,7 +588,7 @@ def test_cobol_level_number_cap() -> None:
         language=COBOL,
         line_prefix="    ",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -619,7 +619,7 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         language=COBOL,
         line_prefix="    ",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -639,7 +639,7 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         language=FORTRAN,
         variable_name="cfg",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         line_prefix="",
         new_variable=True,
         error_on_coercion=False,

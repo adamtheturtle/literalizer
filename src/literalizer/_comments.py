@@ -231,7 +231,7 @@ class YamlCollectionContext:
     comment_prefix: str
     comment_suffix: str
     comment_line_prefix: str
-    wrap: bool
+    include_delimiters: bool
 
 
 @beartype
@@ -284,7 +284,7 @@ def literalize_yaml_collection(
     effective_indent = ctx.comment_line_prefix
     all_lines = ctx.base.split(sep="\n")
 
-    if ctx.wrap and len(all_lines) > 1:
+    if ctx.include_delimiters and len(all_lines) > 1:
         header = all_lines[0]
         footer = all_lines[-1]
         body_lines = all_lines[1:-1]
@@ -329,7 +329,7 @@ def literalize_yaml_collection(
         for comment_text in ctx.trailing
     )
 
-    if ctx.wrap and header is not None and footer is not None:
+    if ctx.include_delimiters and header is not None and footer is not None:
         return "\n".join([header, *result, footer])
     return "\n".join(result)
 
@@ -382,7 +382,7 @@ def apply_collection_comments(
     comment_prefix: str,
     comment_suffix: str,
     comment_line_prefix: str,
-    wrap: bool,
+    include_delimiters: bool,
 ) -> str:
     """Apply extracted comments to a collection literal.
 
@@ -404,6 +404,6 @@ def apply_collection_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        wrap=wrap,
+        include_delimiters=include_delimiters,
     )
     return literalize_yaml_collection(ctx=ctx)

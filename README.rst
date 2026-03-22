@@ -55,7 +55,7 @@ Usage
        ),
        line_prefix="",
        indent="    ",
-       wrap=True,
+       include_delimiters=True,
        variable_name=None,
        new_variable=True,
    )
