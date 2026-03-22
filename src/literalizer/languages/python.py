@@ -4,7 +4,7 @@ import datetime
 import enum
 import functools
 from collections import OrderedDict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -97,6 +97,40 @@ _SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
 
 
 @beartype
+def _element_union(
+    hints: list[str],
+) -> str:
+    """Collapse a list of type hints into a union, or ``Any`` if empty."""
+    unique = list(dict.fromkeys(hints))
+    if not unique:
+        return "Any"
+    if "Any" in unique:
+        return "Any"
+    if len(unique) == 1:
+        return unique[0]
+    return " | ".join(unique)
+
+
+@beartype
+def _collection_element_union(
+    elements: Iterable[Value],
+    *,
+    sequence_config: SequenceFormatConfig,
+    set_config: SetFormatConfig,
+) -> str:
+    """Recursively infer element types and return their union string."""
+    hints = [
+        _python_type_hint(
+            data=elem,
+            sequence_config=sequence_config,
+            set_config=set_config,
+        )
+        for elem in elements
+    ]
+    return _element_union(hints=hints)
+
+
+@beartype
 def _python_type_hint(
     data: Value,
     *,
@@ -108,19 +142,37 @@ def _python_type_hint(
         if isinstance(data, scalar_type):
             return hint
     if isinstance(data, dict):
-        return (
-            "OrderedDict[str, Any]"
-            if isinstance(data, (ordereddict, OrderedDict))
-            else "dict[str, Any]"
+        is_ordered = isinstance(data, (ordereddict, OrderedDict))
+        dict_name = "OrderedDict" if is_ordered else "dict"
+        value_union = _collection_element_union(
+            data.values(),
+            sequence_config=sequence_config,
+            set_config=set_config,
         )
+        return f"{dict_name}[str, {value_union}]"
     if isinstance(data, (set, frozenset)):
-        return (
-            "frozenset[Any]"
+        set_name = (
+            "frozenset"
             if set_config.open_str.startswith("frozenset")
-            else "set[Any]"
+            else "set"
         )
+        elem_union = _collection_element_union(
+            data,
+            sequence_config=sequence_config,
+            set_config=set_config,
+        )
+        return f"{set_name}[{elem_union}]"
     # The only remaining Value type is list.
-    return "list[Any]" if sequence_config.close == "]" else "tuple[Any, ...]"
+    is_list = sequence_config.close == "]"
+    seq_name = "list" if is_list else "tuple"
+    suffix = "" if is_list else ", ..."
+    elements: Iterable[Value] = data if isinstance(data, list) else []
+    elem_union = _collection_element_union(
+        elements,
+        sequence_config=sequence_config,
+        set_config=set_config,
+    )
+    return f"{seq_name}[{elem_union}{suffix}]"
 
 
 @beartype
