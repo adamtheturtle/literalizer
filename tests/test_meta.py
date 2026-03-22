@@ -30,12 +30,7 @@ def test_all_languages_have_lint_workflow(
         for lang_cls in ALL_LANGUAGES
         if lang_cls.__name__ not in no_dedicated_workflow
     }
-    missing = expected_jobs - job_ids
-
-    assert not missing, (
-        "Languages missing a lint job in lint.yml:\n"
-        + "\n".join(f"  - {m}" for m in sorted(missing))
-    )
+    assert expected_jobs <= job_ids
 
 
 def test_all_lint_jobs_in_completion_gate(
@@ -53,9 +48,4 @@ def test_all_lint_jobs_in_completion_gate(
     )
 
     lint_jobs = {jid for jid in job_ids if jid.startswith("lint-")}
-    missing = lint_jobs - completion_needs
-
-    assert not missing, (
-        "Lint jobs not in completion-lint.needs:\n"
-        + "\n".join(f"  - {m}" for m in sorted(missing))
-    )
+    assert lint_jobs <= completion_needs
