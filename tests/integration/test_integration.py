@@ -1794,13 +1794,16 @@ class _VariantCase:
 def _build_date_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar dates.
 
-    For each language, create a variant for every datetime format,
+    For each language, create a variant for every non-default datetime format,
     using ``varname_wrap`` with a variable name.
     """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
+        default_member = next(iter(spec.datetime_formats))
         for fmt in list(spec.datetime_formats):
+            if fmt is default_member:
+                continue
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(datetime_format=fmt),
@@ -1813,13 +1816,16 @@ def _build_date_variants() -> dict[str, _Variant]:
 def _build_datetime_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar datetimes.
 
-    For each language, create a variant for every datetime format,
+    For each language, create a variant for every non-default datetime format,
     using ``varname_wrap`` with a variable name.
     """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
+        default_member = next(iter(spec.datetime_formats))
         for fmt in list(spec.datetime_formats):
+            if fmt is default_member:
+                continue
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(datetime_format=fmt),
