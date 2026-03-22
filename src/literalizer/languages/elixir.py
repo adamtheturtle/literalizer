@@ -46,6 +46,21 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value}"
 
 
+@beartype
+def _format_date_elixir(value: datetime.date) -> str:
+    """Format a date as an Elixir ``~D[...]`` sigil."""
+    return f"~D[{value.isoformat()}]"
+
+
+@beartype
+def _format_datetime_elixir(value: datetime.datetime) -> str:
+    """Format a datetime as an Elixir ``~U[...]`` sigil."""
+    iso = value.isoformat()
+    # Elixir ~U sigil uses a space separator instead of T.
+    iso = iso.replace("T", " ")
+    return f"~U[{iso}]"
+
+
 _string_format: Callable[[str], str] = format_string_backslash
 
 
@@ -60,6 +75,20 @@ class Elixir(metaclass=LanguageCls):
     """Elixir language specification.
 
     Args:
+        date_format: Which date format to use.
+
+            * ``date_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15"``.
+            * ``date_formats.ELIXIR`` — Elixir ``~D`` sigil,
+              e.g. ``~D[2024-01-15]``.
+
+        datetime_format: Which datetime format to use.
+
+            * ``datetime_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
+            * ``datetime_formats.ELIXIR`` — Elixir ``~U`` sigil,
+              e.g. ``~U[2024-01-15 12:30:00+00:00]``.
+
         sequence_format: Which Elixir sequence type to use.
 
             * ``sequence_formats.LIST`` — list literal,
@@ -75,6 +104,7 @@ class Elixir(metaclass=LanguageCls):
         """Date format options for Elixir."""
 
         ISO = enum.member(value=format_date_iso)
+        ELIXIR = enum.member(value=_format_date_elixir)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -84,6 +114,7 @@ class Elixir(metaclass=LanguageCls):
         """Datetime format options for Elixir."""
 
         ISO = enum.member(value=format_datetime_iso)
+        ELIXIR = enum.member(value=_format_datetime_elixir)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

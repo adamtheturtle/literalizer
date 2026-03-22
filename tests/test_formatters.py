@@ -13,6 +13,7 @@ import pytest
 from literalizer.languages import (
     Cpp,
     CSharp,
+    Elixir,
     Go,
     Java,
     JavaScript,
@@ -55,6 +56,18 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "hour=12, minute=30, second=0, "
             "microsecond=123456)",
             id="format_datetime_python_microsecond",
+        ),
+        pytest.param(
+            Elixir.DateFormats.ELIXIR,
+            _SAMPLE_DATE,
+            "~D[2024-01-15]",
+            id="format_date_elixir",
+        ),
+        pytest.param(
+            Elixir.DatetimeFormats.ELIXIR,
+            _SAMPLE_DATETIME,
+            "~U[2024-01-15 12:30:00]",
+            id="format_datetime_elixir",
         ),
         pytest.param(
             Java.DateFormats.JAVA,
