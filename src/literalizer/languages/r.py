@@ -24,12 +24,11 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from literalizer._types import Value
 
 
 @beartype
@@ -65,13 +64,13 @@ def _format_r_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an R variable declaration."""
     return f"{name} <- {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an R variable assignment."""
     return f"{name} <- {value}"
 
@@ -253,9 +252,9 @@ class R(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )

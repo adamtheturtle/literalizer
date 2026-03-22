@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,9 +22,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @beartype
@@ -97,15 +94,15 @@ def _format_ocaml_sequence_entry(item: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an OCaml variable declaration."""
     return f"let {name} : val_t = {_to_val(value=value)}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an OCaml variable assignment."""
-    return _format_variable_declaration(name=name, value=value)
+    return _format_variable_declaration(name=name, value=value, _data=_data)
 
 
 _string_format: Callable[[str], str] = format_string_backslash
@@ -245,10 +242,10 @@ class OCaml(metaclass=LanguageCls):
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.element_separator = "; "

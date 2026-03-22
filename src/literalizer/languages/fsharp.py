@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,9 +22,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @beartype
@@ -93,13 +90,13 @@ def _format_fsharp_sequence_entry(item: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an F# variable declaration."""
     return f"let {name}: Val = {_to_val(value=value)}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an F# variable assignment."""
     return f"let {name}: Val = {_to_val(value=value)}"
 
@@ -245,10 +242,10 @@ class FSharp(metaclass=LanguageCls):
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.element_separator = "; "

@@ -25,15 +25,14 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._types import Value
-
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a named Norg code block.
 
     Uses a heading for the variable name followed by a ranged
@@ -43,7 +42,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a named Norg code block.
 
     Norg has no distinction between declaration and re-assignment;
@@ -202,9 +201,9 @@ class Norg(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )

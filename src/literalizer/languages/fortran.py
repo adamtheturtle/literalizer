@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,9 +22,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 _FVAL_PREFIXES = (
     "fnull()",
@@ -138,7 +135,7 @@ def _format_fortran_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     r"""Format a Fortran variable declaration and initialisation.
 
     Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
@@ -150,7 +147,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Fortran assignment to an existing ``fval_t`` variable.
 
     Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
@@ -300,9 +297,9 @@ class Fortran(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )

@@ -24,11 +24,11 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from literalizer._types import Value
 
 _VB_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
@@ -74,13 +74,13 @@ def _format_vb_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a VB.NET variable declaration."""
     return f"Dim {name} = {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a VB.NET variable assignment."""
     return f"{name} = {value}"
 
@@ -236,9 +236,9 @@ class VisualBasic(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = False
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )

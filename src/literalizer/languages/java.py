@@ -25,12 +25,11 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from literalizer._types import Value
 
 
 _LIST_OF_OPEN = "List.of("
@@ -95,13 +94,13 @@ def _java_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Java variable declaration."""
     return f"var {name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Java variable assignment."""
     return f"{name} = {value};"
 
@@ -281,9 +280,9 @@ class Java(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = True
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
