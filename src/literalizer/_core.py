@@ -184,7 +184,10 @@ def _check_heterogeneous(*, data: Value) -> None:
 
 
 @beartype
-def _coerce_heterogeneous_scalars(*, data: Value) -> Value:
+def _coerce_heterogeneous_scalars(  # noqa: C901  # pylint: disable=too-complex
+    *,
+    data: Value,
+) -> Value:
     """Recursively coerce heterogeneous all-scalar collections to
     strings.
     """
