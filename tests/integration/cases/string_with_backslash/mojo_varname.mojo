@@ -4,3 +4,4 @@ def main():
         "back\\\\slash",
         "hello \\\"world\\\"",
     ]
+    _ = my_data

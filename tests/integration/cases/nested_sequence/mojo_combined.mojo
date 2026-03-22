@@ -11,3 +11,4 @@ def main():
         "[1, 2]",
         "None",
     ]
+    _ = my_data

@@ -7,3 +7,4 @@ def main():
         [],
         [],
     ]
+    _ = my_data

@@ -11,3 +11,4 @@ def main():
         "True",
         "None",
     ]
+    _ = my_data

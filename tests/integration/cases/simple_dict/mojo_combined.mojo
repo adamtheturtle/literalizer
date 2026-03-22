@@ -11,3 +11,4 @@ def main():
         "active": "True",
         "score": "None",
     }
+    _ = my_data

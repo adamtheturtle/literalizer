@@ -9,3 +9,4 @@ def main():
         "key\twith\ttabs": "value2",
         "": "value3",
     }
+    _ = my_data

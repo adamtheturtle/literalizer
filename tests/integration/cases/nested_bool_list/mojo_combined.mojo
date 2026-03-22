@@ -7,3 +7,4 @@ def main():
         [True, False],
         [True, True],
     ]
+    _ = my_data

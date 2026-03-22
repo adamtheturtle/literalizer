@@ -9,3 +9,4 @@ def main():
         "bar",
         "baz",
     ]
+    _ = my_data

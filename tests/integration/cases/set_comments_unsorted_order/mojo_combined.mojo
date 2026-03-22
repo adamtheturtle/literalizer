@@ -11,3 +11,4 @@ def main():
         "banana",  # banana inline
         # trailing
     ]
+    _ = my_data
