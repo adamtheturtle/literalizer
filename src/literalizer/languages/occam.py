@@ -102,6 +102,7 @@ class Occam(metaclass=LanguageCls):
     """Occam-pi language specification."""
 
     extension = ".occ"
+    # Pygments has no occam lexer.
     pygments_name = "text"
 
     class DateFormats(enum.Enum):
