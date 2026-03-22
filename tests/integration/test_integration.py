@@ -1769,6 +1769,10 @@ def _build_date_variants() -> dict[str, _Variant]:
         for fmt in list(spec.date_formats):
             if fmt is default_format:
                 continue
+            # Date and datetime formats can share enum member names
+            # within the same language (e.g. Python has both
+            # DateFormats.ISO and DatetimeFormats.ISO), so we include
+            # a "_date_" infix to keep keys unique.
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(date_format=fmt),
@@ -1791,6 +1795,7 @@ def _build_datetime_variants() -> dict[str, _Variant]:
         for fmt in list(spec.datetime_formats):
             if fmt is default_format:
                 continue
+            # See _build_date_variants for why "_datetime_" is needed.
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(datetime_format=fmt),
