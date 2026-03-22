@@ -1,7 +1,6 @@
 """Visual Basic (.NET) language specification."""
 
-from __future__ import annotations
-
+import datetime
 import enum
 from typing import TYPE_CHECKING, Any
 
@@ -28,7 +27,6 @@ from literalizer._language import (
 from literalizer._types import Value  # noqa: TC001
 
 if TYPE_CHECKING:
-    import datetime
     from collections.abc import Callable
 
 _VB_SCALAR_TYPES: dict[str, str] = {

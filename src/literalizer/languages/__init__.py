@@ -1,7 +1,5 @@
 """Built-in language specifications for common programming languages."""
 
-from __future__ import annotations
-
 from .ada import Ada
 from .bash import Bash
 from .c import C

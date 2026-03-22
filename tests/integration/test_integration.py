@@ -12,12 +12,11 @@ To regenerate all golden files after changing output::
     uv run pytest tests/integration/ --regen-all
 """
 
-from __future__ import annotations
-
 import dataclasses
 import enum
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
 from beartype import beartype
@@ -25,9 +24,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 _CASES_REL = Path("tests") / "integration" / "cases"
 

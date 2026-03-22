@@ -1,18 +1,12 @@
 """Test class-level format Enum access via HasFormatEnums."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
+from literalizer import HasFormatEnums
 from literalizer.languages import (
     Ada,
     Bash,
     Cpp,
     Python,
 )
-
-if TYPE_CHECKING:
-    from literalizer import HasFormatEnums
 
 _LANGUAGE_TYPES: dict[str, HasFormatEnums] = {
     "ada": Ada,
