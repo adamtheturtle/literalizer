@@ -45,6 +45,7 @@ optional-dependencies.dev = [
     "mypy-strict-kwargs==2026.1.12",
     "prek==0.3.6",
     "pydocstringformatter==0.7.5",
+    "pygments==2.19.2",
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.0",
     "pyproject-fmt==2.18.1",
@@ -67,6 +68,7 @@ optional-dependencies.dev = [
     "sphinx-substitution-extensions==2026.1.12",
     "sphinxcontrib-spelling==8.0.2",
     "ty==0.0.24",
+    "types-pygments==2.19.0.20251121",
     "vulture==2.15",
     "yamlfix==1.19.1",
     "zizmor==1.23.1",
@@ -378,8 +380,6 @@ ignore_names = [
     "suppress_warnings",
     "templates_path",
     "warning_is_error",
-    # Language protocol attribute accessed by consumers
-    "pygments_name",
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
     # Enum members accessed by consumers iterating format enums

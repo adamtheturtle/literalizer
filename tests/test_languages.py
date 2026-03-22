@@ -4,12 +4,17 @@ import json
 import textwrap
 
 import pytest
+from pygments.lexers import (
+    get_lexer_by_name,  # pyright: ignore[reportUnknownVariableType]
+)
 
+import literalizer.languages
 from literalizer import (
     Language,
     literalize_json,
     literalize_yaml,
 )
+from literalizer._language import LanguageCls
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import (
     Cobol,
@@ -691,3 +696,22 @@ def test_java_list_rejects_null_elements() -> None:
             new_variable=True,
             error_on_coercion=False,
         )
+
+
+_SORTED_LANGUAGES: list[LanguageCls] = sorted(
+    literalizer.languages.ALL_LANGUAGES,
+    key=lambda c: c.__name__,
+)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_pygments_name_is_valid(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every language's ``pygments_name`` is recognized by Pygments."""
+    get_lexer_by_name(_alias=language_cls.pygments_name)
