@@ -26,11 +26,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_KOTLIN_TUPLE_SIZE_TO_OPENER: dict[int, str] = {
-    2: "Pair(",
-    3: "Triple(",
-}
-
 
 @beartype
 def _format_date_kotlin(value: datetime.date) -> str:
@@ -61,7 +56,11 @@ _KOTLIN_SCALAR_OPENERS: dict[type, str] = {
 @beartype
 def _kotlin_tuple_open(items: list[Value]) -> str:
     """Return the Kotlin tuple opener based on element count."""
-    return _KOTLIN_TUPLE_SIZE_TO_OPENER.get(len(items), "listOf<Any?>(")
+    openers: dict[int, str] = {
+        2: "Pair(",
+        3: "Triple(",
+    }
+    return openers.get(len(items), "listOf<Any?>(")
 
 
 @beartype
