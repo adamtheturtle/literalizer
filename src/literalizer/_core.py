@@ -52,7 +52,10 @@ def _scalar_type_bucket(*, value: Value) -> type | None:
 
 
 @beartype
-def _coerce_scalar_to_str(*, value: Value) -> str:
+def _coerce_scalar_to_str(  # noqa: PLR0911
+    *,
+    value: Value,
+) -> str:
     """Convert a scalar to its string representation."""
     if isinstance(value, bool):
         return "True" if value else "False"
@@ -184,7 +187,7 @@ def _check_heterogeneous(*, data: Value) -> None:
 
 
 @beartype
-def _coerce_heterogeneous_scalars(  # noqa: C901  # pylint: disable=too-complex
+def _coerce_heterogeneous_scalars(  # noqa: C901, PLR0911  # pylint: disable=too-complex
     *,
     data: Value,
 ) -> Value:
@@ -388,7 +391,11 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
 
 
 @beartype
-def _format_value(*, value: Value, spec: Language) -> str:
+def _format_value(  # noqa: PLR0911
+    *,
+    value: Value,
+    spec: Language,
+) -> str:
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), dicts, and sets.

@@ -138,7 +138,6 @@ lint.per-file-ignores."tests/test_*.py" = [
 # is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
 lint.pydocstyle.convention = "google"
-lint.pylint.max-returns = 7
 
 [tool.pylint]
 # Allow the body of an if to be on the same line as the test if there is no
