@@ -11,6 +11,8 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -57,6 +59,16 @@ _KOTLIN_SCALAR_OPENERS: dict[type, str] = {
 
 
 @beartype
+def _kotlin_tuple_open(items: list[Value]) -> str:
+    """Return the Kotlin tuple opener based on element count."""
+    openers: dict[int, str] = {
+        2: "Pair(",
+        3: "Triple(",
+    }
+    return openers.get(len(items), "listOf<Any?>(")
+
+
+@beartype
 def _kotlin_type_to_opener(
     element_type: type | ListType,
 ) -> str | None:
@@ -77,27 +89,15 @@ _KOTLIN_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "LocalDateTime",
 }
 
+_kotlin_element_to_type = make_element_to_type(
+    scalar_types=_KOTLIN_SCALAR_TYPES,
+    list_template="Array<{inner}>",
+)
 
-@beartype
-def _kotlin_element_to_type(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a Kotlin type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _kotlin_element_to_type(element_type=element_type.inner)
-        return f"Array<{inner}>" if inner is not None else None
-    return _KOTLIN_SCALAR_TYPES.get(element_type)
-
-
-@beartype
-def _kotlin_dict_type_to_opener(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a Kotlin map opener."""
-    type_name = _kotlin_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"mapOf<String, {type_name}>("
+_kotlin_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_kotlin_element_to_type,
+    opener_template="mapOf<String, {type_name}>(",
+)
 
 
 @beartype
@@ -132,6 +132,16 @@ class Kotlin(metaclass=LanguageCls):
 
             * ``datetime_formats.KOTLIN`` — ``LocalDateTime.of(...)`` call,
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
+
+        sequence_format: Which Kotlin sequence type to use.
+
+            * ``sequence_formats.LIST`` — typed array calls
+              (e.g. ``intArrayOf(1, 2, 3)``).  Heterogeneous
+              sequences fall back to ``listOf<Any?>(…)``.
+            * ``sequence_formats.TUPLE`` — ``Pair(…)`` for two-element
+              sequences, ``Triple(…)`` for three-element sequences,
+              e.g. ``Pair("a", 1)``.  Other sizes fall back to
+              ``listOf<Any?>(…)``.
     """
 
     extension = ".kts"
@@ -172,6 +182,13 @@ class Kotlin(metaclass=LanguageCls):
                 type_to_opener=_kotlin_type_to_opener,
                 fallback="listOf<Any?>(",
             ),
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
+        TUPLE = SequenceFormatConfig(
+            sequence_open=_kotlin_tuple_open,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,

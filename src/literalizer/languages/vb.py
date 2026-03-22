@@ -7,12 +7,13 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    ListType,
     MixedNumeric,
     fixed_dict_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -109,23 +110,15 @@ _VB_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "String",
 }
 
+_vb_element_to_type = make_element_to_type(
+    scalar_types=_VB_SCALAR_TYPES,
+    list_template="{inner}()",
+)
 
-@beartype
-def _vb_element_to_type(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a VB.NET type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _vb_element_to_type(element_type=element_type.inner)
-        return f"{inner}()" if inner is not None else None
-    return _VB_SCALAR_TYPES.get(element_type)
-
-
-@beartype
-def _vb_type_to_opener(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a VB.NET array opener."""
-    type_name = _vb_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"New {type_name}() {{"
+_vb_type_to_opener = make_type_to_opener(
+    element_to_type=_vb_element_to_type,
+    opener_template="New {type_name}() {{",
+)
 
 
 @beartype

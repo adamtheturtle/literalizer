@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    ListType,
     MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -54,34 +55,20 @@ _DART_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "DateTime",
 }
 
+_dart_element_to_type = make_element_to_type(
+    scalar_types=_DART_SCALAR_TYPES,
+    list_template="List<{inner}>",
+)
 
-@beartype
-def _dart_element_to_type(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Dart type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _dart_element_to_type(element_type=element_type.inner)
-        return f"List<{inner}>" if inner is not None else None
-    return _DART_SCALAR_TYPES.get(element_type)
+_dart_type_to_opener = make_type_to_opener(
+    element_to_type=_dart_element_to_type,
+    opener_template="<{type_name}>[",
+)
 
-
-@beartype
-def _dart_type_to_opener(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Dart list opener."""
-    type_name = _dart_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"<{type_name}>["
-
-
-@beartype
-def _dart_dict_type_to_opener(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a Dart map opener."""
-    type_name = _dart_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"<String, {type_name}>{{"
+_dart_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_dart_element_to_type,
+    opener_template="<String, {type_name}>{{",
+)
 
 
 @beartype

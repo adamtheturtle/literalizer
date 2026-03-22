@@ -385,7 +385,7 @@ def test_python_inline_type_hints_dict() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        my_var: dict[str, Any] = {
+        my_var: dict[str, int] = {
             "a": 1,
         }"""
     )
@@ -406,7 +406,7 @@ def test_python_inline_type_hints_tuple() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        my_var: tuple[Any, ...] = (
+        my_var: tuple[int, ...] = (
             1,
             2,
         )"""
@@ -438,7 +438,7 @@ def test_python_inline_type_hints_list() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        my_var: list[Any] = [
+        my_var: list[int] = [
             1,
             2,
         ]"""
@@ -476,7 +476,7 @@ def test_python_inline_type_hints_set_with_colon_in_string() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        my_var: set[Any] = {
+        my_var: set[str] = {
             "a\\": b",
         }"""
     )
@@ -498,10 +498,70 @@ def test_python_inline_type_hints_set_of_integers() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        my_var: set[Any] = {
+        my_var: set[int] = {
             1,
             2,
             3,
         }"""
     )
     assert result.code == expected
+
+
+def test_python_inline_type_hints_nested_list_in_list() -> None:
+    """Nested collections get recursive type hints, not Any."""
+    result = literalize_json(
+        json_string='[true, "hi", [1, 2], null]',
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        my_var: tuple[bool | str | tuple[int, ...] | None, ...] = (
+            True,
+            "hi",
+            (1, 2),
+            None,
+        )"""
+    )
+    assert result.code == expected
+
+
+def test_python_inline_type_hints_dict_with_list_values() -> None:
+    """Dict with list values infers recursive type hints."""
+    result = literalize_json(
+        json_string='{"key": [1, 2, 3]}',
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        my_var: dict[str, tuple[int, ...]] = {
+            "key": (1, 2, 3),
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_python_inline_type_hints_empty_list() -> None:
+    """Empty collections still use Any since element type is unknown."""
+    result = literalize_json(
+        json_string="[]",
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "tuple[Any, ...]" in result.code

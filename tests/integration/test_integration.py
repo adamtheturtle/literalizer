@@ -1707,19 +1707,21 @@ def test_golden_file_combined_variable_forms(
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
-        (_build_date_variants(), "scalar_date", None),
-        (_build_datetime_variants(), "scalar_datetime", None),
-        (_build_sequence_variants(), "simple_sequence", None),
-        (_build_set_variants(), "set", None),
-        (_build_comment_variants(), "comments", None),
-        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME),
+    variant_sources: list[tuple[dict[str, _Variant], str, str | None, str]] = [
+        (_build_date_variants(), "scalar_date", None, ""),
+        (_build_datetime_variants(), "scalar_datetime", None, ""),
+        (_build_sequence_variants(), "simple_sequence", None, ""),
+        (_build_sequence_variants(), "pair_sequence", None, "_pair"),
+        (_build_sequence_variants(), "triple_sequence", None, "_triple"),
+        (_build_set_variants(), "set", None, ""),
+        (_build_comment_variants(), "comments", None, ""),
+        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME, ""),
     ]
-    for variants, case_dir_name, variable_name in variant_sources:
+    for variants, case_dir_name, variable_name, suffix in variant_sources:
         for variant_name, variant in variants.items():
             cases.append(
                 _VariantCase(
-                    variant_name=variant_name,
+                    variant_name=f"{variant_name}{suffix}",
                     variant=variant,
                     case_dir_name=case_dir_name,
                     variable_name=variable_name,
