@@ -157,6 +157,7 @@ class Mojo(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Mojo language specification."""
         self.sequence_format = sequence_format

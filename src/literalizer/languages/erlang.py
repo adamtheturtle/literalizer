@@ -169,6 +169,7 @@ class Erlang(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.PERCENT,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Erlang language specification."""
         self.sequence_format = sequence_format

@@ -185,6 +185,7 @@ class VisualBasic(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.HASH_SET,
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize VisualBasic language specification."""
         self.sequence_format = sequence_format
