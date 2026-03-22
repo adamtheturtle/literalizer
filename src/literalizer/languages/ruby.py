@@ -67,6 +67,7 @@ class Ruby(metaclass=LanguageCls):
     """
 
     extension = ".rb"
+    pygments_name = "ruby"
 
     class DateFormats(enum.Enum):
         """Date format options for Ruby."""

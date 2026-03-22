@@ -101,6 +101,7 @@ class Haskell(metaclass=LanguageCls):
     """
 
     extension = ".hs"
+    pygments_name = "haskell"
 
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""

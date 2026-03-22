@@ -68,6 +68,7 @@ class Julia(metaclass=LanguageCls):
     """
 
     extension = ".jl"
+    pygments_name = "julia"
 
     class DateFormats(enum.Enum):
         """Date formatting options for Julia."""

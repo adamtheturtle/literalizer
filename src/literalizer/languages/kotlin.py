@@ -129,6 +129,7 @@ class Kotlin(metaclass=LanguageCls):
     """
 
     extension = ".kts"
+    pygments_name = "kotlin"
 
     class DateFormats(enum.Enum):
         """Date format options for Kotlin."""

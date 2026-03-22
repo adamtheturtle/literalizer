@@ -66,6 +66,7 @@ class Elixir(metaclass=LanguageCls):
     """
 
     extension = ".ex"
+    pygments_name = "elixir"
 
     class DateFormats(enum.Enum):
         """Date format options for Elixir."""

@@ -51,6 +51,7 @@ class Nim(metaclass=LanguageCls):
     """Nim language specification."""
 
     extension = ".nim"
+    pygments_name = "nim"
 
     class DateFormats(enum.Enum):
         """Date format options for Nim."""

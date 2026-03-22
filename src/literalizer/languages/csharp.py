@@ -112,6 +112,7 @@ class CSharp(metaclass=LanguageCls):
     """
 
     extension = ".cs"
+    pygments_name = "csharp"
 
     class DateFormats(enum.Enum):
         """Date format options for C#."""

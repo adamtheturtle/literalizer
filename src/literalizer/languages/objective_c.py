@@ -124,6 +124,7 @@ class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
     extension = ".m"
+    pygments_name = "objective-c"
 
     class DateFormats(enum.Enum):
         """Date format options for ObjectiveC."""

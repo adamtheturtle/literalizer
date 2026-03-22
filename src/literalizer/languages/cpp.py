@@ -127,6 +127,7 @@ class Cpp(metaclass=LanguageCls):
     """
 
     extension = ".cpp"
+    pygments_name = "cpp"
 
     class DateFormats(enum.Enum):
         """Date format options for C++."""

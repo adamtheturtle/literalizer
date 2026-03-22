@@ -169,6 +169,7 @@ class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
     extension = ".f90"
+    pygments_name = "fortran"
 
     class DateFormats(enum.Enum):
         """Date format options for Fortran."""

@@ -105,6 +105,7 @@ class R(metaclass=LanguageCls):
     """
 
     extension = ".R"
+    pygments_name = "r"
 
     class DateFormats(enum.Enum):
         """Date formatting options for R."""

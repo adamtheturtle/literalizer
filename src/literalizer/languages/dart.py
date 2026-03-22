@@ -113,6 +113,7 @@ class Dart(metaclass=LanguageCls):
     """
 
     extension = ".dart"
+    pygments_name = "dart"
 
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""

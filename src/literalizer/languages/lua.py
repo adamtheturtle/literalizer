@@ -67,6 +67,7 @@ class Lua(metaclass=LanguageCls):
     """Lua language specification."""
 
     extension = ".lua"
+    pygments_name = "lua"
 
     class DateFormats(enum.Enum):
         """Date format options for Lua."""

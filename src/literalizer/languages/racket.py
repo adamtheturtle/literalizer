@@ -51,6 +51,7 @@ class Racket(metaclass=LanguageCls):
     """Racket language specification."""
 
     extension = ".rkt"
+    pygments_name = "racket"
 
     class DateFormats(enum.Enum):
         """Date format options for Racket."""
