@@ -242,7 +242,7 @@ class Java(metaclass=HasFormatEnums):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        if sequence_format is Java.SequenceFormats.LIST:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+        if sequence_format is Java.sequence_formats.LIST:
             self.sequence_open: Callable[[list[Value]], str] = _list_of_open
         else:
             schema_to_opener = fmt.schema_to_opener
