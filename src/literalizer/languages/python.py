@@ -103,14 +103,20 @@ def _format_inline_type_hint_declaration(
     value: str,
     data: Value,
     *,
-    sequence_type_hint: str,
-    set_type_hint: str,
+    bytes_hint: str,
+    date_hint: str,
+    datetime_hint: str,
+    sequence_hint: str,
+    set_hint: str,
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
         data=data,
-        sequence_type_hint=sequence_type_hint,
-        set_type_hint=set_type_hint,
+        bytes_hint=bytes_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        sequence_hint=sequence_hint,
+        set_hint=set_hint,
     )
     return f"{name}: {hint} = {value}"
 
@@ -121,40 +127,42 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value}"
 
 
-# Ordered by priority: bool before int, datetime before date.
-_SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
-    (type(None), "None"),
-    (bool, "bool"),
-    (int, "int"),
-    (float, "float"),
-    (str, "str"),
-    (bytes, "bytes"),
-    (datetime.datetime, "datetime.datetime"),
-    (datetime.date, "datetime.date"),
-)
-
-
 @beartype
 def _python_type_hint(
     data: Value,
     *,
-    sequence_type_hint: str,
-    set_type_hint: str,
+    bytes_hint: str,
+    date_hint: str,
+    datetime_hint: str,
+    sequence_hint: str,
+    set_hint: str,
 ) -> str:
-    """Derive a Python type hint from the original data structure."""
-    for scalar_type, hint in _SCALAR_TYPE_HINTS:
-        if isinstance(data, scalar_type):
+    """Derive a Python type hint from the original data and format
+    config.
+    """
+    # Order matters: datetime before date (datetime is a date subclass),
+    # bool before int (bool is an int subclass).
+    # OrderedDict / ordereddict before dict.
+    type_hints: tuple[tuple[type, str], ...] = (
+        (type(None), "None"),
+        (bool, "bool"),
+        (int, "int"),
+        (float, "float"),
+        (str, "str"),
+        (bytes, bytes_hint),
+        (datetime.datetime, datetime_hint),
+        (datetime.date, date_hint),
+        (ordereddict, "OrderedDict[str, Any]"),
+        (OrderedDict, "OrderedDict[str, Any]"),
+        (dict, "dict[str, Any]"),
+        (set, set_hint),
+        (frozenset, set_hint),
+    )
+    for typ, hint in type_hints:
+        if isinstance(data, typ):
             return hint
-    if isinstance(data, dict):
-        return (
-            "OrderedDict[str, Any]"
-            if isinstance(data, (ordereddict, OrderedDict))
-            else "dict[str, Any]"
-        )
-    if isinstance(data, (set, frozenset)):
-        return set_type_hint
     # The only remaining Value type is list.
-    return sequence_type_hint
+    return sequence_hint
 
 
 @beartype
@@ -220,6 +228,13 @@ class Python(metaclass=LanguageCls):
             """Format a date."""
             return self.value(value=date_value)
 
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this date format."""
+            if self is type(self).PYTHON:
+                return "datetime.date"
+            return "str"
+
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Python."""
 
@@ -230,6 +245,13 @@ class Python(metaclass=LanguageCls):
             """Format a datetime."""
             return self.value(value=dt_value)
 
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this datetime format."""
+            if self is type(self).PYTHON:
+                return "datetime.datetime"
+            return "float"
+
     class BytesFormats(enum.Enum):
         """Bytes formatting options for Python."""
 
@@ -239,6 +261,13 @@ class Python(metaclass=LanguageCls):
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
             return self.value(value=data)
+
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this bytes format."""
+            if self is type(self).PYTHON:
+                return "bytes"
+            return "str"
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Python."""
@@ -302,8 +331,11 @@ class Python(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            sequence_type_hint: str,
-            set_type_hint: str,
+            bytes_hint: str,
+            date_hint: str,
+            datetime_hint: str,
+            sequence_hint: str,
+            set_hint: str,
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -311,8 +343,11 @@ class Python(metaclass=LanguageCls):
             if self is type(self).INLINE:
                 return functools.partial(
                     _format_inline_type_hint_declaration,
-                    sequence_type_hint=sequence_type_hint,
-                    set_type_hint=set_type_hint,
+                    bytes_hint=bytes_hint,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    sequence_hint=sequence_hint,
+                    set_hint=set_hint,
                 )
             return _format_variable_declaration
 
@@ -388,10 +423,18 @@ class Python(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        bytes_hint = bytes_format.type_hint
+        date_hint = date_format.type_hint
+        datetime_hint = datetime_format.type_hint
+        sequence_hint = sequence_format.type_hint
+        set_hint = set_format.type_hint
         decl_fmt: Callable[[str, str, Value], str] = (
             variable_type_hints.formatter(
-                sequence_type_hint=sequence_format.type_hint,
-                set_type_hint=set_format.type_hint,
+                bytes_hint=bytes_hint,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                sequence_hint=sequence_hint,
+                set_hint=set_hint,
             )
         )
         self.format_variable_declaration = decl_fmt
