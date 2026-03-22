@@ -698,13 +698,16 @@ def test_java_list_rejects_null_elements() -> None:
         )
 
 
+_SORTED_LANGUAGES: list[LanguageCls] = sorted(
+    literalizer.languages.ALL_LANGUAGES,
+    key=lambda c: c.__name__,
+)
+
+
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=sorted(
-        literalizer.languages.ALL_LANGUAGES,
-        key=lambda c: c.__name__,
-    ),
-    ids=lambda c: c.__name__,
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
 def test_pygments_name_is_valid(
     *,
