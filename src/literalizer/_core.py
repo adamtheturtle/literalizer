@@ -1079,8 +1079,9 @@ def literalize_yaml(
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
+    coerced_data = _coerce_yaml_keys(data=data)
     base = _literalize(
-        data=_coerce_yaml_keys(data=data),
+        data=coerced_data,
         language=language,
         line_prefix=line_prefix,
         indent=indent,
@@ -1114,7 +1115,7 @@ def literalize_yaml(
             if new_variable
             else language.format_variable_assignment
         )
-        result = formatter(variable_name, result, data)
+        result = formatter(variable_name, result, coerced_data)
 
     if resolved.pending is not None:
         result = prepend_collection_comments(
