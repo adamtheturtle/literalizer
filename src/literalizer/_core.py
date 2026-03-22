@@ -846,6 +846,14 @@ def _filter_null_dict_comments(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class _ResolvedComments:
+    """Result of resolving YAML comments for a collection."""
+
+    result: str
+    pending: CollectionComments | None
+
+
 @beartype
 def _resolve_yaml_set_comments(
     *,
@@ -856,14 +864,14 @@ def _resolve_yaml_set_comments(
     comment_suffix: str,
     comment_line_prefix: str,
     wrap: bool,
-) -> tuple[str, CollectionComments | None]:
+) -> _ResolvedComments:
     """Resolve comments for a YAML set."""
     ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
         stream=StringIO(initial_value=yaml_string),
     )
     set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
     if not language.supports_collection_comments:
-        return base, set_comments
+        return _ResolvedComments(result=base, pending=set_comments)
     result = apply_collection_comments(
         collection_comments=set_comments,
         base=base,
@@ -872,7 +880,7 @@ def _resolve_yaml_set_comments(
         comment_line_prefix=comment_line_prefix,
         wrap=wrap,
     )
-    return result, None
+    return _ResolvedComments(result=result, pending=None)
 
 
 @beartype
@@ -886,7 +894,7 @@ def _resolve_yaml_collection_comments(
     comment_suffix: str,
     comment_line_prefix: str,
     wrap: bool,
-) -> tuple[str, CollectionComments | None]:
+) -> _ResolvedComments:
     """Resolve comments for a YAML list or dict."""
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
     ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
@@ -908,7 +916,10 @@ def _resolve_yaml_collection_comments(
         )
 
     if not language.supports_collection_comments:
-        return base, collection_comments
+        return _ResolvedComments(
+            result=base,
+            pending=collection_comments,
+        )
     result = apply_collection_comments(
         collection_comments=collection_comments,
         base=base,
@@ -917,7 +928,7 @@ def _resolve_yaml_collection_comments(
         comment_line_prefix=comment_line_prefix,
         wrap=wrap,
     )
-    return result, None
+    return _ResolvedComments(result=result, pending=None)
 
 
 @beartype
@@ -1000,7 +1011,7 @@ def literalize_yaml(  # pylint: disable=too-many-branches,too-complex,too-many-s
     result: str
     pending_collection_comments: CollectionComments | None = None
     if isinstance(data, set):
-        result, pending_collection_comments = _resolve_yaml_set_comments(
+        resolved = _resolve_yaml_set_comments(
             yaml_string=yaml_string,
             base=base,
             language=language,
@@ -1009,6 +1020,8 @@ def literalize_yaml(  # pylint: disable=too-many-branches,too-complex,too-many-s
             comment_line_prefix=comment_line_prefix,
             wrap=wrap,
         )
+        result = resolved.result
+        pending_collection_comments = resolved.pending
     elif not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
@@ -1023,18 +1036,18 @@ def literalize_yaml(  # pylint: disable=too-many-branches,too-complex,too-many-s
     elif not base:
         result = base
     else:
-        result, pending_collection_comments = (
-            _resolve_yaml_collection_comments(
-                yaml_string=yaml_string,
-                data=data,  # pyright: ignore[reportUnknownArgumentType]
-                base=base,
-                language=language,
-                comment_prefix=cp,
-                comment_suffix=cs,
-                comment_line_prefix=comment_line_prefix,
-                wrap=wrap,
-            )
+        resolved = _resolve_yaml_collection_comments(
+            yaml_string=yaml_string,
+            data=data,  # pyright: ignore[reportUnknownArgumentType]
+            base=base,
+            language=language,
+            comment_prefix=cp,
+            comment_suffix=cs,
+            comment_line_prefix=comment_line_prefix,
+            wrap=wrap,
         )
+        result = resolved.result
+        pending_collection_comments = resolved.pending
 
     if variable_name is not None:
         formatter = (
