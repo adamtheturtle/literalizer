@@ -4,9 +4,7 @@ import json
 import textwrap
 
 import pytest
-from pygments.lexers import (
-    get_lexer_by_name,  # pyright: ignore[reportUnknownVariableType]
-)
+from pygments.lexers import get_lexer_by_name
 
 import literalizer.languages
 from literalizer import (
@@ -714,4 +712,4 @@ def test_pygments_name_is_valid(
     language_cls: LanguageCls,
 ) -> None:
     """Every language's ``pygments_name`` is recognized by Pygments."""
-    get_lexer_by_name(_alias=language_cls.pygments_name)  # type: ignore[no-untyped-call]
+    get_lexer_by_name(_alias=language_cls.pygments_name)
