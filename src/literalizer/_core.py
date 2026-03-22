@@ -58,7 +58,9 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
         return frozenset({dict, str}) | child_types
     if isinstance(data, (set, frozenset)):
         scalar_types: frozenset[type] = frozenset(
-            t for v in data if (t := _scalar_type(value=v)) is not None
+            t
+            for v in data
+            if (t := _preamble_scalar_type(value=v)) is not None
         )
         return frozenset({set}) | scalar_types
     if isinstance(data, list):
@@ -66,25 +68,26 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
         for v in data:
             child_types = child_types | _collect_value_types(data=v)
         return frozenset({list}) | child_types
-    result = _scalar_type(value=data)
+    result = _preamble_scalar_type(value=data)
     return frozenset({result}) if result is not None else frozenset()
 
 
 @beartype
-def _scalar_type(*, value: Value) -> type | None:
-    """Return the type bucket for a scalar, or ``None`` if
-    unrecognized.
+def _preamble_scalar_type(*, value: Value) -> type | None:
+    """Return the preamble-relevant type for a scalar.
+
+    Like :func:`_scalar_type_bucket` but distinguishes
+    ``datetime.datetime`` from ``datetime.date`` (they need different
+    preamble lines) and omits ``bool``/``int``/``float`` (which never
+    need preamble).
     """
     if isinstance(value, datetime.datetime):
         return datetime.datetime
     if isinstance(value, datetime.date):
         return datetime.date
-    if isinstance(value, str):
-        return str
-    if isinstance(value, bytes):
-        return bytes
-    if value is None:
-        return type(None)
+    bucket = _scalar_type_bucket(value=value)
+    if bucket in {str, bytes, type(None)}:
+        return bucket
     return None
 
 
