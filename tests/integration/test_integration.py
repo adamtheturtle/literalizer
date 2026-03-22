@@ -1791,55 +1791,41 @@ class _VariantCase:
 
 
 @beartype
-def _build_date_variants() -> list[_VariantCase]:
+def _build_date_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar dates.
 
     For each language, create a variant for every datetime format,
     using ``varname_wrap`` with a variable name.
     """
-    cases: list[_VariantCase] = []
+    variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         for fmt in list(spec.datetime_formats):
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
-            cases.append(
-                _VariantCase(
-                    variant_name=variant_key,
-                    variant=_Variant(
-                        spec=lang_config.lang_cls(datetime_format=fmt),
-                        wrap=lang_config.varname_wrap,
-                    ),
-                    case_dir_name="scalar_date",
-                    variable_name=_VARIABLE_NAME,
-                )
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(datetime_format=fmt),
+                wrap=lang_config.varname_wrap,
             )
-    return cases
+    return variants
 
 
 @beartype
-def _build_datetime_variants() -> list[_VariantCase]:
+def _build_datetime_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar datetimes.
 
     For each language, create a variant for every datetime format,
     using ``varname_wrap`` with a variable name.
     """
-    cases: list[_VariantCase] = []
+    variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         for fmt in list(spec.datetime_formats):
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
-            cases.append(
-                _VariantCase(
-                    variant_name=variant_key,
-                    variant=_Variant(
-                        spec=lang_config.lang_cls(datetime_format=fmt),
-                        wrap=lang_config.varname_wrap,
-                    ),
-                    case_dir_name="scalar_datetime",
-                    variable_name=_VARIABLE_NAME,
-                )
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(datetime_format=fmt),
+                wrap=lang_config.varname_wrap,
             )
-    return cases
+    return variants
 
 
 @beartype
@@ -1887,6 +1873,7 @@ def _build_set_variants() -> dict[str, _Variant]:
     return variants
 
 
+@beartype
 def _build_comment_variants() -> dict[str, _Variant]:
     """Build comment-format variants for all languages with multiple
     formats.
@@ -2070,9 +2057,9 @@ def test_golden_file_combined_variable_forms(
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    cases.extend(_build_date_variants())
-    cases.extend(_build_datetime_variants())
     variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
+        (_build_date_variants(), "scalar_date", _VARIABLE_NAME),
+        (_build_datetime_variants(), "scalar_datetime", _VARIABLE_NAME),
         (_build_sequence_variants(), "simple_sequence", None),
         (_build_set_variants(), "set", None),
         (_build_comment_variants(), "comments", None),
