@@ -2256,6 +2256,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=variant_name,
                 variant=variant,
                 case_dir=_CASES_DIR / "comments",
+                variable_name=None,
             )
         )
     variable_type_hints_variants: dict[str, _Variant] = {
