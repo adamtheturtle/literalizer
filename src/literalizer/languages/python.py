@@ -104,8 +104,6 @@ def _element_union(
     unique = list(dict.fromkeys(hints))
     if not unique:
         return "Any"
-    if "Any" in unique:
-        return "Any"
     if len(unique) == 1:
         return unique[0]
     return " | ".join(unique)
