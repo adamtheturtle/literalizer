@@ -2209,33 +2209,21 @@ class _VariantCase:
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    for variant_name, variant in _DATE_VARIANTS.items():
-        cases.append(
-            _VariantCase(
-                variant_name=variant_name,
-                variant=variant,
-                case_dir_name="dates",
-                variable_name=None,
+    variant_sources: list[tuple[dict[str, _Variant], str]] = [
+        (_DATE_VARIANTS, "dates"),
+        (_SEQUENCE_VARIANTS, "simple_sequence"),
+        (_SET_VARIANTS, "set"),
+    ]
+    for variants, case_dir_name in variant_sources:
+        for variant_name, variant in variants.items():
+            cases.append(
+                _VariantCase(
+                    variant_name=variant_name,
+                    variant=variant,
+                    case_dir_name=case_dir_name,
+                    variable_name=None,
+                )
             )
-        )
-    for variant_name, variant in _SEQUENCE_VARIANTS.items():
-        cases.append(
-            _VariantCase(
-                variant_name=variant_name,
-                variant=variant,
-                case_dir_name="simple_sequence",
-                variable_name=None,
-            )
-        )
-    for variant_name, variant in _SET_VARIANTS.items():
-        cases.append(
-            _VariantCase(
-                variant_name=variant_name,
-                variant=variant,
-                case_dir_name="set",
-                variable_name=None,
-            )
-        )
     variable_type_hints_variants: dict[str, _Variant] = {
         "python_inline": _Variant(
             spec=literalizer.languages.Python(
