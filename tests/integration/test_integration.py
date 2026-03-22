@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -850,6 +851,20 @@ def _in_mojo_main(content: str) -> str:
     """
     indented = "\n".join(f"    {line}" for line in content.splitlines())
     return f"def main():\n{indented}"
+
+
+@beartype
+def _wrap_mojo(content: str) -> str:
+    """Wrap in a Mojo main function with a variable assignment.
+
+    Mojo cannot express a bare literal — ``_ = [...]`` is optimised
+    away by the compiler, producing "cannot emit an empty".  We assign
+    to a named variable so the compiler keeps the expression and can
+    type-check it.
+    """
+    spec = literalizer.languages.Mojo()
+    declaration = spec.format_variable_declaration("_result", content)
+    return _in_mojo_main(content=declaration)
 
 
 @beartype
@@ -1844,10 +1859,10 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     "mojo": _LanguageConfig(
         spec=literalizer.languages.Mojo(),
         extension=".mojo",
-        wrap=_in_mojo_main,
+        wrap=_wrap_mojo,
         varname_wrap=_wrap_mojo_varname,
         combined_wrap=_wrap_mojo_combined,
-        supports_anonymous_literal=False,
+        supports_anonymous_literal=True,
         supports_empty_collection_literal=False,
     ),
     "nim": _LanguageConfig(
@@ -2069,6 +2084,12 @@ _SEQUENCE_VARIANTS: dict[str, _Variant] = {
 
 
 @beartype
+def _has_bare_empty_collection(*, text: str) -> bool:
+    """Return True if *text* contains ``[]`` not inside quotes."""
+    return bool(re.search(pattern=r'(?<!")(\[\])(?!")', string=text))
+
+
+@beartype
 def _discover_cases() -> list[tuple[str, str, Path]]:
     """Return ``(case_name, language, input_path)`` tuples."""
     cases: list[tuple[str, str, Path]] = []
@@ -2109,7 +2130,8 @@ def test_golden_file(
         new_variable=True,
         error_on_coercion=False,
     )
-    if not lang_config.supports_empty_collection_literal and "[]" in result:
+    has_empty = _has_bare_empty_collection(text=result)
+    if not lang_config.supports_empty_collection_literal and has_empty:
         pytest.skip("language does not support empty collection literals")
     wrapped = lang_config.wrap(result)
     file_regression.check(
@@ -2145,7 +2167,8 @@ def test_golden_file_with_variable_name(
         new_variable=True,
         error_on_coercion=False,
     )
-    if not lang_config.supports_empty_collection_literal and "[]" in result:
+    has_empty = _has_bare_empty_collection(text=result)
+    if not lang_config.supports_empty_collection_literal and has_empty:
         pytest.skip("language does not support empty collection literals")
     wrapped = lang_config.varname_wrap(result)
     file_regression.check(
@@ -2183,7 +2206,7 @@ def test_golden_file_combined_variable_forms(
         new_variable=True,
         error_on_coercion=False,
     )
-    has_empty = "[]" in declaration
+    has_empty = _has_bare_empty_collection(text=declaration)
     if not lang_config.supports_empty_collection_literal and has_empty:
         pytest.skip("language does not support empty collection literals")
     assignment = literalizer.literalize_yaml(
