@@ -976,7 +976,7 @@ def _fortran_comment_pos(line: str) -> int | None:
         c = line[i]
         if c == "'" and not in_double_quote:
             next_also_quote = i + 1 < len(line) and line[i + 1] == "'"
-            if in_single_quote and next_also_quote:  # pragma: no cover
+            if in_single_quote and next_also_quote:
                 i += 2
                 continue
             in_single_quote = not in_single_quote
@@ -1957,3 +1957,12 @@ def test_format_enumeration_properties(
     assert len(spec.datetime_formats) >= 1
     assert issubclass(spec.comment_formats, enum.Enum)
     assert len(spec.comment_formats) >= 1
+
+
+def test_fortran_comment_pos_escaped_single_quote() -> None:
+    """Doubled single quotes inside a Fortran string are not treated as
+    the end of the string when locating ``!`` comments.
+    """
+    line = "fstr('it''s here')  ! note"
+    expected = 20
+    assert _fortran_comment_pos(line=line) == expected
