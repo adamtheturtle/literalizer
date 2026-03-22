@@ -64,22 +64,37 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
 
 @beartype
 def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = ["import json"]
+    """Return preamble lines for the generated code.
+
+    ``dateTime(...)`` values are native Nim types that cannot be wrapped
+    by the ``%*`` JSON macro, so when they appear we emit
+    ``import times`` instead of ``import json``.
+    """
     if "dateTime(" in code:
-        lines.append("import times")
-    return lines
+        return ["import times"]
+    return ["import json"]
 
 
 @beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Nim ``var`` declaration using ``%*`` for JSON nodes."""
+    """Format a Nim ``var`` declaration.
+
+    Uses ``%*`` for JSON-compatible values; omits it for native types
+    like ``dateTime(...)`` that cannot be wrapped in a JSON node.
+    """
+    if "dateTime(" in value:
+        return f"var {name} = {value}"
     return f"var {name} = %*{value}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Nim assignment to an existing variable using ``%*``."""
+    """Format a Nim assignment to an existing variable.
+
+    Uses ``%*`` for JSON-compatible values; omits it for native types.
+    """
+    if "dateTime(" in value:
+        return f"{name} = {value}"
     return f"{name} = %*{value}"
 
 

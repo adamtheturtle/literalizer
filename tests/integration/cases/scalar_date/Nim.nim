@@ -1,3 +1,2 @@
-import json
 import times
-let _ = %*dateTime(2024, mJan, 15)
+let _ = dateTime(2024, mJan, 15)
