@@ -101,11 +101,8 @@ def _python_type_hint(
             if set_config.open_str.startswith("frozenset")
             else "set[Any]"
         )
-    if isinstance(data, list):
-        return (
-            "list[Any]" if sequence_config.close == "]" else "tuple[Any, ...]"
-        )
-    return "str"  # pragma: no cover
+    # The only remaining Value type is list.
+    return "list[Any]" if sequence_config.close == "]" else "tuple[Any, ...]"
 
 
 @beartype
