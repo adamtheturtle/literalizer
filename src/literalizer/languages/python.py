@@ -148,9 +148,10 @@ def _collection_element_union(
     """
     if not elements:
         return "Any"
-    return _element_union(
-        types=[recurse(data=e) for e in elements],
-    )
+    types = [recurse(data=e) for e in elements]
+    if isinstance(elements, frozenset):
+        types.sort()
+    return _element_union(types=types)
 
 
 @beartype
