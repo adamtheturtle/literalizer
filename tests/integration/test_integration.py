@@ -1773,7 +1773,7 @@ def _build_sequence_variants() -> dict[str, _Variant]:
         for fmt in list(spec.sequence_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_sequence_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(sequence_format=fmt),
                 wrap=lang_config.wrap,
@@ -1795,7 +1795,7 @@ def _build_set_variants() -> dict[str, _Variant]:
         for fmt in list(spec.set_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_set_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(set_format=fmt),
                 wrap=lang_config.wrap,
@@ -1818,7 +1818,7 @@ def _build_comment_variants() -> dict[str, _Variant]:
         for fmt in list(spec.comment_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_comment_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(comment_format=fmt),
                 wrap=lang_config.wrap,
@@ -1841,7 +1841,7 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
         for fmt in list(spec.variable_type_hints_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_type_hints_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(variable_type_hints=fmt),
                 wrap=lang_config.wrap,
