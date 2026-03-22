@@ -25,6 +25,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import literalizer
 import literalizer.languages
 from literalizer.exceptions import NullInCollectionError
+from literalizer.languages import ALL_LANGUAGES
 
 _CASES_REL = Path("tests") / "integration" / "cases"
 
@@ -1698,6 +1699,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
 }
 
+_COVERED_LANGUAGES = frozenset(cfg.lang_cls for cfg in _LANGUAGES.values())
+assert _COVERED_LANGUAGES == ALL_LANGUAGES, (
+    f"Missing from integration tests: {ALL_LANGUAGES - _COVERED_LANGUAGES}"
+)
+
 
 @dataclasses.dataclass
 class _VariantCase:
@@ -2050,14 +2056,22 @@ def test_format_variant_golden_file(
     )
 
 
-@pytest.mark.parametrize(
-    argnames="lang_config",
-    argvalues=_LANGUAGES.values(),
-    ids=list(_LANGUAGES),
+_SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
+    ALL_LANGUAGES,
+    key=lambda c: c.__name__,
 )
-def test_format_enumeration_properties(lang_config: _LanguageConfig) -> None:
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_format_enumeration_properties(
+    language_cls: literalizer.LanguageCls,
+) -> None:
     """Every language exposes iterable format-enumeration properties."""
-    spec = lang_config.lang_cls()
+    spec = language_cls()
     assert issubclass(spec.bytes_formats, enum.Enum)
     assert len(spec.bytes_formats) >= 1
     assert issubclass(spec.sequence_formats, enum.Enum)
