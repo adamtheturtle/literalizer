@@ -94,6 +94,7 @@ class C(metaclass=LanguageCls):
     """C language specification."""
 
     extension = ".c"
+    pygments_name = "c"
 
     class DateFormats(enum.Enum):
         """Date format options for C."""

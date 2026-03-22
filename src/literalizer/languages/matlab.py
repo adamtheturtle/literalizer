@@ -121,6 +121,7 @@ class Matlab(metaclass=LanguageCls):
     """MATLAB language specification."""
 
     extension = ".m"
+    pygments_name = "matlab"
 
     class DateFormats(enum.Enum):
         """Date format options for Matlab."""

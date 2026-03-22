@@ -68,6 +68,8 @@ class Norg(metaclass=LanguageCls):
     """
 
     extension = ".norg"
+    # Pygments has no Norg lexer.
+    pygments_name = "text"
 
     class DateFormats(enum.Enum):
         """Date format options for Norg."""

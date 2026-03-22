@@ -225,6 +225,7 @@ class Cobol(metaclass=LanguageCls):
     """
 
     extension = ".cob"
+    pygments_name = "cobol"
 
     class DateFormats(enum.Enum):
         """Date format options for Cobol."""

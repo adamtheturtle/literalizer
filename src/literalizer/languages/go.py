@@ -122,6 +122,7 @@ class Go(metaclass=LanguageCls):
     """
 
     extension = ".go"
+    pygments_name = "go"
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""

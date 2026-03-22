@@ -60,6 +60,7 @@ class Crystal(metaclass=LanguageCls):
     """
 
     extension = ".cr"
+    pygments_name = "crystal"
 
     class DateFormats(enum.Enum):
         """Date format options for Crystal."""

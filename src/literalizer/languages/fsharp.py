@@ -112,6 +112,7 @@ class FSharp(metaclass=LanguageCls):
     """F# language specification."""
 
     extension = ".fs"
+    pygments_name = "fsharp"
 
     class DateFormats(enum.Enum):
         """Date format options for FSharp."""

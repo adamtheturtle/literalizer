@@ -116,6 +116,7 @@ class OCaml(metaclass=LanguageCls):
     """OCaml language specification."""
 
     extension = ".ml"
+    pygments_name = "ocaml"
 
     class DateFormats(enum.Enum):
         """Date format options for OCaml."""

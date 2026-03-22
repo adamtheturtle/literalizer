@@ -74,6 +74,7 @@ class Erlang(metaclass=LanguageCls):
     """
 
     extension = ".erl"
+    pygments_name = "erlang"
 
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
