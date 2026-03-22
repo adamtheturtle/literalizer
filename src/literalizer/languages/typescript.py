@@ -20,7 +20,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -51,7 +51,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class TypeScript(metaclass=HasFormatEnums):
+class TypeScript(metaclass=LanguageCls):
     """TypeScript language specification.
 
     Args:
@@ -99,7 +99,7 @@ class TypeScript(metaclass=HasFormatEnums):
         """Sequence type options for TypeScript."""
 
         ARRAY = SequenceFormatConfig(
-            open_str="[",
+            sequence_open=fixed_sequence_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -156,19 +156,21 @@ class TypeScript(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize TypeScript language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
@@ -187,6 +189,7 @@ class TypeScript(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

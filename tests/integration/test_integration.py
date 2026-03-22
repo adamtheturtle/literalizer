@@ -24,6 +24,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
+from literalizer.exceptions import NullInCollectionError
 
 _CASES_REL = Path("tests") / "integration" / "cases"
 
@@ -78,9 +79,9 @@ def _java_time_imports(content: str) -> str:
 def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     time_imports = _java_time_imports(content=content)
+    list_import = "import java.util.List;\n" if "List.of(" in content else ""
     return f"""\
-{time_imports}import java.util.List;
-import java.util.Map;
+{time_imports}{list_import}import java.util.Map;
 import java.util.Set;
 class Check {{
     Object x = {content};
@@ -377,8 +378,10 @@ def _wrap_go_varname(content: str) -> str:
 def _wrap_java_varname(content: str) -> str:
     """Wrap a Java var declaration in a static method."""
     time_imports = _java_time_imports(content=content)
+    list_import = "import java.util.List;\n" if "List.of(" in content else ""
     return (
         f"{time_imports}"
+        f"{list_import}"
         "import java.util.Map;\n"
         "import java.util.Set;\n"
         "class Check {\n"
@@ -834,13 +837,22 @@ def _wrap_mojo(content: str) -> str:
 @beartype
 def _wrap_mojo_varname(content: str) -> str:
     """Wrap a Mojo variable declaration in a main function."""
-    return _in_mojo_main(content=content)
+    # Consume the variable so ``--Werror`` does not flag the
+    # "assignment was never used" warning.
+    return _in_mojo_main(
+        content=content + f"\n_ = {_VARIABLE_NAME}",
+    )
 
 
 @beartype
 def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
     """Wrap Mojo declaration and assignment in a main function."""
-    return _in_mojo_main(content=declaration + "\n" + assignment)
+    # Consume the variable after each assignment so ``--Werror`` does
+    # not flag the "assignment was never used" warning.
+    use = f"_ = {_VARIABLE_NAME}"
+    return _in_mojo_main(
+        content=declaration + f"\n{use}\n" + assignment + f"\n{use}",
+    )
 
 
 @beartype
@@ -1335,12 +1347,10 @@ class _Variant:
 class _LanguageConfig:
     """Language configuration with class, file extension, and wrapper."""
 
-    lang_cls: literalizer.HasFormatEnums
+    lang_cls: literalizer.LanguageCls
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
-    set_wrap: Callable[[str], str]
-    anonymous_literal_wrap: Callable[[str], str]
 
 
 @beartype
@@ -1429,368 +1439,276 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_ada,
         varname_wrap=_wrap_ada_varname,
         combined_wrap=_wrap_ada_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "bash": _LanguageConfig(
         lang_cls=literalizer.languages.Bash,
         wrap=_wrap_bash,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "c": _LanguageConfig(
         lang_cls=literalizer.languages.C,
         wrap=_wrap_c,
         varname_wrap=_wrap_c_varname,
         combined_wrap=_wrap_c_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "cobol": _LanguageConfig(
         lang_cls=literalizer.languages.Cobol,
         wrap=_wrap_cobol,
         varname_wrap=_wrap_cobol_varname,
         combined_wrap=_wrap_cobol_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "d": _LanguageConfig(
         lang_cls=literalizer.languages.D,
         wrap=_wrap_d,
         varname_wrap=_wrap_d_varname,
         combined_wrap=_wrap_d_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "common_lisp": _LanguageConfig(
         lang_cls=literalizer.languages.CommonLisp,
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "clojure": _LanguageConfig(
         lang_cls=literalizer.languages.Clojure,
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "python": _LanguageConfig(
         lang_cls=literalizer.languages.Python,
         wrap=_wrap_python,
         varname_wrap=_wrap_python,
         combined_wrap=_wrap_python_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "javascript": _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
         wrap=_wrap_js,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_js_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "typescript": _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
         wrap=_wrap_js,
         varname_wrap=_wrap_ts_varname,
         combined_wrap=_wrap_ts_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "kotlin": _LanguageConfig(
         lang_cls=literalizer.languages.Kotlin,
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_kotlin_varname,
         combined_wrap=_wrap_kotlin_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "ruby": _LanguageConfig(
         lang_cls=literalizer.languages.Ruby,
         wrap=_wrap_ruby,
         varname_wrap=_wrap_ruby,
         combined_wrap=lambda d, a: _wrap_ruby(content=d + "\n" + a),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "go": _LanguageConfig(
         lang_cls=literalizer.languages.Go,
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
         combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "java": _LanguageConfig(
         lang_cls=literalizer.languages.Java,
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
         combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "csharp": _LanguageConfig(
         lang_cls=literalizer.languages.CSharp,
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
         combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "dart": _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
         wrap=_wrap_dart,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_dart_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "swift": _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
         wrap=_wrap_swift,
         varname_wrap=_wrap_swift_varname,
         combined_wrap=_wrap_swift_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "cpp": _LanguageConfig(
         lang_cls=literalizer.languages.Cpp,
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
         combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "rust": _LanguageConfig(
         lang_cls=literalizer.languages.Rust,
         wrap=_wrap_rust,
         varname_wrap=_wrap_rust_varname,
         combined_wrap=_wrap_rust_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "haskell": _LanguageConfig(
         lang_cls=literalizer.languages.Haskell,
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
         combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "hcl": _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
         wrap=_wrap_hcl,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "julia": _LanguageConfig(
         lang_cls=literalizer.languages.Julia,
         wrap=_wrap_julia,
         varname_wrap=_wrap_julia,
         combined_wrap=lambda d, a: _wrap_julia(content=d + "\n" + a),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "lua": _LanguageConfig(
         lang_cls=literalizer.languages.Lua,
         wrap=_wrap_lua,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "perl": _LanguageConfig(
         lang_cls=literalizer.languages.Perl,
         wrap=_wrap_perl,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "php": _LanguageConfig(
         lang_cls=literalizer.languages.Php,
         wrap=_wrap_php,
         varname_wrap=_wrap_php_varname,
         combined_wrap=lambda d, a: _wrap_php_varname(content=d + "\n" + a),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "elixir": _LanguageConfig(
         lang_cls=literalizer.languages.Elixir,
         wrap=_wrap_elixir,
         varname_wrap=_wrap_elixir_varname,
         combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "erlang": _LanguageConfig(
         lang_cls=literalizer.languages.Erlang,
         wrap=_wrap_erlang,
         varname_wrap=_wrap_erlang_varname,
         combined_wrap=lambda d, _a: _wrap_erlang_varname(content=d),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "fsharp": _LanguageConfig(
         lang_cls=literalizer.languages.FSharp,
         wrap=_wrap_fsharp,
         varname_wrap=_wrap_fsharp_varname,
         combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "ocaml": _LanguageConfig(
         lang_cls=literalizer.languages.OCaml,
         wrap=_wrap_ocaml,
         varname_wrap=_wrap_ocaml_varname,
         combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "occam": _LanguageConfig(
         lang_cls=literalizer.languages.Occam,
         wrap=_wrap_occam,
         varname_wrap=_wrap_occam_varname,
         combined_wrap=lambda d, _a: _wrap_occam_varname(content=d),
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "groovy": _LanguageConfig(
         lang_cls=literalizer.languages.Groovy,
         wrap=_wrap_groovy,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "scala": _LanguageConfig(
         lang_cls=literalizer.languages.Scala,
         wrap=_wrap_scala,
         varname_wrap=_wrap_scala_varname,
         combined_wrap=_wrap_scala_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "r": _LanguageConfig(
         lang_cls=literalizer.languages.R,
         wrap=_wrap_r,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "racket": _LanguageConfig(
         lang_cls=literalizer.languages.Racket,
         wrap=_wrap_racket,
         varname_wrap=_wrap_racket,
         combined_wrap=_wrap_racket_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "crystal": _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
         wrap=_wrap_crystal,
         varname_wrap=_wrap_crystal_varname,
         combined_wrap=_wrap_crystal_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "matlab": _LanguageConfig(
         lang_cls=literalizer.languages.Matlab,
         wrap=_wrap_matlab,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "mojo": _LanguageConfig(
         lang_cls=literalizer.languages.Mojo,
         wrap=_wrap_mojo,
         varname_wrap=_wrap_mojo_varname,
         combined_wrap=_wrap_mojo_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "nim": _LanguageConfig(
         lang_cls=literalizer.languages.Nim,
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "norg": _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
         wrap=_wrap_norg,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "vb": _LanguageConfig(
         lang_cls=literalizer.languages.VisualBasic,
         wrap=_wrap_vb,
         varname_wrap=_wrap_vb_varname,
         combined_wrap=_wrap_vb_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "zig": _LanguageConfig(
         lang_cls=literalizer.languages.Zig,
         wrap=_wrap_zig,
         varname_wrap=_wrap_zig_varname,
         combined_wrap=_wrap_zig_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "powershell": _LanguageConfig(
         lang_cls=literalizer.languages.PowerShell,
         wrap=_wrap_powershell,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "toml": _LanguageConfig(
         lang_cls=literalizer.languages.Toml,
         wrap=_wrap_toml,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "objective_c": _LanguageConfig(
         lang_cls=literalizer.languages.ObjectiveC,
         wrap=_wrap_objc,
         varname_wrap=_wrap_objc_varname,
         combined_wrap=_wrap_objc_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "fortran": _LanguageConfig(
         lang_cls=literalizer.languages.Fortran,
         wrap=_wrap_fortran,
         varname_wrap=_wrap_fortran_varname,
         combined_wrap=_wrap_fortran_combined,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
     "yaml": _LanguageConfig(
         lang_cls=literalizer.languages.Yaml,
         wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
-        set_wrap=_wrap_identity,
-        anonymous_literal_wrap=_wrap_identity,
     ),
 }
 
@@ -1806,55 +1724,52 @@ class _VariantCase:
 
 
 @beartype
-def _build_date_variants() -> list[_VariantCase]:
-    """Build datetime-format variants for scalar dates.
+def _build_date_variants() -> dict[str, _Variant]:
+    """Build date-format variants for scalar dates.
 
-    For each language, create a variant for every datetime format,
-    using ``varname_wrap`` with a variable name.
+    For each language, create a variant for every non-default date format,
+    using ``wrap``.
     """
-    cases: list[_VariantCase] = []
+    variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        for fmt in list(spec.datetime_formats):
+        default_format = spec.format_date
+        for fmt in list(spec.date_formats):
+            if fmt is default_format:
+                continue
+            # Date and datetime formats can share enum member names
+            # within the same language (e.g. Python has both
+            # DateFormats.ISO and DatetimeFormats.ISO), so we include
+            # a "_date_" infix to keep keys unique.
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
-            cases.append(
-                _VariantCase(
-                    variant_name=variant_key,
-                    variant=_Variant(
-                        spec=lang_config.lang_cls(datetime_format=fmt),
-                        wrap=lang_config.varname_wrap,
-                    ),
-                    case_dir_name="scalar_date",
-                    variable_name=_VARIABLE_NAME,
-                )
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(date_format=fmt),
+                wrap=lang_config.wrap,
             )
-    return cases
+    return variants
 
 
 @beartype
-def _build_datetime_variants() -> list[_VariantCase]:
+def _build_datetime_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar datetimes.
 
-    For each language, create a variant for every datetime format,
-    using ``varname_wrap`` with a variable name.
+    For each language, create a variant for every non-default datetime format,
+    using ``wrap``.
     """
-    cases: list[_VariantCase] = []
+    variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
+        default_format = spec.format_datetime
         for fmt in list(spec.datetime_formats):
+            if fmt is default_format:
+                continue
+            # See _build_date_variants for why "_datetime_" is needed.
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
-            cases.append(
-                _VariantCase(
-                    variant_name=variant_key,
-                    variant=_Variant(
-                        spec=lang_config.lang_cls(datetime_format=fmt),
-                        wrap=lang_config.varname_wrap,
-                    ),
-                    case_dir_name="scalar_datetime",
-                    variable_name=_VARIABLE_NAME,
-                )
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(datetime_format=fmt),
+                wrap=lang_config.wrap,
             )
-    return cases
+    return variants
 
 
 @beartype
@@ -1872,7 +1787,7 @@ def _build_sequence_variants() -> dict[str, _Variant]:
         for fmt in list(spec.sequence_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_sequence_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(sequence_format=fmt),
                 wrap=lang_config.wrap,
@@ -1890,18 +1805,19 @@ def _build_set_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_config = spec.set_format_config
+        default_format = spec.set_format
         for fmt in list(spec.set_formats):
-            if fmt.value is default_config:
+            if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_set_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(set_format=fmt),
-                wrap=lang_config.set_wrap,
+                wrap=lang_config.wrap,
             )
     return variants
 
 
+@beartype
 def _build_comment_variants() -> dict[str, _Variant]:
     """Build comment-format variants for all languages with multiple
     formats.
@@ -1912,11 +1828,11 @@ def _build_comment_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_config = spec.comment_config
+        default_format = spec.comment_format
         for fmt in list(spec.comment_formats):
-            if fmt.value is default_config:
+            if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_comment_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(comment_format=fmt),
                 wrap=lang_config.wrap,
@@ -1935,12 +1851,11 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        type_hints_enum = spec.variable_type_hints_formats
-        default_member = next(iter(type_hints_enum))
-        for fmt in list(type_hints_enum):
-            if fmt is default_member:
+        default_format = spec.variable_type_hints
+        for fmt in list(spec.variable_type_hints_formats):
+            if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variant_key = f"{lang_name}_type_hints_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(variable_type_hints=fmt),
                 wrap=lang_config.wrap,
@@ -1982,7 +1897,7 @@ def test_golden_file(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -2019,7 +1934,7 @@ def test_golden_file_with_variable_name(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
         error_on_coercion=False,
@@ -2057,7 +1972,7 @@ def test_golden_file_combined_variable_forms(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
         error_on_coercion=False,
@@ -2067,7 +1982,7 @@ def test_golden_file_combined_variable_forms(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,
         error_on_coercion=False,
@@ -2085,13 +2000,13 @@ def test_golden_file_combined_variable_forms(
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    cases.extend(_build_date_variants())
-    cases.extend(_build_datetime_variants())
     variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
+        (_build_date_variants(), "scalar_date", None),
+        (_build_datetime_variants(), "scalar_datetime", None),
         (_build_sequence_variants(), "simple_sequence", None),
         (_build_set_variants(), "set", None),
         (_build_comment_variants(), "comments", None),
-        (_build_type_hint_variants(), "simple_dict", _VARIABLE_NAME),
+        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME),
     ]
     for variants, case_dir_name, variable_name in variant_sources:
         for variant_name, variant in variants.items():
@@ -2127,16 +2042,19 @@ def test_format_variant_golden_file(
     )
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=variant.spec,
-        line_prefix="",
-        indent="    ",
-        wrap=True,
-        variable_name=variant_case.variable_name,
-        new_variable=True,
-        error_on_coercion=False,
-    )
+    try:
+        result = literalizer.literalize_yaml(
+            yaml_string=yaml_string,
+            language=variant.spec,
+            line_prefix="",
+            indent="    ",
+            include_delimiters=True,
+            variable_name=variant_case.variable_name,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+    except NullInCollectionError:
+        pytest.skip("Format rejects null elements in this input")
     wrapped = variant.wrap(result)
     file_regression.check(
         contents=wrapped + "\n",

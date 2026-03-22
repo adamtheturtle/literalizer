@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -165,7 +165,7 @@ _string_format: Callable[[str], str] = format_string_fortran
 
 
 @beartype
-class Fortran(metaclass=HasFormatEnums):
+class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
     extension = ".f90"
@@ -201,7 +201,7 @@ class Fortran(metaclass=HasFormatEnums):
         """Sequence type options for Fortran."""
 
         LIST = SequenceFormatConfig(
-            open_str="flist([fval_t :: ",
+            sequence_open=fixed_sequence_open(open_str="flist([fval_t :: "),
             close="])",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -254,19 +254,21 @@ class Fortran(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.EXCLAMATION,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Fortran language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "fnull()"
         self.true_literal = "fbool(.true.)"
         self.false_literal = "fbool(.false.)"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="fmap([fval_t :: "),
             close="])",
@@ -282,6 +284,7 @@ class Fortran(metaclass=HasFormatEnums):
         self.format_string: Callable[[str], str] = _string_format
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

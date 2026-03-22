@@ -8,8 +8,8 @@ from literalizer._formatters import fixed_dict_open, fixed_sequence_open
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
     Language,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -18,8 +18,8 @@ from literalizer._language import (
 __all__ = [
     "CommentConfig",
     "DictFormatConfig",
-    "HasFormatEnums",
     "Language",
+    "LanguageCls",
     "OrderedMapFormatConfig",
     "SequenceFormatConfig",
     "SetFormatConfig",

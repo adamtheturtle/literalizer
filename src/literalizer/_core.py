@@ -624,7 +624,7 @@ def _literalize(
     language: Language,
     line_prefix: str,
     indent: str,
-    wrap: bool,
+    include_delimiters: bool,
     error_on_coercion: bool,
 ) -> str:
     r"""Convert data to native language literal text.
@@ -648,9 +648,10 @@ def _literalize(
             for 2-tab margin).  Positions the generated block at
             the right column in surrounding source code.
         indent: Indentation step for elements inside delimiters when
-            *wrap* is ``True`` (e.g. ``"    "`` for 4-space indent).
-            Ignored when *wrap* is ``False``.
-        wrap: If True, wrap the output in delimiters
+            *include_delimiters* is ``True``
+            (e.g. ``"    "`` for 4-space indent).
+            Ignored when *include_delimiters* is ``False``.
+        include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
         error_on_coercion: If ``True``, raise
@@ -680,7 +681,7 @@ def _literalize(
     if isinstance(data, scalar_types) or data is None:
         return f"{line_prefix}{_format_scalar(value=data, spec=spec)}"
 
-    body_prefix = line_prefix + indent if wrap else line_prefix
+    body_prefix = line_prefix + indent if include_delimiters else line_prefix
     lines: list[str] = []
 
     is_ordered_map = isinstance(data, ordereddict)
@@ -691,7 +692,7 @@ def _literalize(
             for k, v in dict_data.items()
             if not (spec.skip_null_dict_values and v is None)
         ]
-        if not entries and wrap and dict_data:
+        if not entries and include_delimiters and dict_data:
             empty_value: ordereddict | dict[str, Value] = (
                 ordereddict() if is_ordered_map else {}
             )
@@ -733,7 +734,7 @@ def _literalize(
 
     body = "\n".join(lines)
 
-    if not wrap or not body:
+    if not include_delimiters or not body:
         return body
 
     return _wrap_body(
@@ -752,7 +753,7 @@ def literalize_json(
     language: Language,
     line_prefix: str,
     indent: str,
-    wrap: bool,
+    include_delimiters: bool,
     variable_name: str | None,
     new_variable: bool,
     error_on_coercion: bool,
@@ -772,9 +773,10 @@ def literalize_json(
             for 2-tab margin).  Positions the generated block at
             the right column in surrounding source code.
         indent: Indentation step for elements inside delimiters when
-            *wrap* is ``True`` (e.g. ``"    "`` for 4-space indent).
-            Ignored when *wrap* is ``False``.
-        wrap: If True, wrap the output in delimiters
+            *include_delimiters* is ``True``
+            (e.g. ``"    "`` for 4-space indent).
+            Ignored when *include_delimiters* is ``False``.
+        include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
             declaration using the language's
@@ -810,7 +812,7 @@ def literalize_json(
         language=language,
         line_prefix=line_prefix,
         indent=indent,
-        wrap=wrap,
+        include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
     if variable_name is not None:
@@ -876,7 +878,7 @@ def _resolve_yaml_set_comments(
     comment_prefix: str,
     comment_suffix: str,
     comment_line_prefix: str,
-    wrap: bool,
+    include_delimiters: bool,
 ) -> _ResolvedComments:
     """Resolve comments for a YAML set."""
     ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
@@ -891,7 +893,7 @@ def _resolve_yaml_set_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        wrap=wrap,
+        include_delimiters=include_delimiters,
     )
     return _ResolvedComments(result=result, pending=None)
 
@@ -906,7 +908,7 @@ def _resolve_yaml_collection_comments(
     comment_prefix: str,
     comment_suffix: str,
     comment_line_prefix: str,
-    wrap: bool,
+    include_delimiters: bool,
 ) -> _ResolvedComments:
     """Resolve comments for a YAML list or dict."""
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
@@ -939,7 +941,7 @@ def _resolve_yaml_collection_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        wrap=wrap,
+        include_delimiters=include_delimiters,
     )
     return _ResolvedComments(result=result, pending=None)
 
@@ -955,7 +957,7 @@ def _resolve_comments(
     comment_suffix: str,
     comment_line_prefix: str,
     line_prefix: str,
-    wrap: bool,
+    include_delimiters: bool,
 ) -> _ResolvedComments:
     """Resolve YAML comments for the given data type."""
     if isinstance(data, set):
@@ -966,7 +968,7 @@ def _resolve_comments(
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
             comment_line_prefix=comment_line_prefix,
-            wrap=wrap,
+            include_delimiters=include_delimiters,
         )
 
     if not isinstance(data, (list, dict)):
@@ -993,7 +995,7 @@ def _resolve_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        wrap=wrap,
+        include_delimiters=include_delimiters,
     )
 
 
@@ -1004,7 +1006,7 @@ def literalize_yaml(
     language: Language,
     line_prefix: str,
     indent: str,
-    wrap: bool,
+    include_delimiters: bool,
     variable_name: str | None,
     new_variable: bool,
     error_on_coercion: bool,
@@ -1027,9 +1029,10 @@ def literalize_yaml(
             for 2-tab margin).  Positions the generated block at
             the right column in surrounding source code.
         indent: Indentation step for elements inside delimiters when
-            *wrap* is ``True`` (e.g. ``"    "`` for 4-space indent).
-            Ignored when *wrap* is ``False``.
-        wrap: If True, wrap the output in delimiters
+            *include_delimiters* is ``True``
+            (e.g. ``"    "`` for 4-space indent).
+            Ignored when *include_delimiters* is ``False``.
+        include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
             declaration using the language's
@@ -1065,14 +1068,16 @@ def literalize_yaml(
         language=language,
         line_prefix=line_prefix,
         indent=indent,
-        wrap=wrap,
+        include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
 
     comment_cfg = language.comment_config
     cp = comment_cfg.prefix
     cs = comment_cfg.suffix
-    comment_line_prefix = line_prefix + indent if wrap else line_prefix
+    comment_line_prefix = (
+        line_prefix + indent if include_delimiters else line_prefix
+    )
 
     resolved = _resolve_comments(
         yaml_string=yaml_string,
@@ -1083,7 +1088,7 @@ def literalize_yaml(
         comment_suffix=cs,
         comment_line_prefix=comment_line_prefix,
         line_prefix=line_prefix,
-        wrap=wrap,
+        include_delimiters=include_delimiters,
     )
     result = resolved.result
 

@@ -8,7 +8,6 @@ from beartype import beartype
 
 from literalizer._formatters import (
     fixed_dict_open,
-    fixed_sequence_open,
     format_bytes_hex,
     format_date_java,
     format_datetime_java_instant,
@@ -21,16 +20,35 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer.exceptions import NullInCollectionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from literalizer._types import Value
+
+
+_LIST_OF_OPEN = "List.of("
+
+
+@beartype
+def _list_of_open(items: list[Any]) -> str:
+    """Return ``List.of(`` after checking for null elements.
+
+    Java's ``List.of()`` throws ``NullPointerException`` on null elements.
+    """
+    if any(item is None for item in items):
+        msg = (
+            "Java's List.of() does not accept null elements. "
+            "Use sequence_format=ARRAY instead."
+        )
+        raise NullInCollectionError(msg)
+    return _LIST_OF_OPEN
 
 
 @beartype
@@ -89,7 +107,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Java(metaclass=HasFormatEnums):
+class Java(metaclass=LanguageCls):
     """Java language specification.
 
     Args:
@@ -105,6 +123,13 @@ class Java(metaclass=HasFormatEnums):
             * ``datetime_formats.ZONED`` — ``ZonedDateTime.of(...)`` call,
               e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
               ZoneId.of("UTC"))``.
+
+        sequence_format: How to format sequences.
+
+            * ``sequence_formats.ARRAY`` — Java array literal,
+              e.g. ``new Object[]{1, 2, 3}``.
+            * ``sequence_formats.LIST`` — ``List.of(...)`` call,
+              e.g. ``List.of(1, 2, 3)``.
     """
 
     extension = ".java"
@@ -141,18 +166,21 @@ class Java(metaclass=HasFormatEnums):
         """Sequence type options for Java."""
 
         ARRAY = SequenceFormatConfig(
-            open_str="new Object[]{",
+            sequence_open=typed_sequence_open(
+                schema_to_opener=_java_schema_to_opener,
+                fallback="new Object[]{",
+            ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
         )
         LIST = SequenceFormatConfig(
-            open_str="List.of(",
+            sequence_open=_list_of_open,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
-            empty_sequence=None,
+            empty_sequence="List.of()",
         )
 
         @property
@@ -205,25 +233,21 @@ class Java(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Java language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        sequence_open_fn: Callable[[list[Value]], str]
-        if sequence_format is self.sequence_formats.ARRAY:
-            sequence_open_fn = typed_sequence_open(
-                schema_to_opener=_java_schema_to_opener,
-                fallback=fmt.open_str,
-            )
-        else:
-            sequence_open_fn = fixed_sequence_open(open_str=fmt.open_str)
-        self.sequence_open = sequence_open_fn
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",
@@ -241,6 +265,7 @@ class Java(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

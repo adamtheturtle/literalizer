@@ -19,7 +19,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -104,7 +104,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Go(metaclass=HasFormatEnums):
+class Go(metaclass=LanguageCls):
     """Go language specification.
 
     Args:
@@ -154,7 +154,10 @@ class Go(metaclass=HasFormatEnums):
         """Sequence type options for Go."""
 
         SLICE = SequenceFormatConfig(
-            open_str="[]any{",
+            sequence_open=typed_sequence_open(
+                schema_to_opener=_go_schema_to_opener,
+                fallback="[]any{",
+            ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -211,20 +214,21 @@ class Go(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.SLICE,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Go language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_go_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 schema_to_opener=_go_dict_schema_to_opener,
@@ -246,6 +250,7 @@ class Go(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_go_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

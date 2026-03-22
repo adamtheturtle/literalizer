@@ -6,3 +6,4 @@ def main():
         # Enable debug mode
         "debug": "True",
     }
+    _ = my_data

@@ -19,7 +19,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -86,7 +86,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class VisualBasic(metaclass=HasFormatEnums):
+class VisualBasic(metaclass=LanguageCls):
     """Visual Basic (.NET) language specification.
 
     VB.NET collection initializers (``New T() { ... }``,
@@ -130,7 +130,10 @@ class VisualBasic(metaclass=HasFormatEnums):
         """Sequence type options for Visual Basic."""
 
         ARRAY = SequenceFormatConfig(
-            open_str="New Object() {",
+            sequence_open=typed_sequence_open(
+                schema_to_opener=_vb_schema_to_opener,
+                fallback="New Object() {",
+            ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -183,20 +186,21 @@ class VisualBasic(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.HASH_SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize VisualBasic language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "Nothing"
         self.true_literal = "True"
         self.false_literal = "False"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_vb_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(
                 open_str="New Dictionary(Of String, Object) From {",
@@ -216,6 +220,7 @@ class VisualBasic(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

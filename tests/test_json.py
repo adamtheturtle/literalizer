@@ -28,7 +28,7 @@ CPP = Cpp(
     date_format=Cpp.date_formats.CPP,
     datetime_format=Cpp.datetime_formats.CPP,
     bytes_format=Cpp.bytes_formats.HEX,
-    sequence_format=Cpp.sequence_formats.VECTOR,
+    sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
 )
 CSHARP = CSharp(
     date_format=CSharp.date_formats.CSHARP,
@@ -72,7 +72,7 @@ def test_dict_python() -> None:
         language=PYTHON,
         line_prefix="    ",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -80,14 +80,14 @@ def test_dict_python() -> None:
     assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
 
 
-def test_dict_wrap() -> None:
+def test_dict_include_delimiters() -> None:
     """Wrapping a dict adds braces and indentation."""
     result = literalize_json(
         json_string=json.dumps(obj={"a": 1, "b": 2}),
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -102,15 +102,20 @@ def test_dict_wrap() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(argnames="wrap", argvalues=[False, True])
-def test_dict_empty(*, wrap: bool) -> None:
-    """An empty dict produces an empty string regardless of wrap."""
+@pytest.mark.parametrize(
+    argnames="include_delimiters",
+    argvalues=[False, True],
+)
+def test_dict_empty(*, include_delimiters: bool) -> None:
+    """An empty dict produces an empty string regardless of
+    include_delimiters.
+    """
     result = literalize_json(
         json_string=json.dumps(obj={}),
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=wrap,
+        include_delimiters=include_delimiters,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -125,7 +130,7 @@ def test_integers() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -146,7 +151,7 @@ def test_floats() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -166,7 +171,7 @@ def test_string_escaping() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -184,7 +189,7 @@ def test_nested_arrays() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -199,7 +204,7 @@ def test_dicts() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -214,7 +219,7 @@ def test_nested_dict_in_sequence() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -229,7 +234,7 @@ def test_nested_sequence_in_dict() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -244,7 +249,7 @@ def test_indent_spaces() -> None:
         language=PYTHON,
         line_prefix="        ",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -259,7 +264,7 @@ def test_indent_tabs() -> None:
         language=GO,
         line_prefix="\t\t",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -267,14 +272,14 @@ def test_indent_tabs() -> None:
     assert result == "\t\ttrue,\n\t\tfalse,"
 
 
-def test_wrap() -> None:
+def test_include_delimiters() -> None:
     """Wrapping adds brackets and indentation."""
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -289,14 +294,14 @@ def test_wrap() -> None:
     assert result == expected
 
 
-def test_wrap_with_line_prefix() -> None:
+def test_include_delimiters_with_line_prefix() -> None:
     """Wrapping respects the given line_prefix."""
     result = literalize_json(
         json_string=json.dumps(obj=[["a", 1.0]]),
         language=PYTHON,
         line_prefix="    ",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -305,15 +310,20 @@ def test_wrap_with_line_prefix() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(argnames="wrap", argvalues=[False, True])
-def test_empty_data(*, wrap: bool) -> None:
-    """An empty list produces an empty string regardless of wrap."""
+@pytest.mark.parametrize(
+    argnames="include_delimiters",
+    argvalues=[False, True],
+)
+def test_empty_data(*, include_delimiters: bool) -> None:
+    """An empty list produces an empty string regardless of
+    include_delimiters.
+    """
     result = literalize_json(
         json_string=json.dumps(obj=[]),
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=wrap,
+        include_delimiters=include_delimiters,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -346,7 +356,7 @@ def test_scalar(
         language=language,
         line_prefix="",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -361,7 +371,7 @@ def test_scalar_with_indent() -> None:
         language=PYTHON,
         line_prefix="    ",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -369,14 +379,14 @@ def test_scalar_with_indent() -> None:
     assert result == "    42"
 
 
-def test_scalar_wrap_ignored() -> None:
+def test_scalar_include_delimiters_ignored() -> None:
     """Wrap is ignored for scalar values."""
     result = literalize_json(
         json_string="42",
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -392,7 +402,7 @@ def test_literalize_json_array() -> None:
         language=PYTHON,
         line_prefix="    ",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -409,7 +419,7 @@ def test_literalize_json_object() -> None:
         language=PYTHON,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -432,7 +442,7 @@ def test_literalize_json_invalid() -> None:
             language=PYTHON,
             line_prefix="",
             indent="    ",
-            wrap=False,
+            include_delimiters=False,
             variable_name=None,
             new_variable=True,
             error_on_coercion=False,
@@ -452,7 +462,7 @@ def test_part1_sample_python() -> None:
         language=PYTHON,
         line_prefix="        ",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -474,7 +484,7 @@ def test_part2_sample_go() -> None:
         language=GO,
         line_prefix="        ",
         indent="    ",
-        wrap=False,
+        include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -492,7 +502,7 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             language=PYTHON,
             line_prefix="",
             indent="    ",
-            wrap=False,
+            include_delimiters=False,
             variable_name=None,
             new_variable=True,
             error_on_coercion=False,
@@ -515,7 +525,7 @@ def test_error_on_coercion_json_raises() -> None:
             language=MOJO,
             line_prefix="",
             indent="    ",
-            wrap=True,
+            include_delimiters=True,
             variable_name=None,
             new_variable=True,
             error_on_coercion=True,
@@ -529,7 +539,7 @@ def test_error_on_coercion_json_no_raise_homogeneous() -> None:
         language=MOJO,
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=True,
@@ -553,7 +563,7 @@ def test_error_on_coercion_json_raises_sibling_lists() -> None:
             language=MOJO,
             line_prefix="",
             indent="    ",
-            wrap=True,
+            include_delimiters=True,
             variable_name=None,
             new_variable=True,
             error_on_coercion=True,
@@ -570,7 +580,7 @@ def test_error_on_coercion_json_raises_nested_sibling_lists() -> None:
             language=MOJO,
             line_prefix="",
             indent="    ",
-            wrap=True,
+            include_delimiters=True,
             variable_name=None,
             new_variable=True,
             error_on_coercion=True,

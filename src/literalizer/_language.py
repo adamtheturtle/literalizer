@@ -13,7 +13,7 @@ from literalizer._types import Value
 class SequenceFormatConfig:
     """Configuration for a single sequence format."""
 
-    open_str: str
+    sequence_open: Callable[[list[Value]], str]
     close: str
     supports_heterogeneity: bool
     single_element_trailing_comma: bool
@@ -64,11 +64,11 @@ class SequenceFormat(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
-class HasFormatEnums(type):
+class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
-    Language classes use ``metaclass=HasFormatEnums`` so that downstream
-    code can write ``dict[str, HasFormatEnums]`` and access
+    Language classes use ``metaclass=LanguageCls`` so that downstream
+    code can write ``dict[str, LanguageCls]`` and access
     ``cls.DateFormats``, ``cls.SequenceFormats``, etc. without ``cast``
     or ``type: ignore``.
     """
@@ -84,7 +84,7 @@ class HasFormatEnums(type):
 
 
 @runtime_checkable
-class Language(Protocol):
+class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Protocol describing how a language formats scalar literals and
     sequences.
 
@@ -276,6 +276,21 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def variable_type_hints(self) -> enum.Enum:
+        """The variable type hint option chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def sequence_format(self) -> SequenceFormat:
         """The sequence format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def set_format(self) -> enum.Enum:
+        """The set format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def comment_format(self) -> enum.Enum:
+        """The comment format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis

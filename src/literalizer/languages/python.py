@@ -12,6 +12,7 @@ from literalizer._formatters import (
     fixed_sequence_open,
     format_bytes_hex,
     format_bytes_python,
+    format_date_iso,
     format_date_python,
     format_datetime_epoch,
     format_datetime_python,
@@ -22,7 +23,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -122,7 +123,7 @@ def _format_variable_declaration_inline_hint(name: str, value: str) -> str:
 
 
 @beartype
-class Python(metaclass=HasFormatEnums):
+class Python(metaclass=LanguageCls):
     """Python language specification.
 
     Args:
@@ -130,6 +131,8 @@ class Python(metaclass=HasFormatEnums):
 
             * ``date_formats.PYTHON`` — ``datetime.date`` constructor call,
               e.g. ``datetime.date(year=2024, month=1, day=15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -175,6 +178,7 @@ class Python(metaclass=HasFormatEnums):
         """Date formatting options for Python."""
 
         PYTHON = enum.member(value=format_date_python)
+        ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -204,14 +208,14 @@ class Python(metaclass=HasFormatEnums):
         """Sequence type options for Python."""
 
         TUPLE = SequenceFormatConfig(
-            open_str="(",
+            sequence_open=fixed_sequence_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
             empty_sequence=None,
         )
         LIST = SequenceFormatConfig(
-            open_str="[",
+            sequence_open=fixed_sequence_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -273,16 +277,16 @@ class Python(metaclass=HasFormatEnums):
         comment_format: CommentFormats = CommentFormats.HASH,
     ) -> None:
         """Initialize Python language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
@@ -302,6 +306,7 @@ class Python(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

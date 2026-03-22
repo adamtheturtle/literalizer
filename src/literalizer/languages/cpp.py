@@ -20,7 +20,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -108,7 +108,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Cpp(metaclass=HasFormatEnums):
+class Cpp(metaclass=LanguageCls):
     """C++ language specification.
 
     Args:
@@ -158,15 +158,21 @@ class Cpp(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C++."""
 
-        VECTOR = SequenceFormatConfig(
-            open_str="{",
+        INITIALIZER_LIST = SequenceFormatConfig(
+            sequence_open=typed_sequence_open(
+                schema_to_opener=_cpp_schema_to_opener,
+                fallback="{",
+            ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
         )
         ARRAY = SequenceFormatConfig(
-            open_str="{",
+            sequence_open=counted_typed_sequence_open(
+                schema_and_count_to_opener=_cpp_array_schema_to_opener,
+                fallback="{",
+            ),
             close="}",
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
@@ -221,30 +227,23 @@ class Cpp(metaclass=HasFormatEnums):
         date_format: DateFormats = DateFormats.CPP,
         datetime_format: DatetimeFormats = DatetimeFormats.CPP,
         bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.VECTOR,
+        sequence_format: SequenceFormats = SequenceFormats.INITIALIZER_LIST,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Cpp language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        sequence_open_fn: Callable[[list[Value]], str]
-        if sequence_format is self.sequence_formats.ARRAY:
-            sequence_open_fn = counted_typed_sequence_open(
-                schema_and_count_to_opener=_cpp_array_schema_to_opener,
-                fallback=fmt.open_str,
-            )
-        else:
-            sequence_open_fn = typed_sequence_open(
-                schema_to_opener=_cpp_schema_to_opener,
-                fallback=fmt.open_str,
-            )
-        self.sequence_open = sequence_open_fn
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 schema_to_opener=_cpp_dict_schema_to_opener,
@@ -266,6 +265,7 @@ class Cpp(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

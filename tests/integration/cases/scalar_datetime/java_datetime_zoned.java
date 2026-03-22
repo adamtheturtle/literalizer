@@ -3,7 +3,5 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Set;
 class Check {
-    public static void check() {
-var my_data = ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("+00:00"));
-    }
+    Object x = ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("+00:00"));
 }

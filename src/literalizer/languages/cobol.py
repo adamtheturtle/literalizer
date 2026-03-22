@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -216,7 +216,7 @@ _string_format: Callable[[str], str] = _format_string_cobol
 
 
 @beartype
-class Cobol(metaclass=HasFormatEnums):
+class Cobol(metaclass=LanguageCls):
     """GnuCOBOL free-format language specification.
 
     Data is represented as COBOL WORKING-STORAGE SECTION level items:
@@ -257,7 +257,7 @@ class Cobol(metaclass=HasFormatEnums):
         """Sequence type options for COBOL."""
 
         SEQUENCE = SequenceFormatConfig(
-            open_str="",
+            sequence_open=fixed_sequence_open(open_str=""),
             close="",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -310,19 +310,21 @@ class Cobol(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.SEQUENCE,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.STAR_ANGLE,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize COBOL language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "SPACES"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.true_literal = '"TRUE"'
         self.false_literal = '"FALSE"'
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str=""),
             close="",
@@ -342,6 +344,7 @@ class Cobol(metaclass=HasFormatEnums):
         self.format_set_entry: Callable[[str], str] = (
             _format_cobol_sequence_entry
         )
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
