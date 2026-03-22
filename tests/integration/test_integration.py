@@ -67,6 +67,10 @@ def _java_time_imports(content: str) -> str:
         types.append("Instant")
     if "LocalDate" in content:
         types.append("LocalDate")
+    if "ZoneId" in content:
+        types.append("ZoneId")
+    if "ZonedDateTime" in content:
+        types.append("ZonedDateTime")
     return "".join(f"import java.time.{t};\n" for t in types)
 
 
