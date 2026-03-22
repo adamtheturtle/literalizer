@@ -11,7 +11,7 @@ from literalizer.languages import ALL_LANGUAGES
 def test_all_languages_have_lint_workflow(
     request: pytest.FixtureRequest,
 ) -> None:
-    """Every language has a lint job in lint.yml."""
+    """Every language has a lint job in the lint workflow."""
     lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
     ruamel_yaml = YAML()
     workflow: dict[str, Any] = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
@@ -41,7 +41,7 @@ def test_all_languages_have_lint_workflow(
 def test_all_lint_jobs_in_completion_gate(
     request: pytest.FixtureRequest,
 ) -> None:
-    """Every lint-* job is in completion-lint.needs."""
+    """Every lint job is in completion-lint needs."""
     lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
     ruamel_yaml = YAML()
     workflow: dict[str, Any] = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
