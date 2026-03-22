@@ -125,7 +125,7 @@ def _compute_preamble(
     if types & {dict, list, set, ordereddict}:
         lines.extend(language.type_hint_collection_preamble_lines)
 
-    # Deduplicate preserving insertion order.
+    # De-duplicate preserving insertion order.
     seen: set[str] = set()
     result: list[str] = []
     for line in lines:
