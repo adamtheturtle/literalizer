@@ -66,8 +66,14 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
         pytest.param(
             Elixir.DatetimeFormats.ELIXIR,
             _SAMPLE_DATETIME,
-            "~U[2024-01-15 12:30:00]",
-            id="format_datetime_elixir",
+            "~N[2024-01-15 12:30:00]",
+            id="format_datetime_elixir_naive",
+        ),
+        pytest.param(
+            Elixir.DatetimeFormats.ELIXIR,
+            datetime.datetime.fromisoformat("2024-01-15T12:30:00+00:00"),
+            "~U[2024-01-15 12:30:00+00:00]",
+            id="format_datetime_elixir_aware",
         ),
         pytest.param(
             Java.DateFormats.JAVA,

@@ -54,11 +54,15 @@ def _format_date_elixir(value: datetime.date) -> str:
 
 @beartype
 def _format_datetime_elixir(value: datetime.datetime) -> str:
-    """Format a datetime as an Elixir ``~U[...]`` sigil."""
+    """Format a datetime as an Elixir sigil.
+
+    Uses ``~U`` for timezone-aware datetimes and ``~N`` for naive ones.
+    """
     iso = value.isoformat()
-    # Elixir ~U sigil uses a space separator instead of T.
+    # Elixir sigils use a space separator instead of T.
     iso = iso.replace("T", " ")
-    return f"~U[{iso}]"
+    sigil = "U" if value.tzinfo is not None else "N"
+    return f"~{sigil}[{iso}]"
 
 
 _string_format: Callable[[str], str] = format_string_backslash
@@ -86,8 +90,10 @@ class Elixir(metaclass=LanguageCls):
 
             * ``datetime_formats.ISO`` — ISO 8601 string literal,
               e.g. ``"2024-01-15T12:30:00+00:00"``.
-            * ``datetime_formats.ELIXIR`` — Elixir ``~U`` sigil,
-              e.g. ``~U[2024-01-15 12:30:00+00:00]``.
+            * ``datetime_formats.ELIXIR`` — Elixir ``~U`` sigil for
+              timezone-aware datetimes (e.g. ``~U[2024-01-15 12:30:00+00:00]``)
+              or ``~N`` sigil for naive datetimes
+              (e.g. ``~N[2024-01-15 12:30:00]``).
 
         sequence_format: Which Elixir sequence type to use.
 
