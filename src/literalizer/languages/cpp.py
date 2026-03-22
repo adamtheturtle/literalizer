@@ -234,7 +234,7 @@ class Cpp(metaclass=HasFormatEnums):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
         sequence_open_fn: Callable[[list[Value]], str]
-        if sequence_format is self.SequenceFormats.ARRAY:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+        if sequence_format is self.sequence_formats.ARRAY:
             sequence_open_fn = counted_typed_sequence_open(
                 schema_and_count_to_opener=_cpp_array_schema_to_opener,
                 fallback=fmt.open_str,

@@ -220,7 +220,7 @@ class Dart(metaclass=HasFormatEnums):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
         sequence_open_fn: Callable[[list[Value]], str]
-        if sequence_format is self.SequenceFormats.LIST:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+        if sequence_format is self.sequence_formats.LIST:
             sequence_open_fn = typed_sequence_open(
                 schema_to_opener=_dart_schema_to_opener,
                 fallback=fmt.open_str,
