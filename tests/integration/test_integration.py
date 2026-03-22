@@ -79,7 +79,8 @@ def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     time_imports = _java_time_imports(content=content)
     return f"""\
-{time_imports}import java.util.Map;
+{time_imports}import java.util.List;
+import java.util.Map;
 import java.util.Set;
 class Check {{
     Object x = {content};
@@ -117,8 +118,10 @@ def _wrap_cpp(content: str) -> str:
     initialization.
     """
     chrono = "#include <chrono>\n" if "std::chrono" in content else ""
+    array = "#include <array>\n" if "std::array" in content else ""
     return (
         f"{chrono}"
+        f"{array}"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
         "#include <map>\n"
@@ -137,6 +140,8 @@ def _wrap_cpp(content: str) -> str:
 @beartype
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
+    if content.lstrip().startswith("("):
+        content = content.replace("nil", "nil as Any?")
     return f"let x: Any? = {content}"
 
 
@@ -238,8 +243,12 @@ def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a custom Val discriminated union."""
     fsharp = literalizer.languages.FSharp()
     typed = fsharp.format_sequence_entry(content)
+    val_type = "Val array" if content.lstrip().startswith("[|") else "Val"
     return (
-        "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {typed}"
+        "module Check\n\n"
+        + _FSHARP_VAL_TYPE
+        + "\n"
+        + f"let x: {val_type} = {typed}"
     )
 
 
@@ -248,11 +257,12 @@ def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a custom val_t variant type."""
     ocaml = literalizer.languages.OCaml()
     typed = ocaml.format_sequence_entry(content)
+    val_type = "val_t array" if content.lstrip().startswith("[|") else "val_t"
     return (
         "module Check = struct\n\n"
         + _OCAML_VAL_TYPE
         + "\n"
-        + f"let x : val_t = {typed}\n\n"
+        + f"let x : {val_type} = {typed}\n\n"
         + "end"
     )
 
@@ -336,8 +346,11 @@ def _wrap_haskell(content: str) -> str:
         "instance Fractional Val where\n"
         "    fromRational r = HFloat (realToFrac r)\n"
         '    a / b = error "not implemented"\n'
-        "x :: Val\n"
-        f"x = {content}"
+        + (
+            f"x = {content}"
+            if content.lstrip().startswith("(")
+            else f"x :: Val\nx = {content}"
+        )
     )
 
 
@@ -411,8 +424,10 @@ def _wrap_cpp_varname(content: str) -> str:
         else content
     )
     chrono = "#include <chrono>\n" if "std::chrono" in content else ""
+    array = "#include <array>\n" if "std::array" in content else ""
     return (
         f"{chrono}"
+        f"{array}"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
         "#include <map>\n"
@@ -630,7 +645,7 @@ def _wrap_r(content: str) -> str:
 @beartype
 def _wrap_nim(content: str) -> str:
     """Wrap in a Nim import json and %* expression."""
-    return f"import json\nlet _ = %*{content}"
+    return f"import json\nlet _ = %* {content}"
 
 
 @beartype

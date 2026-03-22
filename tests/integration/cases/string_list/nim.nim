@@ -1,5 +1,5 @@
 import json
-let _ = %*@[
+let _ = %* @[
     "foo",
     "bar",
     "baz"

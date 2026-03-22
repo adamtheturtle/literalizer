@@ -1,5 +1,5 @@
 import json
-let _ = %*{
+let _ = %* {
     "name": "Alice",
     "age": 30,
     "active": true,

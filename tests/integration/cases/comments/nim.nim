@@ -1,5 +1,5 @@
 import json
-let _ = %*{
+let _ = %* {
     # Server configuration
     "host": "localhost",  # default host
     "port": 8080,

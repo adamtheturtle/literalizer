@@ -10,7 +10,7 @@ type val_t =
   | OMap of (string * val_t) list
   | OSet of val_t list
 
-let x : val_t = [|
+let x : val_t array = [|
     OInt 1;
     OStr "hello";
     OBool true;

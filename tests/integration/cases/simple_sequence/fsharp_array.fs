@@ -10,7 +10,7 @@ type Val =
     | FMap of (string * Val) list
     | FSet of Val list
 
-let x: Val = [|
+let x: Val array = [|
     FInt 1L;
     FStr "hello";
     FBool true;

@@ -34,13 +34,13 @@ if TYPE_CHECKING:
 @beartype
 def _format_variable_declaration(name: str, value: str) -> str:
     """Format a Nim ``var`` declaration using ``%*`` for JSON nodes."""
-    return f"var {name} = %*{value}"
+    return f"var {name} = %* {value}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format a Nim assignment to an existing variable using ``%*``."""
-    return f"{name} = %*{value}"
+    return f"{name} = %* {value}"
 
 
 _string_format: Callable[[str], str] = format_string_backslash

@@ -1,10 +1,10 @@
 import json
-var my_data = %*[
+var my_data = %* [
     "apple",
     "banana",
     "cherry"
 ]
-my_data = %*[
+my_data = %* [
     "apple",
     "banana",
     "cherry"

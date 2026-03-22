@@ -16,7 +16,6 @@ instance Num Val where
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"
-x :: Val
 x = (
     1,
     "hello",
