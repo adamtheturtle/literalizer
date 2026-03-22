@@ -1967,45 +1967,82 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
 }
 
 
+@dataclasses.dataclass
+class _VariantCase:
+    """A format-variant golden-file test case."""
+
+    variant_name: str
+    variant: _Variant
+    case_dir_name: str
+    variable_name: str | None
+
+
 @beartype
-def _build_date_variants() -> dict[str, _Variant]:
+def _build_date_variants() -> list[_VariantCase]:
     """Build datetime-format variants for scalar dates.
 
-    For each language that has a non-identity ``date_wrap`` callback,
-    create a variant for every datetime format.
+    For each language, create a variant for every datetime format.
+    Languages with a non-identity ``date_wrap`` use that wrapper with no
+    variable name; languages with ``_wrap_identity`` use ``varname_wrap``
+    with a variable name so the output is valid syntax.
     """
-    variants: dict[str, _Variant] = {}
+    cases: list[_VariantCase] = []
     for lang_name, lang_config in _LANGUAGES.items():
         if lang_config.date_wrap is _wrap_identity:
-            continue
+            wrap = lang_config.varname_wrap
+            variable_name: str | None = _VARIABLE_NAME
+        else:
+            wrap = lang_config.date_wrap
+            variable_name = None
         spec = lang_config.lang_cls()
         for fmt in list(spec.datetime_formats):
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(datetime_format=fmt),
-                wrap=lang_config.date_wrap,
+            cases.append(
+                _VariantCase(
+                    variant_name=variant_key,
+                    variant=_Variant(
+                        spec=lang_config.lang_cls(datetime_format=fmt),
+                        wrap=wrap,
+                    ),
+                    case_dir_name="scalar_date",
+                    variable_name=variable_name,
+                )
             )
-    return variants
+    return cases
 
 
-def _build_datetime_variants() -> dict[str, _Variant]:
+@beartype
+def _build_datetime_variants() -> list[_VariantCase]:
     """Build datetime-format variants for scalar datetimes.
 
-    For each language that has a non-identity ``datetime_wrap`` callback,
-    create a variant for every datetime format.
+    For each language, create a variant for every datetime format.
+    Languages with a non-identity ``datetime_wrap`` use that wrapper with
+    no variable name; languages with ``_wrap_identity`` use
+    ``varname_wrap`` with a variable name so the output is valid syntax.
     """
-    variants: dict[str, _Variant] = {}
+    cases: list[_VariantCase] = []
     for lang_name, lang_config in _LANGUAGES.items():
         if lang_config.datetime_wrap is _wrap_identity:
-            continue
+            wrap = lang_config.varname_wrap
+            variable_name: str | None = _VARIABLE_NAME
+        else:
+            wrap = lang_config.datetime_wrap
+            variable_name = None
         spec = lang_config.lang_cls()
         for fmt in list(spec.datetime_formats):
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(datetime_format=fmt),
-                wrap=lang_config.datetime_wrap,
+            cases.append(
+                _VariantCase(
+                    variant_name=variant_key,
+                    variant=_Variant(
+                        spec=lang_config.lang_cls(datetime_format=fmt),
+                        wrap=wrap,
+                    ),
+                    case_dir_name="scalar_datetime",
+                    variable_name=variable_name,
+                )
             )
-    return variants
+    return cases
 
 
 @beartype
@@ -2232,23 +2269,13 @@ def test_golden_file_combined_variable_forms(
     )
 
 
-@dataclasses.dataclass
-class _VariantCase:
-    """A format-variant golden-file test case."""
-
-    variant_name: str
-    variant: _Variant
-    case_dir_name: str
-    variable_name: str | None
-
-
 @beartype
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
+    cases.extend(_build_date_variants())
+    cases.extend(_build_datetime_variants())
     variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
-        (_build_date_variants(), "scalar_date", None),
-        (_build_datetime_variants(), "scalar_datetime", None),
         (_build_sequence_variants(), "simple_sequence", None),
         (_build_set_variants(), "set", None),
         (_build_comment_variants(), "comments", None),
