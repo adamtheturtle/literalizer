@@ -66,6 +66,7 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 # Ordered by priority: bool before int, datetime before date.
 _SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
+    (type(None), "None"),
     (bool, "bool"),
     (int, "int"),
     (float, "float"),
@@ -84,8 +85,6 @@ def _python_type_hint(
     set_config: SetFormatConfig,
 ) -> str:
     """Derive a Python type hint from the original data structure."""
-    if data is None:
-        return "None"
     for scalar_type, hint in _SCALAR_TYPE_HINTS:
         if isinstance(data, scalar_type):
             return hint
