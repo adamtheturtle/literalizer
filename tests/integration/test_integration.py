@@ -1879,12 +1879,8 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         type_hints_enum = spec.variable_type_hints_formats
-        members = list(type_hints_enum)
-        min_members_for_variants = 2
-        if len(members) < min_members_for_variants:
-            continue
         default_declaration = spec.format_variable_declaration
-        for fmt in members:
+        for fmt in list(type_hints_enum):
             candidate = lang_config.lang_cls(variable_type_hints=fmt)
             if candidate.format_variable_declaration is default_declaration:
                 continue
