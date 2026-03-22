@@ -157,6 +157,10 @@ class C(metaclass=HasFormatEnums):
             prefix="//",
             suffix="",
         )
+        BLOCK = CommentConfig(
+            prefix="/*",
+            suffix=" */",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
