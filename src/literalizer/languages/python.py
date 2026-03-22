@@ -341,10 +341,13 @@ class Python(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration = variable_type_hints.formatter(
-            sequence_config=self.sequence_format_config,
-            set_config=self.set_format_config,
+        decl_fmt: Callable[[str, str, Value], str] = (
+            variable_type_hints.formatter(
+                sequence_config=self.sequence_format_config,
+                set_config=self.set_format_config,
+            )
         )
+        self.format_variable_declaration = decl_fmt
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
