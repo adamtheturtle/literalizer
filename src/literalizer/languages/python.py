@@ -5,6 +5,7 @@ import enum
 import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
+from typing import cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -211,11 +212,8 @@ def _python_type_hint(
         return f"{set_type_hint}[{elem_union}]"
 
     # The only remaining Value type is list.
-    if not isinstance(data, list):  # pragma: no cover
-        msg = f"Unexpected data type: {type(data)}"
-        raise TypeError(msg)
     elem_union = _collection_element_union(
-        elements=data,
+        elements=cast("list[Value]", data),
         recurse=recurse,
     )
     hint = sequence_type_hint
