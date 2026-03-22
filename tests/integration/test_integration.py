@@ -2078,6 +2078,33 @@ def _build_comment_variants() -> dict[str, _Variant]:
 
 
 @beartype
+def _build_type_hint_variants() -> dict[str, _Variant]:
+    """Build variable-type-hint variants for all languages with multiple
+    formats.
+
+    For each language whose class has a ``VariableTypeHints`` enum,
+    create a variant for every non-default type-hint style.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        type_hints_enum = lang_config.lang_cls.VariableTypeHints
+        if type_hints_enum is None:
+            continue
+        default_formatter = lang_config.spec.format_variable_declaration
+        for fmt in list(type_hints_enum):
+            candidate = lang_config.lang_cls(variable_type_hints=fmt)
+            if candidate.format_variable_declaration is default_formatter:
+                continue
+            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variants[variant_key] = _Variant(
+                spec=candidate,
+                extension=lang_config.extension,
+                wrap=lang_config.wrap,
+            )
+    return variants
+
+
+@beartype
 def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
     cases_dir = Path(__file__).parent / "cases"
@@ -2223,40 +2250,23 @@ class _VariantCase:
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    variant_sources: list[tuple[dict[str, _Variant], str]] = [
-        (_build_date_variants(), "dates"),
-        (_build_sequence_variants(), "simple_sequence"),
-        (_build_set_variants(), "set"),
-        (_build_comment_variants(), "comments"),
+    variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
+        (_build_date_variants(), "dates", None),
+        (_build_sequence_variants(), "simple_sequence", None),
+        (_build_set_variants(), "set", None),
+        (_build_comment_variants(), "comments", None),
+        (_build_type_hint_variants(), "simple_dict", _VARIABLE_NAME),
     ]
-    for variants, case_dir_name in variant_sources:
+    for variants, case_dir_name, variable_name in variant_sources:
         for variant_name, variant in variants.items():
             cases.append(
                 _VariantCase(
                     variant_name=variant_name,
                     variant=variant,
                     case_dir_name=case_dir_name,
-                    variable_name=None,
+                    variable_name=variable_name,
                 )
             )
-    variable_type_hints_variants: dict[str, _Variant] = {
-        "python_inline": _Variant(
-            spec=literalizer.languages.Python(
-                variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
-            ),
-            extension=".py",
-            wrap=_wrap_python,
-        ),
-    }
-    for variant_name, variant in variable_type_hints_variants.items():
-        cases.append(
-            _VariantCase(
-                variant_name=variant_name,
-                variant=variant,
-                case_dir_name="simple_dict",
-                variable_name=_VARIABLE_NAME,
-            )
-        )
     return cases
 
 
