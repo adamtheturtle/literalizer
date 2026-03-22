@@ -186,9 +186,11 @@ class Kotlin(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=_kotlin_tuple_open,
+            preamble_lines=(),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -209,6 +211,7 @@ class Kotlin(metaclass=LanguageCls):
             open_str="setOf<Any?>(",
             close=")",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -268,6 +271,7 @@ class Kotlin(metaclass=LanguageCls):
             close=")",
             format_entry=dict_entry_with_separator(separator=" to "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -289,6 +293,7 @@ class Kotlin(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="linkedMapOf<String, Any?>(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

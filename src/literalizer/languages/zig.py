@@ -138,6 +138,7 @@ class Zig(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -154,6 +155,7 @@ class Zig(metaclass=LanguageCls):
             open_str=".{ .set = &.{",
             close="}}",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -206,6 +208,7 @@ class Zig(metaclass=LanguageCls):
             close="}}",
             format_entry=_format_zig_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -224,6 +227,7 @@ class Zig(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str=".{ .map = &.{",
                 close="}}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

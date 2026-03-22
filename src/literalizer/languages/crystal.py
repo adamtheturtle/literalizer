@@ -95,6 +95,7 @@ class Crystal(metaclass=LanguageCls):
             empty_sequence="[] of Nil",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="{"),
@@ -102,6 +103,7 @@ class Crystal(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -171,6 +173,7 @@ class Crystal(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=" => "),
             empty_dict="{} of Nil => Nil",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -189,6 +192,7 @@ class Crystal(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

@@ -151,6 +151,7 @@ class Ada(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="AList'(1 .. 0 => ANull)",
+            preamble_lines=(),
         )
 
         @property
@@ -167,6 +168,7 @@ class Ada(metaclass=LanguageCls):
             open_str="ASet'(",
             close=")",
             empty_set="ASet'(1 .. 0 => ANull)",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -219,6 +221,7 @@ class Ada(metaclass=LanguageCls):
             close=")",
             format_entry=_format_ada_dict_entry,
             empty_dict="AMap'(1 .. 0 => ANull)",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -235,6 +238,7 @@ class Ada(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="AMap'(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

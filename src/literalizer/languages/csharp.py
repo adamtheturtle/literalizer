@@ -166,6 +166,7 @@ class CSharp(metaclass=LanguageCls):
             open_str="new HashSet<object> {",
             close="}",
             empty_set="new HashSet<object>()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -245,6 +246,7 @@ class CSharp(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="new Dictionary<string, object> {",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

@@ -181,6 +181,7 @@ class Go(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -197,6 +198,7 @@ class Go(metaclass=LanguageCls):
             open_str="map[any]struct{}{",
             close="}",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -256,6 +258,7 @@ class Go(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -275,6 +278,7 @@ class Go(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[][2]any{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

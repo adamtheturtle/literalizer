@@ -128,6 +128,7 @@ class TypeScript(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
@@ -135,6 +136,7 @@ class TypeScript(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="[] as const",
+            preamble_lines=(),
         )
 
         @property
@@ -151,6 +153,7 @@ class TypeScript(metaclass=LanguageCls):
             open_str="new Set([",
             close="])",
             empty_set="new Set()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -207,6 +210,7 @@ class TypeScript(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -226,6 +230,7 @@ class TypeScript(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

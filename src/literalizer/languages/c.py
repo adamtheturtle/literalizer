@@ -143,6 +143,7 @@ class C(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -159,6 +160,7 @@ class C(metaclass=LanguageCls):
             open_str="((_CVal){.a = (_CVal[]){",
             close="}})",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -215,6 +217,7 @@ class C(metaclass=LanguageCls):
             close="}})",
             format_entry=_format_c_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -231,6 +234,7 @@ class C(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="((_CVal){.m = (_CKV[]){",
                 close="}})",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

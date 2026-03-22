@@ -118,6 +118,7 @@ class Julia(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="("),
@@ -125,6 +126,7 @@ class Julia(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -141,6 +143,7 @@ class Julia(metaclass=LanguageCls):
             open_str="Set([",
             close="])",
             empty_set="Set()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -197,6 +200,7 @@ class Julia(metaclass=LanguageCls):
             close=")",
             format_entry=dict_entry_with_separator(separator=" => "),
             empty_dict="Dict()",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -215,6 +219,7 @@ class Julia(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

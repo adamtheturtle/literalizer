@@ -159,6 +159,7 @@ class ObjectiveC(metaclass=LanguageCls):
             empty_sequence="@[]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            preamble_lines=(),
         )
 
         @property
@@ -175,6 +176,7 @@ class ObjectiveC(metaclass=LanguageCls):
             open_str="[NSSet setWithArray:@[",
             close="]]",
             empty_set="[NSSet set]",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -231,6 +233,7 @@ class ObjectiveC(metaclass=LanguageCls):
             close="}",
             format_entry=_format_objc_dict_entry,
             empty_dict="@{}",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -247,6 +250,7 @@ class ObjectiveC(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="@{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

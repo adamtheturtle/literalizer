@@ -184,6 +184,7 @@ class Matlab(metaclass=LanguageCls):
             empty_sequence="{}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            preamble_lines=(),
         )
 
         @property
@@ -200,6 +201,7 @@ class Matlab(metaclass=LanguageCls):
             open_str="{",
             close="}",
             empty_set="{}",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -256,6 +258,7 @@ class Matlab(metaclass=LanguageCls):
             close=")",
             format_entry=_format_matlab_dict_entry,
             empty_dict="struct()",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -274,6 +277,7 @@ class Matlab(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="struct(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

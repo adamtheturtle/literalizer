@@ -120,6 +120,7 @@ class Bash(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -136,6 +137,7 @@ class Bash(metaclass=LanguageCls):
             open_str="(",
             close=")",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -188,6 +190,7 @@ class Bash(metaclass=LanguageCls):
             close=")",
             format_entry=_format_bash_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -206,6 +209,7 @@ class Bash(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

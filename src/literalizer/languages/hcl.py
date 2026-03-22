@@ -88,6 +88,7 @@ class Hcl(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -104,6 +105,7 @@ class Hcl(metaclass=LanguageCls):
             open_str="[",
             close="]",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -160,6 +162,7 @@ class Hcl(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=" = "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -178,6 +181,7 @@ class Hcl(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

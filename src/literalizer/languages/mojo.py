@@ -105,6 +105,7 @@ class Mojo(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence="List[String]()",
+            preamble_lines=(),
         )
 
         @property
@@ -121,6 +122,7 @@ class Mojo(metaclass=LanguageCls):
             open_str="[",
             close="]",
             empty_set="Set[String]()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -173,6 +175,7 @@ class Mojo(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict="Dict[String, String]()",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -191,6 +194,7 @@ class Mojo(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

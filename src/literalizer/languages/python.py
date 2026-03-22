@@ -321,6 +321,7 @@ class Python(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
             empty_sequence=None,
+            preamble_lines=(),
         )
         LIST = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
@@ -328,6 +329,7 @@ class Python(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -349,11 +351,13 @@ class Python(metaclass=LanguageCls):
             open_str="{",
             close="}",
             empty_set="set()",
+            preamble_lines=(),
         )
         FROZENSET = SetFormatConfig(
             open_str="frozenset({",
             close="})",
             empty_set="frozenset()",
+            preamble_lines=(),
         )
 
         @property
@@ -433,6 +437,7 @@ class Python(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
 

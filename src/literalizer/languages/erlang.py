@@ -109,6 +109,7 @@ class Erlang(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="{"),
@@ -116,6 +117,7 @@ class Erlang(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -132,6 +134,7 @@ class Erlang(metaclass=LanguageCls):
             open_str="sets:from_list([",
             close="])",
             empty_set="sets:from_list([])",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -184,6 +187,7 @@ class Erlang(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=" => "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -202,6 +206,7 @@ class Erlang(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

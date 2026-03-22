@@ -210,6 +210,7 @@ class VisualBasic(metaclass=LanguageCls):
             open_str="New HashSet(Of Object) From {",
             close="}",
             empty_set="New HashSet(Of Object)()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -283,6 +284,7 @@ class VisualBasic(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="New Dictionary(Of String, Object) From {",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

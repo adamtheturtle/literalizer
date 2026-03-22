@@ -140,6 +140,7 @@ class FSharp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -156,6 +157,7 @@ class FSharp(metaclass=LanguageCls):
             open_str="FSet [",
             close="]",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -212,6 +214,7 @@ class FSharp(metaclass=LanguageCls):
             close="]",
             format_entry=_format_fsharp_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -227,6 +230,7 @@ class FSharp(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="FMap [",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

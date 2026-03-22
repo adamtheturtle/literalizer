@@ -86,6 +86,7 @@ class Groovy(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -102,6 +103,7 @@ class Groovy(metaclass=LanguageCls):
             open_str="[",
             close="] as Set<Object>",
             empty_set="[] as Set<Object>",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -158,6 +160,7 @@ class Groovy(metaclass=LanguageCls):
             close="]",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict="[:]",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -176,6 +179,7 @@ class Groovy(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

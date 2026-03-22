@@ -166,6 +166,7 @@ class R(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -182,6 +183,7 @@ class R(metaclass=LanguageCls):
             open_str="list(",
             close=")",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -235,6 +237,7 @@ class R(metaclass=LanguageCls):
             close=")",
             format_entry=empty_dict_key,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -253,6 +256,7 @@ class R(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="list(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

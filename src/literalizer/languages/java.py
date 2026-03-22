@@ -182,6 +182,7 @@ class Java(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         LIST = SequenceFormatConfig(
             sequence_open=_list_of_open,

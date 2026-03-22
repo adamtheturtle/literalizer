@@ -152,6 +152,7 @@ class Rust(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence="Vec::<String>::new()",
+            preamble_lines=(),
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
@@ -159,6 +160,7 @@ class Rust(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="("),
@@ -166,6 +168,7 @@ class Rust(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property

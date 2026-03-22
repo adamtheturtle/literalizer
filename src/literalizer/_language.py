@@ -18,7 +18,7 @@ class SequenceFormatConfig:
     supports_heterogeneity: bool
     single_element_trailing_comma: bool
     empty_sequence: str | None
-    preamble_lines: tuple[str, ...] = ()
+    preamble_lines: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -28,7 +28,7 @@ class SetFormatConfig:
     open_str: str
     close: str
     empty_set: str | None
-    preamble_lines: tuple[str, ...] = ()
+    preamble_lines: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -47,7 +47,7 @@ class DictFormatConfig:
     close: str
     format_entry: Callable[[str, str], str]
     empty_dict: str | None
-    preamble_lines: tuple[str, ...] = ()
+    preamble_lines: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -56,7 +56,7 @@ class OrderedMapFormatConfig:
 
     open_str: str
     close: str
-    preamble_lines: tuple[str, ...] = ()
+    preamble_lines: tuple[str, ...]
 
 
 class SequenceFormat(Protocol):
