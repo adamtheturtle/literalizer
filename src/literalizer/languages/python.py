@@ -23,7 +23,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -123,7 +123,7 @@ def _format_variable_declaration_inline_hint(name: str, value: str) -> str:
 
 
 @beartype
-class Python(metaclass=HasFormatEnums):
+class Python(metaclass=LanguageCls):
     """Python language specification.
 
     Args:

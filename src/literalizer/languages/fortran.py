@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -165,7 +165,7 @@ _string_format: Callable[[str], str] = format_string_fortran
 
 
 @beartype
-class Fortran(metaclass=HasFormatEnums):
+class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
     extension = ".f90"

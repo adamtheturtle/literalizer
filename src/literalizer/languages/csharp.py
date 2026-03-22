@@ -19,7 +19,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -95,7 +95,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class CSharp(metaclass=HasFormatEnums):
+class CSharp(metaclass=LanguageCls):
     """C# language specification.
 
     Args:

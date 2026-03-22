@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -89,7 +89,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Java(metaclass=HasFormatEnums):
+class Java(metaclass=LanguageCls):
     """Java language specification.
 
     Args:

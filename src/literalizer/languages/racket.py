@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -47,7 +47,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Racket(metaclass=HasFormatEnums):
+class Racket(metaclass=LanguageCls):
     """Racket language specification."""
 
     extension = ".rkt"

@@ -20,7 +20,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -61,7 +61,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Erlang(metaclass=HasFormatEnums):
+class Erlang(metaclass=LanguageCls):
     """Erlang language specification.
 
     Args:

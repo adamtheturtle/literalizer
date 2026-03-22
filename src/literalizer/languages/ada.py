@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -105,7 +105,7 @@ _string_format: Callable[[str], str] = format_string_ada
 
 
 @beartype
-class Ada(metaclass=HasFormatEnums):
+class Ada(metaclass=LanguageCls):
     """Ada language specification."""
 
     extension = ".adb"
