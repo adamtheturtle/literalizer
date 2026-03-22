@@ -46,7 +46,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.VariableTypeHints.NONE,
+    variable_type_hints=Python.variable_type_hints_formats.NONE,
 )
 
 

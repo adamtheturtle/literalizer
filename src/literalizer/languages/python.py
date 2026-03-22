@@ -316,7 +316,7 @@ class Python(metaclass=HasFormatEnums):
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str], str] = (
             _format_variable_declaration_inline_hint
-            if variable_type_hints == Python.VariableTypeHints.INLINE
+            if variable_type_hints == Python.variable_type_hints_formats.INLINE
             else _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str], str] = (
