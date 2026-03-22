@@ -2082,7 +2082,7 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     """Build variable-type-hint variants for all languages with multiple
     formats.
 
-    For each language whose class has a ``VariableTypeHints`` enum,
+    For each language whose class has a ``VariableTypeHints`` ``enum``,
     create a variant for every non-default type-hint style.
     """
     variants: dict[str, _Variant] = {}
