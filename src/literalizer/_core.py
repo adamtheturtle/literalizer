@@ -1064,7 +1064,7 @@ def literalize_yaml(
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
     base = _literalize(
-        data=_coerce_yaml_keys(data=cast("object", data)),
+        data=_coerce_yaml_keys(data=data),
         language=language,
         line_prefix=line_prefix,
         indent=indent,
