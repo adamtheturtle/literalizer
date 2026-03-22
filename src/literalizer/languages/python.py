@@ -65,14 +65,14 @@ def _format_inline_type_hint_declaration(
     value: str,
     data: Value,
     *,
-    sequence_config: SequenceFormatConfig,
-    set_config: SetFormatConfig,
+    sequence_type_hint: str,
+    set_type_hint: str,
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
         data=data,
-        sequence_config=sequence_config,
-        set_config=set_config,
+        sequence_type_hint=sequence_type_hint,
+        set_type_hint=set_type_hint,
     )
     return f"{name}: {hint} = {value}"
 
@@ -100,8 +100,8 @@ _SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
 def _python_type_hint(
     data: Value,
     *,
-    sequence_config: SequenceFormatConfig,
-    set_config: SetFormatConfig,
+    sequence_type_hint: str,
+    set_type_hint: str,
 ) -> str:
     """Derive a Python type hint from the original data structure."""
     for scalar_type, hint in _SCALAR_TYPE_HINTS:
@@ -114,13 +114,9 @@ def _python_type_hint(
             else "dict[str, Any]"
         )
     if isinstance(data, (set, frozenset)):
-        return (
-            "frozenset[Any]"
-            if set_config.open_str.startswith("frozenset")
-            else "set[Any]"
-        )
+        return set_type_hint
     # The only remaining Value type is list.
-    return "list[Any]" if sequence_config.close == "]" else "tuple[Any, ...]"
+    return sequence_type_hint
 
 
 @beartype
@@ -231,6 +227,13 @@ class Python(metaclass=LanguageCls):
             """
             return self.value.supports_heterogeneity
 
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this sequence format."""
+            if self is type(self).LIST:
+                return "list[Any]"
+            return "tuple[Any, ...]"
+
     class SetFormats(enum.Enum):
         """Set type options for Python."""
 
@@ -245,6 +248,13 @@ class Python(metaclass=LanguageCls):
             empty_set="frozenset()",
         )
 
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this set format."""
+            if self is type(self).FROZENSET:
+                return "frozenset[Any]"
+            return "set[Any]"
+
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""
 
@@ -254,8 +264,8 @@ class Python(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            sequence_config: SequenceFormatConfig,
-            set_config: SetFormatConfig,
+            sequence_type_hint: str,
+            set_type_hint: str,
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -263,8 +273,8 @@ class Python(metaclass=LanguageCls):
             if self is type(self).INLINE:
                 return functools.partial(
                     _format_inline_type_hint_declaration,
-                    sequence_config=sequence_config,
-                    set_config=set_config,
+                    sequence_type_hint=sequence_type_hint,
+                    set_type_hint=set_type_hint,
                 )
             return _format_variable_declaration
 
@@ -342,8 +352,8 @@ class Python(metaclass=LanguageCls):
         self.supports_collection_comments = True
         decl_fmt: Callable[[str, str, Value], str] = (
             variable_type_hints.formatter(
-                sequence_config=self.sequence_format_config,
-                set_config=self.set_format_config,
+                sequence_type_hint=sequence_format.type_hint,
+                set_type_hint=set_format.type_hint,
             )
         )
         self.format_variable_declaration = decl_fmt
