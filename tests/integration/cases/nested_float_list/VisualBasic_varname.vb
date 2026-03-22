@@ -1,4 +1,3 @@
-Imports System.Collections.Generic
 Module Check
     Dim my_data = New Double()() {
         New Double() {1.5, 2.5},

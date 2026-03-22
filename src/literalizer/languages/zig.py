@@ -80,10 +80,25 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+_ZIG_PREAMBLE: tuple[str, ...] = (
+    "const ZVal = union(enum) {",
+    "    nil,",
+    "    bool: bool,",
+    "    int: i64,",
+    "    float: f64,",
+    "    str: []const u8,",
+    "    arr: []const ZVal,",
+    "    map: []const ZKV,",
+    "    set: []const ZVal,",
+    "};",
+    "const ZKV = struct { key: []const u8, val: ZVal };",
+)
+
+
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+    """Return preamble lines for the generated code."""
+    return _ZIG_PREAMBLE
 
 
 @beartype

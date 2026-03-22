@@ -82,9 +82,18 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
 @beartype
 def _preamble(code: str) -> Sequence[str]:
     """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "nullptr" in code:
+        lines.append("#include <cstddef>")
     if "std::chrono" in code:
-        return ["#include <chrono>"]
-    return []
+        lines.append("#include <chrono>")
+    if "std::map" in code:
+        lines.append("#include <map>")
+    if "std::string" in code:
+        lines.append("#include <string>")
+    if "std::vector" in code:
+        lines.append("#include <vector>")
+    return lines
 
 
 @beartype

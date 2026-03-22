@@ -103,7 +103,12 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
+    """Return preamble lines for the generated code.
+
+    The ``val_t`` variant type used by the generated output is
+    user-defined and must appear inside a module body, so it is not
+    part of the preamble.
+    """
     return ()
 
 

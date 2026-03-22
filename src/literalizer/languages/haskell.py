@@ -56,8 +56,15 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+    """Return preamble lines for the generated code.
+
+    Only the ``OverloadedStrings`` pragma is emitted here because it
+    must appear before the ``module`` declaration.  The ``Val`` ADT and
+    typeclass instances are user-defined (see the class doc string) and
+    must be placed after the module header, so they are not part of the
+    preamble.
+    """
+    return ("{-# LANGUAGE OverloadedStrings #-}",)
 
 
 @beartype

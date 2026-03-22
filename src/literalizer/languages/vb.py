@@ -83,9 +83,12 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "Dictionary" in code or "List(Of" in code:
+        lines.append("Imports System.Collections.Generic")
+    return lines
 
 
 @beartype

@@ -79,10 +79,29 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+_C_PREAMBLE: tuple[str, ...] = (
+    "#include <stdbool.h>",
+    "#include <stddef.h>",
+    "typedef struct _CVal _CVal;",
+    "typedef struct _CKV _CKV;",
+    "struct _CVal {",
+    "    union {",
+    "        _Bool b;",
+    "        long long i;",
+    "        double f;",
+    "        const char *s;",
+    "        const _CVal *a;",
+    "        const _CKV *m;",
+    "    };",
+    "};",
+    "struct _CKV { const char *k; _CVal v; };",
+)
+
+
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+    """Return preamble lines for the generated code."""
+    return _C_PREAMBLE
 
 
 @beartype

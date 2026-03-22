@@ -45,8 +45,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+    """Return preamble lines for the generated code."""
+    return ("#lang racket",)
 
 
 @beartype
