@@ -527,10 +527,30 @@ def format_string_backslash_dollar(value: str) -> str:
     return f'"{escaped}"'
 
 
+_VB_CHAR_REPLACEMENTS: dict[str, str] = {
+    "\n": "Chr(10)",
+    "\r": "Chr(13)",
+    "\t": "vbTab",
+}
+
+_VB_CONTROL_CHAR_THRESHOLD = 32
+
+
 @beartype
-def _vb_string_parts(value: str) -> list[str]:  # noqa: C901,PLR0912  # pylint: disable=too-complex,too-many-branches
+def _flush_vb_current(
+    *,
+    parts: list[str],
+    current: str,
+) -> str:
+    """Flush accumulated literal characters into parts."""
+    if current:
+        parts.append(f'"{current}"')
+    return ""
+
+
+@beartype
+def _vb_string_parts(value: str) -> list[str]:
     """Generate VB.NET string parts for control character handling."""
-    vb_control_char_threshold = 32
     parts: list[str] = []
     current = ""
     i = 0
@@ -540,40 +560,21 @@ def _vb_string_parts(value: str) -> list[str]:  # noqa: C901,PLR0912  # pylint: 
             current += '""'
             i += 1
         elif c == "\r" and i + 1 < len(value) and value[i + 1] == "\n":
-            if current:
-                parts.append(f'"{current}"')
-                current = ""
+            current = _flush_vb_current(parts=parts, current=current)
             parts.append("vbCrLf")
             i += 2
-        elif c == "\n":
-            if current:
-                parts.append(f'"{current}"')
-                current = ""
-            parts.append("Chr(10)")
+        elif c in _VB_CHAR_REPLACEMENTS:
+            current = _flush_vb_current(parts=parts, current=current)
+            parts.append(_VB_CHAR_REPLACEMENTS[c])
             i += 1
-        elif c == "\r":
-            if current:
-                parts.append(f'"{current}"')
-                current = ""
-            parts.append("Chr(13)")
-            i += 1
-        elif c == "\t":
-            if current:
-                parts.append(f'"{current}"')
-                current = ""
-            parts.append("vbTab")
-            i += 1
-        elif ord(c) < vb_control_char_threshold:
-            if current:
-                parts.append(f'"{current}"')
-                current = ""
+        elif ord(c) < _VB_CONTROL_CHAR_THRESHOLD:
+            current = _flush_vb_current(parts=parts, current=current)
             parts.append(f"Chr({ord(c)})")
             i += 1
         else:
             current += c
             i += 1
-    if current:
-        parts.append(f'"{current}"')
+    _flush_vb_current(parts=parts, current=current)
     return parts
 
 
