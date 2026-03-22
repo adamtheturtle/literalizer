@@ -169,11 +169,20 @@ class Cpp(metaclass=HasFormatEnums):
             empty_set=None,
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_SLASH = CommentConfig(
+            prefix="//",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -183,6 +192,7 @@ class Cpp(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.INITIALIZER_LIST,
         set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize Cpp language specification."""
         self.sequence_format = sequence_format
@@ -217,10 +227,7 @@ class Cpp(metaclass=HasFormatEnums):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="//",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str="{",

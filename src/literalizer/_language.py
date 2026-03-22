@@ -82,6 +82,7 @@ class HasFormatEnums(type):
     BytesFormats: type[enum.Enum]
     SequenceFormats: type[enum.Enum]
     SetFormats: type[enum.Enum]
+    CommentFormats: type[enum.Enum]
 
 
 @runtime_checkable
@@ -138,6 +139,13 @@ class Language(Protocol):
     @property
     def datetime_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the datetime formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def comment_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the comment formats this language
         supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis

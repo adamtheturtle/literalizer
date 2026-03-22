@@ -158,11 +158,20 @@ class Occam(metaclass=HasFormatEnums):
             empty_set=None,
         )
 
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_DASH = CommentConfig(
+            prefix="--",
+            suffix="",
+        )
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
 
     def __init__(
         self,
@@ -172,6 +181,7 @@ class Occam(metaclass=HasFormatEnums):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.DOUBLE_DASH,
     ) -> None:
         """Initialize Occam language specification."""
         self.sequence_format = sequence_format
@@ -203,10 +213,7 @@ class Occam(metaclass=HasFormatEnums):
             _format_occam_list_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_occam_set_entry
-        self.comment_config: CommentConfig = CommentConfig(
-            prefix="--",
-            suffix="",
-        )
+        self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
