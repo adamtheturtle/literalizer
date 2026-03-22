@@ -1,16 +1,12 @@
 """Language protocol and internal spec dataclass."""
 
-from __future__ import annotations
-
 import dataclasses
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+import datetime
+import enum
+from collections.abc import Callable
+from typing import Protocol, runtime_checkable
 
-if TYPE_CHECKING:
-    import datetime
-    import enum
-    from collections.abc import Callable
-
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @dataclasses.dataclass(frozen=True)
