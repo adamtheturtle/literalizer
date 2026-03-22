@@ -29,6 +29,29 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_swift(value: datetime.date) -> str:
+    """Format a date as a Swift ``DateComponents`` expression."""
+    return (
+        "DateComponents("
+        "calendar: Calendar(identifier: .gregorian), "
+        f"year: {value.year}, month: {value.month}, day: {value.day}"
+        ").date!"
+    )
+
+
+@beartype
+def _format_datetime_swift(value: datetime.datetime) -> str:
+    """Format a datetime as a Swift ``DateComponents`` expression."""
+    return (
+        "DateComponents("
+        "calendar: Calendar(identifier: .gregorian), "
+        f"year: {value.year}, month: {value.month}, day: {value.day}, "
+        f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
+        ").date!"
+    )
+
+
+@beartype
 def _format_swift_ordered_map_entry(key: str, value: str) -> str:
     """Format a Swift dictionary entry."""
     return f"{key}: {value}"
@@ -50,8 +73,10 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
+def _preamble(code: str) -> Sequence[str]:
+    """Return required imports for Swift."""
+    if "DateComponents(" in code:
+        return ("import Foundation",)
     return ()
 
 
@@ -65,6 +90,7 @@ class Swift(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
 
+        SWIFT = enum.member(value=_format_date_swift)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -74,6 +100,7 @@ class Swift(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Swift."""
 
+        SWIFT = enum.member(value=_format_datetime_swift)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -145,8 +172,8 @@ class Swift(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.SWIFT,
+        datetime_format: DatetimeFormats = DatetimeFormats.SWIFT,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
