@@ -42,15 +42,8 @@ def _to_val(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"MOBILE LIT(lit.float; {value}(REAL32))"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"MOBILE LIT(lit.float; {value}(REAL32))"
 
 
 @beartype

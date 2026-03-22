@@ -32,6 +32,9 @@ from literalizer.languages import (
     Toml,
     TypeScript,
 )
+from literalizer.languages.cobol import (
+    _bump_levels,  # pyright: ignore[reportPrivateUsage]
+)
 
 COBOL = Cobol(
     date_format=Cobol.date_formats.ISO,
@@ -715,3 +718,9 @@ def test_pygments_name_is_valid(
 ) -> None:
     """Every language's ``pygments_name`` is recognized by Pygments."""
     get_lexer_by_name(_alias=language_cls.pygments_name)
+
+
+def test_cobol_bump_levels_rejects_non_level_line() -> None:
+    """_bump_levels raises ValueError for lines without a level number."""
+    with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):
+        _bump_levels(content="not a level line")
