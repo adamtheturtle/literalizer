@@ -1250,6 +1250,21 @@ def _wrap_python_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
+def _wrap_java_time(content: str) -> str:
+    """Wrap in a Java class with java.time.* imports."""
+    return f"""\
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.Set;
+class Check {{
+    Object x = {content};
+}}"""
+
+
+@beartype
 def _wrap_ruby(content: str) -> str:
     """Wrap with require 'date' when Ruby Date literals are present."""
     prefix = "require 'date'\n" if "Date.new" in content else ""
@@ -1586,7 +1601,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
         combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
-        date_wrap=_wrap_identity,
+        date_wrap=_wrap_java_time,
         set_wrap=_wrap_identity,
     ),
     "csharp": _LanguageConfig(
