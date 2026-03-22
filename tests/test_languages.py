@@ -6,6 +6,7 @@ import textwrap
 import pytest
 
 from literalizer import (
+    Language,
     literalize_json,
     literalize_yaml,
 )
@@ -111,7 +112,7 @@ TYPESCRIPT = TypeScript(
 
 def test_language_sequence(subtests: pytest.Subtests) -> None:
     """Each language produces the correct sequence literal."""
-    cases = [
+    cases: list[tuple[Language, str]] = [
         (PYTHON, '(True, None, "hi", (1, 2)),'),
         (JAVASCRIPT, '[true, null, "hi", [1, 2]],'),
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
@@ -124,7 +125,7 @@ def test_language_sequence(subtests: pytest.Subtests) -> None:
         (RUST, 'vec!["True", "None", "hi", "[1, 2]"],'),
     ]
     for language, expected in cases:
-        with subtests.test(msg=str(language)):
+        with subtests.test(msg=repr(language)):
             result = literalize_json(
                 json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
                 language=language,
@@ -406,7 +407,7 @@ def test_java_sequence_include_delimiters_uses_braces() -> None:
 
 def test_java_typed_array_opener(subtests: pytest.Subtests) -> None:
     """Java uses typed array openers inferred from element types."""
-    cases = [
+    cases: list[tuple[list[object], str]] = [
         ([1, 2, 3], "new int[]{\n    1,\n    2,\n    3\n}"),
         (["hello", "world"], 'new String[]{\n    "hello",\n    "world"\n}'),
         (
@@ -415,7 +416,7 @@ def test_java_typed_array_opener(subtests: pytest.Subtests) -> None:
         ),
     ]
     for json_input, expected in cases:
-        with subtests.test(msg=str(json_input)):
+        with subtests.test(msg=repr(json_input)):
             result = literalize_json(
                 json_string=json.dumps(obj=json_input),
                 language=JAVA,

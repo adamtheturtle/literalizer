@@ -5,6 +5,7 @@ import textwrap
 import pytest
 
 from literalizer import (
+    Language,
     literalize_yaml,
 )
 from literalizer.exceptions import (
@@ -136,7 +137,7 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
 
 def test_literalize_yaml_scalar(subtests: pytest.Subtests) -> None:
     """``literalize_yaml`` handles scalar YAML values."""
-    cases = [
+    cases: list[tuple[str, Language, str]] = [
         ("42", PYTHON, "42"),
         ("3.14", PYTHON, "3.14"),
         ("hello", PYTHON, '"hello"'),

@@ -238,7 +238,7 @@ _ASSIGNMENT_PARAMS = [
 def test_variable_declaration_json(subtests: pytest.Subtests) -> None:
     """Each language produces correct variable declaration syntax."""
     for language, expected in _DECLARATION_PARAMS:
-        with subtests.test(msg=str(language)):
+        with subtests.test(msg=repr(language)):
             result = literalize_json(
                 json_string="42",
                 language=language,
@@ -255,7 +255,7 @@ def test_variable_declaration_json(subtests: pytest.Subtests) -> None:
 def test_variable_declaration_yaml(subtests: pytest.Subtests) -> None:
     """Each language produces correct variable declaration syntax for YAML."""
     for language, expected in _DECLARATION_PARAMS:
-        with subtests.test(msg=str(language)):
+        with subtests.test(msg=repr(language)):
             result = literalize_yaml(
                 yaml_string="42\n",
                 language=language,
@@ -298,7 +298,7 @@ def test_existing_variable_assignment_json(
     syntax.
     """
     for language, expected in _ASSIGNMENT_PARAMS:
-        with subtests.test(msg=str(language)):
+        with subtests.test(msg=repr(language)):
             result = literalize_json(
                 json_string="42",
                 language=language,
@@ -319,7 +319,7 @@ def test_existing_variable_assignment_yaml(
     for YAML.
     """
     for language, expected in _ASSIGNMENT_PARAMS:
-        with subtests.test(msg=str(language)):
+        with subtests.test(msg=repr(language)):
             result = literalize_yaml(
                 yaml_string="42\n",
                 language=language,

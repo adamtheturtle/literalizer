@@ -6,6 +6,7 @@ import textwrap
 import pytest
 
 from literalizer import (
+    Language,
     literalize_json,
 )
 from literalizer.exceptions import (
@@ -332,7 +333,7 @@ def test_empty_data(subtests: pytest.Subtests) -> None:
 
 def test_scalar(subtests: pytest.Subtests) -> None:
     """Scalar values are formatted as native literals."""
-    cases = [
+    cases: list[tuple[str, Language, str]] = [
         ("42", PYTHON, "42"),
         ("3.14", PYTHON, "3.14"),
         ('"hello"', PYTHON, '"hello"'),
