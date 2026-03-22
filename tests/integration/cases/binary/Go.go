@@ -1,5 +1,5 @@
 package main
 
-var _ = []any{
+var _ = []string{
     "48656c6c6f",
 }

@@ -3,11 +3,12 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    ListType,
+    MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
@@ -28,47 +29,42 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_SCALA_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "Boolean",
-    "integer": "Int",
-    "number": "Double",
+_SCALA_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "Boolean",
+    int: "Int",
+    float: "Double",
+    MixedNumeric: "Double",
+    bytes: "String",
+    datetime.date: "String",
+    datetime.datetime: "String",
 }
 
 
 @beartype
-def _scala_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Scala type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _SCALA_SCALAR_TYPES:
-            return _SCALA_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _scala_schema_to_type(item_schema=nested)
-            return f"Array[{inner}]" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "Double"
-    return None
+def _scala_element_to_type(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a Scala type name, recursively."""
+    if isinstance(element_type, ListType):
+        inner = _scala_element_to_type(element_type=element_type.inner)
+        return f"Array[{inner}]" if inner is not None else None
+    return _SCALA_SCALAR_TYPES.get(element_type)
 
 
 @beartype
-def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Scala collection opener."""
-    type_name = _scala_schema_to_type(item_schema=item_schema)
+def _scala_type_to_opener(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a Scala collection opener."""
+    type_name = _scala_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"Array[{type_name}]("
 
 
 @beartype
-def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a Scala map opener."""
-    type_name = _scala_schema_to_type(item_schema=value_schema)
+def _scala_dict_type_to_opener(
+    element_type: type | ListType,
+) -> str | None:
+    """Map a Python element type to a Scala map opener."""
+    type_name = _scala_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"Map[String, {type_name}]("
@@ -140,7 +136,7 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_scala_schema_to_opener,
+                type_to_opener=_scala_type_to_opener,
                 fallback="List(",
             ),
             close=")",
@@ -216,7 +212,7 @@ class Scala(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_scala_dict_schema_to_opener,
+                type_to_opener=_scala_dict_type_to_opener,
                 fallback="Map(",
             ),
             close=")",

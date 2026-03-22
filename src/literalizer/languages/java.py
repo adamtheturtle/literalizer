@@ -8,6 +8,8 @@ from typing import Any
 from beartype import beartype
 
 from literalizer._formatters import (
+    ListType,
+    MixedNumeric,
     fixed_dict_open,
     format_bytes_hex,
     format_date_java,
@@ -53,38 +55,30 @@ def _format_java_dict_entry(key: str, value: str) -> str:
     return f"Map.entry({key}, {value})"
 
 
-_JAVA_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "boolean",
-    "integer": "int",
-    "number": "double",
+_JAVA_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "boolean",
+    int: "int",
+    float: "double",
+    MixedNumeric: "double",
+    bytes: "String",
+    datetime.date: "LocalDate",
 }
 
 
 @beartype
-def _java_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Java type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _JAVA_SCALAR_TYPES:
-            return _JAVA_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _java_schema_to_type(item_schema=nested)
-            return f"{inner}[]" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "double"
-    return None
+def _java_element_to_type(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a Java type name, recursively."""
+    if isinstance(element_type, ListType):
+        inner = _java_element_to_type(element_type=element_type.inner)
+        return f"{inner}[]" if inner is not None else None
+    return _JAVA_SCALAR_TYPES.get(element_type)
 
 
 @beartype
-def _java_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Java array opener."""
-    type_name = _java_schema_to_type(item_schema=item_schema)
+def _java_type_to_opener(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a Java array opener."""
+    type_name = _java_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"new {type_name}[]{{"
@@ -185,7 +179,7 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_java_schema_to_opener,
+                type_to_opener=_java_type_to_opener,
                 fallback="new Object[]{",
             ),
             close="}",

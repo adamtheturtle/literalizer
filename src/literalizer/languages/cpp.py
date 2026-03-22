@@ -3,11 +3,12 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    ListType,
+    MixedNumeric,
     format_bytes_hex,
     format_date_cpp,
     format_datetime_cpp,
@@ -27,47 +28,40 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_CPP_SCALAR_TYPES: dict[str, str] = {
-    "string": "std::string",
-    "boolean": "bool",
-    "integer": "int",
-    "number": "double",
+_CPP_SCALAR_TYPES: dict[type, str] = {
+    str: "std::string",
+    bool: "bool",
+    int: "int",
+    float: "double",
+    MixedNumeric: "double",
+    bytes: "std::string",
 }
 
 
 @beartype
-def _cpp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a C++ type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _CPP_SCALAR_TYPES:
-            return _CPP_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _cpp_schema_to_type(item_schema=nested)
-            return f"std::vector<{inner}>" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "double"
-    return None
+def _cpp_element_to_type(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a C++ type name, recursively."""
+    if isinstance(element_type, ListType):
+        inner = _cpp_element_to_type(element_type=element_type.inner)
+        return f"std::vector<{inner}>" if inner is not None else None
+    return _CPP_SCALAR_TYPES.get(element_type)
 
 
 @beartype
-def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a C++ initializer-list opener."""
-    type_name = _cpp_schema_to_type(item_schema=item_schema)
+def _cpp_type_to_opener(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a C++ initializer-list opener."""
+    type_name = _cpp_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"std::vector<{type_name}>{{"
 
 
 @beartype
-def _cpp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a C++ map opener."""
-    type_name = _cpp_schema_to_type(item_schema=value_schema)
+def _cpp_dict_type_to_opener(
+    element_type: type | ListType,
+) -> str | None:
+    """Map a Python element type to a C++ map opener."""
+    type_name = _cpp_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"std::map<std::string, {type_name}>{{"
@@ -153,7 +147,7 @@ class Cpp(metaclass=LanguageCls):
 
         INITIALIZER_LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_cpp_schema_to_opener,
+                type_to_opener=_cpp_type_to_opener,
                 fallback="{",
             ),
             close="}",
@@ -229,7 +223,7 @@ class Cpp(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_cpp_dict_schema_to_opener,
+                type_to_opener=_cpp_dict_type_to_opener,
                 fallback="{",
             ),
             close="}",
