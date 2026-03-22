@@ -2034,7 +2034,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_sequence_variants(), "simple_sequence", None),
         (_build_set_variants(), "set", None),
         (_build_comment_variants(), "comments", None),
-        (_build_type_hint_variants(), "simple_dict", _VARIABLE_NAME),
+        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME),
     ]
     for variants, case_dir_name, variable_name in variant_sources:
         for variant_name, variant in variants.items():
