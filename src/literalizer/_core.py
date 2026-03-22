@@ -43,58 +43,59 @@ class LiteralizeResult:
     """
 
 
+@beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
-    """Walk *data* and return the set of value types present."""
-    types: set[type] = set()
-    _walk_value(value=data, types=types)
-    return frozenset(types)
+    """Return the set of Python types present in *data*."""
+    if isinstance(data, ordereddict):
+        child_types: frozenset[type] = frozenset()
+        for v in data.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            child_types = child_types | _collect_value_types(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        return frozenset({ordereddict, str}) | child_types
+    if isinstance(data, dict):
+        child_types = frozenset()
+        for v in data.values():
+            child_types = child_types | _collect_value_types(data=v)
+        return frozenset({dict, str}) | child_types
+    if isinstance(data, (set, frozenset)):
+        scalar_types: frozenset[type] = frozenset(
+            t for v in data if (t := _scalar_type(value=v)) is not None
+        )
+        return frozenset({set}) | scalar_types
+    if isinstance(data, list):
+        child_types = frozenset()
+        for v in data:
+            child_types = child_types | _collect_value_types(data=v)
+        return frozenset({list}) | child_types
+    result = _scalar_type(value=data)
+    return frozenset({result}) if result is not None else frozenset()
 
 
-def _walk_value(*, value: Value, types: set[type]) -> None:
-    """Recursively add the type of *value* to *types*."""
-    if isinstance(value, ordereddict):
-        types.add(ordereddict)
-        types.add(str)  # keys are always strings
-        for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            _walk_value(value=v, types=types)  # pyright: ignore[reportUnknownArgumentType]
-    elif isinstance(value, dict):
-        types.add(dict)
-        types.add(str)  # keys are always strings
-        for v in value.values():
-            _walk_value(value=v, types=types)
-    elif isinstance(value, (set, frozenset)):
-        types.add(set)
-        for v in value:
-            _walk_scalar(value=v, types=types)
-    elif isinstance(value, list):
-        types.add(list)
-        for v in value:
-            _walk_value(value=v, types=types)
-    else:
-        _walk_scalar(value=value, types=types)
-
-
-def _walk_scalar(*, value: Value, types: set[type]) -> None:
-    """Add scalar type of *value* to *types*."""
+@beartype
+def _scalar_type(*, value: Value) -> type | None:
+    """Return the type bucket for a scalar, or ``None`` if
+    unrecognised.
+    """
     if isinstance(value, datetime.datetime):
-        types.add(datetime.datetime)
-    elif isinstance(value, datetime.date):
-        types.add(datetime.date)
-    elif isinstance(value, str):
-        types.add(str)
-    elif isinstance(value, bytes):
-        types.add(bytes)
-    elif value is None:
-        types.add(type(None))
+        return datetime.datetime
+    if isinstance(value, datetime.date):
+        return datetime.date
+    if isinstance(value, str):
+        return str
+    if isinstance(value, bytes):
+        return bytes
+    if value is None:
+        return type(None)
+    return None
 
 
-def _extend_collection_preamble(
+@beartype
+def _collection_preamble(
     *,
     types: frozenset[type],
     language: Language,
-    lines: list[str],
-) -> None:
-    """Append collection-config preamble lines for present types."""
+) -> tuple[str, ...]:
+    """Return collection-config preamble lines for present types."""
+    lines: list[str] = []
     if dict in types:
         lines.extend(language.dict_format_config.preamble_lines)
     if set in types:
@@ -103,29 +104,12 @@ def _extend_collection_preamble(
         lines.extend(language.sequence_format_config.preamble_lines)
     if ordereddict in types:
         lines.extend(language.ordered_map_format_config.preamble_lines)
+    return tuple(lines)
 
 
-def _compute_preamble(
-    *,
-    data: Value,
-    language: Language,
-) -> tuple[str, ...]:
-    """Compute preamble lines from the data types present and the
-    language configuration.  Pure function — no side effects.
-    """
-    types = _collect_value_types(data=data)
-    lines: list[str] = []
-
-    for scalar_type, preamble in language.scalar_preamble.items():
-        if scalar_type in types:
-            lines.extend(preamble)
-
-    _extend_collection_preamble(types=types, language=language, lines=lines)
-
-    if types & {dict, list, set, ordereddict}:
-        lines.extend(language.type_hint_collection_preamble_lines)
-
-    # De-duplicate preserving insertion order.
+@beartype
+def _deduplicate(*, lines: tuple[str, ...]) -> tuple[str, ...]:
+    """Remove duplicates from *lines* preserving insertion order."""
     seen: set[str] = set()
     result: list[str] = []
     for line in lines:
@@ -133,6 +117,32 @@ def _compute_preamble(
             seen.add(line)
             result.append(line)
     return tuple(result)
+
+
+@beartype
+def _compute_preamble(
+    *,
+    data: Value,
+    language: Language,
+) -> tuple[str, ...]:
+    """Compute preamble lines from the data types present and the
+    language configuration.
+    """
+    types = _collect_value_types(data=data)
+
+    scalar = tuple(
+        line
+        for scalar_type, preamble in language.scalar_preamble.items()
+        if scalar_type in types
+        for line in preamble
+    )
+    collection = _collection_preamble(types=types, language=language)
+    type_hint = (
+        language.type_hint_collection_preamble_lines
+        if types & {dict, list, set, ordereddict}
+        else ()
+    )
+    return _deduplicate(lines=scalar + collection + type_hint)
 
 
 @beartype
