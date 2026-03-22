@@ -1,0 +1,4 @@
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+fn main() {
+    let _ = NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap());
+}
