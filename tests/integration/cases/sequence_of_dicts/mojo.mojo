@@ -1,5 +1,5 @@
 def main():
-    _ = [
+    var _result = [
         {"name": "Alice", "age": "30"},
         {"name": "Bob", "age": "25"},
     ]

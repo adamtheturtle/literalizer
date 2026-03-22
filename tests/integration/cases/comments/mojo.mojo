@@ -1,5 +1,5 @@
 def main():
-    _ = {
+    var _result = {
         # Server configuration
         "host": "localhost",  # default host
         "port": "8080",

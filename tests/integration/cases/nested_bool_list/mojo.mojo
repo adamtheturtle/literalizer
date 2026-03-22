@@ -1,5 +1,5 @@
 def main():
-    _ = [
+    var _result = [
         [True, False],
         [True, True],
     ]
