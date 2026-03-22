@@ -288,12 +288,12 @@ class Kotlin(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        date_preamble: tuple[str, ...] = {
-            self.DateFormats.KOTLIN: ("import java.time.LocalDate",),
-        }.get(date_format, ())
-        datetime_preamble: tuple[str, ...] = {
-            self.DatetimeFormats.KOTLIN: ("import java.time.LocalDateTime",),
-        }.get(datetime_format, ())
+        date_preamble: tuple[str, ...] = ()
+        if date_format is Kotlin.DateFormats.KOTLIN:
+            date_preamble = ("import java.time.LocalDate",)
+        datetime_preamble: tuple[str, ...] = ()
+        if datetime_format is Kotlin.DatetimeFormats.KOTLIN:
+            datetime_preamble = ("import java.time.LocalDateTime",)
         scalar_preamble_dict: dict[type, tuple[str, ...]] = {}
         if date_preamble:
             scalar_preamble_dict[datetime.date] = date_preamble

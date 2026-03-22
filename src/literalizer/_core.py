@@ -55,7 +55,7 @@ def _walk_value(*, value: Value, types: set[type]) -> None:
     if isinstance(value, ordereddict):
         types.add(ordereddict)
         for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            _walk_value(value=v, types=types)
+            _walk_value(value=v, types=types)  # pyright: ignore[reportUnknownArgumentType]
     elif isinstance(value, dict):
         types.add(dict)
         for v in value.values():

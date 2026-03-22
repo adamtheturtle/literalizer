@@ -393,6 +393,6 @@ class Python(metaclass=LanguageCls):
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = (
             ("from typing import Any",)
-            if variable_type_hints is self.VariableTypeHints.INLINE
+            if variable_type_hints is Python.VariableTypeHints.INLINE
             else ()
         )
