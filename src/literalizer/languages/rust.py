@@ -197,7 +197,7 @@ class Rust(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.VEC,
         set_format: SetFormats = SetFormats.HASH_SET,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,  # noqa: ARG002
     ) -> None:
         """Initialize Rust language specification."""
         self.sequence_format = sequence_format

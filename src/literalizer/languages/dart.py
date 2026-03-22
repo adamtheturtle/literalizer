@@ -203,7 +203,7 @@ class Dart(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,  # noqa: ARG002
     ) -> None:
         """Initialize Dart language specification."""
         self.sequence_format = sequence_format
