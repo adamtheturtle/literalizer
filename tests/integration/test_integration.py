@@ -884,13 +884,17 @@ def _wrap_mojo(content: str) -> str:
 @beartype
 def _wrap_mojo_varname(content: str) -> str:
     """Wrap a Mojo variable declaration in a main function."""
-    return _in_mojo_main(content=content)
+    return _in_mojo_main(
+        content=content + f"\n_ = {_VARIABLE_NAME}",
+    )
 
 
 @beartype
 def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
     """Wrap Mojo declaration and assignment in a main function."""
-    return _in_mojo_main(content=declaration + "\n" + assignment)
+    return _in_mojo_main(
+        content=declaration + "\n" + assignment + f"\n_ = {_VARIABLE_NAME}",
+    )
 
 
 @beartype
