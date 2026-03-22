@@ -196,6 +196,69 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
 
 
 @beartype
+def make_element_to_type(
+    *,
+    scalar_types: dict[type, str],
+    list_template: str,
+) -> Callable[[type | ListType], str | None]:
+    """Create a recursive type resolver from scalar types and a list
+    template.
+
+    The *list_template* must contain ``{inner}`` which will be replaced
+    with the recursively-resolved inner type name.
+
+    Example::
+
+        go_element_to_type = make_element_to_type(
+            scalar_types={str: "string", int: "int"},
+            list_template="[]{inner}",
+        )
+    """
+
+    @beartype
+    def element_to_type(element_type: type | ListType) -> str | None:
+        """Resolve a Python element type to a language type name."""
+        if isinstance(element_type, ListType):
+            inner = element_to_type(element_type=element_type.inner)
+            if inner is None:
+                return None
+            return list_template.format(inner=inner)
+        return scalar_types.get(element_type)
+
+    return element_to_type
+
+
+@beartype
+def make_type_to_opener(
+    *,
+    element_to_type: Callable[[type | ListType], str | None],
+    opener_template: str,
+) -> Callable[[type | ListType], str | None]:
+    """Create a typed collection opener from an element-to-type resolver.
+
+    The *opener_template* must contain ``{type_name}`` which will be
+    replaced with the resolved type name.
+
+    Example::
+
+        go_type_to_opener = make_type_to_opener(
+            element_to_type=go_element_to_type,
+            opener_template="[]{type_name}{{",
+        )
+    """
+
+    @beartype
+    def type_to_opener(element_type: type | ListType) -> str | None:
+        """Resolve a Python element type to a collection opener."""
+        type_name = element_to_type(element_type)
+        if type_name is None:
+            return None
+        return opener_template.format(type_name=type_name)
+
+    return type_to_opener
+
+
+@beartype
 def _typed_sequence_open(
     items: list[Value],
     *,

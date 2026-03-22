@@ -7,13 +7,14 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
-    ListType,
     MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -40,34 +41,20 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "String",
 }
 
+_scala_element_to_type = make_element_to_type(
+    scalar_types=_SCALA_SCALAR_TYPES,
+    list_template="Array[{inner}]",
+)
 
-@beartype
-def _scala_element_to_type(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Scala type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _scala_element_to_type(element_type=element_type.inner)
-        return f"Array[{inner}]" if inner is not None else None
-    return _SCALA_SCALAR_TYPES.get(element_type)
+_scala_type_to_opener = make_type_to_opener(
+    element_to_type=_scala_element_to_type,
+    opener_template="Array[{type_name}](",
+)
 
-
-@beartype
-def _scala_type_to_opener(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Scala collection opener."""
-    type_name = _scala_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"Array[{type_name}]("
-
-
-@beartype
-def _scala_dict_type_to_opener(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a Scala map opener."""
-    type_name = _scala_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"Map[String, {type_name}]("
+_scala_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_scala_element_to_type,
+    opener_template="Map[String, {type_name}](",
+)
 
 
 @beartype
