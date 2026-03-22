@@ -47,7 +47,7 @@ _NIM_MONTHS: dict[int, str] = {
 def _format_date_nim(value: datetime.date) -> str:
     """Format a date as a Nim ``dateTime(...)`` call."""
     month = _NIM_MONTHS[value.month]
-    return f"dateTime({value.year}, {month}, {value.day})"
+    return f"dateTime({value.year}, {month}, {value.day}, 0, 0, 0, 0, utc())"
 
 
 @beartype
@@ -109,7 +109,7 @@ class Nim(metaclass=LanguageCls):
         date_format: How to format :class:`datetime.date` values.
 
             * ``date_formats.NIM`` — ``dateTime`` call,
-              e.g. ``dateTime(2024, mJan, 15)``.
+              e.g. ``dateTime(2024, mJan, 15, 0, 0, 0, 0, utc())``.
             * ``date_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15"``.
 
