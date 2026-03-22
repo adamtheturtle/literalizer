@@ -4,3 +4,4 @@ def main():
         False,
         True,
     ]
+    _ = my_data

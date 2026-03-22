@@ -37,7 +37,7 @@ jobs:
           set -o pipefail
           find tests/integration/cases -name "*.mojo" -print0 | \
             while IFS= read -r -d '' f; do
-              if ! mojo run "$f"; then
+              if ! mojo run --Werror "$f"; then
                 exit 1
               fi
             done

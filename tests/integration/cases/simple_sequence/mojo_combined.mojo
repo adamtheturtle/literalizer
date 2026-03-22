@@ -5,9 +5,11 @@ def main():
         "True",
         "None",
     ]
+    _ = my_data
     my_data = [
         "1",
         "hello",
         "True",
         "None",
     ]
+    _ = my_data
