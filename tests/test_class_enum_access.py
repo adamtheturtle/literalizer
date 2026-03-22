@@ -1,18 +1,12 @@
 """Test class-level format Enum access via HasFormatEnums."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
+from literalizer import HasFormatEnums
 from literalizer.languages import (
     Ada,
     Bash,
     Cpp,
     Python,
 )
-
-if TYPE_CHECKING:
-    from literalizer import HasFormatEnums
 
 _LANGUAGE_TYPES: dict[str, HasFormatEnums] = {
     "ada": Ada,
@@ -51,6 +45,12 @@ _DATETIME_FORMATS: dict[tuple[str, str], object] = {
     for member in lang_cls.DatetimeFormats
 }
 
+_VARIABLE_TYPE_HINTS: dict[tuple[str, str], object] = {
+    (lang_name, member.name.lower()): member
+    for lang_name, lang_cls in _LANGUAGE_TYPES.items()
+    for member in lang_cls.VariableTypeHints
+}
+
 
 def test_sequence_formats_populated() -> None:
     """Each language contributes at least one sequence format."""
@@ -80,3 +80,11 @@ def test_datetime_formats_populated() -> None:
     """Each language contributes at least one datetime format."""
     for lang_name in _LANGUAGE_TYPES:
         assert any(k[0] == lang_name for k in _DATETIME_FORMATS)
+
+
+def test_variable_type_hints_populated() -> None:
+    """Each language contributes at least one variable type hint
+    option.
+    """
+    for lang_name in _LANGUAGE_TYPES:
+        assert any(k[0] == lang_name for k in _VARIABLE_TYPE_HINTS)

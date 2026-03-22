@@ -1,8 +1,8 @@
 """OCaml language specification."""
 
-from __future__ import annotations
-
+import datetime
 import enum
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -15,12 +15,16 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import (
+    CommentConfig,
+    DictFormatConfig,
+    HasFormatEnums,
+    OrderedMapFormatConfig,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 
@@ -69,7 +73,7 @@ def _format_ocaml_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_ocaml_omap_entry(key: str, value: str) -> str:
+def _format_ocaml_ordered_map_entry(key: str, value: str) -> str:
     """Format an OCaml ordered-map entry as a ``(key, OXxx value)``
     tuple.
     """
@@ -141,25 +145,51 @@ class OCaml(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for OCaml."""
 
-        LIST = "list"
+        LIST = SequenceFormatConfig(
+            open_str="OList [",
+            close="]",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for OCaml."""
 
-        SET = "set"
+        SET = SetFormatConfig(
+            open_str="OSet [",
+            close="]",
+            empty_set=None,
+        )
+
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        PAREN_STAR = CommentConfig(
+            prefix="(*",
+            suffix=" *)",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
+
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NONE = "none"
+
+    variable_type_hints_formats = VariableTypeHints
 
     def __init__(
         self,
@@ -168,43 +198,43 @@ class OCaml(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
+        set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.PAREN_STAR,
     ) -> None:
         """Initialize OCaml language specification."""
         self.sequence_format = sequence_format
         self.null_literal = "ONull"
         self.true_literal = "OBool true"
         self.false_literal = "OBool false"
+        fmt = sequence_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="OList ["
+            open_str=fmt.open_str
         )
-        self.sequence_close = "]"
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="OMap ["
-        )
-        self.dict_close = "]"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            _format_ocaml_dict_entry
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="OMap ["),
+            close="]",
+            format_entry=_format_ocaml_dict_entry,
+            empty_dict=None,
         )
         self.multiline_trailing_comma = False
-        self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = None
-        self.empty_dict: str | None = None
-        self.set_open = "OSet ["
-        self.set_close = "]"
-        self.empty_set: str | None = None
         self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
-        self.comment_prefix = "(*"
-        self.comment_suffix = " *)"
-        self.omap_open = "OMap ["
-        self.omap_close = "]"
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_ocaml_omap_entry
+        self.comment_config: CommentConfig = comment_format.value
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="OMap [",
+                close="]",
+            )
+        )
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_ocaml_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False

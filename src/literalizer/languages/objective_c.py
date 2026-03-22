@@ -1,8 +1,8 @@
 """Objective-C language specification."""
 
-from __future__ import annotations
-
+import datetime
 import enum
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -11,12 +11,16 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import (
+    CommentConfig,
+    DictFormatConfig,
+    HasFormatEnums,
+    OrderedMapFormatConfig,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 _OBJC_PREFIXES = (
@@ -149,25 +153,55 @@ class ObjectiveC(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Objective-C."""
 
-        ARRAY = "array"
+        ARRAY = SequenceFormatConfig(
+            open_str="@[",
+            close="]",
+            empty_sequence="@[]",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Objective-C."""
 
-        SET = "set"
+        SET = SetFormatConfig(
+            open_str="[NSSet setWithArray:@[",
+            close="]]",
+            empty_set="[NSSet set]",
+        )
+
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_SLASH = CommentConfig(
+            prefix="//",
+            suffix="",
+        )
+        BLOCK = CommentConfig(
+            prefix="/*",
+            suffix=" */",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
+
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NONE = "none"
+
+    variable_type_hints_formats = VariableTypeHints
 
     def __init__(
         self,
@@ -176,43 +210,43 @@ class ObjectiveC(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.OBJC,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
+        set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize Objective-C language specification."""
         self.sequence_format = sequence_format
         self.null_literal = "[NSNull null]"
         self.true_literal = "@YES"
         self.false_literal = "@NO"
+        fmt = sequence_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str="@["
+            open_str=fmt.open_str
         )
-        self.sequence_close = "]"
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str="@{"
-        )
-        self.dict_close = "}"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            _format_objc_dict_entry
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="@{"),
+            close="}",
+            format_entry=_format_objc_dict_entry,
+            empty_dict="@{}",
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = "@[]"
-        self.empty_dict: str | None = "@{}"
-        self.set_open = "[NSSet setWithArray:@["
-        self.set_close = "]]"
-        self.empty_set: str | None = "[NSSet set]"
         self.format_sequence_entry: Callable[[str], str] = _to_objc_val
         self.format_set_entry: Callable[[str], str] = _to_objc_val
-        self.comment_prefix = "//"
-        self.comment_suffix = ""
-        self.omap_open = "@{"
-        self.omap_close = "}"
-        self.format_omap_entry: Callable[[str, str], str] = (
+        self.comment_config: CommentConfig = comment_format.value
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="@{",
+                close="}",
+            )
+        )
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
             _format_objc_dict_entry
         )
         self.multiline_close_indent = ""

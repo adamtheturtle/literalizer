@@ -1,8 +1,8 @@
 """Zig language specification."""
 
-from __future__ import annotations
-
+import datetime
 import enum
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -15,12 +15,16 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
 )
-from literalizer._language import HasFormatEnums
+from literalizer._language import (
+    CommentConfig,
+    DictFormatConfig,
+    HasFormatEnums,
+    OrderedMapFormatConfig,
+    SequenceFormatConfig,
+    SetFormatConfig,
+)
 
 if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 
@@ -113,25 +117,51 @@ class Zig(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Zig."""
 
-        ARRAY = "array"
+        ARRAY = SequenceFormatConfig(
+            open_str=".{ .arr = &.{",
+            close="}}",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return True
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Zig."""
 
-        SET = "set"
+        SET = SetFormatConfig(
+            open_str=".{ .set = &.{",
+            close="}}",
+            empty_set=None,
+        )
+
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_SLASH = CommentConfig(
+            prefix="//",
+            suffix="",
+        )
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
+    comment_formats = CommentFormats
+
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NONE = "none"
+
+    variable_type_hints_formats = VariableTypeHints
 
     def __init__(
         self,
@@ -140,45 +170,45 @@ class Zig(metaclass=HasFormatEnums):
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
+        set_format: SetFormats = SetFormats.SET,
+        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize Zig language specification."""
         self.sequence_format = sequence_format
         self.null_literal = ".nil"
         self.true_literal = ".{ .bool = true }"
         self.false_literal = ".{ .bool = false }"
+        fmt = sequence_format.value
+        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=".{ .arr = &.{"
+            open_str=fmt.open_str
         )
-        self.sequence_close = "}}"
-        self.dict_open: Callable[[dict[str, Value]], str] = fixed_dict_open(
-            open_str=".{ .map = &.{"
-        )
-        self.dict_close = "}}"
-        self.format_dict_entry: Callable[[str, str], str] = (
-            _format_zig_dict_entry
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str=".{ .map = &.{"),
+            close="}}",
+            format_entry=_format_zig_dict_entry,
+            empty_dict=None,
         )
         self.multiline_trailing_comma = True
-        self.single_element_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
-        self.empty_sequence: str | None = None
-        self.empty_dict: str | None = None
-        self.set_open = ".{ .set = &.{"
-        self.set_close = "}}"
-        self.empty_set: str | None = None
         self.format_sequence_entry: Callable[[str], str] = (
             _format_zig_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = _format_zig_set_entry
-        self.comment_prefix = "//"
-        self.comment_suffix = ""
-        self.omap_open = ".{ .map = &.{"
-        self.omap_close = "}}"
-        self.format_omap_entry: Callable[[str, str], str] = (
+        self.comment_config: CommentConfig = comment_format.value
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str=".{ .map = &.{",
+                close="}}",
+            )
+        )
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
             _format_zig_dict_entry
         )
         self.multiline_close_indent = ""

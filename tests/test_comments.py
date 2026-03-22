@@ -33,7 +33,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.VariableTypeHints.NONE,
+    variable_type_hints=Python.variable_type_hints_formats.NONE,
 )
 RUBY = Ruby(
     date_format=Ruby.date_formats.RUBY,
@@ -271,7 +271,7 @@ def test_yaml_comment_multiple_before_lines() -> None:
 )
 def test_comment_prefix(language: Language, expected: str) -> None:
     """Each language has the expected comment prefix."""
-    assert language.comment_prefix == expected
+    assert language.comment_config.prefix == expected
 
 
 @pytest.mark.parametrize(
@@ -285,7 +285,7 @@ def test_comment_prefix(language: Language, expected: str) -> None:
 )
 def test_comment_suffix(language: Language) -> None:
     """Each language has an empty comment suffix."""
-    assert language.comment_suffix == ""
+    assert language.comment_config.suffix == ""
 
 
 def test_yaml_comment_escaped_quote_in_value() -> None:

@@ -97,6 +97,7 @@ luac
 matlab
 misclassifies
 multiline
+mypy
 namespaces
 natively
 norc

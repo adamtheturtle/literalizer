@@ -137,13 +137,9 @@ lint.per-file-ignores."tests/test_*.py" = [
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
-lint.mccabe.max-complexity = 12
 lint.pydocstyle.convention = "google"
-lint.pylint.max-returns = 7
 
 [tool.pylint]
-DESIGN.max-complexity = 12
-DESIGN.max-public-methods = 22
 # Allow the body of an if to be on the same line as the test if there is no
 # else.
 FORMAT.single-line-if-stmt = false
@@ -384,9 +380,13 @@ ignore_names = [
     "warning_is_error",
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
-    # Enum members accessed by consumers iterating SetFormat
+    # Enum members accessed by consumers iterating format enums
+    "BLOCK",
     "HASH_SET",
     "MAP_SET",
+    "EPOCH",
+    "FROZENSET",
+    "ZONED",
     # Used in documentation code examples
     "custom",
     "result",

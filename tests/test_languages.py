@@ -81,7 +81,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.VariableTypeHints.NONE,
+    variable_type_hints=Python.variable_type_hints_formats.NONE,
 )
 RUBY = Ruby(
     date_format=Ruby.date_formats.RUBY,
@@ -353,8 +353,8 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
     assert result == expected
 
 
-def test_java_yaml_omap_skips_null_values() -> None:
-    """Java YAML omap nested in a list filters null values."""
+def test_java_yaml_ordered_map_skips_null_values() -> None:
+    """Java YAML ordered map nested in a list filters null values."""
     yaml_string = textwrap.dedent(
         text="""\
         ---
@@ -374,11 +374,11 @@ def test_java_yaml_omap_skips_null_values() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    omap_inline = (
+    ordered_map_inline = (
         "new java.util.ArrayList<>(java.util.Arrays.asList("
         'Map.entry("name", "Alice"), Map.entry("age", 30)))'
     )
-    expected = f"new Object[]{{\n    {omap_inline}\n}}"
+    expected = f"new Object[]{{\n    {ordered_map_inline}\n}}"
     assert result == expected
 
 
@@ -533,7 +533,7 @@ def test_toml_non_quoted_dict_key() -> None:
     When the key does not start with a double-quote character the
     bare-key optimization is skipped and the key is used verbatim.
     """
-    result = TOML.format_dict_entry("plain_key", '"value"')
+    result = TOML.dict_format_config.format_entry("plain_key", '"value"')
     assert result == 'plain_key = "value"'
 
 

@@ -1,15 +1,58 @@
 """Language protocol and internal spec dataclass."""
 
-from __future__ import annotations
+import dataclasses
+import datetime
+import enum
+from collections.abc import Callable
+from typing import Protocol, runtime_checkable
 
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    import datetime
-    import enum
-    from collections.abc import Callable
 
-    from literalizer._types import Value
+@dataclasses.dataclass(frozen=True)
+class SequenceFormatConfig:
+    """Configuration for a single sequence format."""
+
+    open_str: str
+    close: str
+    supports_heterogeneity: bool
+    single_element_trailing_comma: bool
+    empty_sequence: str | None
+
+
+@dataclasses.dataclass(frozen=True)
+class SetFormatConfig:
+    """Configuration for a single set format."""
+
+    open_str: str
+    close: str
+    empty_set: str | None
+
+
+@dataclasses.dataclass(frozen=True)
+class CommentConfig:
+    """Configuration for language comment syntax."""
+
+    prefix: str
+    suffix: str
+
+
+@dataclasses.dataclass(frozen=True)
+class DictFormatConfig:
+    """Configuration for dict formatting."""
+
+    open_fn: Callable[[dict[str, Value]], str]
+    close: str
+    format_entry: Callable[[str, str], str]
+    empty_dict: str | None
+
+
+@dataclasses.dataclass(frozen=True)
+class OrderedMapFormatConfig:
+    """Configuration for ordered-map formatting."""
+
+    open_str: str
+    close: str
 
 
 class SequenceFormat(Protocol):
@@ -35,6 +78,8 @@ class HasFormatEnums(type):
     BytesFormats: type[enum.Enum]
     SequenceFormats: type[enum.Enum]
     SetFormats: type[enum.Enum]
+    CommentFormats: type[enum.Enum]
+    VariableTypeHints: type[enum.Enum]
 
 
 @runtime_checkable
@@ -49,6 +94,16 @@ class Language(Protocol):
     languages or override defaults, write a class that provides all the
     required attributes.
     """
+
+    # Each language class defines PascalCase nested Enum classes
+    # (``DateFormats``, ``SequenceFormats``, …) and snake_case class
+    # attributes that alias them (``date_formats = DateFormats``, …).
+    # The aliases look redundant but are required: nested classes are
+    # class-level (ClassVar) attributes, while Protocol properties are
+    # instance-level.  No single declaration style (``@property``,
+    # ``ClassVar``, or plain annotation) satisfies mypy, pyright, *and*
+    # pyrefly simultaneously for PascalCase names that shadow nested
+    # classes.  The snake_case aliases sidestep the issue entirely.
 
     @property
     def bytes_formats(self) -> type[enum.Enum]:
@@ -85,6 +140,20 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def comment_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the comment formats this language
+        supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def variable_type_hints_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the variable type hint options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     null_literal: str
     """The literal representing null/None."""
 
@@ -104,34 +173,14 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    sequence_close: str
-    """The closing delimiter for sequences."""
+    sequence_format_config: SequenceFormatConfig
+    """Configuration for the chosen sequence format."""
 
-    @property
-    def dict_open(self) -> Callable[[dict[str, Value]], str]:
-        """Callable that returns the opening delimiter for a dict literal.
-
-        Receives the dict about to be formatted, so the delimiter can depend
-        on the value types when needed.  For a fixed delimiter use
-        :func:`~literalizer.fixed_dict_open`.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    dict_close: str
-    """The closing delimiter for dict literals."""
-
-    @property
-    def format_dict_entry(self) -> Callable[[str, str], str]:
-        """Callable that formats a dict entry from a pre-formatted key and
-        value string.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
+    dict_format_config: DictFormatConfig
+    """Configuration for dict formatting."""
 
     multiline_trailing_comma: bool
     """Whether to append a trailing comma after the last entry."""
-
-    single_element_trailing_comma: bool
-    """Whether a single-element sequence requires a trailing comma."""
 
     @property
     def format_bytes(self) -> Callable[[bytes], str]:
@@ -154,20 +203,8 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    empty_sequence: str | None
-    """Override for empty sequence literals, or ``None``."""
-
-    empty_dict: str | None
-    """Override for empty dict literals, or ``None``."""
-
-    set_open: str
-    """The opening delimiter for set literals."""
-
-    set_close: str
-    """The closing delimiter for set literals."""
-
-    empty_set: str | None
-    """Override for empty set literals, or ``None``."""
+    set_format_config: SetFormatConfig
+    """Configuration for the chosen set format."""
 
     @property
     def format_sequence_entry(self) -> Callable[[str], str]:
@@ -179,20 +216,14 @@ class Language(Protocol):
         """Callable that formats a set entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    comment_prefix: str
-    """The comment prefix for the language."""
+    comment_config: CommentConfig
+    """Configuration for the language's comment syntax."""
 
-    comment_suffix: str
-    """The comment suffix for the language."""
-
-    omap_open: str
-    """The opening delimiter for ordered-map literals."""
-
-    omap_close: str
-    """The closing delimiter for ordered-map literals."""
+    ordered_map_format_config: OrderedMapFormatConfig
+    """Configuration for ordered-map formatting."""
 
     @property
-    def format_omap_entry(self) -> Callable[[str, str], str]:
+    def format_ordered_map_entry(self) -> Callable[[str, str], str]:
         """Callable that formats one ordered-map entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 

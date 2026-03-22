@@ -10,7 +10,7 @@ from ruamel.yaml.tokens import CommentToken
 
 
 @dataclasses.dataclass(frozen=True)
-class _ElementComments:
+class ElementComments:
     """Comments associated with a single top-level YAML element."""
 
     before: tuple[str, ...]
@@ -84,10 +84,10 @@ def _parse_after_token(
 
 
 @dataclasses.dataclass(frozen=True)
-class _CollectionComments:
+class CollectionComments:
     """Comments extracted from a YAML sequence or mapping string."""
 
-    elements: tuple[_ElementComments, ...]
+    elements: tuple[ElementComments, ...]
     trailing: tuple[str, ...]
 
 
@@ -95,7 +95,7 @@ class _CollectionComments:
 def extract_yaml_comments(
     *,
     ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
-) -> _CollectionComments:
+) -> CollectionComments:
     """Extract top-level comments from parsed ruamel.yaml data.
 
     Only works for sequences, mappings, and sets — *ruamel.yaml*'s
@@ -131,7 +131,7 @@ def extract_yaml_comments(
     # Iterate in insertion order so that pending_before propagation is
     # correct (a "before element N" comment is stored in the after-token
     # of element N-1 in insertion order).
-    element_map: dict[object, _ElementComments] = {}
+    element_map: dict[object, ElementComments] = {}
     for key in keys:
         before = list(pending_before)
         inline = ""
@@ -144,7 +144,7 @@ def extract_yaml_comments(
                 inline = parsed.inline
                 pending_before = parsed.before_next
 
-        element_map[key] = _ElementComments(
+        element_map[key] = ElementComments(
             before=tuple(before),
             inline=inline,
         )
@@ -159,7 +159,7 @@ def extract_yaml_comments(
     else:
         output_keys = keys
 
-    return _CollectionComments(
+    return CollectionComments(
         elements=tuple(element_map[k] for k in output_keys),
         trailing=tuple(pending_before),
     )
@@ -226,7 +226,7 @@ class YamlCollectionContext:
     """Context for formatting sequence/mapping YAML with comments."""
 
     base: str
-    element_comments: tuple[_ElementComments, ...]
+    element_comments: tuple[ElementComments, ...]
     trailing: tuple[str, ...]
     comment_prefix: str
     comment_suffix: str
@@ -293,7 +293,7 @@ def literalize_yaml_collection(
         footer = None
         body_lines = all_lines
 
-    _empty = _ElementComments(before=(), inline="")
+    _empty = ElementComments(before=(), inline="")
     padded = ctx.element_comments + (_empty,) * (
         len(body_lines) - len(ctx.element_comments)
     )
@@ -337,7 +337,7 @@ def literalize_yaml_collection(
 @beartype
 def prepend_collection_comments(
     *,
-    collection_comments: _CollectionComments,
+    collection_comments: CollectionComments,
     base: str,
     comment_prefix: str,
     comment_suffix: str,
@@ -353,6 +353,7 @@ def prepend_collection_comments(
     Returns *base* unchanged when there are no comments.
     """
 
+    @beartype
     def _fmt(text: str) -> str:
         """Format *text* as a comment line using the outer parameters."""
         return _format_comment(
@@ -376,7 +377,7 @@ def prepend_collection_comments(
 @beartype
 def apply_collection_comments(
     *,
-    collection_comments: _CollectionComments,
+    collection_comments: CollectionComments,
     base: str,
     comment_prefix: str,
     comment_suffix: str,

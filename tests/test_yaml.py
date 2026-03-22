@@ -46,7 +46,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.VariableTypeHints.NONE,
+    variable_type_hints=Python.variable_type_hints_formats.NONE,
 )
 
 
@@ -272,8 +272,9 @@ def test_yaml_empty_set_inline() -> None:
     assert result == "set(),"
 
 
-def test_omap_nested_in_sequence() -> None:
-    """An omap nested inside a sequence exercises _format_value's omap
+def test_ordered_map_nested_in_sequence() -> None:
+    """An ordered map nested inside a sequence exercises _format_value's
+    ordered-map
     branch.
     """
     yaml_string = textwrap.dedent(
@@ -479,7 +480,7 @@ def test_homogeneous_datetime_list_mojo() -> None:
     assert result == expected
 
 
-def test_coerce_homogeneous_omap_no_coercion() -> None:
+def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
     """Homogeneous ordereddict values are not coerced."""
     yaml_string = textwrap.dedent(
         text="""\
@@ -597,7 +598,7 @@ def test_coerce_mixed_dict_values_with_list() -> None:
     assert result == expected
 
 
-def test_coerce_mixed_omap_values() -> None:
+def test_coerce_mixed_ordered_map_values() -> None:
     """Ordered maps with mixed value types are coerced to strings."""
     yaml_string = textwrap.dedent(
         text="""\
@@ -849,8 +850,8 @@ def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
         )
 
 
-def test_error_on_coercion_raises_for_heterogeneous_omap() -> None:
-    """Error_on_coercion raises for heterogeneous omap values."""
+def test_error_on_coercion_raises_for_heterogeneous_ordered_map() -> None:
+    """Error_on_coercion raises for heterogeneous ordered-map values."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
@@ -921,8 +922,8 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
     assert result == expected
 
 
-def test_error_on_coercion_no_raise_for_homogeneous_omap() -> None:
-    """Error_on_coercion does not raise for homogeneous omap values."""
+def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
+    """Error_on_coercion does not raise for homogeneous ordered-map values."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
