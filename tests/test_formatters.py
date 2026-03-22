@@ -1,12 +1,9 @@
 """Tests for literalizer formatters."""
 
 import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 from literalizer._formatters import (
     format_bytes_hex,
@@ -59,7 +56,7 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
 
 def test_format_date_datetime(subtests: pytest.Subtests) -> None:
     """Each format function returns the expected string."""
-    cases: list[tuple[str, Callable[..., str], Any, str]] = [
+    cases: list[tuple[str, Any, Any, str]] = [
         (
             "format_date_python",
             format_date_python,
