@@ -1,0 +1,7 @@
+@code json
+[
+    1,
+    "hello",
+    true
+]
+@end
