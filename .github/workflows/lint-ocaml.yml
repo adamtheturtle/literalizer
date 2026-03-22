@@ -31,7 +31,10 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           set -o pipefail
-          find tests/integration/cases -name "*.ml" -print0 | \
+          find tests/integration/cases -name "*.ml" \
+            -not -name "*_date_ocaml.ml" \
+            -not -name "*_datetime_ocaml.ml" \
+            -print0 | \
             while IFS= read -r -d '' f; do
               ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
             done

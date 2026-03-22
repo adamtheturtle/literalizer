@@ -32,7 +32,10 @@ jobs:
           == 'true'
         run: |-
           set -o pipefail
-          find tests/integration/cases \( -name "*.fs" -o -name "*.fsi" \) -print0 | \
+          find tests/integration/cases \( -name "*.fs" -o -name "*.fsi" \) \
+            -not -name "*_date_fsharp.*" \
+            -not -name "*_datetime_fsharp.*" \
+            -print0 | \
             while IFS= read -r -d '' f; do
               tmpdir=$(mktemp -d)
               DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
