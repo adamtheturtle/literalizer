@@ -1765,9 +1765,9 @@ def _build_date_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_member = next(iter(spec.date_formats))
+        default_format: Any = spec.format_date
         for fmt in list(spec.date_formats):
-            if fmt is default_member:
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
@@ -1787,9 +1787,9 @@ def _build_datetime_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_member = next(iter(spec.datetime_formats))
+        default_format: Any = spec.format_datetime
         for fmt in list(spec.datetime_formats):
-            if fmt is default_member:
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
@@ -1879,9 +1879,14 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         type_hints_enum = spec.variable_type_hints_formats
-        default_member = next(iter(type_hints_enum))
-        for fmt in list(type_hints_enum):
-            if fmt is default_member:
+        members = list(type_hints_enum)
+        min_members_for_variants = 2
+        if len(members) < min_members_for_variants:
+            continue
+        default_declaration = spec.format_variable_declaration
+        for fmt in members:
+            candidate = lang_config.lang_cls(variable_type_hints=fmt)
+            if candidate.format_variable_declaration is default_declaration:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
