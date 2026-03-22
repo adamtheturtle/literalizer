@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -25,9 +24,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @beartype
@@ -44,14 +41,14 @@ def _format_bytes(value: bytes) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an Erlang variable declaration."""
     erlang_name = name[0].upper() + name[1:]
     return f"{erlang_name} = {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an Erlang variable assignment."""
     erlang_name = name[0].upper() + name[1:]
     return f"{erlang_name} = {value}"
@@ -220,10 +217,10 @@ class Erlang(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

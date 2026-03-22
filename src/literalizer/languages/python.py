@@ -2,10 +2,11 @@
 
 import datetime
 import enum
+from collections import OrderedDict
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
     dict_entry_with_separator,
@@ -29,9 +30,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @beartype
@@ -54,84 +53,56 @@ def _preamble(code: str) -> Sequence[str]:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Python variable declaration."""
     return f"{name} = {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Python variable assignment."""
     return f"{name} = {value}"
 
 
-_EXACT_TYPE_HINTS: dict[str, str] = {
-    "True": "bool",
-    "False": "bool",
-    "None": "None",
-    "set()": "set[Any]",
-}
-
-_PREFIX_TYPE_HINTS: tuple[tuple[str, str], ...] = (
-    ("b'", "bytes"),
-    ('b"', "bytes"),
-    ("datetime.datetime(year=", "datetime.datetime"),
-    ("datetime.date(year=", "datetime.date"),
-    ("OrderedDict(", "OrderedDict[str, Any]"),
-    ("frozenset(", "frozenset[Any]"),
-    ("[", "list[Any]"),
-    ("(", "tuple[Any, ...]"),
-    ('"', "str"),
-    ("'", "str"),
+# Ordered by priority: bool before int, datetime before date.
+_SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
+    (bool, "bool"),
+    (int, "int"),
+    (float, "float"),
+    (str, "str"),
+    (bytes, "bytes"),
+    (datetime.datetime, "datetime.datetime"),
+    (datetime.date, "datetime.date"),
 )
 
 
 @beartype
-def _infer_python_type_hint(value: str) -> str:
-    """Infer a Python type hint string from a formatted value."""
-    if value in _EXACT_TYPE_HINTS:
-        return _EXACT_TYPE_HINTS[value]
-    for prefix, hint in _PREFIX_TYPE_HINTS:
-        if value.startswith(prefix):
+def _python_type_hint(
+    data: Value,
+    *,
+    sequence_config: SequenceFormatConfig,
+    set_config: SetFormatConfig,
+) -> str:
+    """Derive a Python type hint from the original data structure."""
+    if data is None:
+        return "None"
+    for scalar_type, hint in _SCALAR_TYPE_HINTS:
+        if isinstance(data, scalar_type):
             return hint
-    if value.startswith("{"):
-        if _is_dict_literal(value=value):
-            return "dict[str, Any]"
-        return "set[Any]"
-    try:
-        int(value)
-    except ValueError:
-        return "float"
-    return "int"
-
-
-@beartype
-def _is_dict_literal(*, value: str) -> bool:
-    """Check whether a ``{``-prefixed formatted value is a dict literal.
-
-    In a dict, the first element is a quoted key followed by ``": "``.
-    In a set, the first element is a formatted value followed by ``,``
-    or ``}``.  To distinguish them we parse the first quoted string
-    (respecting backslash escapes) and check whether ``": "`` or
-    ``":`` immediately follows the closing quote.
-    """
-    content = value[1:].lstrip()
-    if not content or content[0] != '"':
-        return False
-    # Find the closing quote of the first key, skipping backslash escapes.
-    # In a dict, ``": "`` or ``":\n`` follows the closing quote.
-    i = 1
-    while content[i] == "\\" or content[i] != '"':
-        i += 1 + (content[i] == "\\")
-    rest = content[i + 1 :]
-    return rest.startswith((": ", ":\n"))
-
-
-@beartype
-def _format_variable_declaration_inline_hint(name: str, value: str) -> str:
-    """Format a Python variable declaration with an inline type hint."""
-    hint = _infer_python_type_hint(value=value)
-    return f"{name}: {hint} = {value}"
+    if isinstance(data, dict):
+        return (
+            "OrderedDict[str, Any]"
+            if isinstance(data, (ordereddict, OrderedDict))
+            else "dict[str, Any]"
+        )
+    if isinstance(data, (set, frozenset)):
+        return (
+            "frozenset[Any]"
+            if set_config.open_str.startswith("frozenset")
+            else "set[Any]"
+        )
+    # The only remaining Value type is list.
+    return "list[Any]" if sequence_config.close == "]" else "tuple[Any, ...]"
 
 
 @beartype
@@ -334,12 +305,28 @@ class Python(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
-            _format_variable_declaration_inline_hint
-            if variable_type_hints == Python.variable_type_hints_formats.INLINE
-            else _format_variable_declaration
-        )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        decl_formatter: Callable[[str, str, Value], str]
+        if variable_type_hints == Python.variable_type_hints_formats.INLINE:
+            seq_cfg = self.sequence_format_config
+            set_cfg = self.set_format_config
+
+            @beartype
+            def _inline_hint(name: str, value: str, data: Value) -> str:
+                """Format a Python variable declaration with an inline type
+                hint.
+                """
+                hint = _python_type_hint(
+                    data=data,
+                    sequence_config=seq_cfg,
+                    set_config=set_cfg,
+                )
+                return f"{name}: {hint} = {value}"
+
+            decl_formatter = _inline_hint
+        else:
+            decl_formatter = _format_variable_declaration
+        self.format_variable_declaration = decl_formatter
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

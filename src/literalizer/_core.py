@@ -834,7 +834,7 @@ def literalize_json(
             if new_variable
             else language.format_variable_assignment
         )
-        result = formatter(variable_name, result)
+        result = formatter(variable_name, result, data)
     return LiteralizeResult(
         code=result,
         preamble=tuple(language.preamble(result)),
@@ -1114,7 +1114,7 @@ def literalize_yaml(
             if new_variable
             else language.format_variable_assignment
         )
-        result = formatter(variable_name, result)
+        result = formatter(variable_name, result, data)
 
     if resolved.pending is not None:
         result = prepend_collection_comments(
