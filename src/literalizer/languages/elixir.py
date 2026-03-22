@@ -56,13 +56,18 @@ def _format_date_elixir(value: datetime.date) -> str:
 def _format_datetime_elixir(value: datetime.datetime) -> str:
     """Format a datetime as an Elixir sigil.
 
-    Uses ``~U`` for timezone-aware datetimes and ``~N`` for naive ones.
+    Uses ``~U`` for timezone-aware datetimes (converted to UTC, since
+    the ``~U`` sigil only accepts UTC offsets) and ``~N`` for naive ones.
     """
+    if value.tzinfo is not None:
+        utc_value = value.astimezone(tz=datetime.UTC)
+        iso = utc_value.isoformat()
+        # Elixir sigils use a space separator instead of T.
+        iso = iso.replace("T", " ")
+        return f"~U[{iso}]"
     iso = value.isoformat()
-    # Elixir sigils use a space separator instead of T.
     iso = iso.replace("T", " ")
-    sigil = "U" if value.tzinfo is not None else "N"
-    return f"~{sigil}[{iso}]"
+    return f"~N[{iso}]"
 
 
 _string_format: Callable[[str], str] = format_string_backslash
