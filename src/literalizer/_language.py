@@ -80,6 +80,7 @@ class HasFormatEnums(type):
     SetFormats: type[enum.Enum]
     CommentFormats: type[enum.Enum]
     VariableTypeHints: type[enum.Enum]
+    extension: str
 
 
 @runtime_checkable
