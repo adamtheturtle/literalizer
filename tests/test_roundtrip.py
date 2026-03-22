@@ -1,7 +1,5 @@
 """Hypothesis roundtrip tests for literalizer converter."""
 
-# pyright: reportPrivateUsage=false
-
 import ast
 import base64
 import json
@@ -11,11 +9,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from literalizer import literalize_json, literalize_yaml
-from literalizer._formatters import format_bytes_hex
 from literalizer.languages import Python
-from literalizer.languages.python import (
-    _format_bytes_python as format_bytes_python,
-)
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,
@@ -138,14 +132,14 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
 @given(data=st.binary())
 def test_roundtrip_bytes_python(data: bytes) -> None:
     """Format_bytes_python -> ast.literal_eval round-trips."""
-    result = format_bytes_python(value=data)
+    result = Python.BytesFormats.PYTHON(data)
     assert ast.literal_eval(node_or_string=result) == data
 
 
 @given(data=st.binary())
 def test_roundtrip_bytes_hex(data: bytes) -> None:
     """Format_bytes_hex -> bytes.fromhex round-trips."""
-    result = format_bytes_hex(value=data)
+    result = Python.BytesFormats.HEX(data)
     assert bytes.fromhex(result.strip('"')) == data
 
 

@@ -1,96 +1,21 @@
 """Tests for literalizer formatters."""
 
-# pyright: reportPrivateUsage=false
-
 import datetime
 from collections.abc import Callable
 
 import pytest
 
-from literalizer._formatters import (
-    format_bytes_hex,
-)
-from literalizer.languages import Java, Python
-from literalizer.languages.cpp import (
-    _format_date_cpp as format_date_cpp,
-)
-from literalizer.languages.cpp import (
-    _format_datetime_cpp as format_datetime_cpp,
-)
-from literalizer.languages.csharp import (
-    _format_date_csharp as format_date_csharp,
-)
-from literalizer.languages.csharp import (
-    _format_datetime_csharp as format_datetime_csharp,
-)
-from literalizer.languages.go import (
-    _format_date_go as format_date_go,
-)
-from literalizer.languages.go import (
-    _format_datetime_go as format_datetime_go,
-)
-from literalizer.languages.java import (
-    _format_date_java as format_date_java,
-)
-from literalizer.languages.java import (
-    _format_datetime_java_instant as format_datetime_java_instant,
-)
-from literalizer.languages.java import (
-    _format_datetime_java_zoned as format_datetime_java_zoned,
-)
-from literalizer.languages.javascript import (
-    _format_date_js as format_date_js,
-)
-from literalizer.languages.javascript import (
-    _format_datetime_js as format_datetime_js,
-)
-from literalizer.languages.kotlin import (
-    _format_date_kotlin as format_date_kotlin,
-)
-from literalizer.languages.kotlin import (
-    _format_datetime_kotlin as format_datetime_kotlin,
-)
-from literalizer.languages.python import (
-    _format_bytes_python as format_bytes_python,
-)
-from literalizer.languages.python import (
-    _format_date_python as format_date_python,
-)
-from literalizer.languages.python import (
-    _format_datetime_epoch as format_datetime_epoch,
-)
-from literalizer.languages.python import (
-    _format_datetime_python as format_datetime_python,
-)
-from literalizer.languages.ruby import (
-    _format_date_ruby as format_date_ruby,
-)
-from literalizer.languages.ruby import (
-    _format_datetime_ruby as format_datetime_ruby,
-)
-from literalizer.languages.rust import (
-    _format_date_rust as format_date_rust,
-)
-from literalizer.languages.rust import (
-    _format_datetime_rust as format_datetime_rust,
-)
-from literalizer.languages.vb import (
-    _format_string_vb as format_string_vb,
-)
-
-PYTHON = Python(
-    date_format=Python.date_formats.PYTHON,
-    datetime_format=Python.datetime_formats.PYTHON,
-    bytes_format=Python.bytes_formats.HEX,
-    sequence_format=Python.sequence_formats.TUPLE,
-    set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.NONE,
-)
-JAVA = Java(
-    date_format=Java.date_formats.JAVA,
-    datetime_format=Java.datetime_formats.INSTANT,
-    bytes_format=Java.bytes_formats.HEX,
-    sequence_format=Java.sequence_formats.ARRAY,
+from literalizer.languages import (
+    Cpp,
+    CSharp,
+    Go,
+    Java,
+    JavaScript,
+    Kotlin,
+    Python,
+    Ruby,
+    Rust,
+    VisualBasic,
 )
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
@@ -104,13 +29,13 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
     argnames=("func", "value", "expected"),
     argvalues=[
         pytest.param(
-            format_date_python,
+            Python.DateFormats.PYTHON,
             _SAMPLE_DATE,
             "datetime.date(year=2024, month=1, day=15)",
             id="format_date_python",
         ),
         pytest.param(
-            format_datetime_python,
+            Python.DatetimeFormats.PYTHON,
             _SAMPLE_DATETIME,
             "datetime.datetime("
             "year=2024, month=1, day=15, "
@@ -118,7 +43,7 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_python",
         ),
         pytest.param(
-            format_datetime_python,
+            Python.DatetimeFormats.PYTHON,
             _SAMPLE_DATETIME_MICRO,
             "datetime.datetime("
             "year=2024, month=1, day=15, "
@@ -127,91 +52,91 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_python_microsecond",
         ),
         pytest.param(
-            format_date_java,
+            Java.DateFormats.JAVA,
             _SAMPLE_DATE,
             "LocalDate.of(2024, 1, 15)",
             id="format_date_java",
         ),
         pytest.param(
-            format_datetime_java_instant,
+            Java.DatetimeFormats.INSTANT,
             _SAMPLE_DATETIME,
             'Instant.parse("2024-01-15T12:30:00")',
             id="format_datetime_java_instant",
         ),
         pytest.param(
-            format_datetime_java_zoned,
+            Java.DatetimeFormats.ZONED,
             _SAMPLE_DATETIME,
             'ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("UTC"))',
             id="format_datetime_java_zoned",
         ),
         pytest.param(
-            format_date_ruby,
+            Ruby.DateFormats.RUBY,
             _SAMPLE_DATE,
             "Date.new(2024, 1, 15)",
             id="format_date_ruby",
         ),
         pytest.param(
-            format_datetime_ruby,
+            Ruby.DatetimeFormats.RUBY,
             _SAMPLE_DATETIME,
             "Time.new(2024, 1, 15, 12, 30, 0)",
             id="format_datetime_ruby",
         ),
         pytest.param(
-            format_date_js,
+            JavaScript.DateFormats.JS,
             _SAMPLE_DATE,
             'new Date("2024-01-15")',
             id="format_date_js",
         ),
         pytest.param(
-            format_datetime_js,
+            JavaScript.DatetimeFormats.JS,
             _SAMPLE_DATETIME,
             'new Date("2024-01-15T12:30:00")',
             id="format_datetime_js",
         ),
         pytest.param(
-            format_date_csharp,
+            CSharp.DateFormats.CSHARP,
             _SAMPLE_DATE,
             "new DateOnly(2024, 1, 15)",
             id="format_date_csharp",
         ),
         pytest.param(
-            format_datetime_csharp,
+            CSharp.DatetimeFormats.CSHARP,
             _SAMPLE_DATETIME,
             "new DateTime(2024, 1, 15, 12, 30, 0)",
             id="format_datetime_csharp",
         ),
         pytest.param(
-            format_date_go,
+            Go.DateFormats.GO,
             _SAMPLE_DATE,
             "time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)",
             id="format_date_go",
         ),
         pytest.param(
-            format_datetime_go,
+            Go.DatetimeFormats.GO,
             _SAMPLE_DATETIME,
             "time.Date(2024, time.January, 15, 12, 30, 0, 0, time.UTC)",
             id="format_datetime_go",
         ),
         pytest.param(
-            format_date_kotlin,
+            Kotlin.DateFormats.KOTLIN,
             _SAMPLE_DATE,
             "LocalDate.of(2024, 1, 15)",
             id="format_date_kotlin",
         ),
         pytest.param(
-            format_datetime_kotlin,
+            Kotlin.DatetimeFormats.KOTLIN,
             _SAMPLE_DATETIME,
             "LocalDateTime.of(2024, 1, 15, 12, 30, 0)",
             id="format_datetime_kotlin",
         ),
         pytest.param(
-            format_date_rust,
+            Rust.DateFormats.RUST,
             _SAMPLE_DATE,
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()",
             id="format_date_rust",
         ),
         pytest.param(
-            format_datetime_rust,
+            Rust.DatetimeFormats.RUST,
             _SAMPLE_DATETIME,
             "NaiveDateTime::new("
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
@@ -219,7 +144,7 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_rust",
         ),
         pytest.param(
-            format_datetime_rust,
+            Rust.DatetimeFormats.RUST,
             datetime.datetime.fromisoformat("2024-01-15T12:30:00.123456"),
             "NaiveDateTime::new("
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
@@ -234,12 +159,12 @@ def test_format_date_datetime(
     expected: str,
 ) -> None:
     """Each format function returns the expected string."""
-    assert func(value=value) == expected
+    assert func(value) == expected
 
 
 def test_format_datetime_epoch() -> None:
     """``format_datetime_epoch`` returns a numeric timestamp."""
-    result = format_datetime_epoch(value=_SAMPLE_DATETIME)
+    result = Python.DatetimeFormats.EPOCH(_SAMPLE_DATETIME)
     # The exact value depends on local timezone for naive datetimes,
     # so just check it parses as a float.
     float(result)
@@ -247,7 +172,7 @@ def test_format_datetime_epoch() -> None:
 
 def test_format_date_cpp() -> None:
     """``format_date_cpp`` returns a year_month_day literal."""
-    result = format_date_cpp(value=_SAMPLE_DATE)
+    result = Cpp.DateFormats.CPP(_SAMPLE_DATE)
     expected = (
         "std::chrono::year_month_day{"
         "std::chrono::year{2024}, "
@@ -259,7 +184,7 @@ def test_format_date_cpp() -> None:
 
 def test_format_datetime_cpp() -> None:
     """``format_datetime_cpp`` returns a sys_days expression."""
-    result = format_datetime_cpp(value=_SAMPLE_DATETIME)
+    result = Cpp.DatetimeFormats.CPP(_SAMPLE_DATETIME)
     expected = (
         "std::chrono::sys_days{"
         "std::chrono::year_month_day{"
@@ -275,7 +200,7 @@ def test_format_datetime_cpp() -> None:
 def test_format_datetime_cpp_midnight() -> None:
     """``format_datetime_cpp`` at midnight omits zero time components."""
     midnight = datetime.datetime.fromisoformat("2024-01-15T00:00:00")
-    result = format_datetime_cpp(value=midnight)
+    result = Cpp.DatetimeFormats.CPP(midnight)
     expected = (
         "std::chrono::sys_days{"
         "std::chrono::year_month_day{"
@@ -289,7 +214,7 @@ def test_format_datetime_cpp_midnight() -> None:
 def test_format_datetime_cpp_seconds_and_microseconds() -> None:
     """``format_datetime_cpp`` includes seconds and microseconds."""
     dt = datetime.datetime.fromisoformat("2024-01-15T12:30:45.123456")
-    result = format_datetime_cpp(value=dt)
+    result = Cpp.DatetimeFormats.CPP(dt)
     expected = (
         "std::chrono::sys_days{"
         "std::chrono::year_month_day{"
@@ -308,25 +233,25 @@ def test_format_datetime_cpp_seconds_and_microseconds() -> None:
     argnames=("func", "value", "expected"),
     argvalues=[
         pytest.param(
-            format_bytes_hex,
+            Python.BytesFormats.HEX,
             b"Hello",
             '"48656c6c6f"',
             id="format_bytes_hex",
         ),
         pytest.param(
-            format_bytes_hex,
+            Python.BytesFormats.HEX,
             b"",
             '""',
             id="format_bytes_hex_empty",
         ),
         pytest.param(
-            format_bytes_python,
+            Python.BytesFormats.PYTHON,
             b"Hello",
             "b'Hello'",
             id="format_bytes_python",
         ),
         pytest.param(
-            format_bytes_python,
+            Python.BytesFormats.PYTHON,
             b"\x00\x01\x02",
             "b'\\x00\\x01\\x02'",
             id="format_bytes_python_non_printable",
@@ -339,7 +264,10 @@ def test_format_bytes(
     expected: str,
 ) -> None:
     """Each bytes format function returns the expected string."""
-    assert func(value=value) == expected
+    assert func(value) == expected
+
+
+_VB = VisualBasic()
 
 
 @pytest.mark.parametrize(
@@ -375,4 +303,4 @@ def test_format_string_vb(value: str, expected: str) -> None:
     """``format_string_vb`` formats strings using VB.NET escaping
     rules.
     """
-    assert format_string_vb(value=value) == expected
+    assert _VB.format_string(value=value) == expected
