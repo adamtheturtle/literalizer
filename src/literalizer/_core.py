@@ -32,16 +32,15 @@ from literalizer.exceptions import (
 
 @dataclasses.dataclass(frozen=True)
 class LiteralizeResult:
-    """Result of converting data to a native language literal.
-
-    Attributes:
-        code: The formatted literal text.
-        preamble: Lines (imports, package declarations, etc.) that
-            must precede the generated code.  Empty when none are needed.
-    """
+    """Result of converting data to a native language literal."""
 
     code: str
+    """The formatted literal text."""
+
     preamble: tuple[str, ...]
+    """Lines (imports, package declarations, etc.) that must precede
+    the generated code.  Empty when none are needed.
+    """
 
 
 @beartype
