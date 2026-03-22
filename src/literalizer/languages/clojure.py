@@ -138,6 +138,7 @@ class Clojure(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.VECTOR,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.SEMICOLON,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Clojure language specification."""
         self.sequence_format = sequence_format

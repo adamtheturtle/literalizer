@@ -155,6 +155,7 @@ class Norg(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.PERCENT,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Norg language specification."""
         self.sequence_format = sequence_format

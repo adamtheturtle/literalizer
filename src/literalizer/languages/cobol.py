@@ -312,6 +312,7 @@ class Cobol(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.SEQUENCE,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.STAR_ANGLE,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize COBOL language specification."""
         self.sequence_format = sequence_format
