@@ -65,7 +65,7 @@ def test_yaml_comment_sequence_before() -> None:
             "b",
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_sequence_inline() -> None:
@@ -88,7 +88,7 @@ def test_yaml_comment_sequence_inline() -> None:
             "b",  # note b
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_mapping() -> None:
@@ -113,7 +113,7 @@ def test_yaml_comment_mapping() -> None:
             "b": 2,
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_javascript_prefix() -> None:
@@ -136,7 +136,7 @@ def test_yaml_comment_javascript_prefix() -> None:
             "a",
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_trailing() -> None:
@@ -159,7 +159,7 @@ def test_yaml_comment_trailing() -> None:
             # trailing
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_no_include_delimiters() -> None:
@@ -176,7 +176,7 @@ def test_yaml_comment_no_include_delimiters() -> None:
         error_on_coercion=False,
     )
     expected = '    # comment\n    "a",\n    "b",'
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_scalar() -> None:
@@ -193,7 +193,7 @@ def test_yaml_comment_scalar() -> None:
         error_on_coercion=False,
     )
     expected = "# note\n42"
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_scalar_inline() -> None:
@@ -210,7 +210,7 @@ def test_yaml_comment_scalar_inline() -> None:
         error_on_coercion=False,
     )
     expected = "42  # note"
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_no_comments_unchanged() -> None:
@@ -233,7 +233,7 @@ def test_yaml_no_comments_unchanged() -> None:
             "b",
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_multiple_before_lines() -> None:
@@ -257,7 +257,7 @@ def test_yaml_comment_multiple_before_lines() -> None:
             "a",
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -307,7 +307,7 @@ def test_yaml_comment_escaped_quote_in_value() -> None:
             "key": "value \\" # not a comment",  # real
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_scalar_quoted_with_hash() -> None:
@@ -324,7 +324,7 @@ def test_yaml_comment_scalar_quoted_with_hash() -> None:
         error_on_coercion=False,
     )
     expected = '"hello # world"  # note'
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_double_hash() -> None:
@@ -347,7 +347,7 @@ def test_yaml_comment_double_hash() -> None:
             "a",
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_block_scalar_not_extracted() -> None:
@@ -370,7 +370,7 @@ def test_yaml_comment_block_scalar_not_extracted() -> None:
             "name": "foo",
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_scalar_with_document_markers() -> None:
@@ -387,7 +387,7 @@ def test_yaml_comment_scalar_with_document_markers() -> None:
         error_on_coercion=False,
     )
     expected = "# note\n42"
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_empty_comment_line() -> None:
@@ -411,7 +411,7 @@ def test_yaml_comment_empty_comment_line() -> None:
             "b",
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_more_body_lines_than_comments() -> None:
@@ -435,7 +435,7 @@ def test_yaml_comment_more_body_lines_than_comments() -> None:
             "c",
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_scalar_only_comments() -> None:
@@ -452,7 +452,7 @@ def test_yaml_comment_scalar_only_comments() -> None:
         error_on_coercion=False,
     )
     expected = "# just a comment\nNone"
-    assert result == expected
+    assert result.code == expected
 
 
 def test_yaml_comment_mapping_nested_value_none_token() -> None:
@@ -475,4 +475,4 @@ def test_yaml_comment_mapping_nested_value_none_token() -> None:
             "b": 2,
         }"""
     )
-    assert result == expected
+    assert result.code == expected

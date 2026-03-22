@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -27,8 +28,6 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 
@@ -51,6 +50,12 @@ def _format_variable_assignment(name: str, value: str) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"* {name}\n@code json\n{value}\n@end"
+
+
+@beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return required imports (none for this language)."""
+    return ()
 
 
 @beartype
@@ -208,3 +213,4 @@ class Norg(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

@@ -77,7 +77,8 @@ def test_dict_python() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
+    expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
+    assert result.code == expected
 
 
 def test_dict_include_delimiters() -> None:
@@ -99,7 +100,7 @@ def test_dict_include_delimiters() -> None:
             "b": 2,
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -120,7 +121,7 @@ def test_dict_empty(*, include_delimiters: bool) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == ""
+    assert result.code == ""
 
 
 def test_integers() -> None:
@@ -141,7 +142,7 @@ def test_integers() -> None:
         0,
         -7,"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_floats() -> None:
@@ -161,7 +162,7 @@ def test_floats() -> None:
         1000.0,
         3.14,"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_string_escaping() -> None:
@@ -176,7 +177,7 @@ def test_string_escaping() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    lines = result.split(sep="\n")
+    lines = result.code.split(sep="\n")
     assert lines[0] == '"say \\"hi\\"",'
     assert lines[1] == '"a\\\\b",'
     assert lines[2] == '"line1\\nline2",'
@@ -194,7 +195,7 @@ def test_nested_arrays() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "((1, 2), (3, 4)),"
+    assert result.code == "((1, 2), (3, 4)),"
 
 
 def test_dicts() -> None:
@@ -209,7 +210,7 @@ def test_dicts() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '{"name": "alice", "age": 30},'
+    assert result.code == '{"name": "alice", "age": 30},'
 
 
 def test_nested_dict_in_sequence() -> None:
@@ -224,7 +225,7 @@ def test_nested_dict_in_sequence() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '("a", {"x": 1}),'
+    assert result.code == '("a", {"x": 1}),'
 
 
 def test_nested_sequence_in_dict() -> None:
@@ -239,7 +240,7 @@ def test_nested_sequence_in_dict() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '{"items": (1, 2)},'
+    assert result.code == '{"items": (1, 2)},'
 
 
 def test_indent_spaces() -> None:
@@ -254,7 +255,7 @@ def test_indent_spaces() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "        True,\n        False,"
+    assert result.code == "        True,\n        False,"
 
 
 def test_indent_tabs() -> None:
@@ -269,7 +270,7 @@ def test_indent_tabs() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "\t\ttrue,\n\t\tfalse,"
+    assert result.code == "\t\ttrue,\n\t\tfalse,"
 
 
 def test_include_delimiters() -> None:
@@ -291,7 +292,7 @@ def test_include_delimiters() -> None:
             False,
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_include_delimiters_with_line_prefix() -> None:
@@ -307,7 +308,7 @@ def test_include_delimiters_with_line_prefix() -> None:
         error_on_coercion=False,
     )
     expected = '    (\n        ("a", 1.0),\n    )'
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -328,7 +329,7 @@ def test_empty_data(*, include_delimiters: bool) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == ""
+    assert result.code == ""
 
 
 @pytest.mark.parametrize(
@@ -361,7 +362,7 @@ def test_scalar(
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_scalar_with_indent() -> None:
@@ -376,7 +377,7 @@ def test_scalar_with_indent() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "    42"
+    assert result.code == "    42"
 
 
 def test_scalar_include_delimiters_ignored() -> None:
@@ -391,7 +392,7 @@ def test_scalar_include_delimiters_ignored() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "42"
+    assert result.code == "42"
 
 
 def test_literalize_json_array() -> None:
@@ -408,7 +409,7 @@ def test_literalize_json_array() -> None:
         error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
-    assert result == expected
+    assert result.code == expected
 
 
 def test_literalize_json_object() -> None:
@@ -431,7 +432,7 @@ def test_literalize_json_object() -> None:
             "b": True,
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_literalize_json_invalid() -> None:
@@ -473,7 +474,7 @@ def test_part1_sample_python() -> None:
         '        ("user_1", 1002.0),',
         '        ("user_1", 1003.0),',
     ]
-    assert result.split(sep="\n") == expected_lines
+    assert result.code.split(sep="\n") == expected_lines
 
 
 def test_part2_sample_go() -> None:
@@ -489,7 +490,7 @@ def test_part2_sample_go() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    lines = result.split(sep="\n")
+    lines = result.code.split(sep="\n")
     assert lines[0] == '        []any{"user_1", 49, 1000.0},'
     assert lines[1] == '        []any{"user_9", 10, 1003.0},'
 
@@ -552,7 +553,7 @@ def test_error_on_coercion_json_no_raise_homogeneous() -> None:
             3,
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_error_on_coercion_json_raises_sibling_lists() -> None:

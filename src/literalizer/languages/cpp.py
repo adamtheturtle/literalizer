@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
@@ -27,8 +28,6 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 _CPP_SCALAR_TYPES: dict[str, str] = {
@@ -93,6 +92,14 @@ def _cpp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
 def _format_cpp_dict_entry(key: str, value: str) -> str:
     """Format a C++ dict entry as a brace-enclosed pair."""
     return f"{{{key}, {value}}}"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    if "std::chrono" in code:
+        return ["#include <chrono>"]
+    return []
 
 
 @beartype
@@ -287,3 +294,4 @@ class Cpp(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble
