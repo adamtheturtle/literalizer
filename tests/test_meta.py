@@ -1,7 +1,9 @@
 """Meta-tests for project structure and CI configuration."""
 
+from typing import Any
+
 import pytest
-import yaml
+from ruamel.yaml import YAML
 
 from literalizer.languages import ALL_LANGUAGES
 
@@ -11,7 +13,10 @@ def test_all_languages_have_lint_workflow(
 ) -> None:
     """Every language has a lint job in lint.yml."""
     lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
-    workflow = yaml.safe_load(lint_yml.read_text())
+    ruamel_yaml = YAML()
+    workflow: dict[str, Any] = ruamel_yaml.load(
+        stream=lint_yml,
+    )
     job_ids: set[str] = set(workflow["jobs"])
 
     # Python is linted by the "build" job (pre-commit hooks),
@@ -45,7 +50,10 @@ def test_all_lint_jobs_in_completion_gate(
 ) -> None:
     """Every lint-* job is in completion-lint.needs."""
     lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
-    workflow = yaml.safe_load(lint_yml.read_text())
+    ruamel_yaml = YAML()
+    workflow: dict[str, Any] = ruamel_yaml.load(
+        stream=lint_yml,
+    )
     job_ids: set[str] = set(workflow["jobs"])
     completion_needs: set[str] = set(
         workflow["jobs"]["completion-lint"]["needs"],
