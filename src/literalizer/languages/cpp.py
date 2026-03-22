@@ -289,6 +289,7 @@ class Cpp(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             str: ("#include <string>",),
+            bytes: ("#include <string>",),
             type(None): ("#include <cstddef>",),
             datetime.date: ("#include <chrono>",),
             datetime.datetime: ("#include <chrono>",),

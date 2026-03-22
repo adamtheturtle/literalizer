@@ -54,10 +54,12 @@ def _walk_value(*, value: Value, types: set[type]) -> None:
     """Recursively add the type of *value* to *types*."""
     if isinstance(value, ordereddict):
         types.add(ordereddict)
+        types.add(str)  # keys are always strings
         for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
             _walk_value(value=v, types=types)  # pyright: ignore[reportUnknownArgumentType]
     elif isinstance(value, dict):
         types.add(dict)
+        types.add(str)  # keys are always strings
         for v in value.values():
             _walk_value(value=v, types=types)
     elif isinstance(value, (set, frozenset)):
