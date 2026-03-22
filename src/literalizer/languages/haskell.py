@@ -20,7 +20,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -58,7 +58,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Haskell(metaclass=HasFormatEnums):
+class Haskell(metaclass=LanguageCls):
     """Haskell language specification.
 
     The generated output uses custom constructors (``HNull``, ``HBool``,

@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -90,7 +90,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class C(metaclass=HasFormatEnums):
+class C(metaclass=LanguageCls):
     """C language specification."""
 
     extension = ".c"

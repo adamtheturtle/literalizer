@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -108,7 +108,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class FSharp(metaclass=HasFormatEnums):
+class FSharp(metaclass=LanguageCls):
     """F# language specification."""
 
     extension = ".fs"

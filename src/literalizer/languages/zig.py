@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -84,7 +84,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Zig(metaclass=HasFormatEnums):
+class Zig(metaclass=LanguageCls):
     """Zig language specification."""
 
     extension = ".zig"

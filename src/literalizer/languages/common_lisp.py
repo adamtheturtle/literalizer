@@ -20,7 +20,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -52,7 +52,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class CommonLisp(metaclass=HasFormatEnums):
+class CommonLisp(metaclass=LanguageCls):
     """Common Lisp language specification."""
 
     extension = ".lisp"

@@ -1332,7 +1332,7 @@ class _Variant:
 class _LanguageConfig:
     """Language configuration with class, file extension, and wrapper."""
 
-    lang_cls: literalizer.HasFormatEnums
+    lang_cls: literalizer.LanguageCls
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]

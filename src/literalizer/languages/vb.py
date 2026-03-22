@@ -19,7 +19,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -86,7 +86,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class VisualBasic(metaclass=HasFormatEnums):
+class VisualBasic(metaclass=LanguageCls):
     """Visual Basic (.NET) language specification.
 
     VB.NET collection initializers (``New T() { ... }``,

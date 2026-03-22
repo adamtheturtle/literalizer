@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -117,7 +117,7 @@ _string_format: Callable[[str], str] = format_string_matlab
 
 
 @beartype
-class Matlab(metaclass=HasFormatEnums):
+class Matlab(metaclass=LanguageCls):
     """MATLAB language specification."""
 
     extension = ".m"
