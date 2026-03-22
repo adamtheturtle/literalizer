@@ -130,12 +130,14 @@ class VisualBasic(metaclass=LanguageCls):
         """Sequence type options for Visual Basic."""
 
         ARRAY = SequenceFormatConfig(
-            open_str="New Object() {",
+            sequence_open=typed_sequence_open(
+                schema_to_opener=_vb_schema_to_opener,
+                fallback="New Object() {",
+            ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="New Object() {}",
-            schema_to_opener=None,
         )
 
         @property
@@ -195,10 +197,7 @@ class VisualBasic(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_vb_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(
                 open_str="New Dictionary(Of String, Object) From {",

@@ -208,20 +208,18 @@ class Python(metaclass=LanguageCls):
         """Sequence type options for Python."""
 
         TUPLE = SequenceFormatConfig(
-            open_str="(",
+            sequence_open=fixed_sequence_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
             empty_sequence=None,
-            schema_to_opener=None,
         )
         LIST = SequenceFormatConfig(
-            open_str="[",
+            sequence_open=fixed_sequence_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
-            schema_to_opener=None,
         )
 
         @property
@@ -286,9 +284,7 @@ class Python(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
