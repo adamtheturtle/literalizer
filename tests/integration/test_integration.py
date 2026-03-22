@@ -2005,9 +2005,6 @@ def _build_date_variants() -> dict[str, _Variant]:
     return variants
 
 
-_DATE_VARIANTS: dict[str, _Variant] = _build_date_variants()
-
-
 @beartype
 def _build_sequence_variants() -> dict[str, _Variant]:
     """Build sequence-format variants for all languages with multiple
@@ -2030,9 +2027,6 @@ def _build_sequence_variants() -> dict[str, _Variant]:
                 wrap=lang_config.wrap,
             )
     return variants
-
-
-_SEQUENCE_VARIANTS: dict[str, _Variant] = _build_sequence_variants()
 
 
 @beartype
@@ -2060,9 +2054,6 @@ def _build_set_variants() -> dict[str, _Variant]:
     return variants
 
 
-_SET_VARIANTS: dict[str, _Variant] = _build_set_variants()
-
-
 def _build_comment_variants() -> dict[str, _Variant]:
     """Build comment-format variants for all languages with multiple
     formats.
@@ -2084,9 +2075,6 @@ def _build_comment_variants() -> dict[str, _Variant]:
                 wrap=lang_config.wrap,
             )
     return variants
-
-
-_COMMENT_VARIANTS: dict[str, _Variant] = _build_comment_variants()
 
 
 @beartype
@@ -2236,10 +2224,10 @@ def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[dict[str, _Variant], str]] = [
-        (_DATE_VARIANTS, "dates"),
-        (_SEQUENCE_VARIANTS, "simple_sequence"),
-        (_SET_VARIANTS, "set"),
-        (_COMMENT_VARIANTS, "comments"),
+        (_build_date_variants(), "dates"),
+        (_build_sequence_variants(), "simple_sequence"),
+        (_build_set_variants(), "set"),
+        (_build_comment_variants(), "comments"),
     ]
     for variants, case_dir_name in variant_sources:
         for variant_name, variant in variants.items():
