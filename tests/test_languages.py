@@ -10,6 +10,7 @@ from literalizer import (
     literalize_json,
     literalize_yaml,
 )
+from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import (
     Cobol,
     Cpp,
@@ -646,3 +647,47 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     )
     assert "'it''s here'" in result
     assert "&  !" in result
+
+
+def test_java_list_format() -> None:
+    """Java LIST format uses ``List.of(...)`` for non-null sequences."""
+    spec = Java(
+        sequence_format=Java.sequence_formats.LIST,
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj=[1, "hello", True]),
+        language=spec,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        List.of(
+            1,
+            "hello",
+            true
+        )"""
+    )
+    assert result == expected
+
+
+def test_java_list_rejects_null_elements() -> None:
+    """Java's ``List.of()`` does not accept null elements."""
+    spec = Java(
+        sequence_format=Java.sequence_formats.LIST,
+    )
+    with pytest.raises(expected_exception=NullInCollectionError):
+        literalize_json(
+            json_string=json.dumps(obj=[1, None, "hello"]),
+            language=spec,
+            line_prefix="",
+            indent="    ",
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=False,
+        )

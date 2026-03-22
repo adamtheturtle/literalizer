@@ -8,7 +8,6 @@ from beartype import beartype
 
 from literalizer._formatters import (
     fixed_dict_open,
-    fixed_sequence_open,
     format_bytes_hex,
     format_date_java,
     format_datetime_java_instant,
@@ -26,11 +25,30 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer.exceptions import NullInCollectionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from literalizer._types import Value
+
+
+_LIST_OF_OPEN = "List.of("
+
+
+@beartype
+def _list_of_open(items: list[Any]) -> str:
+    """Return ``List.of(`` after checking for null elements.
+
+    Java's ``List.of()`` throws ``NullPointerException`` on null elements.
+    """
+    if any(item is None for item in items):
+        msg = (
+            "Java's List.of() does not accept null elements. "
+            "Use sequence_format=ARRAY instead."
+        )
+        raise NullInCollectionError(msg)
+    return _LIST_OF_OPEN
 
 
 @beartype
@@ -227,16 +245,14 @@ class Java(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        if fmt.schema_to_opener is not None:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    schema_to_opener=fmt.schema_to_opener,
-                    fallback=fmt.open_str,
-                )
-            )
+        if sequence_format is Java.sequence_formats.LIST:
+            self.sequence_open: Callable[[list[Value]], str] = _list_of_open
         else:
-            self.sequence_open = fixed_sequence_open(
-                open_str=fmt.open_str,
+            # ARRAY always defines schema_to_opener; narrow for type checkers.
+            opener = fmt.schema_to_opener or _java_schema_to_opener
+            self.sequence_open = typed_sequence_open(
+                schema_to_opener=opener,
+                fallback=fmt.open_str,
             )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
