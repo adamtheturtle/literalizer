@@ -106,7 +106,7 @@ class Mojo(metaclass=HasFormatEnums):
             close="]",
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
-            empty_sequence=None,
+            empty_sequence="List[String]()",
         )
 
         @property
@@ -122,7 +122,7 @@ class Mojo(metaclass=HasFormatEnums):
         SET = SetFormatConfig(
             open_str="[",
             close="]",
-            empty_set=None,
+            empty_set="Set[String]()",
         )
 
     class CommentFormats(enum.Enum):
@@ -172,7 +172,7 @@ class Mojo(metaclass=HasFormatEnums):
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
-            empty_dict=None,
+            empty_dict="Dict[String, String]()",
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
