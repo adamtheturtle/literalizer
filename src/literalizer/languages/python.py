@@ -145,7 +145,7 @@ def _python_type_hint(
         is_ordered = isinstance(data, (ordereddict, OrderedDict))
         dict_name = "OrderedDict" if is_ordered else "dict"
         value_union = _collection_element_union(
-            data.values(),
+            elements=data.values(),
             sequence_config=sequence_config,
             set_config=set_config,
         )
@@ -157,7 +157,7 @@ def _python_type_hint(
             else "set"
         )
         elem_union = _collection_element_union(
-            data,
+            elements=data,
             sequence_config=sequence_config,
             set_config=set_config,
         )
@@ -168,7 +168,7 @@ def _python_type_hint(
     suffix = "" if is_list else ", ..."
     elements: Iterable[Value] = data if isinstance(data, list) else []
     elem_union = _collection_element_union(
-        elements,
+        elements=elements,
         sequence_config=sequence_config,
         set_config=set_config,
     )
