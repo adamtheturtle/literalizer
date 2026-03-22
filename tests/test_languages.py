@@ -698,16 +698,13 @@ def test_java_list_rejects_null_elements() -> None:
         )
 
 
-_ALL_LANGUAGE_CLASSES = [
-    getattr(literalizer.languages, name)
-    for name in literalizer.languages.__all__
-]
-
-
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=_ALL_LANGUAGE_CLASSES,
-    ids=[cls.__name__ for cls in _ALL_LANGUAGE_CLASSES],
+    argvalues=sorted(
+        literalizer.languages.ALL_LANGUAGES,
+        key=lambda c: c.__name__,
+    ),
+    ids=lambda c: c.__name__,
 )
 def test_pygments_name_is_valid(
     *,
