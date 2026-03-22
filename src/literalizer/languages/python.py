@@ -309,7 +309,7 @@ class Python(metaclass=LanguageCls):
                 hint.
                 """
                 hint = _python_type_hint(
-                    data,
+                    data=data,
                     sequence_config=seq_cfg,
                     set_config=set_cfg,
                 )
