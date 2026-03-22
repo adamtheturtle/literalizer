@@ -1250,75 +1250,10 @@ def _wrap_python_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_java_time(content: str) -> str:
-    """Wrap in a Java class with java.time.* imports."""
-    return f"""\
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Map;
-import java.util.Set;
-class Check {{
-    Object x = {content};
-}}"""
-
-
-@beartype
-def _wrap_kotlin_time(content: str) -> str:
-    """Wrap in a Kotlin variable assignment with java.time imports."""
-    return (
-        f"import java.time.LocalDate\n"
-        f"import java.time.LocalDateTime\n"
-        f"val x: Any? = {content}"
-    )
-
-
-@beartype
-def _wrap_go_time(content: str) -> str:
-    """Wrap in a Go package with the time package imported."""
-    return f'package main\n\nimport "time"\n\nvar _ = {content}'
-
-
-@beartype
-def _wrap_cpp_chrono(content: str) -> str:
-    """Wrap in C++ with the chrono header included."""
-    return (
-        "#include <chrono>\n"
-        "#include <initializer_list>\n"
-        "#include <cstddef>\n"
-        "#include <map>\n"
-        "#include <string>\n"
-        "#include <vector>\n"
-        "struct _Any {\n"
-        "    template<class T> _Any(T&&) noexcept {}\n"
-        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-        "};\n"
-        "void _check() {\n"
-        f"    [[maybe_unused]] _Any _v = {content};\n"
-        "}"
-    )
-
-
-@beartype
-def _wrap_csharp_date(content: str) -> str:
-    """Wrap in C# with System and Collections.Generic namespaces."""
-    return (
-        f"using System;\nusing System.Collections.Generic;\nvar x = {content};"
-    )
-
-
-@beartype
 def _wrap_ruby(content: str) -> str:
     """Wrap with require 'date' when Ruby Date literals are present."""
     prefix = "require 'date'\n" if "Date.new" in content else ""
     return f"{prefix}{content}"
-
-
-@beartype
-def _wrap_ruby_date(content: str) -> str:
-    """Wrap with require 'date' for Ruby Date literals."""
-    return f"require 'date'\n{content}"
 
 
 @beartype
@@ -1357,12 +1292,6 @@ def _wrap_julia(content: str) -> str:
     needs_dates = "Date(" in content or "DateTime(" in content
     prefix = "using Dates\n" if needs_dates else ""
     return f"{prefix}{content}"
-
-
-@beartype
-def _wrap_julia_dates(content: str) -> str:
-    """Wrap with ``using Dates`` for native Julia date literals."""
-    return f"using Dates\n{content}"
 
 
 @beartype
@@ -1627,7 +1556,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_kotlin,
         varname_wrap=_wrap_kotlin_varname,
         combined_wrap=_wrap_kotlin_combined,
-        date_wrap=_wrap_kotlin_time,
+        date_wrap=_wrap_identity,
         set_wrap=_wrap_identity,
     ),
     "ruby": _LanguageConfig(
@@ -1637,7 +1566,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_ruby,
         varname_wrap=_wrap_ruby,
         combined_wrap=lambda d, a: _wrap_ruby(content=d + "\n" + a),
-        date_wrap=_wrap_ruby_date,
+        date_wrap=_wrap_identity,
         set_wrap=_wrap_identity,
     ),
     "go": _LanguageConfig(
@@ -1647,7 +1576,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_go,
         varname_wrap=_wrap_go_varname,
         combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
-        date_wrap=_wrap_go_time,
+        date_wrap=_wrap_identity,
         set_wrap=_wrap_identity,
     ),
     "java": _LanguageConfig(
@@ -1657,7 +1586,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_java,
         varname_wrap=_wrap_java_varname,
         combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
-        date_wrap=_wrap_java_time,
+        date_wrap=_wrap_identity,
         set_wrap=_wrap_identity,
     ),
     "csharp": _LanguageConfig(
@@ -1667,7 +1596,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_csharp,
         varname_wrap=_wrap_csharp_varname,
         combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
-        date_wrap=_wrap_csharp_date,
+        date_wrap=_wrap_identity,
         set_wrap=_wrap_identity,
     ),
     "dart": _LanguageConfig(
@@ -1697,7 +1626,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_cpp,
         varname_wrap=_wrap_cpp_varname,
         combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
-        date_wrap=_wrap_cpp_chrono,
+        date_wrap=_wrap_identity,
         set_wrap=_wrap_identity,
     ),
     "rust": _LanguageConfig(
@@ -1737,7 +1666,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_julia,
         varname_wrap=_wrap_julia,
         combined_wrap=lambda d, a: _wrap_julia(content=d + "\n" + a),
-        date_wrap=_wrap_julia_dates,
+        date_wrap=_wrap_identity,
         set_wrap=_wrap_identity,
     ),
     "lua": _LanguageConfig(
