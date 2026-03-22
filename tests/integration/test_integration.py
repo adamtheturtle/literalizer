@@ -24,6 +24,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
+from literalizer.exceptions import NullInCollectionError
 
 _CASES_REL = Path("tests") / "integration" / "cases"
 
@@ -2070,16 +2071,19 @@ def test_format_variant_golden_file(
     )
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=variant.spec,
-        line_prefix="",
-        indent="    ",
-        wrap=True,
-        variable_name=variant_case.variable_name,
-        new_variable=True,
-        error_on_coercion=False,
-    )
+    try:
+        result = literalizer.literalize_yaml(
+            yaml_string=yaml_string,
+            language=variant.spec,
+            line_prefix="",
+            indent="    ",
+            wrap=True,
+            variable_name=variant_case.variable_name,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+    except NullInCollectionError:
+        pytest.skip("Format rejects null elements in this input")
     wrapped = variant.wrap(result)
     file_regression.check(
         contents=wrapped + "\n",

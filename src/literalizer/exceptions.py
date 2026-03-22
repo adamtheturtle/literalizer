@@ -24,3 +24,9 @@ class HeterogeneousCoercionError(Exception):
     the language would coerce them to strings, but the caller opted to
     receive an error instead.
     """
+
+
+class NullInCollectionError(Exception):
+    """Raised when a collection contains null elements and the chosen
+    format does not support them (e.g. Java's ``List.of()``).
+    """

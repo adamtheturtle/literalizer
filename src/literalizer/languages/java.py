@@ -26,11 +26,30 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer.exceptions import NullInCollectionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from literalizer._types import Value
+
+
+_LIST_OF_OPEN = "List.of("
+
+
+@beartype
+def _list_of_open(items: list[Any]) -> str:
+    """Return ``List.of(`` after checking for null elements.
+
+    Java's ``List.of()`` throws ``NullPointerException`` on null elements.
+    """
+    if any(item is None for item in items):
+        msg = (
+            "Java's List.of() does not accept null elements. "
+            "Use sequence_format=ARRAY instead."
+        )
+        raise NullInCollectionError(msg)
+    return _LIST_OF_OPEN
 
 
 @beartype
@@ -224,12 +243,12 @@ class Java(metaclass=HasFormatEnums):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        if fmt.schema_to_opener is not None:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    schema_to_opener=fmt.schema_to_opener,
-                    fallback=fmt.open_str,
-                )
+        if sequence_format is self.SequenceFormats.LIST:
+            self.sequence_open: Callable[[list[Value]], str] = _list_of_open
+        elif fmt.schema_to_opener is not None:
+            self.sequence_open = typed_sequence_open(
+                schema_to_opener=fmt.schema_to_opener,
+                fallback=fmt.open_str,
             )
         else:
             self.sequence_open = fixed_sequence_open(
