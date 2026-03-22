@@ -2077,8 +2077,8 @@ def _build_comment_variants() -> dict[str, _Variant]:
         for fmt in list(spec.comment_formats):
             if fmt.value is default_config:
                 continue
-            variant_key = f"{lang_name}_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
+            variant_key = f"{lang_name}_{fmt.name.lower()}"  # pragma: no cover
+            variants[variant_key] = _Variant(  # pragma: no cover
                 spec=lang_config.lang_cls(comment_format=fmt),
                 extension=lang_config.extension,
                 wrap=lang_config.wrap,
@@ -2259,7 +2259,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             )
         )
     for variant_name, variant in _COMMENT_VARIANTS.items():
-        cases.append(
+        cases.append(  # pragma: no cover
             _VariantCase(
                 variant_name=variant_name,
                 variant=variant,
