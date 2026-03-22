@@ -6,7 +6,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    Language,
     literalize_json,
     literalize_yaml,
 )
@@ -110,9 +109,9 @@ TYPESCRIPT = TypeScript(
 )
 
 
-@pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
+def test_language_sequence(subtests: pytest.Subtests) -> None:
+    """Each language produces the correct sequence literal."""
+    cases = [
         (PYTHON, '(True, None, "hi", (1, 2)),'),
         (JAVASCRIPT, '[true, null, "hi", [1, 2]],'),
         (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
@@ -123,21 +122,20 @@ TYPESCRIPT = TypeScript(
         (RUBY, '[true, nil, "hi", [1, 2]],'),
         (KOTLIN, 'listOf<Any?>(true, null, "hi", intArrayOf(1, 2)),'),
         (RUST, 'vec!["True", "None", "hi", "[1, 2]"],'),
-    ],
-)
-def test_language_sequence(*, language: Language, expected: str) -> None:
-    """Each language produces the correct sequence literal."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    ]
+    for language, expected in cases:
+        with subtests.test(msg=str(language)):
+            result = literalize_json(
+                json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
+                language=language,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
 def test_ruby_dict() -> None:
@@ -406,51 +404,32 @@ def test_java_sequence_include_delimiters_uses_braces() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("json_input", "expected"),
-    argvalues=[
-        (
-            [1, 2, 3],
-            "new int[]{\n    1,\n    2,\n    3\n}",
-        ),
-        (
-            ["hello", "world"],
-            'new String[]{\n    "hello",\n    "world"\n}',
-        ),
+def test_java_typed_array_opener(subtests: pytest.Subtests) -> None:
+    """Java uses typed array openers inferred from element types."""
+    cases = [
+        ([1, 2, 3], "new int[]{\n    1,\n    2,\n    3\n}"),
+        (["hello", "world"], 'new String[]{\n    "hello",\n    "world"\n}'),
         (
             [1, "hello", True],
             'new Object[]{\n    1,\n    "hello",\n    true\n}',
         ),
-    ],
-    ids=["all_int", "all_string", "mixed"],
-)
-def test_java_typed_array_opener(
-    *, json_input: list[object], expected: str
-) -> None:
-    """Java uses typed array openers inferred from element types."""
-    result = literalize_json(
-        json_string=json.dumps(obj=json_input),
-        language=JAVA,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    ]
+    for json_input, expected in cases:
+        with subtests.test(msg=str(json_input)):
+            result = literalize_json(
+                json_string=json.dumps(obj=json_input),
+                language=JAVA,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=True,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("yaml_string", "expected"),
-    argvalues=[
-        ("hello\n", '"hello"'),
-        ('"hello\\nworld"\n', '"hello" + char(10) + "world"'),
-        ('"hello\\tworld"\n', '"hello" + char(9) + "world"'),
-        ('"back\\\\slash"\n', '"back\\\\slash"'),
-    ],
-)
-def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
+def test_matlab_string_escaping(subtests: pytest.Subtests) -> None:
     r"""MATLAB string values escape backslashes and use char() for control
     characters.
 
@@ -459,22 +438,30 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
     characters (newlines, tabs, etc.) are represented as ``char(N)``
     expressions joined with ``+``.
     """
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=Matlab(
-            date_format=Matlab.date_formats.ISO,
-            datetime_format=Matlab.datetime_formats.ISO,
-            bytes_format=Matlab.bytes_formats.HEX,
-            sequence_format=Matlab.sequence_formats.CELL_ARRAY,
-        ),
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    cases = [
+        ("hello\n", '"hello"'),
+        ('"hello\\nworld"\n', '"hello" + char(10) + "world"'),
+        ('"hello\\tworld"\n', '"hello" + char(9) + "world"'),
+        ('"back\\\\slash"\n', '"back\\\\slash"'),
+    ]
+    for yaml_string, expected in cases:
+        with subtests.test(msg=yaml_string.strip()):
+            result = literalize_yaml(
+                yaml_string=yaml_string,
+                language=Matlab(
+                    date_format=Matlab.date_formats.ISO,
+                    datetime_format=Matlab.datetime_formats.ISO,
+                    bytes_format=Matlab.bytes_formats.HEX,
+                    sequence_format=Matlab.sequence_formats.CELL_ARRAY,
+                ),
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
 def test_matlab_dict_key_with_quote() -> None:

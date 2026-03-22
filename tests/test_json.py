@@ -6,7 +6,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    Language,
     literalize_json,
 )
 from literalizer.exceptions import (
@@ -102,25 +101,25 @@ def test_dict_include_delimiters() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames="include_delimiters",
-    argvalues=[False, True],
-)
-def test_dict_empty(*, include_delimiters: bool) -> None:
+def test_dict_empty(subtests: pytest.Subtests) -> None:
     """An empty dict produces an empty string regardless of
     include_delimiters.
     """
-    result = literalize_json(
-        json_string=json.dumps(obj={}),
-        language=PYTHON,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=include_delimiters,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == ""
+    for include_delimiters in (False, True):
+        with subtests.test(
+            msg=f"include_delimiters={include_delimiters}",
+        ):
+            result = literalize_json(
+                json_string=json.dumps(obj={}),
+                language=PYTHON,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=include_delimiters,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == ""
 
 
 def test_integers() -> None:
@@ -310,30 +309,30 @@ def test_include_delimiters_with_line_prefix() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames="include_delimiters",
-    argvalues=[False, True],
-)
-def test_empty_data(*, include_delimiters: bool) -> None:
+def test_empty_data(subtests: pytest.Subtests) -> None:
     """An empty list produces an empty string regardless of
     include_delimiters.
     """
-    result = literalize_json(
-        json_string=json.dumps(obj=[]),
-        language=PYTHON,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=include_delimiters,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == ""
+    for include_delimiters in (False, True):
+        with subtests.test(
+            msg=f"include_delimiters={include_delimiters}",
+        ):
+            result = literalize_json(
+                json_string=json.dumps(obj=[]),
+                language=PYTHON,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=include_delimiters,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == ""
 
 
-@pytest.mark.parametrize(
-    argnames=("json_string", "language", "expected"),
-    argvalues=[
+def test_scalar(subtests: pytest.Subtests) -> None:
+    """Scalar values are formatted as native literals."""
+    cases = [
         ("42", PYTHON, "42"),
         ("3.14", PYTHON, "3.14"),
         ('"hello"', PYTHON, '"hello"'),
@@ -345,23 +344,20 @@ def test_empty_data(*, include_delimiters: bool) -> None:
         ("null", GO, "nil"),
         ("null", RUBY, "nil"),
         ("null", CPP, "nullptr"),
-    ],
-)
-def test_scalar(
-    *, json_string: str, language: Language, expected: str
-) -> None:
-    """Scalar values are formatted as native literals."""
-    result = literalize_json(
-        json_string=json_string,
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    ]
+    for json_string, language, expected in cases:
+        with subtests.test(msg=f"{json_string}/{language}"):
+            result = literalize_json(
+                json_string=json_string,
+                language=language,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
 def test_scalar_with_indent() -> None:

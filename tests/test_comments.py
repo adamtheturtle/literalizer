@@ -5,7 +5,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    Language,
     literalize_yaml,
 )
 from literalizer.languages import (
@@ -260,32 +259,25 @@ def test_yaml_comment_multiple_before_lines() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
+def test_comment_prefix(subtests: pytest.Subtests) -> None:
+    """Each language has the expected comment prefix."""
+    cases = [
         (PYTHON, "#"),
         (RUBY, "#"),
         (JAVASCRIPT, "//"),
         (GO, "//"),
-    ],
-)
-def test_comment_prefix(language: Language, expected: str) -> None:
-    """Each language has the expected comment prefix."""
-    assert language.comment_config.prefix == expected
+    ]
+    for language, expected in cases:
+        with subtests.test(msg=str(language)):
+            assert language.comment_config.prefix == expected
 
 
-@pytest.mark.parametrize(
-    argnames="language",
-    argvalues=[
-        PYTHON,
-        RUBY,
-        JAVASCRIPT,
-        GO,
-    ],
-)
-def test_comment_suffix(language: Language) -> None:
+def test_comment_suffix(subtests: pytest.Subtests) -> None:
     """Each language has an empty comment suffix."""
-    assert language.comment_config.suffix == ""
+    languages = [PYTHON, RUBY, JAVASCRIPT, GO]
+    for language in languages:
+        with subtests.test(msg=str(language)):
+            assert language.comment_config.suffix == ""
 
 
 def test_yaml_comment_escaped_quote_in_value() -> None:

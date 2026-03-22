@@ -1,7 +1,6 @@
 """Tests for literalizer formatters."""
 
 import datetime
-from collections.abc import Callable
 
 import pytest
 
@@ -54,141 +53,136 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
 )
 
 
-@pytest.mark.parametrize(
-    argnames=("func", "value", "expected"),
-    argvalues=[
-        pytest.param(
+def test_format_date_datetime(subtests: pytest.Subtests) -> None:
+    """Each format function returns the expected string."""
+    cases = [
+        (
+            "format_date_python",
             format_date_python,
             _SAMPLE_DATE,
             "datetime.date(year=2024, month=1, day=15)",
-            id="format_date_python",
         ),
-        pytest.param(
+        (
+            "format_datetime_python",
             format_datetime_python,
             _SAMPLE_DATETIME,
             "datetime.datetime("
             "year=2024, month=1, day=15, "
             "hour=12, minute=30, second=0)",
-            id="format_datetime_python",
         ),
-        pytest.param(
+        (
+            "format_datetime_python_microsecond",
             format_datetime_python,
             _SAMPLE_DATETIME_MICRO,
             "datetime.datetime("
             "year=2024, month=1, day=15, "
             "hour=12, minute=30, second=0, "
             "microsecond=123456)",
-            id="format_datetime_python_microsecond",
         ),
-        pytest.param(
+        (
+            "format_date_java",
             format_date_java,
             _SAMPLE_DATE,
             "LocalDate.of(2024, 1, 15)",
-            id="format_date_java",
         ),
-        pytest.param(
+        (
+            "format_datetime_java_instant",
             format_datetime_java_instant,
             _SAMPLE_DATETIME,
             'Instant.parse("2024-01-15T12:30:00")',
-            id="format_datetime_java_instant",
         ),
-        pytest.param(
+        (
+            "format_datetime_java_zoned",
             format_datetime_java_zoned,
             _SAMPLE_DATETIME,
             'ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("UTC"))',
-            id="format_datetime_java_zoned",
         ),
-        pytest.param(
+        (
+            "format_date_ruby",
             format_date_ruby,
             _SAMPLE_DATE,
             "Date.new(2024, 1, 15)",
-            id="format_date_ruby",
         ),
-        pytest.param(
+        (
+            "format_datetime_ruby",
             format_datetime_ruby,
             _SAMPLE_DATETIME,
             "Time.new(2024, 1, 15, 12, 30, 0)",
-            id="format_datetime_ruby",
         ),
-        pytest.param(
+        (
+            "format_date_js",
             format_date_js,
             _SAMPLE_DATE,
             'new Date("2024-01-15")',
-            id="format_date_js",
         ),
-        pytest.param(
+        (
+            "format_datetime_js",
             format_datetime_js,
             _SAMPLE_DATETIME,
             'new Date("2024-01-15T12:30:00")',
-            id="format_datetime_js",
         ),
-        pytest.param(
+        (
+            "format_date_csharp",
             format_date_csharp,
             _SAMPLE_DATE,
             "new DateOnly(2024, 1, 15)",
-            id="format_date_csharp",
         ),
-        pytest.param(
+        (
+            "format_datetime_csharp",
             format_datetime_csharp,
             _SAMPLE_DATETIME,
             "new DateTime(2024, 1, 15, 12, 30, 0)",
-            id="format_datetime_csharp",
         ),
-        pytest.param(
+        (
+            "format_date_go",
             format_date_go,
             _SAMPLE_DATE,
             "time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)",
-            id="format_date_go",
         ),
-        pytest.param(
+        (
+            "format_datetime_go",
             format_datetime_go,
             _SAMPLE_DATETIME,
             "time.Date(2024, time.January, 15, 12, 30, 0, 0, time.UTC)",
-            id="format_datetime_go",
         ),
-        pytest.param(
+        (
+            "format_date_kotlin",
             format_date_kotlin,
             _SAMPLE_DATE,
             "LocalDate.of(2024, 1, 15)",
-            id="format_date_kotlin",
         ),
-        pytest.param(
+        (
+            "format_datetime_kotlin",
             format_datetime_kotlin,
             _SAMPLE_DATETIME,
             "LocalDateTime.of(2024, 1, 15, 12, 30, 0)",
-            id="format_datetime_kotlin",
         ),
-        pytest.param(
+        (
+            "format_date_rust",
             format_date_rust,
             _SAMPLE_DATE,
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()",
-            id="format_date_rust",
         ),
-        pytest.param(
+        (
+            "format_datetime_rust",
             format_datetime_rust,
             _SAMPLE_DATETIME,
             "NaiveDateTime::new("
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
             "NaiveTime::from_hms_opt(12, 30, 0).unwrap())",
-            id="format_datetime_rust",
         ),
-        pytest.param(
+        (
+            "format_datetime_rust_microsecond",
             format_datetime_rust,
             datetime.datetime.fromisoformat("2024-01-15T12:30:00.123456"),
             "NaiveDateTime::new("
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
             "NaiveTime::from_hms_micro_opt(12, 30, 0, 123456).unwrap())",
-            id="format_datetime_rust_microsecond",
         ),
-    ],
-)
-def test_format_date_datetime(
-    func: Callable[..., str],
-    value: datetime.date | datetime.datetime,
-    expected: str,
-) -> None:
-    """Each format function returns the expected string."""
-    assert func(value=value) == expected
+    ]
+    for name, func, value, expected in cases:
+        with subtests.test(msg=name):
+            assert func(value=value) == expected
 
 
 def test_format_datetime_epoch() -> None:
@@ -258,75 +252,44 @@ def test_format_datetime_cpp_seconds_and_microseconds() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("func", "value", "expected"),
-    argvalues=[
-        pytest.param(
-            format_bytes_hex,
-            b"Hello",
-            '"48656c6c6f"',
-            id="format_bytes_hex",
-        ),
-        pytest.param(
-            format_bytes_hex,
-            b"",
-            '""',
-            id="format_bytes_hex_empty",
-        ),
-        pytest.param(
-            format_bytes_python,
-            b"Hello",
-            "b'Hello'",
-            id="format_bytes_python",
-        ),
-        pytest.param(
+def test_format_bytes(subtests: pytest.Subtests) -> None:
+    """Each bytes format function returns the expected string."""
+    cases = [
+        ("format_bytes_hex", format_bytes_hex, b"Hello", '"48656c6c6f"'),
+        ("format_bytes_hex_empty", format_bytes_hex, b"", '""'),
+        ("format_bytes_python", format_bytes_python, b"Hello", "b'Hello'"),
+        (
+            "format_bytes_python_non_printable",
             format_bytes_python,
             b"\x00\x01\x02",
             "b'\\x00\\x01\\x02'",
-            id="format_bytes_python_non_printable",
         ),
-    ],
-)
-def test_format_bytes(
-    func: Callable[..., str],
-    value: bytes,
-    expected: str,
-) -> None:
-    """Each bytes format function returns the expected string."""
-    assert func(value=value) == expected
+    ]
+    for name, func, value, expected in cases:
+        with subtests.test(msg=name):
+            assert func(value=value) == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("value", "expected"),
-    argvalues=[
-        pytest.param("", '""', id="empty"),
-        pytest.param("hello", '"hello"', id="plain"),
-        pytest.param('say "hi"', '"say ""hi"""', id="quotes"),
-        pytest.param(
-            "line1\r\nline2", '"line1" & vbCrLf & "line2"', id="crlf"
-        ),
-        pytest.param("\r\nline2", 'vbCrLf & "line2"', id="crlf_at_start"),
-        pytest.param("line1\nline2", '"line1" & Chr(10) & "line2"', id="lf"),
-        pytest.param("\nline2", 'Chr(10) & "line2"', id="lf_at_start"),
-        pytest.param("line1\rline2", '"line1" & Chr(13) & "line2"', id="cr"),
-        pytest.param("\rline2", 'Chr(13) & "line2"', id="cr_at_start"),
-        pytest.param("col1\tcol2", '"col1" & vbTab & "col2"', id="tab"),
-        pytest.param("\tcol2", 'vbTab & "col2"', id="tab_at_start"),
-        pytest.param("\x01", "Chr(1)", id="control_char"),
-        pytest.param(
-            "\x01text",
-            'Chr(1) & "text"',
-            id="control_char_then_text",
-        ),
-        pytest.param(
-            "text\x01",
-            '"text" & Chr(1)',
-            id="text_then_control_char",
-        ),
-    ],
-)
-def test_format_string_vb(value: str, expected: str) -> None:
+def test_format_string_vb(subtests: pytest.Subtests) -> None:
     """``format_string_vb`` formats strings using VB.NET escaping
     rules.
     """
-    assert format_string_vb(value=value) == expected
+    cases = [
+        ("empty", "", '""'),
+        ("plain", "hello", '"hello"'),
+        ("quotes", 'say "hi"', '"say ""hi"""'),
+        ("crlf", "line1\r\nline2", '"line1" & vbCrLf & "line2"'),
+        ("crlf_at_start", "\r\nline2", 'vbCrLf & "line2"'),
+        ("lf", "line1\nline2", '"line1" & Chr(10) & "line2"'),
+        ("lf_at_start", "\nline2", 'Chr(10) & "line2"'),
+        ("cr", "line1\rline2", '"line1" & Chr(13) & "line2"'),
+        ("cr_at_start", "\rline2", 'Chr(13) & "line2"'),
+        ("tab", "col1\tcol2", '"col1" & vbTab & "col2"'),
+        ("tab_at_start", "\tcol2", 'vbTab & "col2"'),
+        ("control_char", "\x01", "Chr(1)"),
+        ("control_char_then_text", "\x01text", 'Chr(1) & "text"'),
+        ("text_then_control_char", "text\x01", '"text" & Chr(1)'),
+    ]
+    for name, value, expected in cases:
+        with subtests.test(msg=name):
+            assert format_string_vb(value=value) == expected

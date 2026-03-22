@@ -235,44 +235,38 @@ _ASSIGNMENT_PARAMS = [
 ]
 
 
-@pytest.mark.parametrize(
-    argnames=("language", "expected"), argvalues=_DECLARATION_PARAMS
-)
-def test_variable_declaration_json(
-    *, language: Language, expected: str
-) -> None:
+def test_variable_declaration_json(subtests: pytest.Subtests) -> None:
     """Each language produces correct variable declaration syntax."""
-    result = literalize_json(
-        json_string="42",
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name="my_var",
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    for language, expected in _DECLARATION_PARAMS:
+        with subtests.test(msg=str(language)):
+            result = literalize_json(
+                json_string="42",
+                language=language,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name="my_var",
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("language", "expected"), argvalues=_DECLARATION_PARAMS
-)
-def test_variable_declaration_yaml(
-    *, language: Language, expected: str
-) -> None:
+def test_variable_declaration_yaml(subtests: pytest.Subtests) -> None:
     """Each language produces correct variable declaration syntax for YAML."""
-    result = literalize_yaml(
-        yaml_string="42\n",
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name="my_var",
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    for language, expected in _DECLARATION_PARAMS:
+        with subtests.test(msg=str(language)):
+            result = literalize_yaml(
+                yaml_string="42\n",
+                language=language,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name="my_var",
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
 def test_variable_declaration_none_no_wrap() -> None:
@@ -297,78 +291,75 @@ def test_variable_declaration_none_no_wrap() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
-)
 def test_existing_variable_assignment_json(
-    *, language: Language, expected: str
+    subtests: pytest.Subtests,
 ) -> None:
     """Each language produces correct existing-variable assignment
     syntax.
     """
-    result = literalize_json(
-        json_string="42",
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name="my_var",
-        new_variable=False,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    for language, expected in _ASSIGNMENT_PARAMS:
+        with subtests.test(msg=str(language)):
+            result = literalize_json(
+                json_string="42",
+                language=language,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name="my_var",
+                new_variable=False,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
-)
 def test_existing_variable_assignment_yaml(
-    *, language: Language, expected: str
+    subtests: pytest.Subtests,
 ) -> None:
     """Each language produces correct existing-variable assignment syntax
     for YAML.
     """
-    result = literalize_yaml(
-        yaml_string="42\n",
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name="my_var",
-        new_variable=False,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    for language, expected in _ASSIGNMENT_PARAMS:
+        with subtests.test(msg=str(language)):
+            result = literalize_yaml(
+                yaml_string="42\n",
+                language=language,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name="my_var",
+                new_variable=False,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
-@pytest.mark.parametrize(
-    argnames=("json_input", "expected"),
-    argvalues=[
+def test_python_inline_type_hints_scalars(
+    subtests: pytest.Subtests,
+) -> None:
+    """Python with INLINE variable_type_hints adds type annotations
+    for scalar values.
+    """
+    cases = [
         ("42", "my_var: int = 42"),
         ("3.14", "my_var: float = 3.14"),
         ("true", "my_var: bool = True"),
         ("false", "my_var: bool = False"),
         ("null", "my_var: None = None"),
         ('"hello"', 'my_var: str = "hello"'),
-    ],
-)
-def test_python_inline_type_hints_scalars(
-    *, json_input: str, expected: str
-) -> None:
-    """Python with INLINE variable_type_hints adds type annotations
-    for scalar values.
-    """
-    result = literalize_json(
-        json_string=json_input,
-        language=PYTHON_INLINE_HINTS,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name="my_var",
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    ]
+    for json_input, expected in cases:
+        with subtests.test(msg=json_input):
+            result = literalize_json(
+                json_string=json_input,
+                language=PYTHON_INLINE_HINTS,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name="my_var",
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
 def test_python_inline_type_hints_dict() -> None:

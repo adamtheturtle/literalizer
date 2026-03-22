@@ -5,7 +5,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    Language,
     literalize_yaml,
 )
 from literalizer.exceptions import (
@@ -135,9 +134,9 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    argnames=("yaml_string", "language", "expected"),
-    argvalues=[
+def test_literalize_yaml_scalar(subtests: pytest.Subtests) -> None:
+    """``literalize_yaml`` handles scalar YAML values."""
+    cases = [
         ("42", PYTHON, "42"),
         ("3.14", PYTHON, "3.14"),
         ("hello", PYTHON, '"hello"'),
@@ -146,26 +145,20 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
         ("null", PYTHON, "None"),
         ("true", JAVASCRIPT, "true"),
         ("null", GO, "nil"),
-    ],
-)
-def test_literalize_yaml_scalar(
-    *,
-    yaml_string: str,
-    language: Language,
-    expected: str,
-) -> None:
-    """``literalize_yaml`` handles scalar YAML values."""
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result == expected
+    ]
+    for yaml_string, language, expected in cases:
+        with subtests.test(msg=f"{yaml_string}/{language}"):
+            result = literalize_yaml(
+                yaml_string=yaml_string,
+                language=language,
+                line_prefix="",
+                indent="    ",
+                include_delimiters=False,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assert result == expected
 
 
 def test_literalize_yaml_date() -> None:

@@ -1904,49 +1904,39 @@ def _discover_cases() -> list[tuple[str, str]]:
 _CASES = _discover_cases()
 
 
-@pytest.mark.parametrize(
-    argnames=("_case_name", "language"),
-    argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
-)
 def test_golden_file(
-    _case_name: str,
-    language: str,
+    subtests: pytest.Subtests,
     request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
     cases_dir = request.config.rootpath / _CASES_REL
-    input_path = cases_dir / _case_name / "input.yaml"
-    lang_config = _LANGUAGES[language]
-    yaml_string = input_path.read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    wrapped = lang_config.wrap(result)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=lang_config.lang_cls.extension,
-        fullpath=input_path.parent
-        / (language + lang_config.lang_cls.extension),
-    )
+    for _case_name, language in _CASES:
+        with subtests.test(msg=f"{_case_name}/{language}"):
+            input_path = cases_dir / _case_name / "input.yaml"
+            lang_config = _LANGUAGES[language]
+            yaml_string = input_path.read_text()
+            result = literalizer.literalize_yaml(
+                yaml_string=yaml_string,
+                language=lang_config.lang_cls(),
+                line_prefix="",
+                indent="    ",
+                include_delimiters=True,
+                variable_name=None,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            wrapped = lang_config.wrap(result)
+            file_regression.check(
+                contents=wrapped + "\n",
+                extension=lang_config.lang_cls.extension,
+                fullpath=input_path.parent
+                / (language + lang_config.lang_cls.extension),
+            )
 
 
-@pytest.mark.parametrize(
-    argnames=("_case_name", "language"),
-    argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
-)
 def test_golden_file_with_variable_name(
-    _case_name: str,
-    language: str,
+    subtests: pytest.Subtests,
     request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -1954,36 +1944,32 @@ def test_golden_file_with_variable_name(
     file.
     """
     cases_dir = request.config.rootpath / _CASES_REL
-    input_path = cases_dir / _case_name / "input.yaml"
-    lang_config = _LANGUAGES[language]
-    yaml_string = input_path.read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=_VARIABLE_NAME,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    wrapped = lang_config.varname_wrap(result)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=lang_config.lang_cls.extension,
-        fullpath=input_path.parent
-        / (language + "_varname" + lang_config.lang_cls.extension),
-    )
+    for _case_name, language in _CASES:
+        with subtests.test(msg=f"{_case_name}/{language}"):
+            input_path = cases_dir / _case_name / "input.yaml"
+            lang_config = _LANGUAGES[language]
+            yaml_string = input_path.read_text()
+            result = literalizer.literalize_yaml(
+                yaml_string=yaml_string,
+                language=lang_config.lang_cls(),
+                line_prefix="",
+                indent="    ",
+                include_delimiters=True,
+                variable_name=_VARIABLE_NAME,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            wrapped = lang_config.varname_wrap(result)
+            file_regression.check(
+                contents=wrapped + "\n",
+                extension=lang_config.lang_cls.extension,
+                fullpath=input_path.parent
+                / (language + "_varname" + lang_config.lang_cls.extension),
+            )
 
 
-@pytest.mark.parametrize(
-    argnames=("_case_name", "language"),
-    argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
-)
 def test_golden_file_combined_variable_forms(
-    _case_name: str,
-    language: str,
+    subtests: pytest.Subtests,
     request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -1992,36 +1978,38 @@ def test_golden_file_combined_variable_forms(
     golden output, combined in one file to show the difference in syntax.
     """
     cases_dir = request.config.rootpath / _CASES_REL
-    input_path = cases_dir / _case_name / "input.yaml"
-    lang_config = _LANGUAGES[language]
-    yaml_string = input_path.read_text()
-    declaration = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=_VARIABLE_NAME,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assignment = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=_VARIABLE_NAME,
-        new_variable=False,
-        error_on_coercion=False,
-    )
-    combined = lang_config.combined_wrap(declaration, assignment)
-    file_regression.check(
-        contents=combined + "\n",
-        extension=lang_config.lang_cls.extension,
-        fullpath=input_path.parent
-        / (language + "_combined" + lang_config.lang_cls.extension),
-    )
+    for _case_name, language in _CASES:
+        with subtests.test(msg=f"{_case_name}/{language}"):
+            input_path = cases_dir / _case_name / "input.yaml"
+            lang_config = _LANGUAGES[language]
+            yaml_string = input_path.read_text()
+            declaration = literalizer.literalize_yaml(
+                yaml_string=yaml_string,
+                language=lang_config.lang_cls(),
+                line_prefix="",
+                indent="    ",
+                include_delimiters=True,
+                variable_name=_VARIABLE_NAME,
+                new_variable=True,
+                error_on_coercion=False,
+            )
+            assignment = literalizer.literalize_yaml(
+                yaml_string=yaml_string,
+                language=lang_config.lang_cls(),
+                line_prefix="",
+                indent="    ",
+                include_delimiters=True,
+                variable_name=_VARIABLE_NAME,
+                new_variable=False,
+                error_on_coercion=False,
+            )
+            combined = lang_config.combined_wrap(declaration, assignment)
+            file_regression.check(
+                contents=combined + "\n",
+                extension=lang_config.lang_cls.extension,
+                fullpath=input_path.parent
+                / (language + "_combined" + lang_config.lang_cls.extension),
+            )
 
 
 @beartype
@@ -2052,63 +2040,61 @@ def _build_variant_cases() -> list[_VariantCase]:
 _FORMAT_VARIANT_CASES = _build_variant_cases()
 
 
-@pytest.mark.parametrize(
-    argnames="variant_case",
-    argvalues=_FORMAT_VARIANT_CASES,
-    ids=[c.variant_name for c in _FORMAT_VARIANT_CASES],
-)
 def test_format_variant_golden_file(
-    variant_case: _VariantCase,
+    subtests: pytest.Subtests,
     request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test format-variant options (dates, sequences, sets, type hints)
     against golden files.
     """
-    case_dir = (
-        request.config.rootpath / _CASES_REL / variant_case.case_dir_name
-    )
-    variant = variant_case.variant
-    yaml_string = (case_dir / "input.yaml").read_text()
-    try:
-        result = literalizer.literalize_yaml(
-            yaml_string=yaml_string,
-            language=variant.spec,
-            line_prefix="",
-            indent="    ",
-            include_delimiters=True,
-            variable_name=variant_case.variable_name,
-            new_variable=True,
-            error_on_coercion=False,
-        )
-    except NullInCollectionError:
-        pytest.skip("Format rejects null elements in this input")
-    wrapped = variant.wrap(result)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=variant.spec.extension,
-        fullpath=case_dir
-        / (variant_case.variant_name + variant.spec.extension),
-    )
+    for variant_case in _FORMAT_VARIANT_CASES:
+        with subtests.test(msg=variant_case.variant_name):
+            case_dir = (
+                request.config.rootpath
+                / _CASES_REL
+                / variant_case.case_dir_name
+            )
+            variant = variant_case.variant
+            yaml_string = (case_dir / "input.yaml").read_text()
+            try:
+                result = literalizer.literalize_yaml(
+                    yaml_string=yaml_string,
+                    language=variant.spec,
+                    line_prefix="",
+                    indent="    ",
+                    include_delimiters=True,
+                    variable_name=variant_case.variable_name,
+                    new_variable=True,
+                    error_on_coercion=False,
+                )
+            except NullInCollectionError:
+                pytest.skip("Format rejects null elements in this input")
+            wrapped = variant.wrap(result)
+            file_regression.check(
+                contents=wrapped + "\n",
+                extension=variant.spec.extension,
+                fullpath=case_dir
+                / (variant_case.variant_name + variant.spec.extension),
+            )
 
 
-@pytest.mark.parametrize(
-    argnames="lang_config",
-    argvalues=_LANGUAGES.values(),
-    ids=list(_LANGUAGES),
-)
-def test_format_enumeration_properties(lang_config: _LanguageConfig) -> None:
+def test_format_enumeration_properties(
+    subtests: pytest.Subtests,
+) -> None:
     """Every language exposes iterable format-enumeration properties."""
-    spec = lang_config.lang_cls()
-    assert issubclass(spec.bytes_formats, enum.Enum)
-    assert len(spec.bytes_formats) >= 1
-    assert issubclass(spec.sequence_formats, enum.Enum)
-    assert len(spec.sequence_formats) >= 1
-    assert issubclass(spec.set_formats, enum.Enum)
-    assert len(spec.set_formats) >= 1
-    assert issubclass(spec.date_formats, enum.Enum)
-    assert len(spec.date_formats) >= 1
-    assert issubclass(spec.datetime_formats, enum.Enum)
-    assert len(spec.datetime_formats) >= 1
-    assert issubclass(spec.comment_formats, enum.Enum)
-    assert len(spec.comment_formats) >= 1
+    for lang_name, lang_config in _LANGUAGES.items():
+        with subtests.test(msg=lang_name):
+            spec = lang_config.lang_cls()
+            assert issubclass(spec.bytes_formats, enum.Enum)
+            assert len(spec.bytes_formats) >= 1
+            assert issubclass(spec.sequence_formats, enum.Enum)
+            assert len(spec.sequence_formats) >= 1
+            assert issubclass(spec.set_formats, enum.Enum)
+            assert len(spec.set_formats) >= 1
+            assert issubclass(spec.date_formats, enum.Enum)
+            assert len(spec.date_formats) >= 1
+            assert issubclass(spec.datetime_formats, enum.Enum)
+            assert len(spec.datetime_formats) >= 1
+            assert issubclass(spec.comment_formats, enum.Enum)
+            assert len(spec.comment_formats) >= 1
