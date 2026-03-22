@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -27,8 +28,6 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 
@@ -36,6 +35,14 @@ if TYPE_CHECKING:
 def _format_julia_ordered_map_entry(key: str, value: str) -> str:
     """Format a Julia ordered-map entry as a pair arrow expression."""
     return f"{key} => {value}"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    if "Date(" in code or "DateTime(" in code:
+        return ["using Dates"]
+    return []
 
 
 @beartype
@@ -218,3 +225,4 @@ class Julia(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_declaration
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

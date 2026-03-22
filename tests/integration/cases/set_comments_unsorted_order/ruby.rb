@@ -1,3 +1,4 @@
+require 'set'
 Set.new([
     # before apple
     "apple",

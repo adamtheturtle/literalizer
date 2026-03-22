@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -29,6 +29,14 @@ from literalizer._language import (
 
 if TYPE_CHECKING:
     from literalizer._types import Value
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    if "Set{" in code:
+        return ['require "set"']
+    return []
 
 
 @beartype
@@ -206,3 +214,4 @@ class Crystal(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

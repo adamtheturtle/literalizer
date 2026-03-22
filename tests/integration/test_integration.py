@@ -44,73 +44,30 @@ def _wrap_js(content: str) -> str:
 
 
 @beartype
-def _go_time_import(content: str) -> str:
-    """Return a Go time import block if the content uses time types."""
-    if "time." in content:
-        return '\nimport "time"'
-    return ""
-
-
-@beartype
 def _wrap_go(content: str) -> str:
     """Wrap in a Go package-level variable declaration."""
-    time_import = _go_time_import(content=content)
-    return f"package main{time_import}\n\nvar _ = {content}"
-
-
-@beartype
-def _java_time_imports(content: str) -> str:
-    """Return java.time import lines if the content uses java.time
-    types.
-    """
-    types: list[str] = []
-    if "Instant" in content:
-        types.append("Instant")
-    if "LocalDate" in content:
-        types.append("LocalDate")
-    if "ZoneId" in content:
-        types.append("ZoneId")
-    if "ZonedDateTime" in content:
-        types.append("ZonedDateTime")
-    return "".join(f"import java.time.{t};\n" for t in types)
+    return f"\nvar _ = {content}"
 
 
 @beartype
 def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
-    time_imports = _java_time_imports(content=content)
-    list_import = "import java.util.List;\n" if "List.of(" in content else ""
     return f"""\
-{time_imports}{list_import}import java.util.Map;
-import java.util.Set;
 class Check {{
     Object x = {content};
 }}"""
 
 
 @beartype
-def _kotlin_time_imports(content: str) -> str:
-    """Return Kotlin java.time import lines if needed."""
-    imports = ""
-    if "LocalDate." in content:
-        imports += "import java.time.LocalDate\n"
-    if "LocalDateTime" in content:
-        imports += "import java.time.LocalDateTime\n"
-    return imports
-
-
-@beartype
 def _wrap_kotlin(content: str) -> str:
     """Wrap in a Kotlin variable assignment."""
-    time_imports = _kotlin_time_imports(content=content)
-    return f"{time_imports}val x: Any? = {content}"
+    return f"val x: Any? = {content}"
 
 
 @beartype
 def _wrap_kotlin_varname(content: str) -> str:
     """Wrap a Kotlin variable declaration with time imports if needed."""
-    time_imports = _kotlin_time_imports(content=content)
-    return f"{time_imports}{content}"
+    return content
 
 
 @beartype
@@ -118,9 +75,7 @@ def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
     """
-    chrono = "#include <chrono>\n" if "std::chrono" in content else ""
     return (
-        f"{chrono}"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
         "#include <map>\n"
@@ -145,54 +100,16 @@ def _wrap_swift(content: str) -> str:
 @beartype
 def _wrap_csharp(content: str) -> str:
     """Wrap in C# using statement and variable assignment."""
-    needs_system = "DateOnly" in content or "DateTime" in content
-    system = "using System;\n" if needs_system else ""
     return f"""\
-{system}using System.Collections.Generic;
+using System.Collections.Generic;
 var x = {content};"""
-
-
-@beartype
-def _rust_collections_use(content: str) -> str:
-    """Return a use statement for std::collections types used in
-    content.
-    """
-    names: list[str] = []
-    if "HashMap" in content:
-        names.append("HashMap")
-    if "HashSet" in content:
-        names.append("HashSet")
-    if not names:
-        return ""
-    return f"use std::collections::{{{', '.join(names)}}};\n"
-
-
-@beartype
-def _rust_chrono_use(content: str) -> str:
-    """Return a chrono use statement if the content uses chrono types."""
-    names: list[str] = []
-    if "NaiveDate" in content:
-        names.append("NaiveDate")
-    if "NaiveDateTime" in content:
-        names.append("NaiveDateTime")
-    if "NaiveTime" in content:
-        names.append("NaiveTime")
-    if not names:
-        return ""
-    return f"use chrono::{{{', '.join(names)}}};\n"
 
 
 @beartype
 def _wrap_rust(content: str) -> str:
     """Wrap in a Rust main function with necessary imports."""
     indented = content.replace("\n", "\n    ")
-    return (
-        _rust_collections_use(content=content)
-        + _rust_chrono_use(content=content)
-        + "fn main() {\n"
-        f"    let _ = {indented};\n"
-        "}"
-    )
+    return f"fn main() {{\n    let _ = {indented};\n}}"
 
 
 _FSHARP_VAL_TYPE = (
@@ -355,23 +272,13 @@ _VARIABLE_NAME = "my_data"
 @beartype
 def _wrap_go_varname(content: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
-    time_import = _go_time_import(content=content)
-    return (
-        f"package main{time_import}\n\nfunc main() {{\n{content}\n"
-        f"_ = {_VARIABLE_NAME}\n}}"
-    )
+    return f"\nfunc main() {{\n{content}\n_ = {_VARIABLE_NAME}\n}}"
 
 
 @beartype
 def _wrap_java_varname(content: str) -> str:
     """Wrap a Java var declaration in a static method."""
-    time_imports = _java_time_imports(content=content)
-    list_import = "import java.util.List;\n" if "List.of(" in content else ""
     return (
-        f"{time_imports}"
-        f"{list_import}"
-        "import java.util.Map;\n"
-        "import java.util.Set;\n"
         "class Check {\n"
         "    public static void check() {\n"
         f"{content}\n"
@@ -383,9 +290,7 @@ def _wrap_java_varname(content: str) -> str:
 @beartype
 def _wrap_csharp_varname(content: str) -> str:
     """Wrap a C# top-level variable declaration with required imports."""
-    needs_system = "DateOnly" in content or "DateTime" in content
-    system = "using System;\n" if needs_system else ""
-    return f"{system}using System.Collections.Generic;\n{content}"
+    return f"using System.Collections.Generic;\n{content}"
 
 
 @beartype
@@ -414,9 +319,7 @@ def _wrap_cpp_varname(content: str) -> str:
         if content.startswith(old_prefix)
         else content
     )
-    chrono = "#include <chrono>\n" if "std::chrono" in content else ""
     return (
-        f"{chrono}"
         "#include <initializer_list>\n"
         "#include <cstddef>\n"
         "#include <map>\n"
@@ -633,20 +536,20 @@ def _wrap_r(content: str) -> str:
 
 @beartype
 def _wrap_nim(content: str) -> str:
-    """Wrap in a Nim import json and %* expression."""
-    return f"import json\nlet _ = %*{content}"
+    """Wrap in a Nim %* expression."""
+    return f"let _ = %*{content}"
 
 
 @beartype
 def _wrap_nim_varname(content: str) -> str:
-    """Wrap a Nim var declaration with the json import."""
-    return f"import json\n{content}"
+    """Pass through Nim content unchanged."""
+    return content
 
 
 @beartype
 def _wrap_nim_combined(declaration: str, assignment: str) -> str:
-    """Wrap Nim declaration and assignment with the json import."""
-    return f"import json\n{declaration}\n{assignment}"
+    """Join Nim declaration and assignment with a newline."""
+    return f"{declaration}\n{assignment}"
 
 
 @beartype
@@ -657,31 +560,22 @@ def _wrap_norg(content: str) -> str:
 
 @beartype
 def _wrap_d(content: str) -> str:
-    """Wrap in a D function with ``std.json`` imported."""
+    """Wrap in a D function."""
     d_lang = literalizer.languages.D()
     typed = d_lang.format_sequence_entry(content)
-    return f"import std.json;\n\nvoid _check() {{\n    auto _v = {typed};\n}}"
+    return f"void _check() {{\n    auto _v = {typed};\n}}"
 
 
 @beartype
 def _wrap_d_varname(content: str) -> str:
-    """Wrap a D ``auto`` declaration in a function with ``std.json``
-    imported.
-    """
-    return f"import std.json;\n\nvoid _check() {{\n{content}\n}}"
+    """Wrap a D ``auto`` declaration in a function."""
+    return f"void _check() {{\n{content}\n}}"
 
 
 @beartype
 def _wrap_d_combined(declaration: str, assignment: str) -> str:
     """Wrap D declaration and assignment together in one function."""
-    return (
-        "import std.json;\n"
-        "\n"
-        "void _check() {\n"
-        f"{declaration}\n"
-        f"{assignment}\n"
-        "}"
-    )
+    return f"void _check() {{\n{declaration}\n{assignment}\n}}"
 
 
 @beartype
@@ -845,14 +739,7 @@ def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
 def _wrap_rust_varname(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
-    return (
-        _rust_collections_use(content=content)
-        + _rust_chrono_use(content=content)
-        + "fn main() {\n"
-        f"    {indented}\n"
-        f"    let _ = {_VARIABLE_NAME};\n"
-        "}"
-    )
+    return f"fn main() {{\n    {indented}\n    let _ = {_VARIABLE_NAME};\n}}"
 
 
 @beartype
@@ -997,10 +884,7 @@ def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
     """Kotlin: val declaration in one fun, var + assignment in another."""
     decl_indented = "    " + declaration.replace("\n", "\n    ")
     assign_indented = "    " + assignment.replace("\n", "\n    ")
-    combined = declaration + assignment
-    time_imports = _kotlin_time_imports(content=combined)
     return (
-        f"{time_imports}"
         f"fun _declaration() {{\n"
         f"{decl_indented}\n"
         f"}}\n"
@@ -1030,11 +914,8 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     """
     decl_indented = "        " + declaration.replace("\n", "\n        ")
     assign_indented = "    " + assignment.replace("\n", "\n    ")
-    combined = declaration + assignment
     return (
-        _rust_collections_use(content=combined)
-        + _rust_chrono_use(content=combined)
-        + "fn main() {\n"
+        "fn main() {\n"
         "    {\n"
         f"{decl_indented}\n"
         f"        let _ = {_VARIABLE_NAME};\n"
@@ -1198,76 +1079,47 @@ def _wrap_combined_newline(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _python_imports(content: str) -> str:
-    """Return import lines needed by the Python content."""
-    imports: list[str] = []
-    if "OrderedDict(" in content:
-        imports.append("from collections import OrderedDict")
-    if "[Any" in content or "Any]" in content:
-        imports.append("from typing import Any")
-    if "datetime." in content:
-        imports.append("import datetime")
-    if not imports:
-        return ""
-    return "\n".join(imports) + "\n"
-
-
-@beartype
 def _wrap_python(content: str) -> str:
-    """Wrap with any imports needed by the generated Python code."""
-    return _python_imports(content=content) + content
+    """Pass through Python content unchanged."""
+    return content
 
 
 @beartype
 def _wrap_python_combined(declaration: str, assignment: str) -> str:
-    """Join declaration and assignment with imports prepended."""
-    combined = declaration + "\n" + assignment
-    return _python_imports(content=combined) + combined
+    """Join declaration and assignment with a newline."""
+    return declaration + "\n" + assignment
 
 
 @beartype
 def _wrap_ruby(content: str) -> str:
-    """Wrap with require 'date' when Ruby Date literals are present."""
-    prefix = "require 'date'\n" if "Date.new" in content else ""
-    return f"{prefix}{content}"
+    """Pass through Ruby content unchanged."""
+    return content
 
 
 @beartype
 def _wrap_crystal(content: str) -> str:
     """Wrap in a Crystal variable assignment to suppress unused-expression
-    warnings. Adds ``require "set"`` when the content uses ``Set{``.
+    warnings.
     """
-    prefix = 'require "set"\n' if "Set{" in content else ""
-    return f"{prefix}_ = {content}"
+    return f"_ = {content}"
 
 
 @beartype
 def _wrap_crystal_varname(content: str) -> str:
-    """Identity wrap for Crystal, but adds ``require "set"`` when the
-    content uses ``Set{``.
-    """
-    if "Set{" in content:
-        return f'require "set"\n{content}'
+    """Pass through Crystal content unchanged."""
     return content
 
 
 @beartype
 def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
-    """Join Crystal declaration and assignment with a newline, adding
-    ``require "set"`` when either uses ``Set{``.
-    """
-    combined = declaration + "\n" + assignment
-    if "Set{" in combined:
-        return f'require "set"\n{combined}'
-    return combined
+    """Join Crystal declaration and assignment with a newline."""
+    return declaration + "\n" + assignment
 
 
 @beartype
 def _wrap_julia(content: str) -> str:
-    """Wrap with ``using Dates`` when Julia date literals are present."""
-    needs_dates = "Date(" in content or "DateTime(" in content
-    prefix = "using Dates\n" if needs_dates else ""
-    return f"{prefix}{content}"
+    """Pass through Julia content unchanged."""
+    return content
 
 
 @beartype
@@ -1319,6 +1171,17 @@ def _wrap_vb_combined(declaration: str, assignment: str) -> str:
         "    End Sub\n"
         "End Module"
     )
+
+
+@beartype
+def _prepend_preamble(
+    wrapped: str,
+    preamble: tuple[str, ...],
+) -> str:
+    """Prepend *preamble* lines before *wrapped*."""
+    if not preamble:
+        return wrapped
+    return "\n".join(preamble) + "\n" + wrapped
 
 
 @dataclasses.dataclass
@@ -1888,7 +1751,11 @@ def test_golden_file(
         new_variable=True,
         error_on_coercion=False,
     )
-    wrapped = lang_config.wrap(result)
+    wrapped = lang_config.wrap(result.code)
+    wrapped = _prepend_preamble(
+        wrapped=wrapped,
+        preamble=result.preamble,
+    )
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.lang_cls.extension,
@@ -1925,7 +1792,11 @@ def test_golden_file_with_variable_name(
         new_variable=True,
         error_on_coercion=False,
     )
-    wrapped = lang_config.varname_wrap(result)
+    wrapped = lang_config.varname_wrap(result.code)
+    wrapped = _prepend_preamble(
+        wrapped=wrapped,
+        preamble=result.preamble,
+    )
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.lang_cls.extension,
@@ -1973,7 +1844,11 @@ def test_golden_file_combined_variable_forms(
         new_variable=False,
         error_on_coercion=False,
     )
-    combined = lang_config.combined_wrap(declaration, assignment)
+    combined = lang_config.combined_wrap(declaration.code, assignment.code)
+    combined = _prepend_preamble(
+        wrapped=combined,
+        preamble=declaration.preamble,
+    )
     file_regression.check(
         contents=combined + "\n",
         extension=lang_config.lang_cls.extension,
@@ -2041,7 +1916,11 @@ def test_format_variant_golden_file(
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
-    wrapped = variant.wrap(result)
+    wrapped = variant.wrap(result.code)
+    wrapped = _prepend_preamble(
+        wrapped=wrapped,
+        preamble=result.preamble,
+    )
     file_regression.check(
         contents=wrapped + "\n",
         extension=variant.spec.extension,

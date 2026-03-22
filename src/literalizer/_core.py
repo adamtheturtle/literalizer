@@ -30,6 +30,20 @@ from literalizer.exceptions import (
 )
 
 
+@dataclasses.dataclass(frozen=True)
+class LiteralizeResult:
+    """Result of converting data to a native language literal.
+
+    Attributes:
+        code: The formatted literal text.
+        preamble: Lines (imports, package declarations, etc.) that
+            must precede the generated code.  Empty when none are needed.
+    """
+
+    code: str
+    preamble: tuple[str, ...]
+
+
 @beartype
 def _scalar_type_bucket(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
@@ -757,7 +771,7 @@ def literalize_json(
     variable_name: str | None,
     new_variable: bool,
     error_on_coercion: bool,
-) -> str:
+) -> LiteralizeResult:
     r"""Convert a JSON string to native language literal text.
 
     Convert a JSON string to native language literal text.
@@ -821,8 +835,11 @@ def literalize_json(
             if new_variable
             else language.format_variable_assignment
         )
-        return formatter(variable_name, result)
-    return result
+        result = formatter(variable_name, result)
+    return LiteralizeResult(
+        code=result,
+        preamble=tuple(language.preamble(result)),
+    )
 
 
 @beartype
@@ -1010,7 +1027,7 @@ def literalize_yaml(
     variable_name: str | None,
     new_variable: bool,
     error_on_coercion: bool,
-) -> str:
+) -> LiteralizeResult:
     r"""Convert a YAML string to native language literal text.
 
     YAML comments are preserved in the output using the target
@@ -1109,4 +1126,7 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
-    return result
+    return LiteralizeResult(
+        code=result,
+        preamble=tuple(language.preamble(result)),
+    )
