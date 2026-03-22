@@ -782,15 +782,6 @@ def _apply_variable_wrapper(
 
 
 @beartype
-def _build_result(*, code: str, language: Language) -> LiteralizeResult:
-    """Build a :class:`LiteralizeResult` from finished code."""
-    return LiteralizeResult(
-        code=code,
-        preamble=tuple(language.preamble(code)),
-    )
-
-
-@beartype
 def literalize_json(
     *,
     json_string: str,
@@ -866,7 +857,10 @@ def literalize_json(
         variable_name=variable_name,
         new_variable=new_variable,
     )
-    return _build_result(code=result, language=language)
+    return LiteralizeResult(
+        code=result,
+        preamble=tuple(language.preamble(result)),
+    )
 
 
 @beartype
@@ -924,10 +918,7 @@ def _resolve_yaml_set_comments(
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Resolve comments for a YAML set.
-
-    Pure: operates on pre-parsed ruamel data.
-    """
+    """Resolve comments for a YAML set."""
     set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
     if not language.supports_collection_comments:
         return _ResolvedComments(result=base, pending=set_comments)
@@ -954,10 +945,7 @@ def _resolve_yaml_collection_comments(
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Resolve comments for a YAML list or dict.
-
-    Pure: operates on pre-parsed ruamel data.
-    """
+    """Resolve comments for a YAML list or dict."""
     collection_comments = extract_yaml_comments(
         ruamel_data=ruamel_data,
     )
@@ -1002,11 +990,7 @@ def _resolve_yaml_comments(
     line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Parse YAML for comment metadata and resolve comments.
-
-    This is the single impure entry point for comment resolution — it
-    parses the YAML string once, then delegates to pure helpers.
-    """
+    """Parse YAML for comment metadata and resolve comments."""
     if isinstance(data, set):
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
@@ -1111,7 +1095,6 @@ def literalize_yaml(
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
-    # --- impure: parse YAML ------------------------------------------
     ruamel_yaml = YAML(typ="safe")
     try:
         # https://sourceforge.net/p/ruamel-yaml/tickets/564/
@@ -1119,8 +1102,6 @@ def literalize_yaml(
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
-
-    # --- pure from here ----------------------------------------------
     coerced_data = _coerce_yaml_keys(data=data)
     base = _literalize(
         data=coerced_data,
@@ -1168,4 +1149,7 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
-    return _build_result(code=result, language=language)
+    return LiteralizeResult(
+        code=result,
+        preamble=tuple(language.preamble(result)),
+    )
