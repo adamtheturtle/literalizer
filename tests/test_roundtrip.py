@@ -1,5 +1,10 @@
 """Hypothesis roundtrip tests for literalizer converter."""
 
+# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownArgumentType=false
+# pyright: reportUnknownVariableType=false
+# pyright: reportAttributeAccessIssue=false
+
 import ast
 import base64
 import json

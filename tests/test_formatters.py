@@ -1,5 +1,10 @@
 """Tests for literalizer formatters."""
 
+# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownArgumentType=false
+# pyright: reportUnknownVariableType=false
+# pyright: reportAttributeAccessIssue=false
+
 import datetime
 from collections.abc import Callable
 
@@ -303,4 +308,4 @@ def test_format_string_vb(value: str, expected: str) -> None:
     """``format_string_vb`` formats strings using VB.NET escaping
     rules.
     """
-    assert _VB.format_string(value=value) == expected
+    assert _VB.format_string(value) == expected
