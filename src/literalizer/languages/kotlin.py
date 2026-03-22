@@ -154,8 +154,8 @@ class Kotlin(metaclass=LanguageCls):
 
         sequence_format: Which Kotlin sequence type to use.
 
-            * ``sequence_formats.LIST`` — typed ``arrayOf``/``listOf``
-              calls, e.g. ``intArrayOf(1, 2, 3)``.  Heterogeneous
+            * ``sequence_formats.LIST`` — typed array calls
+              (e.g. ``intArrayOf(1, 2, 3)``).  Heterogeneous
               sequences fall back to ``listOf<Any?>(…)``.
             * ``sequence_formats.TUPLE`` — ``Pair(…)`` for two-element
               sequences, ``Triple(…)`` for three-element sequences,
