@@ -274,12 +274,12 @@ class CSharp(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        date_preamble: tuple[str, ...] = ()
-        if date_format is CSharp.DateFormats.CSHARP:
-            date_preamble = ("using System;",)
-        datetime_preamble: tuple[str, ...] = ()
-        if datetime_format is CSharp.DatetimeFormats.CSHARP:
-            datetime_preamble = ("using System;",)
+        date_preamble: tuple[str, ...] = {
+            "CSHARP": ("using System;",),
+        }.get(date_format.name, ())
+        datetime_preamble: tuple[str, ...] = {
+            "CSHARP": ("using System;",),
+        }.get(datetime_format.name, ())
         scalar_preamble_dict: dict[type, tuple[str, ...]] = {}
         if date_preamble:
             scalar_preamble_dict[datetime.date] = date_preamble

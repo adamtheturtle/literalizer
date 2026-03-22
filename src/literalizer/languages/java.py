@@ -306,17 +306,16 @@ class Java(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        date_preamble: tuple[str, ...] = ()
-        if date_format is Java.DateFormats.JAVA:
-            date_preamble = ("import java.time.LocalDate;",)
-        datetime_preamble: tuple[str, ...] = ()
-        if datetime_format is Java.DatetimeFormats.INSTANT:
-            datetime_preamble = ("import java.time.Instant;",)
-        elif datetime_format is Java.DatetimeFormats.ZONED:
-            datetime_preamble = (
+        date_preamble: tuple[str, ...] = {
+            "JAVA": ("import java.time.LocalDate;",),
+        }.get(date_format.name, ())
+        datetime_preamble: tuple[str, ...] = {
+            "INSTANT": ("import java.time.Instant;",),
+            "ZONED": (
                 "import java.time.ZoneId;",
                 "import java.time.ZonedDateTime;",
-            )
+            ),
+        }.get(datetime_format.name, ())
         scalar_preamble_dict: dict[type, tuple[str, ...]] = {}
         if date_preamble:
             scalar_preamble_dict[datetime.date] = date_preamble
