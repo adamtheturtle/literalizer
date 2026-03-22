@@ -1,4 +1,4 @@
-"""Test class-level format Enum access via the LanguageCls metaclass."""
+"""Test class-level format Enum access via the LanguageCls meta-class."""
 
 from literalizer import LanguageCls
 from literalizer.languages import (
