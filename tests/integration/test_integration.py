@@ -12,12 +12,11 @@ To regenerate all golden files after changing output::
     uv run pytest tests/integration/ --regen-all
 """
 
-from __future__ import annotations
-
 import dataclasses
 import enum
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
 from beartype import beartype
@@ -25,9 +24,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 _CASES_REL = Path("tests") / "integration" / "cases"
 
@@ -2172,6 +2168,31 @@ def _build_comment_variants() -> dict[str, _Variant]:
 
 
 @beartype
+def _build_type_hint_variants() -> dict[str, _Variant]:
+    """Build variable-type-hint variants for all languages with multiple
+    formats.
+
+    For each language that has more than one variable type-hint format,
+    create a variant for every non-default type-hint style.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.spec
+        type_hints_enum = spec.variable_type_hints_formats
+        default_member = next(iter(type_hints_enum))
+        for fmt in list(type_hints_enum):
+            if fmt is default_member:
+                continue
+            variant_key = f"{lang_name}_{fmt.name.lower()}"
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(variable_type_hints=fmt),
+                extension=lang_config.extension,
+                wrap=lang_config.wrap,
+            )
+    return variants
+
+
+@beartype
 def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
     cases_dir = Path(__file__).parent / "cases"
@@ -2317,41 +2338,24 @@ class _VariantCase:
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    variant_sources: list[tuple[dict[str, _Variant], str]] = [
-        (_build_date_variants(), "scalar_date"),
-        (_build_datetime_variants(), "scalar_datetime"),
-        (_build_sequence_variants(), "simple_sequence"),
-        (_build_set_variants(), "set"),
-        (_build_comment_variants(), "comments"),
+    variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
+        (_build_date_variants(), "scalar_date", None),
+        (_build_datetime_variants(), "scalar_datetime", None),
+        (_build_sequence_variants(), "simple_sequence", None),
+        (_build_set_variants(), "set", None),
+        (_build_comment_variants(), "comments", None),
+        (_build_type_hint_variants(), "simple_dict", _VARIABLE_NAME),
     ]
-    for variants, case_dir_name in variant_sources:
+    for variants, case_dir_name, variable_name in variant_sources:
         for variant_name, variant in variants.items():
             cases.append(
                 _VariantCase(
                     variant_name=variant_name,
                     variant=variant,
                     case_dir_name=case_dir_name,
-                    variable_name=None,
+                    variable_name=variable_name,
                 )
             )
-    variable_type_hints_variants: dict[str, _Variant] = {
-        "python_inline": _Variant(
-            spec=literalizer.languages.Python(
-                variable_type_hints=literalizer.languages.Python.VariableTypeHints.INLINE,
-            ),
-            extension=".py",
-            wrap=_wrap_python,
-        ),
-    }
-    for variant_name, variant in variable_type_hints_variants.items():
-        cases.append(
-            _VariantCase(
-                variant_name=variant_name,
-                variant=variant,
-                case_dir_name="simple_dict",
-                variable_name=_VARIABLE_NAME,
-            )
-        )
     return cases
 
 

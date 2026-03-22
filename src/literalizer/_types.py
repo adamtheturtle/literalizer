@@ -1,7 +1,5 @@
 """Type aliases used across the literalizer package."""
 
-from __future__ import annotations
-
 import datetime
 
 type Scalar = (

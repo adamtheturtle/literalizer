@@ -1,9 +1,9 @@
 """Scala language specification."""
 
-from __future__ import annotations
-
+import datetime
 import enum
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
+from typing import Any
 
 from beartype import beartype
 
@@ -27,10 +27,6 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value  # noqa: TC001
-
-if TYPE_CHECKING:
-    import datetime
-    from collections.abc import Callable
 
 _SCALA_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
@@ -175,6 +171,13 @@ class Scala(metaclass=HasFormatEnums):
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NONE = "none"
+
+    variable_type_hints_formats = VariableTypeHints
 
     def __init__(
         self,

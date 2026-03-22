@@ -1,7 +1,6 @@
 """YAML language specification."""
 
-from __future__ import annotations
-
+import datetime
 import enum
 from typing import TYPE_CHECKING
 
@@ -26,7 +25,6 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    import datetime
     from collections.abc import Callable
 
     from literalizer._types import Value
@@ -148,6 +146,13 @@ class Yaml(metaclass=HasFormatEnums):
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NONE = "none"
+
+    variable_type_hints_formats = VariableTypeHints
 
     def __init__(
         self,
