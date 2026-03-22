@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -165,6 +165,12 @@ _string_format: Callable[[str], str] = format_string_fortran
 
 
 @beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return required imports (none for this language)."""
+    return ()
+
+
+@beartype
 class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
@@ -306,3 +312,4 @@ class Fortran(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

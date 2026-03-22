@@ -62,7 +62,7 @@ def test_literalize_yaml_empty_sequence() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == ""
+    assert result.code == ""
 
 
 def test_literalize_yaml_sequence() -> None:
@@ -79,7 +79,7 @@ def test_literalize_yaml_sequence() -> None:
         error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
-    assert result == expected
+    assert result.code == expected
 
 
 def test_literalize_yaml_mapping() -> None:
@@ -102,7 +102,7 @@ def test_literalize_yaml_mapping() -> None:
             "b": True,
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_literalize_yaml_invalid() -> None:
@@ -165,7 +165,7 @@ def test_literalize_yaml_scalar(
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_literalize_yaml_date() -> None:
@@ -183,7 +183,7 @@ def test_literalize_yaml_date() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "datetime.date(year=2024, month=1, day=15),"
+    assert result.code == "datetime.date(year=2024, month=1, day=15),"
 
 
 def test_literalize_yaml_datetime() -> None:
@@ -206,7 +206,7 @@ def test_literalize_yaml_datetime() -> None:
         "year=2024, month=1, day=15, "
         "hour=12, minute=30, second=0),"
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_literalize_yaml_binary() -> None:
@@ -222,7 +222,7 @@ def test_literalize_yaml_binary() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '"48656c6c6f",'
+    assert result.code == '"48656c6c6f",'
 
 
 def test_yaml_set_inline_in_sequence() -> None:
@@ -239,7 +239,7 @@ def test_yaml_set_inline_in_sequence() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '{"a", "b"},'
+    assert result.code == '{"a", "b"},'
 
 
 def test_yaml_set_inline_with_format_set_entry() -> None:
@@ -254,7 +254,7 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == 'map[any]struct{}{"a": struct{}{}},'
+    assert result.code == 'map[any]struct{}{"a": struct{}{}},'
 
 
 def test_yaml_empty_set_inline() -> None:
@@ -269,7 +269,7 @@ def test_yaml_empty_set_inline() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "set(),"
+    assert result.code == "set(),"
 
 
 def test_ordered_map_nested_in_sequence() -> None:
@@ -301,7 +301,7 @@ def test_ordered_map_nested_in_sequence() -> None:
             OrderedDict([("name", "Alice"), ("age", 30)]),
         )""",
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_heterogeneous_bytes_in_collection() -> None:
@@ -330,7 +330,7 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
             "key2": "42",
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_heterogeneous_set() -> None:
@@ -359,7 +359,7 @@ def test_coerce_heterogeneous_set() -> None:
             "hello",
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_heterogeneous_date_in_collection() -> None:
@@ -387,7 +387,7 @@ def test_coerce_heterogeneous_date_in_collection() -> None:
             "42",
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_heterogeneous_datetime_in_collection() -> None:
@@ -417,7 +417,7 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
             "42",
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_homogeneous_date_list_mojo() -> None:
@@ -447,7 +447,7 @@ def test_homogeneous_date_list_mojo() -> None:
             "2024-01-16",
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_homogeneous_datetime_list_mojo() -> None:
@@ -477,7 +477,7 @@ def test_homogeneous_datetime_list_mojo() -> None:
             "2024-01-16T08:00:00",
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
@@ -506,7 +506,7 @@ def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
             Tuple("city", "Paris"),
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_mixed_dict_values_none_with_list() -> None:
@@ -535,7 +535,7 @@ def test_coerce_mixed_dict_values_none_with_list() -> None:
             "extra": "None",
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_mixed_dict_values_set_with_string() -> None:
@@ -565,7 +565,7 @@ def test_coerce_mixed_dict_values_set_with_string() -> None:
             "roles": "[\\"admin\\"]",
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_mixed_dict_values_with_list() -> None:
@@ -595,7 +595,7 @@ def test_coerce_mixed_dict_values_with_list() -> None:
             "tags": "[\\"admin\\", \\"user\\"]",
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_coerce_mixed_ordered_map_values() -> None:
@@ -627,7 +627,7 @@ def test_coerce_mixed_ordered_map_values() -> None:
             Tuple("tags", "[\\"admin\\"]"),
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_r_empty_dict_key_positional() -> None:
@@ -656,7 +656,7 @@ def test_r_empty_dict_key_positional() -> None:
             "value"
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_r_empty_dict_key_positional_is_default() -> None:
@@ -685,7 +685,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
             "value"
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_r_empty_dict_key_error() -> None:
@@ -737,7 +737,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
             "key" = "value"
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_error_on_coercion_raises_for_heterogeneous_list() -> None:
@@ -800,7 +800,7 @@ def test_error_on_coercion_no_raise_for_homogeneous() -> None:
             3,
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
@@ -824,7 +824,7 @@ def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
             3,
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
@@ -919,7 +919,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
             "b": 2,
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
@@ -948,7 +948,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
             Tuple("city", "Paris"),
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
@@ -977,4 +977,4 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
             2,
         ]"""
     )
-    assert result == expected
+    assert result.code == expected

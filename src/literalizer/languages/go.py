@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
@@ -26,8 +27,6 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 _GO_SCALAR_TYPES: dict[str, str] = {
@@ -89,6 +88,15 @@ def _format_go_set_entry(item: str) -> str:
 def _format_go_ordered_map_entry(key: str, value: str) -> str:
     """Format a Go ordered-map entry as a ``{key, value}`` pair."""
     return f"{{{key}, {value}}}"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = ["package main"]
+    if "time." in code:
+        lines.append('import "time"')
+    return lines
 
 
 @beartype
@@ -272,3 +280,4 @@ class Go(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

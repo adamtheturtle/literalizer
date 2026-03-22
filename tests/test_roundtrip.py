@@ -82,9 +82,9 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
         error_on_coercion=False,
     )
     if not data:
-        assert result == ""
+        assert result.code == ""
         return
-    parsed = ast.literal_eval(node_or_string=result)
+    parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == tuple(_lists_to_tuples(value=v) for v in data)
 
 
@@ -101,7 +101,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    parsed = ast.literal_eval(node_or_string=result)
+    parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
 
 
@@ -124,9 +124,9 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
         error_on_coercion=False,
     )
     if not data:
-        assert result == ""
+        assert result.code == ""
         return
-    parsed = ast.literal_eval(node_or_string=result)
+    parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == _lists_to_tuples(value=data)
 
 
@@ -161,4 +161,5 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert ast.literal_eval(node_or_string=result.rstrip(",")) == data.hex()
+    code = result.code.rstrip(",")
+    assert ast.literal_eval(node_or_string=code) == data.hex()

@@ -36,7 +36,7 @@ Usage
    # Enable debug mode for development
    debug: true
    """
-   result = literalize_yaml(
+   result = literalize_yaml(  # returns LiteralizeResult with .code and .preamble
        yaml_string=yaml_config,
        error_on_coercion=False,
        language=Go(
@@ -51,7 +51,7 @@ Usage
        variable_name=None,
        new_variable=True,
    )
-   # result:
+   # result.code:
    # map[string]any{
    #     // Server configuration
    #     "host": "localhost",  // default host

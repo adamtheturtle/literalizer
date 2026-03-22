@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -27,8 +28,6 @@ from literalizer._language import (
 from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 
@@ -74,6 +73,12 @@ def _format_variable_declaration(name: str, value: str) -> str:
 def _format_variable_assignment(name: str, value: str) -> str:
     """Format an R variable assignment."""
     return f"{name} <- {value}"
+
+
+@beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return required imports (none for this language)."""
+    return ()
 
 
 @beartype
@@ -259,3 +264,4 @@ class R(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

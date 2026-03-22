@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
@@ -27,8 +28,6 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from literalizer._types import Value
 
 _KOTLIN_SCALAR_OPENERS: dict[str, str] = {
@@ -97,6 +96,17 @@ def _kotlin_dict_schema_to_opener(
 def _format_kotlin_ordered_map_entry(key: str, value: str) -> str:
     """Format a Kotlin ordered-map entry."""
     return f"{key} to {value}"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "LocalDate." in code:
+        lines.append("import java.time.LocalDate")
+    if "LocalDateTime" in code:
+        lines.append("import java.time.LocalDateTime")
+    return lines
 
 
 @beartype
@@ -280,3 +290,4 @@ class Kotlin(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

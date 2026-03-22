@@ -1,6 +1,7 @@
 """Convert data structures to native language literal syntax."""
 
 from literalizer._core import (
+    LiteralizeResult,
     literalize_json,
     literalize_yaml,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "DictFormatConfig",
     "Language",
     "LanguageCls",
+    "LiteralizeResult",
     "OrderedMapFormatConfig",
     "SequenceFormatConfig",
     "SetFormatConfig",
