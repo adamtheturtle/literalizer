@@ -85,7 +85,7 @@ class LanguageCls(type):
 
 
 @runtime_checkable
-class Language(Protocol):
+class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Protocol describing how a language formats scalar literals and
     sequences.
 
@@ -284,4 +284,14 @@ class Language(Protocol):
     @property
     def sequence_format(self) -> SequenceFormat:
         """The sequence format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def set_format(self) -> enum.Enum:
+        """The set format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def comment_format(self) -> enum.Enum:
+        """The comment format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis

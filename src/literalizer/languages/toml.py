@@ -201,6 +201,7 @@ class Toml(metaclass=LanguageCls):
         self.sequence_format = sequence_format
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.null_literal = '""'
         self.true_literal = "true"
@@ -225,6 +226,7 @@ class Toml(metaclass=LanguageCls):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(

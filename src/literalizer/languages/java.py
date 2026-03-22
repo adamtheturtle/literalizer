@@ -244,6 +244,7 @@ class Java(metaclass=LanguageCls):
         self.false_literal = "false"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
+        self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         if sequence_format is Java.sequence_formats.LIST:
             self.sequence_open: Callable[[list[Value]], str] = _list_of_open
@@ -271,6 +272,7 @@ class Java(metaclass=LanguageCls):
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.comment_format = comment_format
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
