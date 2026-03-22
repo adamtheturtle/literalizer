@@ -15,7 +15,6 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -26,7 +25,7 @@ import literalizer
 import literalizer.languages
 from literalizer.exceptions import NullInCollectionError
 
-_CASES_REL = Path("tests") / "integration" / "cases"
+_CASES_DIR_PARTS = ("tests", "integration", "cases")
 
 
 @beartype
@@ -1891,30 +1890,17 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     return variants
 
 
-@beartype
-def _discover_cases() -> list[tuple[str, str]]:
-    """Return ``(case_name, language)`` tuples."""
-    cases_dir = Path(__file__).parent / "cases"
-    cases: list[tuple[str, str]] = []
-    for case_dir in sorted(cases_dir.iterdir()):
-        cases.extend((case_dir.name, lang_name) for lang_name in _LANGUAGES)
-    return cases
-
-
-_CASES = _discover_cases()
-
-
 def test_golden_file(
     subtests: pytest.Subtests,
     request: pytest.FixtureRequest,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
-    cases_dir = request.config.rootpath / _CASES_REL
-    for _case_name, language in _CASES:
-        with subtests.test(msg=f"{_case_name}/{language}"):
-            input_path = cases_dir / _case_name / "input.yaml"
-            lang_config = _LANGUAGES[language]
+    cases_dir = request.config.rootpath.joinpath(*_CASES_DIR_PARTS)
+    for case_dir in sorted(cases_dir.iterdir()):
+        for language, lang_config in _LANGUAGES.items():
+            with subtests.test(msg=f"{case_dir.name}/{language}"):
+                input_path = case_dir / "input.yaml"
             yaml_string = input_path.read_text()
             result = literalizer.literalize_yaml(
                 yaml_string=yaml_string,
@@ -1930,7 +1916,7 @@ def test_golden_file(
             file_regression.check(
                 contents=wrapped + "\n",
                 extension=lang_config.lang_cls.extension,
-                fullpath=input_path.parent
+                fullpath=case_dir
                 / (language + lang_config.lang_cls.extension),
             )
 
@@ -1943,29 +1929,29 @@ def test_golden_file_with_variable_name(
     """Test that literalize_yaml with variable_name matches golden
     file.
     """
-    cases_dir = request.config.rootpath / _CASES_REL
-    for _case_name, language in _CASES:
-        with subtests.test(msg=f"{_case_name}/{language}"):
-            input_path = cases_dir / _case_name / "input.yaml"
-            lang_config = _LANGUAGES[language]
-            yaml_string = input_path.read_text()
-            result = literalizer.literalize_yaml(
-                yaml_string=yaml_string,
-                language=lang_config.lang_cls(),
-                line_prefix="",
-                indent="    ",
-                include_delimiters=True,
-                variable_name=_VARIABLE_NAME,
-                new_variable=True,
-                error_on_coercion=False,
-            )
-            wrapped = lang_config.varname_wrap(result)
-            file_regression.check(
-                contents=wrapped + "\n",
-                extension=lang_config.lang_cls.extension,
-                fullpath=input_path.parent
-                / (language + "_varname" + lang_config.lang_cls.extension),
-            )
+    cases_dir = request.config.rootpath.joinpath(*_CASES_DIR_PARTS)
+    for case_dir in sorted(cases_dir.iterdir()):
+        for language, lang_config in _LANGUAGES.items():
+            with subtests.test(msg=f"{case_dir.name}/{language}"):
+                input_path = case_dir / "input.yaml"
+                yaml_string = input_path.read_text()
+                result = literalizer.literalize_yaml(
+                    yaml_string=yaml_string,
+                    language=lang_config.lang_cls(),
+                    line_prefix="",
+                    indent="    ",
+                    include_delimiters=True,
+                    variable_name=_VARIABLE_NAME,
+                    new_variable=True,
+                    error_on_coercion=False,
+                )
+                wrapped = lang_config.varname_wrap(result)
+                file_regression.check(
+                    contents=wrapped + "\n",
+                    extension=lang_config.lang_cls.extension,
+                    fullpath=case_dir
+                    / (language + "_varname" + lang_config.lang_cls.extension),
+                )
 
 
 def test_golden_file_combined_variable_forms(
@@ -1977,39 +1963,41 @@ def test_golden_file_combined_variable_forms(
     new_variable=False (assignment to existing variable) produce expected
     golden output, combined in one file to show the difference in syntax.
     """
-    cases_dir = request.config.rootpath / _CASES_REL
-    for _case_name, language in _CASES:
-        with subtests.test(msg=f"{_case_name}/{language}"):
-            input_path = cases_dir / _case_name / "input.yaml"
-            lang_config = _LANGUAGES[language]
-            yaml_string = input_path.read_text()
-            declaration = literalizer.literalize_yaml(
-                yaml_string=yaml_string,
-                language=lang_config.lang_cls(),
-                line_prefix="",
-                indent="    ",
-                include_delimiters=True,
-                variable_name=_VARIABLE_NAME,
-                new_variable=True,
-                error_on_coercion=False,
-            )
-            assignment = literalizer.literalize_yaml(
-                yaml_string=yaml_string,
-                language=lang_config.lang_cls(),
-                line_prefix="",
-                indent="    ",
-                include_delimiters=True,
-                variable_name=_VARIABLE_NAME,
-                new_variable=False,
-                error_on_coercion=False,
-            )
-            combined = lang_config.combined_wrap(declaration, assignment)
-            file_regression.check(
-                contents=combined + "\n",
-                extension=lang_config.lang_cls.extension,
-                fullpath=input_path.parent
-                / (language + "_combined" + lang_config.lang_cls.extension),
-            )
+    cases_dir = request.config.rootpath.joinpath(*_CASES_DIR_PARTS)
+    for case_dir in sorted(cases_dir.iterdir()):
+        for language, lang_config in _LANGUAGES.items():
+            with subtests.test(msg=f"{case_dir.name}/{language}"):
+                input_path = case_dir / "input.yaml"
+                yaml_string = input_path.read_text()
+                declaration = literalizer.literalize_yaml(
+                    yaml_string=yaml_string,
+                    language=lang_config.lang_cls(),
+                    line_prefix="",
+                    indent="    ",
+                    include_delimiters=True,
+                    variable_name=_VARIABLE_NAME,
+                    new_variable=True,
+                    error_on_coercion=False,
+                )
+                assignment = literalizer.literalize_yaml(
+                    yaml_string=yaml_string,
+                    language=lang_config.lang_cls(),
+                    line_prefix="",
+                    indent="    ",
+                    include_delimiters=True,
+                    variable_name=_VARIABLE_NAME,
+                    new_variable=False,
+                    error_on_coercion=False,
+                )
+                combined = lang_config.combined_wrap(declaration, assignment)
+                file_regression.check(
+                    contents=combined + "\n",
+                    extension=lang_config.lang_cls.extension,
+                    fullpath=case_dir
+                    / (
+                        language + "_combined" + lang_config.lang_cls.extension
+                    ),
+                )
 
 
 @beartype
@@ -2050,10 +2038,9 @@ def test_format_variant_golden_file(
     """
     for variant_case in _FORMAT_VARIANT_CASES:
         with subtests.test(msg=variant_case.variant_name):
-            case_dir = (
-                request.config.rootpath
-                / _CASES_REL
-                / variant_case.case_dir_name
+            case_dir = request.config.rootpath.joinpath(
+                *_CASES_DIR_PARTS,
+                variant_case.case_dir_name,
             )
             variant = variant_case.variant
             yaml_string = (case_dir / "input.yaml").read_text()
