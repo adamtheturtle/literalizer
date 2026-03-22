@@ -214,10 +214,12 @@ class Go(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.SLICE,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Go language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"

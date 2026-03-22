@@ -276,6 +276,11 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def variable_type_hints(self) -> enum.Enum:
+        """The variable type hint option chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def sequence_format(self) -> SequenceFormat:
         """The sequence format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis

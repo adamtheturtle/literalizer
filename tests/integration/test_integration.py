@@ -24,6 +24,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
+from literalizer.exceptions import NullInCollectionError
 
 _CASES_REL = Path("tests") / "integration" / "cases"
 
@@ -1878,10 +1879,9 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        type_hints_enum = spec.variable_type_hints_formats
-        default_member = next(iter(type_hints_enum))
-        for fmt in list(type_hints_enum):
-            if fmt is default_member:
+        default_format = spec.variable_type_hints
+        for fmt in list(spec.variable_type_hints_formats):
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
@@ -2070,16 +2070,19 @@ def test_format_variant_golden_file(
     )
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=variant.spec,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=variant_case.variable_name,
-        new_variable=True,
-        error_on_coercion=False,
-    )
+    try:
+        result = literalizer.literalize_yaml(
+            yaml_string=yaml_string,
+            language=variant.spec,
+            line_prefix="",
+            indent="    ",
+            include_delimiters=True,
+            variable_name=variant_case.variable_name,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+    except NullInCollectionError:
+        pytest.skip("Format rejects null elements in this input")
     wrapped = variant.wrap(result)
     file_regression.check(
         contents=wrapped + "\n",

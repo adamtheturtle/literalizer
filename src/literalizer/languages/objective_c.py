@@ -213,10 +213,12 @@ class ObjectiveC(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Objective-C language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "[NSNull null]"
         self.true_literal = "@YES"

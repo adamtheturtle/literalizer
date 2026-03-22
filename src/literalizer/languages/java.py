@@ -8,7 +8,6 @@ from beartype import beartype
 
 from literalizer._formatters import (
     fixed_dict_open,
-    fixed_sequence_open,
     format_bytes_hex,
     format_date_java,
     format_datetime_java_instant,
@@ -26,11 +25,30 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer.exceptions import NullInCollectionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from literalizer._types import Value
+
+
+_LIST_OF_OPEN = "List.of("
+
+
+@beartype
+def _list_of_open(items: list[Any]) -> str:
+    """Return ``List.of(`` after checking for null elements.
+
+    Java's ``List.of()`` throws ``NullPointerException`` on null elements.
+    """
+    if any(item is None for item in items):
+        msg = (
+            "Java's List.of() does not accept null elements. "
+            "Use sequence_format=ARRAY instead."
+        )
+        raise NullInCollectionError(msg)
+    return _LIST_OF_OPEN
 
 
 @beartype
@@ -158,7 +176,7 @@ class Java(metaclass=LanguageCls):
             empty_sequence=None,
         )
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="List.of("),
+            sequence_open=_list_of_open,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -215,10 +233,12 @@ class Java(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Java language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"
