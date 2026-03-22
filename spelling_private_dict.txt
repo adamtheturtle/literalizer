@@ -136,7 +136,6 @@ subdirectory
 swiftc
 ty
 typeclass
-utc
 uv
 val_t
 whitespace

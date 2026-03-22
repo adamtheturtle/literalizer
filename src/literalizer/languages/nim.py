@@ -27,46 +27,29 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_NIM_MONTHS: dict[int, str] = {
-    1: "mJan",
-    2: "mFeb",
-    3: "mMar",
-    4: "mApr",
-    5: "mMay",
-    6: "mJun",
-    7: "mJul",
-    8: "mAug",
-    9: "mSep",
-    10: "mOct",
-    11: "mNov",
-    12: "mDec",
-}
-
 
 @beartype
 def _format_date_nim(value: datetime.date) -> str:
-    """Format a date as a Nim ``dateTime(...)`` call."""
-    month = _NIM_MONTHS[value.month]
-    return f"dateTime({value.day}, {month}, {value.year}, zone = utc())"
-
-
-@beartype
-def _format_datetime_nim(value: datetime.datetime) -> str:
-    """Format a datetime as a Nim ``dateTime(...)`` call."""
-    month = _NIM_MONTHS[value.month]
+    """Format a date as a Nim table literal."""
     return (
-        f"dateTime({value.day}, {month}, {value.year}, "
-        f"{value.hour}, {value.minute}, {value.second}, zone = utc())"
+        f'{{"year": {value.year}, "month": {value.month}, "day": {value.day}}}'
     )
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
+def _format_datetime_nim(value: datetime.datetime) -> str:
+    """Format a datetime as a Nim table literal."""
+    return (
+        f'{{"year": {value.year}, "month": {value.month}, '
+        f'"day": {value.day}, "hour": {value.hour}, '
+        f'"minute": {value.minute}, "second": {value.second}}}'
+    )
+
+
+@beartype
+def _preamble(_code: str) -> Sequence[str]:
     """Return preamble lines for the generated code."""
-    lines: list[str] = ["import json"]
-    if "dateTime(" in code:
-        lines.append("import times")
-    return lines
+    return ["import json"]
 
 
 @beartype
@@ -91,16 +74,16 @@ class Nim(metaclass=LanguageCls):
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.NIM`` — ``dateTime(...)`` call,
-              e.g. ``dateTime(15, mJan, 2024, zone = utc())``.
+            * ``date_formats.NIM`` — table literal,
+              e.g. ``{"year": 2024, "month": 1, "day": 15}``.
             * ``date_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.NIM`` — ``dateTime(...)`` call,
-              e.g. ``dateTime(15, mJan, 2024, 12, 30, 0,
-              zone = utc())``.
+            * ``datetime_formats.NIM`` — table literal,
+              e.g. ``{"year": 2024, "month": 1, "day": 15,
+              "hour": 12, "minute": 30, "second": 0}``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
     """

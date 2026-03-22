@@ -152,7 +152,7 @@ _OCCAM_LIT_TYPE = (
 
 _HASKELL_ADT = (
     "import Data.String (IsString(fromString))\n"
-    "import Data.Time (Day, UTCTime, fromGregorian,"
+    "import Data.Time (Day, UTCTime(..), fromGregorian,"
     " secondsToDiffTime, picosecondsToDiffTime)\n"
     "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
     " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]"

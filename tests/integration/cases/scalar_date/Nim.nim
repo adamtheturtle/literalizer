@@ -1,3 +1,2 @@
 import json
-import times
-let _ = %*dateTime(15, mJan, 2024, zone = utc())
+let _ = %*{"year": 2024, "month": 1, "day": 15}

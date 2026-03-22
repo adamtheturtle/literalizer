@@ -1,10 +1,9 @@
 import json
-import times
 var my_data = %*{
-    "date": dateTime(15, mJan, 2024, zone = utc()),
-    "datetime": dateTime(15, mJan, 2024, 12, 30, 0, zone = utc())
+    "date": {"year": 2024, "month": 1, "day": 15},
+    "datetime": {"year": 2024, "month": 1, "day": 15, "hour": 12, "minute": 30, "second": 0}
 }
 my_data = %*{
-    "date": dateTime(15, mJan, 2024, zone = utc()),
-    "datetime": dateTime(15, mJan, 2024, 12, 30, 0, zone = utc())
+    "date": {"year": 2024, "month": 1, "day": 15},
+    "datetime": {"year": 2024, "month": 1, "day": 15, "hour": 12, "minute": 30, "second": 0}
 }
