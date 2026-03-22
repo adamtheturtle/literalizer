@@ -83,7 +83,7 @@ class HasFormatEnums(type):
     SequenceFormats: type[enum.Enum]
     SetFormats: type[enum.Enum]
     CommentFormats: type[enum.Enum]
-    VariableTypeHints: type[enum.Enum] | None
+    VariableTypeHints: type[enum.Enum]
 
 
 @runtime_checkable

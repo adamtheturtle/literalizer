@@ -121,7 +121,11 @@ class Racket(metaclass=HasFormatEnums):
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
-    VariableTypeHints = None
+
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NONE = "none"
 
     def __init__(
         self,

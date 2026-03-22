@@ -2088,16 +2088,13 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         type_hints_enum = lang_config.lang_cls.VariableTypeHints
-        if type_hints_enum is None:
-            continue
-        default_formatter = lang_config.spec.format_variable_declaration
+        default_member = type_hints_enum.NONE
         for fmt in list(type_hints_enum):
-            candidate = lang_config.lang_cls(variable_type_hints=fmt)
-            if candidate.format_variable_declaration is default_formatter:
+            if fmt is default_member:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
-                spec=candidate,
+                spec=lang_config.lang_cls(variable_type_hints=fmt),
                 extension=lang_config.extension,
                 wrap=lang_config.wrap,
             )
