@@ -712,4 +712,4 @@ def test_pygments_name_is_valid(
     language_cls: LanguageCls,
 ) -> None:
     """Every language's ``pygments_name`` is recognized by Pygments."""
-    get_lexer_by_name(language_cls.pygments_name)
+    get_lexer_by_name(_alias=language_cls.pygments_name)  # type: ignore[no-untyped-call]
