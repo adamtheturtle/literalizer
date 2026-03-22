@@ -1,5 +1,5 @@
 def main():
-    _ = {
+    var _ = {
         "name": "Alice",
         "score": "None",
         "age": "30",

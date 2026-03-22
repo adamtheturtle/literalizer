@@ -1,5 +1,5 @@
 def main():
-    _ = [
+    var _ = [
         "foo",
         "bar",
         "baz",

@@ -1,5 +1,5 @@
 def main():
-    _ = [
+    var _ = [
         True,
         False,
         True,

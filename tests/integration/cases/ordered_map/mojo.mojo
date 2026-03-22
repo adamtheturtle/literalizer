@@ -1,5 +1,5 @@
 def main():
-    _ = [
+    var _ = [
         Tuple("name", "Alice"),
         Tuple("age", "30"),
         Tuple("active", "True"),
