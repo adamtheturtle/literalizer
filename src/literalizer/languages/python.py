@@ -79,19 +79,6 @@ def _format_python_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    if "OrderedDict(" in code:
-        lines.append("from collections import OrderedDict")
-    if "datetime." in code:
-        lines.append("import datetime")
-    if "[Any" in code or "Any]" in code:
-        lines.append("from typing import Any")
-    return lines
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Python variable declaration."""
     return f"{name} = {value}"
@@ -379,6 +366,7 @@ class Python(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="OrderedDict([",
                 close="])",
+                preamble_lines=("from collections import OrderedDict",),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -398,4 +386,14 @@ class Python(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            datetime.date: ("import datetime",),
+            datetime.datetime: ("import datetime",),
+        }
+        if variable_type_hints is self.VariableTypeHints.INLINE:
+            self.type_hint_collection_preamble_lines: tuple[str, ...] = (
+                "from typing import Any",
+            )
+        else:
+            self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

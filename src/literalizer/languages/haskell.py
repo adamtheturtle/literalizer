@@ -55,19 +55,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code.
-
-    Only the ``OverloadedStrings`` pragma is emitted here because it
-    must appear before the ``module`` declaration.  The ``Val`` ADT and
-    typeclass instances are user-defined (see the class doc string) and
-    must be placed after the module header, so they are not part of the
-    preamble.
-    """
-    return ("{-# LANGUAGE OverloadedStrings #-}",)
-
-
-@beartype
 class Haskell(metaclass=LanguageCls):
     """Haskell language specification.
 
@@ -254,4 +241,8 @@ class Haskell(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = (
+            "{-# LANGUAGE OverloadedStrings #-}",
+        )
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

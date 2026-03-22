@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,6 +23,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -62,29 +65,6 @@ def _format_rust_dict_entry(key: str, value: str) -> str:
 def _format_rust_ordered_map_entry(key: str, value: str) -> str:
     """Format a Rust ordered-map entry as a tuple ``(key, value)``."""
     return f"({key}, {value})"
-
-
-@beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    collections: list[str] = []
-    if "HashMap" in code:
-        collections.append("HashMap")
-    if "HashSet" in code:
-        collections.append("HashSet")
-    if collections:
-        lines.append(f"use std::collections::{{{', '.join(collections)}}};")
-    chrono: list[str] = []
-    if "NaiveDate" in code:
-        chrono.append("NaiveDate")
-    if "NaiveDateTime" in code:
-        chrono.append("NaiveDateTime")
-    if "NaiveTime" in code:
-        chrono.append("NaiveTime")
-    if chrono:
-        lines.append(f"use chrono::{{{', '.join(chrono)}}};")
-    return lines
 
 
 @beartype
@@ -202,6 +182,7 @@ class Rust(metaclass=LanguageCls):
             open_str="HashSet::from([",
             close="])",
             empty_set=None,
+            preamble_lines=("use std::collections::HashSet;",),
         )
 
     class CommentFormats(enum.Enum):
@@ -258,6 +239,7 @@ class Rust(metaclass=LanguageCls):
             close="])",
             format_entry=_format_rust_dict_entry,
             empty_dict=None,
+            preamble_lines=("use std::collections::HashMap;",),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -277,6 +259,7 @@ class Rust(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="HashMap::from([",
                 close="])",
+                preamble_lines=("use std::collections::HashMap;",),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -292,4 +275,13 @@ class Rust(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            datetime.date: ("use chrono::NaiveDate;",),
+            datetime.datetime: (
+                "use chrono::NaiveDate;",
+                "use chrono::NaiveDateTime;",
+                "use chrono::NaiveTime;",
+            ),
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -98,17 +98,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code.
-
-    The ``Val`` discriminated union used by the generated output is
-    user-defined and must appear after the ``module`` declaration, so
-    it is not part of the preamble.
-    """
-    return ()
-
-
-@beartype
 class FSharp(metaclass=LanguageCls):
     """F# language specification."""
 
@@ -256,4 +245,6 @@ class FSharp(metaclass=LanguageCls):
         self.format_sequence_entry: Callable[[str], str] = (
             _format_fsharp_sequence_entry
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

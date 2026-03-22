@@ -1,4 +1,4 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 fn main() {
     let my_data = HashMap::from([
         ("key\nwith\nnewlines", "value1"),

@@ -43,6 +43,99 @@ class LiteralizeResult:
     """
 
 
+def _collect_value_types(data: Value) -> frozenset[type]:
+    """Walk *data* and return the set of value types present."""
+    types: set[type] = set()
+    _walk_value(data, types)
+    return frozenset(types)
+
+
+def _walk_value(value: Value, types: set[type]) -> None:
+    """Recursively add the type of *value* to *types*."""
+    if isinstance(value, ordereddict):
+        types.add(ordereddict)
+        for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            _walk_value(v, types)
+    elif isinstance(value, dict):
+        types.add(dict)
+        for v in value.values():
+            _walk_value(v, types)
+    elif isinstance(value, (set, frozenset)):
+        types.add(set)
+    elif isinstance(value, list):
+        types.add(list)
+        for v in value:
+            _walk_value(v, types)
+    else:
+        _walk_scalar(value, types)
+
+
+def _walk_scalar(value: Value, types: set[type]) -> None:
+    """Add scalar type of *value* to *types*."""
+    if isinstance(value, datetime.datetime):
+        types.add(datetime.datetime)
+    elif isinstance(value, datetime.date):
+        types.add(datetime.date)
+    elif isinstance(value, str):
+        types.add(str)
+    elif isinstance(value, bytes):
+        types.add(bytes)
+    elif value is None:
+        types.add(type(None))
+
+
+def _extend_collection_preamble(
+    types: frozenset[type],
+    language: Language,
+    lines: list[str],
+) -> None:
+    """Append collection-config preamble lines for present types."""
+    if dict in types:
+        lines.extend(language.dict_format_config.preamble_lines)
+    if set in types:
+        lines.extend(language.set_format_config.preamble_lines)
+    if list in types:
+        lines.extend(language.sequence_format_config.preamble_lines)
+    if ordereddict in types:
+        lines.extend(language.ordered_map_format_config.preamble_lines)
+
+
+def _compute_preamble(
+    *,
+    data: Value,
+    language: Language,
+    has_variable: bool,
+    new_variable: bool,
+) -> tuple[str, ...]:
+    """Compute preamble lines from the data types present and the
+    language configuration.  Pure function — no side effects.
+    """
+    types = _collect_value_types(data)
+    lines: list[str] = []
+
+    for scalar_type, preamble in language.scalar_preamble.items():
+        if scalar_type in types:
+            lines.extend(preamble)
+
+    _extend_collection_preamble(types, language, lines)
+
+    if (
+        has_variable
+        and new_variable
+        and types & {dict, list, set, ordereddict}
+    ):
+        lines.extend(language.type_hint_collection_preamble_lines)
+
+    # Deduplicate preserving insertion order.
+    seen: set[str] = set()
+    result: list[str] = []
+    for line in lines:
+        if line not in seen:
+            seen.add(line)
+            result.append(line)
+    return tuple(result)
+
+
 @beartype
 def _scalar_type_bucket(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
@@ -440,13 +533,14 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 @beartype
 def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     """Format a set value as a native language literal."""
-    if not value and spec.set_format_config.empty_set is not None:
-        return spec.set_format_config.empty_set
+    set_cfg = spec.set_format_config
+
+    if not value and set_cfg.empty_set is not None:
+        return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [spec.format_set_entry(item) for item in formatted]
     joined = spec.element_separator.join(entries)
-    set_cfg = spec.set_format_config
     return set_cfg.open_str + joined + set_cfg.close
 
 
@@ -457,6 +551,8 @@ def _format_ordered_map_value(
     spec: Language,
 ) -> str:
     """Format an ordered map as a native language literal."""
+    ordered_map_cfg = spec.ordered_map_format_config
+
     ordered_map_items: list[tuple[str, Value]] = [
         (k, v)
         for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
@@ -470,7 +566,6 @@ def _format_ordered_map_value(
         for k, v in ordered_map_items
     ]
     joined = spec.element_separator.join(pairs)
-    ordered_map_cfg = spec.ordered_map_format_config
     return ordered_map_cfg.open_str + joined + ordered_map_cfg.close
 
 
@@ -481,12 +576,13 @@ def _format_dict_value(
     spec: Language,
 ) -> str:
     """Format a dict as a native language literal."""
+    dict_cfg = spec.dict_format_config
+
     dict_items: dict[str, Value] = {
         k: v
         for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
     }
-    dict_cfg = spec.dict_format_config
     if not dict_items and dict_cfg.empty_dict is not None:
         return dict_cfg.empty_dict
     pairs = [
@@ -509,6 +605,7 @@ def _format_list_value(
 ) -> str:
     """Format a list as a native language literal."""
     seq_cfg = spec.sequence_format_config
+
     if not value and seq_cfg.empty_sequence is not None:
         return seq_cfg.empty_sequence
     items = [
@@ -562,10 +659,12 @@ def _wrap_body(
     close_prefix = f"{line_prefix}{ci}"
     if is_ordered_map:
         ordered_map_cfg = spec.ordered_map_format_config
+
         opening = f"{line_prefix}{ordered_map_cfg.open_str}"
         closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
         dict_cfg = spec.dict_format_config
+
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
     elif isinstance(data, set):
@@ -850,16 +949,22 @@ def literalize_json(
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
-    result = _apply_variable_wrapper(
-        result=result,
-        language=language,
+    if variable_name is not None:
+        formatter = (
+            language.format_variable_declaration
+            if new_variable
+            else language.format_variable_assignment
+        )
+        result = formatter(variable_name, result, data)
+    preamble = tuple(language.static_preamble) + _compute_preamble(
         data=data,
-        variable_name=variable_name,
+        language=language,
+        has_variable=variable_name is not None,
         new_variable=new_variable,
     )
     return LiteralizeResult(
         code=result,
-        preamble=tuple(language.preamble(result)),
+        preamble=preamble,
     )
 
 
@@ -1149,7 +1254,13 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
+    preamble = tuple(language.static_preamble) + _compute_preamble(
+        data=coerced_data,
+        language=language,
+        has_variable=variable_name is not None,
+        new_variable=new_variable,
+    )
     return LiteralizeResult(
         code=result,
-        preamble=tuple(language.preamble(result)),
+        preamble=preamble,
     )

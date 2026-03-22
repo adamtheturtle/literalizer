@@ -117,12 +117,6 @@ _string_format: Callable[[str], str] = _format_objc_string
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return ("#import <Foundation/Foundation.h>",)
-
-
-@beartype
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
@@ -268,4 +262,8 @@ class ObjectiveC(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = (
+            "#import <Foundation/Foundation.h>",
+        )
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

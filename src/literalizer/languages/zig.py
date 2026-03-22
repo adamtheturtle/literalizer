@@ -96,12 +96,6 @@ _ZIG_PREAMBLE: tuple[str, ...] = (
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return _ZIG_PREAMBLE
-
-
-@beartype
 class Zig(metaclass=LanguageCls):
     """Zig language specification."""
 
@@ -245,4 +239,6 @@ class Zig(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = _ZIG_PREAMBLE
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

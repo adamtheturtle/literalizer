@@ -2,8 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
@@ -27,6 +26,9 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -104,27 +106,6 @@ def _java_type_to_opener(element_type: type | ListType) -> str | None:
     if type_name is None:
         return None
     return f"new {type_name}[]{{"
-
-
-@beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    if "Instant" in code:
-        lines.append("import java.time.Instant;")
-    if "LocalDate" in code:
-        lines.append("import java.time.LocalDate;")
-    if "ZoneId" in code:
-        lines.append("import java.time.ZoneId;")
-    if "ZonedDateTime" in code:
-        lines.append("import java.time.ZonedDateTime;")
-    if "List.of(" in code:
-        lines.append("import java.util.List;")
-    if "Map.entry(" in code or "Map.ofEntries(" in code:
-        lines.append("import java.util.Map;")
-    if "Set.of(" in code:
-        lines.append("import java.util.Set;")
-    return lines
 
 
 @beartype
@@ -215,6 +196,7 @@ class Java(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="List.of()",
+            preamble_lines=("import java.util.List;",),
         )
 
         @property
@@ -231,6 +213,7 @@ class Java(metaclass=LanguageCls):
             open_str="Set.of(",
             close=")",
             empty_set=None,
+            preamble_lines=("import java.util.Set;",),
         )
 
     class CommentFormats(enum.Enum):
@@ -287,6 +270,7 @@ class Java(metaclass=LanguageCls):
             close=")",
             format_entry=_format_java_dict_entry,
             empty_dict=None,
+            preamble_lines=("import java.util.Map;",),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -305,6 +289,7 @@ class Java(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="new java.util.ArrayList<>(java.util.Arrays.asList(",
                 close="))",
+                preamble_lines=("import java.util.Map;",),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -320,4 +305,23 @@ class Java(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        date_preamble: tuple[str, ...] = {
+            self.DateFormats.JAVA: ("import java.time.LocalDate;",),
+        }.get(date_format, ())
+        datetime_preamble: tuple[str, ...] = {
+            self.DatetimeFormats.INSTANT: ("import java.time.Instant;",),
+            self.DatetimeFormats.ZONED: (
+                "import java.time.ZoneId;",
+                "import java.time.ZonedDateTime;",
+            ),
+        }.get(datetime_format, ())
+        scalar_preamble_dict: dict[type, tuple[str, ...]] = {}
+        if date_preamble:
+            scalar_preamble_dict[datetime.date] = date_preamble
+        if datetime_preamble:
+            scalar_preamble_dict[datetime.datetime] = datetime_preamble
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            scalar_preamble_dict
+        )
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

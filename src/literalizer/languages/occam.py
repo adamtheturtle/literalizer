@@ -88,17 +88,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code.
-
-    The ``LIT`` mobile data type used by the generated output is
-    user-defined and must appear before any PROC that uses it, so it
-    is not part of the preamble.
-    """
-    return ()
-
-
-@beartype
 class Occam(metaclass=LanguageCls):
     """Occam-pi language specification."""
 
@@ -247,4 +236,6 @@ class Occam(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

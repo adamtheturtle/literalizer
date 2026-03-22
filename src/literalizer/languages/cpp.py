@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -25,6 +25,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -100,23 +103,6 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    if "nullptr" in code:
-        lines.append("#include <cstddef>")
-    if "std::chrono" in code:
-        lines.append("#include <chrono>")
-    if "std::map" in code:
-        lines.append("#include <map>")
-    if "std::string" in code:
-        lines.append("#include <string>")
-    if "std::vector" in code:
-        lines.append("#include <vector>")
-    return lines
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a C++ variable declaration."""
     return f"auto {name} = {value};"
@@ -189,6 +175,7 @@ class Cpp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=("#include <vector>",),
         )
 
         @property
@@ -264,6 +251,7 @@ class Cpp(metaclass=LanguageCls):
             close="}",
             format_entry=_format_cpp_dict_entry,
             empty_dict=None,
+            preamble_lines=("#include <map>",),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -298,4 +286,11 @@ class Cpp(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            str: ("#include <string>",),
+            type(None): ("#include <cstddef>",),
+            datetime.date: ("#include <chrono>",),
+            datetime.datetime: ("#include <chrono>",),
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

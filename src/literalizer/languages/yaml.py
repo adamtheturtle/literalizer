@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -24,6 +24,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -60,12 +63,6 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"{name}: {value}"
-
-
-@beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
 
 
 @beartype
@@ -220,4 +217,6 @@ class Yaml(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -26,6 +26,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 _VB_CHAR_REPLACEMENTS: dict[str, str] = {
     "\n": "Chr(10)",
@@ -144,15 +147,6 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    if "Dictionary" in code or "List(Of" in code:
-        lines.append("Imports System.Collections.Generic")
-    return lines
-
-
-@beartype
 class VisualBasic(metaclass=LanguageCls):
     """Visual Basic (.NET) language specification.
 
@@ -206,6 +200,7 @@ class VisualBasic(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="New Object() {}",
+            preamble_lines=("Imports System.Collections.Generic",),
         )
 
         @property
@@ -276,6 +271,7 @@ class VisualBasic(metaclass=LanguageCls):
             close="}",
             format_entry=_format_vb_dict_entry,
             empty_dict=None,
+            preamble_lines=("Imports System.Collections.Generic",),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -309,4 +305,6 @@ class VisualBasic(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
