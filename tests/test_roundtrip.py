@@ -1,5 +1,7 @@
 """Hypothesis roundtrip tests for literalizer converter."""
 
+# pyright: reportPrivateUsage=false
+
 import ast
 import base64
 import json

@@ -1,5 +1,7 @@
 """Tests for literalizer formatters."""
 
+# pyright: reportPrivateUsage=false
+
 import datetime
 from collections.abc import Callable
 
