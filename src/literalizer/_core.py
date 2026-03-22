@@ -73,7 +73,7 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
 @beartype
 def _scalar_type(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` if
-    unrecognised.
+    unrecognized.
     """
     if isinstance(value, datetime.datetime):
         return datetime.datetime
