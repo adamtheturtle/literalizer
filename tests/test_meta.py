@@ -25,23 +25,16 @@ def test_all_languages_have_lint_workflow(
         {"Python"},
     )
 
-    missing: list[str] = []
-    for lang_cls in sorted(
-        ALL_LANGUAGES,
-        key=lambda c: c.__name__,
-    ):
-        if lang_cls.__name__ in no_dedicated_workflow:
-            continue
-        expected = f"lint-{lang_cls.__name__.lower()}"
-        if expected not in job_ids:
-            name = lang_cls.__name__
-            missing.append(
-                f"{name} (expected job {expected!r})",
-            )
+    expected_jobs = {
+        f"lint-{lang_cls.__name__.lower()}"
+        for lang_cls in ALL_LANGUAGES
+        if lang_cls.__name__ not in no_dedicated_workflow
+    }
+    missing = expected_jobs - job_ids
 
     assert not missing, (
         "Languages missing a lint job in lint.yml:\n"
-        + "\n".join(f"  - {m}" for m in missing)
+        + "\n".join(f"  - {m}" for m in sorted(missing))
     )
 
 
