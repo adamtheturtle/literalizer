@@ -104,14 +104,20 @@ def _format_inline_type_hint_declaration(
     value: str,
     data: Value,
     *,
-    sequence_type_hint: str,
-    set_type_hint: str,
+    bytes_hint: str,
+    date_hint: str,
+    datetime_hint: str,
+    sequence_hint: str,
+    set_hint: str,
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
         data=data,
-        sequence_type_hint=sequence_type_hint,
-        set_type_hint=set_type_hint,
+        bytes_hint=bytes_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        sequence_hint=sequence_hint,
+        set_hint=set_hint,
     )
     return f"{name}: {hint} = {value}"
 
@@ -122,19 +128,6 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value}"
 
 
-# Ordered by priority: bool before int, datetime before date.
-_SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
-    (type(None), "None"),
-    (bool, "bool"),
-    (int, "int"),
-    (float, "float"),
-    (str, "str"),
-    (bytes, "bytes"),
-    (datetime.datetime, "datetime.datetime"),
-    (datetime.date, "datetime.date"),
-)
-
-
 @beartype
 def _element_union(*, types: list[str]) -> str:
     """De-duplicate *types* and join into a union."""
@@ -142,15 +135,6 @@ def _element_union(*, types: list[str]) -> str:
     if len(unique) == 1:
         return unique[0]
     return " | ".join(unique)
-
-
-@beartype
-def _scalar_type_hint(data: Value) -> str | None:
-    """Return the scalar type hint for *data*, or ``None``."""
-    for scalar_type, hint in _SCALAR_TYPE_HINTS:
-        if isinstance(data, scalar_type):
-            return hint
-    return None
 
 
 @beartype
@@ -173,23 +157,38 @@ def _collection_element_union(
 def _python_type_hint(
     data: Value,
     *,
-    sequence_type_hint: str,
-    set_type_hint: str,
+    bytes_hint: str,
+    date_hint: str,
+    datetime_hint: str,
+    sequence_hint: str,
+    set_hint: str,
 ) -> str:
-    """Derive a Python type hint from the original data structure.
-
-    *sequence_type_hint* and *set_type_hint* are the outer type names
-    to use (e.g. ``"tuple"`` vs ``"list"``, ``"frozenset"`` vs
-    ``"set"``).
+    """Derive a Python type hint from the original data and format
+    config.
     """
-    scalar = _scalar_type_hint(data=data)
-    if scalar is not None:
-        return scalar
+    # Order matters: datetime before date (datetime is a date subclass),
+    # bool before int (bool is an int subclass).
+    scalar_hints: tuple[tuple[type, str], ...] = (
+        (type(None), "None"),
+        (bool, "bool"),
+        (int, "int"),
+        (float, "float"),
+        (str, "str"),
+        (bytes, bytes_hint),
+        (datetime.datetime, datetime_hint),
+        (datetime.date, date_hint),
+    )
+    for typ, hint in scalar_hints:
+        if isinstance(data, typ):
+            return hint
 
     recurse = functools.partial(
         _python_type_hint,
-        sequence_type_hint=sequence_type_hint,
-        set_type_hint=set_type_hint,
+        bytes_hint=bytes_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        sequence_hint=sequence_hint,
+        set_hint=set_hint,
     )
 
     if isinstance(data, dict):
@@ -209,17 +208,16 @@ def _python_type_hint(
             elements=frozenset(data),
             recurse=recurse,
         )
-        return f"{set_type_hint}[{elem_union}]"
+        return f"{set_hint}[{elem_union}]"
 
     # The only remaining Value type is list.
     elem_union = _collection_element_union(
         elements=cast("list[Value]", data),
         recurse=recurse,
     )
-    hint = sequence_type_hint
-    if hint == "tuple":
-        return f"{hint}[{elem_union}, ...]"
-    return f"{hint}[{elem_union}]"
+    if sequence_hint == "tuple":
+        return f"{sequence_hint}[{elem_union}, ...]"
+    return f"{sequence_hint}[{elem_union}]"
 
 
 @beartype
@@ -285,6 +283,13 @@ class Python(metaclass=LanguageCls):
             """Format a date."""
             return self.value(value=date_value)
 
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this date format."""
+            if self is type(self).PYTHON:
+                return "datetime.date"
+            return "str"
+
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Python."""
 
@@ -295,6 +300,13 @@ class Python(metaclass=LanguageCls):
             """Format a datetime."""
             return self.value(value=dt_value)
 
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this datetime format."""
+            if self is type(self).PYTHON:
+                return "datetime.datetime"
+            return "float"
+
     class BytesFormats(enum.Enum):
         """Bytes formatting options for Python."""
 
@@ -304,6 +316,13 @@ class Python(metaclass=LanguageCls):
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
             return self.value(value=data)
+
+        @property
+        def type_hint(self) -> str:
+            """The Python type hint for this bytes format."""
+            if self is type(self).PYTHON:
+                return "bytes"
+            return "str"
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Python."""
@@ -363,8 +382,11 @@ class Python(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            sequence_type_hint: str,
-            set_type_hint: str,
+            bytes_hint: str,
+            date_hint: str,
+            datetime_hint: str,
+            sequence_hint: str,
+            set_hint: str,
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -372,8 +394,11 @@ class Python(metaclass=LanguageCls):
             if self is type(self).INLINE:
                 return functools.partial(
                     _format_inline_type_hint_declaration,
-                    sequence_type_hint=sequence_type_hint,
-                    set_type_hint=set_type_hint,
+                    bytes_hint=bytes_hint,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    sequence_hint=sequence_hint,
+                    set_hint=set_hint,
                 )
             return _format_variable_declaration
 
@@ -449,10 +474,18 @@ class Python(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        bytes_hint = bytes_format.type_hint
+        date_hint = date_format.type_hint
+        datetime_hint = datetime_format.type_hint
+        sequence_hint = sequence_format.type_hint
+        set_hint = set_format.type_hint
         decl_fmt: Callable[[str, str, Value], str] = (
             variable_type_hints.formatter(
-                sequence_type_hint=sequence_format.type_hint,
-                set_type_hint=set_format.type_hint,
+                bytes_hint=bytes_hint,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                sequence_hint=sequence_hint,
+                set_hint=set_hint,
             )
         )
         self.format_variable_declaration = decl_fmt

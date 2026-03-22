@@ -54,6 +54,16 @@ _KOTLIN_SCALAR_OPENERS: dict[type, str] = {
 
 
 @beartype
+def _kotlin_tuple_open(items: list[Value]) -> str:
+    """Return the Kotlin tuple opener based on element count."""
+    openers: dict[int, str] = {
+        2: "Pair(",
+        3: "Triple(",
+    }
+    return openers.get(len(items), "listOf<Any?>(")
+
+
+@beartype
 def _kotlin_type_to_opener(
     element_type: type | ListType,
 ) -> str | None:
@@ -140,6 +150,16 @@ class Kotlin(metaclass=LanguageCls):
 
             * ``datetime_formats.KOTLIN`` — ``LocalDateTime.of(...)`` call,
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
+
+        sequence_format: Which Kotlin sequence type to use.
+
+            * ``sequence_formats.LIST`` — typed array calls
+              (e.g. ``intArrayOf(1, 2, 3)``).  Heterogeneous
+              sequences fall back to ``listOf<Any?>(…)``.
+            * ``sequence_formats.TUPLE`` — ``Pair(…)`` for two-element
+              sequences, ``Triple(…)`` for three-element sequences,
+              e.g. ``Pair("a", 1)``.  Other sizes fall back to
+              ``listOf<Any?>(…)``.
     """
 
     extension = ".kts"
@@ -180,6 +200,13 @@ class Kotlin(metaclass=LanguageCls):
                 type_to_opener=_kotlin_type_to_opener,
                 fallback="listOf<Any?>(",
             ),
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
+        TUPLE = SequenceFormatConfig(
+            sequence_open=_kotlin_tuple_open,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
