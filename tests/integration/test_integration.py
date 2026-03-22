@@ -1795,7 +1795,7 @@ def _build_date_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar dates.
 
     For each language, create a variant for every non-default datetime format,
-    using ``varname_wrap`` with a variable name.
+    using ``wrap``.
     """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
@@ -1807,7 +1807,7 @@ def _build_date_variants() -> dict[str, _Variant]:
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(datetime_format=fmt),
-                wrap=lang_config.varname_wrap,
+                wrap=lang_config.wrap,
             )
     return variants
 
@@ -1817,7 +1817,7 @@ def _build_datetime_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar datetimes.
 
     For each language, create a variant for every non-default datetime format,
-    using ``varname_wrap`` with a variable name.
+    using ``wrap``.
     """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
@@ -1829,7 +1829,7 @@ def _build_datetime_variants() -> dict[str, _Variant]:
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(datetime_format=fmt),
-                wrap=lang_config.varname_wrap,
+                wrap=lang_config.wrap,
             )
     return variants
 
@@ -2064,8 +2064,8 @@ def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
-        (_build_date_variants(), "scalar_date", _VARIABLE_NAME),
-        (_build_datetime_variants(), "scalar_datetime", _VARIABLE_NAME),
+        (_build_date_variants(), "scalar_date", None),
+        (_build_datetime_variants(), "scalar_datetime", None),
         (_build_sequence_variants(), "simple_sequence", None),
         (_build_set_variants(), "set", None),
         (_build_comment_variants(), "comments", None),
