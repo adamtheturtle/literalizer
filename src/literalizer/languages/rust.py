@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -26,9 +25,6 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 @beartype

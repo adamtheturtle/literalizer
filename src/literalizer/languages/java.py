@@ -3,7 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from beartype import beartype
 
@@ -28,10 +28,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 
 _LIST_OF_OPEN = "List.of("
 
