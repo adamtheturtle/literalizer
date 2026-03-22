@@ -1,6 +1,6 @@
-var my_data = new object[] {
+var my_data = new string[] {
     "48656c6c6f"
 };
-my_data = new object[] {
+my_data = new string[] {
     "48656c6c6f"
 };

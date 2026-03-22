@@ -4,37 +4,59 @@ import datetime
 import functools
 import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from dataclasses import dataclass
 
 from beartype import beartype
-from json_to_schema import infer_schema
 
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from json_to_schema.core import JsonValue
 
-# JSON-native Python types that json-to-schema can represent accurately.
-# literalizer's Value type also includes bytes, date, and datetime, which
-# exist in YAML but not in JSON.  json-to-schema misclassifies these as
-# "string", so when any non-JSON-native value is present we skip schema
-# inference entirely and let the language mapper fall through to its
-# fallback opener.
-_JSON_NATIVE_TYPES = (str, int, float, bool, type(None), list, dict)
+@dataclass(frozen=True)
+class ListType:
+    """Represents a homogeneous list element type for type inference.
+
+    For nested lists, ``inner`` is another ``ListType``.
+    For leaf lists, ``inner`` is a Python ``type``.
+    """
+
+    inner: "type | ListType"
+
+
+class MixedNumeric:
+    """Sentinel class representing mixed int/float element types.
+
+    Used as a key in scalar type mapping dicts so each language can
+    decide how to handle collections containing both int and float
+    values.
+    """
 
 
 @beartype
-def _all_json_native(values: Value) -> bool:
-    """Check whether every scalar in *values* is a JSON-native type.
+def _infer_element_type(
+    items: list[Value],
+) -> type | ListType | None:
+    """Infer the common element type from a list of values.
 
-    Walks into nested lists and dict values so that YAML-only types
-    (``bytes``, ``date``, ``datetime``) are detected at any depth.
+    Returns ``None`` when the list is empty or contains mixed types
+    that cannot be unified.  Returns ``MixedNumeric`` when the list
+    contains a mix of ``int`` and ``float`` values.
     """
-    if isinstance(values, list):
-        return all(_all_json_native(values=v) for v in values)
-    if isinstance(values, dict):
-        return all(_all_json_native(values=v) for v in values.values())
-    return isinstance(values, _JSON_NATIVE_TYPES)
+    if not items:
+        return None
+    element_types: set[type | ListType] = set()
+    for item in items:
+        if isinstance(item, list):
+            inner = _infer_element_type(items=item)
+            if inner is None:
+                return None
+            element_types.add(ListType(inner=inner))
+        else:
+            element_types.add(type(item))
+    if len(element_types) == 1:
+        return next(iter(element_types))
+    if element_types == {int, float}:
+        return MixedNumeric
+    return None
 
 
 @beartype
@@ -680,54 +702,51 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
 def _typed_sequence_open(
     items: list[Value],
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> str:
-    """Infer an item schema and return the language-specific opener.
+    """Infer the common element type and return the language-specific
+    opener.
 
-    Uses ``json-to-schema`` to infer a JSON Schema from the list
-    values, then passes the ``items`` sub-schema to
-    *schema_to_opener* which returns the language-specific opening
-    delimiter.  When inference is not possible or *schema_to_opener*
+    Uses direct ``type()`` checks on the Python runtime objects
+    to determine the element type, then passes it to
+    *type_to_opener* which returns the language-specific opening
+    delimiter.  When inference is not possible or *type_to_opener*
     returns ``None``, *fallback* is returned instead.
-
-    See ``_JSON_NATIVE_TYPES`` for why we skip inference for
-    YAML-only types.
     """
-    if not _all_json_native(values=items):
+    element_type = _infer_element_type(items=items)
+    if element_type is None:
         return fallback
-    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", items))
-    item_schema: dict[str, Any] = schema.get("items", {})
-    return schema_to_opener(item_schema) or fallback
+    return type_to_opener(element_type) or fallback
 
 
 @beartype
 def typed_sequence_open(
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> Callable[[list[Value]], str]:
-    """Return a ``sequence_open`` callable that infers an item schema and
-    delegates to *schema_to_opener*.
+    """Return a ``sequence_open`` callable that infers the common
+    element type and delegates to *type_to_opener*.
 
-    When inference is not possible or *schema_to_opener* returns
+    When inference is not possible or *type_to_opener* returns
     ``None``, *fallback* is used instead.
 
     Example::
 
-        def my_opener(item_schema: dict[str, Any]) -> str | None:
-            if item_schema.get("type") == "string":
+        def my_opener(element_type: type | ListType) -> str | None:
+            if element_type is str:
                 return "[]string{"
             return None
 
         sequence_open = typed_sequence_open(
-            schema_to_opener=my_opener,
+            type_to_opener=my_opener,
             fallback="[]any{",
         )
     """
     return functools.partial(
         _typed_sequence_open,
-        schema_to_opener=schema_to_opener,
+        type_to_opener=type_to_opener,
         fallback=fallback,
     )
 
@@ -736,54 +755,51 @@ def typed_sequence_open(
 def _typed_dict_open(
     items: dict[str, Value],
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> str:
-    """Infer a value schema and return the language-specific opener.
+    """Infer a common value type and return the language-specific
+    opener.
 
-    Uses ``json-to-schema`` to infer a JSON Schema from the dict
-    values (treated as a list), then passes the ``items`` sub-schema
-    to *schema_to_opener* which returns the language-specific opening
-    delimiter.  When inference is not possible or *schema_to_opener*
-    returns ``None``, *fallback* is returned instead.
-
-    See ``_JSON_NATIVE_TYPES`` for why we skip inference for
-    YAML-only types.
+    Treats the dict values as a list and infers a common element
+    type, then passes it to *type_to_opener* which returns the
+    language-specific opening delimiter.  When inference is not
+    possible or *type_to_opener* returns ``None``, *fallback* is
+    returned instead.
     """
     values = list(items.values())
-    if not _all_json_native(values=values):
+    element_type = _infer_element_type(items=values)
+    if element_type is None:
         return fallback
-    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", values))
-    value_schema: dict[str, Any] = schema.get("items", {})
-    return schema_to_opener(value_schema) or fallback
+    return type_to_opener(element_type) or fallback
 
 
 @beartype
 def typed_dict_open(
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> Callable[[dict[str, Value]], str]:
-    """Return a ``dict_open`` callable that infers a value schema and
-    delegates to *schema_to_opener*.
+    """Return a ``dict_open`` callable that infers a common value type
+    and delegates to *type_to_opener*.
 
-    When inference is not possible or *schema_to_opener* returns
+    When inference is not possible or *type_to_opener* returns
     ``None``, *fallback* is used instead.
 
     Example::
 
-        def my_opener(value_schema: dict[str, Any]) -> str | None:
-            if value_schema.get("type") == "string":
+        def my_opener(element_type: type | ListType) -> str | None:
+            if element_type is str:
                 return "map[string]string{"
             return None
 
         dict_open = typed_dict_open(
-            schema_to_opener=my_opener,
+            type_to_opener=my_opener,
             fallback="map[string]any{",
         )
     """
     return functools.partial(
         _typed_dict_open,
-        schema_to_opener=schema_to_opener,
+        type_to_opener=type_to_opener,
         fallback=fallback,
     )

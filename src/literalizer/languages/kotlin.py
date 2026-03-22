@@ -3,11 +3,11 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    ListType,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_kotlin,
@@ -28,63 +28,56 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_KOTLIN_SCALAR_OPENERS: dict[str, str] = {
-    "string": "arrayOf(",
-    "boolean": "booleanArrayOf(",
-    "integer": "intArrayOf(",
-    "number": "doubleArrayOf(",
+_KOTLIN_SCALAR_OPENERS: dict[type, str] = {
+    str: "arrayOf(",
+    bool: "booleanArrayOf(",
+    int: "intArrayOf(",
+    float: "doubleArrayOf(",
+    bytes: "arrayOf(",
+    datetime.date: "arrayOf(",
+    datetime.datetime: "arrayOf(",
 }
 
 
 @beartype
-def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Kotlin collection opener."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _KOTLIN_SCALAR_OPENERS:
-            return _KOTLIN_SCALAR_OPENERS[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _kotlin_schema_to_opener(item_schema=nested)
-            return "arrayOf(" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "listOf<Any?>("
-    return None
-
-
-_KOTLIN_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "Boolean",
-    "integer": "Int",
-    "number": "Double",
-}
-
-
-@beartype
-def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Kotlin type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _KOTLIN_SCALAR_TYPES:
-            return _KOTLIN_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _kotlin_schema_to_type(item_schema=nested)
-            return f"Array<{inner}>" if inner is not None else None
-        return None
-    return None
-
-
-@beartype
-def _kotlin_dict_schema_to_opener(
-    value_schema: dict[str, Any],
+def _kotlin_type_to_opener(
+    element_type: type | ListType,
 ) -> str | None:
-    """Map a JSON Schema value type to a Kotlin map opener."""
-    type_name = _kotlin_schema_to_type(item_schema=value_schema)
+    """Map a Python element type to a Kotlin collection opener."""
+    if isinstance(element_type, ListType):
+        inner = _kotlin_type_to_opener(element_type=element_type.inner)
+        return "arrayOf(" if inner is not None else None
+    return _KOTLIN_SCALAR_OPENERS.get(element_type)
+
+
+_KOTLIN_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "Boolean",
+    int: "Int",
+    float: "Double",
+    bytes: "String",
+    datetime.date: "LocalDate",
+    datetime.datetime: "LocalDateTime",
+}
+
+
+@beartype
+def _kotlin_element_to_type(
+    element_type: type | ListType,
+) -> str | None:
+    """Map a Python element type to a Kotlin type name, recursively."""
+    if isinstance(element_type, ListType):
+        inner = _kotlin_element_to_type(element_type=element_type.inner)
+        return f"Array<{inner}>" if inner is not None else None
+    return _KOTLIN_SCALAR_TYPES.get(element_type)
+
+
+@beartype
+def _kotlin_dict_type_to_opener(
+    element_type: type | ListType,
+) -> str | None:
+    """Map a Python element type to a Kotlin map opener."""
+    type_name = _kotlin_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"mapOf<String, {type_name}>("
@@ -170,7 +163,7 @@ class Kotlin(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_kotlin_schema_to_opener,
+                type_to_opener=_kotlin_type_to_opener,
                 fallback="listOf<Any?>(",
             ),
             close=")",
@@ -246,7 +239,7 @@ class Kotlin(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_kotlin_dict_schema_to_opener,
+                type_to_opener=_kotlin_dict_type_to_opener,
                 fallback="mapOf<String, Any?>(",
             ),
             close=")",

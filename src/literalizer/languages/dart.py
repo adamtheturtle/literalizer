@@ -3,11 +3,12 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    ListType,
+    MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_dart,
@@ -28,47 +29,42 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_DART_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "bool",
-    "integer": "int",
-    "number": "double",
+_DART_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "bool",
+    int: "int",
+    float: "double",
+    MixedNumeric: "double",
+    bytes: "String",
+    datetime.date: "DateTime",
+    datetime.datetime: "DateTime",
 }
 
 
 @beartype
-def _dart_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Dart type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _DART_SCALAR_TYPES:
-            return _DART_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _dart_schema_to_type(item_schema=nested)
-            return f"List<{inner}>" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "double"
-    return None
+def _dart_element_to_type(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a Dart type name, recursively."""
+    if isinstance(element_type, ListType):
+        inner = _dart_element_to_type(element_type=element_type.inner)
+        return f"List<{inner}>" if inner is not None else None
+    return _DART_SCALAR_TYPES.get(element_type)
 
 
 @beartype
-def _dart_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Dart list opener."""
-    type_name = _dart_schema_to_type(item_schema=item_schema)
+def _dart_type_to_opener(element_type: type | ListType) -> str | None:
+    """Map a Python element type to a Dart list opener."""
+    type_name = _dart_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"<{type_name}>["
 
 
 @beartype
-def _dart_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a Dart map opener."""
-    type_name = _dart_schema_to_type(item_schema=value_schema)
+def _dart_dict_type_to_opener(
+    element_type: type | ListType,
+) -> str | None:
+    """Map a Python element type to a Dart map opener."""
+    type_name = _dart_element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return f"<String, {type_name}>{{"
@@ -149,7 +145,7 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_dart_schema_to_opener,
+                type_to_opener=_dart_type_to_opener,
                 fallback="[",
             ),
             close="]",
@@ -225,7 +221,7 @@ class Dart(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_dart_dict_schema_to_opener,
+                type_to_opener=_dart_dict_type_to_opener,
                 fallback="{",
             ),
             close="}",
