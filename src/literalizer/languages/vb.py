@@ -2,7 +2,8 @@
 
 import datetime
 import enum
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from beartype import beartype
 
@@ -25,10 +26,6 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 
 _VB_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
@@ -83,6 +80,12 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a VB.NET variable assignment."""
     return f"{name} = {value}"
+
+
+@beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return required imports (none for this language)."""
+    return ()
 
 
 @beartype
@@ -242,3 +245,4 @@ class VisualBasic(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

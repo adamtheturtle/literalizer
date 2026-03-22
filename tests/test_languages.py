@@ -142,7 +142,7 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_ruby_dict() -> None:
@@ -157,7 +157,7 @@ def test_ruby_dict() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '{"key" => nil},'
+    assert result.code == '{"key" => nil},'
 
 
 def test_dict_ruby() -> None:
@@ -172,7 +172,7 @@ def test_dict_ruby() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '  "user_1" => "team_alpha",'
+    assert result.code == '  "user_1" => "team_alpha",'
 
 
 def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
@@ -196,7 +196,7 @@ def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
             Map.entry("age", 30)
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_dict_skips_null_values() -> None:
@@ -219,7 +219,7 @@ def test_java_dict_skips_null_values() -> None:
             Map.entry("age", 30)
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_dict_skips_null_values_no_include_delimiters() -> None:
@@ -235,7 +235,7 @@ def test_java_dict_skips_null_values_no_include_delimiters() -> None:
         error_on_coercion=False,
     )
     expected = 'Map.entry("b", 1)'
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_dict_all_null_values_include_delimiters() -> None:
@@ -252,7 +252,7 @@ def test_java_dict_all_null_values_include_delimiters() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "Map.ofEntries()"
+    assert result.code == "Map.ofEntries()"
 
 
 def test_java_yaml_dict_null_values_with_comments() -> None:
@@ -275,7 +275,7 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
             Map.entry("name", "Alice")
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
@@ -307,7 +307,7 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
             Map.entry("debug", true)
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
@@ -337,7 +337,7 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
             // not configured yet
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
@@ -356,7 +356,7 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         error_on_coercion=False,
     )
     expected = "Map.ofEntries()\n    // trailing"
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_yaml_ordered_map_skips_null_values() -> None:
@@ -385,7 +385,7 @@ def test_java_yaml_ordered_map_skips_null_values() -> None:
         'Map.entry("name", "Alice"), Map.entry("age", 30)))'
     )
     expected = f"new Object[]{{\n    {ordered_map_inline}\n}}"
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_sequence_include_delimiters_uses_braces() -> None:
@@ -408,7 +408,7 @@ def test_java_sequence_include_delimiters_uses_braces() -> None:
             true
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -443,7 +443,7 @@ def test_java_typed_array_opener(
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -479,7 +479,7 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_matlab_dict_key_with_quote() -> None:
@@ -504,7 +504,7 @@ def test_matlab_dict_key_with_quote() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == "'hello \"world\"', 1"
+    assert result.code == "'hello \"world\"', 1"
 
 
 def test_toml_integer_dict_key() -> None:
@@ -530,7 +530,7 @@ def test_toml_integer_dict_key() -> None:
             1 = "value"
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_toml_non_quoted_dict_key() -> None:
@@ -555,7 +555,7 @@ def test_cobol_string_control_characters() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '"line1 line2"'
+    assert result.code == '"line1 line2"'
 
 
 def test_cobol_string_tab_characters() -> None:
@@ -570,7 +570,7 @@ def test_cobol_string_tab_characters() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == '"col1 col2"'
+    assert result.code == '"col1 col2"'
 
 
 def test_cobol_level_number_cap() -> None:
@@ -613,7 +613,7 @@ def test_cobol_level_number_cap() -> None:
         '49 F-VALUE PIC X(4) VALUE "deep".\n'
         "    "
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
@@ -630,7 +630,7 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    for line in result.splitlines():
+    for line in result.code.splitlines():
         stripped = line.strip()
         if stripped.startswith("05 F-"):
             name = stripped.split()[1]
@@ -650,8 +650,8 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert "'it''s here'" in result
-    assert "&  !" in result
+    assert "'it''s here'" in result.code
+    assert "&  !" in result.code
 
 
 def test_java_list_format() -> None:
@@ -677,7 +677,7 @@ def test_java_list_format() -> None:
             true
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_java_list_rejects_null_elements() -> None:

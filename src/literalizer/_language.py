@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Protocol, runtime_checkable
 
 from literalizer._types import Value
@@ -299,4 +299,15 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def comment_format(self) -> enum.Enum:
         """The comment format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def preamble(self) -> Callable[[str], Sequence[str]]:
+        """Callable that returns preamble lines for the formatted output.
+
+        Called as ``preamble(code)`` where *code* is the
+        already-formatted literal string.  Returns a (possibly empty)
+        sequence of lines (imports, package declarations, etc.) that
+        must precede the generated code.
+        """
         ...  # pylint: disable=unnecessary-ellipsis

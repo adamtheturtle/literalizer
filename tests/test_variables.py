@@ -252,7 +252,7 @@ def test_variable_declaration_json(
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -272,7 +272,7 @@ def test_variable_declaration_yaml(
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_variable_declaration_none_no_wrap() -> None:
@@ -294,7 +294,7 @@ def test_variable_declaration_none_no_wrap() -> None:
             2,
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -316,7 +316,7 @@ def test_existing_variable_assignment_json(
         new_variable=False,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -338,7 +338,7 @@ def test_existing_variable_assignment_yaml(
         new_variable=False,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -368,7 +368,7 @@ def test_python_inline_type_hints_scalars(
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_python_inline_type_hints_dict() -> None:
@@ -389,7 +389,7 @@ def test_python_inline_type_hints_dict() -> None:
             "a": 1,
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_python_inline_type_hints_tuple() -> None:
@@ -411,7 +411,7 @@ def test_python_inline_type_hints_tuple() -> None:
             2,
         )"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_python_inline_type_hints_list() -> None:
@@ -443,7 +443,7 @@ def test_python_inline_type_hints_list() -> None:
             2,
         ]"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_python_inline_type_hints_assignment_no_hint() -> None:
@@ -458,7 +458,7 @@ def test_python_inline_type_hints_assignment_no_hint() -> None:
         new_variable=False,
         error_on_coercion=False,
     )
-    assert result == "my_var = 42"
+    assert result.code == "my_var = 42"
 
 
 def test_python_inline_type_hints_set_with_colon_in_string() -> None:
@@ -480,7 +480,7 @@ def test_python_inline_type_hints_set_with_colon_in_string() -> None:
             "a\\": b",
         }"""
     )
-    assert result == expected
+    assert result.code == expected
 
 
 def test_python_inline_type_hints_set_of_integers() -> None:
@@ -504,4 +504,4 @@ def test_python_inline_type_hints_set_of_integers() -> None:
             3,
         }"""
     )
-    assert result == expected
+    assert result.code == expected

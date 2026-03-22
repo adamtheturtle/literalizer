@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from beartype import beartype
@@ -93,6 +93,12 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 
 _string_format: Callable[[str], str] = format_string_backslash
+
+
+@beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return required imports (none for this language)."""
+    return ()
 
 
 @beartype
@@ -249,3 +255,4 @@ class Scala(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

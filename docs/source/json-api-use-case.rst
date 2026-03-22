@@ -52,7 +52,7 @@ returns this response:
        include_delimiters=True,
        new_variable=True,
    )
-   assert request_literal == (
+   assert request_literal.code == (
        "request_body = {\n"
        '    "name": "Alice",\n'
        '    "email": "alice@example.com",\n'
@@ -76,7 +76,7 @@ returns this response:
        include_delimiters=True,
        new_variable=True,
    )
-   assert response_literal == (
+   assert response_literal.code == (
        "response = {\n"
        '    "id": 42,\n'
        '    "name": "Alice",\n'

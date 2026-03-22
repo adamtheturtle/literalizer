@@ -3,7 +3,7 @@
 import datetime
 import enum
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 
@@ -213,6 +213,12 @@ _string_format: Callable[[str], str] = _format_string_cobol
 
 
 @beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return required imports (none for this language)."""
+    return ()
+
+
+@beartype
 class Cobol(metaclass=LanguageCls):
     """GnuCOBOL free-format language specification.
 
@@ -363,3 +369,4 @@ class Cobol(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

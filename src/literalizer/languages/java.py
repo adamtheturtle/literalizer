@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
@@ -91,6 +92,27 @@ def _java_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
     if type_name is None:
         return None
     return f"new {type_name}[]{{"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "Instant" in code:
+        lines.append("import java.time.Instant;")
+    if "LocalDate" in code:
+        lines.append("import java.time.LocalDate;")
+    if "ZoneId" in code:
+        lines.append("import java.time.ZoneId;")
+    if "ZonedDateTime" in code:
+        lines.append("import java.time.ZonedDateTime;")
+    if "List.of(" in code:
+        lines.append("import java.util.List;")
+    if "Map.entry(" in code or "Map.ofEntries(" in code:
+        lines.append("import java.util.Map;")
+    if "Set.of(" in code:
+        lines.append("import java.util.Set;")
+    return lines
 
 
 @beartype
@@ -286,3 +308,4 @@ class Java(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

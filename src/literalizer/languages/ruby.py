@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -35,6 +36,17 @@ if TYPE_CHECKING:
 def _format_ruby_ordered_map_entry(key: str, value: str) -> str:
     """Format a Ruby ordered-map entry."""
     return f"{key} => {value}"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "Date.new" in code:
+        lines.append("require 'date'")
+    if "Set.new(" in code:
+        lines.append("require 'set'")
+    return lines
 
 
 @beartype
@@ -206,3 +218,4 @@ class Ruby(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

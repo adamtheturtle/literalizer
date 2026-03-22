@@ -3,7 +3,7 @@
 import datetime
 import enum
 from collections import OrderedDict
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -32,14 +32,24 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 
 @beartype
 def _format_python_ordered_map_entry(key: str, value: str) -> str:
     """Format one Python ``OrderedDict`` entry as a ``(key, value)`` tuple."""
     return f"({key}, {value})"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "OrderedDict(" in code:
+        lines.append("from collections import OrderedDict")
+    if "datetime." in code:
+        lines.append("import datetime")
+    if "[Any" in code or "Any]" in code:
+        lines.append("from typing import Any")
+    return lines
 
 
 @beartype
@@ -322,3 +332,4 @@ class Python(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

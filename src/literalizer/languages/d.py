@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 
@@ -87,6 +87,12 @@ def _format_d_ordered_map_entry(key: str, value: str) -> str:
     array.
     """
     return f"JSONValue([JSONValue({key}), {_to_val(value=value)}])"
+
+
+@beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    return ["import std.json;"]
 
 
 @beartype
@@ -252,3 +258,4 @@ class D(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

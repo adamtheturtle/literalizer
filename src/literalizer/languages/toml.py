@@ -3,7 +3,7 @@
 import datetime
 import enum
 import re
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 
@@ -24,10 +24,6 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 
 _BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
 _MIN_QUOTED_KEY_LENGTH = 2
@@ -87,6 +83,12 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     :func:`_format_variable_declaration`.
     """
     return f"{name} = {value}"
+
+
+@beartype
+def _preamble(_code: str) -> Sequence[str]:
+    """Return required imports (none for this language)."""
+    return ()
 
 
 @beartype
@@ -245,3 +247,4 @@ class Toml(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble

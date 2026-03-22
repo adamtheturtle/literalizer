@@ -1,3 +1,4 @@
+require 'set'
 my_data = Set.new([
     # before apple
     "apple",

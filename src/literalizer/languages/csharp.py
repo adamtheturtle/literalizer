@@ -2,7 +2,8 @@
 
 import datetime
 import enum
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from beartype import beartype
 
@@ -25,10 +26,6 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 
 _CSHARP_SCALAR_TYPES: dict[str, str] = {
     "string": "string",
@@ -80,6 +77,14 @@ def _csharp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
 def _format_csharp_dict_entry(key: str, value: str) -> str:
     """Format a C# dictionary indexer entry."""
     return f"[{key}] = {value}"
+
+
+@beartype
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    if "DateOnly" in code or "DateTime" in code:
+        return ["using System;"]
+    return []
 
 
 @beartype
@@ -261,3 +266,4 @@ class CSharp(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
+        self.preamble: Callable[[str], Sequence[str]] = _preamble
