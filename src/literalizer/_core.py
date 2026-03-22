@@ -760,6 +760,37 @@ def _literalize(
 
 
 @beartype
+def _apply_variable_wrapper(
+    *,
+    result: str,
+    language: Language,
+    data: Value,
+    variable_name: str | None,
+    new_variable: bool,
+) -> str:
+    """Optionally wrap *result* in a variable declaration or
+    assignment.
+    """
+    if variable_name is None:
+        return result
+    formatter = (
+        language.format_variable_declaration
+        if new_variable
+        else language.format_variable_assignment
+    )
+    return formatter(variable_name, result, data)
+
+
+@beartype
+def _build_result(*, code: str, language: Language) -> LiteralizeResult:
+    """Build a :class:`LiteralizeResult` from finished code."""
+    return LiteralizeResult(
+        code=code,
+        preamble=tuple(language.preamble(code)),
+    )
+
+
+@beartype
 def literalize_json(
     *,
     json_string: str,
@@ -828,17 +859,14 @@ def literalize_json(
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
-    if variable_name is not None:
-        formatter = (
-            language.format_variable_declaration
-            if new_variable
-            else language.format_variable_assignment
-        )
-        result = formatter(variable_name, result, data)
-    return LiteralizeResult(
-        code=result,
-        preamble=tuple(language.preamble(result)),
+    result = _apply_variable_wrapper(
+        result=result,
+        language=language,
+        data=data,
+        variable_name=variable_name,
+        new_variable=new_variable,
     )
+    return _build_result(code=result, language=language)
 
 
 @beartype
@@ -888,7 +916,7 @@ class _ResolvedComments:
 @beartype
 def _resolve_yaml_set_comments(
     *,
-    yaml_string: str,
+    ruamel_set: CommentedSet,
     base: str,
     language: Language,
     comment_prefix: str,
@@ -896,10 +924,10 @@ def _resolve_yaml_set_comments(
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Resolve comments for a YAML set."""
-    ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
-        stream=StringIO(initial_value=yaml_string),
-    )
+    """Resolve comments for a YAML set.
+
+    Pure: operates on pre-parsed ruamel data.
+    """
     set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
     if not language.supports_collection_comments:
         return _ResolvedComments(result=base, pending=set_comments)
@@ -917,7 +945,7 @@ def _resolve_yaml_set_comments(
 @beartype
 def _resolve_yaml_collection_comments(
     *,
-    yaml_string: str,
+    ruamel_data: CommentedSeq | CommentedMap,
     data: object,
     base: str,
     language: Language,
@@ -926,11 +954,10 @@ def _resolve_yaml_collection_comments(
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Resolve comments for a YAML list or dict."""
-    # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
-        stream=StringIO(initial_value=yaml_string),
-    )
+    """Resolve comments for a YAML list or dict.
+
+    Pure: operates on pre-parsed ruamel data.
+    """
     collection_comments = extract_yaml_comments(
         ruamel_data=ruamel_data,
     )
@@ -963,7 +990,7 @@ def _resolve_yaml_collection_comments(
 
 
 @beartype
-def _resolve_comments(
+def _resolve_yaml_comments(
     *,
     yaml_string: str,
     data: object,
@@ -975,10 +1002,18 @@ def _resolve_comments(
     line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Resolve YAML comments for the given data type."""
+    """Parse YAML for comment metadata and resolve comments.
+
+    This is the single impure entry point for comment resolution — it
+    parses the YAML string once, then delegates to pure helpers.
+    """
     if isinstance(data, set):
+        # https://sourceforge.net/p/ruamel-yaml/tickets/328/
+        ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+            stream=StringIO(initial_value=yaml_string),
+        )
         return _resolve_yaml_set_comments(
-            yaml_string=yaml_string,
+            ruamel_set=ruamel_set,
             base=base,
             language=language,
             comment_prefix=comment_prefix,
@@ -1003,8 +1038,12 @@ def _resolve_comments(
     if not base:
         return _ResolvedComments(result=base, pending=None)
 
+    # https://sourceforge.net/p/ruamel-yaml/tickets/328/
+    ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+        stream=StringIO(initial_value=yaml_string),
+    )
     return _resolve_yaml_collection_comments(
-        yaml_string=yaml_string,
+        ruamel_data=ruamel_data,
         data=data,  # pyright: ignore[reportUnknownArgumentType]
         base=base,
         language=language,
@@ -1072,6 +1111,7 @@ def literalize_yaml(
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
+    # --- impure: parse YAML ------------------------------------------
     ruamel_yaml = YAML(typ="safe")
     try:
         # https://sourceforge.net/p/ruamel-yaml/tickets/564/
@@ -1079,6 +1119,8 @@ def literalize_yaml(
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
+
+    # --- pure from here ----------------------------------------------
     coerced_data = _coerce_yaml_keys(data=data)
     base = _literalize(
         data=coerced_data,
@@ -1096,7 +1138,7 @@ def literalize_yaml(
         line_prefix + indent if include_delimiters else line_prefix
     )
 
-    resolved = _resolve_comments(
+    resolved = _resolve_yaml_comments(
         yaml_string=yaml_string,
         data=data,
         base=base,
@@ -1109,13 +1151,13 @@ def literalize_yaml(
     )
     result = resolved.result
 
-    if variable_name is not None:
-        formatter = (
-            language.format_variable_declaration
-            if new_variable
-            else language.format_variable_assignment
-        )
-        result = formatter(variable_name, result, coerced_data)
+    result = _apply_variable_wrapper(
+        result=result,
+        language=language,
+        data=coerced_data,
+        variable_name=variable_name,
+        new_variable=new_variable,
+    )
 
     if resolved.pending is not None:
         result = prepend_collection_comments(
@@ -1126,7 +1168,4 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
-    return LiteralizeResult(
-        code=result,
-        preamble=tuple(language.preamble(result)),
-    )
+    return _build_result(code=result, language=language)
