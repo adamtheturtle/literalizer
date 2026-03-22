@@ -11,8 +11,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_julia,
-    format_datetime_julia,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -26,6 +24,21 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_julia(value: datetime.date) -> str:
+    """Format a date as a Julia ``Date(...)`` constructor call."""
+    return f"Date({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_julia(value: datetime.datetime) -> str:
+    """Format a datetime as a Julia ``DateTime(...)`` constructor call."""
+    return (
+        f"DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
 
 
 @beartype
@@ -77,7 +90,7 @@ class Julia(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Julia."""
 
-        JULIA = enum.member(value=format_date_julia)
+        JULIA = enum.member(value=_format_date_julia)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -86,7 +99,7 @@ class Julia(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Julia."""
 
-        JULIA = enum.member(value=format_datetime_julia)
+        JULIA = enum.member(value=_format_datetime_julia)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

@@ -11,8 +11,6 @@ from literalizer._formatters import (
     MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
-    format_date_go,
-    format_datetime_go,
     format_string_backslash,
     passthrough_sequence_entry,
     typed_dict_open,
@@ -27,6 +25,43 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+_GO_MONTHS: dict[int, str] = {
+    1: "time.January",
+    2: "time.February",
+    3: "time.March",
+    4: "time.April",
+    5: "time.May",
+    6: "time.June",
+    7: "time.July",
+    8: "time.August",
+    9: "time.September",
+    10: "time.October",
+    11: "time.November",
+    12: "time.December",
+}
+
+
+@beartype
+def _format_date_go(value: datetime.date) -> str:
+    """Format a date as a Go ``time.Date(...)`` call."""
+    month = _GO_MONTHS[value.month]
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, 0, 0, 0, 0, time.UTC)"
+    )
+
+
+@beartype
+def _format_datetime_go(value: datetime.datetime) -> str:
+    """Format a datetime as a Go ``time.Date(...)`` call."""
+    month = _GO_MONTHS[value.month]
+    nanos = value.microsecond * 1000
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f"{nanos}, time.UTC)"
+    )
+
 
 _GO_SCALAR_TYPES: dict[type, str] = {
     str: "string",
@@ -129,7 +164,7 @@ class Go(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Go."""
 
-        GO = enum.member(value=format_date_go)
+        GO = enum.member(value=_format_date_go)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -138,7 +173,7 @@ class Go(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Go."""
 
-        GO = enum.member(value=format_datetime_go)
+        GO = enum.member(value=_format_datetime_go)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

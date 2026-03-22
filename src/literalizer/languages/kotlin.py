@@ -10,8 +10,6 @@ from literalizer._formatters import (
     ListType,
     dict_entry_with_separator,
     format_bytes_hex,
-    format_date_kotlin,
-    format_datetime_kotlin,
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -27,6 +25,22 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_kotlin(value: datetime.date) -> str:
+    """Format a date as a Kotlin ``LocalDate.of(...)`` call."""
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_kotlin(value: datetime.datetime) -> str:
+    """Format a datetime as a Kotlin ``LocalDateTime.of(...)`` call."""
+    return (
+        f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
 
 _KOTLIN_SCALAR_OPENERS: dict[type, str] = {
     str: "arrayOf(",
@@ -134,7 +148,7 @@ class Kotlin(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Kotlin."""
 
-        KOTLIN = enum.member(value=format_date_kotlin)
+        KOTLIN = enum.member(value=_format_date_kotlin)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -143,7 +157,7 @@ class Kotlin(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Kotlin."""
 
-        KOTLIN = enum.member(value=format_datetime_kotlin)
+        KOTLIN = enum.member(value=_format_datetime_kotlin)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

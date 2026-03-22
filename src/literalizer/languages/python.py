@@ -14,11 +14,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_bytes_python,
     format_date_iso,
-    format_date_python,
-    format_datetime_epoch,
-    format_datetime_python,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -32,6 +28,48 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_python(value: datetime.date) -> str:
+    """Format a date as a Python ``datetime.date(...)`` constructor
+    call.
+    """
+    return (
+        f"datetime.date("
+        f"year={value.year}, month={value.month}, day={value.day})"
+    )
+
+
+@beartype
+def _format_datetime_python(value: datetime.datetime) -> str:
+    """Format a datetime as a Python ``datetime.datetime(...)`` constructor
+    call.
+    """
+    parts = [
+        f"year={value.year}",
+        f"month={value.month}",
+        f"day={value.day}",
+        f"hour={value.hour}",
+        f"minute={value.minute}",
+        f"second={value.second}",
+    ]
+    if value.microsecond:
+        parts.append(f"microsecond={value.microsecond}")
+    args = ", ".join(parts)
+    return f"datetime.datetime({args})"
+
+
+@beartype
+def _format_datetime_epoch(value: datetime.datetime) -> str:
+    """Format a datetime as seconds since the Unix epoch."""
+    return repr(value.timestamp())
+
+
+@beartype
+def _format_bytes_python(value: bytes) -> str:
+    """Format bytes as a Python ``bytes`` literal."""
+    return repr(value)
 
 
 @beartype
@@ -175,7 +213,7 @@ class Python(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Python."""
 
-        PYTHON = enum.member(value=format_date_python)
+        PYTHON = enum.member(value=_format_date_python)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -185,8 +223,8 @@ class Python(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Python."""
 
-        PYTHON = enum.member(value=format_datetime_python)
-        EPOCH = enum.member(value=format_datetime_epoch)
+        PYTHON = enum.member(value=_format_datetime_python)
+        EPOCH = enum.member(value=_format_datetime_epoch)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -196,7 +234,7 @@ class Python(metaclass=LanguageCls):
         """Bytes formatting options for Python."""
 
         HEX = enum.member(value=format_bytes_hex)
-        PYTHON = enum.member(value=format_bytes_python)
+        PYTHON = enum.member(value=_format_bytes_python)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""

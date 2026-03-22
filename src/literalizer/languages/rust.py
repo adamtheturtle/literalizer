@@ -10,8 +10,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_rust,
-    format_datetime_rust,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -25,6 +23,33 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_rust(value: datetime.date) -> str:
+    """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call."""
+    return (
+        f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
+        ".unwrap()"
+    )
+
+
+@beartype
+def _format_datetime_rust(value: datetime.datetime) -> str:
+    """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call."""
+    date = _format_date_rust(value=value)
+    if value.microsecond:
+        time_call = (
+            f"NaiveTime::from_hms_micro_opt("
+            f"{value.hour}, {value.minute}, {value.second}, "
+            f"{value.microsecond}).unwrap()"
+        )
+    else:
+        time_call = (
+            f"NaiveTime::from_hms_opt("
+            f"{value.hour}, {value.minute}, {value.second}).unwrap()"
+        )
+    return f"NaiveDateTime::new({date}, {time_call})"
 
 
 @beartype
@@ -114,7 +139,7 @@ class Rust(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
 
-        RUST = enum.member(value=format_date_rust)
+        RUST = enum.member(value=_format_date_rust)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -123,7 +148,7 @@ class Rust(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Rust."""
 
-        RUST = enum.member(value=format_datetime_rust)
+        RUST = enum.member(value=_format_datetime_rust)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

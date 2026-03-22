@@ -13,7 +13,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_vb,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -27,6 +26,74 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+_VB_CHAR_REPLACEMENTS: dict[str, str] = {
+    "\n": "Chr(10)",
+    "\r": "Chr(13)",
+    "\t": "vbTab",
+}
+
+_VB_CONTROL_CHAR_THRESHOLD = 32
+
+
+@beartype
+def _flush_vb_current(
+    *,
+    parts: list[str],
+    current: str,
+) -> str:
+    """Flush accumulated literal characters into parts."""
+    if current:
+        parts.append(f'"{current}"')
+    return ""
+
+
+@beartype
+def _vb_string_parts(value: str) -> list[str]:
+    """Generate VB.NET string parts for control character handling."""
+    parts: list[str] = []
+    current = ""
+    i = 0
+    while i < len(value):
+        c = value[i]
+        if c == '"':
+            current += '""'
+            i += 1
+        elif c == "\r" and i + 1 < len(value) and value[i + 1] == "\n":
+            current = _flush_vb_current(parts=parts, current=current)
+            parts.append("vbCrLf")
+            i += 2
+        elif c in _VB_CHAR_REPLACEMENTS:
+            current = _flush_vb_current(parts=parts, current=current)
+            parts.append(_VB_CHAR_REPLACEMENTS[c])
+            i += 1
+        elif ord(c) < _VB_CONTROL_CHAR_THRESHOLD:
+            current = _flush_vb_current(parts=parts, current=current)
+            parts.append(f"Chr({ord(c)})")
+            i += 1
+        else:
+            current += c
+            i += 1
+    _flush_vb_current(parts=parts, current=current)
+    return parts
+
+
+@beartype
+def _format_string_vb(value: str) -> str:
+    r"""Format a string using VB.NET string escaping rules.
+
+    VB.NET strings use ``""`` to escape embedded double quotes and do not
+    support backslash escapes.  Control characters such as newlines and
+    tabs are expressed via ``vbCrLf``, ``vbTab``, or ``Chr(N)`` string
+    concatenation.
+    """
+    parts = _vb_string_parts(value)  # type: ignore[misc]
+    if not parts:
+        return '""'
+    if len(parts) == 1:
+        return parts[0]
+    return " & ".join(parts)
+
 
 _VB_SCALAR_TYPES: dict[type, str] = {
     str: "String",
@@ -216,7 +283,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_vb
+        self.format_string: Callable[[str], str] = _format_string_vb
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

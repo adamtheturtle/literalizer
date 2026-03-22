@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 
 from beartype import beartype
@@ -12,7 +13,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_fortran,
 )
 from literalizer._language import (
     CommentConfig,
@@ -23,6 +23,35 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_string_fortran(value: str) -> str:
+    r"""Format a string using Fortran single-quote string syntax.
+
+    Fortran strings use single quotes, with ``''`` for embedded single
+    quotes.  Control characters (code points 0-31) are emitted as
+    ``achar(N)`` expressions concatenated with ``//``.
+    """
+    _fortran_control_char_threshold = 32
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if (
+            len(segment) == 1
+            and ord(segment) < _fortran_control_char_threshold
+        ):
+            parts.append(f"achar({ord(segment)})")
+        else:
+            escaped = segment.replace("'", "''")
+            parts.append(f"'{escaped}'")
+    if not parts:
+        return "''"
+    if len(parts) == 1:
+        return parts[0]
+    return " // ".join(parts)
+
 
 _FVAL_PREFIXES = (
     "fnull()",
@@ -151,7 +180,7 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {continued}"
 
 
-_string_format: Callable[[str], str] = format_string_fortran
+_string_format: Callable[[str], str] = _format_string_fortran
 
 
 _FORTRAN_PREAMBLE: tuple[str, ...] = (

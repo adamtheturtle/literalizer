@@ -10,8 +10,6 @@ from literalizer._formatters import (
     ListType,
     MixedNumeric,
     format_bytes_hex,
-    format_date_csharp,
-    format_datetime_csharp,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -27,6 +25,22 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_csharp(value: datetime.date) -> str:
+    """Format a date as a C# ``new DateOnly(...)`` call."""
+    return f"new DateOnly({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_csharp(value: datetime.datetime) -> str:
+    """Format a datetime as a C# ``new DateTime(...)`` call."""
+    return (
+        f"new DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
 
 _CSHARP_SCALAR_TYPES: dict[type, str] = {
     str: "string",
@@ -120,7 +134,7 @@ class CSharp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for C#."""
 
-        CSHARP = enum.member(value=format_date_csharp)
+        CSHARP = enum.member(value=_format_date_csharp)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -129,7 +143,7 @@ class CSharp(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C#."""
 
-        CSHARP = enum.member(value=format_datetime_csharp)
+        CSHARP = enum.member(value=_format_datetime_csharp)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

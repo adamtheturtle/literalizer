@@ -11,8 +11,6 @@ from literalizer._formatters import (
     MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
-    format_date_dart,
-    format_datetime_dart,
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -28,6 +26,19 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_dart(value: datetime.date) -> str:
+    """Format a date as a Dart ``DateTime.parse(...)`` call."""
+    return f'DateTime.parse("{value.isoformat()}")'
+
+
+@beartype
+def _format_datetime_dart(value: datetime.datetime) -> str:
+    """Format a datetime as a Dart ``DateTime.parse(...)`` call."""
+    return f'DateTime.parse("{value.isoformat()}")'
+
 
 _DART_SCALAR_TYPES: dict[type, str] = {
     str: "String",
@@ -116,7 +127,7 @@ class Dart(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 
-        DART = enum.member(value=format_date_dart)
+        DART = enum.member(value=_format_date_dart)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -125,7 +136,7 @@ class Dart(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        DART = enum.member(value=format_datetime_dart)
+        DART = enum.member(value=_format_datetime_dart)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

@@ -11,8 +11,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_ruby,
-    format_datetime_ruby,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -26,6 +24,21 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_ruby(value: datetime.date) -> str:
+    """Format a date as a Ruby ``Date.new(...)`` call."""
+    return f"Date.new({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_ruby(value: datetime.datetime) -> str:
+    """Format a datetime as a Ruby ``Time.new(...)`` call."""
+    return (
+        f"Time.new({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
 
 
 @beartype
@@ -79,7 +92,7 @@ class Ruby(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Ruby."""
 
-        RUBY = enum.member(value=format_date_ruby)
+        RUBY = enum.member(value=_format_date_ruby)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -88,7 +101,7 @@ class Ruby(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Ruby."""
 
-        RUBY = enum.member(value=format_datetime_ruby)
+        RUBY = enum.member(value=_format_datetime_ruby)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
