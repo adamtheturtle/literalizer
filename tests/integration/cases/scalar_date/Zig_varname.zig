@@ -1,3 +1,5 @@
+const ZDate = struct { year: i32, month: u8, day: u8 };
+const ZDatetime = struct { year: i32, month: u8, day: u8, hour: u8, minute: u8, second: u8 };
 const ZVal = union(enum) {
     nil,
     bool: bool,
@@ -7,9 +9,11 @@ const ZVal = union(enum) {
     arr: []const ZVal,
     map: []const ZKV,
     set: []const ZVal,
+    date: ZDate,
+    datetime: ZDatetime,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    const my_data: ZVal = .{ .str = "2024-01-15" };
+    const my_data: ZVal = .{ .date = .{ .year = 2024, .month = 1, .day = 15 } };
     _ = my_data;
 }

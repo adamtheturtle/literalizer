@@ -27,20 +27,21 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_zig(value: datetime.date) -> str:
-    """Format a date as a Zig anonymous struct literal."""
+    """Format a date as a Zig ``ZVal`` ``.date`` field."""
     return (
-        f".{{ .year = {value.year}, .month = {value.month}, "
-        f".day = {value.day} }}"
+        f".{{ .date = .{{ .year = {value.year}, .month = {value.month}, "
+        f".day = {value.day} }} }}"
     )
 
 
 @beartype
 def _format_datetime_zig(value: datetime.datetime) -> str:
-    """Format a datetime as a Zig anonymous struct literal."""
+    """Format a datetime as a Zig ``ZVal`` ``.datetime`` field."""
     return (
-        f".{{ .year = {value.year}, .month = {value.month}, "
-        f".day = {value.day}, .hour = {value.hour}, "
-        f".minute = {value.minute}, .second = {value.second} }}"
+        f".{{ .datetime = .{{ .year = {value.year}, "
+        f".month = {value.month}, .day = {value.day}, "
+        f".hour = {value.hour}, .minute = {value.minute}, "
+        f".second = {value.second} }} }}"
     )
 
 
@@ -100,6 +101,9 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 _ZIG_PREAMBLE: tuple[str, ...] = (
+    "const ZDate = struct { year: i32, month: u8, day: u8 };",
+    "const ZDatetime = struct "
+    "{ year: i32, month: u8, day: u8, hour: u8, minute: u8, second: u8 };",
     "const ZVal = union(enum) {",
     "    nil,",
     "    bool: bool,",
@@ -109,6 +113,8 @@ _ZIG_PREAMBLE: tuple[str, ...] = (
     "    arr: []const ZVal,",
     "    map: []const ZKV,",
     "    set: []const ZVal,",
+    "    date: ZDate,",
+    "    datetime: ZDatetime,",
     "};",
     "const ZKV = struct { key: []const u8, val: ZVal };",
 )
@@ -225,8 +231,8 @@ class Zig(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.ZIG,
+        datetime_format: DatetimeFormats = DatetimeFormats.ZIG,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,

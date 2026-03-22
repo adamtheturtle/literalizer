@@ -27,16 +27,16 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_fsharp(value: datetime.date) -> str:
-    """Format a date as an F# ``System.DateTime(...)`` call."""
-    return f"System.DateTime({value.year}, {value.month}, {value.day})"
+    """Format a date as an F# ``FDate`` constructor."""
+    return f"FDate(System.DateTime({value.year}, {value.month}, {value.day}))"
 
 
 @beartype
 def _format_datetime_fsharp(value: datetime.datetime) -> str:
-    """Format a datetime as an F# ``System.DateTime(...)`` call."""
+    """Format a datetime as an F# ``FDatetime`` constructor."""
     return (
-        f"System.DateTime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
+        f"FDatetime(System.DateTime({value.year}, {value.month}, "
+        f"{value.day}, {value.hour}, {value.minute}, {value.second}))"
     )
 
 
@@ -52,7 +52,8 @@ def _to_val(value: str) -> str:
         "FStr",
         "FInt",
         "FFloat",
-        "System.DateTime",
+        "FDate",
+        "FDatetime",
     )
     if any(value.startswith(p) for p in _val_prefixes):
         return value
@@ -232,8 +233,8 @@ class FSharp(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.FSHARP,
+        datetime_format: DatetimeFormats = DatetimeFormats.FSHARP,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,

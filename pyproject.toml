@@ -387,10 +387,6 @@ ignore_names = [
     "MAP_SET",
     "EPOCH",
     "FROZENSET",
-    "FSHARP",
-    "HASKELL",
-    "OCAML",
-    "ZIG",
     "ZONED",
     # Used in documentation code examples
     "custom",

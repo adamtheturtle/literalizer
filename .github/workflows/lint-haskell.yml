@@ -32,10 +32,7 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           set -o pipefail
-          find tests/integration/cases -name "*.hs" \
-            -not -name "*_date_haskell.hs" \
-            -not -name "*_datetime_haskell.hs" \
-            -print0 | \
+          find tests/integration/cases -name "*.hs" -print0 | \
             while IFS= read -r -d '' f; do
               ghc -fno-code -outputdir "$tmpdir" "$f" || exit 1
             done

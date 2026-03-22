@@ -27,15 +27,15 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_ocaml(value: datetime.date) -> str:
-    """Format a date as an OCaml tuple."""
-    return f"({value.year}, {value.month}, {value.day})"
+    """Format a date as an OCaml ``ODate`` constructor."""
+    return f"ODate ({value.year}, {value.month}, {value.day})"
 
 
 @beartype
 def _format_datetime_ocaml(value: datetime.datetime) -> str:
-    """Format a datetime as an OCaml pair of tuples."""
+    """Format a datetime as an OCaml ``ODatetime`` constructor."""
     return (
-        f"(({value.year}, {value.month}, {value.day}), "
+        f"ODatetime (({value.year}, {value.month}, {value.day}), "
         f"({value.hour}, {value.minute}, {value.second}))"
     )
 
@@ -52,10 +52,10 @@ def _to_val(value: str) -> str:
         "OStr",
         "OInt",
         "OFloat",
+        "ODate",
+        "ODatetime",
     )
     if any(value.startswith(p) for p in _val_prefixes):
-        return value
-    if value.startswith("("):
         return value
     if value.startswith('"') and value.endswith('"'):
         return f"OStr {value}"
@@ -233,8 +233,8 @@ class OCaml(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.OCAML,
+        datetime_format: DatetimeFormats = DatetimeFormats.OCAML,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,

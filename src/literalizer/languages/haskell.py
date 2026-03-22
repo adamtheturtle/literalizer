@@ -29,13 +29,13 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_haskell(value: datetime.date) -> str:
-    """Format a date as a Haskell ``fromGregorian`` call."""
-    return f"fromGregorian {value.year} {value.month} {value.day}"
+    """Format a date as a Haskell ``HDate`` constructor."""
+    return f"HDate (fromGregorian {value.year} {value.month} {value.day})"
 
 
 @beartype
 def _format_datetime_haskell(value: datetime.datetime) -> str:
-    """Format a datetime as a Haskell ``UTCTime`` constructor."""
+    """Format a datetime as a Haskell ``HDatetime`` constructor."""
     total_seconds = value.hour * 3600 + value.minute * 60 + value.second
     if value.microsecond:
         picos = total_seconds * 10**12 + value.microsecond * 10**6
@@ -43,8 +43,9 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
     else:
         time_part = f"secondsToDiffTime {total_seconds}"
     return (
-        f"UTCTime (fromGregorian {value.year} {value.month} {value.day}) "
-        f"({time_part})"
+        f"HDatetime (UTCTime "
+        f"(fromGregorian {value.year} {value.month} {value.day}) "
+        f"({time_part}))"
     )
 
 
@@ -236,8 +237,8 @@ class Haskell(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.HASKELL,
+        datetime_format: DatetimeFormats = DatetimeFormats.HASKELL,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
