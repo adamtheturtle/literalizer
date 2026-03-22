@@ -1901,24 +1901,24 @@ def test_golden_file(
         for language, lang_config in _LANGUAGES.items():
             with subtests.test(msg=f"{case_dir.name}/{language}"):
                 input_path = case_dir / "input.yaml"
-            yaml_string = input_path.read_text()
-            result = literalizer.literalize_yaml(
-                yaml_string=yaml_string,
-                language=lang_config.lang_cls(),
-                line_prefix="",
-                indent="    ",
-                include_delimiters=True,
-                variable_name=None,
-                new_variable=True,
-                error_on_coercion=False,
-            )
-            wrapped = lang_config.wrap(result)
-            file_regression.check(
-                contents=wrapped + "\n",
-                extension=lang_config.lang_cls.extension,
-                fullpath=case_dir
-                / (language + lang_config.lang_cls.extension),
-            )
+                yaml_string = input_path.read_text()
+                result = literalizer.literalize_yaml(
+                    yaml_string=yaml_string,
+                    language=lang_config.lang_cls(),
+                    line_prefix="",
+                    indent="    ",
+                    include_delimiters=True,
+                    variable_name=None,
+                    new_variable=True,
+                    error_on_coercion=False,
+                )
+                wrapped = lang_config.wrap(result)
+                file_regression.check(
+                    contents=wrapped + "\n",
+                    extension=lang_config.lang_cls.extension,
+                    fullpath=case_dir
+                    / (language + lang_config.lang_cls.extension),
+                )
 
 
 def test_golden_file_with_variable_name(
