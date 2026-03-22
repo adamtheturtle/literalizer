@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -12,8 +11,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_js,
-    format_datetime_js,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -26,9 +23,25 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _format_date_ts(value: datetime.date) -> str:
+    """Format a date as a TypeScript ``new Date(...)`` call.
+
+    Example: ``new Date("2024-01-15")``.
+    """
+    return f'new Date("{value.isoformat()}")'
+
+
+@beartype
+def _format_datetime_ts(value: datetime.datetime) -> str:
+    """Format a datetime as a TypeScript ``new Date(...)`` call.
+
+    Example: ``new Date("2024-01-15T12:30:00")``.
+    """
+    return f'new Date("{value.isoformat()}")'
 
 
 @beartype
@@ -38,13 +51,13 @@ def _format_ts_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a TypeScript variable declaration."""
     return f"const {name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a TypeScript variable assignment."""
     return f"{name} = {value};"
 
@@ -69,6 +82,14 @@ class TypeScript(metaclass=LanguageCls):
 
             * ``datetime_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.
+
+        sequence_format: Which TypeScript sequence type to use.
+
+            * ``sequence_formats.ARRAY`` — array literal,
+              e.g. ``[1, 2, 3]``.
+            * ``sequence_formats.TUPLE`` — ``as const`` tuple literal,
+              e.g. ``[1, 2, 3] as const``.  TypeScript infers
+              per-element types instead of a union array type.
     """
 
     extension = ".ts"
@@ -77,7 +98,7 @@ class TypeScript(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for TypeScript."""
 
-        JS = enum.member(value=format_date_js)
+        JS = enum.member(value=_format_date_ts)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -86,7 +107,7 @@ class TypeScript(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for TypeScript."""
 
-        JS = enum.member(value=format_datetime_js)
+        JS = enum.member(value=_format_datetime_ts)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -110,6 +131,13 @@ class TypeScript(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+        )
+        TUPLE = SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(open_str="["),
+            close="] as const",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence="[] as const",
         )
 
         @property
@@ -210,10 +238,10 @@ class TypeScript(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

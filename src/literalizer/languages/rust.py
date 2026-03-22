@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -11,8 +10,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_rust,
-    format_datetime_rust,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -25,9 +22,34 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _format_date_rust(value: datetime.date) -> str:
+    """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call."""
+    return (
+        f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
+        ".unwrap()"
+    )
+
+
+@beartype
+def _format_datetime_rust(value: datetime.datetime) -> str:
+    """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call."""
+    date = _format_date_rust(value=value)
+    if value.microsecond:
+        time_call = (
+            f"NaiveTime::from_hms_micro_opt("
+            f"{value.hour}, {value.minute}, {value.second}, "
+            f"{value.microsecond}).unwrap()"
+        )
+    else:
+        time_call = (
+            f"NaiveTime::from_hms_opt("
+            f"{value.hour}, {value.minute}, {value.second}).unwrap()"
+        )
+    return f"NaiveDateTime::new({date}, {time_call})"
 
 
 @beartype
@@ -66,13 +88,13 @@ def _preamble(code: str) -> Sequence[str]:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Rust variable declaration."""
     return f"let {name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Rust variable assignment."""
     return f"{name} = {value};"
 
@@ -117,7 +139,7 @@ class Rust(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
 
-        RUST = enum.member(value=format_date_rust)
+        RUST = enum.member(value=_format_date_rust)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -126,7 +148,7 @@ class Rust(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Rust."""
 
-        RUST = enum.member(value=format_datetime_rust)
+        RUST = enum.member(value=_format_datetime_rust)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -264,10 +286,10 @@ class Rust(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -12,8 +11,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_julia,
-    format_datetime_julia,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -26,9 +23,22 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _format_date_julia(value: datetime.date) -> str:
+    """Format a date as a Julia ``Date(...)`` constructor call."""
+    return f"Date({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_julia(value: datetime.datetime) -> str:
+    """Format a datetime as a Julia ``DateTime(...)`` constructor call."""
+    return (
+        f"DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
 
 
 @beartype
@@ -46,7 +56,7 @@ def _preamble(code: str) -> Sequence[str]:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Julia variable declaration."""
     return f"{name} = {value}"
 
@@ -80,7 +90,7 @@ class Julia(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Julia."""
 
-        JULIA = enum.member(value=format_date_julia)
+        JULIA = enum.member(value=_format_date_julia)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -89,7 +99,7 @@ class Julia(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Julia."""
 
-        JULIA = enum.member(value=format_datetime_julia)
+        JULIA = enum.member(value=_format_datetime_julia)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -219,10 +229,10 @@ class Julia(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

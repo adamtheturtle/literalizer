@@ -210,9 +210,9 @@ def test_literalize_yaml_datetime() -> None:
     assert result.code == expected
 
 
-def test_cpp_array_non_json_native_fallback() -> None:
-    """C++ ARRAY format falls back to bare braces for non-JSON-native
-    types like binary data.
+def test_cpp_array_binary_typed() -> None:
+    """C++ ARRAY format infers std::array<std::string, N> for binary
+    data.
     """
     cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
     yaml_string = "- !!binary |\n    SGVsbG8=\n"
@@ -227,7 +227,7 @@ def test_cpp_array_non_json_native_fallback() -> None:
         error_on_coercion=False,
     )
     assert '"48656c6c6f"' in result.code
-    assert result.code.startswith("{")
+    assert "std::array<std::string, 1>" in result.code
 
 
 def test_cpp_array_null_list_fallback() -> None:

@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -11,8 +10,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_r,
-    format_datetime_r,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -25,10 +22,20 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 from literalizer.exceptions import EmptyDictKeyError
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _format_date_r(value: datetime.date) -> str:
+    """Format a date as an R ``as.Date(...)`` call."""
+    return f'as.Date("{value.isoformat()}")'
+
+
+@beartype
+def _format_datetime_r(value: datetime.datetime) -> str:
+    """Format a datetime as an R ``as.POSIXct(...)`` call."""
+    return f'as.POSIXct("{value.isoformat()}")'
 
 
 @beartype
@@ -64,13 +71,13 @@ def _format_r_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an R variable declaration."""
     return f"{name} <- {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an R variable assignment."""
     return f"{name} <- {value}"
 
@@ -115,7 +122,7 @@ class R(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for R."""
 
-        R = enum.member(value=format_date_r)
+        R = enum.member(value=_format_date_r)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -124,7 +131,7 @@ class R(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for R."""
 
-        R = enum.member(value=format_datetime_r)
+        R = enum.member(value=_format_datetime_r)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -258,10 +265,10 @@ class R(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

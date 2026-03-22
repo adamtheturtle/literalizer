@@ -2,39 +2,60 @@
 
 import datetime
 import functools
-import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from dataclasses import dataclass
 
 from beartype import beartype
-from json_to_schema import infer_schema
 
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from json_to_schema.core import JsonValue
 
-# JSON-native Python types that json-to-schema can represent accurately.
-# literalizer's Value type also includes bytes, date, and datetime, which
-# exist in YAML but not in JSON.  json-to-schema misclassifies these as
-# "string", so when any non-JSON-native value is present we skip schema
-# inference entirely and let the language mapper fall through to its
-# fallback opener.
-_JSON_NATIVE_TYPES = (str, int, float, bool, type(None), list, dict)
+@dataclass(frozen=True)
+class ListType:
+    """Represents a homogeneous list element type for type inference.
+
+    For nested lists, ``inner`` is another ``ListType``.
+    For leaf lists, ``inner`` is a Python ``type``.
+    """
+
+    inner: "type | ListType"
+
+
+class MixedNumeric:
+    """Sentinel class representing mixed int/float element types.
+
+    Used as a key in scalar type mapping dicts so each language can
+    decide how to handle collections containing both int and float
+    values.
+    """
 
 
 @beartype
-def _all_json_native(values: Value) -> bool:
-    """Check whether every scalar in *values* is a JSON-native type.
+def _infer_element_type(
+    items: list[Value],
+) -> type | ListType | None:
+    """Infer the common element type from a list of values.
 
-    Walks into nested lists and dict values so that YAML-only types
-    (``bytes``, ``date``, ``datetime``) are detected at any depth.
+    Returns ``None`` when the list is empty or contains mixed types
+    that cannot be unified.  Returns ``MixedNumeric`` when the list
+    contains a mix of ``int`` and ``float`` values.
     """
-    if isinstance(values, list):
-        return all(_all_json_native(values=v) for v in values)
-    if isinstance(values, dict):
-        return all(_all_json_native(values=v) for v in values.values())
-    return isinstance(values, _JSON_NATIVE_TYPES)
+    if not items:
+        return None
+    element_types: set[type | ListType] = set()
+    for item in items:
+        if isinstance(item, list):
+            inner = _infer_element_type(items=item)
+            if inner is None:
+                return None
+            element_types.add(ListType(inner=inner))
+        else:
+            element_types.add(type(item))
+    if len(element_types) == 1:
+        return next(iter(element_types))
+    if element_types == {int, float}:
+        return MixedNumeric
+    return None
 
 
 @beartype
@@ -57,301 +78,12 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 
 @beartype
-def format_date_python(value: datetime.date) -> str:
-    """Format a date as a Python ``datetime.date(...)`` constructor call.
-
-    Example: ``datetime.date(year=2024, month=1, day=15)``.
-    """
-    return (
-        f"datetime.date("
-        f"year={value.year}, month={value.month}, day={value.day})"
-    )
-
-
-@beartype
-def format_datetime_python(value: datetime.datetime) -> str:
-    """Format a datetime as a Python ``datetime.datetime(...)``
-    constructor call.
-
-    Example: ``datetime.datetime(year=2024, month=1, day=15,
-    hour=12, minute=30, second=0)``.
-    """
-    parts = [
-        f"year={value.year}",
-        f"month={value.month}",
-        f"day={value.day}",
-        f"hour={value.hour}",
-        f"minute={value.minute}",
-        f"second={value.second}",
-    ]
-    if value.microsecond:
-        parts.append(f"microsecond={value.microsecond}")
-    args = ", ".join(parts)
-    return f"datetime.datetime({args})"
-
-
-@beartype
-def format_datetime_epoch(value: datetime.datetime) -> str:
-    """Format a datetime as seconds since the Unix epoch.
-
-    Uses :meth:`datetime.datetime.timestamp`, so the result depends on
-    whether the datetime is naive (assumed local time) or aware.
-
-    Example: ``1705312200.0``.
-    """
-    return repr(value.timestamp())
-
-
-@beartype
-def format_date_java(value: datetime.date) -> str:
-    """Format a date as a Java ``LocalDate.of(...)`` call.
-
-    Example: ``LocalDate.of(2024, 1, 15)``.
-    """
-    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def format_datetime_java_instant(value: datetime.datetime) -> str:
-    """Format a datetime as a Java ``Instant.parse(...)`` call.
-
-    Example: ``Instant.parse("2024-01-15T12:30:00")``.
-    """
-    return f'Instant.parse("{value.isoformat()}")'
-
-
-@beartype
-def format_datetime_java_zoned(value: datetime.datetime) -> str:
-    """Format a datetime as a Java ``ZonedDateTime.of(...)`` call.
-
-    Example: ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
-    ZoneId.of("UTC"))``.
-    """
-    tz = value.tzname() or "UTC"
-    nanos = value.microsecond * 1000
-    return (
-        f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second}, "
-        f'{nanos}, ZoneId.of("{tz}"))'
-    )
-
-
-@beartype
-def format_date_ruby(value: datetime.date) -> str:
-    """Format a date as a Ruby ``Date.new(...)`` call.
-
-    Example: ``Date.new(2024, 1, 15)``.
-    """
-    return f"Date.new({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def format_datetime_ruby(value: datetime.datetime) -> str:
-    """Format a datetime as a Ruby ``Time.new(...)`` call.
-
-    Example: ``Time.new(2024, 1, 15, 12, 30, 0)``.
-    """
-    return (
-        f"Time.new({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
-
-
-@beartype
-def format_date_js(value: datetime.date) -> str:
-    """Format a date as a JavaScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15")``.
-    """
-    return f'new Date("{value.isoformat()}")'
-
-
-@beartype
-def format_datetime_js(value: datetime.datetime) -> str:
-    """Format a datetime as a JavaScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15T12:30:00")``.
-    """
-    return f'new Date("{value.isoformat()}")'
-
-
-@beartype
-def format_date_csharp(value: datetime.date) -> str:
-    """Format a date as a C# ``new DateOnly(...)`` call.
-
-    Example: ``new DateOnly(2024, 1, 15)``.
-    """
-    return f"new DateOnly({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def format_datetime_csharp(value: datetime.datetime) -> str:
-    """Format a datetime as a C# ``new DateTime(...)`` call.
-
-    Example: ``new DateTime(2024, 1, 15, 12, 30, 0)``.
-    """
-    return (
-        f"new DateTime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
-
-
-_GO_MONTHS: dict[int, str] = {
-    1: "time.January",
-    2: "time.February",
-    3: "time.March",
-    4: "time.April",
-    5: "time.May",
-    6: "time.June",
-    7: "time.July",
-    8: "time.August",
-    9: "time.September",
-    10: "time.October",
-    11: "time.November",
-    12: "time.December",
-}
-
-
-@beartype
-def format_date_go(value: datetime.date) -> str:
-    """Format a date as a Go ``time.Date(...)`` call.
-
-    Example: ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
-    time.UTC)``.
-    """
-    month = _GO_MONTHS[value.month]
-    return (
-        f"time.Date({value.year}, {month}, {value.day}, 0, 0, 0, 0, time.UTC)"
-    )
-
-
-@beartype
-def format_datetime_go(value: datetime.datetime) -> str:
-    """Format a datetime as a Go ``time.Date(...)`` call.
-
-    Example: ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
-    time.UTC)``.
-    """
-    month = _GO_MONTHS[value.month]
-    nanos = value.microsecond * 1000
-    return (
-        f"time.Date({value.year}, {month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second}, "
-        f"{nanos}, time.UTC)"
-    )
-
-
-@beartype
-def format_date_kotlin(value: datetime.date) -> str:
-    """Format a date as a Kotlin ``LocalDate.of(...)`` call.
-
-    Example: ``LocalDate.of(2024, 1, 15)``.
-    """
-    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def format_datetime_kotlin(value: datetime.datetime) -> str:
-    """Format a datetime as a Kotlin ``LocalDateTime.of(...)`` call.
-
-    Example: ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
-    """
-    return (
-        f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
-
-
-@beartype
-def format_date_cpp(value: datetime.date) -> str:
-    """Format a date as a C++ chrono year_month_day literal.
-
-    Example:
-    ``std::chrono::year_month_day{std::chrono::year{2024},
-    std::chrono::month{1}, std::chrono::day{15}}``.
-    """
-    return (
-        f"std::chrono::year_month_day{{"
-        f"std::chrono::year{{{value.year}}}, "
-        f"std::chrono::month{{{value.month}}}, "
-        f"std::chrono::day{{{value.day}}}}}"
-    )
-
-
-@beartype
-def format_datetime_cpp(value: datetime.datetime) -> str:
-    """Format a datetime as a C++ chrono time_point construction.
-
-    Uses ``std::chrono::sys_days`` combined with a time-of-day
-    duration.
-
-    Example: ``std::chrono::sys_days{std::chrono::year_month_day{...}}
-    + std::chrono::hours{12} + ...``.
-    """
-    ymd = format_date_cpp(value=value)
-    parts = [f"std::chrono::sys_days{{{ymd}}}"]
-    if value.hour:
-        parts.append(f"std::chrono::hours{{{value.hour}}}")
-    if value.minute:
-        parts.append(f"std::chrono::minutes{{{value.minute}}}")
-    if value.second:
-        parts.append(f"std::chrono::seconds{{{value.second}}}")
-    if value.microsecond:
-        parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
-    return " + ".join(parts)
-
-
-@beartype
 def format_bytes_hex(value: bytes) -> str:
     """Format bytes as a hex string literal.
 
     Example: ``b"Hello"`` → ``"48656c6c6f"``.
     """
     return f'"{value.hex()}"'
-
-
-@beartype
-def format_bytes_python(value: bytes) -> str:
-    """Format bytes as a Python ``bytes`` literal.
-
-    Example: ``b"Hello"`` → ``b'Hello'``.
-    """
-    return repr(value)
-
-
-@beartype
-def format_date_rust(value: datetime.date) -> str:
-    """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call.
-
-    Example: ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
-    """
-    return (
-        f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
-        ".unwrap()"
-    )
-
-
-@beartype
-def format_datetime_rust(value: datetime.datetime) -> str:
-    """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call.
-
-    Example:
-    ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
-    NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
-    """
-    date = format_date_rust(value=value)
-    if value.microsecond:
-        time_call = (
-            f"NaiveTime::from_hms_micro_opt("
-            f"{value.hour}, {value.minute}, {value.second}, "
-            f"{value.microsecond}).unwrap()"
-        )
-    else:
-        time_call = (
-            f"NaiveTime::from_hms_opt("
-            f"{value.hour}, {value.minute}, {value.second}).unwrap()"
-        )
-    return f"NaiveDateTime::new({date}, {time_call})"
 
 
 @beartype
@@ -365,65 +97,13 @@ def passthrough_sequence_entry(item: str) -> str:
 
 
 @beartype
-def format_date_r(value: datetime.date) -> str:
-    """Format a date as an R ``as.Date(...)`` call.
+def passthrough_set_entry(item: str) -> str:
+    """Return *item* unchanged.
 
-    Example: ``datetime.date(2024, 1, 15)`` → ``as.Date("2024-01-15")``.
+    Use this as ``format_set_entry`` for languages where set entries
+    need no extra formatting.
     """
-    return f'as.Date("{value.isoformat()}")'
-
-
-@beartype
-def format_datetime_r(value: datetime.datetime) -> str:
-    """Format a datetime as an R ``as.POSIXct(...)`` call.
-
-    The ISO 8601 offset in the string is used for parsing, so no
-    separate ``tz`` argument is needed.
-
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
-    ``as.POSIXct("2024-01-15T12:30:00")``.
-    """
-    return f'as.POSIXct("{value.isoformat()}")'
-
-
-@beartype
-def format_date_dart(value: datetime.date) -> str:
-    """Format a date as a Dart ``DateTime.parse(...)`` call.
-
-    Example: ``DateTime.parse("2024-01-15")``.
-    """
-    return f'DateTime.parse("{value.isoformat()}")'
-
-
-@beartype
-def format_datetime_dart(value: datetime.datetime) -> str:
-    """Format a datetime as a Dart ``DateTime.parse(...)`` call.
-
-    Example: ``DateTime.parse("2024-01-15T12:30:00")``.
-    """
-    return f'DateTime.parse("{value.isoformat()}")'
-
-
-@beartype
-def format_date_julia(value: datetime.date) -> str:
-    """Format a date as a Julia ``Date(...)`` constructor call.
-
-    Example: ``datetime.date(2024, 1, 15)`` → ``Date(2024, 1, 15)``.
-    """
-    return f"Date({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def format_datetime_julia(value: datetime.datetime) -> str:
-    """Format a datetime as a Julia ``DateTime(...)`` constructor call.
-
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30, 0)`` →
-    ``DateTime(2024, 1, 15, 12, 30, 0)``.
-    """
-    return (
-        f"DateTime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
+    return item
 
 
 @beartype
@@ -440,54 +120,6 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
         return f"{key}{separator}{value}"
 
     return _format
-
-
-_MATLAB_CONTROL_CHAR_THRESHOLD = 32
-
-
-@beartype
-def format_string_matlab(value: str) -> str:
-    r"""Format a string using MATLAB double-quoted string escaping rules.
-
-    MATLAB double-quoted strings (the ``string`` type) interpret backslash
-    escape sequences: ``\\`` for a literal backslash, ``\n`` for newline,
-    ``\t`` for tab, etc.  Double quotes are escaped by doubling (``""``).
-    Control characters (code points 0-31) are emitted as ``char(N)``
-    expressions joined with ``+``.
-
-    Example: ``hello "world" bye`` -> ``"hello ""world"" bye"``.
-    """
-    parts: list[str] = []
-    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
-        if not segment:
-            continue
-        if len(segment) == 1 and ord(segment) < _MATLAB_CONTROL_CHAR_THRESHOLD:
-            parts.append(f"char({ord(segment)})")
-        else:
-            escaped = segment.replace("\\", "\\\\").replace('"', '""')
-            parts.append(f'"{escaped}"')
-    if not parts:
-        return '""'
-    if len(parts) == 1:
-        return parts[0]
-    return " + ".join(parts)
-
-
-@beartype
-def format_string_ada(value: str) -> str:
-    r"""Format a string using Ada double-quote escaping.
-
-    Ada has no backslash escaping — backslashes are literal characters.
-    Only double quotes are escaped, by doubling them (``""``).
-    Newlines and tabs are rendered as ``\n`` / ``\t`` for readability
-    since Ada string literals cannot span lines.
-
-    Example: ``hello "world" bye`` → ``"hello ""world"" bye"``.
-    """
-    escaped = (
-        value.replace("\n", "\\n").replace("\t", "\\t").replace('"', '""')
-    )
-    return f'"{escaped}"'
 
 
 @beartype
@@ -527,119 +159,6 @@ def format_string_backslash_dollar(value: str) -> str:
     return f'"{escaped}"'
 
 
-_VB_CHAR_REPLACEMENTS: dict[str, str] = {
-    "\n": "Chr(10)",
-    "\r": "Chr(13)",
-    "\t": "vbTab",
-}
-
-_VB_CONTROL_CHAR_THRESHOLD = 32
-
-
-@beartype
-def _flush_vb_current(
-    *,
-    parts: list[str],
-    current: str,
-) -> str:
-    """Flush accumulated literal characters into parts."""
-    if current:
-        parts.append(f'"{current}"')
-    return ""
-
-
-@beartype
-def _vb_string_parts(value: str) -> list[str]:
-    """Generate VB.NET string parts for control character handling."""
-    parts: list[str] = []
-    current = ""
-    i = 0
-    while i < len(value):
-        c = value[i]
-        if c == '"':
-            current += '""'
-            i += 1
-        elif c == "\r" and i + 1 < len(value) and value[i + 1] == "\n":
-            current = _flush_vb_current(parts=parts, current=current)
-            parts.append("vbCrLf")
-            i += 2
-        elif c in _VB_CHAR_REPLACEMENTS:
-            current = _flush_vb_current(parts=parts, current=current)
-            parts.append(_VB_CHAR_REPLACEMENTS[c])
-            i += 1
-        elif ord(c) < _VB_CONTROL_CHAR_THRESHOLD:
-            current = _flush_vb_current(parts=parts, current=current)
-            parts.append(f"Chr({ord(c)})")
-            i += 1
-        else:
-            current += c
-            i += 1
-    _flush_vb_current(parts=parts, current=current)
-    return parts
-
-
-@beartype
-def format_string_vb(value: str) -> str:
-    r"""Format a string using VB.NET string escaping rules.
-
-    VB.NET strings use ``""`` to escape embedded double quotes and do not
-    support backslash escapes.  Control characters such as newlines and
-    tabs are expressed via ``vbCrLf``, ``vbTab``, or ``Chr(N)`` string
-    concatenation.
-
-    Example: ``hi "world" bye`` → ``"hi ""world"" bye"``.
-    Example: ``line1\nline2`` → ``"line1" & Chr(10) & "line2"``.
-    """
-    parts = _vb_string_parts(value)  # type: ignore[misc]
-    if not parts:
-        return '""'
-    if len(parts) == 1:
-        return parts[0]
-    return " & ".join(parts)
-
-
-@beartype
-def format_string_fortran(value: str) -> str:
-    r"""Format a string using Fortran single-quote string syntax.
-
-    Fortran strings use single quotes, with ``''`` for embedded single
-    quotes.  Control characters (code points 0-31) are emitted as
-    ``achar(N)`` expressions concatenated with ``//``.
-
-    Example: ``it's`` → ``'it''s'``.
-    Example: ``line1\nline2`` →
-    ``'line1' // achar(10) // 'line2'``.
-    """
-    _fortran_control_char_threshold = 32
-    parts: list[str] = []
-    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
-        if not segment:
-            continue
-        if (
-            len(segment) == 1
-            and ord(segment) < _fortran_control_char_threshold
-        ):
-            parts.append(f"achar({ord(segment)})")
-        else:
-            escaped = segment.replace("'", "''")
-            parts.append(f"'{escaped}'")
-    if not parts:
-        return "''"
-    if len(parts) == 1:
-        return parts[0]
-    return " // ".join(parts)
-
-
-@beartype
-def passthrough_set_entry(item: str) -> str:
-    """Return *item* unchanged.
-
-    Use this as ``format_set_entry`` for languages where set entries
-    need no extra formatting.
-    """
-    return item
-
-
 @beartype
 def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
     """Return a ``sequence_open`` callable that always returns *open_str*.
@@ -677,97 +196,117 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
 
 
 @beartype
+def make_element_to_type(
+    *,
+    scalar_types: dict[type, str],
+    list_template: str,
+) -> Callable[[type | ListType], str | None]:
+    """Create a recursive type resolver from scalar types and a list
+    template.
+
+    The *list_template* must contain ``{inner}`` which will be replaced
+    with the recursively-resolved inner type name.
+
+    Example::
+
+        go_element_to_type = make_element_to_type(
+            scalar_types={str: "string", int: "int"},
+            list_template="[]{inner}",
+        )
+    """
+
+    @beartype
+    def element_to_type(element_type: type | ListType) -> str | None:
+        """Resolve a Python element type to a language type name."""
+        if isinstance(element_type, ListType):
+            inner = element_to_type(element_type=element_type.inner)
+            if inner is None:
+                return None
+            return list_template.format(inner=inner)
+        return scalar_types.get(element_type)
+
+    return element_to_type
+
+
+@beartype
+def make_type_to_opener(
+    *,
+    element_to_type: Callable[[type | ListType], str | None],
+    opener_template: str,
+) -> Callable[[type | ListType], str | None]:
+    """Create a typed collection opener from an element-to-type resolver.
+
+    The *opener_template* must contain ``{type_name}`` which will be
+    replaced with the resolved type name.
+
+    Example::
+
+        go_type_to_opener = make_type_to_opener(
+            element_to_type=go_element_to_type,
+            opener_template="[]{type_name}{{",
+        )
+    """
+
+    @beartype
+    def type_to_opener(element_type: type | ListType) -> str | None:
+        """Resolve a Python element type to a collection opener."""
+        type_name = element_to_type(element_type)
+        if type_name is None:
+            return None
+        return opener_template.format(type_name=type_name)
+
+    return type_to_opener
+
+
+@beartype
 def _typed_sequence_open(
     items: list[Value],
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> str:
-    """Infer an item schema and return the language-specific opener.
+    """Infer the common element type and return the language-specific
+    opener.
 
-    Uses ``json-to-schema`` to infer a JSON Schema from the list
-    values, then passes the ``items`` sub-schema to
-    *schema_to_opener* which returns the language-specific opening
-    delimiter.  When inference is not possible or *schema_to_opener*
+    Uses direct ``type()`` checks on the Python runtime objects
+    to determine the element type, then passes it to
+    *type_to_opener* which returns the language-specific opening
+    delimiter.  When inference is not possible or *type_to_opener*
     returns ``None``, *fallback* is returned instead.
-
-    See ``_JSON_NATIVE_TYPES`` for why we skip inference for
-    YAML-only types.
     """
-    if not _all_json_native(values=items):
+    element_type = _infer_element_type(items=items)
+    if element_type is None:
         return fallback
-    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", items))
-    item_schema: dict[str, Any] = schema.get("items", {})
-    return schema_to_opener(item_schema) or fallback
+    return type_to_opener(element_type) or fallback
 
 
 @beartype
 def typed_sequence_open(
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> Callable[[list[Value]], str]:
-    """Return a ``sequence_open`` callable that infers an item schema and
-    delegates to *schema_to_opener*.
+    """Return a ``sequence_open`` callable that infers the common
+    element type and delegates to *type_to_opener*.
 
-    When inference is not possible or *schema_to_opener* returns
+    When inference is not possible or *type_to_opener* returns
     ``None``, *fallback* is used instead.
 
     Example::
 
-        def my_opener(item_schema: dict[str, Any]) -> str | None:
-            if item_schema.get("type") == "string":
+        def my_opener(element_type: type | ListType) -> str | None:
+            if element_type is str:
                 return "[]string{"
             return None
 
         sequence_open = typed_sequence_open(
-            schema_to_opener=my_opener,
+            type_to_opener=my_opener,
             fallback="[]any{",
         )
     """
     return functools.partial(
         _typed_sequence_open,
-        schema_to_opener=schema_to_opener,
-        fallback=fallback,
-    )
-
-
-@beartype
-def _counted_typed_sequence_open(
-    items: list[Value],
-    *,
-    schema_and_count_to_opener: Callable[[dict[str, Any], int], str | None],
-    fallback: str,
-) -> str:
-    """Like ``_typed_sequence_open`` but also passes the element count.
-
-    This is useful for languages where the collection type embeds its
-    size in the type, e.g. C++ ``std::array<int, 3>``.
-    """
-    if not _all_json_native(values=items):
-        return fallback
-    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", items))
-    item_schema: dict[str, Any] = schema.get("items", {})
-    return schema_and_count_to_opener(item_schema, len(items)) or fallback
-
-
-@beartype
-def counted_typed_sequence_open(
-    *,
-    schema_and_count_to_opener: Callable[[dict[str, Any], int], str | None],
-    fallback: str,
-) -> Callable[[list[Value]], str]:
-    """Return a ``sequence_open`` callable that infers an item schema and
-    delegates to *schema_and_count_to_opener* together with the element
-    count.
-
-    Behaves like :func:`typed_sequence_open` but the opener callback
-    also receives ``len(items)`` so it can embed the size in the
-    opening delimiter (e.g. ``std::array<int, 3>``).
-    """
-    return functools.partial(
-        _counted_typed_sequence_open,
-        schema_and_count_to_opener=schema_and_count_to_opener,
+        type_to_opener=type_to_opener,
         fallback=fallback,
     )
 
@@ -776,54 +315,51 @@ def counted_typed_sequence_open(
 def _typed_dict_open(
     items: dict[str, Value],
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> str:
-    """Infer a value schema and return the language-specific opener.
+    """Infer a common value type and return the language-specific
+    opener.
 
-    Uses ``json-to-schema`` to infer a JSON Schema from the dict
-    values (treated as a list), then passes the ``items`` sub-schema
-    to *schema_to_opener* which returns the language-specific opening
-    delimiter.  When inference is not possible or *schema_to_opener*
-    returns ``None``, *fallback* is returned instead.
-
-    See ``_JSON_NATIVE_TYPES`` for why we skip inference for
-    YAML-only types.
+    Treats the dict values as a list and infers a common element
+    type, then passes it to *type_to_opener* which returns the
+    language-specific opening delimiter.  When inference is not
+    possible or *type_to_opener* returns ``None``, *fallback* is
+    returned instead.
     """
     values = list(items.values())
-    if not _all_json_native(values=values):
+    element_type = _infer_element_type(items=values)
+    if element_type is None:
         return fallback
-    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", values))
-    value_schema: dict[str, Any] = schema.get("items", {})
-    return schema_to_opener(value_schema) or fallback
+    return type_to_opener(element_type) or fallback
 
 
 @beartype
 def typed_dict_open(
     *,
-    schema_to_opener: Callable[[dict[str, Any]], str | None],
+    type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
 ) -> Callable[[dict[str, Value]], str]:
-    """Return a ``dict_open`` callable that infers a value schema and
-    delegates to *schema_to_opener*.
+    """Return a ``dict_open`` callable that infers a common value type
+    and delegates to *type_to_opener*.
 
-    When inference is not possible or *schema_to_opener* returns
+    When inference is not possible or *type_to_opener* returns
     ``None``, *fallback* is used instead.
 
     Example::
 
-        def my_opener(value_schema: dict[str, Any]) -> str | None:
-            if value_schema.get("type") == "string":
+        def my_opener(element_type: type | ListType) -> str | None:
+            if element_type is str:
                 return "map[string]string{"
             return None
 
         dict_open = typed_dict_open(
-            schema_to_opener=my_opener,
+            type_to_opener=my_opener,
             fallback="map[string]any{",
         )
     """
     return functools.partial(
         _typed_dict_open,
-        schema_to_opener=schema_to_opener,
+        type_to_opener=type_to_opener,
         fallback=fallback,
     )

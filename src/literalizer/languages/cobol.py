@@ -4,7 +4,6 @@ import datetime
 import enum
 import re
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,9 +22,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 _COBOL_CONTROL_CHAR_REPLACEMENTS: dict[str, str] = {
     "\n": " ",
@@ -105,13 +102,13 @@ def _bump_levels(content: str) -> str:
     result: list[str] = []
     for line in lines:
         m = re.match(pattern=r"^(\s*)(\d{2})(\s)", string=line)
-        if m:
-            new_level = min(int(m.group(2)) + 5, _MAX_COBOL_LEVEL)
-            result.append(
-                f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
-            )
-        else:  # pragma: no cover
-            result.append(line)
+        if not m:
+            msg = f"Expected COBOL level-number line, got: {line!r}"
+            raise ValueError(msg)
+        new_level = min(int(m.group(2)) + 5, _MAX_COBOL_LEVEL)
+        result.append(
+            f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
+        )
     return "\n".join(result)
 
 
@@ -141,10 +138,7 @@ def _key_to_cobol_name(key_str: str) -> str:
     reserved words.  The result is truncated to 28 characters (leaving
     room for the prefix).
     """
-    if key_str.startswith('"') and key_str.endswith('"'):
-        name = key_str[1:-1].replace('""', '"')
-    else:  # pragma: no cover
-        name = key_str
+    name = key_str[1:-1].replace('""', '"')
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
@@ -181,7 +175,7 @@ def _to_cobol_name(python_name: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a COBOL 01-level variable declaration.
 
     Scalars become an elementary 01-level item; collections become a
@@ -197,7 +191,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a COBOL PROCEDURE DIVISION assignment statement.
 
     Scalars use a ``MOVE … TO …`` statement; complex group items use
@@ -366,10 +360,10 @@ class Cobol(metaclass=LanguageCls):
         self.element_separator = "\n"
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

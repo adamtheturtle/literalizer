@@ -1,4 +1,3 @@
-Imports System.Collections.Generic
 Module Check
     Dim my_data = New String() {
         "C:\path\to\file",

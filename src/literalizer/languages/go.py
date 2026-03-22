@@ -3,16 +3,16 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
-    format_date_go,
-    format_datetime_go,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     typed_dict_open,
     typed_sequence_open,
@@ -25,54 +25,70 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-_GO_SCALAR_TYPES: dict[str, str] = {
-    "string": "string",
-    "boolean": "bool",
-    "integer": "int",
-    "number": "float64",
+_GO_MONTHS: dict[int, str] = {
+    1: "time.January",
+    2: "time.February",
+    3: "time.March",
+    4: "time.April",
+    5: "time.May",
+    6: "time.June",
+    7: "time.July",
+    8: "time.August",
+    9: "time.September",
+    10: "time.October",
+    11: "time.November",
+    12: "time.December",
 }
 
 
 @beartype
-def _go_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Go type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _GO_SCALAR_TYPES:
-            return _GO_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _go_schema_to_type(item_schema=nested)
-            return f"[]{inner}" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "float64"
-    return None
+def _format_date_go(value: datetime.date) -> str:
+    """Format a date as a Go ``time.Date(...)`` call."""
+    month = _GO_MONTHS[value.month]
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, 0, 0, 0, 0, time.UTC)"
+    )
 
 
 @beartype
-def _go_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Go slice opener."""
-    type_name = _go_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"[]{type_name}{{"
+def _format_datetime_go(value: datetime.datetime) -> str:
+    """Format a datetime as a Go ``time.Date(...)`` call."""
+    month = _GO_MONTHS[value.month]
+    nanos = value.microsecond * 1000
+    return (
+        f"time.Date({value.year}, {month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f"{nanos}, time.UTC)"
+    )
 
 
-@beartype
-def _go_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a Go map opener."""
-    type_name = _go_schema_to_type(item_schema=value_schema)
-    if type_name is None:
-        return None
-    return f"map[string]{type_name}{{"
+_GO_SCALAR_TYPES: dict[type, str] = {
+    str: "string",
+    bool: "bool",
+    int: "int",
+    float: "float64",
+    MixedNumeric: "float64",
+    bytes: "string",
+    datetime.date: "time.Time",
+    datetime.datetime: "time.Time",
+}
+
+_go_element_to_type = make_element_to_type(
+    scalar_types=_GO_SCALAR_TYPES,
+    list_template="[]{inner}",
+)
+
+_go_type_to_opener = make_type_to_opener(
+    element_to_type=_go_element_to_type,
+    opener_template="[]{type_name}{{",
+)
+
+_go_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_go_element_to_type,
+    opener_template="map[string]{type_name}{{",
+)
 
 
 @beartype
@@ -100,13 +116,13 @@ def _preamble(code: str) -> Sequence[str]:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Go variable declaration."""
     return f"{name} := {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Go variable assignment."""
     return f"{name} = {value}"
 
@@ -135,7 +151,7 @@ class Go(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Go."""
 
-        GO = enum.member(value=format_date_go)
+        GO = enum.member(value=_format_date_go)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -144,7 +160,7 @@ class Go(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Go."""
 
-        GO = enum.member(value=format_datetime_go)
+        GO = enum.member(value=_format_datetime_go)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -164,7 +180,7 @@ class Go(metaclass=LanguageCls):
 
         SLICE = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_go_schema_to_opener,
+                type_to_opener=_go_type_to_opener,
                 fallback="[]any{",
             ),
             close="}",
@@ -240,7 +256,7 @@ class Go(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_go_dict_schema_to_opener,
+                type_to_opener=_go_dict_type_to_opener,
                 fallback="map[string]any{",
             ),
             close="}",
@@ -274,10 +290,10 @@ class Go(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

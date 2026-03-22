@@ -3,17 +3,17 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_dart,
-    format_datetime_dart,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -27,54 +27,46 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
-_DART_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "bool",
-    "integer": "int",
-    "number": "double",
+@beartype
+def _format_date_dart(value: datetime.date) -> str:
+    """Format a date as a Dart ``DateTime.parse(...)`` call."""
+    return f'DateTime.parse("{value.isoformat()}")'
+
+
+@beartype
+def _format_datetime_dart(value: datetime.datetime) -> str:
+    """Format a datetime as a Dart ``DateTime.parse(...)`` call."""
+    return f'DateTime.parse("{value.isoformat()}")'
+
+
+_DART_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "bool",
+    int: "int",
+    float: "double",
+    MixedNumeric: "double",
+    bytes: "String",
+    datetime.date: "DateTime",
+    datetime.datetime: "DateTime",
 }
 
+_dart_element_to_type = make_element_to_type(
+    scalar_types=_DART_SCALAR_TYPES,
+    list_template="List<{inner}>",
+)
 
-@beartype
-def _dart_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Dart type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _DART_SCALAR_TYPES:
-            return _DART_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _dart_schema_to_type(item_schema=nested)
-            return f"List<{inner}>" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "double"
-    return None
+_dart_type_to_opener = make_type_to_opener(
+    element_to_type=_dart_element_to_type,
+    opener_template="<{type_name}>[",
+)
 
-
-@beartype
-def _dart_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Dart list opener."""
-    type_name = _dart_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"<{type_name}>["
-
-
-@beartype
-def _dart_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a Dart map opener."""
-    type_name = _dart_schema_to_type(item_schema=value_schema)
-    if type_name is None:
-        return None
-    return f"<String, {type_name}>{{"
+_dart_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_dart_element_to_type,
+    opener_template="<String, {type_name}>{{",
+)
 
 
 @beartype
@@ -84,13 +76,13 @@ def _format_dart_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Dart variable declaration."""
     return f"final {name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Dart variable assignment."""
     return f"{name} = {value};"
 
@@ -123,7 +115,7 @@ class Dart(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 
-        DART = enum.member(value=format_date_dart)
+        DART = enum.member(value=_format_date_dart)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -132,7 +124,7 @@ class Dart(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        DART = enum.member(value=format_datetime_dart)
+        DART = enum.member(value=_format_datetime_dart)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -152,7 +144,7 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_dart_schema_to_opener,
+                type_to_opener=_dart_type_to_opener,
                 fallback="[",
             ),
             close="]",
@@ -235,7 +227,7 @@ class Dart(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_dart_dict_schema_to_opener,
+                type_to_opener=_dart_dict_type_to_opener,
                 fallback="{",
             ),
             close="}",
@@ -270,10 +262,10 @@ class Dart(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

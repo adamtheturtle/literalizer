@@ -3,17 +3,17 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    ListType,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_kotlin,
-    format_datetime_kotlin,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -27,70 +27,75 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
-_KOTLIN_SCALAR_OPENERS: dict[str, str] = {
-    "string": "arrayOf(",
-    "boolean": "booleanArrayOf(",
-    "integer": "intArrayOf(",
-    "number": "doubleArrayOf(",
+@beartype
+def _format_date_kotlin(value: datetime.date) -> str:
+    """Format a date as a Kotlin ``LocalDate.of(...)`` call."""
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_kotlin(value: datetime.datetime) -> str:
+    """Format a datetime as a Kotlin ``LocalDateTime.of(...)`` call."""
+    return (
+        f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+_KOTLIN_SCALAR_OPENERS: dict[type, str] = {
+    str: "arrayOf(",
+    bool: "booleanArrayOf(",
+    int: "intArrayOf(",
+    float: "doubleArrayOf(",
+    bytes: "arrayOf(",
+    datetime.date: "arrayOf(",
+    datetime.datetime: "arrayOf(",
 }
 
 
 @beartype
-def _kotlin_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Kotlin collection opener."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _KOTLIN_SCALAR_OPENERS:
-            return _KOTLIN_SCALAR_OPENERS[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _kotlin_schema_to_opener(item_schema=nested)
-            return "arrayOf(" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "listOf<Any?>("
-    return None
-
-
-_KOTLIN_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "Boolean",
-    "integer": "Int",
-    "number": "Double",
-}
+def _kotlin_tuple_open(items: list[Value]) -> str:
+    """Return the Kotlin tuple opener based on element count."""
+    openers: dict[int, str] = {
+        2: "Pair(",
+        3: "Triple(",
+    }
+    return openers.get(len(items), "listOf<Any?>(")
 
 
 @beartype
-def _kotlin_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Kotlin type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _KOTLIN_SCALAR_TYPES:
-            return _KOTLIN_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _kotlin_schema_to_type(item_schema=nested)
-            return f"Array<{inner}>" if inner is not None else None
-        return None
-    return None
-
-
-@beartype
-def _kotlin_dict_schema_to_opener(
-    value_schema: dict[str, Any],
+def _kotlin_type_to_opener(
+    element_type: type | ListType,
 ) -> str | None:
-    """Map a JSON Schema value type to a Kotlin map opener."""
-    type_name = _kotlin_schema_to_type(item_schema=value_schema)
-    if type_name is None:
-        return None
-    return f"mapOf<String, {type_name}>("
+    """Map a Python element type to a Kotlin collection opener."""
+    if isinstance(element_type, ListType):
+        inner = _kotlin_type_to_opener(element_type=element_type.inner)
+        return "arrayOf(" if inner is not None else None
+    return _KOTLIN_SCALAR_OPENERS.get(element_type)
+
+
+_KOTLIN_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "Boolean",
+    int: "Int",
+    float: "Double",
+    bytes: "String",
+    datetime.date: "LocalDate",
+    datetime.datetime: "LocalDateTime",
+}
+
+_kotlin_element_to_type = make_element_to_type(
+    scalar_types=_KOTLIN_SCALAR_TYPES,
+    list_template="Array<{inner}>",
+)
+
+_kotlin_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_kotlin_element_to_type,
+    opener_template="mapOf<String, {type_name}>(",
+)
 
 
 @beartype
@@ -111,13 +116,13 @@ def _preamble(code: str) -> Sequence[str]:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Kotlin variable declaration."""
     return f"val {name} = {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Kotlin variable assignment."""
     return f"{name} = {value}"
 
@@ -136,6 +141,16 @@ class Kotlin(metaclass=LanguageCls):
 
             * ``datetime_formats.KOTLIN`` — ``LocalDateTime.of(...)`` call,
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
+
+        sequence_format: Which Kotlin sequence type to use.
+
+            * ``sequence_formats.LIST`` — typed array calls
+              (e.g. ``intArrayOf(1, 2, 3)``).  Heterogeneous
+              sequences fall back to ``listOf<Any?>(…)``.
+            * ``sequence_formats.TUPLE`` — ``Pair(…)`` for two-element
+              sequences, ``Triple(…)`` for three-element sequences,
+              e.g. ``Pair("a", 1)``.  Other sizes fall back to
+              ``listOf<Any?>(…)``.
     """
 
     extension = ".kts"
@@ -144,7 +159,7 @@ class Kotlin(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Kotlin."""
 
-        KOTLIN = enum.member(value=format_date_kotlin)
+        KOTLIN = enum.member(value=_format_date_kotlin)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -153,7 +168,7 @@ class Kotlin(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Kotlin."""
 
-        KOTLIN = enum.member(value=format_datetime_kotlin)
+        KOTLIN = enum.member(value=_format_datetime_kotlin)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -173,7 +188,7 @@ class Kotlin(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_kotlin_schema_to_opener,
+                type_to_opener=_kotlin_type_to_opener,
                 fallback="listOf<Any?>(",
             ),
             close=")",
@@ -183,6 +198,13 @@ class Kotlin(metaclass=LanguageCls):
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="arrayOf<Any?>("),
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
+        TUPLE = SequenceFormatConfig(
+            sequence_open=_kotlin_tuple_open,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -256,7 +278,7 @@ class Kotlin(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_kotlin_dict_schema_to_opener,
+                type_to_opener=_kotlin_dict_type_to_opener,
                 fallback="mapOf<String, Any?>(",
             ),
             close=")",
@@ -292,10 +314,10 @@ class Kotlin(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

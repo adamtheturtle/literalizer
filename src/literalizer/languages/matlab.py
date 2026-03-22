@@ -4,7 +4,6 @@ import datetime
 import enum
 import re
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -14,7 +13,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_matlab,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -26,9 +24,36 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+_MATLAB_CONTROL_CHAR_THRESHOLD = 32
+
+
+@beartype
+def _format_string_matlab(value: str) -> str:
+    r"""Format a string using MATLAB double-quoted string escaping rules.
+
+    MATLAB double-quoted strings (the ``string`` type) interpret backslash
+    escape sequences: ``\\`` for a literal backslash, ``\n`` for newline,
+    ``\t`` for tab, etc.  Double quotes are escaped by doubling (``""``).
+    Control characters (code points 0-31) are emitted as ``char(N)``
+    expressions joined with ``+``.
+    """
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if len(segment) == 1 and ord(segment) < _MATLAB_CONTROL_CHAR_THRESHOLD:
+            parts.append(f"char({ord(segment)})")
+        else:
+            escaped = segment.replace("\\", "\\\\").replace('"', '""')
+            parts.append(f'"{escaped}"')
+    if not parts:
+        return '""'
+    if len(parts) == 1:
+        return parts[0]
+    return " + ".join(parts)
+
 
 _CONTROL_CHAR_THRESHOLD = 32
 
@@ -102,18 +127,18 @@ def _format_matlab_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a MATLAB variable declaration."""
     return f"{name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a MATLAB variable assignment."""
     return f"{name} = {value};"
 
 
-_string_format: Callable[[str], str] = format_string_matlab
+_string_format: Callable[[str], str] = _format_string_matlab
 
 
 @beartype
@@ -264,10 +289,10 @@ class Matlab(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

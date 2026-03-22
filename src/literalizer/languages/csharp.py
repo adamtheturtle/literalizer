@@ -3,16 +3,16 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_csharp,
-    format_datetime_csharp,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -26,54 +26,49 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
-_CSHARP_SCALAR_TYPES: dict[str, str] = {
-    "string": "string",
-    "boolean": "bool",
-    "integer": "int",
-    "number": "double",
+@beartype
+def _format_date_csharp(value: datetime.date) -> str:
+    """Format a date as a C# ``new DateOnly(...)`` call."""
+    return f"new DateOnly({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_csharp(value: datetime.datetime) -> str:
+    """Format a datetime as a C# ``new DateTime(...)`` call."""
+    return (
+        f"new DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+_CSHARP_SCALAR_TYPES: dict[type, str] = {
+    str: "string",
+    bool: "bool",
+    int: "int",
+    float: "double",
+    MixedNumeric: "double",
+    bytes: "string",
+    datetime.date: "DateOnly",
+    datetime.datetime: "DateTime",
 }
 
+_csharp_element_to_type = make_element_to_type(
+    scalar_types=_CSHARP_SCALAR_TYPES,
+    list_template="{inner}[]",
+)
 
-@beartype
-def _csharp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a C# type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _CSHARP_SCALAR_TYPES:
-            return _CSHARP_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _csharp_schema_to_type(item_schema=nested)
-            return f"{inner}[]" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "double"
-    return None
+_csharp_type_to_opener = make_type_to_opener(
+    element_to_type=_csharp_element_to_type,
+    opener_template="new {type_name}[] {{",
+)
 
-
-@beartype
-def _csharp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a C# array opener."""
-    type_name = _csharp_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"new {type_name}[] {{"
-
-
-@beartype
-def _csharp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a C# dictionary opener."""
-    type_name = _csharp_schema_to_type(item_schema=value_schema)
-    if type_name is None:
-        return None
-    return f"new Dictionary<string, {type_name}> {{"
+_csharp_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_csharp_element_to_type,
+    opener_template="new Dictionary<string, {type_name}> {{",
+)
 
 
 @beartype
@@ -85,19 +80,22 @@ def _format_csharp_dict_entry(key: str, value: str) -> str:
 @beartype
 def _preamble(code: str) -> Sequence[str]:
     """Return preamble lines for the generated code."""
+    lines: list[str] = []
     if "DateOnly" in code or "DateTime" in code:
-        return ["using System;"]
-    return []
+        lines.append("using System;")
+    if "Dictionary" in code or "List<" in code:
+        lines.append("using System.Collections.Generic;")
+    return lines
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a C# variable declaration."""
     return f"var {name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a C# variable assignment."""
     return f"{name} = {value};"
 
@@ -124,7 +122,7 @@ class CSharp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for C#."""
 
-        CSHARP = enum.member(value=format_date_csharp)
+        CSHARP = enum.member(value=_format_date_csharp)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -133,7 +131,7 @@ class CSharp(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C#."""
 
-        CSHARP = enum.member(value=format_datetime_csharp)
+        CSHARP = enum.member(value=_format_datetime_csharp)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -160,7 +158,7 @@ class CSharp(metaclass=LanguageCls):
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_csharp_schema_to_opener,
+                type_to_opener=_csharp_type_to_opener,
                 fallback="new object[] {",
             ),
             close="}",
@@ -236,7 +234,7 @@ class CSharp(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_csharp_dict_schema_to_opener,
+                type_to_opener=_csharp_dict_type_to_opener,
                 fallback="new Dictionary<string, object> {",
             ),
             close="}",
@@ -270,10 +268,10 @@ class CSharp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

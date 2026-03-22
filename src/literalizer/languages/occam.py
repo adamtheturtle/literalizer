@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,9 +22,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @beartype
@@ -45,15 +42,8 @@ def _to_val(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"MOBILE LIT(lit.float; {value}(REAL32))"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"MOBILE LIT(lit.float; {value}(REAL32))"
 
 
 @beartype
@@ -83,13 +73,13 @@ def _format_occam_set_entry(item: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an occam-pi variable declaration."""
     return f"VAL MOBILE LIT {name} IS {value}:"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an occam-pi variable assignment."""
     return f"{name} := {value}"
 
@@ -99,7 +89,12 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
+    """Return preamble lines for the generated code.
+
+    The ``LIT`` mobile data type used by the generated output is
+    user-defined and must appear before any PROC that uses it, so it
+    is not part of the preamble.
+    """
     return ()
 
 
@@ -246,10 +241,10 @@ class Occam(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

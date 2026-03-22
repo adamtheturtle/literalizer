@@ -80,10 +80,6 @@ def _wrap_cpp(content: str) -> str:
     return (
         f"{array}"
         "#include <initializer_list>\n"
-        "#include <cstddef>\n"
-        "#include <map>\n"
-        "#include <string>\n"
-        "#include <vector>\n"
         "struct _Any {\n"
         "    template<class T> _Any(T&&) noexcept {}\n"
         "    _Any(std::initializer_list<_Any>) noexcept {}\n"
@@ -104,10 +100,8 @@ def _wrap_swift(content: str) -> str:
 
 @beartype
 def _wrap_csharp(content: str) -> str:
-    """Wrap in C# using statement and variable assignment."""
-    return f"""\
-using System.Collections.Generic;
-var x = {content};"""
+    """Wrap in C# variable assignment."""
+    return f"var x = {content};"
 
 
 @beartype
@@ -156,13 +150,37 @@ _OCCAM_LIT_TYPE = (
     ":"
 )
 
+_HASKELL_ADT = (
+    "import Data.String (IsString(fromString))\n"
+    "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
+    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+    "instance IsString Val where\n"
+    "    fromString = HStr\n"
+    "instance Num Val where\n"
+    "    fromInteger = HInt\n"
+    '    a + b = error "not implemented"\n'
+    '    a * b = error "not implemented"\n'
+    '    abs a = error "not implemented"\n'
+    '    signum a = error "not implemented"\n'
+    "    negate (HInt n) = HInt (negate n)\n"
+    "    negate (HFloat f) = HFloat (negate f)\n"
+    '    negate _ = error "not implemented"\n'
+    "instance Fractional Val where\n"
+    "    fromRational r = HFloat (realToFrac r)\n"
+    '    a / b = error "not implemented"\n'
+)
+
 
 @beartype
 def _wrap_fsharp(content: str) -> str:
-    """Wrap in an F# module with a custom Val discriminated union."""
+    """Wrap in an F# module with a Val assignment."""
     fsharp = literalizer.languages.FSharp()
-    typed = fsharp.format_sequence_entry(content)
-    val_type = "Val array" if content.lstrip().startswith("[|") else "Val"
+    if content.lstrip().startswith("[|"):
+        val_type = "Val array"
+        typed = content
+    else:
+        val_type = "Val"
+        typed = fsharp.format_sequence_entry(content)
     return (
         "module Check\n\n"
         + _FSHARP_VAL_TYPE
@@ -173,10 +191,14 @@ def _wrap_fsharp(content: str) -> str:
 
 @beartype
 def _wrap_ocaml(content: str) -> str:
-    """Wrap in an OCaml module with a custom val_t variant type."""
+    """Wrap in an OCaml module with a val_t assignment."""
     ocaml = literalizer.languages.OCaml()
-    typed = ocaml.format_sequence_entry(content)
-    val_type = "val_t array" if content.lstrip().startswith("[|") else "val_t"
+    if content.lstrip().startswith("[|"):
+        val_type = "val_t array"
+        typed = content
+    else:
+        val_type = "val_t"
+        typed = ocaml.format_sequence_entry(content)
     return (
         "module Check = struct\n\n"
         + _OCAML_VAL_TYPE
@@ -188,9 +210,7 @@ def _wrap_ocaml(content: str) -> str:
 
 @beartype
 def _wrap_ocaml_varname(content: str) -> str:
-    """Wrap an OCaml ``let`` declaration with the val_t type
-    definition.
-    """
+    """Wrap an OCaml ``let`` declaration in a module."""
     return (
         "module Check = struct\n\n"
         + _OCAML_VAL_TYPE
@@ -202,7 +222,7 @@ def _wrap_ocaml_varname(content: str) -> str:
 
 @beartype
 def _wrap_occam(content: str) -> str:
-    """Wrap in an occam-pi PROC with a custom ``LIT`` mobile data type."""
+    """Wrap in an occam-pi PROC."""
     occam = literalizer.languages.Occam()
     typed = occam.format_sequence_entry(content)
     return (
@@ -218,9 +238,7 @@ def _wrap_occam(content: str) -> str:
 
 @beartype
 def _wrap_occam_varname(content: str) -> str:
-    """Wrap an occam-pi ``VAL`` declaration in a PROC with the LIT
-    type.
-    """
+    """Wrap an occam-pi ``VAL`` declaration in a PROC."""
     indented = "  " + content.replace("\n", "\n  ")
     return (
         _OCCAM_LIT_TYPE
@@ -236,35 +254,16 @@ def _wrap_occam_varname(content: str) -> str:
 
 @beartype
 def _wrap_fsharp_varname(content: str) -> str:
-    """Wrap a F# ``let`` declaration with the Val type definition."""
+    """Wrap an F# ``let`` declaration in a module."""
     return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
 
 
 @beartype
 def _wrap_haskell(content: str) -> str:
-    """Wrap in a Haskell module with a custom Val ADT that accepts mixed
-    types.
-    """
+    """Wrap in a Haskell module with a Val binding."""
     return (
-        "{-# LANGUAGE OverloadedStrings #-}\n"
         "module Check where\n"
-        "import Data.String (IsString(fromString))\n"
-        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
-        "instance IsString Val where\n"
-        "    fromString = HStr\n"
-        "instance Num Val where\n"
-        "    fromInteger = HInt\n"
-        '    a + b = error "not implemented"\n'
-        '    a * b = error "not implemented"\n'
-        '    abs a = error "not implemented"\n'
-        '    signum a = error "not implemented"\n'
-        "    negate (HInt n) = HInt (negate n)\n"
-        "    negate (HFloat f) = HFloat (negate f)\n"
-        '    negate _ = error "not implemented"\n'
-        "instance Fractional Val where\n"
-        "    fromRational r = HFloat (realToFrac r)\n"
-        '    a / b = error "not implemented"\n'
+        + _HASKELL_ADT
         + (
             f"x = {content}"
             if content.lstrip().startswith("(")
@@ -302,8 +301,8 @@ def _wrap_java_varname(content: str) -> str:
 
 @beartype
 def _wrap_csharp_varname(content: str) -> str:
-    """Wrap a C# top-level variable declaration with required imports."""
-    return f"using System.Collections.Generic;\n{content}"
+    """Wrap a C# top-level variable declaration."""
+    return content
 
 
 @beartype
@@ -336,10 +335,6 @@ def _wrap_cpp_varname(content: str) -> str:
     return (
         f"{array}"
         "#include <initializer_list>\n"
-        "#include <cstddef>\n"
-        "#include <map>\n"
-        "#include <string>\n"
-        "#include <vector>\n"
         "struct _Any {\n"
         "    template<class T> _Any(T&&) noexcept {}\n"
         "    _Any(std::initializer_list<_Any>) noexcept {}\n"
@@ -412,7 +407,7 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 
 @beartype
 def _wrap_racket(content: str) -> str:
-    """Wrap in a Racket #lang racket module.
+    """Wrap Racket content with trailing whitespace stripped.
 
     Trailing whitespace is stripped from each line because the
     ``(list ``/``(hash ``/``(set `` opening delimiters produce a
@@ -420,16 +415,14 @@ def _wrap_racket(content: str) -> str:
     ``trim trailing whitespace`` pre-commit hook removes from the
     committed golden files.
     """
-    cleaned = "\n".join(line.rstrip() for line in content.splitlines())
-    return f"#lang racket\n{cleaned}"
+    return "\n".join(line.rstrip() for line in content.splitlines())
 
 
 @beartype
 def _wrap_racket_combined(declaration: str, assignment: str) -> str:
-    """Wrap Racket declaration and assignment in a #lang racket module."""
+    """Wrap Racket declaration and assignment."""
     combined = f"{declaration}\n{assignment}"
-    cleaned = "\n".join(line.rstrip() for line in combined.splitlines())
-    return f"#lang racket\n{cleaned}"
+    return "\n".join(line.rstrip() for line in combined.splitlines())
 
 
 @beartype
@@ -440,8 +433,8 @@ def _wrap_perl(content: str) -> str:
 
 @beartype
 def _wrap_php(content: str) -> str:
-    """Wrap in a PHP script variable assignment."""
-    return f"<?php\n$x = {content};"
+    """Wrap in a PHP variable assignment."""
+    return f"$x = {content};"
 
 
 @beartype
@@ -599,61 +592,29 @@ def _wrap_powershell(content: str) -> str:
     return f"$x = {content}"
 
 
-_C_PREAMBLE = (
-    "#include <stdbool.h>\n"
-    "#include <stddef.h>\n"
-    "typedef struct _CVal _CVal;\n"
-    "typedef struct _CKV _CKV;\n"
-    "struct _CVal {\n"
-    "    union {\n"
-    "        _Bool b;\n"
-    "        long long i;\n"
-    "        double f;\n"
-    "        const char *s;\n"
-    "        const _CVal *a;\n"
-    "        const _CKV *m;\n"
-    "    };\n"
-    "};\n"
-    "struct _CKV { const char *k; _CVal v; };\n"
-)
-
-
 @beartype
 def _wrap_c(content: str) -> str:
-    """Wrap in a C function with the _CVal/_CKV type definitions."""
+    """Wrap in a C function."""
     c_lang = literalizer.languages.C()
     typed = c_lang.format_sequence_entry(content)
-    return (
-        _C_PREAMBLE
-        + "void _check(void) {\n"
-        + f"    _CVal _v = {typed};\n"
-        + "    (void)_v;\n"
-        + "}"
-    )
+    return f"void _check(void) {{\n    _CVal _v = {typed};\n    (void)_v;\n}}"
 
 
 @beartype
 def _wrap_c_varname(content: str) -> str:
-    """Wrap a C _CVal declaration in a function with type definitions."""
-    return (
-        _C_PREAMBLE
-        + "void _check(void) {\n"
-        + f"{content}\n"
-        + f"    (void){_VARIABLE_NAME};\n"
-        + "}"
-    )
+    """Wrap a C _CVal declaration in a function."""
+    return f"void _check(void) {{\n{content}\n    (void){_VARIABLE_NAME};\n}}"
 
 
 @beartype
 def _wrap_c_combined(declaration: str, assignment: str) -> str:
     """Wrap C declaration and assignment together in one function."""
     return (
-        _C_PREAMBLE
-        + "void _check(void) {\n"
-        + f"{declaration}\n"
-        + f"{assignment}\n"
-        + f"    (void){_VARIABLE_NAME};\n"
-        + "}"
+        "void _check(void) {\n"
+        f"{declaration}\n"
+        f"{assignment}\n"
+        f"    (void){_VARIABLE_NAME};\n"
+        "}"
     )
 
 
@@ -663,43 +624,27 @@ def _wrap_matlab(content: str) -> str:
     return f"x = {content};"
 
 
-_OBJC_PREAMBLE = "#import <Foundation/Foundation.h>\n"
-
-
 @beartype
 def _wrap_objc(content: str) -> str:
-    """Wrap in an Objective-C function with Foundation import."""
-    return (
-        _OBJC_PREAMBLE
-        + "void _check(void) {\n"
-        + f"    id _v = {content};\n"
-        + "    (void)_v;\n"
-        + "}"
-    )
+    """Wrap in an Objective-C function."""
+    return f"void _check(void) {{\n    id _v = {content};\n    (void)_v;\n}}"
 
 
 @beartype
 def _wrap_objc_varname(content: str) -> str:
     """Wrap an Objective-C variable declaration in a function."""
-    return (
-        _OBJC_PREAMBLE
-        + "void _check(void) {\n"
-        + f"{content}\n"
-        + f"    (void){_VARIABLE_NAME};\n"
-        + "}"
-    )
+    return f"void _check(void) {{\n{content}\n    (void){_VARIABLE_NAME};\n}}"
 
 
 @beartype
 def _wrap_objc_combined(declaration: str, assignment: str) -> str:
     """Wrap Objective-C declaration and assignment in a function."""
     return (
-        _OBJC_PREAMBLE
-        + "void _check(void) {\n"
-        + f"{declaration}\n"
-        + f"{assignment}\n"
-        + f"    (void){_VARIABLE_NAME};\n"
-        + "}"
+        "void _check(void) {\n"
+        f"{declaration}\n"
+        f"{assignment}\n"
+        f"    (void){_VARIABLE_NAME};\n"
+        "}"
     )
 
 
@@ -759,67 +704,32 @@ def _wrap_rust_varname(content: str) -> str:
 
 @beartype
 def _wrap_haskell_varname(content: str) -> str:
-    """Wrap a Haskell variable binding in module boilerplate."""
+    """Wrap a Haskell variable binding in a module."""
     return (
-        "{-# LANGUAGE OverloadedStrings #-}\n"
         "module Check where\n"
-        "import Data.String (IsString(fromString))\n"
-        "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-        " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
-        "instance IsString Val where\n"
-        "    fromString = HStr\n"
-        "instance Num Val where\n"
-        "    fromInteger = HInt\n"
-        '    a + b = error "not implemented"\n'
-        '    a * b = error "not implemented"\n'
-        '    abs a = error "not implemented"\n'
-        '    signum a = error "not implemented"\n'
-        "    negate (HInt n) = HInt (negate n)\n"
-        "    negate (HFloat f) = HFloat (negate f)\n"
-        '    negate _ = error "not implemented"\n'
-        "instance Fractional Val where\n"
-        "    fromRational r = HFloat (realToFrac r)\n"
-        '    a / b = error "not implemented"\n'
-        f"{_VARIABLE_NAME} :: Val\n"
-        f"{content}"
+        + _HASKELL_ADT
+        + f"{_VARIABLE_NAME} :: Val\n"
+        + f"{content}"
     )
 
 
 @beartype
 def _wrap_php_varname(content: str) -> str:
-    """Wrap a PHP variable assignment in a PHP script."""
-    return f"<?php\n{content}"
-
-
-_ZIG_PREAMBLE = (
-    "const ZVal = union(enum) {\n"
-    "    nil,\n"
-    "    bool: bool,\n"
-    "    int: i64,\n"
-    "    float: f64,\n"
-    "    str: []const u8,\n"
-    "    arr: []const ZVal,\n"
-    "    map: []const ZKV,\n"
-    "    set: []const ZVal,\n"
-    "};\n"
-    "const ZKV = struct { key: []const u8, val: ZVal };\n"
-)
+    """Wrap a PHP variable assignment."""
+    return content
 
 
 @beartype
 def _wrap_zig(content: str) -> str:
-    """Wrap in a Zig main function with ``ZVal``/``ZKV`` type
-    definitions.
-    """
+    """Wrap in a Zig main function."""
     zig = literalizer.languages.Zig()
     typed = zig.format_sequence_entry(content)
     indented = typed.replace("\n", "\n    ")
     return (
-        _ZIG_PREAMBLE
-        + "pub fn main() void {\n"
-        + f"    const v: ZVal = {indented};\n"
-        + "    _ = v;\n"
-        + "}"
+        "pub fn main() void {\n"
+        f"    const v: ZVal = {indented};\n"
+        "    _ = v;\n"
+        "}"
     )
 
 
@@ -827,13 +737,7 @@ def _wrap_zig(content: str) -> str:
 def _wrap_zig_varname(content: str) -> str:
     """Wrap a Zig ``const`` declaration in a main function."""
     indented = "    " + content.replace("\n", "\n    ")
-    return (
-        _ZIG_PREAMBLE
-        + "pub fn main() void {\n"
-        + f"{indented}\n"
-        + f"    _ = {_VARIABLE_NAME};\n"
-        + "}"
-    )
+    return f"pub fn main() void {{\n{indented}\n    _ = {_VARIABLE_NAME};\n}}"
 
 
 @beartype
@@ -844,17 +748,16 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
     decl_indented = "        " + declaration.replace("\n", "\n        ")
     assign_indented = "    " + assignment.replace("\n", "\n    ")
     return (
-        _ZIG_PREAMBLE
-        + "pub fn main() void {\n"
-        + "    {\n"
-        + f"{decl_indented}\n"
-        + f"        _ = {_VARIABLE_NAME};\n"
-        + "    }\n"
-        + f"    var {_VARIABLE_NAME}: ZVal = undefined;\n"
-        + f"{assign_indented}\n"
-        + f"    const _{_VARIABLE_NAME}_read = {_VARIABLE_NAME};\n"
-        + f"    _ = _{_VARIABLE_NAME}_read;\n"
-        + "}"
+        "pub fn main() void {\n"
+        "    {\n"
+        f"{decl_indented}\n"
+        f"        _ = {_VARIABLE_NAME};\n"
+        "    }\n"
+        f"    var {_VARIABLE_NAME}: ZVal = undefined;\n"
+        f"{assign_indented}\n"
+        f"    const _{_VARIABLE_NAME}_read = {_VARIABLE_NAME};\n"
+        f"    _ = _{_VARIABLE_NAME}_read;\n"
+        "}"
     )
 
 
@@ -942,44 +845,6 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     )
 
 
-_FORTRAN_PREAMBLE = (
-    "module fval_m\n"
-    "  implicit none\n"
-    "  type :: fval_t\n"
-    "    integer :: t = 0\n"
-    "  end type fval_t\n"
-    "contains\n"
-    "  function fnull() result(v)"
-    "; type(fval_t) :: v; end function\n"
-    "  function fbool(b) result(v)"
-    "; logical, intent(in) :: b"
-    "; type(fval_t) :: v; end function\n"
-    "  function fint(n) result(v)"
-    "; integer, intent(in) :: n"
-    "; type(fval_t) :: v; end function\n"
-    "  function freal(x) result(v)"
-    "; real, intent(in) :: x"
-    "; type(fval_t) :: v; end function\n"
-    "  function fstr(s) result(v)"
-    "; character(len=*), intent(in) :: s"
-    "; type(fval_t) :: v; end function\n"
-    "  function flist(a) result(v)"
-    "; type(fval_t), intent(in) :: a(:)"
-    "; type(fval_t) :: v; end function\n"
-    "  function fmap(a) result(v)"
-    "; type(fval_t), intent(in) :: a(:)"
-    "; type(fval_t) :: v; end function\n"
-    "  function fset(a) result(v)"
-    "; type(fval_t), intent(in) :: a(:)"
-    "; type(fval_t) :: v; end function\n"
-    "  function fentry(k, u) result(v)"
-    "; character(len=*), intent(in) :: k"
-    "; type(fval_t), intent(in) :: u"
-    "; type(fval_t) :: v; end function\n"
-    "end module fval_m\n"
-)
-
-
 @beartype
 def _fortran_comment_pos(line: str) -> int | None:
     """Return the index of the ``!`` comment in *line* outside strings."""
@@ -990,7 +855,7 @@ def _fortran_comment_pos(line: str) -> int | None:
         c = line[i]
         if c == "'" and not in_double_quote:
             next_also_quote = i + 1 < len(line) and line[i + 1] == "'"
-            if in_single_quote and next_also_quote:  # pragma: no cover
+            if in_single_quote and next_also_quote:
                 i += 2
                 continue
             in_single_quote = not in_single_quote
@@ -1039,7 +904,7 @@ def _wrap_fortran(content: str) -> str:
     typed = fortran.format_sequence_entry(content)
     continued = _add_fortran_continuation(content=typed)
     return (
-        _FORTRAN_PREAMBLE + "program check\n"
+        "program check\n"
         "  use fval_m\n"
         "  implicit none\n"
         "  type(fval_t) :: x\n"
@@ -1050,10 +915,10 @@ def _wrap_fortran(content: str) -> str:
 
 @beartype
 def _wrap_fortran_varname(content: str) -> str:
-    """Wrap a Fortran variable declaration in a self-contained program."""
+    """Wrap a Fortran variable declaration in a program."""
     indented = "  " + content.replace("\n", "\n  ")
     return (
-        _FORTRAN_PREAMBLE + "program check\n"
+        "program check\n"
         "  use fval_m\n"
         "  implicit none\n"
         f"{indented}\n"
@@ -1067,7 +932,7 @@ def _wrap_fortran_combined(declaration: str, assignment: str) -> str:
     decl_indented = "  " + declaration.replace("\n", "\n  ")
     assign_indented = "  " + assignment.replace("\n", "\n  ")
     return (
-        _FORTRAN_PREAMBLE + "subroutine check_declaration()\n"
+        "subroutine check_declaration()\n"
         "  use fval_m\n"
         "  implicit none\n"
         f"{decl_indented}\n"
@@ -1097,12 +962,6 @@ def _wrap_combined_newline(declaration: str, assignment: str) -> str:
 def _wrap_python(content: str) -> str:
     """Pass through Python content unchanged."""
     return content
-
-
-@beartype
-def _wrap_python_combined(declaration: str, assignment: str) -> str:
-    """Join declaration and assignment with a newline."""
-    return declaration + "\n" + assignment
 
 
 @beartype
@@ -1152,21 +1011,14 @@ def _wrap_vb(content: str) -> str:
     rest_indented = rest.replace("\n", "\n    ")
     dim_line = f"    Dim x As Object = {rest_indented}"
     body = "\n".join([*comment_lines, dim_line]) if comment_lines else dim_line
-    return (
-        f"Imports System.Collections.Generic\nModule Check\n{body}\nEnd Module"
-    )
+    return f"Module Check\n{body}\nEnd Module"
 
 
 @beartype
 def _wrap_vb_varname(content: str) -> str:
     """Wrap a VB.NET Dim declaration inside a Module."""
     indented = "    " + content.replace("\n", "\n    ")
-    return (
-        "Imports System.Collections.Generic\n"
-        "Module Check\n"
-        f"{indented}\n"
-        "End Module"
-    )
+    return f"Module Check\n{indented}\nEnd Module"
 
 
 @beartype
@@ -1175,7 +1027,6 @@ def _wrap_vb_combined(declaration: str, assignment: str) -> str:
     decl_indented = "        " + declaration.replace("\n", "\n        ")
     assign_indented = "        " + assignment.replace("\n", "\n        ")
     return (
-        "Imports System.Collections.Generic\n"
         "Module Check\n"
         "    Sub _declaration()\n"
         f"{decl_indented}\n"
@@ -1344,7 +1195,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Python,
         wrap=_wrap_python,
         varname_wrap=_wrap_python,
-        combined_wrap=_wrap_python_combined,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
@@ -1881,19 +1732,21 @@ def test_golden_file_combined_variable_forms(
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
-        (_build_date_variants(), "scalar_date", None),
-        (_build_datetime_variants(), "scalar_datetime", None),
-        (_build_sequence_variants(), "simple_sequence", None),
-        (_build_set_variants(), "set", None),
-        (_build_comment_variants(), "comments", None),
-        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME),
+    variant_sources: list[tuple[dict[str, _Variant], str, str | None, str]] = [
+        (_build_date_variants(), "scalar_date", None, ""),
+        (_build_datetime_variants(), "scalar_datetime", None, ""),
+        (_build_sequence_variants(), "simple_sequence", None, ""),
+        (_build_sequence_variants(), "pair_sequence", None, "_pair"),
+        (_build_sequence_variants(), "triple_sequence", None, "_triple"),
+        (_build_set_variants(), "set", None, ""),
+        (_build_comment_variants(), "comments", None, ""),
+        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME, ""),
     ]
-    for variants, case_dir_name, variable_name in variant_sources:
+    for variants, case_dir_name, variable_name, suffix in variant_sources:
         for variant_name, variant in variants.items():
             cases.append(
                 _VariantCase(
-                    variant_name=variant_name,
+                    variant_name=f"{variant_name}{suffix}",
                     variant=variant,
                     case_dir_name=case_dir_name,
                     variable_name=variable_name,
@@ -1977,3 +1830,12 @@ def test_format_enumeration_properties(
     assert len(spec.datetime_formats) >= 1
     assert issubclass(spec.comment_formats, enum.Enum)
     assert len(spec.comment_formats) >= 1
+
+
+def test_fortran_comment_pos_escaped_single_quote() -> None:
+    """Doubled single quotes inside a Fortran string are not treated as
+    the end of the string when locating ``!`` comments.
+    """
+    line = "fstr('it''s here')  ! note"
+    expected = 20
+    assert _fortran_comment_pos(line=line) == expected

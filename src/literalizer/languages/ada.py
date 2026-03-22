@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -13,7 +12,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_ada,
 )
 from literalizer._language import (
     CommentConfig,
@@ -23,9 +21,22 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _format_string_ada(value: str) -> str:
+    r"""Format a string using Ada double-quote escaping.
+
+    Ada has no backslash escaping — backslashes are literal characters.
+    Only double quotes are escaped, by doubling them (``""``).
+    Newlines and tabs are rendered as ``\n`` / ``\t`` for readability
+    since Ada string literals cannot span lines.
+    """
+    escaped = (
+        value.replace("\n", "\\n").replace("\t", "\\t").replace('"', '""')
+    )
+    return f'"{escaped}"'
 
 
 @beartype
@@ -62,15 +73,8 @@ def _to_ada_val(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"AFloat ({value})"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"AFloat ({value})"
 
 
 @beartype
@@ -82,7 +86,7 @@ def _format_ada_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an Ada object declaration.
 
     Example: ``"x"`` and ``"AList'(AInt (1))"`` →
@@ -92,7 +96,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an Ada assignment statement to an existing variable.
 
     Example: ``"x"`` and ``"AList'(AInt (1))"`` →
@@ -101,7 +105,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} := {_to_ada_val(value=value)};"
 
 
-_string_format: Callable[[str], str] = format_string_ada
+_string_format: Callable[[str], str] = _format_string_ada
 
 
 @beartype
@@ -246,10 +250,10 @@ class Ada(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

@@ -2,8 +2,8 @@
 
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -13,7 +13,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_fortran,
 )
 from literalizer._language import (
     CommentConfig,
@@ -23,9 +22,36 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _format_string_fortran(value: str) -> str:
+    r"""Format a string using Fortran single-quote string syntax.
+
+    Fortran strings use single quotes, with ``''`` for embedded single
+    quotes.  Control characters (code points 0-31) are emitted as
+    ``achar(N)`` expressions concatenated with ``//``.
+    """
+    _fortran_control_char_threshold = 32
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if (
+            len(segment) == 1
+            and ord(segment) < _fortran_control_char_threshold
+        ):
+            parts.append(f"achar({ord(segment)})")
+        else:
+            escaped = segment.replace("'", "''")
+            parts.append(f"'{escaped}'")
+    if not parts:
+        return "''"
+    if len(parts) == 1:
+        return parts[0]
+    return " // ".join(parts)
+
 
 _FVAL_PREFIXES = (
     "fnull()",
@@ -65,15 +91,8 @@ def _to_fval(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"freal({value})"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"freal({value})"
 
 
 @beartype
@@ -138,7 +157,7 @@ def _format_fortran_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     r"""Format a Fortran variable declaration and initialisation.
 
     Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
@@ -150,7 +169,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Fortran assignment to an existing ``fval_t`` variable.
 
     Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
@@ -161,13 +180,50 @@ def _format_variable_assignment(name: str, value: str) -> str:
     return f"{name} = {continued}"
 
 
-_string_format: Callable[[str], str] = format_string_fortran
+_string_format: Callable[[str], str] = _format_string_fortran
+
+
+_FORTRAN_PREAMBLE: tuple[str, ...] = (
+    "module fval_m",
+    "  implicit none",
+    "  type :: fval_t",
+    "    integer :: t = 0",
+    "  end type fval_t",
+    "contains",
+    "  function fnull() result(v); type(fval_t) :: v; end function",
+    "  function fbool(b) result(v)"
+    "; logical, intent(in) :: b"
+    "; type(fval_t) :: v; end function",
+    "  function fint(n) result(v)"
+    "; integer, intent(in) :: n"
+    "; type(fval_t) :: v; end function",
+    "  function freal(x) result(v)"
+    "; real, intent(in) :: x"
+    "; type(fval_t) :: v; end function",
+    "  function fstr(s) result(v)"
+    "; character(len=*), intent(in) :: s"
+    "; type(fval_t) :: v; end function",
+    "  function flist(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function",
+    "  function fmap(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function",
+    "  function fset(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function",
+    "  function fentry(k, u) result(v)"
+    "; character(len=*), intent(in) :: k"
+    "; type(fval_t), intent(in) :: u"
+    "; type(fval_t) :: v; end function",
+    "end module fval_m",
+)
 
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+    """Return preamble lines for the generated code."""
+    return _FORTRAN_PREAMBLE
 
 
 @beartype
@@ -306,10 +362,10 @@ class Fortran(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

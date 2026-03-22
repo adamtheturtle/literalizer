@@ -3,16 +3,17 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     fixed_dict_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_vb,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -25,45 +26,96 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-_VB_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "Boolean",
-    "integer": "Integer",
-    "number": "Double",
+_VB_CHAR_REPLACEMENTS: dict[str, str] = {
+    "\n": "Chr(10)",
+    "\r": "Chr(13)",
+    "\t": "vbTab",
 }
 
-
-@beartype
-def _vb_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a VB.NET type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _VB_SCALAR_TYPES:
-            return _VB_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _vb_schema_to_type(item_schema=nested)
-            return f"{inner}()" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "Double"
-    return None
+_VB_CONTROL_CHAR_THRESHOLD = 32
 
 
 @beartype
-def _vb_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a VB.NET array opener."""
-    type_name = _vb_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"New {type_name}() {{"
+def _flush_vb_current(
+    *,
+    parts: list[str],
+    current: str,
+) -> str:
+    """Flush accumulated literal characters into parts."""
+    if current:
+        parts.append(f'"{current}"')
+    return ""
+
+
+@beartype
+def _vb_string_parts(value: str) -> list[str]:
+    """Generate VB.NET string parts for control character handling."""
+    parts: list[str] = []
+    current = ""
+    i = 0
+    while i < len(value):
+        c = value[i]
+        if c == '"':
+            current += '""'
+            i += 1
+        elif c == "\r" and i + 1 < len(value) and value[i + 1] == "\n":
+            current = _flush_vb_current(parts=parts, current=current)
+            parts.append("vbCrLf")
+            i += 2
+        elif c in _VB_CHAR_REPLACEMENTS:
+            current = _flush_vb_current(parts=parts, current=current)
+            parts.append(_VB_CHAR_REPLACEMENTS[c])
+            i += 1
+        elif ord(c) < _VB_CONTROL_CHAR_THRESHOLD:
+            current = _flush_vb_current(parts=parts, current=current)
+            parts.append(f"Chr({ord(c)})")
+            i += 1
+        else:
+            current += c
+            i += 1
+    _flush_vb_current(parts=parts, current=current)
+    return parts
+
+
+@beartype
+def _format_string_vb(value: str) -> str:
+    r"""Format a string using VB.NET string escaping rules.
+
+    VB.NET strings use ``""`` to escape embedded double quotes and do not
+    support backslash escapes.  Control characters such as newlines and
+    tabs are expressed via ``vbCrLf``, ``vbTab``, or ``Chr(N)`` string
+    concatenation.
+    """
+    parts = _vb_string_parts(value)  # type: ignore[misc]
+    if not parts:
+        return '""'
+    if len(parts) == 1:
+        return parts[0]
+    return " & ".join(parts)
+
+
+_VB_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "Boolean",
+    int: "Integer",
+    float: "Double",
+    MixedNumeric: "Double",
+    bytes: "String",
+    datetime.date: "String",
+    datetime.datetime: "String",
+}
+
+_vb_element_to_type = make_element_to_type(
+    scalar_types=_VB_SCALAR_TYPES,
+    list_template="{inner}()",
+)
+
+_vb_type_to_opener = make_type_to_opener(
+    element_to_type=_vb_element_to_type,
+    opener_template="New {type_name}() {{",
+)
 
 
 @beartype
@@ -73,21 +125,24 @@ def _format_vb_dict_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a VB.NET variable declaration."""
     return f"Dim {name} = {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a VB.NET variable assignment."""
     return f"{name} = {value}"
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "Dictionary" in code or "List(Of" in code:
+        lines.append("Imports System.Collections.Generic")
+    return lines
 
 
 @beartype
@@ -137,7 +192,7 @@ class VisualBasic(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_vb_schema_to_opener,
+                type_to_opener=_vb_type_to_opener,
                 fallback="New Object() {",
             ),
             close="}",
@@ -221,7 +276,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_vb
+        self.format_string: Callable[[str], str] = _format_string_vb
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
@@ -241,10 +296,10 @@ class VisualBasic(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = False
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

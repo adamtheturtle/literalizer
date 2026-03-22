@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,9 +22,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @beartype
@@ -45,15 +42,8 @@ def _to_val(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"((_CVal){{.f = {value}}})"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"((_CVal){{.f = {value}}})"
 
 
 @beartype
@@ -75,13 +65,13 @@ def _format_c_set_entry(item: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a C variable declaration."""
     return f"_CVal {name} = {_to_val(value=value)};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a C variable assignment."""
     return f"{name} = {_to_val(value=value)};"
 
@@ -89,10 +79,29 @@ def _format_variable_assignment(name: str, value: str) -> str:
 _string_format: Callable[[str], str] = format_string_backslash
 
 
+_C_PREAMBLE: tuple[str, ...] = (
+    "#include <stdbool.h>",
+    "#include <stddef.h>",
+    "typedef struct _CVal _CVal;",
+    "typedef struct _CKV _CKV;",
+    "struct _CVal {",
+    "    union {",
+    "        _Bool b;",
+    "        long long i;",
+    "        double f;",
+    "        const char *s;",
+    "        const _CVal *a;",
+    "        const _CKV *m;",
+    "    };",
+    "};",
+    "struct _CKV { const char *k; _CVal v; };",
+)
+
+
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+    """Return preamble lines for the generated code."""
+    return _C_PREAMBLE
 
 
 @beartype
@@ -237,10 +246,10 @@ class C(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

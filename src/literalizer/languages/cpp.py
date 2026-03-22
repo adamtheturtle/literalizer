@@ -3,16 +3,15 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
-    counted_typed_sequence_open,
+    MixedNumeric,
     format_bytes_hex,
-    format_date_cpp,
-    format_datetime_cpp,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -26,66 +25,70 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
-_CPP_SCALAR_TYPES: dict[str, str] = {
-    "string": "std::string",
-    "boolean": "bool",
-    "integer": "int",
-    "number": "double",
+@beartype
+def _format_date_cpp(value: datetime.date) -> str:
+    """Format a date as a C++ chrono year_month_day literal."""
+    return (
+        f"std::chrono::year_month_day{{"
+        f"std::chrono::year{{{value.year}}}, "
+        f"std::chrono::month{{{value.month}}}, "
+        f"std::chrono::day{{{value.day}}}}}"
+    )
+
+
+@beartype
+def _format_datetime_cpp(value: datetime.datetime) -> str:
+    """Format a datetime as a C++ chrono time_point construction."""
+    ymd = _format_date_cpp(value=value)
+    parts = [f"std::chrono::sys_days{{{ymd}}}"]
+    if value.hour:
+        parts.append(f"std::chrono::hours{{{value.hour}}}")
+    if value.minute:
+        parts.append(f"std::chrono::minutes{{{value.minute}}}")
+    if value.second:
+        parts.append(f"std::chrono::seconds{{{value.second}}}")
+    if value.microsecond:
+        parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
+    return " + ".join(parts)
+
+
+_CPP_SCALAR_TYPES: dict[type, str] = {
+    str: "std::string",
+    bool: "bool",
+    int: "int",
+    float: "double",
+    MixedNumeric: "double",
+    bytes: "std::string",
 }
 
+_cpp_element_to_type = make_element_to_type(
+    scalar_types=_CPP_SCALAR_TYPES,
+    list_template="std::vector<{inner}>",
+)
+
+_cpp_type_to_opener = make_type_to_opener(
+    element_to_type=_cpp_element_to_type,
+    opener_template="std::vector<{type_name}>{{",
+)
+
+_cpp_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_cpp_element_to_type,
+    opener_template="std::map<std::string, {type_name}>{{",
+)
+
 
 @beartype
-def _cpp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a C++ type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _CPP_SCALAR_TYPES:
-            return _CPP_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _cpp_schema_to_type(item_schema=nested)
-            return f"std::vector<{inner}>" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
+def _cpp_array_open(items: list[Value]) -> str:
+    """Infer element type and return a ``std::array<T, N>`` opener."""
+    type_name = _cpp_element_to_type(type(items[0])) if items else None
+    if type_name is None or not all(
+        _cpp_element_to_type(type(i)) == type_name for i in items
     ):
-        return "double"
-    return None
-
-
-@beartype
-def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a C++ vector opener."""
-    type_name = _cpp_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"std::vector<{type_name}>{{"
-
-
-@beartype
-def _cpp_array_schema_to_opener(
-    item_schema: dict[str, Any],
-    count: int,
-) -> str | None:
-    """Map a JSON Schema item type to a C++ std::array opener."""
-    type_name = _cpp_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"std::array<{type_name}, {count}>{{"
-
-
-@beartype
-def _cpp_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a C++ map opener."""
-    type_name = _cpp_schema_to_type(item_schema=value_schema)
-    if type_name is None:
-        return None
-    return f"std::map<std::string, {type_name}>{{"
+        return "{"
+    return f"std::array<{type_name}, {len(items)}>{{"
 
 
 @beartype
@@ -97,19 +100,28 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
 @beartype
 def _preamble(code: str) -> Sequence[str]:
     """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "nullptr" in code:
+        lines.append("#include <cstddef>")
     if "std::chrono" in code:
-        return ["#include <chrono>"]
-    return []
+        lines.append("#include <chrono>")
+    if "std::map" in code:
+        lines.append("#include <map>")
+    if "std::string" in code:
+        lines.append("#include <string>")
+    if "std::vector" in code:
+        lines.append("#include <vector>")
+    return lines
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a C++ variable declaration."""
     return f"auto {name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a C++ variable assignment."""
     return f"{name} = {value};"
 
@@ -139,7 +151,7 @@ class Cpp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for C++."""
 
-        CPP = enum.member(value=format_date_cpp)
+        CPP = enum.member(value=_format_date_cpp)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -148,7 +160,7 @@ class Cpp(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C++."""
 
-        CPP = enum.member(value=format_datetime_cpp)
+        CPP = enum.member(value=_format_datetime_cpp)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -168,7 +180,7 @@ class Cpp(metaclass=LanguageCls):
 
         INITIALIZER_LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_cpp_schema_to_opener,
+                type_to_opener=_cpp_type_to_opener,
                 fallback="{",
             ),
             close="}",
@@ -177,10 +189,7 @@ class Cpp(metaclass=LanguageCls):
             empty_sequence=None,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=counted_typed_sequence_open(
-                schema_and_count_to_opener=_cpp_array_schema_to_opener,
-                fallback="{",
-            ),
+            sequence_open=_cpp_array_open,
             close="}",
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
@@ -254,7 +263,7 @@ class Cpp(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_cpp_dict_schema_to_opener,
+                type_to_opener=_cpp_dict_type_to_opener,
                 fallback="{",
             ),
             close="}",
@@ -288,10 +297,10 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

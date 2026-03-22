@@ -3,17 +3,17 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     fixed_dict_open,
     format_bytes_hex,
-    format_date_java,
-    format_datetime_java_instant,
-    format_datetime_java_zoned,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -26,10 +26,32 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _format_date_java(value: datetime.date) -> str:
+    """Format a date as a Java ``LocalDate.of(...)`` call."""
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_java_instant(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``Instant.parse(...)`` call."""
+    return f'Instant.parse("{value.isoformat()}")'
+
+
+@beartype
+def _format_datetime_java_zoned(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``ZonedDateTime.of(...)`` call."""
+    tz = value.tzname() or "UTC"
+    nanos = value.microsecond * 1000
+    return (
+        f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f'{nanos}, ZoneId.of("{tz}"))'
+    )
 
 
 _LIST_OF_OPEN = "List.of("
@@ -56,41 +78,25 @@ def _format_java_dict_entry(key: str, value: str) -> str:
     return f"Map.entry({key}, {value})"
 
 
-_JAVA_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "boolean",
-    "integer": "int",
-    "number": "double",
+_JAVA_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "boolean",
+    int: "int",
+    float: "double",
+    MixedNumeric: "double",
+    bytes: "String",
+    datetime.date: "LocalDate",
 }
 
+_java_element_to_type = make_element_to_type(
+    scalar_types=_JAVA_SCALAR_TYPES,
+    list_template="{inner}[]",
+)
 
-@beartype
-def _java_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Java type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _JAVA_SCALAR_TYPES:
-            return _JAVA_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _java_schema_to_type(item_schema=nested)
-            return f"{inner}[]" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "double"
-    return None
-
-
-@beartype
-def _java_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Java array opener."""
-    type_name = _java_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"new {type_name}[]{{"
+_java_type_to_opener = make_type_to_opener(
+    element_to_type=_java_element_to_type,
+    opener_template="new {type_name}[]{{",
+)
 
 
 @beartype
@@ -115,13 +121,13 @@ def _preamble(code: str) -> Sequence[str]:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Java variable declaration."""
     return f"var {name} = {value};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Java variable assignment."""
     return f"{name} = {value};"
 
@@ -158,7 +164,7 @@ class Java(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Java."""
 
-        JAVA = enum.member(value=format_date_java)
+        JAVA = enum.member(value=_format_date_java)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -167,8 +173,8 @@ class Java(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Java."""
 
-        INSTANT = enum.member(value=format_datetime_java_instant)
-        ZONED = enum.member(value=format_datetime_java_zoned)
+        INSTANT = enum.member(value=_format_datetime_java_instant)
+        ZONED = enum.member(value=_format_datetime_java_zoned)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -188,7 +194,7 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_java_schema_to_opener,
+                type_to_opener=_java_type_to_opener,
                 fallback="new Object[]{",
             ),
             close="}",
@@ -301,10 +307,10 @@ class Java(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = True
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

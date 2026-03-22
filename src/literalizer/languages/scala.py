@@ -3,17 +3,19 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -27,54 +29,33 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
-
-_SCALA_SCALAR_TYPES: dict[str, str] = {
-    "string": "String",
-    "boolean": "Boolean",
-    "integer": "Int",
-    "number": "Double",
+_SCALA_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "Boolean",
+    int: "Int",
+    float: "Double",
+    MixedNumeric: "Double",
+    bytes: "String",
+    datetime.date: "String",
+    datetime.datetime: "String",
 }
 
+_scala_element_to_type = make_element_to_type(
+    scalar_types=_SCALA_SCALAR_TYPES,
+    list_template="Array[{inner}]",
+)
 
-@beartype
-def _scala_schema_to_type(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Scala type name, recursively."""
-    schema_type = item_schema.get("type")
-    if isinstance(schema_type, str):
-        if schema_type in _SCALA_SCALAR_TYPES:
-            return _SCALA_SCALAR_TYPES[schema_type]
-        if schema_type == "array":
-            nested = item_schema.get("items", {})
-            inner = _scala_schema_to_type(item_schema=nested)
-            return f"Array[{inner}]" if inner is not None else None
-        return None
-    if (
-        isinstance(schema_type, list)
-        and set(schema_type) == {"integer", "number"}  # pyright: ignore[reportUnknownArgumentType]
-    ):
-        return "Double"
-    return None
+_scala_type_to_opener = make_type_to_opener(
+    element_to_type=_scala_element_to_type,
+    opener_template="Array[{type_name}](",
+)
 
-
-@beartype
-def _scala_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a Scala collection opener."""
-    type_name = _scala_schema_to_type(item_schema=item_schema)
-    if type_name is None:
-        return None
-    return f"Array[{type_name}]("
-
-
-@beartype
-def _scala_dict_schema_to_opener(value_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema value type to a Scala map opener."""
-    type_name = _scala_schema_to_type(item_schema=value_schema)
-    if type_name is None:
-        return None
-    return f"Map[String, {type_name}]("
+_scala_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_scala_element_to_type,
+    opener_template="Map[String, {type_name}](",
+)
 
 
 @beartype
@@ -84,13 +65,13 @@ def _format_scala_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Scala variable declaration."""
     return f"val {name} = {value}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Scala variable assignment."""
     return f"{name} = {value}"
 
@@ -143,7 +124,7 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                schema_to_opener=_scala_schema_to_opener,
+                type_to_opener=_scala_type_to_opener,
                 fallback="List(",
             ),
             close=")",
@@ -233,7 +214,7 @@ class Scala(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                schema_to_opener=_scala_dict_schema_to_opener,
+                type_to_opener=_scala_dict_type_to_opener,
                 fallback="Map(",
             ),
             close=")",
@@ -266,10 +247,10 @@ class Scala(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.preamble: Callable[[str], Sequence[str]] = _preamble

@@ -3,7 +3,6 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -23,9 +22,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
+from literalizer._types import Value
 
 
 @beartype
@@ -55,15 +52,8 @@ def _to_val(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"FFloat({value})" if negative else f"FFloat {value}"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"FFloat({value})" if negative else f"FFloat {value}"
 
 
 @beartype
@@ -93,13 +83,13 @@ def _format_fsharp_sequence_entry(item: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str) -> str:
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an F# variable declaration."""
     return f"let {name}: Val = {_to_val(value=value)}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str) -> str:
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an F# variable assignment."""
     return f"let {name}: Val = {_to_val(value=value)}"
 
@@ -109,7 +99,12 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
+    """Return preamble lines for the generated code.
+
+    The ``Val`` discriminated union used by the generated output is
+    user-defined and must appear after the ``module`` declaration, so
+    it is not part of the preamble.
+    """
     return ()
 
 
@@ -258,10 +253,10 @@ class FSharp(metaclass=LanguageCls):
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str], str] = (
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.element_separator = "; "
