@@ -1765,9 +1765,9 @@ def _build_date_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_member = next(iter(spec.date_formats))
+        default_format = spec.format_date
         for fmt in list(spec.date_formats):
-            if fmt is default_member:
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
@@ -1787,9 +1787,9 @@ def _build_datetime_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_member = next(iter(spec.datetime_formats))
+        default_format = spec.format_datetime
         for fmt in list(spec.datetime_formats):
-            if fmt is default_member:
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
