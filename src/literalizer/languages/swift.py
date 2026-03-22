@@ -42,13 +42,16 @@ def _format_date_swift(value: datetime.date) -> str:
 @beartype
 def _format_datetime_swift(value: datetime.datetime) -> str:
     """Format a datetime as a Swift ``DateComponents`` expression."""
-    return (
+    parts = (
         "DateComponents("
         "calendar: Calendar(identifier: .gregorian), "
         f"year: {value.year}, month: {value.month}, day: {value.day}, "
         f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
-        ").date!"
     )
+    if value.microsecond:
+        nanosecond = value.microsecond * 1000
+        parts += f", nanosecond: {nanosecond}"
+    return parts + ").date!"
 
 
 @beartype
