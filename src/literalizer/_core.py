@@ -685,8 +685,8 @@ def _literalize(
     lines: list[str] = []
 
     is_ordered_map = isinstance(data, ordereddict)
-    if is_ordered_map or isinstance(data, dict):
-        dict_data = cast("dict[str, Value]", data)
+    if isinstance(data, dict):
+        dict_data = data
         entries = [
             (k, v)
             for k, v in dict_data.items()
