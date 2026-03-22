@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     fixed_dict_open,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_java,
     format_datetime_java_instant,
@@ -104,6 +105,13 @@ class Java(metaclass=HasFormatEnums):
             * ``datetime_formats.ZONED`` — ``ZonedDateTime.of(...)`` call,
               e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
               ZoneId.of("UTC"))``.
+
+        sequence_format: How to format sequences.
+
+            * ``sequence_formats.ARRAY`` — Java array literal,
+              e.g. ``new Object[]{1, 2, 3}``.
+            * ``sequence_formats.LIST`` — ``List.of(...)`` call,
+              e.g. ``List.of(1, 2, 3)``.
     """
 
     extension = ".java"
@@ -145,6 +153,15 @@ class Java(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            schema_to_opener=_java_schema_to_opener,
+        )
+        LIST = SequenceFormatConfig(
+            open_str="List.of(",
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence="List.of()",
+            schema_to_opener=None,
         )
 
         @property
@@ -207,10 +224,17 @@ class Java(metaclass=HasFormatEnums):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_java_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        if fmt.schema_to_opener is not None:
+            self.sequence_open: Callable[[list[Value]], str] = (
+                typed_sequence_open(
+                    schema_to_opener=fmt.schema_to_opener,
+                    fallback=fmt.open_str,
+                )
+            )
+        else:
+            self.sequence_open = fixed_sequence_open(
+                open_str=fmt.open_str,
+            )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",

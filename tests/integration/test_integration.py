@@ -78,8 +78,9 @@ def _java_time_imports(content: str) -> str:
 def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     time_imports = _java_time_imports(content=content)
+    list_import = "import java.util.List;\n" if "List.of(" in content else ""
     return f"""\
-{time_imports}import java.util.Map;
+{time_imports}{list_import}import java.util.Map;
 import java.util.Set;
 class Check {{
     Object x = {content};
@@ -364,8 +365,10 @@ def _wrap_go_varname(content: str) -> str:
 def _wrap_java_varname(content: str) -> str:
     """Wrap a Java var declaration in a static method."""
     time_imports = _java_time_imports(content=content)
+    list_import = "import java.util.List;\n" if "List.of(" in content else ""
     return (
         f"{time_imports}"
+        f"{list_import}"
         "import java.util.Map;\n"
         "import java.util.Set;\n"
         "class Check {\n"

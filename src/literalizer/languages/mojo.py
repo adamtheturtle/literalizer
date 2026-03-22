@@ -107,6 +107,7 @@ class Mojo(metaclass=HasFormatEnums):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence="List[String]()",
+            schema_to_opener=None,
         )
 
         @property

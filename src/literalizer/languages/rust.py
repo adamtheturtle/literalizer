@@ -127,6 +127,7 @@ class Rust(metaclass=HasFormatEnums):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence="Vec::<String>::new()",
+            schema_to_opener=None,
         )
         ARRAY = SequenceFormatConfig(
             open_str="[",
@@ -134,6 +135,7 @@ class Rust(metaclass=HasFormatEnums):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            schema_to_opener=None,
         )
         TUPLE = SequenceFormatConfig(
             open_str="(",
@@ -141,6 +143,7 @@ class Rust(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            schema_to_opener=None,
         )
 
         @property
