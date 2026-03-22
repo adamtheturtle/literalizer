@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+import Data.Time
 module Check where
 import Data.String (IsString(fromString))
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]
@@ -17,4 +18,4 @@ instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"
 x :: Val
-x = "2024-01-15T12:30:00+00:00"
+x = UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000)

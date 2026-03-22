@@ -1,3 +1,4 @@
+import java.time.{LocalDateTime}
 object Check {
-val x: Any = "2024-01-15T12:30:00+00:00"
+val x: Any = LocalDateTime.of(2024, 1, 15, 12, 30, 0)
 }

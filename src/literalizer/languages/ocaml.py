@@ -26,6 +26,21 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_ocaml(value: datetime.date) -> str:
+    """Format a date as an OCaml tuple."""
+    return f"({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_ocaml(value: datetime.datetime) -> str:
+    """Format a datetime as an OCaml pair of tuples."""
+    return (
+        f"(({value.year}, {value.month}, {value.day}), "
+        f"({value.hour}, {value.minute}, {value.second}))"
+    )
+
+
+@beartype
 def _to_val(value: str) -> str:
     """Convert a value to an OCaml union type expression."""
     _val_prefixes = (
@@ -39,6 +54,8 @@ def _to_val(value: str) -> str:
         "OFloat",
     )
     if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.startswith("("):
         return value
     if value.startswith('"') and value.endswith('"'):
         return f"OStr {value}"
@@ -114,7 +131,23 @@ def _preamble(_code: str) -> Sequence[str]:
 
 @beartype
 class OCaml(metaclass=LanguageCls):
-    """OCaml language specification."""
+    """OCaml language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.OCAML`` — tuple literal,
+              e.g. ``(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.OCAML`` — pair of tuples,
+              e.g. ``((2024, 1, 15), (12, 30, 0))``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
+    """
 
     extension = ".ml"
     pygments_name = "ocaml"
@@ -122,6 +155,7 @@ class OCaml(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for OCaml."""
 
+        OCAML = enum.member(value=_format_date_ocaml)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -131,6 +165,7 @@ class OCaml(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for OCaml."""
 
+        OCAML = enum.member(value=_format_datetime_ocaml)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -198,8 +233,8 @@ class OCaml(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.OCAML,
+        datetime_format: DatetimeFormats = DatetimeFormats.OCAML,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,

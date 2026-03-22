@@ -28,6 +28,27 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_haskell(value: datetime.date) -> str:
+    """Format a date as a Haskell ``fromGregorian`` call."""
+    return f"fromGregorian {value.year} {value.month} {value.day}"
+
+
+@beartype
+def _format_datetime_haskell(value: datetime.datetime) -> str:
+    """Format a datetime as a Haskell ``UTCTime`` constructor."""
+    total_seconds = value.hour * 3600 + value.minute * 60 + value.second
+    if value.microsecond:
+        picos = total_seconds * 10**12 + value.microsecond * 10**6
+        time_part = f"picosecondsToDiffTime {picos}"
+    else:
+        time_part = f"secondsToDiffTime {total_seconds}"
+    return (
+        f"UTCTime (fromGregorian {value.year} {value.month} {value.day}) "
+        f"({time_part})"
+    )
+
+
+@beartype
 def _format_haskell_dict_entry(key: str, value: str) -> str:
     """Format a Haskell dict entry as a tuple pair."""
     return f"({key}, {value})"
@@ -55,16 +76,12 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code.
-
-    Only the ``OverloadedStrings`` pragma is emitted here because it
-    must appear before the ``module`` declaration.  The ``Val`` ADT and
-    typeclass instances are user-defined (see the class doc string) and
-    must be placed after the module header, so they are not part of the
-    preamble.
-    """
-    return ("{-# LANGUAGE OverloadedStrings #-}",)
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = ["{-# LANGUAGE OverloadedStrings #-}"]
+    if "fromGregorian" in code or "UTCTime" in code:
+        lines.append("import Data.Time")
+    return lines
 
 
 @beartype
@@ -108,6 +125,24 @@ class Haskell(metaclass=LanguageCls):
     ``OverloadedStrings`` lets bare string literals like ``"hi"`` resolve to
     ``HStr "hi"`` via ``IsString``, and the ``Num`` / ``Fractional`` instances
     let numeric literals resolve to ``HInt`` / ``HFloat``.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.HASKELL`` — ``fromGregorian`` call,
+              e.g. ``fromGregorian 2024 1 15``.
+              Requires the ``time`` package.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.HASKELL`` — ``UTCTime`` constructor,
+              e.g. ``UTCTime (fromGregorian 2024 1 15)
+              (secondsToDiffTime 45000)``.
+              Requires the ``time`` package.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".hs"
@@ -116,6 +151,7 @@ class Haskell(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
 
+        HASKELL = enum.member(value=_format_date_haskell)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -125,6 +161,7 @@ class Haskell(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Haskell."""
 
+        HASKELL = enum.member(value=_format_datetime_haskell)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -196,8 +233,8 @@ class Haskell(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.HASKELL,
+        datetime_format: DatetimeFormats = DatetimeFormats.HASKELL,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,

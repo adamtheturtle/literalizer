@@ -1,5 +1,6 @@
 import json
+import times
 var my_data = %*{
-    "date": "2024-01-15",
-    "datetime": "2024-01-15T12:30:00+00:00"
+    "date": dateTime(15, mJan, 2024, zone = utc()),
+    "datetime": dateTime(15, mJan, 2024, 12, 30, 0, zone = utc())
 }

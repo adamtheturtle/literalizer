@@ -26,6 +26,25 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_zig(value: datetime.date) -> str:
+    """Format a date as a Zig anonymous struct literal."""
+    return (
+        f".{{ .year = {value.year}, .month = {value.month}, "
+        f".day = {value.day} }}"
+    )
+
+
+@beartype
+def _format_datetime_zig(value: datetime.datetime) -> str:
+    """Format a datetime as a Zig anonymous struct literal."""
+    return (
+        f".{{ .year = {value.year}, .month = {value.month}, "
+        f".day = {value.day}, .hour = {value.hour}, "
+        f".minute = {value.minute}, .second = {value.second} }}"
+    )
+
+
+@beartype
 def _to_val(value: str) -> str:
     """Wrap a pre-formatted value string in a Zig ``ZVal`` union literal.
 
@@ -103,7 +122,24 @@ def _preamble(_code: str) -> Sequence[str]:
 
 @beartype
 class Zig(metaclass=LanguageCls):
-    """Zig language specification."""
+    """Zig language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.ZIG`` — anonymous struct literal,
+              e.g. ``.{ .year = 2024, .month = 1, .day = 15 }``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.ZIG`` — anonymous struct literal,
+              e.g. ``.{ .year = 2024, .month = 1, .day = 15,
+              .hour = 12, .minute = 30, .second = 0 }``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
+    """
 
     extension = ".zig"
     pygments_name = "zig"
@@ -111,6 +147,7 @@ class Zig(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Zig."""
 
+        ZIG = enum.member(value=_format_date_zig)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -120,6 +157,7 @@ class Zig(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Zig."""
 
+        ZIG = enum.member(value=_format_datetime_zig)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -187,8 +225,8 @@ class Zig(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.ZIG,
+        datetime_format: DatetimeFormats = DatetimeFormats.ZIG,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,

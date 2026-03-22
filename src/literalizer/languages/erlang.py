@@ -28,6 +28,21 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_erlang(value: datetime.date) -> str:
+    """Format a date as an Erlang calendar date tuple."""
+    return f"{{{value.year}, {value.month}, {value.day}}}"
+
+
+@beartype
+def _format_datetime_erlang(value: datetime.datetime) -> str:
+    """Format a datetime as an Erlang calendar datetime tuple."""
+    return (
+        f"{{{{{value.year}, {value.month}, {value.day}}}, "
+        f"{{{value.hour}, {value.minute}, {value.second}}}}}"
+    )
+
+
+@beartype
 def _format_erlang_ordered_map_entry(key: str, value: str) -> str:
     """Format an Erlang ordered-map entry as a ``{key, value}`` tuple."""
     return f"{{{key}, {value}}}"
@@ -68,6 +83,20 @@ class Erlang(metaclass=LanguageCls):
     """Erlang language specification.
 
     Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.ERLANG`` — calendar date tuple,
+              e.g. ``{2024, 1, 15}``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.ERLANG`` — calendar datetime tuple,
+              e.g. ``{{2024, 1, 15}, {12, 30, 0}}``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
+
         sequence_format: Which Erlang sequence type to use.
 
             * ``sequence_formats.LIST`` — list literal,
@@ -82,6 +111,7 @@ class Erlang(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
 
+        ERLANG = enum.member(value=_format_date_erlang)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -91,6 +121,7 @@ class Erlang(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Erlang."""
 
+        ERLANG = enum.member(value=_format_datetime_erlang)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -165,8 +196,8 @@ class Erlang(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.ERLANG,
+        datetime_format: DatetimeFormats = DatetimeFormats.ERLANG,
         bytes_format: BytesFormats = BytesFormats.BINARY,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,

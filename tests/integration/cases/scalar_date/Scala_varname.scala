@@ -1,3 +1,4 @@
+import java.time.{LocalDate}
 object Check {
-val my_data = "2024-01-15"
+val my_data = LocalDate.of(2024, 1, 15)
 }

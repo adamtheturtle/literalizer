@@ -12,15 +12,15 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     {
         const my_data: ZVal = .{ .map = &.{
-            .{ .key = "date", .val = .{ .str = "2024-01-15" } },
-            .{ .key = "datetime", .val = .{ .str = "2024-01-15T12:30:00+00:00" } },
+            .{ .key = "date", .val = .{ .year = 2024, .month = 1, .day = 15 } },
+            .{ .key = "datetime", .val = .{ .year = 2024, .month = 1, .day = 15, .hour = 12, .minute = 30, .second = 0 } },
         }};
         _ = my_data;
     }
     var my_data: ZVal = undefined;
     my_data = .{ .map = &.{
-        .{ .key = "date", .val = .{ .str = "2024-01-15" } },
-        .{ .key = "datetime", .val = .{ .str = "2024-01-15T12:30:00+00:00" } },
+        .{ .key = "date", .val = .{ .year = 2024, .month = 1, .day = 15 } },
+        .{ .key = "datetime", .val = .{ .year = 2024, .month = 1, .day = 15, .hour = 12, .minute = 30, .second = 0 } },
     }};
     const _my_data_read = my_data;
     _ = _my_data_read;

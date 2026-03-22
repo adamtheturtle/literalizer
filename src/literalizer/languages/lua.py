@@ -27,6 +27,25 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_lua(value: datetime.date) -> str:
+    """Format a date as a Lua ``os.time(...)`` call."""
+    return (
+        f"os.time({{year = {value.year}, month = {value.month}, "
+        f"day = {value.day}, hour = 0, min = 0, sec = 0}})"
+    )
+
+
+@beartype
+def _format_datetime_lua(value: datetime.datetime) -> str:
+    """Format a datetime as a Lua ``os.time(...)`` call."""
+    return (
+        f"os.time({{year = {value.year}, month = {value.month}, "
+        f"day = {value.day}, hour = {value.hour}, "
+        f"min = {value.minute}, sec = {value.second}}})"
+    )
+
+
+@beartype
 def _format_lua_dict_entry(key: str, value: str) -> str:
     """Format a Lua table entry with a string key.
 
@@ -67,7 +86,25 @@ def _preamble(_code: str) -> Sequence[str]:
 
 @beartype
 class Lua(metaclass=LanguageCls):
-    """Lua language specification."""
+    """Lua language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.LUA`` — ``os.time(...)`` call,
+              e.g. ``os.time({year = 2024, month = 1, day = 15,
+              hour = 0, min = 0, sec = 0})``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.LUA`` — ``os.time(...)`` call,
+              e.g. ``os.time({year = 2024, month = 1, day = 15,
+              hour = 12, min = 30, sec = 0})``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
+    """
 
     extension = ".lua"
     pygments_name = "lua"
@@ -75,6 +112,7 @@ class Lua(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Lua."""
 
+        LUA = enum.member(value=_format_date_lua)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -84,6 +122,7 @@ class Lua(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Lua."""
 
+        LUA = enum.member(value=_format_datetime_lua)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -155,8 +194,8 @@ class Lua(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.LUA,
+        datetime_format: DatetimeFormats = DatetimeFormats.LUA,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.TABLE,
         set_format: SetFormats = SetFormats.SET,

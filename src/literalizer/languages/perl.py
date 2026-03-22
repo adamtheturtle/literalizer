@@ -29,6 +29,25 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_perl(value: datetime.date) -> str:
+    """Format a date as a Perl ``DateTime->new(...)`` call."""
+    return (
+        f"DateTime->new(year => {value.year}, month => {value.month}, "
+        f"day => {value.day})"
+    )
+
+
+@beartype
+def _format_datetime_perl(value: datetime.datetime) -> str:
+    """Format a datetime as a Perl ``DateTime->new(...)`` call."""
+    return (
+        f"DateTime->new(year => {value.year}, month => {value.month}, "
+        f"day => {value.day}, hour => {value.hour}, "
+        f"minute => {value.minute}, second => {value.second})"
+    )
+
+
+@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Perl variable declaration."""
     return f"my ${name} = {value};"
@@ -44,14 +63,37 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "DateTime->new" in code:
+        lines.append("use DateTime;")
+    return lines
 
 
 @beartype
 class Perl(metaclass=LanguageCls):
-    """Perl language specification."""
+    """Perl language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.PERL`` — ``DateTime->new(...)`` call,
+              e.g. ``DateTime->new(year => 2024, month => 1,
+              day => 15)``.
+              Requires the ``DateTime`` CPAN module.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.PERL`` — ``DateTime->new(...)`` call,
+              e.g. ``DateTime->new(year => 2024, month => 1,
+              day => 15, hour => 12, minute => 30, second => 0)``.
+              Requires the ``DateTime`` CPAN module.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
+    """
 
     extension = ".pl"
     pygments_name = "perl"
@@ -59,6 +101,7 @@ class Perl(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Perl."""
 
+        PERL = enum.member(value=_format_date_perl)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -68,6 +111,7 @@ class Perl(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Perl."""
 
+        PERL = enum.member(value=_format_datetime_perl)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -135,8 +179,8 @@ class Perl(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.PERL,
+        datetime_format: DatetimeFormats = DatetimeFormats.PERL,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,

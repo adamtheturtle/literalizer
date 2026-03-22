@@ -1,3 +1,4 @@
 import json
-var my_data = %*"2024-01-15T12:30:00+00:00"
-my_data = %*"2024-01-15T12:30:00+00:00"
+import times
+var my_data = %*dateTime(15, mJan, 2024, 12, 30, 0, zone = utc())
+my_data = %*dateTime(15, mJan, 2024, 12, 30, 0, zone = utc())
