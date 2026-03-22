@@ -932,7 +932,60 @@ def _resolve_yaml_collection_comments(
 
 
 @beartype
-def literalize_yaml(  # pylint: disable=too-many-branches,too-complex,too-many-statements
+def _resolve_comments(
+    *,
+    yaml_string: str,
+    data: object,
+    base: str,
+    language: Language,
+    comment_prefix: str,
+    comment_suffix: str,
+    comment_line_prefix: str,
+    line_prefix: str,
+    wrap: bool,
+) -> _ResolvedComments:
+    """Resolve YAML comments for the given data type."""
+    if isinstance(data, set):
+        return _resolve_yaml_set_comments(
+            yaml_string=yaml_string,
+            base=base,
+            language=language,
+            comment_prefix=comment_prefix,
+            comment_suffix=comment_suffix,
+            comment_line_prefix=comment_line_prefix,
+            wrap=wrap,
+        )
+
+    if not isinstance(data, (list, dict)):
+        stream = StringIO(initial_value=yaml_string)
+        # https://sourceforge.net/p/ruamel-yaml/tickets/328/
+        tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
+        result = literalize_yaml_scalar(
+            tokens=tokens,
+            base=base,
+            comment_prefix=comment_prefix,
+            comment_suffix=comment_suffix,
+            line_prefix=line_prefix,
+        )
+        return _ResolvedComments(result=result, pending=None)
+
+    if not base:
+        return _ResolvedComments(result=base, pending=None)
+
+    return _resolve_yaml_collection_comments(
+        yaml_string=yaml_string,
+        data=data,  # pyright: ignore[reportUnknownArgumentType]
+        base=base,
+        language=language,
+        comment_prefix=comment_prefix,
+        comment_suffix=comment_suffix,
+        comment_line_prefix=comment_line_prefix,
+        wrap=wrap,
+    )
+
+
+@beartype
+def literalize_yaml(
     *,
     yaml_string: str,
     language: Language,
@@ -1008,46 +1061,18 @@ def literalize_yaml(  # pylint: disable=too-many-branches,too-complex,too-many-s
     cs = comment_cfg.suffix
     comment_line_prefix = line_prefix + indent if wrap else line_prefix
 
-    result: str
-    pending_collection_comments: CollectionComments | None = None
-    if isinstance(data, set):
-        resolved = _resolve_yaml_set_comments(
-            yaml_string=yaml_string,
-            base=base,
-            language=language,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            wrap=wrap,
-        )
-        result = resolved.result
-        pending_collection_comments = resolved.pending
-    elif not isinstance(data, (list, dict)):
-        stream = StringIO(initial_value=yaml_string)
-        # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-        tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
-        result = literalize_yaml_scalar(
-            tokens=tokens,
-            base=base,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            line_prefix=line_prefix,
-        )
-    elif not base:
-        result = base
-    else:
-        resolved = _resolve_yaml_collection_comments(
-            yaml_string=yaml_string,
-            data=data,  # pyright: ignore[reportUnknownArgumentType]
-            base=base,
-            language=language,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            wrap=wrap,
-        )
-        result = resolved.result
-        pending_collection_comments = resolved.pending
+    resolved = _resolve_comments(
+        yaml_string=yaml_string,
+        data=data,
+        base=base,
+        language=language,
+        comment_prefix=cp,
+        comment_suffix=cs,
+        comment_line_prefix=comment_line_prefix,
+        line_prefix=line_prefix,
+        wrap=wrap,
+    )
+    result = resolved.result
 
     if variable_name is not None:
         formatter = (
@@ -1057,9 +1082,9 @@ def literalize_yaml(  # pylint: disable=too-many-branches,too-complex,too-many-s
         )
         result = formatter(variable_name, result)
 
-    if pending_collection_comments is not None:
+    if resolved.pending is not None:
         result = prepend_collection_comments(
-            collection_comments=pending_collection_comments,
+            collection_comments=resolved.pending,
             base=result,
             comment_prefix=cp,
             comment_suffix=cs,
