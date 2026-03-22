@@ -652,7 +652,7 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
 def test_java_list_rejects_null_elements() -> None:
     """Java's ``List.of()`` does not accept null elements."""
     spec = Java(
-        sequence_format=Java.SequenceFormats.LIST,
+        sequence_format=Java.SequenceFormats.LIST,  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportAttributeAccessIssue]
     )
     with pytest.raises(expected_exception=NullInCollectionError):
         literalize_json(
