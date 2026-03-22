@@ -279,6 +279,7 @@ class Python(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.HASH,
     ) -> None:
         """Initialize Python language specification."""
+        self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "None"
         self.true_literal = "True"
