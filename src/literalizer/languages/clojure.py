@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -47,7 +47,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Clojure(metaclass=HasFormatEnums):
+class Clojure(metaclass=LanguageCls):
     """Clojure language specification."""
 
     extension = ".clj"
@@ -138,6 +138,7 @@ class Clojure(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.VECTOR,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.SEMICOLON,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Clojure language specification."""
         self.sequence_format = sequence_format

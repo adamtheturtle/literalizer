@@ -1,6 +1,6 @@
-"""Test class-level format Enum access via HasFormatEnums."""
+"""Test class-level format Enum access via the LanguageCls meta-class."""
 
-from literalizer import HasFormatEnums
+from literalizer import LanguageCls
 from literalizer.languages import (
     Ada,
     Bash,
@@ -8,7 +8,7 @@ from literalizer.languages import (
     Python,
 )
 
-_LANGUAGE_TYPES: dict[str, HasFormatEnums] = {
+_LANGUAGE_TYPES: dict[str, LanguageCls] = {
     "ada": Ada,
     "bash": Bash,
     "cpp": Cpp,

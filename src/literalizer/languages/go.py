@@ -19,7 +19,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -104,7 +104,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Go(metaclass=HasFormatEnums):
+class Go(metaclass=LanguageCls):
     """Go language specification.
 
     Args:
@@ -213,6 +213,7 @@ class Go(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.SLICE,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Go language specification."""
         self.sequence_format = sequence_format

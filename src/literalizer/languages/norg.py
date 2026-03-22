@@ -20,7 +20,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -54,7 +54,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Norg(metaclass=HasFormatEnums):
+class Norg(metaclass=LanguageCls):
     """Norg markup language specification.
 
     Produces data literals using Norg-compatible syntax — square
@@ -155,6 +155,7 @@ class Norg(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.PERCENT,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Norg language specification."""
         self.sequence_format = sequence_format

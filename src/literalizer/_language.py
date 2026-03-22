@@ -65,11 +65,11 @@ class SequenceFormat(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
-class HasFormatEnums(type):
+class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
-    Language classes use ``metaclass=HasFormatEnums`` so that downstream
-    code can write ``dict[str, HasFormatEnums]`` and access
+    Language classes use ``metaclass=LanguageCls`` so that downstream
+    code can write ``dict[str, LanguageCls]`` and access
     ``cls.DateFormats``, ``cls.SequenceFormats``, etc. without ``cast``
     or ``type: ignore``.
     """

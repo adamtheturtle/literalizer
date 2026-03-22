@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -55,7 +55,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Mojo(metaclass=HasFormatEnums):
+class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
 
     Mojo does not support heterogeneous collections — every element in a
@@ -157,6 +157,7 @@ class Mojo(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Mojo language specification."""
         self.sequence_format = sequence_format

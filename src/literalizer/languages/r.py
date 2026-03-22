@@ -19,7 +19,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -77,7 +77,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class R(metaclass=HasFormatEnums):
+class R(metaclass=LanguageCls):
     """R language specification.
 
     Dicts are represented as named ``list()`` calls where each entry is
@@ -207,6 +207,7 @@ class R(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize R language specification."""
         self.sequence_format = sequence_format

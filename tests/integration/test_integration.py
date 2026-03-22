@@ -1333,7 +1333,7 @@ class _Variant:
 class _LanguageConfig:
     """Language configuration with class, file extension, and wrapper."""
 
-    lang_cls: literalizer.HasFormatEnums
+    lang_cls: literalizer.LanguageCls
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
@@ -1758,22 +1758,22 @@ class _VariantCase:
 
 @beartype
 def _build_date_variants() -> dict[str, _Variant]:
-    """Build datetime-format variants for scalar dates.
+    """Build date-format variants for scalar dates.
 
-    For each language, create a variant for every non-default datetime format,
-    using ``varname_wrap`` with a variable name.
+    For each language, create a variant for every non-default date format,
+    using ``wrap``.
     """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_member = next(iter(spec.datetime_formats))
-        for fmt in list(spec.datetime_formats):
-            if fmt is default_member:
+        default_format = spec.format_date
+        for fmt in list(spec.date_formats):
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_date_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(datetime_format=fmt),
-                wrap=lang_config.varname_wrap,
+                spec=lang_config.lang_cls(date_format=fmt),
+                wrap=lang_config.wrap,
             )
     return variants
 
@@ -1783,19 +1783,19 @@ def _build_datetime_variants() -> dict[str, _Variant]:
     """Build datetime-format variants for scalar datetimes.
 
     For each language, create a variant for every non-default datetime format,
-    using ``varname_wrap`` with a variable name.
+    using ``wrap``.
     """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_member = next(iter(spec.datetime_formats))
+        default_format = spec.format_datetime
         for fmt in list(spec.datetime_formats):
-            if fmt is default_member:
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(datetime_format=fmt),
-                wrap=lang_config.varname_wrap,
+                wrap=lang_config.wrap,
             )
     return variants
 
@@ -1926,7 +1926,7 @@ def test_golden_file(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
@@ -1963,7 +1963,7 @@ def test_golden_file_with_variable_name(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
         error_on_coercion=False,
@@ -2001,7 +2001,7 @@ def test_golden_file_combined_variable_forms(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
         error_on_coercion=False,
@@ -2011,7 +2011,7 @@ def test_golden_file_combined_variable_forms(
         language=lang_config.lang_cls(),
         line_prefix="",
         indent="    ",
-        wrap=True,
+        include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,
         error_on_coercion=False,
@@ -2030,12 +2030,12 @@ def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[dict[str, _Variant], str, str | None]] = [
-        (_build_date_variants(), "scalar_date", _VARIABLE_NAME),
-        (_build_datetime_variants(), "scalar_datetime", _VARIABLE_NAME),
+        (_build_date_variants(), "scalar_date", None),
+        (_build_datetime_variants(), "scalar_datetime", None),
         (_build_sequence_variants(), "simple_sequence", None),
         (_build_set_variants(), "set", None),
         (_build_comment_variants(), "comments", None),
-        (_build_type_hint_variants(), "simple_dict", _VARIABLE_NAME),
+        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME),
     ]
     for variants, case_dir_name, variable_name in variant_sources:
         for variant_name, variant in variants.items():
@@ -2077,7 +2077,7 @@ def test_format_variant_golden_file(
             language=variant.spec,
             line_prefix="",
             indent="    ",
-            wrap=True,
+            include_delimiters=True,
             variable_name=variant_case.variable_name,
             new_variable=True,
             error_on_coercion=False,

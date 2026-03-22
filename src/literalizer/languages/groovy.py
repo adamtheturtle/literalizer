@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -47,7 +47,7 @@ _string_format: Callable[[str], str] = format_string_backslash_dollar
 
 
 @beartype
-class Groovy(metaclass=HasFormatEnums):
+class Groovy(metaclass=LanguageCls):
     """Groovy language specification."""
 
     extension = ".groovy"
@@ -142,6 +142,7 @@ class Groovy(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Groovy language specification."""
         self.sequence_format = sequence_format

@@ -19,7 +19,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -73,7 +73,7 @@ _string_format: Callable[[str], str] = _format_string
 
 
 @beartype
-class PowerShell(metaclass=HasFormatEnums):
+class PowerShell(metaclass=LanguageCls):
     """PowerShell language specification."""
 
     extension = ".ps1"
@@ -168,6 +168,7 @@ class PowerShell(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize PowerShell language specification."""
         self.sequence_format = sequence_format

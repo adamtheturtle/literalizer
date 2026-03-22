@@ -14,7 +14,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -120,7 +120,7 @@ _string_format: Callable[[str], str] = _format_objc_string
 
 
 @beartype
-class ObjectiveC(metaclass=HasFormatEnums):
+class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
     extension = ".m"
@@ -215,6 +215,7 @@ class ObjectiveC(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Objective-C language specification."""
         self.sequence_format = sequence_format

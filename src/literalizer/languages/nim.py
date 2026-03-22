@@ -21,7 +21,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -47,7 +47,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-class Nim(metaclass=HasFormatEnums):
+class Nim(metaclass=LanguageCls):
     """Nim language specification."""
 
     extension = ".nim"
@@ -142,6 +142,7 @@ class Nim(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Nim language specification."""
         self.sequence_format = sequence_format

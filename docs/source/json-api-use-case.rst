@@ -49,7 +49,7 @@ returns this response:
        line_prefix="",
        indent="    ",
        variable_name="request_body",
-       wrap=True,
+       include_delimiters=True,
        new_variable=True,
    )
    assert request_literal == (
@@ -73,7 +73,7 @@ returns this response:
        line_prefix="",
        indent="    ",
        variable_name="response",
-       wrap=True,
+       include_delimiters=True,
        new_variable=True,
    )
    assert response_literal == (

@@ -18,7 +18,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -90,7 +90,7 @@ def _format_variable_assignment(name: str, value: str) -> str:
 
 
 @beartype
-class Toml(metaclass=HasFormatEnums):
+class Toml(metaclass=LanguageCls):
     """TOML language specification.
 
     Produces TOML inline values — inline tables for mappings, and
@@ -193,6 +193,7 @@ class Toml(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize TOML language specification."""
         self.sequence_format = sequence_format

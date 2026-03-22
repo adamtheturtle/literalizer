@@ -20,7 +20,7 @@ from literalizer._formatters import (
 from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
-    HasFormatEnums,
+    LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -45,7 +45,7 @@ def _format_variable_declaration(name: str, value: str) -> str:
 
 
 @beartype
-class Julia(metaclass=HasFormatEnums):
+class Julia(metaclass=LanguageCls):
     """Julia language specification.
 
     Args:
@@ -167,6 +167,7 @@ class Julia(metaclass=HasFormatEnums):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
     ) -> None:
         """Initialize Julia language specification."""
         self.sequence_format = sequence_format
