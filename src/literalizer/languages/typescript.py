@@ -82,6 +82,14 @@ class TypeScript(metaclass=LanguageCls):
 
             * ``datetime_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.
+
+        sequence_format: Which TypeScript sequence type to use.
+
+            * ``sequence_formats.ARRAY`` — array literal,
+              e.g. ``[1, 2, 3]``.
+            * ``sequence_formats.TUPLE`` — ``as const`` tuple literal,
+              e.g. ``[1, 2, 3] as const``.  TypeScript infers
+              per-element types instead of a union array type.
     """
 
     extension = ".ts"
@@ -123,6 +131,13 @@ class TypeScript(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+        )
+        TUPLE = SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(open_str="["),
+            close="] as const",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence="[] as const",
         )
 
         @property
