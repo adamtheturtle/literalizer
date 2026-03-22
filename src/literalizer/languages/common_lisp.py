@@ -56,6 +56,7 @@ class CommonLisp(metaclass=LanguageCls):
     """Common Lisp language specification."""
 
     extension = ".lisp"
+    pygments_name = "common-lisp"
 
     class DateFormats(enum.Enum):
         """Date format options for CommonLisp."""

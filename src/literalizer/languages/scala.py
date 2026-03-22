@@ -102,6 +102,7 @@ class Scala(metaclass=LanguageCls):
     """Scala language specification."""
 
     extension = ".scala"
+    pygments_name = "scala"
 
     class DateFormats(enum.Enum):
         """Date format options for Scala."""

@@ -173,6 +173,7 @@ class Python(metaclass=LanguageCls):
     """
 
     extension = ".py"
+    pygments_name = "python"
 
     class DateFormats(enum.Enum):
         """Date formatting options for Python."""

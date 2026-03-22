@@ -112,6 +112,7 @@ class D(metaclass=LanguageCls):
     """D language specification."""
 
     extension = ".d"
+    pygments_name = "d"
 
     class DateFormats(enum.Enum):
         """Date format options for D."""

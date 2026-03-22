@@ -133,6 +133,7 @@ class Java(metaclass=LanguageCls):
     """
 
     extension = ".java"
+    pygments_name = "java"
 
     class DateFormats(enum.Enum):
         """Date formatting options for Java."""

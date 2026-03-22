@@ -67,6 +67,7 @@ class Php(metaclass=LanguageCls):
     """PHP language specification."""
 
     extension = ".php"
+    pygments_name = "php"
 
     class DateFormats(enum.Enum):
         """Date format options for Php."""

@@ -79,6 +79,7 @@ class Yaml(metaclass=LanguageCls):
     """
 
     extension = ".yaml"
+    pygments_name = "yaml"
 
     class DateFormats(enum.Enum):
         """Date format options for Yaml."""

@@ -90,6 +90,7 @@ class Rust(metaclass=LanguageCls):
     """
 
     extension = ".rs"
+    pygments_name = "rust"
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""

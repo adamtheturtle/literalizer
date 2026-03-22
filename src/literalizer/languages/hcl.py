@@ -53,6 +53,7 @@ class Hcl(metaclass=LanguageCls):
     """HCL (HashiCorp Configuration Language) language specification."""
 
     extension = ".hcl"
+    pygments_name = "hcl"
 
     class DateFormats(enum.Enum):
         """Date format options for Hcl."""

@@ -85,6 +85,7 @@ class Bash(metaclass=LanguageCls):
     """Bash language specification."""
 
     extension = ".sh"
+    pygments_name = "bash"
 
     class DateFormats(enum.Enum):
         """Date format options for Bash."""

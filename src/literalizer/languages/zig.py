@@ -88,6 +88,7 @@ class Zig(metaclass=LanguageCls):
     """Zig language specification."""
 
     extension = ".zig"
+    pygments_name = "zig"
 
     class DateFormats(enum.Enum):
         """Date format options for Zig."""

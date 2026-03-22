@@ -81,6 +81,7 @@ class LanguageCls(type):
     CommentFormats: type[enum.Enum]
     VariableTypeHints: type[enum.Enum]
     extension: str
+    pygments_name: str
 
 
 @runtime_checkable
@@ -157,6 +158,9 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
 
     extension: str
     """The file extension for this language, including the leading dot."""
+
+    pygments_name: str
+    """The Pygments lexer short name for syntax highlighting."""
 
     null_literal: str
     """The literal representing null/None."""

@@ -102,6 +102,7 @@ class Occam(metaclass=LanguageCls):
     """Occam-pi language specification."""
 
     extension = ".occ"
+    pygments_name = "text"
 
     class DateFormats(enum.Enum):
         """Date format options for Occam."""

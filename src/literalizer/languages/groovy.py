@@ -51,6 +51,7 @@ class Groovy(metaclass=LanguageCls):
     """Groovy language specification."""
 
     extension = ".groovy"
+    pygments_name = "groovy"
 
     class DateFormats(enum.Enum):
         """Date format options for Groovy."""

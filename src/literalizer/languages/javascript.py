@@ -67,6 +67,7 @@ class JavaScript(metaclass=LanguageCls):
     """
 
     extension = ".js"
+    pygments_name = "javascript"
 
     class DateFormats(enum.Enum):
         """Date formatting options for JavaScript."""
