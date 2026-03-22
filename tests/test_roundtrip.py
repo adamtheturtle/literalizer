@@ -1,10 +1,5 @@
 """Hypothesis roundtrip tests for literalizer converter."""
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportAttributeAccessIssue=false
-
 import ast
 import base64
 import json
@@ -20,6 +15,14 @@ PYTHON = Python(
     date_format=Python.date_formats.PYTHON,
     datetime_format=Python.datetime_formats.PYTHON,
     bytes_format=Python.bytes_formats.HEX,
+    sequence_format=Python.sequence_formats.TUPLE,
+    set_format=Python.set_formats.SET,
+    variable_type_hints=Python.variable_type_hints_formats.NONE,
+)
+PYTHON_BYTES = Python(
+    date_format=Python.date_formats.PYTHON,
+    datetime_format=Python.datetime_formats.PYTHON,
+    bytes_format=Python.bytes_formats.PYTHON,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.NONE,
@@ -137,14 +140,14 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
 @given(data=st.binary())
 def test_roundtrip_bytes_python(data: bytes) -> None:
     """Format_bytes_python -> ast.literal_eval round-trips."""
-    result = Python.BytesFormats.PYTHON(data)
+    result = PYTHON_BYTES.format_bytes(data)
     assert ast.literal_eval(node_or_string=result) == data
 
 
 @given(data=st.binary())
 def test_roundtrip_bytes_hex(data: bytes) -> None:
     """Format_bytes_hex -> bytes.fromhex round-trips."""
-    result = Python.BytesFormats.HEX(data)
+    result = PYTHON.format_bytes(data)
     assert bytes.fromhex(result.strip('"')) == data
 
 
