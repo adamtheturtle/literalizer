@@ -87,6 +87,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Zig(metaclass=HasFormatEnums):
     """Zig language specification."""
 
+    extension = ".zig"
+
     class DateFormats(enum.Enum):
         """Date format options for Zig."""
 

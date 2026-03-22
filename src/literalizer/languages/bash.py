@@ -84,6 +84,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Bash(metaclass=HasFormatEnums):
     """Bash language specification."""
 
+    extension = ".sh"
+
     class DateFormats(enum.Enum):
         """Date format options for Bash."""
 

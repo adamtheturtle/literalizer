@@ -80,6 +80,7 @@ class HasFormatEnums(type):
     SetFormats: type[enum.Enum]
     CommentFormats: type[enum.Enum]
     VariableTypeHints: type[enum.Enum]
+    extension: str
 
 
 @runtime_checkable
@@ -153,6 +154,9 @@ class Language(Protocol):
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
+
+    extension: str
+    """The file extension for this language, including the leading dot."""
 
     null_literal: str
     """The literal representing null/None."""

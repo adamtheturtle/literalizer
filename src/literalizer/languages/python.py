@@ -169,6 +169,8 @@ class Python(metaclass=HasFormatEnums):
               e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
+    extension = ".py"
+
     class DateFormats(enum.Enum):
         """Date formatting options for Python."""
 

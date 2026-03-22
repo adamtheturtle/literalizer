@@ -50,6 +50,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Clojure(metaclass=HasFormatEnums):
     """Clojure language specification."""
 
+    extension = ".clj"
+
     class DateFormats(enum.Enum):
         """Date format options for Clojure."""
 

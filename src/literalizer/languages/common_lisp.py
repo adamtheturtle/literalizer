@@ -55,6 +55,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class CommonLisp(metaclass=HasFormatEnums):
     """Common Lisp language specification."""
 
+    extension = ".lisp"
+
     class DateFormats(enum.Enum):
         """Date format options for CommonLisp."""
 

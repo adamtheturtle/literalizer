@@ -78,6 +78,8 @@ class Yaml(metaclass=HasFormatEnums):
     datetime literals, which YAML parsers interpret as typed values.
     """
 
+    extension = ".yaml"
+
     class DateFormats(enum.Enum):
         """Date format options for Yaml."""
 

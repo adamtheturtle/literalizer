@@ -111,6 +111,8 @@ class Dart(metaclass=HasFormatEnums):
               e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
     """
 
+    extension = ".dart"
+
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 

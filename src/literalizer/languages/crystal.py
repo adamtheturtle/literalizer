@@ -59,6 +59,8 @@ class Crystal(metaclass=HasFormatEnums):
               e.g. ``{1, 2, 3}``.
     """
 
+    extension = ".cr"
+
     class DateFormats(enum.Enum):
         """Date format options for Crystal."""
 

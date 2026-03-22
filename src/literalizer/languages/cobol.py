@@ -224,6 +224,8 @@ class Cobol(metaclass=HasFormatEnums):
     sequences / dicts become group items with 05-level sub-items.
     """
 
+    extension = ".cob"
+
     class DateFormats(enum.Enum):
         """Date format options for Cobol."""
 

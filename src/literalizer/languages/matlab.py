@@ -120,6 +120,8 @@ _string_format: Callable[[str], str] = format_string_matlab
 class Matlab(metaclass=HasFormatEnums):
     """MATLAB language specification."""
 
+    extension = ".m"
+
     class DateFormats(enum.Enum):
         """Date format options for Matlab."""
 

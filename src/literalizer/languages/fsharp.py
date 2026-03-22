@@ -111,6 +111,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class FSharp(metaclass=HasFormatEnums):
     """F# language specification."""
 
+    extension = ".fs"
+
     class DateFormats(enum.Enum):
         """Date format options for FSharp."""
 

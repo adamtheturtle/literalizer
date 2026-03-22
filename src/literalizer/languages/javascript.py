@@ -66,6 +66,8 @@ class JavaScript(metaclass=HasFormatEnums):
               e.g. ``new Date("2024-01-15T12:30:00")``.
     """
 
+    extension = ".js"
+
     class DateFormats(enum.Enum):
         """Date formatting options for JavaScript."""
 

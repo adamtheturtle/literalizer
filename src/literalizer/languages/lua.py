@@ -66,6 +66,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Lua(metaclass=HasFormatEnums):
     """Lua language specification."""
 
+    extension = ".lua"
+
     class DateFormats(enum.Enum):
         """Date format options for Lua."""
 

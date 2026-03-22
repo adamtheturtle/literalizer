@@ -50,6 +50,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Racket(metaclass=HasFormatEnums):
     """Racket language specification."""
 
+    extension = ".rkt"
+
     class DateFormats(enum.Enum):
         """Date format options for Racket."""
 
