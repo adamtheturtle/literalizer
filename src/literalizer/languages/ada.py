@@ -12,7 +12,6 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_ada,
 )
 from literalizer._language import (
     CommentConfig,
@@ -23,6 +22,21 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_string_ada(value: str) -> str:
+    r"""Format a string using Ada double-quote escaping.
+
+    Ada has no backslash escaping — backslashes are literal characters.
+    Only double quotes are escaped, by doubling them (``""``).
+    Newlines and tabs are rendered as ``\n`` / ``\t`` for readability
+    since Ada string literals cannot span lines.
+    """
+    escaped = (
+        value.replace("\n", "\\n").replace("\t", "\\t").replace('"', '""')
+    )
+    return f'"{escaped}"'
 
 
 @beartype
@@ -91,7 +105,7 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} := {_to_ada_val(value=value)};"
 
 
-_string_format: Callable[[str], str] = format_string_ada
+_string_format: Callable[[str], str] = _format_string_ada
 
 
 @beartype

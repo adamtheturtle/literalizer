@@ -9,8 +9,11 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from literalizer import literalize_json, literalize_yaml
-from literalizer._formatters import format_bytes_hex, format_bytes_python
+from literalizer._formatters import format_bytes_hex
 from literalizer.languages import Python
+from literalizer.languages.python import (
+    _format_bytes_python as format_bytes_python,
+)
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,

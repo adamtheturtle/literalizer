@@ -10,8 +10,6 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
-    format_date_r,
-    format_datetime_r,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -26,6 +24,18 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import EmptyDictKeyError
+
+
+@beartype
+def _format_date_r(value: datetime.date) -> str:
+    """Format a date as an R ``as.Date(...)`` call."""
+    return f'as.Date("{value.isoformat()}")'
+
+
+@beartype
+def _format_datetime_r(value: datetime.datetime) -> str:
+    """Format a datetime as an R ``as.POSIXct(...)`` call."""
+    return f'as.POSIXct("{value.isoformat()}")'
 
 
 @beartype
@@ -112,7 +122,7 @@ class R(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for R."""
 
-        R = enum.member(value=format_date_r)
+        R = enum.member(value=_format_date_r)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -121,7 +131,7 @@ class R(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for R."""
 
-        R = enum.member(value=format_datetime_r)
+        R = enum.member(value=_format_datetime_r)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

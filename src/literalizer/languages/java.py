@@ -12,9 +12,6 @@ from literalizer._formatters import (
     MixedNumeric,
     fixed_dict_open,
     format_bytes_hex,
-    format_date_java,
-    format_datetime_java_instant,
-    format_datetime_java_zoned,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -30,6 +27,31 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
+
+
+@beartype
+def _format_date_java(value: datetime.date) -> str:
+    """Format a date as a Java ``LocalDate.of(...)`` call."""
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_java_instant(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``Instant.parse(...)`` call."""
+    return f'Instant.parse("{value.isoformat()}")'
+
+
+@beartype
+def _format_datetime_java_zoned(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``ZonedDateTime.of(...)`` call."""
+    tz = value.tzname() or "UTC"
+    nanos = value.microsecond * 1000
+    return (
+        f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f'{nanos}, ZoneId.of("{tz}"))'
+    )
+
 
 _LIST_OF_OPEN = "List.of("
 
@@ -149,7 +171,7 @@ class Java(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Java."""
 
-        JAVA = enum.member(value=format_date_java)
+        JAVA = enum.member(value=_format_date_java)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -158,8 +180,8 @@ class Java(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Java."""
 
-        INSTANT = enum.member(value=format_datetime_java_instant)
-        ZONED = enum.member(value=format_datetime_java_zoned)
+        INSTANT = enum.member(value=_format_datetime_java_instant)
+        ZONED = enum.member(value=_format_datetime_java_zoned)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

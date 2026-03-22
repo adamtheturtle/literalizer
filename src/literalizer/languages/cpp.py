@@ -10,8 +10,6 @@ from literalizer._formatters import (
     ListType,
     MixedNumeric,
     format_bytes_hex,
-    format_date_cpp,
-    format_datetime_cpp,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -27,6 +25,34 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_cpp(value: datetime.date) -> str:
+    """Format a date as a C++ chrono year_month_day literal."""
+    return (
+        f"std::chrono::year_month_day{{"
+        f"std::chrono::year{{{value.year}}}, "
+        f"std::chrono::month{{{value.month}}}, "
+        f"std::chrono::day{{{value.day}}}}}"
+    )
+
+
+@beartype
+def _format_datetime_cpp(value: datetime.datetime) -> str:
+    """Format a datetime as a C++ chrono time_point construction."""
+    ymd = _format_date_cpp(value=value)
+    parts = [f"std::chrono::sys_days{{{ymd}}}"]
+    if value.hour:
+        parts.append(f"std::chrono::hours{{{value.hour}}}")
+    if value.minute:
+        parts.append(f"std::chrono::minutes{{{value.minute}}}")
+    if value.second:
+        parts.append(f"std::chrono::seconds{{{value.second}}}")
+    if value.microsecond:
+        parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
+    return " + ".join(parts)
+
 
 _CPP_SCALAR_TYPES: dict[type, str] = {
     str: "std::string",
@@ -127,7 +153,7 @@ class Cpp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for C++."""
 
-        CPP = enum.member(value=format_date_cpp)
+        CPP = enum.member(value=_format_date_cpp)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -136,7 +162,7 @@ class Cpp(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C++."""
 
-        CPP = enum.member(value=format_datetime_cpp)
+        CPP = enum.member(value=_format_datetime_cpp)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
