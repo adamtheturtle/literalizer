@@ -52,6 +52,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Hcl(metaclass=HasFormatEnums):
     """HCL (HashiCorp Configuration Language) language specification."""
 
+    extension = ".hcl"
+
     class DateFormats(enum.Enum):
         """Date format options for Hcl."""
 

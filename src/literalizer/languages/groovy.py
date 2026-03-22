@@ -50,6 +50,8 @@ _string_format: Callable[[str], str] = format_string_backslash_dollar
 class Groovy(metaclass=HasFormatEnums):
     """Groovy language specification."""
 
+    extension = ".groovy"
+
     class DateFormats(enum.Enum):
         """Date format options for Groovy."""
 

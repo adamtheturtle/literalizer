@@ -65,6 +65,8 @@ class Elixir(metaclass=HasFormatEnums):
               e.g. ``{1, 2, 3}``.
     """
 
+    extension = ".ex"
+
     class DateFormats(enum.Enum):
         """Date format options for Elixir."""
 

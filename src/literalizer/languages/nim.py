@@ -50,6 +50,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Nim(metaclass=HasFormatEnums):
     """Nim language specification."""
 
+    extension = ".nim"
+
     class DateFormats(enum.Enum):
         """Date format options for Nim."""
 

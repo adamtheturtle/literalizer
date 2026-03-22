@@ -101,6 +101,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Occam(metaclass=HasFormatEnums):
     """Occam-pi language specification."""
 
+    extension = ".occ"
+
     class DateFormats(enum.Enum):
         """Date format options for Occam."""
 

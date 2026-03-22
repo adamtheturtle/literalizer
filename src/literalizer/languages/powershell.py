@@ -76,6 +76,8 @@ _string_format: Callable[[str], str] = _format_string
 class PowerShell(metaclass=HasFormatEnums):
     """PowerShell language specification."""
 
+    extension = ".ps1"
+
     class DateFormats(enum.Enum):
         """Date format options for PowerShell."""
 

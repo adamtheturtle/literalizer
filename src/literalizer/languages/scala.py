@@ -101,6 +101,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Scala(metaclass=HasFormatEnums):
     """Scala language specification."""
 
+    extension = ".scala"
+
     class DateFormats(enum.Enum):
         """Date format options for Scala."""
 

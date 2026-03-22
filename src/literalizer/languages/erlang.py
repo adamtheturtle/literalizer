@@ -73,6 +73,8 @@ class Erlang(metaclass=HasFormatEnums):
               e.g. ``{1, 2, 3}``.
     """
 
+    extension = ".erl"
+
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
 

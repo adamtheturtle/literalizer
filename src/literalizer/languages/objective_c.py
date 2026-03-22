@@ -123,6 +123,8 @@ _string_format: Callable[[str], str] = _format_objc_string
 class ObjectiveC(metaclass=HasFormatEnums):
     """Objective-C language specification."""
 
+    extension = ".m"
+
     class DateFormats(enum.Enum):
         """Date format options for ObjectiveC."""
 

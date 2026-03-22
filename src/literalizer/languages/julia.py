@@ -67,6 +67,8 @@ class Julia(metaclass=HasFormatEnums):
               e.g. ``(1, 2, 3)``.
     """
 
+    extension = ".jl"
+
     class DateFormats(enum.Enum):
         """Date formatting options for Julia."""
 

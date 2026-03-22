@@ -100,6 +100,8 @@ class Haskell(metaclass=HasFormatEnums):
     let numeric literals resolve to ``HInt`` / ``HFloat``.
     """
 
+    extension = ".hs"
+
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
 

@@ -168,6 +168,8 @@ _string_format: Callable[[str], str] = format_string_fortran
 class Fortran(metaclass=HasFormatEnums):
     """Fortran language specification."""
 
+    extension = ".f90"
+
     class DateFormats(enum.Enum):
         """Date format options for Fortran."""
 

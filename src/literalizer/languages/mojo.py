@@ -69,6 +69,8 @@ class Mojo(metaclass=HasFormatEnums):
     same string (e.g. ``{1, "1"}`` both become ``"1"``).
     """
 
+    extension = ".mojo"
+
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
 

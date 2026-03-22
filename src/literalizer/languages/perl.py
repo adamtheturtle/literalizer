@@ -50,6 +50,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Perl(metaclass=HasFormatEnums):
     """Perl language specification."""
 
+    extension = ".pl"
+
     class DateFormats(enum.Enum):
         """Date format options for Perl."""
 

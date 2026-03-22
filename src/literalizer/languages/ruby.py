@@ -66,6 +66,8 @@ class Ruby(metaclass=HasFormatEnums):
               e.g. ``Time.new(2024, 1, 15, 12, 30, 0)``.
     """
 
+    extension = ".rb"
+
     class DateFormats(enum.Enum):
         """Date format options for Ruby."""
 
