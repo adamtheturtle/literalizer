@@ -54,32 +54,17 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-_HASKELL_PREAMBLE: tuple[str, ...] = (
-    "{-# LANGUAGE OverloadedStrings #-}",
-    "import Data.String (IsString(fromString))",
-    "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]",
-    "instance IsString Val where",
-    "    fromString = HStr",
-    "instance Num Val where",
-    "    fromInteger = HInt",
-    '    a + b = error "not implemented"',
-    '    a * b = error "not implemented"',
-    '    abs a = error "not implemented"',
-    '    signum a = error "not implemented"',
-    "    negate (HInt n) = HInt (negate n)",
-    "    negate (HFloat f) = HFloat (negate f)",
-    '    negate _ = error "not implemented"',
-    "instance Fractional Val where",
-    "    fromRational r = HFloat (realToFrac r)",
-    '    a / b = error "not implemented"',
-)
-
-
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return _HASKELL_PREAMBLE
+    """Return preamble lines for the generated code.
+
+    Only the ``OverloadedStrings`` pragma is emitted here because it
+    must appear before the ``module`` declaration.  The ``Val`` ADT and
+    typeclass instances are user-defined (see the class docstring) and
+    must be placed after the module header, so they are not part of the
+    preamble.
+    """
+    return ("{-# LANGUAGE OverloadedStrings #-}",)
 
 
 @beartype

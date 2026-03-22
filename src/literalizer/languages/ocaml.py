@@ -108,23 +108,15 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-_OCAML_PREAMBLE: tuple[str, ...] = (
-    "type val_t =",
-    "  | ONull",
-    "  | OBool of bool",
-    "  | OInt of int",
-    "  | OFloat of float",
-    "  | OStr of string",
-    "  | OList of val_t list",
-    "  | OMap of (string * val_t) list",
-    "  | OSet of val_t list",
-)
-
-
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return _OCAML_PREAMBLE
+    """Return preamble lines for the generated code.
+
+    The ``val_t`` variant type used by the generated output is
+    user-defined and must appear inside a module body, so it is not
+    part of the preamble.
+    """
+    return ()
 
 
 @beartype

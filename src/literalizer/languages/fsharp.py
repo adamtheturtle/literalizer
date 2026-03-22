@@ -104,23 +104,15 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 _string_format: Callable[[str], str] = format_string_backslash
 
 
-_FSHARP_PREAMBLE: tuple[str, ...] = (
-    "type Val =",
-    "    | FNull",
-    "    | FBool of bool",
-    "    | FInt of int64",
-    "    | FFloat of float",
-    "    | FStr of string",
-    "    | FList of Val list",
-    "    | FMap of (string * Val) list",
-    "    | FSet of Val list",
-)
-
-
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return _FSHARP_PREAMBLE
+    """Return preamble lines for the generated code.
+
+    The ``Val`` discriminated union used by the generated output is
+    user-defined and must appear after the ``module`` declaration, so
+    it is not part of the preamble.
+    """
+    return ()
 
 
 @beartype

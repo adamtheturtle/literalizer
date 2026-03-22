@@ -107,12 +107,74 @@ def _wrap_rust(content: str) -> str:
     return f"fn main() {{\n    let _ = {indented};\n}}"
 
 
+_FSHARP_VAL_TYPE = (
+    "type Val =\n"
+    "    | FNull\n"
+    "    | FBool of bool\n"
+    "    | FInt of int64\n"
+    "    | FFloat of float\n"
+    "    | FStr of string\n"
+    "    | FList of Val list\n"
+    "    | FMap of (string * Val) list\n"
+    "    | FSet of Val list\n"
+)
+
+_OCAML_VAL_TYPE = (
+    "type val_t =\n"
+    "  | ONull\n"
+    "  | OBool of bool\n"
+    "  | OInt of int\n"
+    "  | OFloat of float\n"
+    "  | OStr of string\n"
+    "  | OList of val_t list\n"
+    "  | OMap of (string * val_t) list\n"
+    "  | OSet of val_t list\n"
+)
+
+_OCCAM_LIT_TYPE = (
+    "MOBILE DATA TYPE LIT IS\n"
+    "  CASE\n"
+    "    lit.null\n"
+    "    lit.bool ; BOOL\n"
+    "    lit.int ; INT\n"
+    "    lit.float ; REAL32\n"
+    "    lit.str ; MOBILE []BYTE\n"
+    "    lit.list ; MOBILE []MOBILE LIT\n"
+    "    lit.map ; MOBILE []MOBILE LIT\n"
+    "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
+    "    lit.set ; MOBILE []MOBILE LIT\n"
+    ":"
+)
+
+_HASKELL_ADT = (
+    "import Data.String (IsString(fromString))\n"
+    "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
+    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+    "instance IsString Val where\n"
+    "    fromString = HStr\n"
+    "instance Num Val where\n"
+    "    fromInteger = HInt\n"
+    '    a + b = error "not implemented"\n'
+    '    a * b = error "not implemented"\n'
+    '    abs a = error "not implemented"\n'
+    '    signum a = error "not implemented"\n'
+    "    negate (HInt n) = HInt (negate n)\n"
+    "    negate (HFloat f) = HFloat (negate f)\n"
+    '    negate _ = error "not implemented"\n'
+    "instance Fractional Val where\n"
+    "    fromRational r = HFloat (realToFrac r)\n"
+    '    a / b = error "not implemented"\n'
+)
+
+
 @beartype
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a Val assignment."""
     fsharp = literalizer.languages.FSharp()
     typed = fsharp.format_sequence_entry(content)
-    return f"module Check\n\nlet x: Val = {typed}"
+    return (
+        "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {typed}"
+    )
 
 
 @beartype
@@ -120,13 +182,25 @@ def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a val_t assignment."""
     ocaml = literalizer.languages.OCaml()
     typed = ocaml.format_sequence_entry(content)
-    return f"module Check = struct\n\nlet x : val_t = {typed}\n\nend"
+    return (
+        "module Check = struct\n\n"
+        + _OCAML_VAL_TYPE
+        + "\n"
+        + f"let x : val_t = {typed}\n\n"
+        + "end"
+    )
 
 
 @beartype
 def _wrap_ocaml_varname(content: str) -> str:
     """Wrap an OCaml ``let`` declaration in a module."""
-    return "module Check = struct\n\n" + content + "\n\nend"
+    return (
+        "module Check = struct\n\n"
+        + _OCAML_VAL_TYPE
+        + "\n"
+        + content
+        + "\n\nend"
+    )
 
 
 @beartype
@@ -134,26 +208,45 @@ def _wrap_occam(content: str) -> str:
     """Wrap in an occam-pi PROC."""
     occam = literalizer.languages.Occam()
     typed = occam.format_sequence_entry(content)
-    return f"PROC check ()\n  VAL MOBILE LIT x IS {typed}:\n  SEQ\n    SKIP\n:"
+    return (
+        _OCCAM_LIT_TYPE
+        + "\n\n"
+        + "PROC check ()\n"
+        + f"  VAL MOBILE LIT x IS {typed}:\n"
+        + "  SEQ\n"
+        + "    SKIP\n"
+        + ":"
+    )
 
 
 @beartype
 def _wrap_occam_varname(content: str) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC."""
     indented = "  " + content.replace("\n", "\n  ")
-    return "PROC check ()\n" + indented + "\n" + "  SEQ\n" + "    SKIP\n" + ":"
+    return (
+        _OCCAM_LIT_TYPE
+        + "\n\n"
+        + "PROC check ()\n"
+        + indented
+        + "\n"
+        + "  SEQ\n"
+        + "    SKIP\n"
+        + ":"
+    )
 
 
 @beartype
 def _wrap_fsharp_varname(content: str) -> str:
     """Wrap an F# ``let`` declaration in a module."""
-    return "module Check\n\n" + content
+    return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
 
 
 @beartype
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a Val binding."""
-    return f"module Check where\nx :: Val\nx = {content}"
+    return (
+        "module Check where\n" + _HASKELL_ADT + "x :: Val\n" + f"x = {content}"
+    )
 
 
 @beartype
@@ -587,7 +680,12 @@ def _wrap_rust_varname(content: str) -> str:
 @beartype
 def _wrap_haskell_varname(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
-    return f"module Check where\n{_VARIABLE_NAME} :: Val\n{content}"
+    return (
+        "module Check where\n"
+        + _HASKELL_ADT
+        + f"{_VARIABLE_NAME} :: Val\n"
+        + f"{content}"
+    )
 
 
 @beartype

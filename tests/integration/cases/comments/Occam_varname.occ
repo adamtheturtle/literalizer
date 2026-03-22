@@ -10,6 +10,7 @@ MOBILE DATA TYPE LIT IS
     lit.pair ; MOBILE []BYTE ; MOBILE LIT
     lit.set ; MOBILE []MOBILE LIT
 :
+
 PROC check ()
   VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
       -- Server configuration
