@@ -391,9 +391,8 @@ class Python(metaclass=LanguageCls):
             datetime.date: ("import datetime",),
             datetime.datetime: ("import datetime",),
         }
-        if variable_type_hints is self.VariableTypeHints.INLINE:
-            self.type_hint_collection_preamble_lines: tuple[str, ...] = (
-                "from typing import Any",
-            )
-        else:
-            self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = (
+            ("from typing import Any",)
+            if variable_type_hints is self.VariableTypeHints.INLINE
+            else ()
+        )

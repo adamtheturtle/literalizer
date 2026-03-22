@@ -43,34 +43,34 @@ class LiteralizeResult:
     """
 
 
-def _collect_value_types(data: Value) -> frozenset[type]:
+def _collect_value_types(*, data: Value) -> frozenset[type]:
     """Walk *data* and return the set of value types present."""
     types: set[type] = set()
-    _walk_value(data, types)
+    _walk_value(value=data, types=types)
     return frozenset(types)
 
 
-def _walk_value(value: Value, types: set[type]) -> None:
+def _walk_value(*, value: Value, types: set[type]) -> None:
     """Recursively add the type of *value* to *types*."""
     if isinstance(value, ordereddict):
         types.add(ordereddict)
         for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            _walk_value(v, types)
+            _walk_value(value=v, types=types)
     elif isinstance(value, dict):
         types.add(dict)
         for v in value.values():
-            _walk_value(v, types)
+            _walk_value(value=v, types=types)
     elif isinstance(value, (set, frozenset)):
         types.add(set)
     elif isinstance(value, list):
         types.add(list)
         for v in value:
-            _walk_value(v, types)
+            _walk_value(value=v, types=types)
     else:
-        _walk_scalar(value, types)
+        _walk_scalar(value=value, types=types)
 
 
-def _walk_scalar(value: Value, types: set[type]) -> None:
+def _walk_scalar(*, value: Value, types: set[type]) -> None:
     """Add scalar type of *value* to *types*."""
     if isinstance(value, datetime.datetime):
         types.add(datetime.datetime)
@@ -85,6 +85,7 @@ def _walk_scalar(value: Value, types: set[type]) -> None:
 
 
 def _extend_collection_preamble(
+    *,
     types: frozenset[type],
     language: Language,
     lines: list[str],
@@ -110,14 +111,14 @@ def _compute_preamble(
     """Compute preamble lines from the data types present and the
     language configuration.  Pure function — no side effects.
     """
-    types = _collect_value_types(data)
+    types = _collect_value_types(data=data)
     lines: list[str] = []
 
     for scalar_type, preamble in language.scalar_preamble.items():
         if scalar_type in types:
             lines.extend(preamble)
 
-    _extend_collection_preamble(types, language, lines)
+    _extend_collection_preamble(types=types, language=language, lines=lines)
 
     if (
         has_variable
