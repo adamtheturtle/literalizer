@@ -2075,9 +2075,15 @@ def _build_date_variants() -> dict[str, _Variant]:
 
 
 def _build_datetime_variants() -> dict[str, _Variant]:
-    """Build datetime-format variants for scalar datetimes."""
+    """Build datetime-format variants for scalar datetimes.
+
+    For each language that has a non-identity ``datetime_wrap`` callback,
+    create a variant for every datetime format.
+    """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
+        if lang_config.datetime_wrap is _wrap_identity:
+            continue
         spec = lang_config.spec
         for fmt in list(spec.datetime_formats):
             variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
