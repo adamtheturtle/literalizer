@@ -4,3 +4,4 @@ def main():
         "banana",
         "cherry",
     ]
+    _ = my_data

@@ -4,3 +4,4 @@ def main():
         2,
         3,
     ]
+    _ = my_data

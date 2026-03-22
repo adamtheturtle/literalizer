@@ -12,6 +12,7 @@ from literalizer._formatters import (
     fixed_sequence_open,
     format_bytes_hex,
     format_bytes_python,
+    format_date_iso,
     format_date_python,
     format_datetime_epoch,
     format_datetime_python,
@@ -130,6 +131,8 @@ class Python(metaclass=HasFormatEnums):
 
             * ``date_formats.PYTHON`` — ``datetime.date`` constructor call,
               e.g. ``datetime.date(year=2024, month=1, day=15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -175,6 +178,7 @@ class Python(metaclass=HasFormatEnums):
         """Date formatting options for Python."""
 
         PYTHON = enum.member(value=format_date_python)
+        ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -209,6 +213,7 @@ class Python(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
             empty_sequence=None,
+            schema_to_opener=None,
         )
         LIST = SequenceFormatConfig(
             open_str="[",
@@ -216,6 +221,7 @@ class Python(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            schema_to_opener=None,
         )
 
         @property

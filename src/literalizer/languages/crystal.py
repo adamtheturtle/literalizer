@@ -97,6 +97,7 @@ class Crystal(metaclass=HasFormatEnums):
             empty_sequence="[] of Nil",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            schema_to_opener=None,
         )
         TUPLE = SequenceFormatConfig(
             open_str="{",
@@ -104,6 +105,7 @@ class Crystal(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            schema_to_opener=None,
         )
 
         @property

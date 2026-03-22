@@ -5,9 +5,11 @@ def main():
         "active": "True",
         "score": "None",
     }
+    _ = my_data
     my_data = {
         "name": "Alice",
         "age": "30",
         "active": "True",
         "score": "None",
     }
+    _ = my_data

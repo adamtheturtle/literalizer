@@ -18,6 +18,7 @@ class SequenceFormatConfig:
     supports_heterogeneity: bool
     single_element_trailing_comma: bool
     empty_sequence: str | None
+    schema_to_opener: Callable[..., str | None] | None
 
 
 @dataclasses.dataclass(frozen=True)

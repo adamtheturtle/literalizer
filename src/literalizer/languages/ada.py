@@ -146,6 +146,7 @@ class Ada(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="AList'(1 .. 0 => ANull)",
+            schema_to_opener=None,
         )
 
         @property
