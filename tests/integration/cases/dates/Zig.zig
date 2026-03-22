@@ -11,8 +11,8 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const v: ZVal = .{ .map = &.{
-        .{ .key = "date", .val = .{ .year = 2024, .month = 1, .day = 15 } },
-        .{ .key = "datetime", .val = .{ .year = 2024, .month = 1, .day = 15, .hour = 12, .minute = 30, .second = 0 } },
+        .{ .key = "date", .val = .{ .str = "2024-01-15" } },
+        .{ .key = "datetime", .val = .{ .str = "2024-01-15T12:30:00+00:00" } },
     }};
     _ = v;
 }

@@ -21,6 +21,10 @@ jobs:
               - 'tests/integration/cases/**'
               - '**/*.yml'
               - '**/*.toml'
+      - name: Install Perl dependencies
+        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
+          == 'true'
+        run: cpanm --notest DateTime
       - name: Check Perl syntax
         if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
           == 'true'

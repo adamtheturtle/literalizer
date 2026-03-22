@@ -63,9 +63,12 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+def _preamble(code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code."""
+    lines: list[str] = []
+    if "DateTime->new" in code:
+        lines.append("use DateTime;")
+    return lines
 
 
 @beartype

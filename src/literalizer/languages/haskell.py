@@ -76,12 +76,15 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = ["{-# LANGUAGE OverloadedStrings #-}"]
-    if "fromGregorian" in code or "UTCTime" in code:
-        lines.append("import Data.Time")
-    return lines
+def _preamble(_code: str) -> Sequence[str]:
+    """Return preamble lines for the generated code.
+
+    Only the ``OverloadedStrings`` pragma is emitted here because it
+    must appear before the ``module`` declaration.  The ``Data.Time``
+    import required by the ``HASKELL`` date/datetime format must be
+    placed after the module header by the consuming code.
+    """
+    return ("{-# LANGUAGE OverloadedStrings #-}",)
 
 
 @beartype
@@ -233,8 +236,8 @@ class Haskell(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.HASKELL,
-        datetime_format: DatetimeFormats = DatetimeFormats.HASKELL,
+        date_format: DateFormats = DateFormats.ISO,
+        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,

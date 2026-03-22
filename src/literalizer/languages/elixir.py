@@ -37,7 +37,8 @@ def _format_date_elixir(value: datetime.date) -> str:
 @beartype
 def _format_datetime_elixir(value: datetime.datetime) -> str:
     """Format a datetime as an Elixir ``~U`` sigil."""
-    return f"~U[{value.isoformat()}Z]"
+    naive = value.replace(tzinfo=None)
+    return f"~U[{naive.isoformat()}Z]"
 
 
 @beartype

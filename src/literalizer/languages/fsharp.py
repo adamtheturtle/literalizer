@@ -232,8 +232,8 @@ class FSharp(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.FSHARP,
-        datetime_format: DatetimeFormats = DatetimeFormats.FSHARP,
+        date_format: DateFormats = DateFormats.ISO,
+        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,

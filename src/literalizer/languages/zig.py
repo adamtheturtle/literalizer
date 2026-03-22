@@ -225,8 +225,8 @@ class Zig(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ZIG,
-        datetime_format: DatetimeFormats = DatetimeFormats.ZIG,
+        date_format: DateFormats = DateFormats.ISO,
+        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
