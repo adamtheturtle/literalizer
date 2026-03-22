@@ -138,6 +138,7 @@ class Haskell(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            schema_to_opener=None,
         )
 
         @property

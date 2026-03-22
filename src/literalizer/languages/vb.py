@@ -135,6 +135,7 @@ class VisualBasic(metaclass=HasFormatEnums):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="New Object() {}",
+            schema_to_opener=None,
         )
 
         @property

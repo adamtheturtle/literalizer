@@ -158,6 +158,7 @@ class Matlab(metaclass=HasFormatEnums):
             empty_sequence="{}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            schema_to_opener=None,
         )
 
         @property
