@@ -81,6 +81,7 @@ frozenset
 ghc
 gnatmake
 gofmt
+gregorian
 haskell
 init
 initialisation
@@ -135,6 +136,7 @@ subdirectory
 swiftc
 ty
 typeclass
+utc
 uv
 val_t
 whitespace
