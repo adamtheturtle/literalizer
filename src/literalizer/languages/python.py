@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 
@@ -56,6 +57,24 @@ def _preamble(code: str) -> Sequence[str]:
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Python variable declaration."""
     return f"{name} = {value}"
+
+
+@beartype
+def _format_inline_type_hint_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    sequence_config: SequenceFormatConfig,
+    set_config: SetFormatConfig,
+) -> str:
+    """Format a Python variable declaration with an inline type hint."""
+    hint = _python_type_hint(
+        data=data,
+        sequence_config=sequence_config,
+        set_config=set_config,
+    )
+    return f"{name}: {hint} = {value}"
 
 
 @beartype
@@ -232,6 +251,23 @@ class Python(metaclass=LanguageCls):
         NONE = "none"
         INLINE = "inline"
 
+        def formatter(
+            self,
+            *,
+            sequence_config: SequenceFormatConfig,
+            set_config: SetFormatConfig,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter for this hint
+            style.
+            """
+            if self is type(self).INLINE:
+                return functools.partial(
+                    _format_inline_type_hint_declaration,
+                    sequence_config=sequence_config,
+                    set_config=set_config,
+                )
+            return _format_variable_declaration
+
     class CommentFormats(enum.Enum):
         """Comment style options."""
 
@@ -304,27 +340,13 @@ class Python(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        decl_formatter: Callable[[str, str, Value], str]
-        if variable_type_hints == Python.variable_type_hints_formats.INLINE:
-            seq_cfg = self.sequence_format_config
-            set_cfg = self.set_format_config
-
-            @beartype
-            def _inline_hint(name: str, value: str, data: Value) -> str:
-                """Format a Python variable declaration with an inline type
-                hint.
-                """
-                hint = _python_type_hint(
-                    data=data,
-                    sequence_config=seq_cfg,
-                    set_config=set_cfg,
-                )
-                return f"{name}: {hint} = {value}"
-
-            decl_formatter = _inline_hint
-        else:
-            decl_formatter = _format_variable_declaration
-        self.format_variable_declaration = decl_formatter
+        decl_fmt: Callable[[str, str, Value], str] = (
+            variable_type_hints.formatter(
+                sequence_config=self.sequence_format_config,
+                set_config=self.set_format_config,
+            )
+        )
+        self.format_variable_declaration = decl_fmt
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
