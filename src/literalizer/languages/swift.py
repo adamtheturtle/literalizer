@@ -22,7 +22,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_swift_omap_entry(key: str, value: str) -> str:
+def _format_swift_ordered_map_entry(key: str, value: str) -> str:
     """Format a Swift dictionary entry."""
     return f"{key}: {value}"
 
@@ -167,12 +167,14 @@ class Swift(metaclass=HasFormatEnums):
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_config: CommentConfig = comment_format.value
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="[",
-            close="]",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="[",
+                close="]",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_swift_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_swift_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

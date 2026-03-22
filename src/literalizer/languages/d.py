@@ -19,7 +19,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -88,7 +88,7 @@ def _format_d_set_entry(item: str) -> str:
 
 
 @beartype
-def _format_d_omap_entry(key: str, value: str) -> str:
+def _format_d_ordered_map_entry(key: str, value: str) -> str:
     """Format a D ordered-map entry as a two-element ``JSONValue``
     array.
     """
@@ -222,12 +222,14 @@ class D(metaclass=HasFormatEnums):
         )
         self.format_set_entry: Callable[[str], str] = _format_d_set_entry
         self.comment_config: CommentConfig = comment_format.value
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="JSONValue([",
-            close="])",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="JSONValue([",
+                close="])",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_d_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_d_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

@@ -22,7 +22,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -161,11 +161,13 @@ class Perl(metaclass=HasFormatEnums):
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_config: CommentConfig = comment_format.value
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="{",
-            close="}",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="{",
+                close="}",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
             dict_entry_with_separator(separator=" => ")
         )
         self.multiline_close_indent = ""

@@ -21,7 +21,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -61,7 +61,7 @@ def _format_r_dict_entry_error(key: str, value: str) -> str:
 
 
 @beartype
-def _format_r_omap_entry(key: str, value: str) -> str:
+def _format_r_ordered_map_entry(key: str, value: str) -> str:
     """Format an R named list entry for an ordered map."""
     return f"{key} = {value}"
 
@@ -229,12 +229,14 @@ class R(metaclass=HasFormatEnums):
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_config: CommentConfig = comment_format.value
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="list(",
-            close=")",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="list(",
+                close=")",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
-            _format_r_omap_entry
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
+            _format_r_ordered_map_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

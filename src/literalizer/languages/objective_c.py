@@ -15,7 +15,7 @@ from literalizer._language import (
     CommentConfig,
     DictFormatConfig,
     HasFormatEnums,
-    OmapFormatConfig,
+    OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
@@ -232,11 +232,13 @@ class ObjectiveC(metaclass=HasFormatEnums):
         self.format_sequence_entry: Callable[[str], str] = _to_objc_val
         self.format_set_entry: Callable[[str], str] = _to_objc_val
         self.comment_config: CommentConfig = comment_format.value
-        self.omap_format_config: OmapFormatConfig = OmapFormatConfig(
-            open_str="@{",
-            close="}",
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
+            OrderedMapFormatConfig(
+                open_str="@{",
+                close="}",
+            )
         )
-        self.format_omap_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, str], str] = (
             _format_objc_dict_entry
         )
         self.multiline_close_indent = ""
