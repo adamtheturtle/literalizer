@@ -78,24 +78,6 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 
 @beartype
-def format_date_js(value: datetime.date) -> str:
-    """Format a date as a JavaScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15")``.
-    """
-    return f'new Date("{value.isoformat()}")'
-
-
-@beartype
-def format_datetime_js(value: datetime.datetime) -> str:
-    """Format a datetime as a JavaScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15T12:30:00")``.
-    """
-    return f'new Date("{value.isoformat()}")'
-
-
-@beartype
 def format_bytes_hex(value: bytes) -> str:
     """Format bytes as a hex string literal.
 

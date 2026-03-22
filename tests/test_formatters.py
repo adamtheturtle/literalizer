@@ -7,8 +7,6 @@ import pytest
 
 from literalizer._formatters import (
     format_bytes_hex,
-    format_date_js,
-    format_datetime_js,
 )
 from literalizer.languages import Java, Python
 from literalizer.languages.cpp import (
@@ -37,6 +35,12 @@ from literalizer.languages.java import (
 )
 from literalizer.languages.java import (
     _format_datetime_java_zoned as format_datetime_java_zoned,
+)
+from literalizer.languages.javascript import (
+    _format_date_js as format_date_js,
+)
+from literalizer.languages.javascript import (
+    _format_datetime_js as format_datetime_js,
 )
 from literalizer.languages.kotlin import (
     _format_date_kotlin as format_date_kotlin,
