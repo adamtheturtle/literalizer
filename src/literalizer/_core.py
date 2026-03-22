@@ -109,8 +109,6 @@ def _compute_preamble(
     *,
     data: Value,
     language: Language,
-    has_variable: bool,
-    new_variable: bool,
 ) -> tuple[str, ...]:
     """Compute preamble lines from the data types present and the
     language configuration.  Pure function — no side effects.
@@ -124,11 +122,7 @@ def _compute_preamble(
 
     _extend_collection_preamble(types=types, language=language, lines=lines)
 
-    if (
-        has_variable
-        and new_variable
-        and types & {dict, list, set, ordereddict}
-    ):
+    if types & {dict, list, set, ordereddict}:
         lines.extend(language.type_hint_collection_preamble_lines)
 
     # Deduplicate preserving insertion order.
@@ -964,8 +958,6 @@ def literalize_json(
     preamble = tuple(language.static_preamble) + _compute_preamble(
         data=data,
         language=language,
-        has_variable=variable_name is not None,
-        new_variable=new_variable,
     )
     return LiteralizeResult(
         code=result,
@@ -1262,8 +1254,6 @@ def literalize_yaml(
     preamble = tuple(language.static_preamble) + _compute_preamble(
         data=coerced_data,
         language=language,
-        has_variable=variable_name is not None,
-        new_variable=new_variable,
     )
     return LiteralizeResult(
         code=result,
