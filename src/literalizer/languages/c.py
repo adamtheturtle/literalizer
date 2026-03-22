@@ -93,6 +93,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class C(metaclass=HasFormatEnums):
     """C language specification."""
 
+    extension = ".c"
+
     class DateFormats(enum.Enum):
         """Date format options for C."""
 

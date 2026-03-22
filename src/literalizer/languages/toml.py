@@ -105,6 +105,8 @@ class Toml(metaclass=HasFormatEnums):
     datetime literals, which are a distinct TOML type.
     """
 
+    extension = ".toml"
+
     class DateFormats(enum.Enum):
         """Date format options for Toml."""
 

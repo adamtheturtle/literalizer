@@ -104,6 +104,8 @@ class R(metaclass=HasFormatEnums):
               :class:`~literalizer.exceptions.EmptyDictKeyError`.
     """
 
+    extension = ".R"
+
     class DateFormats(enum.Enum):
         """Date formatting options for R."""
 

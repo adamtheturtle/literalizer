@@ -110,6 +110,8 @@ class CSharp(metaclass=HasFormatEnums):
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
     """
 
+    extension = ".cs"
+
     class DateFormats(enum.Enum):
         """Date format options for C#."""
 

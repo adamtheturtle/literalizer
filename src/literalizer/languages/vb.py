@@ -97,6 +97,8 @@ class VisualBasic(metaclass=HasFormatEnums):
     variable name is supplied.
     """
 
+    extension = ".vb"
+
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
 

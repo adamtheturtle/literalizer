@@ -127,6 +127,8 @@ class Kotlin(metaclass=HasFormatEnums):
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
     """
 
+    extension = ".kts"
+
     class DateFormats(enum.Enum):
         """Date format options for Kotlin."""
 

@@ -67,6 +67,8 @@ class Norg(metaclass=HasFormatEnums):
     verbatim tag: ``* name`` then ``@code json`` / ``@end``.
     """
 
+    extension = ".norg"
+
     class DateFormats(enum.Enum):
         """Date format options for Norg."""
 

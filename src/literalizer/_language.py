@@ -154,6 +154,9 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    extension: str
+    """The file extension for this language, including the leading dot."""
+
     null_literal: str
     """The literal representing null/None."""
 

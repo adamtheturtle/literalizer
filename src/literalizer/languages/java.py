@@ -106,6 +106,8 @@ class Java(metaclass=HasFormatEnums):
               ZoneId.of("UTC"))``.
     """
 
+    extension = ".java"
+
     class DateFormats(enum.Enum):
         """Date formatting options for Java."""
 

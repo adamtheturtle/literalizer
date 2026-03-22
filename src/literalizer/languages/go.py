@@ -121,6 +121,8 @@ class Go(metaclass=HasFormatEnums):
               time.UTC)``.
     """
 
+    extension = ".go"
+
     class DateFormats(enum.Enum):
         """Date format options for Go."""
 

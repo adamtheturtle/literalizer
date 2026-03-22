@@ -108,6 +108,8 @@ _string_format: Callable[[str], str] = format_string_ada
 class Ada(metaclass=HasFormatEnums):
     """Ada language specification."""
 
+    extension = ".adb"
+
     class DateFormats(enum.Enum):
         """Date format options for Ada."""
 

@@ -115,6 +115,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class OCaml(metaclass=HasFormatEnums):
     """OCaml language specification."""
 
+    extension = ".ml"
+
     class DateFormats(enum.Enum):
         """Date format options for OCaml."""
 

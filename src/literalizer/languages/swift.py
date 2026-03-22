@@ -56,6 +56,8 @@ _string_format: Callable[[str], str] = format_string_backslash
 class Swift(metaclass=HasFormatEnums):
     """Swift language specification."""
 
+    extension = ".swift"
+
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
 

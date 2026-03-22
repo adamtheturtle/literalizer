@@ -113,6 +113,8 @@ class Cpp(metaclass=HasFormatEnums):
               + std::chrono::minutes{30}``.
     """
 
+    extension = ".cpp"
+
     class DateFormats(enum.Enum):
         """Date format options for C++."""
 

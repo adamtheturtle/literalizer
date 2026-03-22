@@ -89,6 +89,8 @@ class Rust(metaclass=HasFormatEnums):
               e.g. ``(1, 2, 3)``.
     """
 
+    extension = ".rs"
+
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
 
