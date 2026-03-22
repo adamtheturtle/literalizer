@@ -6,6 +6,7 @@ def main():
         # Enable debug mode
         "debug": "True",
     }
+    _ = my_data
     my_data = {
         # Server configuration
         "host": "localhost",  # default host

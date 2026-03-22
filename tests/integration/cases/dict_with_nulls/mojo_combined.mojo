@@ -4,6 +4,7 @@ def main():
         "score": "None",
         "age": "30",
     }
+    _ = my_data
     my_data = {
         "name": "Alice",
         "score": "None",

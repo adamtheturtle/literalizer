@@ -3,6 +3,7 @@ def main():
         "[]",
         "{}",
     ]
+    _ = my_data
     my_data = [
         "[]",
         "{}",

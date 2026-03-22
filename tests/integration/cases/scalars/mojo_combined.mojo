@@ -6,6 +6,7 @@ def main():
         "False",
         "hello \"world\"",
     ]
+    _ = my_data
     my_data = [
         "42",
         "3.14",

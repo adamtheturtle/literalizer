@@ -4,6 +4,7 @@ def main():
         "back\\\\slash",
         "hello \\\"world\\\"",
     ]
+    _ = my_data
     my_data = [
         "C:\\path\\to\\file",
         "back\\\\slash",

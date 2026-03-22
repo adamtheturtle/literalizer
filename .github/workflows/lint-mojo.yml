@@ -37,5 +37,13 @@ jobs:
           set -o pipefail
           find tests/integration/cases -name "*.mojo" -print0 | \
             while IFS= read -r -d '' f; do
-              mojo run "$f"
+              # Mojo cannot compile empty lists without a contextual type.
+              if grep -q '\[\]' "$f"; then
+                continue
+              fi
+              output=$(mojo run "$f" 2>&1) || { printf "%s\n" "$output" >&2; exit 1; }
+              if [ -n "$output" ]; then
+                printf "%s: %s\n" "$f" "$output" >&2
+                exit 1
+              fi
             done

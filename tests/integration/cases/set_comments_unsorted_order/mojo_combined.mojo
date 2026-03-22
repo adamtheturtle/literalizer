@@ -5,6 +5,7 @@ def main():
         "banana",  # banana inline
         # trailing
     ]
+    _ = my_data
     my_data = [
         # before apple
         "apple",
