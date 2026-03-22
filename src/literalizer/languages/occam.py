@@ -42,15 +42,8 @@ def _to_val(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"MOBILE LIT(lit.float; {value}(REAL32))"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"MOBILE LIT(lit.float; {value}(REAL32))"
 
 
 @beartype
@@ -96,7 +89,12 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
+    """Return preamble lines for the generated code.
+
+    The ``LIT`` mobile data type used by the generated output is
+    user-defined and must appear before any PROC that uses it, so it
+    is not part of the preamble.
+    """
     return ()
 
 

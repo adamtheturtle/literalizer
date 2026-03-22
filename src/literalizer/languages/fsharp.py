@@ -52,15 +52,8 @@ def _to_val(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"FFloat({value})" if negative else f"FFloat {value}"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"FFloat({value})" if negative else f"FFloat {value}"
 
 
 @beartype
@@ -106,7 +99,12 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
+    """Return preamble lines for the generated code.
+
+    The ``Val`` discriminated union used by the generated output is
+    user-defined and must appear after the ``module`` declaration, so
+    it is not part of the preamble.
+    """
     return ()
 
 

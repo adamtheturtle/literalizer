@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 var x = new double[] {
     1.1,
     2.2,

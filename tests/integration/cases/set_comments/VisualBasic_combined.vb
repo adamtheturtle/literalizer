@@ -1,4 +1,3 @@
-Imports System.Collections.Generic
 Module Check
     Sub _declaration()
         ' inline comment

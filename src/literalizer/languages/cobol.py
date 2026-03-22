@@ -102,13 +102,13 @@ def _bump_levels(content: str) -> str:
     result: list[str] = []
     for line in lines:
         m = re.match(pattern=r"^(\s*)(\d{2})(\s)", string=line)
-        if m:
-            new_level = min(int(m.group(2)) + 5, _MAX_COBOL_LEVEL)
-            result.append(
-                f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
-            )
-        else:  # pragma: no cover
-            result.append(line)
+        if not m:
+            msg = f"Expected COBOL level-number line, got: {line!r}"
+            raise ValueError(msg)
+        new_level = min(int(m.group(2)) + 5, _MAX_COBOL_LEVEL)
+        result.append(
+            f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
+        )
     return "\n".join(result)
 
 
@@ -138,10 +138,7 @@ def _key_to_cobol_name(key_str: str) -> str:
     reserved words.  The result is truncated to 28 characters (leaving
     room for the prefix).
     """
-    if key_str.startswith('"') and key_str.endswith('"'):
-        name = key_str[1:-1].replace('""', '"')
-    else:  # pragma: no cover
-        name = key_str
+    name = key_str[1:-1].replace('""', '"')
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")

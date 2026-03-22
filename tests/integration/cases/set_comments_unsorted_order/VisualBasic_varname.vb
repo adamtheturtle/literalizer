@@ -1,4 +1,3 @@
-Imports System.Collections.Generic
 Module Check
     ' before apple
     ' banana inline

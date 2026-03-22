@@ -78,9 +78,12 @@ def _format_csharp_dict_entry(key: str, value: str) -> str:
 @beartype
 def _preamble(code: str) -> Sequence[str]:
     """Return preamble lines for the generated code."""
+    lines: list[str] = []
     if "DateOnly" in code or "DateTime" in code:
-        return ["using System;"]
-    return []
+        lines.append("using System;")
+    if "Dictionary" in code or "List<" in code:
+        lines.append("using System.Collections.Generic;")
+    return lines
 
 
 @beartype

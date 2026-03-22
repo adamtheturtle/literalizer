@@ -62,15 +62,8 @@ def _to_fval(value: str) -> str:
         pass
     if int_result is not None:
         return int_result
-    float_result = None
-    try:
-        float(rest)
-        float_result = f"freal({value})"
-    except ValueError:  # pragma: no cover
-        pass
-    if float_result is not None:
-        return float_result
-    return value  # pragma: no cover
+    float(rest)
+    return f"freal({value})"
 
 
 @beartype
@@ -161,10 +154,47 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 _string_format: Callable[[str], str] = format_string_fortran
 
 
+_FORTRAN_PREAMBLE: tuple[str, ...] = (
+    "module fval_m",
+    "  implicit none",
+    "  type :: fval_t",
+    "    integer :: t = 0",
+    "  end type fval_t",
+    "contains",
+    "  function fnull() result(v); type(fval_t) :: v; end function",
+    "  function fbool(b) result(v)"
+    "; logical, intent(in) :: b"
+    "; type(fval_t) :: v; end function",
+    "  function fint(n) result(v)"
+    "; integer, intent(in) :: n"
+    "; type(fval_t) :: v; end function",
+    "  function freal(x) result(v)"
+    "; real, intent(in) :: x"
+    "; type(fval_t) :: v; end function",
+    "  function fstr(s) result(v)"
+    "; character(len=*), intent(in) :: s"
+    "; type(fval_t) :: v; end function",
+    "  function flist(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function",
+    "  function fmap(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function",
+    "  function fset(a) result(v)"
+    "; type(fval_t), intent(in) :: a(:)"
+    "; type(fval_t) :: v; end function",
+    "  function fentry(k, u) result(v)"
+    "; character(len=*), intent(in) :: k"
+    "; type(fval_t), intent(in) :: u"
+    "; type(fval_t) :: v; end function",
+    "end module fval_m",
+)
+
+
 @beartype
 def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+    """Return preamble lines for the generated code."""
+    return _FORTRAN_PREAMBLE
 
 
 @beartype
