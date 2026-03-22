@@ -4,3 +4,4 @@ def main():
         Tuple("age", "30"),
         Tuple("active", "True"),
     ]
+    _ = my_data

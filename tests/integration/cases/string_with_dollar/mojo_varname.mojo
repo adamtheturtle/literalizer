@@ -3,3 +3,4 @@ def main():
         "price $10",
         "$HOME",
     ]
+    _ = my_data

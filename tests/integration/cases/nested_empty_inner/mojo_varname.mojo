@@ -3,3 +3,4 @@ def main():
         List[String](),
         List[String](),
     ]
+    _ = my_data

@@ -819,13 +819,22 @@ def _wrap_mojo(content: str) -> str:
 @beartype
 def _wrap_mojo_varname(content: str) -> str:
     """Wrap a Mojo variable declaration in a main function."""
-    return _in_mojo_main(content=content)
+    # Consume the variable so ``--Werror`` does not flag the
+    # "assignment was never used" warning.
+    return _in_mojo_main(
+        content=content + f"\n_ = {_VARIABLE_NAME}",
+    )
 
 
 @beartype
 def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
     """Wrap Mojo declaration and assignment in a main function."""
-    return _in_mojo_main(content=declaration + "\n" + assignment)
+    # Consume the variable after each assignment so ``--Werror`` does
+    # not flag the "assignment was never used" warning.
+    use = f"_ = {_VARIABLE_NAME}"
+    return _in_mojo_main(
+        content=declaration + f"\n{use}\n" + assignment + f"\n{use}",
+    )
 
 
 @beartype

@@ -4,8 +4,10 @@ def main():
         "bar",
         "baz",
     ]
+    _ = my_data
     my_data = [
         "foo",
         "bar",
         "baz",
     ]
+    _ = my_data
