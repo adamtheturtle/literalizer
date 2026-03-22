@@ -135,26 +135,98 @@ _SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
 
 
 @beartype
+def _element_union(*, types: list[str]) -> str:
+    """Deduplicate *types* and join into a union.
+
+    Collapses to ``"Any"`` when any element is ``"Any"``.
+    """
+    unique: list[str] = list(dict.fromkeys(types))
+    if "Any" in unique:
+        return "Any"
+    if len(unique) == 1:
+        return unique[0]
+    return " | ".join(unique)
+
+
+@beartype
+def _scalar_type_hint(data: Value) -> str | None:
+    """Return the scalar type hint for *data*, or ``None``."""
+    for scalar_type, hint in _SCALAR_TYPE_HINTS:
+        if isinstance(data, scalar_type):
+            return hint
+    return None
+
+
+@beartype
+def _collection_element_union(
+    *,
+    elements: frozenset[Value] | list[Value],
+    recurse: Callable[..., str],
+) -> str:
+    """Return the element union for a collection, or ``"Any"`` if
+    empty.
+    """
+    if not elements:
+        return "Any"
+    return _element_union(
+        types=[recurse(data=e) for e in elements],
+    )
+
+
+@beartype
 def _python_type_hint(
     data: Value,
     *,
     sequence_type_hint: str,
     set_type_hint: str,
 ) -> str:
-    """Derive a Python type hint from the original data structure."""
-    for scalar_type, hint in _SCALAR_TYPE_HINTS:
-        if isinstance(data, scalar_type):
-            return hint
+    """Derive a Python type hint from the original data structure.
+
+    *sequence_type_hint* and *set_type_hint* are the outer type names
+    to use (e.g. ``"tuple"`` vs ``"list"``, ``"frozenset"`` vs
+    ``"set"``).
+    """
+    scalar = _scalar_type_hint(data=data)
+    if scalar is not None:
+        return scalar
+
+    recurse = functools.partial(
+        _python_type_hint,
+        sequence_type_hint=sequence_type_hint,
+        set_type_hint=set_type_hint,
+    )
+
     if isinstance(data, dict):
-        return (
-            "OrderedDict[str, Any]"
+        outer = (
+            "OrderedDict"
             if isinstance(data, (ordereddict, OrderedDict))
-            else "dict[str, Any]"
+            else "dict"
         )
+        val_union = _collection_element_union(
+            elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            recurse=recurse,
+        )
+        return f"{outer}[str, {val_union}]"
+
     if isinstance(data, (set, frozenset)):
-        return set_type_hint
+        elem_union = _collection_element_union(
+            elements=frozenset(data),
+            recurse=recurse,
+        )
+        return f"{set_type_hint}[{elem_union}]"
+
     # The only remaining Value type is list.
-    return sequence_type_hint
+    if not isinstance(data, list):
+        msg = f"Unexpected data type: {type(data)}"
+        raise TypeError(msg)
+    elem_union = _collection_element_union(
+        elements=data,
+        recurse=recurse,
+    )
+    hint = sequence_type_hint
+    if hint == "tuple":
+        return f"{hint}[{elem_union}, ...]"
+    return f"{hint}[{elem_union}]"
 
 
 @beartype
@@ -267,10 +339,8 @@ class Python(metaclass=LanguageCls):
 
         @property
         def type_hint(self) -> str:
-            """The Python type hint for this sequence format."""
-            if self is type(self).LIST:
-                return "list[Any]"
-            return "tuple[Any, ...]"
+            """Python type hint name for this sequence format."""
+            return "tuple" if self is type(self).TUPLE else "list"
 
     class SetFormats(enum.Enum):
         """Set type options for Python."""
@@ -288,10 +358,8 @@ class Python(metaclass=LanguageCls):
 
         @property
         def type_hint(self) -> str:
-            """The Python type hint for this set format."""
-            if self is type(self).FROZENSET:
-                return "frozenset[Any]"
-            return "set[Any]"
+            """Python type hint name for this set format."""
+            return "frozenset" if self is type(self).FROZENSET else "set"
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""
