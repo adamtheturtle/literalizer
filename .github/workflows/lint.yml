@@ -99,8 +99,8 @@ jobs:
   lint-haskell:
     uses: ./.github/workflows/lint-haskell.yml
 
-  lint-common-lisp:
-    uses: ./.github/workflows/lint-common-lisp.yml
+  lint-commonlisp:
+    uses: ./.github/workflows/lint-commonlisp.yml
 
   lint-hcl:
     uses: ./.github/workflows/lint-hcl.yml
@@ -168,14 +168,14 @@ jobs:
   lint-yaml:
     uses: ./.github/workflows/lint-yaml.yml
 
-  lint-vb:
-    uses: ./.github/workflows/lint-vb.yml
+  lint-visualbasic:
+    uses: ./.github/workflows/lint-visualbasic.yml
 
   lint-fortran:
     uses: ./.github/workflows/lint-fortran.yml
 
-  lint-objective-c:
-    uses: ./.github/workflows/lint-objective-c.yml
+  lint-objectivec:
+    uses: ./.github/workflows/lint-objectivec.yml
 
   completion-lint:
     needs:
@@ -199,7 +199,7 @@ jobs:
       - lint-fsharp
       - lint-ocaml
       - lint-haskell
-      - lint-common-lisp
+      - lint-commonlisp
       - lint-hcl
       - lint-clojure
       - lint-scala
@@ -222,9 +222,9 @@ jobs:
       - lint-toml
       - lint-yaml
       - lint-powershell
-      - lint-vb
+      - lint-visualbasic
       - lint-fortran
-      - lint-objective-c
+      - lint-objectivec
     runs-on: ubuntu-latest
     if: always()
     steps:
