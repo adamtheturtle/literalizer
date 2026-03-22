@@ -105,7 +105,7 @@ def _python_type_hint(
         return (
             "list[Any]" if sequence_config.close == "]" else "tuple[Any, ...]"
         )
-    return "str"
+    return "str"  # pragma: no cover
 
 
 @beartype
