@@ -24,10 +24,11 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-from literalizer._types import Value  # noqa: TC001
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from literalizer._types import Value
 
 _VB_SCALAR_TYPES: dict[str, str] = {
     "string": "String",

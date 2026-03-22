@@ -3,7 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from beartype import beartype
 
@@ -26,7 +26,9 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-from literalizer._types import Value  # noqa: TC001
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 _SCALA_SCALAR_TYPES: dict[str, str] = {
     "string": "String",
