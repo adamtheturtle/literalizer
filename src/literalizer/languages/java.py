@@ -166,20 +166,21 @@ class Java(metaclass=LanguageCls):
         """Sequence type options for Java."""
 
         ARRAY = SequenceFormatConfig(
-            open_str="new Object[]{",
+            sequence_open=typed_sequence_open(
+                schema_to_opener=_java_schema_to_opener,
+                fallback="new Object[]{",
+            ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
-            schema_to_opener=_java_schema_to_opener,
         )
         LIST = SequenceFormatConfig(
-            open_str="List.of(",
+            sequence_open=_list_of_open,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="List.of()",
-            schema_to_opener=None,
         )
 
         @property
@@ -246,15 +247,7 @@ class Java(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        if sequence_format is Java.sequence_formats.LIST:
-            self.sequence_open: Callable[[list[Value]], str] = _list_of_open
-        else:
-            # ARRAY always defines schema_to_opener; narrow for type checkers.
-            opener = fmt.schema_to_opener or _java_schema_to_opener
-            self.sequence_open = typed_sequence_open(
-                schema_to_opener=opener,
-                fallback=fmt.open_str,
-            )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",

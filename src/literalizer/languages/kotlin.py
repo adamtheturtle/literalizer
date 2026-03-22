@@ -160,12 +160,14 @@ class Kotlin(metaclass=LanguageCls):
         """Sequence type options for Kotlin."""
 
         LIST = SequenceFormatConfig(
-            open_str="listOf<Any?>(",
+            sequence_open=typed_sequence_open(
+                schema_to_opener=_kotlin_schema_to_opener,
+                fallback="listOf<Any?>(",
+            ),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
-            schema_to_opener=None,
         )
 
         @property
@@ -232,10 +234,7 @@ class Kotlin(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_kotlin_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 schema_to_opener=_kotlin_dict_schema_to_opener,

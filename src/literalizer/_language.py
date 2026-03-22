@@ -13,12 +13,11 @@ from literalizer._types import Value
 class SequenceFormatConfig:
     """Configuration for a single sequence format."""
 
-    open_str: str
+    sequence_open: Callable[[list[Value]], str]
     close: str
     supports_heterogeneity: bool
     single_element_trailing_comma: bool
     empty_sequence: str | None
-    schema_to_opener: Callable[..., str | None] | None
 
 
 @dataclasses.dataclass(frozen=True)

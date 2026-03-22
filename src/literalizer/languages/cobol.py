@@ -257,12 +257,11 @@ class Cobol(metaclass=LanguageCls):
         """Sequence type options for COBOL."""
 
         SEQUENCE = SequenceFormatConfig(
-            open_str="",
+            sequence_open=fixed_sequence_open(open_str=""),
             close="",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="05 FILLER PIC X(1) VALUE SPACES.",
-            schema_to_opener=None,
         )
 
         @property
@@ -325,9 +324,7 @@ class Cobol(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.true_literal = '"TRUE"'
         self.false_literal = '"FALSE"'
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str=""),
             close="",

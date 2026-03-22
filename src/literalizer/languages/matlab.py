@@ -153,12 +153,11 @@ class Matlab(metaclass=LanguageCls):
         """Sequence type options for MATLAB."""
 
         CELL_ARRAY = SequenceFormatConfig(
-            open_str="{",
+            sequence_open=fixed_sequence_open(open_str="{"),
             close="}",
             empty_sequence="{}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
-            schema_to_opener=None,
         )
 
         @property
@@ -225,9 +224,7 @@ class Matlab(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="struct("),
             close=")",

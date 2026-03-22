@@ -117,12 +117,11 @@ class Bash(metaclass=LanguageCls):
         """Sequence type options for Bash."""
 
         ARRAY = SequenceFormatConfig(
-            open_str="(",
+            sequence_open=fixed_sequence_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
-            schema_to_opener=None,
         )
 
         @property
@@ -185,9 +184,7 @@ class Bash(metaclass=LanguageCls):
         self.null_literal = '""'
         self.true_literal = "true"
         self.false_literal = "false"
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="("),
             close=")",

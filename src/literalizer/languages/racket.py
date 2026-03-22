@@ -83,12 +83,11 @@ class Racket(metaclass=LanguageCls):
         """Sequence type options for Racket."""
 
         LIST = SequenceFormatConfig(
-            open_str="(list ",
+            sequence_open=fixed_sequence_open(open_str="(list "),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="(list)",
-            schema_to_opener=None,
         )
 
         @property
@@ -155,9 +154,7 @@ class Racket(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fixed_sequence_open(
-            open_str=fmt.open_str
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="(hash "),
             close=")",
