@@ -37,11 +37,7 @@ jobs:
           set -o pipefail
           find tests/integration/cases -name "*.mojo" -print0 | \
             while IFS= read -r -d '' f; do
-              if ! output=$(mojo run "$f" 2>&1); then
-                if ! printf "%s" "$output" | grep -qE \
-                  "cannot emit an empty"; then
-                  printf "%s\n" "$output" >&2
-                  exit 1
-                fi
+              if ! mojo run "$f"; then
+                exit 1
               fi
             done
