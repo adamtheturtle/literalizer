@@ -75,18 +75,31 @@ def _coerce_scalar_to_str(
 
 
 @beartype
+def _scalar_type_buckets(
+    *,
+    values: Sequence[Value],
+) -> set[type] | None:
+    """Return the set of scalar type buckets for *values*.
+
+    Returns ``None`` if any value is not a scalar.
+    """
+    buckets: set[type] = set()
+    for v in values:
+        bucket = _scalar_type_bucket(value=v)
+        if bucket is None:
+            return None
+        buckets.add(bucket)
+    return buckets
+
+
+@beartype
 def _all_scalars_heterogeneous(
     *,
     values: Sequence[Value],
 ) -> bool:
     """Check whether values are all scalars with more than one type."""
-    buckets: set[type] = set()
-    for v in values:
-        bucket = _scalar_type_bucket(value=v)
-        if bucket is None:
-            return False
-        buckets.add(bucket)
-    return len(buckets) > 1
+    buckets = _scalar_type_buckets(values=values)
+    return buckets is not None and len(buckets) > 1
 
 
 @beartype
