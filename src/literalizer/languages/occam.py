@@ -191,6 +191,7 @@ class Occam(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_DASH,
     ) -> None:
         """Initialize Occam language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "MOBILE LIT(lit.null)"
         self.true_literal = "MOBILE LIT(lit.bool; TRUE)"

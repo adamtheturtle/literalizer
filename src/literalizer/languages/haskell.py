@@ -194,6 +194,7 @@ class Haskell(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_DASH,
     ) -> None:
         """Initialize Haskell language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "HNull"
         self.true_literal = "HBool True"

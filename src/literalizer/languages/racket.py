@@ -144,6 +144,7 @@ class Racket(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.SEMICOLON,
     ) -> None:
         """Initialize Racket language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "(void)"
         self.true_literal = "#t"

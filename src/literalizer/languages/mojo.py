@@ -159,6 +159,7 @@ class Mojo(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.HASH,
     ) -> None:
         """Initialize Mojo language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "None"
         self.true_literal = "True"

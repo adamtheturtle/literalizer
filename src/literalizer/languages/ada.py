@@ -198,6 +198,7 @@ class Ada(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_DASH,
     ) -> None:
         """Initialize Ada language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "ANull"
         self.true_literal = "ABool (True)"

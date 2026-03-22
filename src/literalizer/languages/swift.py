@@ -150,6 +150,7 @@ class Swift(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize Swift language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"

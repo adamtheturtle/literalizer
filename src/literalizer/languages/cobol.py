@@ -314,6 +314,7 @@ class Cobol(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.STAR_ANGLE,
     ) -> None:
         """Initialize COBOL language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "SPACES"
         fmt = sequence_format.value

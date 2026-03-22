@@ -171,6 +171,7 @@ class Erlang(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.PERCENT,
     ) -> None:
         """Initialize Erlang language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "undefined"
         self.true_literal = "true"

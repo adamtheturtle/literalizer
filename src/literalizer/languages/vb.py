@@ -187,6 +187,7 @@ class VisualBasic(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
     ) -> None:
         """Initialize VisualBasic language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "Nothing"
         self.true_literal = "True"

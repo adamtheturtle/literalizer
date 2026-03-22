@@ -195,6 +195,7 @@ class Toml(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.HASH,
     ) -> None:
         """Initialize TOML language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt

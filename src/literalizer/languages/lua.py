@@ -160,6 +160,7 @@ class Lua(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_DASH,
     ) -> None:
         """Initialize Lua language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "true"

@@ -258,6 +258,7 @@ class Fortran(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.EXCLAMATION,
     ) -> None:
         """Initialize Fortran language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "fnull()"
         self.true_literal = "fbool(.true.)"

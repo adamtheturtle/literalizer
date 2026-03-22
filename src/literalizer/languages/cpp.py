@@ -207,6 +207,7 @@ class Cpp(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize Cpp language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "nullptr"
         self.true_literal = "true"

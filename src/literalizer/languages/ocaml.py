@@ -205,6 +205,7 @@ class OCaml(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.PAREN_STAR,
     ) -> None:
         """Initialize OCaml language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "ONull"
         self.true_literal = "OBool true"

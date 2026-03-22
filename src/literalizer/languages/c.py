@@ -187,6 +187,7 @@ class C(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize C language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "((_CVal){.s = NULL})"
         self.true_literal = "((_CVal){.b = true})"

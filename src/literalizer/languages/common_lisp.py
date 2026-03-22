@@ -149,6 +149,7 @@ class CommonLisp(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.SEMICOLON,
     ) -> None:
         """Initialize Common Lisp language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "nil"
         self.true_literal = "t"

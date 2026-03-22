@@ -205,6 +205,7 @@ class Dart(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize Dart language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "null"
         self.true_literal = "true"

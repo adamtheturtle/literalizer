@@ -209,6 +209,7 @@ class R(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.HASH,
     ) -> None:
         """Initialize R language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "NULL"
         self.true_literal = "TRUE"

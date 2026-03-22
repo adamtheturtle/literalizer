@@ -204,6 +204,7 @@ class CSharp(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
         """Initialize CSharp language specification."""
+        self.variable_type_hints = self.VariableTypeHints.NONE
         self.sequence_format = sequence_format
         self.null_literal = "(object?)null"
         self.true_literal = "true"

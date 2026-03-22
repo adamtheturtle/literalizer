@@ -1878,10 +1878,9 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        type_hints_enum = spec.variable_type_hints_formats
-        default_member = next(iter(type_hints_enum))
-        for fmt in list(type_hints_enum):
-            if fmt is default_member:
+        default_format = spec.variable_type_hints
+        for fmt in list(spec.variable_type_hints_formats):
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
