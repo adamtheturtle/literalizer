@@ -257,6 +257,7 @@ class Python(metaclass=HasFormatEnums):
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+    variable_type_hints_formats = VariableTypeHints
 
     def __init__(
         self,

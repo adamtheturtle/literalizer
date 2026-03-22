@@ -125,6 +125,13 @@ class Hcl(metaclass=HasFormatEnums):
     set_formats = SetFormats
     comment_formats = CommentFormats
 
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NONE = "none"
+
+    variable_type_hints_formats = VariableTypeHints
+
     def __init__(
         self,
         *,

@@ -146,6 +146,13 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def variable_type_hints_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the variable type hint options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     null_literal: str
     """The literal representing null/None."""
 
