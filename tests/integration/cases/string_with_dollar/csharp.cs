@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var x = new string[] {
+var x = (
     "price $10",
     "$HOME"
-};
+);

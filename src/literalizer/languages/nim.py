@@ -82,6 +82,13 @@ class Nim(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Nim."""
 
+        SEQ = SequenceFormatConfig(
+            open_str="@[",
+            close="]",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
         ARRAY = SequenceFormatConfig(
             open_str="[",
             close="]",
@@ -138,7 +145,7 @@ class Nim(metaclass=HasFormatEnums):
         date_format: DateFormats = DateFormats.ISO,
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
+        sequence_format: SequenceFormats = SequenceFormats.SEQ,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.HASH,
     ) -> None:

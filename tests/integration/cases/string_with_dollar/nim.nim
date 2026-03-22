@@ -1,5 +1,5 @@
 import json
-let _ = %*[
+let _ = %*@[
     "price $10",
     "$HOME"
 ]

@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     fixed_dict_open,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_java,
     format_datetime_java_instant,
@@ -146,6 +147,13 @@ class Java(metaclass=HasFormatEnums):
             single_element_trailing_comma=False,
             empty_sequence=None,
         )
+        LIST = SequenceFormatConfig(
+            open_str="List.of(",
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
@@ -207,10 +215,15 @@ class Java(metaclass=HasFormatEnums):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_java_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        sequence_open_fn: Callable[[list[Value]], str]
+        if sequence_format is self.SequenceFormats.ARRAY:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            sequence_open_fn = typed_sequence_open(
+                schema_to_opener=_java_schema_to_opener,
+                fallback=fmt.open_str,
+            )
+        else:
+            sequence_open_fn = fixed_sequence_open(open_str=fmt.open_str)
+        self.sequence_open = sequence_open_fn
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",

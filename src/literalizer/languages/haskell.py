@@ -139,6 +139,13 @@ class Haskell(metaclass=HasFormatEnums):
             single_element_trailing_comma=False,
             empty_sequence=None,
         )
+        TUPLE = SequenceFormatConfig(
+            open_str="(",
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:

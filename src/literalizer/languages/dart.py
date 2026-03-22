@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_dart,
     format_datetime_dart,
@@ -150,6 +151,13 @@ class Dart(metaclass=HasFormatEnums):
             single_element_trailing_comma=False,
             empty_sequence=None,
         )
+        TUPLE = SequenceFormatConfig(
+            open_str="(",
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
@@ -211,10 +219,15 @@ class Dart(metaclass=HasFormatEnums):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_dart_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        sequence_open_fn: Callable[[list[Value]], str]
+        if sequence_format is self.SequenceFormats.LIST:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            sequence_open_fn = typed_sequence_open(
+                schema_to_opener=_dart_schema_to_opener,
+                fallback=fmt.open_str,
+            )
+        else:
+            sequence_open_fn = fixed_sequence_open(open_str=fmt.open_str)
+        self.sequence_open = sequence_open_fn
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 schema_to_opener=_dart_dict_schema_to_opener,

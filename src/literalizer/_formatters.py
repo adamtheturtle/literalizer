@@ -733,6 +733,46 @@ def typed_sequence_open(
 
 
 @beartype
+def _counted_typed_sequence_open(
+    items: list[Value],
+    *,
+    schema_and_count_to_opener: Callable[[dict[str, Any], int], str | None],
+    fallback: str,
+) -> str:
+    """Like ``_typed_sequence_open`` but also passes the element count.
+
+    This is useful for languages where the collection type embeds its
+    size in the type, e.g. C++ ``std::array<int, 3>``.
+    """
+    if not _all_json_native(values=items):
+        return fallback
+    schema: dict[str, Any] = infer_schema(value=cast("JsonValue", items))
+    item_schema: dict[str, Any] = schema.get("items", {})
+    return schema_and_count_to_opener(item_schema, len(items)) or fallback
+
+
+@beartype
+def counted_typed_sequence_open(
+    *,
+    schema_and_count_to_opener: Callable[[dict[str, Any], int], str | None],
+    fallback: str,
+) -> Callable[[list[Value]], str]:
+    """Return a ``sequence_open`` callable that infers an item schema and
+    delegates to *schema_and_count_to_opener* together with the element
+    count.
+
+    Behaves like :func:`typed_sequence_open` but the opener callback
+    also receives ``len(items)`` so it can embed the size in the
+    opening delimiter (e.g. ``std::array<int, 3>``).
+    """
+    return functools.partial(
+        _counted_typed_sequence_open,
+        schema_and_count_to_opener=schema_and_count_to_opener,
+        fallback=fallback,
+    )
+
+
+@beartype
 def _typed_dict_open(
     items: dict[str, Value],
     *,

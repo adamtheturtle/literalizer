@@ -28,7 +28,7 @@ CPP = Cpp(
     date_format=Cpp.date_formats.CPP,
     datetime_format=Cpp.datetime_formats.CPP,
     bytes_format=Cpp.bytes_formats.HEX,
-    sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
+    sequence_format=Cpp.sequence_formats.VECTOR,
 )
 CSHARP = CSharp(
     date_format=CSharp.date_formats.CSHARP,

@@ -1,4 +1,4 @@
 import json
-let _ = %*[
+let _ = %*@[
     "48656c6c6f"
 ]

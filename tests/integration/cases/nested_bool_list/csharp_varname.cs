@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var my_data = new bool[][] {
-    new bool[] {true, false},
-    new bool[] {true, true}
-};
+var my_data = (
+    (true, false),
+    (true, true)
+);

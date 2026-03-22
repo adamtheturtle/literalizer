@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from beartype import beartype
 
 from literalizer._formatters import (
+    counted_typed_sequence_open,
     format_bytes_hex,
     format_date_cpp,
     format_datetime_cpp,
@@ -60,11 +61,23 @@ def _cpp_schema_to_type(item_schema: dict[str, Any]) -> str | None:
 
 @beartype
 def _cpp_schema_to_opener(item_schema: dict[str, Any]) -> str | None:
-    """Map a JSON Schema item type to a C++ initializer-list opener."""
+    """Map a JSON Schema item type to a C++ vector opener."""
     type_name = _cpp_schema_to_type(item_schema=item_schema)
     if type_name is None:
         return None
     return f"std::vector<{type_name}>{{"
+
+
+@beartype
+def _cpp_array_schema_to_opener(
+    item_schema: dict[str, Any],
+    count: int,
+) -> str | None:
+    """Map a JSON Schema item type to a C++ std::array opener."""
+    type_name = _cpp_schema_to_type(item_schema=item_schema)
+    if type_name is None:
+        return None
+    return f"std::array<{type_name}, {count}>{{"
 
 
 @beartype
@@ -145,10 +158,17 @@ class Cpp(metaclass=HasFormatEnums):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C++."""
 
-        INITIALIZER_LIST = SequenceFormatConfig(
+        VECTOR = SequenceFormatConfig(
             open_str="{",
             close="}",
             supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+        )
+        ARRAY = SequenceFormatConfig(
+            open_str="{",
+            close="}",
+            supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence=None,
         )
@@ -201,7 +221,7 @@ class Cpp(metaclass=HasFormatEnums):
         date_format: DateFormats = DateFormats.CPP,
         datetime_format: DatetimeFormats = DatetimeFormats.CPP,
         bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.INITIALIZER_LIST,
+        sequence_format: SequenceFormats = SequenceFormats.VECTOR,
         set_format: SetFormats = SetFormats.SET,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
     ) -> None:
@@ -213,10 +233,18 @@ class Cpp(metaclass=HasFormatEnums):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            schema_to_opener=_cpp_schema_to_opener,
-            fallback=fmt.open_str,
-        )
+        sequence_open_fn: Callable[[list[Value]], str]
+        if sequence_format is self.SequenceFormats.ARRAY:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            sequence_open_fn = counted_typed_sequence_open(
+                schema_and_count_to_opener=_cpp_array_schema_to_opener,
+                fallback=fmt.open_str,
+            )
+        else:
+            sequence_open_fn = typed_sequence_open(
+                schema_to_opener=_cpp_schema_to_opener,
+                fallback=fmt.open_str,
+            )
+        self.sequence_open = sequence_open_fn
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 schema_to_opener=_cpp_dict_schema_to_opener,
