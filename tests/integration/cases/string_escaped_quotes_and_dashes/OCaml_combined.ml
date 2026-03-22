@@ -1,5 +1,3 @@
-module Check = struct
-
 type val_t =
   | ONull
   | OBool of bool
@@ -9,6 +7,7 @@ type val_t =
   | OList of val_t list
   | OMap of (string * val_t) list
   | OSet of val_t list
+module Check = struct
 
 let my_data : val_t = OStr "hello \"world\" -- not a comment"
 

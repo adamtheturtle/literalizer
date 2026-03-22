@@ -1,5 +1,3 @@
-module Check
-
 type Val =
     | FNull
     | FBool of bool
@@ -9,6 +7,7 @@ type Val =
     | FList of Val list
     | FMap of (string * Val) list
     | FSet of Val list
+module Check
 
 let my_data: Val = FList [
     FList [FFloat 1.5; FFloat 2.5];

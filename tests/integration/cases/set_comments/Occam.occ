@@ -10,7 +10,6 @@ MOBILE DATA TYPE LIT IS
     lit.pair ; MOBILE []BYTE ; MOBILE LIT
     lit.set ; MOBILE []MOBILE LIT
 :
-
 PROC check ()
   VAL MOBILE LIT x IS MOBILE LIT(lit.set; MOBILE []MOBILE LIT [
     MOBILE LIT(lit.str; MOBILE []BYTE "apple"),  -- inline comment

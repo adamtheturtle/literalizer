@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Check where
 import Data.String (IsString(fromString))
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]
 instance IsString Val where
@@ -16,5 +15,6 @@ instance Num Val where
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"
+module Check where
 my_data :: Val
 my_data = "2024-01-15T12:30:00+00:00"

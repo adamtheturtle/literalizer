@@ -1,4 +1,3 @@
-Imports System.Collections.Generic
 Module Check
     Dim x As Object = New String() {
         "price $10",

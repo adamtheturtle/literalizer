@@ -1,4 +1,3 @@
-Imports System.Collections.Generic
 Module Check
     Sub _declaration()
         Dim my_data = "2024-01-15"

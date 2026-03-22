@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Check where
 import Data.String (IsString(fromString))
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]
 instance IsString Val where
@@ -16,6 +15,7 @@ instance Num Val where
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"
+module Check where
 my_data :: Val
 my_data = HMap [
     ("level1", HMap [("level2", HMap [("level3", HMap [("level4", HMap [("value", "deep"), ("items", HList ["a", "b"])])]), ("sibling", 42)]), ("tags", HList [HMap [("name", "tag1"), ("meta", HMap [("priority", 1), ("labels", HList ["x", "y"])])]])])
