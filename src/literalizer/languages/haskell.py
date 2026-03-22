@@ -60,7 +60,7 @@ def _preamble(_code: str) -> Sequence[str]:
 
     Only the ``OverloadedStrings`` pragma is emitted here because it
     must appear before the ``module`` declaration.  The ``Val`` ADT and
-    typeclass instances are user-defined (see the class docstring) and
+    typeclass instances are user-defined (see the class doc string) and
     must be placed after the module header, so they are not part of the
     preamble.
     """
