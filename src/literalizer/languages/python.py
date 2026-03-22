@@ -136,13 +136,8 @@ _SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
 
 @beartype
 def _element_union(*, types: list[str]) -> str:
-    """De-duplicate *types* and join into a union.
-
-    Collapses to ``"Any"`` when any element is ``"Any"``.
-    """
+    """De-duplicate *types* and join into a union."""
     unique: list[str] = list(dict.fromkeys(types))
-    if "Any" in unique:
-        return "Any"
     if len(unique) == 1:
         return unique[0]
     return " | ".join(unique)
@@ -216,7 +211,7 @@ def _python_type_hint(
         return f"{set_type_hint}[{elem_union}]"
 
     # The only remaining Value type is list.
-    if not isinstance(data, list):
+    if not isinstance(data, list):  # pragma: no cover
         msg = f"Unexpected data type: {type(data)}"
         raise TypeError(msg)
     elem_union = _collection_element_union(
