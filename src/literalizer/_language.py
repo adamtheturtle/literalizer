@@ -85,7 +85,7 @@ class LanguageCls(type):
 
 
 @runtime_checkable
-class Language(Protocol):
+class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Protocol describing how a language formats scalar literals and
     sequences.
 
