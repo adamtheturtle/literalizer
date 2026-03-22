@@ -136,7 +136,7 @@ _SCALAR_TYPE_HINTS: tuple[tuple[type, str], ...] = (
 
 @beartype
 def _element_union(*, types: list[str]) -> str:
-    """Deduplicate *types* and join into a union.
+    """De-duplicate *types* and join into a union.
 
     Collapses to ``"Any"`` when any element is ``"Any"``.
     """
