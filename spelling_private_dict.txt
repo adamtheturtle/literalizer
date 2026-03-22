@@ -70,6 +70,7 @@ datetimes
 dicts
 durations
 elixirc
+enum
 erlc
 fnull
 formatter
