@@ -1,5 +1,7 @@
 """Built-in language specifications for common programming languages."""
 
+from literalizer._language import LanguageCls
+
 from .ada import Ada
 from .bash import Bash
 from .c import C
@@ -47,7 +49,59 @@ from .vb import VisualBasic
 from .yaml import Yaml
 from .zig import Zig
 
+ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
+    {
+        Ada,
+        Bash,
+        C,
+        Clojure,
+        Cobol,
+        CommonLisp,
+        Cpp,
+        Crystal,
+        CSharp,
+        D,
+        Dart,
+        Elixir,
+        Erlang,
+        Fortran,
+        FSharp,
+        Go,
+        Groovy,
+        Haskell,
+        Hcl,
+        Java,
+        JavaScript,
+        Julia,
+        Kotlin,
+        Lua,
+        Matlab,
+        Mojo,
+        Nim,
+        Norg,
+        ObjectiveC,
+        OCaml,
+        Occam,
+        Perl,
+        Php,
+        PowerShell,
+        Python,
+        R,
+        Racket,
+        Ruby,
+        Rust,
+        Scala,
+        Swift,
+        Toml,
+        TypeScript,
+        VisualBasic,
+        Yaml,
+        Zig,
+    }
+)
+
 __all__ = [
+    "ALL_LANGUAGES",
     "Ada",
     "Bash",
     "C",
