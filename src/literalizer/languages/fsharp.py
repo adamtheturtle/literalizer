@@ -188,6 +188,8 @@ class FSharp(metaclass=HasFormatEnums):
 
         NONE = "none"
 
+    variable_type_hints_formats = VariableTypeHints
+
     def __init__(
         self,
         *,

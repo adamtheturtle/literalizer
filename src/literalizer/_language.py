@@ -83,7 +83,6 @@ class HasFormatEnums(type):
     SequenceFormats: type[enum.Enum]
     SetFormats: type[enum.Enum]
     CommentFormats: type[enum.Enum]
-    VariableTypeHints: type[enum.Enum]
 
 
 @runtime_checkable
@@ -148,6 +147,13 @@ class Language(Protocol):
     def comment_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the comment formats this language
         supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def variable_type_hints_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the variable type hint options
+        this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

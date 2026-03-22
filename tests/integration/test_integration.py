@@ -2087,7 +2087,8 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
     """
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
-        type_hints_enum = lang_config.lang_cls.VariableTypeHints
+        spec = lang_config.spec
+        type_hints_enum = spec.variable_type_hints_formats
         default_member = next(iter(type_hints_enum))
         for fmt in list(type_hints_enum):
             if fmt is default_member:
