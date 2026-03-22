@@ -245,12 +245,10 @@ class Java(metaclass=HasFormatEnums):
         if sequence_format is Java.sequence_formats.LIST:
             self.sequence_open: Callable[[list[Value]], str] = _list_of_open
         else:
-            schema_to_opener = fmt.schema_to_opener
-            if schema_to_opener is None:  # pragma: no cover
-                msg = "ARRAY format must have schema_to_opener"
-                raise TypeError(msg)
+            # ARRAY always defines schema_to_opener; narrow for type checkers.
+            opener = fmt.schema_to_opener or _java_schema_to_opener
             self.sequence_open = typed_sequence_open(
-                schema_to_opener=schema_to_opener,
+                schema_to_opener=opener,
                 fallback=fmt.open_str,
             )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
