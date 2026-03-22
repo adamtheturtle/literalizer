@@ -1832,9 +1832,9 @@ def _build_set_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_config = spec.set_format_config
+        default_format = spec.set_format
         for fmt in list(spec.set_formats):
-            if fmt.value is default_config:
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(
@@ -1855,9 +1855,9 @@ def _build_comment_variants() -> dict[str, _Variant]:
     variants: dict[str, _Variant] = {}
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_config = spec.comment_config
+        default_format = spec.comment_format
         for fmt in list(spec.comment_formats):
-            if fmt.value is default_config:
+            if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_{fmt.name.lower()}"
             variants[variant_key] = _Variant(

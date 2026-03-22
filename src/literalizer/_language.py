@@ -285,3 +285,13 @@ class Language(Protocol):
     def sequence_format(self) -> SequenceFormat:
         """The sequence format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def set_format(self) -> enum.Enum:
+        """The set format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def comment_format(self) -> enum.Enum:
+        """The comment format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
