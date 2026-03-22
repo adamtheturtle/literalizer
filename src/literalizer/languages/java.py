@@ -8,11 +8,12 @@ from typing import Any
 from beartype import beartype
 
 from literalizer._formatters import (
-    ListType,
     MixedNumeric,
     fixed_dict_open,
     format_bytes_hex,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -87,23 +88,15 @@ _JAVA_SCALAR_TYPES: dict[type, str] = {
     datetime.date: "LocalDate",
 }
 
+_java_element_to_type = make_element_to_type(
+    scalar_types=_JAVA_SCALAR_TYPES,
+    list_template="{inner}[]",
+)
 
-@beartype
-def _java_element_to_type(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Java type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _java_element_to_type(element_type=element_type.inner)
-        return f"{inner}[]" if inner is not None else None
-    return _JAVA_SCALAR_TYPES.get(element_type)
-
-
-@beartype
-def _java_type_to_opener(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Java array opener."""
-    type_name = _java_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"new {type_name}[]{{"
+_java_type_to_opener = make_type_to_opener(
+    element_to_type=_java_element_to_type,
+    opener_template="new {type_name}[]{{",
+)
 
 
 @beartype
