@@ -64,6 +64,8 @@ def _walk_value(*, value: Value, types: set[type]) -> None:
             _walk_value(value=v, types=types)
     elif isinstance(value, (set, frozenset)):
         types.add(set)
+        for v in value:
+            _walk_scalar(value=v, types=types)
     elif isinstance(value, list):
         types.add(list)
         for v in value:
