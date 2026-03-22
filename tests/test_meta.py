@@ -14,7 +14,7 @@ def test_all_languages_have_lint_workflow(
     """Every language has a lint job in lint.yml."""
     lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
     ruamel_yaml = YAML()
-    workflow: dict[str, Any] = ruamel_yaml.load(
+    workflow: dict[str, Any] = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
         stream=lint_yml,
     )
     job_ids: set[str] = set(workflow["jobs"])
@@ -51,7 +51,7 @@ def test_all_lint_jobs_in_completion_gate(
     """Every lint-* job is in completion-lint.needs."""
     lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
     ruamel_yaml = YAML()
-    workflow: dict[str, Any] = ruamel_yaml.load(
+    workflow: dict[str, Any] = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
         stream=lint_yml,
     )
     job_ids: set[str] = set(workflow["jobs"])
