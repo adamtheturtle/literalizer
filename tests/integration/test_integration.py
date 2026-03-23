@@ -252,8 +252,18 @@ def _wrap_fsharp_varname(content: str) -> str:
     return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
 
 
+@dataclasses.dataclass(frozen=True)
+class _HaskellBodySplit:
+    """Result of splitting body-preamble lines from a Haskell code
+    string.
+    """
+
+    body_preamble: str
+    expression: str
+
+
 @beartype
-def _split_haskell_body_preamble(content: str) -> tuple[str, str]:
+def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
     """Split body-preamble lines from the expression in *content*.
 
     Body-preamble lines (imports, typeclass instances) are now included
@@ -261,11 +271,11 @@ def _split_haskell_body_preamble(content: str) -> tuple[str, str]:
     from the trailing expression so the test wrapper can place them in
     the correct structural position within the Haskell module.
     """
-    lines = content.split("\n")
+    lines = content.split(sep="\n")
     # Body-preamble lines start with "import " or "instance ", plus
     # indented continuation lines of instance blocks.
     expr_start = 0
-    for i, line in enumerate(lines):
+    for i, line in enumerate(iterable=lines):
         if line.startswith(("import ", "instance ")):
             expr_start = i + 1
         elif line.startswith("    ") and expr_start > 0:
@@ -273,22 +283,23 @@ def _split_haskell_body_preamble(content: str) -> tuple[str, str]:
             expr_start = i + 1
         else:
             break
-    body_preamble = "\n".join(lines[:expr_start])
-    expr = "\n".join(lines[expr_start:])
-    return body_preamble, expr
+    return _HaskellBodySplit(
+        body_preamble="\n".join(lines[:expr_start]),
+        expression="\n".join(lines[expr_start:]),
+    )
 
 
 @beartype
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a Val binding."""
-    body_preamble, expr = _split_haskell_body_preamble(content)
+    split = _split_haskell_body_preamble(content=content)
     header = _HASKELL_MODULE_HEADER
-    if body_preamble:
-        header += body_preamble + "\n"
+    if split.body_preamble:
+        header += split.body_preamble + "\n"
     header += _HASKELL_VAL_TYPE
-    if expr.lstrip().startswith("("):
-        return header + f"x = {expr}"
-    return header + "x :: Val\n" + f"x = {expr}"
+    if split.expression.lstrip().startswith("("):
+        return header + f"x = {split.expression}"
+    return header + "x :: Val\n" + f"x = {split.expression}"
 
 
 @beartype
@@ -702,12 +713,12 @@ def _wrap_rust_varname(content: str) -> str:
 @beartype
 def _wrap_haskell_varname(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
-    body_preamble, decl = _split_haskell_body_preamble(content)
+    split = _split_haskell_body_preamble(content=content)
     header = _HASKELL_MODULE_HEADER
-    if body_preamble:
-        header += body_preamble + "\n"
+    if split.body_preamble:
+        header += split.body_preamble + "\n"
     header += _HASKELL_VAL_TYPE
-    return header + f"{_VARIABLE_NAME} :: Val\n" + decl
+    return header + f"{_VARIABLE_NAME} :: Val\n" + split.expression
 
 
 @beartype

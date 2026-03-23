@@ -47,13 +47,6 @@ class LiteralizeResult:
     the generated code.  Empty when none are needed.
     """
 
-    body_preamble: tuple[str, ...]
-    """Always an empty tuple.
-
-    Body-preamble lines are now included directly in :attr:`code`.
-    This field is retained for backward compatibility.
-    """
-
 
 @beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
@@ -164,9 +157,11 @@ def _compute_preamble(
     body = _deduplicate(
         lines=tuple(
             line
-            for scalar_type, preamble in language.scalar_body_preamble.items()
+            for scalar_type, body_preamble in (
+                language.scalar_body_preamble.items()
+            )
             if scalar_type in types
-            for line in preamble
+            for line in body_preamble
         ),
     )
     return _PreambleResult(
@@ -1065,7 +1060,6 @@ def literalize_json(
     return LiteralizeResult(
         code=result,
         preamble=preamble,
-        body_preamble=(),
     )
 
 
@@ -1359,5 +1353,4 @@ def literalize_yaml(
     return LiteralizeResult(
         code=result,
         preamble=preamble,
-        body_preamble=(),
     )
