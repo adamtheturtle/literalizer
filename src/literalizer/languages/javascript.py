@@ -2,6 +2,8 @@
 
 import datetime
 import enum
+from collections.abc import Callable
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -33,7 +35,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
 
 @beartype
@@ -238,23 +240,47 @@ class JavaScript(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class IntegerFormats(enum.Enum):
-        """Integer format options."""
-
-        DECIMAL = "decimal"
-        HEX = "hex"
-
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
         NONE = "none"
         UNDERSCORE = "underscore"
 
+    class IntegerFormats(enum.Enum):
+        """Integer format options."""
+
+        DECIMAL = MappingProxyType(
+            mapping={
+                "NONE": str,
+                "UNDERSCORE": _format_integer_underscore,
+            }
+        )
+        HEX = MappingProxyType(
+            mapping={
+                "NONE": _format_integer_hex,
+                "UNDERSCORE": _format_integer_hex,
+            }
+        )
+
+        def get_formatter(
+            self,
+            numeric_separator: enum.Enum,
+        ) -> Callable[[int], str]:
+            """Return the integer formatter for the given separator."""
+            formatter: Callable[[int], str] = self.value[
+                numeric_separator.name
+            ]
+            return formatter
+
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
-        SINGLE = "single"
+        DOUBLE = enum.member(value=format_string_backslash)
+        SINGLE = enum.member(value=format_string_backslash_single)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -277,8 +303,8 @@ class JavaScript(metaclass=LanguageCls):
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats
-    integer_formats = IntegerFormats
     numeric_separators = NumericSeparators
+    integer_formats = IntegerFormats
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
@@ -319,22 +345,16 @@ class JavaScript(metaclass=LanguageCls):
             datetime_format
         )
 
-        self.format_string: Callable[[str], str] = (
-            format_string_backslash_single
-            if string_format.name == "SINGLE"
-            else format_string_backslash
-        )
+        self.format_string: Callable[[str], str] = string_format
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        if integer_format.name == "HEX":
-            fmt_int: Callable[[int], str] = _format_integer_hex
-        elif numeric_separator.name == "UNDERSCORE":
-            fmt_int = _format_integer_underscore
-        else:
-            fmt_int = str
-        self.format_integer: Callable[[int], str] = fmt_int
+        self.format_integer: Callable[[int], str] = (
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
