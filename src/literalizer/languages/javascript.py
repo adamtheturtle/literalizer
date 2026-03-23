@@ -12,6 +12,7 @@ from literalizer._formatters import (
     fixed_sequence_open,
     format_bytes_hex,
     format_string_backslash,
+    format_string_backslash_single,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -54,15 +55,56 @@ def _format_js_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a JavaScript variable declaration."""
+def _format_variable_declaration_const(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a JavaScript ``const`` variable declaration."""
     return f"const {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_let(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a JavaScript ``let`` variable declaration."""
+    return f"let {name} = {value};"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a JavaScript variable assignment."""
     return f"{name} = {value};"
+
+
+@beartype
+def _format_integer_hex(value: int) -> str:
+    """Format an integer as a JavaScript hexadecimal literal."""
+    if value < 0:
+        return f"-0x{abs(value):x}"
+    return f"0x{value:x}"
+
+
+@beartype
+def _format_integer_underscore(value: int) -> str:
+    """Format an integer with underscore separators."""
+    s = str(abs(value))
+    # Insert underscores every 3 digits from the right.
+    group_size = 3
+    groups: list[str] = []
+    while len(s) > group_size:
+        groups.append(s[-group_size:])
+        s = s[:-group_size]
+    groups.append(s)
+    formatted = "_".join(reversed(groups))
+    if value < 0:
+        return f"-{formatted}"
+    return formatted
+
+
+@beartype
+def _format_map_entry(key: str, value: str) -> str:
+    """Format a JavaScript ``Map`` entry as ``[key, value]``."""
+    return f"[{key}, {value}]"
 
 
 @beartype
@@ -156,31 +198,37 @@ class JavaScript(metaclass=LanguageCls):
         """Declaration style options."""
 
         CONST = "const"
+        LET = "let"
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
         OBJECT = "object"
+        MAP = "map"
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
         DECIMAL = "decimal"
+        HEX = "hex"
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
 
         DOUBLE = "double"
+        SINGLE = "single"
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
         YES = "yes"
+        NO = "no"
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -231,25 +279,47 @@ class JavaScript(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="{"),
-            close="}",
-            format_entry=dict_entry_with_separator(separator=": "),
-            empty_dict=None,
-            preamble_lines=(),
+        if dict_format is JavaScript.DictFormats.MAP:
+            self.dict_format_config: DictFormatConfig = DictFormatConfig(
+                open_fn=fixed_dict_open(open_str="new Map(["),
+                close="])",
+                format_entry=_format_map_entry,
+                empty_dict="new Map()",
+                preamble_lines=(),
+            )
+        else:
+            self.dict_format_config = DictFormatConfig(
+                open_fn=fixed_dict_open(open_str="{"),
+                close="}",
+                format_entry=dict_entry_with_separator(separator=": "),
+                empty_dict=None,
+                preamble_lines=(),
+            )
+        self.multiline_trailing_comma = (
+            trailing_comma is JavaScript.TrailingCommas.YES
         )
-        self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
 
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = (
+            format_string_backslash_single
+            if string_format is JavaScript.StringFormats.SINGLE
+            else format_string_backslash
+        )
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        if integer_format is JavaScript.IntegerFormats.HEX:
+            fmt_int: Callable[[int], str] = _format_integer_hex
+        elif numeric_separator is JavaScript.NumericSeparators.UNDERSCORE:
+            fmt_int = _format_integer_underscore
+        else:
+            fmt_int = str
+        self.format_integer: Callable[[int], str] = fmt_int
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -273,7 +343,9 @@ class JavaScript(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            _format_variable_declaration_let
+            if declaration_style is JavaScript.DeclarationStyles.LET
+            else _format_variable_declaration_const
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
