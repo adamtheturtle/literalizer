@@ -212,6 +212,7 @@ class Matlab(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

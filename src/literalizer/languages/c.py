@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    passthrough_sequence_entry,
 )
 from literalizer._language import (
     CommentConfig,
@@ -150,6 +151,7 @@ class C(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

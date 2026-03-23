@@ -176,6 +176,7 @@ class Dart(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="("),
@@ -184,6 +185,7 @@ class Dart(metaclass=LanguageCls):
             single_element_trailing_comma=True,
             empty_sequence="()",
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

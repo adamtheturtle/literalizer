@@ -161,6 +161,7 @@ class CSharp(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence="ValueTuple.Create()",
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -174,6 +175,7 @@ class CSharp(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence="Array.Empty<object>()",
             preamble_lines=("using System.Collections.Generic;",),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

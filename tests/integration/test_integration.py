@@ -14,7 +14,6 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -92,12 +91,6 @@ def _wrap_cpp(content: str) -> str:
 @beartype
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
-    if content.lstrip().startswith("("):
-        content = re.sub(
-            pattern=r"\bnil\b",
-            repl="nil as Any?",
-            string=content,
-        )
     return f"let x: Any? = {content}"
 
 
@@ -394,26 +387,6 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
         f"  _assignment();\n"
         f"}}"
     )
-
-
-@beartype
-def _wrap_racket(content: str) -> str:
-    """Wrap Racket content with trailing whitespace stripped.
-
-    Trailing whitespace is stripped from each line because the
-    ``(list ``/``(hash ``/``(set `` opening delimiters produce a
-    trailing space before the newline in multi-line mode, which the
-    ``trim trailing whitespace`` pre-commit hook removes from the
-    committed golden files.
-    """
-    return "\n".join(line.rstrip() for line in content.splitlines())
-
-
-@beartype
-def _wrap_racket_combined(declaration: str, assignment: str) -> str:
-    """Wrap Racket declaration and assignment."""
-    combined = f"{declaration}\n{assignment}"
-    return "\n".join(line.rstrip() for line in combined.splitlines())
 
 
 @beartype
@@ -747,20 +720,7 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
     )
 
 
-@beartype
-def _wrap_swift_varname(content: str) -> str:
-    """Add type annotation to Swift let/var declaration for mixed-type
-    collections.
-
-    The content from format_variable_declaration is like
-    "let my_data = [...]" or "var my_data = [...]", and we need to add
-    a type annotation for Swift to accept heterogeneous collections.
-    """
-    for keyword in ("let", "var"):
-        prefix = f"{keyword} {_VARIABLE_NAME}"
-        if content.startswith(prefix):
-            return prefix + ": Any =" + content[len(prefix) + 2 :]
-    return content
+_wrap_swift_varname = _wrap_identity
 
 
 @beartype
@@ -804,11 +764,10 @@ def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
 
 @beartype
 def _wrap_swift_combined(declaration: str, assignment: str) -> str:
-    """Swift: let declaration (with type annotation) in a do block,
+    """Swift: let declaration in a do block,
     then var + assignment in the outer scope.
     """
-    annotated = _wrap_swift_varname(content=declaration)
-    decl_indented = "    " + annotated.replace("\n", "\n    ")
+    decl_indented = "    " + declaration.replace("\n", "\n    ")
     return (
         f"do {{\n{decl_indented}\n}}\nvar {_VARIABLE_NAME}: Any\n{assignment}"
     )
@@ -989,18 +948,16 @@ def _wrap_julia(content: str) -> str:
 def _wrap_vb(content: str) -> str:
     """Wrap in a VB.NET Module with a Dim declaration.
 
-    Leading comment lines (starting with ``'``) are hoisted before the
-    ``Dim`` statement so that the output remains valid VB.NET.
+    Comment hoisting is delegated to the language module's
+    ``format_variable_declaration``.
     """
-    lines = content.split(sep="\n")
-    comment_lines: list[str] = []
-    while lines and lines[0].startswith("'"):
-        comment_lines.append("    " + lines.pop(0))
-    rest = "\n".join(lines)
-    rest_indented = rest.replace("\n", "\n    ")
-    dim_line = f"    Dim x As Object = {rest_indented}"
-    body = "\n".join([*comment_lines, dim_line]) if comment_lines else dim_line
-    return f"Module Check\n{body}\nEnd Module"
+    lang = literalizer.languages.VisualBasic()
+    declaration = lang.format_variable_declaration(
+        "x As Object",
+        content,
+        None,
+    )
+    return _wrap_vb_varname(content=declaration)
 
 
 @beartype
@@ -1364,9 +1321,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Racket.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Racket,
-        wrap=_wrap_racket,
-        varname_wrap=_wrap_racket,
-        combined_wrap=_wrap_racket_combined,
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,

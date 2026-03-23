@@ -162,6 +162,7 @@ class TypeScript(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
@@ -170,6 +171,7 @@ class TypeScript(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence="[] as const",
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

@@ -189,6 +189,7 @@ class Nim(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=("import json",),
+            format_entry=passthrough_sequence_entry,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
@@ -197,6 +198,7 @@ class Nim(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=("import json",),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

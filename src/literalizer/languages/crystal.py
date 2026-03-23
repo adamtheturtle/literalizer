@@ -102,6 +102,7 @@ class Crystal(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="{"),
@@ -110,6 +111,7 @@ class Crystal(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

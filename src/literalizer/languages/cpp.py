@@ -199,6 +199,7 @@ class Cpp(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=("#include <vector>",),
+            format_entry=passthrough_sequence_entry,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=_cpp_array_open,
@@ -207,6 +208,7 @@ class Cpp(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=("#include <array>",),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

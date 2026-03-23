@@ -19,6 +19,7 @@ class SequenceFormatConfig:
     single_element_trailing_comma: bool
     empty_sequence: str | None
     preamble_lines: tuple[str, ...]
+    format_entry: Callable[[str], str]
 
 
 @dataclasses.dataclass(frozen=True)

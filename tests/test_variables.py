@@ -191,7 +191,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
         declaration="val my_var = 42", assignment="my_var = 42"
     ),
     SWIFT: _VariableSyntax(
-        declaration="let my_var = 42", assignment="my_var = 42"
+        declaration="let my_var: Any = 42", assignment="my_var = 42"
     ),
     RUST: _VariableSyntax(
         declaration="let my_var = 42;", assignment="my_var = 42;"

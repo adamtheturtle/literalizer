@@ -69,7 +69,7 @@ def _format_variable_declaration_let(
     name: str, value: str, _data: Value
 ) -> str:
     """Format a Swift ``let`` variable declaration."""
-    return f"let {name} = {value}"
+    return f"let {name}: Any = {value}"
 
 
 @beartype
@@ -77,7 +77,7 @@ def _format_variable_declaration_var(
     name: str, value: str, _data: Value
 ) -> str:
     """Format a Swift ``var`` variable declaration."""
-    return f"var {name} = {value}"
+    return f"var {name}: Any = {value}"
 
 
 @beartype
@@ -98,6 +98,14 @@ def _format_string_swift(value: str) -> str:
     )
     escaped = escape_control_chars(value=escaped, fmt="\\u{{{:x}}}")
     return f'"{escaped}"'
+
+
+@beartype
+def _tuple_sequence_entry(entry: str) -> str:
+    """Format a tuple sequence entry, casting nil to Any? for Swift."""
+    if entry == "nil":
+        return "nil as Any?"
+    return entry
 
 
 _string_format: Callable[[str], str] = _format_string_swift
@@ -158,6 +166,7 @@ class Swift(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence="[Any]()",
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="("),
@@ -166,6 +175,7 @@ class Swift(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=_tuple_sequence_entry,
         )
 
         @property
@@ -296,9 +306,7 @@ class Swift(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = _string_format
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
-            passthrough_sequence_entry
-        )
+        self.format_sequence_entry: Callable[[str], str] = fmt.format_entry
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
