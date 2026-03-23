@@ -15,12 +15,14 @@ from literalizer.languages import (
     CSharp,
     Elixir,
     Go,
+    Haskell,
     Java,
     JavaScript,
     Kotlin,
     Python,
     Ruby,
     Rust,
+    Scala,
     Swift,
     VisualBasic,
 )
@@ -191,6 +193,20 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "hour: 12, minute: 30, second: 0, "
             "nanosecond: 123456000).date!",
             id="format_datetime_swift_microsecond",
+        ),
+        pytest.param(
+            Haskell.DatetimeFormats.HASKELL,
+            _SAMPLE_DATETIME_MICRO,
+            "HDatetime (UTCTime "
+            "(fromGregorian 2024 1 15) "
+            "(picosecondsToDiffTime 45000123456000000))",
+            id="format_datetime_haskell_microsecond",
+        ),
+        pytest.param(
+            Scala.DatetimeFormats.SCALA,
+            _SAMPLE_DATETIME_MICRO,
+            "LocalDateTime.of(2024, 1, 15, 12, 30, 0, 123456000)",
+            id="format_datetime_scala_microsecond",
         ),
     ],
 )
