@@ -978,3 +978,70 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
         ]"""
     )
     assert result.code == expected
+
+
+def test_error_on_coercion_raises_for_mixed_dict_values() -> None:
+    """Error_on_coercion raises when a dict has values of mixed types."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        name: Bob
+        tags:
+          - admin
+          - user
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_raises_for_mixed_list_values() -> None:
+    """Error_on_coercion raises when a list has mixed element types."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        - hello
+        -
+          - nested
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
+    """Error_on_coercion raises when a dict has None alongside a list."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        tags:
+          - admin
+        extra:
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=MOJO,
+            line_prefix="",
+            indent="    ",
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
