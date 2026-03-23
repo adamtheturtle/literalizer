@@ -541,7 +541,7 @@ def _nim_has_mixed_types(content: str) -> bool:
     ``@[...]`` seq cannot hold them.
     """
     inner = content.strip().strip("[]").strip()
-    elements = [e.strip() for e in inner.split(",") if e.strip()]
+    elements = [e.strip() for e in inner.split(sep=",") if e.strip()]
     has_quoted = any(e.startswith('"') for e in elements)
     has_unquoted = any(not e.startswith('"') for e in elements)
     return has_quoted and has_unquoted
@@ -559,7 +559,7 @@ def _wrap_nim(content: str) -> str:
     if (
         stripped.startswith("[")
         and "[[" not in content
-        and not _nim_has_mixed_types(content)
+        and not _nim_has_mixed_types(content=content)
     ):
         return f"let _ = @{content}"
     return f"let _ = %* {content}"
