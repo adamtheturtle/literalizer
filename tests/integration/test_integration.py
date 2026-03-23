@@ -179,7 +179,7 @@ _HASKELL_FRACTIONAL_INSTANCE = (
     '    a / b = error "not implemented"\n'
 )
 
-_HASKELL_QUOTED_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
+_HASKELL_QUOTED_RE = re.compile(pattern=r'"(?:[^"\\]|\\.)*"')
 
 
 @beartype
@@ -192,8 +192,10 @@ def _haskell_preamble(content: str) -> str:
     """
     stripped = _HASKELL_QUOTED_RE.sub("", content)
     needs_strings = '"' in content
-    needs_fractional = bool(re.search(r"\d\.\d", stripped))
-    needs_num = needs_fractional or bool(re.search(r"\d", stripped))
+    needs_fractional = bool(re.search(pattern=r"\d\.\d", string=stripped))
+    needs_num = needs_fractional or bool(
+        re.search(pattern=r"\d", string=stripped)
+    )
 
     parts: list[str] = []
     parts.append("module Check where\n")
