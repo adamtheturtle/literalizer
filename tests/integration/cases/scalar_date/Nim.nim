@@ -1,2 +1,2 @@
-import json
-let _ = %*"2024-01-15"
+import times
+let _ = dateTime(2024, mJan, 15, 0, 0, 0, 0, utc())

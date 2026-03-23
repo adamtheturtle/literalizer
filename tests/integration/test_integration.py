@@ -519,7 +519,13 @@ def _wrap_r(content: str) -> str:
 
 @beartype
 def _wrap_nim(content: str) -> str:
-    """Wrap in a Nim %* expression."""
+    """Wrap in a Nim expression.
+
+    Uses ``%*`` for JSON-compatible values; omits it for native types
+    like ``dateTime(...)`` that cannot be wrapped in a JSON node.
+    """
+    if "dateTime(" in content:
+        return f"let _ = {content}"
     return f"let _ = %*{content}"
 
 
