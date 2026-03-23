@@ -5,7 +5,7 @@ import inspect
 import pytest
 
 from literalizer._formatters import (
-    TypedOpenerConfig,  # pyright: ignore[reportPrivateUsage]
+    TypedOpenerConfig,
 )
 from literalizer.languages import (
     VisualBasic,
