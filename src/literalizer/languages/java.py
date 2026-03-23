@@ -100,6 +100,7 @@ _java_opener_config = TypedOpenerConfig(
     list_template="{inner}[]",
     seq_opener_template="new {type_name}[]{{",
     dict_opener_template="new {type_name}[]{{",
+    set_opener_template="Set.of(",
 )
 
 
