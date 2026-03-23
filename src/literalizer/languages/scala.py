@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
+    TypeOpeners,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
@@ -139,6 +140,30 @@ def _list_sequence_open(
 
 
 _string_format: Callable[[str], str] = format_string_backslash
+
+
+@beartype
+def _resolve_sequence_open(
+    *,
+    sequence_format: enum.Enum,
+    list_member: enum.Enum,
+    fmt: SequenceFormatConfig,
+    openers: TypeOpeners,
+    date_type: str,
+    datetime_type: str,
+) -> Callable[[list[Value]], str]:
+    """Resolve the sequence opener for a Scala sequence format."""
+    if sequence_format is list_member:
+        return _list_sequence_open(
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+    if fmt.typed_opener_fallback is not None:
+        return typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback=fmt.typed_opener_fallback,
+        )
+    return fmt.sequence_open
 
 
 @beartype
@@ -362,20 +387,16 @@ class Scala(metaclass=LanguageCls):
                 fallback="Set(",
             ),
         )
-        seq_open: Callable[[list[Value]], str]
-        if sequence_format is self.sequence_formats.LIST:
-            seq_open = _list_sequence_open(
+        self.sequence_open: Callable[[list[Value]], str] = (
+            _resolve_sequence_open(
+                sequence_format=sequence_format,
+                list_member=self.sequence_formats.LIST,
+                fmt=fmt,
+                openers=openers,
                 date_type=_SCALA_SCALAR_TYPES[date_tp],
                 datetime_type=_SCALA_SCALAR_TYPES[dt_tp],
             )
-        elif fmt.typed_opener_fallback is not None:
-            seq_open = typed_sequence_open(
-                type_to_opener=openers.seq,
-                fallback=fmt.typed_opener_fallback,
-            )
-        else:
-            seq_open = fmt.sequence_open
-        self.sequence_open: Callable[[list[Value]], str] = seq_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
