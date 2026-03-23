@@ -75,6 +75,14 @@ _scala_opener_config = TypedOpenerConfig(
     set_opener_template="Set[{type_name}](",
 )
 
+_scala_tree_set_type_to_opener = make_type_to_opener(
+    element_to_type=make_element_to_type(
+        scalar_types=_SCALA_SCALAR_TYPES,
+        list_template="Array[{inner}]",
+    ),
+    opener_template="TreeSet[{type_name}](",
+)
+
 # The LIST format needs List[…] for nested type names, not Array[…].
 _scala_list_element_to_type = make_element_to_type(
     scalar_types=_SCALA_SCALAR_TYPES,
@@ -249,6 +257,15 @@ class Scala(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
         )
+        TREE_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=_scala_tree_set_type_to_opener,
+                fallback="TreeSet(",
+            ),
+            close=")",
+            empty_set=None,
+            preamble_lines=("import scala.collection.immutable.TreeSet",),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -352,11 +369,28 @@ class Scala(metaclass=LanguageCls):
                 datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
             },
         )
+        if set_format is self.SetFormats.TREE_SET:
+            _eto = make_element_to_type(
+                scalar_types={
+                    **_SCALA_SCALAR_TYPES,
+                    datetime.date: _SCALA_SCALAR_TYPES[date_tp],
+                    datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
+                },
+                list_template="Array[{inner}]",
+            )
+            _set_tto = make_type_to_opener(
+                element_to_type=_eto,
+                opener_template="TreeSet[{type_name}](",
+            )
+            _set_fallback = "TreeSet("
+        else:
+            _set_tto = openers.set
+            _set_fallback = "Set("
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="Set(",
+                type_to_opener=_set_tto,
+                fallback=_set_fallback,
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (

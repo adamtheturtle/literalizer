@@ -15,6 +15,8 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -70,6 +72,43 @@ _csharp_opener_config = TypedOpenerConfig(
     dict_opener_template="new Dictionary<string, {type_name}> {{",
     set_opener_template="new HashSet<{type_name}> {{",
 )
+
+_csharp_sorted_set_type_to_opener = make_type_to_opener(
+    element_to_type=make_element_to_type(
+        scalar_types=_CSHARP_SCALAR_TYPES,
+        list_template="{inner}[]",
+    ),
+    opener_template="new SortedSet<{type_name}> {{",
+)
+
+
+@beartype
+def _build_set_format_config(
+    *,
+    set_format_value: SetFormatConfig,
+    set_format_name: str,
+    scalar_type_overrides: dict[type, str],
+) -> SetFormatConfig:
+    """Build the resolved set format config for a chosen format."""
+    if set_format_name == "SORTED_SET":
+        eto = make_element_to_type(
+            scalar_types={**_CSHARP_SCALAR_TYPES, **scalar_type_overrides},
+            list_template="{inner}[]",
+        )
+        tto = make_type_to_opener(
+            element_to_type=eto,
+            opener_template="new SortedSet<{type_name}> {{",
+        )
+        fallback = "new SortedSet<object> {"
+    else:
+        tto = _csharp_opener_config.build(
+            scalar_type_overrides=scalar_type_overrides,
+        ).set
+        fallback = "new HashSet<object> {"
+    return dataclasses.replace(
+        set_format_value,
+        set_open=typed_set_open(type_to_opener=tto, fallback=fallback),
+    )
 
 
 @beartype
@@ -199,6 +238,15 @@ class CSharp(metaclass=LanguageCls):
             empty_set="new HashSet<object>()",
             preamble_lines=(),
         )
+        SORTED_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=_csharp_sorted_set_type_to_opener,
+                fallback="new SortedSet<object> {",
+            ),
+            close="}",
+            empty_set="new SortedSet<object>()",
+            preamble_lines=("using System.Collections.Generic;",),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -292,18 +340,17 @@ class CSharp(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
+        _scalar_overrides: dict[type, str] = {
+            datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
+            datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
+        }
         openers = _csharp_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
-                datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
-            },
+            scalar_type_overrides=_scalar_overrides,
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="new HashSet<object> {",
-            ),
+        self.set_format_config = _build_set_format_config(
+            set_format_value=set_format.value,
+            set_format_name=set_format.name,
+            scalar_type_overrides=_scalar_overrides,
         )
         if sequence_format is self.sequence_formats.ARRAY:
             self.sequence_open: Callable[[list[Value]], str] = (

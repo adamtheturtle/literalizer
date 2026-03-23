@@ -16,6 +16,8 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -102,6 +104,14 @@ _kotlin_opener_config = TypedOpenerConfig(
     seq_opener_template="arrayOf(",
     dict_opener_template="mapOf<String, {type_name}>(",
     set_opener_template="setOf<{type_name}>(",
+)
+
+_kotlin_sorted_set_type_to_opener = make_type_to_opener(
+    element_to_type=make_element_to_type(
+        scalar_types=_KOTLIN_SCALAR_TYPES,
+        list_template="Array<{inner}>",
+    ),
+    opener_template="sortedSetOf<{type_name}>(",
 )
 
 
@@ -259,6 +269,15 @@ class Kotlin(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
         )
+        SORTED_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=_kotlin_sorted_set_type_to_opener,
+                fallback="sortedSetOf<Any?>(",
+            ),
+            close=")",
+            empty_set=None,
+            preamble_lines=(),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -364,11 +383,28 @@ class Kotlin(metaclass=LanguageCls):
                 datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
             },
         )
+        if set_format is self.SetFormats.SORTED_SET:
+            _eto = make_element_to_type(
+                scalar_types={
+                    **_KOTLIN_SCALAR_TYPES,
+                    datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
+                    datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
+                },
+                list_template="Array<{inner}>",
+            )
+            _set_tto = make_type_to_opener(
+                element_to_type=_eto,
+                opener_template="sortedSetOf<{type_name}>(",
+            )
+            _set_fallback = "sortedSetOf<Any?>("
+        else:
+            _set_tto = openers.set
+            _set_fallback = "setOf<Any?>("
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="setOf<Any?>(",
+                type_to_opener=_set_tto,
+                fallback=_set_fallback,
             ),
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
