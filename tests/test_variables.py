@@ -200,7 +200,30 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
         declaration="$my_var = 42;", assignment="$my_var = 42;"
     ),
     HASKELL: _VariableSyntax(
-        declaration="my_var = 42", assignment="my_var = 42"
+        declaration=(
+            "instance Num Val where\n"
+            "    fromInteger = HInt\n"
+            '    a + b = error "not implemented"\n'
+            '    a * b = error "not implemented"\n'
+            '    abs a = error "not implemented"\n'
+            '    signum a = error "not implemented"\n'
+            "    negate (HInt n) = HInt (negate n)\n"
+            "    negate (HFloat f) = HFloat (negate f)\n"
+            '    negate _ = error "not implemented"\n'
+            "my_var = 42"
+        ),
+        assignment=(
+            "instance Num Val where\n"
+            "    fromInteger = HInt\n"
+            '    a + b = error "not implemented"\n'
+            '    a * b = error "not implemented"\n'
+            '    abs a = error "not implemented"\n'
+            '    signum a = error "not implemented"\n'
+            "    negate (HInt n) = HInt (negate n)\n"
+            "    negate (HFloat f) = HFloat (negate f)\n"
+            '    negate _ = error "not implemented"\n'
+            "my_var = 42"
+        ),
     ),
     DART: _VariableSyntax(
         declaration="final my_var = 42;", assignment="my_var = 42;"
