@@ -1,5 +1,5 @@
 object Declaration {
-  val my_data = Array[String](
+  val my_data = List[String](
       "line1\r\nline2",
       "line1\rline2",
       "",
@@ -7,7 +7,7 @@ object Declaration {
 }
 object Assignment {
   var my_data: Any = null
-  my_data = Array[String](
+  my_data = List[String](
       "line1\r\nline2",
       "line1\rline2",
       "",

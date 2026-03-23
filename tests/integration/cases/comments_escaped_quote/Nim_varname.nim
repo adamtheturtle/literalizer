@@ -1,4 +1,4 @@
 import json
-var my_data = %*{
+var my_data = %* {
     "key": "value \" # not a comment"  # real
 }

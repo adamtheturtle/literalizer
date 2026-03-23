@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-var x = new object[] {
+var x = (
     true,
     "hi",
-    new int[] {1, 2},
+    (1, 2),
     (object?)null
-};
+);

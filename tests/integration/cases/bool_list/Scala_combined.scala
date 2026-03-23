@@ -1,5 +1,5 @@
 object Declaration {
-  val my_data = Array[Boolean](
+  val my_data = List[Boolean](
       true,
       false,
       true,
@@ -7,7 +7,7 @@ object Declaration {
 }
 object Assignment {
   var my_data: Any = null
-  my_data = Array[Boolean](
+  my_data = List[Boolean](
       true,
       false,
       true,

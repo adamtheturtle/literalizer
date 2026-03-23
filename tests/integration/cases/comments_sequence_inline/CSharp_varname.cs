@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-var my_data = new string[] {
+var my_data = (
     "a",  // note a
     "b"  // note b
-};
+);

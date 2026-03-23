@@ -50,15 +50,49 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Nim ``var`` declaration."""
-    return f"var {name} = %*{value}"
+def _make_variable_declaration(
+    *,
+    seq_mode: bool,
+) -> Callable[[str, str, Value], str]:
+    """Create a Nim variable declaration formatter."""
+
+    @beartype
+    def _format(name: str, value: str, _data: Value) -> str:
+        """Format a ``var`` declaration, using ``@`` for flat
+        sequences.
+        """
+        if (
+            seq_mode
+            and isinstance(_data, list)
+            and _data
+            and not any(isinstance(item, list) for item in _data)
+        ):
+            return f"var {name} = @{value}"
+        return f"var {name} = %* {value}"
+
+    return _format
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Nim assignment to an existing variable."""
-    return f"{name} = %*{value}"
+def _make_variable_assignment(
+    *,
+    seq_mode: bool,
+) -> Callable[[str, str, Value], str]:
+    """Create a Nim variable assignment formatter."""
+
+    @beartype
+    def _format(name: str, value: str, _data: Value) -> str:
+        """Format an assignment, using ``@`` for flat sequences."""
+        if (
+            seq_mode
+            and isinstance(_data, list)
+            and _data
+            and not any(isinstance(item, list) for item in _data)
+        ):
+            return f"{name} = @{value}"
+        return f"{name} = %* {value}"
+
+    return _format
 
 
 _string_format: Callable[[str], str] = format_string_backslash
@@ -134,6 +168,14 @@ class Nim(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Nim."""
 
+        SEQ = SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(open_str="["),
+            close="]",
+            supports_heterogeneity=False,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+            preamble_lines=("import json",),
+        )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
             close="]",
@@ -228,7 +270,7 @@ class Nim(metaclass=LanguageCls):
         date_format: DateFormats = DateFormats.NIM,
         datetime_format: DatetimeFormats = DatetimeFormats.NIM,
         bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
+        sequence_format: SequenceFormats = SequenceFormats.SEQ,
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.HASH,
@@ -292,11 +334,12 @@ class Nim(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        _seq = sequence_format is self.sequence_formats.SEQ
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            _make_variable_declaration(seq_mode=_seq)
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _make_variable_assignment(seq_mode=_seq)
         )
         _json = ("import json",)
         self.static_preamble: Sequence[str] = ()

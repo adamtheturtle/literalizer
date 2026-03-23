@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -91,6 +92,12 @@ def _wrap_cpp(content: str) -> str:
 @beartype
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
+    if content.lstrip().startswith("("):
+        content = re.sub(
+            pattern=r"\bnil\b",
+            repl="nil as Any?",
+            string=content,
+        )
     return f"let x: Any? = {content}"
 
 
@@ -167,9 +174,17 @@ _HASKELL_STATIC_HEADER = (
 def _wrap_fsharp(content: str) -> str:
     """Wrap in an F# module with a Val assignment."""
     fsharp = literalizer.languages.FSharp()
-    typed = fsharp.format_sequence_entry(content)
+    if content.lstrip().startswith("[|"):
+        val_type = "Val array"
+        typed = content
+    else:
+        val_type = "Val"
+        typed = fsharp.format_sequence_entry(content)
     return (
-        "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + f"let x: Val = {typed}"
+        "module Check\n\n"
+        + _FSHARP_VAL_TYPE
+        + "\n"
+        + f"let x: {val_type} = {typed}"
     )
 
 
@@ -177,12 +192,17 @@ def _wrap_fsharp(content: str) -> str:
 def _wrap_ocaml(content: str) -> str:
     """Wrap in an OCaml module with a val_t assignment."""
     ocaml = literalizer.languages.OCaml()
-    typed = ocaml.format_sequence_entry(content)
+    if content.lstrip().startswith("[|"):
+        val_type = "val_t array"
+        typed = content
+    else:
+        val_type = "val_t"
+        typed = ocaml.format_sequence_entry(content)
     return (
         "module Check = struct\n\n"
         + _OCAML_VAL_TYPE
         + "\n"
-        + f"let x : val_t = {typed}\n\n"
+        + f"let x : {val_type} = {typed}\n\n"
         + "end"
     )
 
@@ -240,6 +260,8 @@ def _wrap_fsharp_varname(content: str) -> str:
 @beartype
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a Val binding."""
+    if content.lstrip().startswith("("):
+        return _HASKELL_STATIC_HEADER + f"x = {content}"
     return _HASKELL_STATIC_HEADER + "x :: Val\n" + f"x = {content}"
 
 
@@ -511,10 +533,37 @@ def _wrap_r(content: str) -> str:
     return f"x <- {content}"
 
 
+def _nim_has_mixed_types(content: str) -> bool:
+    """Check if a Nim sequence literal contains mixed types.
+
+    Returns ``True`` when both quoted strings and unquoted literals
+    (numbers, booleans, nil) appear as elements, which means a typed
+    ``@[...]`` seq cannot hold them.
+    """
+    inner = content.strip().strip("[]").strip()
+    elements = [e.strip() for e in inner.split(sep=",") if e.strip()]
+    has_quoted = any(e.startswith('"') for e in elements)
+    has_unquoted = any(not e.startswith('"') for e in elements)
+    return has_quoted and has_unquoted
+
+
 @beartype
 def _wrap_nim(content: str) -> str:
-    """Wrap in a Nim JSON expression."""
-    return f"let _ = %*{content}"
+    """Wrap in a Nim expression.
+
+    Flat sequences use ``@`` prefix (typed seq); nested or non-sequence
+    content uses ``%*`` (JSON node) to avoid fixed-size array type
+    mismatches.
+    """
+    stripped = content.lstrip()
+    if (
+        stripped.startswith("[")
+        and stripped.strip() != "[]"
+        and "[" not in stripped[1:]
+        and not _nim_has_mixed_types(content=content)
+    ):
+        return f"let _ = @{content}"
+    return f"let _ = %* {content}"
 
 
 @beartype

@@ -1,7 +1,7 @@
 import json
-var my_data = %*[
-    1,
+var my_data = @[
+    "1",
     "hello",
-    true,
-    nil
+    "True",
+    "None"
 ]

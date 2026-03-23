@@ -187,6 +187,14 @@ class OCaml(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
         )
+        ARRAY = SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(open_str="[|"),
+            close="|]",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+            preamble_lines=(),
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:

@@ -1,2 +1,1 @@
-using System.Collections.Generic;
-var x = Array.Empty<object>();
+var x = ValueTuple.Create();

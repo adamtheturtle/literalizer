@@ -1,12 +1,12 @@
 object Declaration {
-  val my_data = Array[String](
+  val my_data = List[String](
       "a",
       // trailing
   )
 }
 object Assignment {
   var my_data: Any = null
-  my_data = Array[String](
+  my_data = List[String](
       "a",
       // trailing
   )

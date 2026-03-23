@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-var my_data = new string[] {
+var my_data = (
     "48656c6c6f"
-};
-my_data = new string[] {
+);
+my_data = (
     "48656c6c6f"
-};
+);

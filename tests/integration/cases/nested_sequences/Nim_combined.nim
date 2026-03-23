@@ -1,9 +1,9 @@
 import json
-var my_data = %*[
+var my_data = %* [
     [[1, 2], [3, 4]],
     [[5]]
 ]
-my_data = %*[
+my_data = %* [
     [[1, 2], [3, 4]],
     [[5]]
 ]

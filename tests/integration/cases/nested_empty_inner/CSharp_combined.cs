@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-var my_data = new object[] {
-    Array.Empty<object>(),
-    Array.Empty<object>()
-};
-my_data = new object[] {
-    Array.Empty<object>(),
-    Array.Empty<object>()
-};
+var my_data = (
+    ValueTuple.Create(),
+    ValueTuple.Create()
+);
+my_data = (
+    ValueTuple.Create(),
+    ValueTuple.Create()
+);

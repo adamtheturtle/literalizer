@@ -1,5 +1,5 @@
 object Check {
-val my_data = Array[Boolean](
+val my_data = List[Boolean](
     true,
     false,
     true,

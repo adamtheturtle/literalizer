@@ -1,2 +1,2 @@
 import json
-let _ = %*"hello \"world\" -- not a comment"
+let _ = %* "hello \"world\" -- not a comment"

@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -153,6 +154,14 @@ class CSharp(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C#."""
 
+        TUPLE = SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(open_str="("),
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence="ValueTuple.Create()",
+            preamble_lines=(),
+        )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=_csharp_opener_config.build(
@@ -257,7 +266,7 @@ class CSharp(metaclass=LanguageCls):
         date_format: DateFormats = DateFormats.CSHARP,
         datetime_format: DatetimeFormats = DatetimeFormats.CSHARP,
         bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
+        sequence_format: SequenceFormats = SequenceFormats.TUPLE,
         set_format: SetFormats = SetFormats.HASH_SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
@@ -294,10 +303,15 @@ class CSharp(metaclass=LanguageCls):
                 fallback="new HashSet<object> {",
             ),
         )
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            type_to_opener=openers.seq,
-            fallback="new object[] {",
-        )
+        if sequence_format is self.sequence_formats.ARRAY:
+            self.sequence_open: Callable[[list[Value]], str] = (
+                typed_sequence_open(
+                    type_to_opener=openers.seq,
+                    fallback="new object[] {",
+                )
+            )
+        else:
+            self.sequence_open = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,

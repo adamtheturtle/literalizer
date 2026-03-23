@@ -1,6 +1,6 @@
 object Check {
 val my_data = List(
-    Array[Int](1, 2),
-    Array[String]("a", "b"),
+    List[Int](1, 2),
+    List[String]("a", "b"),
 )
 }

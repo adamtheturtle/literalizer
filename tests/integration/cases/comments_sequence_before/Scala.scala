@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Array[String](
+val x: Any = List[String](
     // first
     "a",
     // second

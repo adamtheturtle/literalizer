@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-var x = new int[] {
+var x = (
     1000000,
     -1234,
     255,
     -10
-};
+);

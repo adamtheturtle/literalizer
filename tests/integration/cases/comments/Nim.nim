@@ -1,8 +1,8 @@
 import json
-let _ = %*{
+let _ = %* {
     # Server configuration
     "host": "localhost",  # default host
-    "port": 8080,
+    "port": "8080",
     # Enable debug mode
-    "debug": true
+    "debug": "True"
 }

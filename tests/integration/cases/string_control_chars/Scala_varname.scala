@@ -1,5 +1,5 @@
 object Check {
-val my_data = Array[String](
+val my_data = List[String](
     "line1\r\nline2",
     "line1\rline2",
     "",

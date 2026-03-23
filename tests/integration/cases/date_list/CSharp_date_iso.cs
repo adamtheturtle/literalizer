@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-var x = new string[] {
+var x = (
     "2024-01-15",
     "2024-02-20"
-};
+);

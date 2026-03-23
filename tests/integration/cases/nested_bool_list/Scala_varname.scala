@@ -1,6 +1,6 @@
 object Check {
-val my_data = Array[Array[Boolean]](
-    Array[Boolean](true, false),
-    Array[Boolean](true, true),
+val my_data = List[List[Boolean]](
+    List[Boolean](true, false),
+    List[Boolean](true, true),
 )
 }

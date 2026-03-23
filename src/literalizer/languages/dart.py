@@ -10,6 +10,7 @@ from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
     dict_entry_with_separator,
+    fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
@@ -157,6 +158,14 @@ class Dart(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
         )
+        TUPLE = SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(open_str="("),
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=True,
+            empty_sequence="()",
+            preamble_lines=(),
+        )
 
         @property
         def supports_heterogeneity(self) -> bool:
@@ -274,10 +283,15 @@ class Dart(metaclass=LanguageCls):
                 datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
             },
         )
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            type_to_opener=openers.seq,
-            fallback="[",
-        )
+        if sequence_format is self.sequence_formats.LIST:
+            self.sequence_open: Callable[[list[Value]], str] = (
+                typed_sequence_open(
+                    type_to_opener=openers.seq,
+                    fallback="[",
+                )
+            )
+        else:
+            self.sequence_open = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,

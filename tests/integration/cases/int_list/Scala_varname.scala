@@ -1,5 +1,5 @@
 object Check {
-val my_data = Array[Int](
+val my_data = List[Int](
     1,
     2,
     3,

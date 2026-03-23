@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-var my_data = new string[] {
+var my_data = (
     "a"
     // trailing
-};
-my_data = new string[] {
+);
+my_data = (
     "a"
     // trailing
-};
+);

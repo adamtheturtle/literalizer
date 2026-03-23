@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-var x = new string[] {
+var x = (
     "line1\r\nline2",
     "line1\rline2",
     ""
-};
+);

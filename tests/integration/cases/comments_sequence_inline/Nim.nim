@@ -1,5 +1,5 @@
 import json
-let _ = %*[
+let _ = %* [
     "a",  # note a
     "b"  # note b
 ]

@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-var x = new int[] {
+var x = (
     1,
     2,
     3
-};
+);

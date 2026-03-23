@@ -89,6 +89,17 @@ _cpp_dict_type_to_opener = make_type_to_opener(
 
 
 @beartype
+def _cpp_array_open(items: list[Value]) -> str:
+    """Infer element type and return a ``std::array<T, N>`` opener."""
+    type_name = _cpp_element_to_type(type(items[0])) if items else None
+    if type_name is None or not all(
+        _cpp_element_to_type(type(i)) == type_name for i in items
+    ):
+        return "{"
+    return f"std::array<{type_name}, {len(items)}>{{"
+
+
+@beartype
 def _format_cpp_dict_entry(key: str, value: str) -> str:
     """Format a C++ dict entry as a brace-enclosed pair."""
     return f"{{{key}, {value}}}"
@@ -188,6 +199,14 @@ class Cpp(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=("#include <vector>",),
+        )
+        ARRAY = SequenceFormatConfig(
+            sequence_open=_cpp_array_open,
+            close="}",
+            supports_heterogeneity=False,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+            preamble_lines=("#include <array>",),
         )
 
         @property

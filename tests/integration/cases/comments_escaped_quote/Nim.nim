@@ -1,4 +1,4 @@
 import json
-let _ = %*{
+let _ = %* {
     "key": "value \" # not a comment"  # real
 }

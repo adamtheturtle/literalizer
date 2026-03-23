@@ -1,3 +1,2 @@
-using System.Collections.Generic;
-var my_data = Array.Empty<object>();
-my_data = Array.Empty<object>();
+var my_data = ValueTuple.Create();
+my_data = ValueTuple.Create();

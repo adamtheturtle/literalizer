@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var x = new object[] {
-    Array.Empty<object>(),
+var x = (
+    ValueTuple.Create(),
     new Dictionary<string, object> {}
-};
+);

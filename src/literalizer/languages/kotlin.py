@@ -11,6 +11,7 @@ from literalizer._formatters import (
     ListType,
     TypedOpenerConfig,
     dict_entry_with_separator,
+    fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -206,13 +207,21 @@ class Kotlin(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
         )
-        TUPLE = SequenceFormatConfig(
-            sequence_open=_kotlin_tuple_open,
-            preamble_lines=(),
+        ARRAY = SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(open_str="arrayOf<Any?>("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
+        )
+        TUPLE = SequenceFormatConfig(
+            sequence_open=_kotlin_tuple_open,
+            close=")",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property

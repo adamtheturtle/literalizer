@@ -384,6 +384,7 @@ ignore_names = [
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
     # Enum members accessed by consumers iterating format enums
+    "ARRAY",
     "BLOCK",
     "HASH_SET",
     "HEX",
@@ -394,7 +395,9 @@ ignore_names = [
     "FROZENSET",
     "ERLANG",
     "NO",
+    "SEQ",
     "SINGLE",
+    "TUPLE",
     "UNDERSCORE",
     "ZONED",
     # Used in documentation code examples

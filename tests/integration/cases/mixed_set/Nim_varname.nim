@@ -1,6 +1,6 @@
 import json
-var my_data = %*[
-    true,
-    42,
+var my_data = %* [
+    "42",
+    "True",
     "apple"
 ]

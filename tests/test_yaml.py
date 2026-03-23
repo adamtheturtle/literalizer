@@ -15,6 +15,7 @@ from literalizer.exceptions import (
     YAMLParseError,
 )
 from literalizer.languages import (
+    Cpp,
     Go,
     JavaScript,
     Mojo,
@@ -207,6 +208,46 @@ def test_literalize_yaml_datetime() -> None:
         "hour=12, minute=30, second=0),"
     )
     assert result.code == expected
+
+
+def test_cpp_array_binary_typed() -> None:
+    """C++ ARRAY format infers std::array<std::string, N> for binary
+    data.
+    """
+    cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
+    yaml_string = "- !!binary |\n    SGVsbG8=\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=cpp_array,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert '"48656c6c6f"' in result.code
+    assert "std::array<std::string, 1>" in result.code
+
+
+def test_cpp_array_null_list_fallback() -> None:
+    """C++ ARRAY format falls back when schema type is not mappable
+    (e.g. all-null list).
+    """
+    cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
+    yaml_string = "- null\n- null\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=cpp_array,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "nullptr" in result.code
+    assert result.code.startswith("{")
 
 
 def test_literalize_yaml_binary() -> None:

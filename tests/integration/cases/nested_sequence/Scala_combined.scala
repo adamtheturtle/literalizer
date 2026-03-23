@@ -2,7 +2,7 @@ object Declaration {
   val my_data = List(
       true,
       "hi",
-      Array[Int](1, 2),
+      List[Int](1, 2),
       null,
   )
 }
@@ -11,7 +11,7 @@ object Assignment {
   my_data = List(
       true,
       "hi",
-      Array[Int](1, 2),
+      List[Int](1, 2),
       null,
   )
 }

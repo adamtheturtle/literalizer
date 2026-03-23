@@ -1,6 +1,6 @@
 object Check {
 val x: Any = List(
-    Array[Int](1, 2),
-    Array[String]("a", "b"),
+    List[Int](1, 2),
+    List[String]("a", "b"),
 )
 }

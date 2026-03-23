@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-var x = new string[] {
+var x = (
     // # section
     "a"
-};
+);

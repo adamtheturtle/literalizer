@@ -1,5 +1,5 @@
 import json
-let _ = %*{
-    "date": {"year": 2024, "month": 1, "day": 15},
-    "datetime": {"year": 2024, "month": 1, "day": 15, "hour": 12, "minute": 30, "second": 0}
+let _ = %* {
+    "date": "2024-01-15",
+    "datetime": "2024-01-15T12:30:00+00:00"
 }

@@ -1,5 +1,5 @@
 object Declaration {
-  val my_data = Array[Int](
+  val my_data = List[Int](
       1000000,
       -1234,
       255,
@@ -8,7 +8,7 @@ object Declaration {
 }
 object Assignment {
   var my_data: Any = null
-  my_data = Array[Int](
+  my_data = List[Int](
       1000000,
       -1234,
       255,

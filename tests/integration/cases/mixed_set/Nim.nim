@@ -1,6 +1,6 @@
 import json
-let _ = %*[
-    true,
-    42,
+let _ = @[
+    "42",
+    "True",
     "apple"
 ]

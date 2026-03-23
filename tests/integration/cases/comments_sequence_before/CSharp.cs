@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-var x = new string[] {
+var x = (
     // first
     "a",
     // second
     "b"
-};
+);

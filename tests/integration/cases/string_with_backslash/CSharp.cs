@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-var x = new string[] {
+var x = (
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\""
-};
+);
