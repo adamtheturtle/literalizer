@@ -118,9 +118,14 @@ class TypedOpenerConfig:
         self,
         *,
         scalar_type_overrides: Mapping[type, str],
+        set_opener_template: str | None = None,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.
+
+        If *set_opener_template* is given it overrides the template
+        used for ``set`` openers, allowing a single
+        ``TypedOpenerConfig`` to serve multiple set formats.
         """
         scalar_types = dict(self._scalar_types)
         scalar_types.update(scalar_type_overrides)
@@ -139,7 +144,9 @@ class TypedOpenerConfig:
             ),
             set=make_type_to_opener(
                 element_to_type=element_to_type,
-                opener_template=self._set_opener_template,
+                opener_template=(
+                    set_opener_template or self._set_opener_template
+                ),
             ),
         )
 

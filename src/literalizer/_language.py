@@ -48,6 +48,7 @@ class SetFormatConfig:
     close: str
     empty_set: str | None
     preamble_lines: tuple[str, ...]
+    set_opener_template: str = ""
 
 
 @dataclasses.dataclass(frozen=True)

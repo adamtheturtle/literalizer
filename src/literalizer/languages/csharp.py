@@ -71,14 +71,6 @@ _csharp_opener_config = TypedOpenerConfig(
     set_opener_template="new HashSet<{type_name}> {{",
 )
 
-_csharp_sorted_set_opener_config = TypedOpenerConfig(
-    scalar_types=_CSHARP_SCALAR_TYPES,
-    list_template="{inner}[]",
-    seq_opener_template="new {type_name}[] {{",
-    dict_opener_template="new Dictionary<string, {type_name}> {{",
-    set_opener_template="new SortedSet<{type_name}> {{",
-)
-
 
 @beartype
 def _format_csharp_dict_entry(key: str, value: str) -> str:
@@ -209,14 +201,16 @@ class CSharp(metaclass=LanguageCls):
         )
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_csharp_sorted_set_opener_config.build(
+                type_to_opener=_csharp_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template="new SortedSet<{type_name}> {{",
                 ).set,
                 fallback="new SortedSet<object> {",
             ),
             close="}",
             empty_set="new SortedSet<object>()",
             preamble_lines=(),
+            set_opener_template="new SortedSet<{type_name}> {{",
         )
 
     class CommentFormats(enum.Enum):
@@ -311,25 +305,17 @@ class CSharp(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        _scalar_overrides: dict[type, str] = {
-            datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
-            datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
-        }
         openers = _csharp_opener_config.build(
-            scalar_type_overrides=_scalar_overrides,
-        )
-        _set_cfg = (
-            _csharp_sorted_set_opener_config
-            if set_format is self.set_formats.SORTED_SET
-            else _csharp_opener_config
-        )
-        _set_openers = _set_cfg.build(
-            scalar_type_overrides=_scalar_overrides,
+            scalar_type_overrides={
+                datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
+                datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
+            },
+            set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=_set_openers.set,
+                type_to_opener=openers.set,
                 fallback=set_format.value.set_open([]),
             ),
         )

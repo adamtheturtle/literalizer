@@ -104,14 +104,6 @@ _kotlin_opener_config = TypedOpenerConfig(
     set_opener_template="setOf<{type_name}>(",
 )
 
-_kotlin_sorted_set_opener_config = TypedOpenerConfig(
-    scalar_types=_KOTLIN_SCALAR_TYPES,
-    list_template="Array<{inner}>",
-    seq_opener_template="arrayOf(",
-    dict_opener_template="mapOf<String, {type_name}>(",
-    set_opener_template="sortedSetOf<{type_name}>(",
-)
-
 
 @beartype
 def _format_kotlin_ordered_map_entry(key: str, value: str) -> str:
@@ -269,14 +261,16 @@ class Kotlin(metaclass=LanguageCls):
         )
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_sorted_set_opener_config.build(
+                type_to_opener=_kotlin_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template="sortedSetOf<{type_name}>(",
                 ).set,
                 fallback="sortedSetOf<Any?>(",
             ),
             close=")",
             empty_set=None,
             preamble_lines=(),
+            set_opener_template="sortedSetOf<{type_name}>(",
         )
 
     class CommentFormats(enum.Enum):
@@ -377,25 +371,17 @@ class Kotlin(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        _scalar_overrides: dict[type, str] = {
-            datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
-            datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
-        }
         openers = _kotlin_opener_config.build(
-            scalar_type_overrides=_scalar_overrides,
-        )
-        _set_cfg = (
-            _kotlin_sorted_set_opener_config
-            if set_format is self.set_formats.SORTED_SET
-            else _kotlin_opener_config
-        )
-        _set_openers = _set_cfg.build(
-            scalar_type_overrides=_scalar_overrides,
+            scalar_type_overrides={
+                datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
+                datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
+            },
+            set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=_set_openers.set,
+                type_to_opener=openers.set,
                 fallback=set_format.value.set_open([]),
             ),
         )
