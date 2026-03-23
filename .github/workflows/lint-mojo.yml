@@ -46,11 +46,18 @@ jobs:
         if: steps.files.outputs.found == 'true'
         run: |-
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
+      # The Mojo runtime has a known bug where it randomly crashes
+      # with "mojo: error: execution crashed" (see #558).
+      # This is not caused by our code. Retrying works around it.
       - name: Check Mojo syntax
         if: steps.files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            if ! mojo run --Werror "$f"; then
-              exit 1
-            fi
-          done < /tmp/files-to-lint
+        uses: nick-fields/retry@v4
+        with:
+          max_attempts: 3
+          timeout_minutes: 10
+          command: |-
+            while IFS= read -r -d '' f; do
+              if ! mojo run --Werror "$f"; then
+                exit 1
+              fi
+            done < /tmp/files-to-lint
