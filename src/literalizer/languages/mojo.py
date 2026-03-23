@@ -134,6 +134,7 @@ class Mojo(metaclass=LanguageCls):
             empty_sequence="List[String]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property

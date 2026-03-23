@@ -17,7 +17,6 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    resolve_sequence_open,
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
@@ -163,6 +162,7 @@ class CSharp(metaclass=LanguageCls):
             empty_sequence="ValueTuple.Create()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -177,6 +177,7 @@ class CSharp(metaclass=LanguageCls):
             empty_sequence="Array.Empty<object>()",
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="new object[] {",
         )
 
         @property
@@ -307,16 +308,12 @@ class CSharp(metaclass=LanguageCls):
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
-            resolve_sequence_open(
-                sequence_format=sequence_format,
-                typed_openers={
-                    self.sequence_formats.ARRAY: typed_sequence_open(
-                        type_to_opener=openers.seq,
-                        fallback="new object[] {",
-                    ),
-                },
-                default=fmt.sequence_open,
+            typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback=fmt.typed_opener_fallback,
             )
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(

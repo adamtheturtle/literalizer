@@ -167,6 +167,7 @@ class Swift(metaclass=LanguageCls):
             empty_sequence="[Any]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="("),
@@ -176,6 +177,7 @@ class Swift(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=_tuple_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property

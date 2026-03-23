@@ -20,7 +20,6 @@ from literalizer._formatters import (
     make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    resolve_sequence_open,
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
@@ -204,6 +203,7 @@ class Scala(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         SEQ = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="Seq("),
@@ -213,6 +213,7 @@ class Scala(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -227,6 +228,7 @@ class Scala(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="Array(",
         )
 
         @property
@@ -360,22 +362,20 @@ class Scala(metaclass=LanguageCls):
                 fallback="Set(",
             ),
         )
-        self.sequence_open: Callable[[list[Value]], str] = (
-            resolve_sequence_open(
-                sequence_format=sequence_format,
-                typed_openers={
-                    self.sequence_formats.LIST: _list_sequence_open(
-                        date_type=_SCALA_SCALAR_TYPES[date_tp],
-                        datetime_type=_SCALA_SCALAR_TYPES[dt_tp],
-                    ),
-                    self.sequence_formats.ARRAY: typed_sequence_open(
-                        type_to_opener=openers.seq,
-                        fallback="Array(",
-                    ),
-                },
-                default=fmt.sequence_open,
+        seq_open: Callable[[list[Value]], str]
+        if sequence_format is self.sequence_formats.LIST:
+            seq_open = _list_sequence_open(
+                date_type=_SCALA_SCALAR_TYPES[date_tp],
+                datetime_type=_SCALA_SCALAR_TYPES[dt_tp],
             )
-        )
+        elif fmt.typed_opener_fallback is not None:
+            seq_open = typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback=fmt.typed_opener_fallback,
+            )
+        else:
+            seq_open = fmt.sequence_open
+        self.sequence_open: Callable[[list[Value]], str] = seq_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
