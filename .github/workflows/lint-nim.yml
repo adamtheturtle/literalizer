@@ -13,25 +13,36 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: dorny/paths-filter@v3
+      - uses: tj-actions/changed-files@v46
         id: changes
         with:
-          filters: |-
-            relevant:
-              - 'tests/integration/cases/**'
+          files_yaml: |
+            config:
               - '**/*.yml'
               - '**/*.toml'
+            lang:
+              - 'tests/integration/cases/**/*.nim'
+      - name: Find files to lint
+        id: files
+        if: github.event_name != 'pull_request' || steps.changes.outputs.config_any_changed
+          == 'true' || steps.changes.outputs.lang_any_modified == 'true'
+        env:
+          CONFIG_CHANGED: ${{ steps.changes.outputs.config_any_changed }}
+          LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
+        run: |-
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
+            # shellcheck disable=SC2086
+            printf '%s\0' $LANG_FILES
+          else
+            find tests/integration/cases -name "*.nim" -print0
+          fi > /tmp/files-to-lint
       - name: Install Nim
-        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
-          == 'true'
+        if: steps.files.outcome == 'success'
         uses: jiro4989/setup-nim-action@v2
       - name: Check Nim syntax
-        if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
-          == 'true'
+        if: steps.files.outcome == 'success'
         run: |-
-          set -o pipefail
-          find tests/integration/cases -name "*.nim" -print0 | \
-            while IFS= read -r -d '' f; do
-              tmpdir=$(mktemp -d)
-              nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
-            done
+          while IFS= read -r -d '' f; do
+            tmpdir=$(mktemp -d)
+            nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
+          done < /tmp/files-to-lint
