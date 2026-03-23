@@ -200,7 +200,7 @@ def escape_control_chars(value: str, *, fmt: str) -> str:
     Call **after** replacing named escapes (``\t``, ``\n``, ``\r``) so that
     only truly unhandled control characters are affected.
 
-    *fmt* is a :func:`str.format` pattern receiving the code point as a
+    The format pattern passed in ``fmt`` receives the code point as a
     positional integer, e.g. ``"\\x{:02x}"`` → ``\\x01``.
     """
     return _CONTROL_CHAR_RE.sub(
