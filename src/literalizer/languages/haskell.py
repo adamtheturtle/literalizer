@@ -294,7 +294,11 @@ class Haskell(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
+        _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            str: ("{-# LANGUAGE OverloadedStrings #-}",),
+            str: _overloaded_strings,
+            bytes: _overloaded_strings,
+            datetime.date: _overloaded_strings,
+            datetime.datetime: _overloaded_strings,
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
