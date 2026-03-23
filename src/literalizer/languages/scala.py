@@ -30,6 +30,25 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+
+@beartype
+def _format_date_scala(value: datetime.date) -> str:
+    """Format a date as a Scala ``LocalDate.of(...)`` call."""
+    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_scala(value: datetime.datetime) -> str:
+    """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
+    tz = value.tzname() or "UTC"
+    nanos = value.microsecond * 1000
+    return (
+        f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f'{nanos}, ZoneId.of("{tz}"))'
+    )
+
+
 _SCALA_SCALAR_TYPES: dict[type, str] = {
     str: "String",
     bool: "Boolean",
@@ -37,8 +56,8 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     float: "Double",
     MixedNumeric: "Double",
     bytes: "String",
-    datetime.date: "String",
-    datetime.datetime: "String",
+    datetime.date: "LocalDate",
+    datetime.datetime: "ZonedDateTime",
 }
 
 _scala_element_to_type = make_element_to_type(
@@ -88,6 +107,7 @@ class Scala(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Scala."""
 
+        SCALA = enum.member(value=_format_date_scala)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -97,6 +117,7 @@ class Scala(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Scala."""
 
+        SCALA = enum.member(value=_format_datetime_scala)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -173,8 +194,8 @@ class Scala(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.SCALA,
+        datetime_format: DatetimeFormats = DatetimeFormats.SCALA,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
@@ -237,5 +258,24 @@ class Scala(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        _date_map: dict[str, tuple[str, ...]] = {
+            "SCALA": ("import java.time.LocalDate",),
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "SCALA": (
+                "import java.time.ZoneId",
+                "import java.time.ZonedDateTime",
+            ),
+        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (datetime.date, _date_map.get(date_format.name, ())),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, ()),
+                ),
+            )
+            if p
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
