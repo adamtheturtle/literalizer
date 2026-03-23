@@ -35,7 +35,13 @@ def _format_date_haskell(value: datetime.date) -> str:
 
 @beartype
 def _format_datetime_haskell(value: datetime.datetime) -> str:
-    """Format a datetime as a Haskell ``HDatetime`` constructor."""
+    """Format a datetime as a Haskell ``HDatetime`` constructor.
+
+    Timezone-aware datetimes are converted to UTC first, since
+    ``UTCTime`` represents a point in time in UTC.
+    """
+    if value.tzinfo is not None:
+        value = value.astimezone(tz=datetime.UTC)
     total_seconds = value.hour * 3600 + value.minute * 60 + value.second
     if value.microsecond:
         picos = total_seconds * 10**12 + value.microsecond * 10**6

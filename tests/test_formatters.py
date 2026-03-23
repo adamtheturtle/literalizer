@@ -212,6 +212,16 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_haskell_microsecond",
         ),
         pytest.param(
+            Haskell.DatetimeFormats.HASKELL,
+            datetime.datetime.fromisoformat(
+                "2024-01-15T18:00:00+05:30",
+            ),
+            "HDatetime (UTCTime "
+            "(fromGregorian 2024 1 15) "
+            "(secondsToDiffTime 45000))",
+            id="format_datetime_haskell_non_utc",
+        ),
+        pytest.param(
             Scala.DatetimeFormats.SCALA,
             _SAMPLE_DATETIME_MICRO,
             "ZonedDateTime.of(2024, 1, 15, 12, 30, 0, "
