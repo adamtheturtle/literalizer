@@ -5,7 +5,6 @@ import enum
 import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
-from typing import cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -144,7 +143,7 @@ def _collection_element_union(
 
 
 @beartype
-def _python_type_hint(
+def _python_type_hint(  # noqa: C901, PLR0911
     data: Value,
     *,
     bytes_hint: str,
@@ -156,22 +155,6 @@ def _python_type_hint(
     """Derive a Python type hint from the original data and format
     config.
     """
-    # Order matters: datetime before date (datetime is a date subclass),
-    # bool before int (bool is an int subclass).
-    scalar_hints: tuple[tuple[type, str], ...] = (
-        (type(None), "None"),
-        (bool, "bool"),
-        (int, "int"),
-        (float, "float"),
-        (str, "str"),
-        (bytes, bytes_hint),
-        (datetime.datetime, datetime_hint),
-        (datetime.date, date_hint),
-    )
-    for typ, hint in scalar_hints:
-        if isinstance(data, typ):
-            return hint
-
     recurse = functools.partial(
         _python_type_hint,
         bytes_hint=bytes_hint,
@@ -181,33 +164,50 @@ def _python_type_hint(
         set_hint=set_hint,
     )
 
-    if isinstance(data, dict):
-        outer = (
-            "OrderedDict"
-            if isinstance(data, (ordereddict, OrderedDict))
-            else "dict"
-        )
-        val_union = _collection_element_union(
-            elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            recurse=recurse,
-        )
-        return f"{outer}[str, {val_union}]"
-
-    if isinstance(data, (set, frozenset)):
-        elem_union = _collection_element_union(
-            elements=frozenset(data),
-            recurse=recurse,
-        )
-        return f"{set_hint}[{elem_union}]"
-
-    # The only remaining Value type is list.
-    elem_union = _collection_element_union(
-        elements=cast("list[Value]", data),
-        recurse=recurse,
-    )
-    if sequence_hint == "tuple":
-        return f"{sequence_hint}[{elem_union}, ...]"
-    return f"{sequence_hint}[{elem_union}]"
+    # Order matters: datetime before date (datetime is a date subclass),
+    # bool before int (bool is an int subclass).
+    match data:
+        case bool():
+            return "bool"
+        case int():
+            return "int"
+        case float():
+            return "float"
+        case str():
+            return "str"
+        case bytes():
+            return bytes_hint
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "None"
+        case dict():
+            outer = (
+                "OrderedDict"
+                if isinstance(data, (ordereddict, OrderedDict))
+                else "dict"
+            )
+            val_union = _collection_element_union(
+                elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                recurse=recurse,
+            )
+            return f"{outer}[str, {val_union}]"
+        case set() | frozenset():
+            elem_union = _collection_element_union(
+                elements=frozenset(data),
+                recurse=recurse,
+            )
+            return f"{set_hint}[{elem_union}]"
+        case list():
+            elem_union = _collection_element_union(
+                elements=data,
+                recurse=recurse,
+            )
+            if sequence_hint == "tuple":
+                return f"{sequence_hint}[{elem_union}, ...]"
+            return f"{sequence_hint}[{elem_union}]"
 
 
 @beartype

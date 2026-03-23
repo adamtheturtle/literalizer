@@ -575,7 +575,9 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 
 
 @beartype
-def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
+def _format_set_value(
+    *, value: set[Scalar] | frozenset[Scalar], spec: Language
+) -> str:
     """Format a set value as a native language literal."""
     set_cfg = spec.set_format_config
 
@@ -680,7 +682,7 @@ def _format_value(
     if isinstance(value, dict):
         return _format_dict_value(value=value, spec=spec)
 
-    if isinstance(value, set):
+    if isinstance(value, (set, frozenset)):
         return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
@@ -694,7 +696,7 @@ def _wrap_body(
     *,
     body: str,
     is_ordered_map: bool,
-    data: list[Value] | dict[str, Value] | set[Scalar],
+    data: list[Value] | dict[str, Value] | set[Scalar] | frozenset[Scalar],
     spec: Language,
     line_prefix: str,
 ) -> str:
@@ -711,7 +713,7 @@ def _wrap_body(
 
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         opening = f"{line_prefix}{spec.set_format_config.open_str}"
         closing = f"{close_prefix}{spec.set_format_config.close}"
     else:
