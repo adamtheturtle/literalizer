@@ -97,7 +97,7 @@ class Ruby(metaclass=LanguageCls):
             formatter=_format_date_ruby,
             preamble_lines=("require 'date'",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -109,7 +109,10 @@ class Ruby(metaclass=LanguageCls):
         RUBY = DatetimeFormatConfig(
             formatter=_format_datetime_ruby,
         )
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
