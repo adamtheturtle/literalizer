@@ -36,6 +36,12 @@ jobs:
           else
             find tests/integration/cases -name "*.pl" -print0
           fi > /tmp/files-to-lint
+      - name: Install Perl dependencies
+        if: steps.files.outcome == 'success'
+        run: |-
+          sudo apt-get update
+          sudo apt-get install -y cpanminus
+          sudo cpanm --notest DateTime
       - name: Check Perl syntax
         if: steps.files.outcome == 'success'
         run: |-

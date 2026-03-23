@@ -18,6 +18,8 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Kotlin,
+    Matlab,
+    Perl,
     Python,
     Ruby,
     Rust,
@@ -184,6 +186,12 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_rust_microsecond",
         ),
         pytest.param(
+            Matlab.DatetimeFormats.MATLAB,
+            _SAMPLE_DATETIME_MICRO,
+            "datetime(2024, 1, 15, 12, 30, 0, 123.456)",
+            id="format_datetime_matlab_microsecond",
+        ),
+        pytest.param(
             Swift.DatetimeFormats.SWIFT,
             _SAMPLE_DATETIME_MICRO,
             "DateComponents("
@@ -192,6 +200,40 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "hour: 12, minute: 30, second: 0, "
             "nanosecond: 123456000).date!",
             id="format_datetime_swift_microsecond",
+        ),
+        pytest.param(
+            Perl.DateFormats.PERL,
+            _SAMPLE_DATE,
+            "DateTime->new(year => 2024, month => 1, day => 15)",
+            id="format_date_perl",
+        ),
+        pytest.param(
+            Perl.DatetimeFormats.PERL,
+            _SAMPLE_DATETIME,
+            "DateTime->new("
+            "year => 2024, month => 1, day => 15, "
+            "hour => 12, minute => 30, second => 0, "
+            "time_zone => 'UTC')",
+            id="format_datetime_perl",
+        ),
+        pytest.param(
+            Perl.DatetimeFormats.PERL,
+            _SAMPLE_DATETIME_MICRO,
+            "DateTime->new("
+            "year => 2024, month => 1, day => 15, "
+            "hour => 12, minute => 30, second => 0, "
+            "nanosecond => 123456000, "
+            "time_zone => 'UTC')",
+            id="format_datetime_perl_microsecond",
+        ),
+        pytest.param(
+            Perl.DatetimeFormats.PERL,
+            datetime.datetime.fromisoformat("2024-01-15T18:00:00+05:30"),
+            "DateTime->new("
+            "year => 2024, month => 1, day => 15, "
+            "hour => 12, minute => 30, second => 0, "
+            "time_zone => 'UTC')",
+            id="format_datetime_perl_non_utc",
         ),
     ],
 )

@@ -24,3 +24,9 @@ def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     assert len(language_cls.DateFormats) >= 1
     assert len(language_cls.DatetimeFormats) >= 1
     assert len(language_cls.VariableTypeHints) >= 1
+    assert len(language_cls.DeclarationStyles) >= 1
+    assert len(language_cls.DictFormats) >= 1
+    assert len(language_cls.IntegerFormats) >= 1
+    assert len(language_cls.NumericSeparators) >= 1
+    assert len(language_cls.StringFormats) >= 1
+    assert len(language_cls.TrailingCommas) >= 1

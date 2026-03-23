@@ -138,6 +138,25 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value};"
 
 
+@beartype
+def _format_date_matlab(value: datetime.date) -> str:
+    """Format a date as a MATLAB ``datetime`` expression."""
+    return f"datetime({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_matlab(value: datetime.datetime) -> str:
+    """Format a datetime as a MATLAB ``datetime`` expression."""
+    parts = (
+        f"datetime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}"
+    )
+    if value.microsecond:
+        millisecond = value.microsecond / 1000
+        parts += f", {millisecond}"
+    return parts + ")"
+
+
 _string_format: Callable[[str], str] = _format_string_matlab
 
 
@@ -151,6 +170,7 @@ class Matlab(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Matlab."""
 
+        MATLAB = enum.member(value=_format_date_matlab)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -160,6 +180,7 @@ class Matlab(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Matlab."""
 
+        MATLAB = enum.member(value=_format_datetime_matlab)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -216,6 +237,36 @@ class Matlab(metaclass=LanguageCls):
             suffix=" %}",
         )
 
+    class DeclarationStyles(enum.Enum):
+        """Declaration style options."""
+
+        ASSIGN = "assign"
+
+    class DictFormats(enum.Enum):
+        """Dict/map format options."""
+
+        STRUCT = "struct"
+
+    class IntegerFormats(enum.Enum):
+        """Integer format options."""
+
+        DECIMAL = "decimal"
+
+    class NumericSeparators(enum.Enum):
+        """Numeric separator options."""
+
+        NONE = "none"
+
+    class StringFormats(enum.Enum):
+        """String format options."""
+
+        DOUBLE = "double"
+
+    class TrailingCommas(enum.Enum):
+        """Trailing comma options."""
+
+        NO = "no"
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
@@ -229,18 +280,30 @@ class Matlab(metaclass=LanguageCls):
         NONE = "none"
 
     variable_type_hints_formats = VariableTypeHints
+    declaration_styles = DeclarationStyles
+    dict_formats = DictFormats
+    integer_formats = IntegerFormats
+    numeric_separators = NumericSeparators
+    string_formats = StringFormats
+    trailing_commas = TrailingCommas
 
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.MATLAB,
+        datetime_format: DatetimeFormats = DatetimeFormats.MATLAB,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.CELL_ARRAY,
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.PERCENT,
         _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
+        dict_format: DictFormats = DictFormats.STRUCT,
+        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
+        numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        string_format: StringFormats = StringFormats.DOUBLE,
+        trailing_comma: TrailingCommas = TrailingCommas.NO,
     ) -> None:
         """Initialize Matlab language specification."""
         self.variable_type_hints = variable_type_hints
@@ -272,6 +335,12 @@ class Matlab(metaclass=LanguageCls):
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_format = comment_format
+        self.declaration_style = declaration_style
+        self.dict_format = dict_format
+        self.integer_format = integer_format
+        self.numeric_separator = numeric_separator
+        self.string_format = string_format
+        self.trailing_comma = trailing_comma
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
