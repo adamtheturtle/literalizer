@@ -374,7 +374,7 @@ class Scala(metaclass=LanguageCls):
         )
         _set_cfg = (
             _scala_tree_set_opener_config
-            if set_format is self.SetFormats.TREE_SET
+            if set_format is self.set_formats.TREE_SET
             else _scala_opener_config
         )
         _set_openers = _set_cfg.build(

@@ -320,7 +320,7 @@ class CSharp(metaclass=LanguageCls):
         )
         _set_cfg = (
             _csharp_sorted_set_opener_config
-            if set_format is self.SetFormats.SORTED_SET
+            if set_format is self.set_formats.SORTED_SET
             else _csharp_opener_config
         )
         _set_openers = _set_cfg.build(
