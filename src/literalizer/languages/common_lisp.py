@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -110,7 +111,7 @@ class CommonLisp(metaclass=LanguageCls):
         """Set type options for Common Lisp."""
 
         SET = SetFormatConfig(
-            open_str="(list ",
+            set_open=fixed_set_open(open_str="(list "),
             close=")",
             empty_set="nil",
             preamble_lines=(),

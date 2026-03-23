@@ -10,6 +10,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -145,7 +146,7 @@ class Swift(metaclass=LanguageCls):
         """Set type options for Swift."""
 
         SET = SetFormatConfig(
-            open_str="Set<AnyHashable>([",
+            set_open=fixed_set_open(open_str="Set<AnyHashable>(["),
             close="])",
             empty_set="Set<AnyHashable>()",
             preamble_lines=(),

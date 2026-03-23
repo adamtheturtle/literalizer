@@ -10,6 +10,7 @@ from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
     dict_entry_with_separator,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -165,7 +166,7 @@ class Scala(metaclass=LanguageCls):
         """Set type options for Scala."""
 
         SET = SetFormatConfig(
-            open_str="Set(",
+            set_open=fixed_set_open(open_str="Set("),
             close=")",
             empty_set=None,
             preamble_lines=(),

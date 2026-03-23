@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -162,7 +163,7 @@ class C(metaclass=LanguageCls):
         """Set type options for C."""
 
         SET = SetFormatConfig(
-            open_str="((_CVal){.a = (_CVal[]){",
+            set_open=fixed_set_open(open_str="((_CVal){.a = (_CVal[]){"),
             close="}})",
             empty_set=None,
             preamble_lines=(),

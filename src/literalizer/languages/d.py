@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -159,7 +160,7 @@ class D(metaclass=LanguageCls):
         """Set type options for D."""
 
         SET = SetFormatConfig(
-            open_str="JSONValue([",
+            set_open=fixed_set_open(open_str="JSONValue(["),
             close="])",
             empty_set='parseJSON("[]")',
             preamble_lines=(),

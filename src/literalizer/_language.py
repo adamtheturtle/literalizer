@@ -43,7 +43,7 @@ class DatetimeFormatConfig:
 class SetFormatConfig:
     """Configuration for a single set format."""
 
-    open_str: str
+    set_open: Callable[[list[Value]], str]
     close: str
     empty_set: str | None
     preamble_lines: tuple[str, ...]

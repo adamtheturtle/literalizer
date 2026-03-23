@@ -10,6 +10,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -156,7 +157,7 @@ class Perl(metaclass=LanguageCls):
         """Set type options for Perl."""
 
         SET = SetFormatConfig(
-            open_str="[",
+            set_open=fixed_set_open(open_str="["),
             close="]",
             empty_set=None,
             preamble_lines=(),

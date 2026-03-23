@@ -10,6 +10,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -149,7 +150,7 @@ class Ruby(metaclass=LanguageCls):
         """Set type options for Ruby."""
 
         SET = SetFormatConfig(
-            open_str="Set.new([",
+            set_open=fixed_set_open(open_str="Set.new(["),
             close="])",
             empty_set="Set.new",
             preamble_lines=("require 'set'",),
