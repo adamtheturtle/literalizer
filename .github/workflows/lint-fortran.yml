@@ -36,10 +36,13 @@ jobs:
           else
             find tests/integration/cases -name "*.f90" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install gfortran
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: sudo apt-get install -y gfortran
       - name: Check Fortran syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
           /tmp/files-to-lint

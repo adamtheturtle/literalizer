@@ -36,11 +36,14 @@ jobs:
           else
             find tests/integration/cases -name "*.norg" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install tree-sitter CLI
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: npm install tree-sitter-cli
       - name: Build tree-sitter-norg parser
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           git clone --depth=1 https://github.com/nvim-neorg/tree-sitter-norg.git /tmp/tree-sitter-norg
           cc -shared -fPIC -o /tmp/norg.so \
@@ -49,6 +52,6 @@ jobs:
             -x c++ /tmp/tree-sitter-norg/src/scanner.cc \
             -lstdc++
       - name: Check Norg syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 npx tree-sitter parse --lib-path /tmp/norg.so --lang-name norg
           --quiet < /tmp/files-to-lint

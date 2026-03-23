@@ -36,9 +36,12 @@ jobs:
           else
             find tests/integration/cases -name "*.rkt" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install Racket
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: sudo apt-get install -y racket
       - name: Check Racket syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 raco make < /tmp/files-to-lint

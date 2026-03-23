@@ -36,6 +36,9 @@ jobs:
           else
             find tests/integration/cases -name "*.go" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check Go syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 gofmt -e < /tmp/files-to-lint

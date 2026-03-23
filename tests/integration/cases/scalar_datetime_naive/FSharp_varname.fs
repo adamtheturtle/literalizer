@@ -9,5 +9,7 @@ type Val =
     | FList of Val list
     | FMap of (string * Val) list
     | FSet of Val list
+    | FDate of System.DateTime
+    | FDatetime of System.DateTime
 
-let my_data: Val = FStr "2024-01-15T12:30:00"
+let my_data: Val = FStr (string (System.DateTime(2024, 1, 15, 12, 30, 0)))

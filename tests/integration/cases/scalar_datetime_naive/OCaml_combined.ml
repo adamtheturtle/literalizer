@@ -9,7 +9,9 @@ type val_t =
   | OList of val_t list
   | OMap of (string * val_t) list
   | OSet of val_t list
+  | ODate of (int * int * int)
+  | ODatetime of ((int * int * int) * (int * int * int))
 
-let my_data : val_t = OStr "2024-01-15T12:30:00"
+let my_data : val_t = ODatetime ((2024, 1, 15), (12, 30, 0))
 
 end

@@ -36,13 +36,16 @@ jobs:
           else
             find tests/integration/cases -name "*.d" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install DMD
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: dlang-community/setup-dlang@v2
         with:
           compiler: dmd-latest
       - name: Check D syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             dmd -o- -c "$f" || exit 1

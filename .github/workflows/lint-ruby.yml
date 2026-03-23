@@ -36,8 +36,11 @@ jobs:
           else
             find tests/integration/cases -name "*.rb" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check Ruby syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             ruby -c "$f" || exit 1

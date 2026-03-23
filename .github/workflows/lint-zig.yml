@@ -36,13 +36,16 @@ jobs:
           else
             find tests/integration/cases -name "*.zig" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install Zig
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: mlugg/setup-zig@v2
         with:
           version: 0.14.0
       - name: Check Zig
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             zig build-obj -fno-emit-bin "$f" || exit 1
