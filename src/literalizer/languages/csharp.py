@@ -213,7 +213,7 @@ class CSharp(metaclass=LanguageCls):
             ),
             close="}",
             empty_set="new SortedSet<object>()",
-            preamble_lines=(),
+            preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="new SortedSet<{type_name}> {{",
         )
 
