@@ -115,6 +115,16 @@ _ANY_PREAMBLE: tuple[str, ...] = (
 
 
 @beartype
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+) -> str:
+    """Format a C++ variable declaration."""
+    return f"_Any {name} = {value};"
+
+
+@beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a C++ variable assignment."""
     return f"{name} = {value};"
@@ -367,23 +377,9 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.static_preamble: Sequence[str] = ()
-
-        def _format_var_decl(
-            name: str,
-            value: str,
-            _data: Value,
-        ) -> str:
-            """Format a C++ variable declaration."""
-            if value.startswith("{"):
-                self.static_preamble = (
-                    tuple(self.static_preamble) + _ANY_PREAMBLE
-                )
-                return f"_Any {name} = {value};"
-            return f"auto {name} = {value};"
-
+        self.static_preamble: Sequence[str] = _ANY_PREAMBLE
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_var_decl
+            _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment

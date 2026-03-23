@@ -1,7 +1,12 @@
+#include <initializer_list>
+struct _Any {
+    template<class T> _Any(T&&) noexcept {}
+    _Any(std::initializer_list<_Any>) noexcept {}
+};
 #include <string>
 #include <vector>
 void _check() {
-auto my_data = std::vector<std::string>{
+_Any my_data = std::vector<std::string>{
     // line 1
     // line 2
     "a",
