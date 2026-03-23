@@ -1776,6 +1776,41 @@ def _build_line_ending_variants() -> dict[str, _Variant]:
 
 
 @beartype
+def _build_line_ending_decl_variants() -> dict[str, _Variant]:
+    """Build line-ending + declaration-style cross-option variants.
+
+    For each language with multiple line endings *and* multiple
+    declaration styles, create a variant for every non-default
+    line ending paired with every non-default declaration style.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_le = spec.line_ending
+        default_ds = spec.declaration_style
+        non_default_le = [
+            le for le in spec.line_endings if le is not default_le
+        ]
+        non_default_ds = [
+            ds for ds in spec.declaration_styles if ds is not default_ds
+        ]
+        for le in non_default_le:
+            for ds in non_default_ds:
+                key = (
+                    f"{lang_name}_line_ending_{le.name.lower()}"
+                    f"_decl_{ds.name.lower()}"
+                )
+                variants[key] = _Variant(
+                    spec=lang_config.lang_cls(
+                        line_ending=le,
+                        declaration_style=ds,
+                    ),
+                    wrap=lang_config.varname_wrap,
+                )
+    return variants
+
+
+@beartype
 def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
     cases_dir = Path(__file__).parent / "cases"
@@ -1980,6 +2015,12 @@ def _build_variant_cases() -> list[_VariantCase]:
             _VARIABLE_NAME,
             "_dict",
         ),
+        (
+            _build_line_ending_decl_variants(),
+            "simple_sequence",
+            _VARIABLE_NAME,
+            "",
+        ),
     ]
     for variants, case_dir_name, variable_name, suffix in variant_sources:
         for variant_name, variant in variants.items():
@@ -2035,6 +2076,99 @@ def test_format_variant_golden_file(
         extension=variant.spec.extension,
         fullpath=case_dir
         / (variant_case.variant_name + variant.spec.extension),
+    )
+
+
+@dataclasses.dataclass
+class _LineEndingCombinedCase:
+    """A combined-variable-forms test case with a non-default line
+    ending.
+    """
+
+    name: str
+    lang_config: _LanguageConfig
+    line_ending: enum.Enum
+    case_dir_name: str
+
+
+@beartype
+def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
+    """Collect combined (declaration + assignment) test cases for
+    non-default line endings.
+    """
+    cases: list[_LineEndingCombinedCase] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_le = spec.line_ending
+        for le in spec.line_endings:
+            if le is default_le:
+                continue
+            for case_dir_name in ("simple_sequence", "simple_dict"):
+                name = (
+                    f"{lang_name}_line_ending"
+                    f"_{le.name.lower()}_{case_dir_name}"
+                )
+                cases.append(
+                    _LineEndingCombinedCase(
+                        name=name,
+                        lang_config=lang_config,
+                        line_ending=le,
+                        case_dir_name=case_dir_name,
+                    )
+                )
+    return cases
+
+
+_LINE_ENDING_COMBINED_CASES = _build_line_ending_combined_cases()
+
+
+@pytest.mark.parametrize(
+    argnames="case",
+    argvalues=_LINE_ENDING_COMBINED_CASES,
+    ids=[c.name for c in _LINE_ENDING_COMBINED_CASES],
+)
+def test_line_ending_combined_variable_forms(
+    case: _LineEndingCombinedCase,
+    request: pytest.FixtureRequest,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test that combined (declaration + assignment) output with a
+    non-default line ending matches the golden file.
+    """
+    cases_dir = request.config.rootpath / _CASES_REL
+    input_path = cases_dir / case.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    spec = case.lang_config.lang_cls(line_ending=case.line_ending)
+    declaration = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=spec,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assignment = literalizer.literalize_yaml(
+        yaml_string=yaml_string,
+        language=spec,
+        line_prefix="",
+        indent="    ",
+        include_delimiters=True,
+        variable_name=_VARIABLE_NAME,
+        new_variable=False,
+        error_on_coercion=False,
+    )
+    combined = case.lang_config.combined_wrap(
+        declaration.code, assignment.code
+    )
+    combined = _prepend_preamble(
+        wrapped=combined, preamble=declaration.preamble
+    )
+    file_regression.check(
+        contents=combined + "\n",
+        extension=spec.extension,
+        fullpath=input_path.parent / (case.name + spec.extension),
     )
 
 
