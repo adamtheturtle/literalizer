@@ -162,23 +162,7 @@ _string_format: Callable[[str], str] = _format_string_matlab
 
 @beartype
 class Matlab(metaclass=LanguageCls):
-    """MATLAB language specification.
-
-    Args:
-        date_format: How to format :class:`datetime.date` values.
-
-            * ``date_formats.MATLAB`` — ``datetime(...)`` call,
-              e.g. ``datetime(2024, 1, 15)``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15"``.
-
-        datetime_format: How to format :class:`datetime.datetime` values.
-
-            * ``datetime_formats.MATLAB`` — ``datetime(...)`` call,
-              e.g. ``datetime(2024, 1, 15, 12, 30, 0)``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
-    """
+    """MATLAB language specification."""
 
     extension = ".m"
     pygments_name = "matlab"

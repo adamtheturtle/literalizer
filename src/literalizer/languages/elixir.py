@@ -29,6 +29,24 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_elixir_ordered_map_entry(key: str, value: str) -> str:
+    """Format an Elixir ordered-map entry as a ``{key, value}`` tuple."""
+    return f"{{{key}, {value}}}"
+
+
+@beartype
+def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+    """Format an Elixir variable declaration."""
+    return f"{name} = {value}"
+
+
+@beartype
+def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+    """Format an Elixir variable assignment."""
+    return f"{name} = {value}"
+
+
+@beartype
 def _format_date_elixir(value: datetime.date) -> str:
     """Format a date as an Elixir ``~D[...]`` sigil."""
     return f"~D[{value.isoformat()}]"
@@ -52,24 +70,6 @@ def _format_datetime_elixir(value: datetime.datetime) -> str:
     return f"~N[{iso}]"
 
 
-@beartype
-def _format_elixir_ordered_map_entry(key: str, value: str) -> str:
-    """Format an Elixir ordered-map entry as a ``{key, value}`` tuple."""
-    return f"{{{key}, {value}}}"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format an Elixir variable declaration."""
-    return f"{name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format an Elixir variable assignment."""
-    return f"{name} = {value}"
-
-
 _string_format: Callable[[str], str] = format_string_backslash
 
 
@@ -80,19 +80,19 @@ class Elixir(metaclass=LanguageCls):
     Args:
         date_format: Which date format to use.
 
-            * ``date_formats.ELIXIR`` — Elixir ``~D`` sigil,
-              e.g. ``~D[2024-01-15]``.
             * ``date_formats.ISO`` — ISO 8601 string literal,
               e.g. ``"2024-01-15"``.
+            * ``date_formats.ELIXIR`` — Elixir ``~D`` sigil,
+              e.g. ``~D[2024-01-15]``.
 
         datetime_format: Which datetime format to use.
 
+            * ``datetime_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
             * ``datetime_formats.ELIXIR`` — Elixir ``~U`` sigil for
               timezone-aware datetimes (e.g. ``~U[2024-01-15 12:30:00+00:00]``)
               or ``~N`` sigil for naive datetimes
               (e.g. ``~N[2024-01-15 12:30:00]``).
-            * ``datetime_formats.ISO`` — ISO 8601 string literal,
-              e.g. ``"2024-01-15T12:30:00+00:00"``.
 
         sequence_format: Which Elixir sequence type to use.
 
@@ -108,8 +108,8 @@ class Elixir(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Elixir."""
 
-        ELIXIR = enum.member(value=_format_date_elixir)
         ISO = enum.member(value=format_date_iso)
+        ELIXIR = enum.member(value=_format_date_elixir)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -118,8 +118,8 @@ class Elixir(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Elixir."""
 
-        ELIXIR = enum.member(value=_format_datetime_elixir)
         ISO = enum.member(value=format_datetime_iso)
+        ELIXIR = enum.member(value=_format_datetime_elixir)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -232,8 +232,8 @@ class Elixir(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ELIXIR,
-        datetime_format: DatetimeFormats = DatetimeFormats.ELIXIR,
+        date_format: DateFormats = DateFormats.ISO,
+        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.MAP_SET,

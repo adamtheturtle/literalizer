@@ -77,28 +77,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 class Swift(metaclass=LanguageCls):
-    """Swift language specification.
-
-    Args:
-        date_format: How to format :class:`datetime.date` values.
-
-            * ``date_formats.SWIFT`` — ``DateComponents`` expression,
-              e.g. ``DateComponents(calendar:
-              Calendar(identifier: .gregorian), year: 2024,
-              month: 1, day: 15).date!``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15"``.
-
-        datetime_format: How to format :class:`datetime.datetime` values.
-
-            * ``datetime_formats.SWIFT`` — ``DateComponents``
-              expression, e.g. ``DateComponents(calendar:
-              Calendar(identifier: .gregorian), year: 2024,
-              month: 1, day: 15, hour: 12, minute: 30,
-              second: 0).date!``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
-    """
+    """Swift language specification."""
 
     extension = ".swift"
     pygments_name = "swift"

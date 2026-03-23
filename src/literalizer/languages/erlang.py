@@ -81,17 +81,17 @@ class Erlang(metaclass=LanguageCls):
     Args:
         date_format: Which date format to use.
 
-            * ``date_formats.ERLANG`` — Erlang date tuple,
-              e.g. ``{2024, 1, 15}``.
             * ``date_formats.ISO`` — ISO 8601 string literal,
               e.g. ``"2024-01-15"``.
+            * ``date_formats.ERLANG`` — Erlang date tuple,
+              e.g. ``{2024, 1, 15}``.
 
         datetime_format: Which datetime format to use.
 
-            * ``datetime_formats.ERLANG`` — Erlang datetime tuple,
-              e.g. ``{{2024, 1, 15}, {12, 30, 0}}``.
             * ``datetime_formats.ISO`` — ISO 8601 string literal,
               e.g. ``"2024-01-15T12:30:00+00:00"``.
+            * ``datetime_formats.ERLANG`` — Erlang datetime tuple,
+              e.g. ``{{2024, 1, 15}, {12, 30, 0}}``.
 
         sequence_format: Which Erlang sequence type to use.
 
@@ -107,8 +107,8 @@ class Erlang(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
 
-        ERLANG = enum.member(value=_format_date_erlang)
         ISO = enum.member(value=format_date_iso)
+        ERLANG = enum.member(value=_format_date_erlang)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -117,8 +117,8 @@ class Erlang(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Erlang."""
 
-        ERLANG = enum.member(value=_format_datetime_erlang)
         ISO = enum.member(value=format_datetime_iso)
+        ERLANG = enum.member(value=_format_datetime_erlang)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -231,8 +231,8 @@ class Erlang(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ERLANG,
-        datetime_format: DatetimeFormats = DatetimeFormats.ERLANG,
+        date_format: DateFormats = DateFormats.ISO,
+        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.BINARY,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
