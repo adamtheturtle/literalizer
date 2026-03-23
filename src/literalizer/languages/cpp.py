@@ -13,7 +13,6 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    infer_element_type,
     make_element_to_type,
     make_type_to_opener,
     passthrough_sequence_entry,
@@ -113,23 +112,6 @@ _ANY_PREAMBLE: tuple[str, ...] = (
     "    _Any(std::initializer_list<_Any>) noexcept {}",
     "};",
 )
-
-
-@beartype
-def _is_heterogeneous(data: Value) -> bool:
-    """Check whether *data* is a collection with mixed element types.
-
-    Returns ``True`` when the top-level structure is a list, dict,
-    set, or frozenset whose elements cannot be unified into a single
-    C++ type, making ``auto`` deduction impossible.
-    """
-    if isinstance(data, list) and data:
-        return infer_element_type(items=data) is None
-    if isinstance(data, dict) and data:
-        return infer_element_type(items=list(data.values())) is None
-    if isinstance(data, (set, frozenset)) and data:
-        return infer_element_type(items=list(data)) is None
-    return False
 
 
 @beartype
@@ -393,7 +375,7 @@ class Cpp(metaclass=LanguageCls):
             _data: Value,
         ) -> str:
             """Format a C++ variable declaration."""
-            if _is_heterogeneous(data=_data):
+            if value.startswith("{"):
                 self.static_preamble = (
                     tuple(self.static_preamble) + _ANY_PREAMBLE
                 )
