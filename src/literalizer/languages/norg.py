@@ -134,6 +134,36 @@ class Norg(metaclass=LanguageCls):
             suffix="%",
         )
 
+    class DeclarationStyles(enum.Enum):
+        """Declaration style options."""
+
+        BLOCK = "block"
+
+    class DictFormats(enum.Enum):
+        """Dict/map format options."""
+
+        DEFAULT = "default"
+
+    class IntegerFormats(enum.Enum):
+        """Integer format options."""
+
+        DECIMAL = "decimal"
+
+    class NumericSeparators(enum.Enum):
+        """Numeric separator options."""
+
+        NONE = "none"
+
+    class StringFormats(enum.Enum):
+        """String format options."""
+
+        DOUBLE = "double"
+
+    class TrailingCommas(enum.Enum):
+        """Trailing comma options."""
+
+        NO = "no"
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
@@ -147,6 +177,12 @@ class Norg(metaclass=LanguageCls):
         NONE = "none"
 
     variable_type_hints_formats = VariableTypeHints
+    declaration_styles_formats = DeclarationStyles
+    dict_formats_formats = DictFormats
+    integer_formats_formats = IntegerFormats
+    numeric_separators_formats = NumericSeparators
+    string_formats_formats = StringFormats
+    trailing_commas_formats = TrailingCommas
 
     def __init__(
         self,
@@ -159,6 +195,12 @@ class Norg(metaclass=LanguageCls):
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.PERCENT,
         _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        declaration_style: DeclarationStyles = DeclarationStyles.BLOCK,
+        dict_format: DictFormats = DictFormats.DEFAULT,
+        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
+        numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        string_format: StringFormats = StringFormats.DOUBLE,
+        trailing_comma: TrailingCommas = TrailingCommas.NO,
     ) -> None:
         """Initialize Norg language specification."""
         self.variable_type_hints = variable_type_hints
@@ -190,6 +232,12 @@ class Norg(metaclass=LanguageCls):
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_format = comment_format
+        self.declaration_style = declaration_style
+        self.dict_format = dict_format
+        self.integer_format = integer_format
+        self.numeric_separator = numeric_separator
+        self.string_format = string_format
+        self.trailing_comma = trailing_comma
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
