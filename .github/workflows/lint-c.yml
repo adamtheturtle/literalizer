@@ -38,4 +38,4 @@ jobs:
           fi > /tmp/files-to-lint
       - name: Check C syntax
         if: steps.files.outcome == 'success'
-        run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint {} +
+        run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint

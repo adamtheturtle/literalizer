@@ -42,4 +42,4 @@ jobs:
       - name: Check Fortran syntax
         if: steps.files.outcome == 'success'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
-          /tmp/files-to-lint -ffree-line-length-none -fsyntax-only {} +
+          /tmp/files-to-lint
