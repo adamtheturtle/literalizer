@@ -62,7 +62,7 @@ def _format_datetime_elixir(value: datetime.datetime) -> str:
     if value.tzinfo is not None:
         utc_value = value.astimezone(tz=datetime.UTC)
         iso = utc_value.isoformat()
-        # Elixir sigils use a space separator instead of T.
+        # Elixir sigil syntax uses a space separator instead of T.
         iso = iso.replace("T", " ")
         return f"~U[{iso}]"
     iso = value.isoformat()
