@@ -397,18 +397,6 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_racket(content: str) -> str:
-    """Return Racket content unchanged."""
-    return content
-
-
-@beartype
-def _wrap_racket_combined(declaration: str, assignment: str) -> str:
-    """Wrap Racket declaration and assignment."""
-    return f"{declaration}\n{assignment}"
-
-
-@beartype
 def _wrap_perl(content: str) -> str:
     """Wrap in a Perl variable assignment."""
     return f"my $x = {content};"
@@ -1353,9 +1341,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Racket.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Racket,
-        wrap=_wrap_racket,
-        varname_wrap=_wrap_racket,
-        combined_wrap=_wrap_racket_combined,
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
