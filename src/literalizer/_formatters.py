@@ -32,7 +32,7 @@ class MixedNumeric:
 
 
 @beartype
-def _infer_element_type(
+def infer_element_type(
     items: list[Value],
 ) -> type | ListType | None:
     """Infer the common element type from a list of values.
@@ -46,7 +46,7 @@ def _infer_element_type(
     element_types: set[type | ListType] = set()
     for item in items:
         if isinstance(item, list):
-            inner = _infer_element_type(items=item)
+            inner = infer_element_type(items=item)
             if inner is None:
                 return None
             element_types.add(ListType(inner=inner))
@@ -300,7 +300,7 @@ def _typed_set_open(
     inference is not possible or *type_to_opener* returns ``None``,
     *fallback* is returned instead.
     """
-    element_type = _infer_element_type(items=items)
+    element_type = infer_element_type(items=items)
     if element_type is None:
         return fallback
     return type_to_opener(element_type) or fallback
@@ -452,7 +452,7 @@ def _typed_sequence_open(
     delimiter.  When inference is not possible or *type_to_opener*
     returns ``None``, *fallback* is returned instead.
     """
-    element_type = _infer_element_type(items=items)
+    element_type = infer_element_type(items=items)
     if element_type is None:
         return fallback
     return type_to_opener(element_type) or fallback
@@ -506,7 +506,7 @@ def _typed_dict_open(
     returned instead.
     """
     values = list(items.values())
-    element_type = _infer_element_type(items=values)
+    element_type = infer_element_type(items=values)
     if element_type is None:
         return fallback
     return type_to_opener(element_type) or fallback
