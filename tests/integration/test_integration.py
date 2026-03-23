@@ -1860,6 +1860,7 @@ def _build_variant_cases() -> list[_VariantCase]:
     variant_sources: list[tuple[dict[str, _Variant], str, str | None, str]] = [
         (_build_date_variants(), "scalar_date", None, ""),
         (_build_datetime_variants(), "scalar_datetime", None, ""),
+        (_build_datetime_variants(), "scalar_datetime_naive", None, "_naive"),
         (_build_sequence_variants(), "simple_sequence", None, ""),
         (_build_sequence_variants(), "pair_sequence", None, "_pair"),
         (_build_sequence_variants(), "triple_sequence", None, "_triple"),
