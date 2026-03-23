@@ -300,22 +300,25 @@ class Java(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        date_preamble: tuple[str, ...] = {
+        _date_map: dict[str, tuple[str, ...]] = {
             "JAVA": ("import java.time.LocalDate;",),
-        }.get(date_format.name, ())
-        datetime_preamble: tuple[str, ...] = {
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
             "INSTANT": ("import java.time.Instant;",),
             "ZONED": (
                 "import java.time.ZoneId;",
                 "import java.time.ZonedDateTime;",
             ),
-        }.get(datetime_format.name, ())
-        scalar_preamble_dict: dict[type, tuple[str, ...]] = {}
-        if date_preamble:
-            scalar_preamble_dict[datetime.date] = date_preamble
-        if datetime_preamble:
-            scalar_preamble_dict[datetime.datetime] = datetime_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            scalar_preamble_dict
-        )
+        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (datetime.date, _date_map.get(date_format.name, ())),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, ()),
+                ),
+            )
+            if p
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
