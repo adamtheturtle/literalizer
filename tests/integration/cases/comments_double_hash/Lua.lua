@@ -1,0 +1,4 @@
+local _ = {
+    -- # section
+    "a",
+}

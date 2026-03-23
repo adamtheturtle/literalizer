@@ -1,0 +1,5 @@
+@code json
+{
+    "key": "value \" # not a comment"  % real%
+}
+@end
