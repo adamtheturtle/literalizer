@@ -10,6 +10,8 @@ from literalizer._formatters import (
     MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     make_element_to_type,
     make_type_to_opener,
@@ -133,12 +135,16 @@ class Go(metaclass=LanguageCls):
             * ``date_formats.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
               time.UTC)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
               time.UTC)``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".go"
@@ -151,6 +157,7 @@ class Go(metaclass=LanguageCls):
             formatter=_format_date_go,
             preamble_lines=('import "time"',),
         )
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -163,6 +170,7 @@ class Go(metaclass=LanguageCls):
             formatter=_format_datetime_go,
             preamble_lines=('import "time"',),
         )
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

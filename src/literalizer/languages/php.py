@@ -11,6 +11,8 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -72,6 +74,7 @@ class Php(metaclass=LanguageCls):
         """Date format options for Php."""
 
         PHP = DateFormatConfig(formatter=_format_date)
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -81,6 +84,7 @@ class Php(metaclass=LanguageCls):
         """Datetime format options for Php."""
 
         PHP = DatetimeFormatConfig(formatter=_format_datetime)
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

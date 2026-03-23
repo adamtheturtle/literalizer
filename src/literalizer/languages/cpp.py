@@ -9,6 +9,8 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     make_element_to_type,
     make_type_to_opener,
@@ -113,6 +115,8 @@ class Cpp(metaclass=LanguageCls):
             * ``date_formats.CPP`` — ``std::chrono::year_month_day`` literal,
               e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
               std::chrono::month{1}, std::chrono::day{15}}``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -120,6 +124,8 @@ class Cpp(metaclass=LanguageCls):
               time-of-day durations,
               e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
               + std::chrono::minutes{30}``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".cpp"
@@ -132,6 +138,10 @@ class Cpp(metaclass=LanguageCls):
             formatter=_format_date_cpp,
             preamble_lines=("#include <chrono>",),
         )
+        ISO = DateFormatConfig(
+            formatter=format_date_iso,
+            preamble_lines=("#include <string>",),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -143,6 +153,10 @@ class Cpp(metaclass=LanguageCls):
         CPP = DatetimeFormatConfig(
             formatter=_format_datetime_cpp,
             preamble_lines=("#include <chrono>",),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            preamble_lines=("#include <string>",),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

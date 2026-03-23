@@ -10,6 +10,8 @@ from literalizer._formatters import (
     MixedNumeric,
     fixed_dict_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     make_element_to_type,
     make_type_to_opener,
@@ -124,6 +126,8 @@ class Java(metaclass=LanguageCls):
 
             * ``date_formats.JAVA`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -132,6 +136,8 @@ class Java(metaclass=LanguageCls):
             * ``datetime_formats.ZONED`` — ``ZonedDateTime.of(...)`` call,
               e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
               ZoneId.of("UTC"))``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: How to format sequences.
 
@@ -151,6 +157,7 @@ class Java(metaclass=LanguageCls):
             formatter=_format_date_java,
             preamble_lines=("import java.time.LocalDate;",),
         )
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -170,6 +177,7 @@ class Java(metaclass=LanguageCls):
                 "import java.time.ZonedDateTime;",
             ),
         )
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

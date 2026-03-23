@@ -9,6 +9,8 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    format_date_iso,
+    format_datetime_iso,
 )
 from literalizer._language import (
     CommentConfig,
@@ -129,6 +131,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Date format options for ObjectiveC."""
 
         OBJC = DateFormatConfig(formatter=_format_objc_date)
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -138,6 +141,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Datetime format options for ObjectiveC."""
 
         OBJC = DatetimeFormatConfig(formatter=_format_objc_datetime)
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

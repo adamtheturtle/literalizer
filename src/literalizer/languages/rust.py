@@ -10,6 +10,8 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -92,6 +94,8 @@ class Rust(metaclass=LanguageCls):
               ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
               Requires the ``chrono`` crate.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -100,6 +104,8 @@ class Rust(metaclass=LanguageCls):
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
               Requires the ``chrono`` crate.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: Which Rust sequence type to use.
 
@@ -125,6 +131,7 @@ class Rust(metaclass=LanguageCls):
             formatter=_format_date_rust,
             preamble_lines=("use chrono::NaiveDate;",),
         )
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -141,6 +148,7 @@ class Rust(metaclass=LanguageCls):
                 "use chrono::NaiveTime;",
             ),
         )
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
