@@ -42,6 +42,14 @@ class LiteralizeResult:
     the generated code.  Empty when none are needed.
     """
 
+    body_preamble: tuple[str, ...]
+    """Lines that belong inside the module body rather than before it.
+
+    Most languages produce an empty tuple.  Haskell uses this for
+    typeclass instance definitions that must follow the ``module``
+    header.
+    """
+
 
 @beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
@@ -118,12 +126,20 @@ def _deduplicate(*, lines: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(result)
 
 
+@dataclasses.dataclass(frozen=True)
+class _PreambleResult:
+    """Header and body preamble lines."""
+
+    header: tuple[str, ...]
+    body: tuple[str, ...]
+
+
 @beartype
 def _compute_preamble(
     *,
     data: Value,
     language: Language,
-) -> tuple[str, ...]:
+) -> _PreambleResult:
     """Compute preamble lines from the data types present and the
     language configuration.
     """
@@ -141,7 +157,18 @@ def _compute_preamble(
         if types & {dict, list, set, ordereddict}
         else ()
     )
-    return _deduplicate(lines=scalar + collection + type_hint)
+    body = _deduplicate(
+        lines=tuple(
+            line
+            for scalar_type, preamble in language.scalar_body_preamble.items()
+            if scalar_type in types
+            for line in preamble
+        ),
+    )
+    return _PreambleResult(
+        header=_deduplicate(lines=scalar + collection + type_hint),
+        body=body,
+    )
 
 
 @beartype
@@ -1027,13 +1054,12 @@ def literalize_json(
             else language.format_variable_assignment
         )
         result = formatter(variable_name, result, data)
-    preamble = tuple(language.static_preamble) + _compute_preamble(
-        data=data,
-        language=language,
-    )
+    computed = _compute_preamble(data=data, language=language)
+    preamble = tuple(language.static_preamble) + computed.header
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )
 
 
@@ -1320,11 +1346,10 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
-    preamble = tuple(language.static_preamble) + _compute_preamble(
-        data=coerced_data,
-        language=language,
-    )
+    computed = _compute_preamble(data=coerced_data, language=language)
+    preamble = tuple(language.static_preamble) + computed.header
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )

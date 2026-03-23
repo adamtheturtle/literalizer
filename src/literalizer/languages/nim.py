@@ -310,4 +310,5 @@ class Nim(metaclass=LanguageCls):
             datetime.date: date_format.value.preamble_lines,
             datetime.datetime: datetime_format.value.preamble_lines,
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -84,6 +84,28 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 _string_format: Callable[[str], str] = format_string_backslash
 
+_IS_STRING_IMPORT = "import Data.String (IsString(fromString))"
+
+_IS_STRING_INSTANCE = "instance IsString Val where\n    fromString = HStr"
+
+_NUM_INSTANCE = (
+    "instance Num Val where\n"
+    "    fromInteger = HInt\n"
+    '    a + b = error "not implemented"\n'
+    '    a * b = error "not implemented"\n'
+    '    abs a = error "not implemented"\n'
+    '    signum a = error "not implemented"\n'
+    "    negate (HInt n) = HInt (negate n)\n"
+    "    negate (HFloat f) = HFloat (negate f)\n"
+    '    negate _ = error "not implemented"'
+)
+
+_FRACTIONAL_INSTANCE = (
+    "instance Fractional Val where\n"
+    "    fromRational r = HFloat (realToFrac r)\n"
+    '    a / b = error "not implemented"'
+)
+
 
 @beartype
 class Haskell(metaclass=LanguageCls):
@@ -355,6 +377,7 @@ class Haskell(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
+        _is_string_body = (_IS_STRING_IMPORT, _IS_STRING_INSTANCE)
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             str: _overloaded_strings,
             bytes: _overloaded_strings,
@@ -363,6 +386,23 @@ class Haskell(metaclass=LanguageCls):
                 for t, p in (
                     (datetime.date, date_format.value.preamble_lines),
                     (datetime.datetime, datetime_format.value.preamble_lines),
+                )
+                if p
+            },
+        }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
+            str: _is_string_body,
+            bytes: _is_string_body,
+            int: (_NUM_INSTANCE,),
+            float: (_NUM_INSTANCE, _FRACTIONAL_INSTANCE),
+            **{
+                t: _is_string_body
+                for t, p in (
+                    (datetime.date, date_format.value.preamble_lines),
+                    (
+                        datetime.datetime,
+                        datetime_format.value.preamble_lines,
+                    ),
                 )
                 if p
             },
