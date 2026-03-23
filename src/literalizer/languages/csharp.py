@@ -15,6 +15,8 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -30,6 +32,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    date_scalar_preamble,
 )
 from literalizer._types import Value
 
@@ -70,6 +73,44 @@ _csharp_opener_config = TypedOpenerConfig(
     dict_opener_template="new Dictionary<string, {type_name}> {{",
     set_opener_template="new HashSet<{type_name}> {{",
 )
+
+_CSHARP_SET_OPENER_TEMPLATES: dict[str, tuple[str, str]] = {
+    "HASH_SET": ("new HashSet<{type_name}> {{", "new HashSet<object> {"),
+    "SORTED_SET": (
+        "new SortedSet<{type_name}> {{",
+        "new SortedSet<object> {",
+    ),
+}
+
+_csharp_element_to_type_default = make_element_to_type(
+    scalar_types=_CSHARP_SCALAR_TYPES,
+    list_template="{inner}[]",
+)
+
+
+@beartype
+def _build_set_format_config(
+    *,
+    set_format_value: SetFormatConfig,
+    set_format_name: str,
+    scalar_type_overrides: dict[type, str],
+) -> SetFormatConfig:
+    """Build the resolved set format config for a chosen format."""
+    template, fallback = _CSHARP_SET_OPENER_TEMPLATES[set_format_name]
+    eto = make_element_to_type(
+        scalar_types={**_CSHARP_SCALAR_TYPES, **scalar_type_overrides},
+        list_template="{inner}[]",
+    )
+    return dataclasses.replace(
+        set_format_value,
+        set_open=typed_set_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=eto,
+                opener_template=template,
+            ),
+            fallback=fallback,
+        ),
+    )
 
 
 @beartype
@@ -190,14 +231,31 @@ class CSharp(metaclass=LanguageCls):
 
         HASH_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_csharp_opener_config.build(
-                    scalar_type_overrides={},
-                ).set,
-                fallback="new HashSet<object> {",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_csharp_element_to_type_default,
+                    opener_template=_CSHARP_SET_OPENER_TEMPLATES["HASH_SET"][
+                        0
+                    ],
+                ),
+                fallback=_CSHARP_SET_OPENER_TEMPLATES["HASH_SET"][1],
             ),
             close="}",
             empty_set="new HashSet<object>()",
             preamble_lines=(),
+        )
+        SORTED_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_csharp_element_to_type_default,
+                    opener_template=_CSHARP_SET_OPENER_TEMPLATES["SORTED_SET"][
+                        0
+                    ],
+                ),
+                fallback=_CSHARP_SET_OPENER_TEMPLATES["SORTED_SET"][1],
+            ),
+            close="}",
+            empty_set="new SortedSet<object>()",
+            preamble_lines=("using System.Collections.Generic;",),
         )
 
     class CommentFormats(enum.Enum):
@@ -292,18 +350,17 @@ class CSharp(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
+        _scalar_overrides: dict[type, str] = {
+            datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
+            datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
+        }
         openers = _csharp_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
-                datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
-            },
+            scalar_type_overrides=_scalar_overrides,
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="new HashSet<object> {",
-            ),
+        self.set_format_config: SetFormatConfig = _build_set_format_config(
+            set_format_value=set_format.value,
+            set_format_name=set_format.name,
+            scalar_type_overrides=_scalar_overrides,
         )
         if sequence_format is self.sequence_formats.ARRAY:
             self.sequence_open: Callable[[list[Value]], str] = (
@@ -366,13 +423,11 @@ class CSharp(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            date_scalar_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
             )
-            if p
-        }
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

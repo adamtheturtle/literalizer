@@ -22,11 +22,13 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    date_scalar_preamble,
 )
 from literalizer._types import Value
 
@@ -64,9 +66,19 @@ def _format_swift_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Swift variable declaration."""
+def _format_variable_declaration_let(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Swift ``let`` variable declaration."""
     return f"let {name}: Any = {value}"
+
+
+@beartype
+def _format_variable_declaration_var(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Swift ``var`` variable declaration."""
+    return f"var {name}: Any = {value}"
 
 
 @beartype
@@ -199,7 +211,12 @@ class Swift(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        LET = "let"
+        LET = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_let,
+        )
+        VAR = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_var,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -315,19 +332,17 @@ class Swift(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            date_scalar_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
             )
-            if p
-        }
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

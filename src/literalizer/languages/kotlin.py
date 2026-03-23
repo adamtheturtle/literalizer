@@ -16,6 +16,8 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -26,11 +28,13 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    date_scalar_preamble,
 )
 from literalizer._types import Value
 
@@ -103,6 +107,16 @@ _kotlin_opener_config = TypedOpenerConfig(
     set_opener_template="setOf<{type_name}>(",
 )
 
+_KOTLIN_SET_OPENER_TEMPLATES: dict[str, tuple[str, str]] = {
+    "SET": ("setOf<{type_name}>(", "setOf<Any?>("),
+    "SORTED_SET": ("sortedSetOf<{type_name}>(", "sortedSetOf<Any?>("),
+}
+
+_kotlin_element_to_type_default = make_element_to_type(
+    scalar_types=_KOTLIN_SCALAR_TYPES,
+    list_template="Array<{inner}>",
+)
+
 
 @beartype
 def _format_kotlin_ordered_map_entry(key: str, value: str) -> str:
@@ -111,9 +125,19 @@ def _format_kotlin_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Kotlin variable declaration."""
+def _format_variable_declaration_val(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Kotlin ``val`` variable declaration."""
     return f"val {name} = {value}"
+
+
+@beartype
+def _format_variable_declaration_var(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Kotlin ``var`` variable declaration."""
+    return f"var {name} = {value}"
 
 
 @beartype
@@ -239,10 +263,25 @@ class Kotlin(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.build(
-                    scalar_type_overrides={},
-                ).set,
-                fallback="setOf<Any?>(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_element_to_type_default,
+                    opener_template=_KOTLIN_SET_OPENER_TEMPLATES["SET"][0],
+                ),
+                fallback=_KOTLIN_SET_OPENER_TEMPLATES["SET"][1],
+            ),
+            close=")",
+            empty_set=None,
+            preamble_lines=(),
+        )
+        SORTED_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_element_to_type_default,
+                    opener_template=_KOTLIN_SET_OPENER_TEMPLATES["SORTED_SET"][
+                        0
+                    ],
+                ),
+                fallback=_KOTLIN_SET_OPENER_TEMPLATES["SORTED_SET"][1],
             ),
             close=")",
             empty_set=None,
@@ -264,7 +303,12 @@ class Kotlin(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        VAL = "val"
+        VAL = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_val,
+        )
+        VAR = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_var,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -348,11 +392,25 @@ class Kotlin(metaclass=LanguageCls):
                 datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
             },
         )
+        _set_template, _set_fallback = _KOTLIN_SET_OPENER_TEMPLATES[
+            set_format.name
+        ]
+        _set_eto = make_element_to_type(
+            scalar_types={
+                **_KOTLIN_SCALAR_TYPES,
+                datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
+                datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
+            },
+            list_template="Array<{inner}>",
+        )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="setOf<Any?>(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_set_eto,
+                    opener_template=_set_template,
+                ),
+                fallback=_set_fallback,
             ),
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
@@ -403,19 +461,17 @@ class Kotlin(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            date_scalar_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
             )
-            if p
-        }
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -28,6 +28,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    date_scalar_preamble,
 )
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
@@ -236,6 +237,15 @@ class Java(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
         )
+        TREE_SET = SetFormatConfig(
+            set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
+            close="))",
+            empty_set="new TreeSet<>()",
+            preamble_lines=(
+                "import java.util.Set;",
+                "import java.util.TreeSet;",
+            ),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -395,13 +405,11 @@ class Java(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            date_scalar_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
             )
-            if p
-        }
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

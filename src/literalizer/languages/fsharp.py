@@ -20,6 +20,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -104,9 +105,19 @@ def _format_fsharp_sequence_entry(item: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format an F# variable declaration."""
+def _format_variable_declaration_let(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format an F# ``let`` variable declaration."""
     return f"let {name}: Val = {_to_val(value=value)}"
+
+
+@beartype
+def _format_variable_declaration_let_mutable(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format an F# ``let mutable`` variable declaration."""
+    return f"let mutable {name}: Val = {_to_val(value=value)}"
 
 
 @beartype
@@ -223,7 +234,12 @@ class FSharp(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        LET = "let"
+        LET = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_let,
+        )
+        LET_MUTABLE = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_let_mutable,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -337,7 +353,7 @@ class FSharp(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment

@@ -35,19 +35,16 @@ class LiteralizeResult:
     """Result of converting data to a native language literal."""
 
     code: str
-    """The formatted literal text."""
+    """The formatted literal text.
+
+    When a language defines ``scalar_body_preamble`` entries (e.g.
+    Haskell typeclass instances), those lines are prepended to the code
+    so they appear in the correct structural position.
+    """
 
     preamble: tuple[str, ...]
     """Lines (imports, package declarations, etc.) that must precede
     the generated code.  Empty when none are needed.
-    """
-
-    body_preamble: tuple[str, ...]
-    """Lines that belong inside the module body rather than before it.
-
-    Most languages produce an empty tuple.  Haskell uses this for
-    typeclass instance definitions that must follow the ``module``
-    header.
     """
 
 
@@ -160,9 +157,11 @@ def _compute_preamble(
     body = _deduplicate(
         lines=tuple(
             line
-            for scalar_type, preamble in language.scalar_body_preamble.items()
+            for scalar_type, body_preamble in (
+                language.scalar_body_preamble.items()
+            )
             if scalar_type in types
-            for line in preamble
+            for line in body_preamble
         ),
     )
     return _PreambleResult(
@@ -1056,10 +1055,11 @@ def literalize_json(
         result = formatter(variable_name, result, data)
     computed = _compute_preamble(data=data, language=language)
     preamble = tuple(language.static_preamble) + computed.header
+    if computed.body:
+        result = "\n".join(computed.body) + "\n" + result
     return LiteralizeResult(
         code=result,
         preamble=preamble,
-        body_preamble=computed.body,
     )
 
 
@@ -1348,8 +1348,9 @@ def literalize_yaml(
 
     computed = _compute_preamble(data=coerced_data, language=language)
     preamble = tuple(language.static_preamble) + computed.header
+    if computed.body:
+        result = "\n".join(computed.body) + "\n" + result
     return LiteralizeResult(
         code=result,
         preamble=preamble,
-        body_preamble=computed.body,
     )

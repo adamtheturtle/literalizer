@@ -21,11 +21,13 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    date_scalar_preamble,
 )
 from literalizer._types import Value
 
@@ -73,9 +75,19 @@ def _format_rust_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Rust variable declaration."""
+def _format_variable_declaration_let(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Rust ``let`` variable declaration."""
     return f"let {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_let_mut(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Rust ``let mut`` variable declaration."""
+    return f"let mut {name} = {value};"
 
 
 @beartype
@@ -214,6 +226,12 @@ class Rust(metaclass=LanguageCls):
             empty_set="HashSet::<String>::new()",
             preamble_lines=("use std::collections::HashSet;",),
         )
+        BTREE_SET = SetFormatConfig(
+            set_open=fixed_set_open(open_str="BTreeSet::from(["),
+            close="])",
+            empty_set="BTreeSet::<String>::new()",
+            preamble_lines=("use std::collections::BTreeSet;",),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -230,7 +248,12 @@ class Rust(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        LET = "let"
+        LET = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_let,
+        )
+        LET_MUT = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_let_mut,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -349,19 +372,17 @@ class Rust(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            date_scalar_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
             )
-            if p
-        }
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

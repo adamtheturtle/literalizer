@@ -25,6 +25,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -76,9 +77,27 @@ def _format_dart_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Dart variable declaration."""
+def _format_variable_declaration_final(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Dart ``final`` variable declaration."""
     return f"final {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_var(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Dart ``var`` variable declaration."""
+    return f"var {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_const(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Dart ``const`` variable declaration."""
+    return f"const {name} = {value};"
 
 
 @beartype
@@ -201,7 +220,15 @@ class Dart(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        FINAL = "final"
+        FINAL = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_final,
+        )
+        VAR = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_var,
+        )
+        CONST = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_const,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -341,7 +368,7 @@ class Dart(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
