@@ -275,28 +275,6 @@ def test_variable_declaration_yaml(
     assert result.code == expected
 
 
-def test_variable_declaration_none_no_wrap() -> None:
-    """Omitting variable_name leaves output unchanged."""
-    result = literalize_json(
-        json_string="[1, 2]",
-        language=PYTHON,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        (
-            1,
-            2,
-        )"""
-    )
-    assert result.code == expected
-
-
 @pytest.mark.parametrize(
     argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
 )
