@@ -66,7 +66,7 @@ def _make_variable_declaration(
         """Format a declaration, using ``@`` for flat sequences of
         simple scalars.
         """
-        if (
+        use_seq = (
             isinstance(_data, list)
             and _data
             and (
@@ -78,8 +78,11 @@ def _make_variable_declaration(
                     )
                 )
             )
-        ):
+        )
+        if use_seq:
             return f"{keyword} {name} = @{value}"
+        if force_seq:
+            return f"{keyword} {name} = {value}"
         return f"{keyword} {name} = %* {value}"
 
     return _format
