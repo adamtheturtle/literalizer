@@ -13,7 +13,6 @@ import pytest
 from literalizer.languages import (
     Elixir,
     Haskell,
-    JavaScript,
     Perl,
     Python,
     VisualBasic,
@@ -69,13 +68,6 @@ def test_format_datetime_epoch() -> None:
     # The exact value depends on local timezone for naive datetimes,
     # so just check it parses as a float.
     float(result)
-
-
-def test_format_variable_declaration_let() -> None:
-    """``_format_variable_declaration_let`` uses the ``let`` keyword."""
-    js_let = JavaScript(declaration_style=JavaScript.DeclarationStyles.LET)
-    result = js_let.format_variable_declaration("x", "[1, 2]", [1, 2])
-    assert result == "let x = [1, 2];"
 
 
 _VB = VisualBasic()

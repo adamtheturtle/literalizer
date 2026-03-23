@@ -1892,7 +1892,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_set_variants(), "set", None, ""),
         (_build_comment_variants(), "comments", None, ""),
         (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME, ""),
-        (_build_declaration_style_variants(), "simple_sequence", None, ""),
+        (
+            _build_declaration_style_variants(),
+            "simple_sequence",
+            _VARIABLE_NAME,
+            "",
+        ),
         (_build_dict_format_variants(), "simple_dict", None, ""),
         (_build_integer_format_variants(), "int_list", None, ""),
         (_build_integer_format_variants(), "int_list_large", None, "_large"),
