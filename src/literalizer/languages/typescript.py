@@ -11,6 +11,8 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -76,11 +78,15 @@ class TypeScript(metaclass=LanguageCls):
 
             * ``date_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15")``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: Which TypeScript sequence type to use.
 
@@ -98,6 +104,7 @@ class TypeScript(metaclass=LanguageCls):
         """Date formatting options for TypeScript."""
 
         JS = DateFormatConfig(formatter=_format_date_ts)
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -107,6 +114,7 @@ class TypeScript(metaclass=LanguageCls):
         """Datetime formatting options for TypeScript."""
 
         JS = DatetimeFormatConfig(formatter=_format_datetime_ts)
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

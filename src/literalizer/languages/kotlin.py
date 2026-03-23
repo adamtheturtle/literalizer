@@ -10,6 +10,8 @@ from literalizer._formatters import (
     ListType,
     dict_entry_with_separator,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash_dollar,
     make_element_to_type,
     make_type_to_opener,
@@ -129,11 +131,15 @@ class Kotlin(metaclass=LanguageCls):
 
             * ``date_formats.KOTLIN`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.KOTLIN`` — ``LocalDateTime.of(...)`` call,
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: Which Kotlin sequence type to use.
 
@@ -156,6 +162,7 @@ class Kotlin(metaclass=LanguageCls):
             formatter=_format_date_kotlin,
             preamble_lines=("import java.time.LocalDate",),
         )
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -168,6 +175,7 @@ class Kotlin(metaclass=LanguageCls):
             formatter=_format_datetime_kotlin,
             preamble_lines=("import java.time.LocalDateTime",),
         )
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

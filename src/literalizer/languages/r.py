@@ -10,6 +10,8 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -101,11 +103,15 @@ class R(metaclass=LanguageCls):
 
             * ``date_formats.R`` — ``as.Date(...)`` call,
               e.g. ``as.Date("2024-01-15")``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.R`` — ``as.POSIXct(...)`` call,
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         empty_dict_key: How to handle empty-string dict keys.
 
@@ -122,6 +128,7 @@ class R(metaclass=LanguageCls):
         """Date formatting options for R."""
 
         R = DateFormatConfig(formatter=_format_date_r)
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -131,6 +138,7 @@ class R(metaclass=LanguageCls):
         """Datetime formatting options for R."""
 
         R = DatetimeFormatConfig(formatter=_format_datetime_r)
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

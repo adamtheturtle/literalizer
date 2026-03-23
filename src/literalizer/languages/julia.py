@@ -11,6 +11,8 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -67,11 +69,15 @@ class Julia(metaclass=LanguageCls):
 
             * ``date_formats.JULIA`` — ``Date(...)`` constructor call,
               e.g. ``Date(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.JULIA`` — ``DateTime(...)`` constructor
               call, e.g. ``DateTime(2024, 1, 15, 12, 30, 0)``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: Which Julia sequence type to use.
 
@@ -91,6 +97,7 @@ class Julia(metaclass=LanguageCls):
             formatter=_format_date_julia,
             preamble_lines=("using Dates",),
         )
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -103,6 +110,7 @@ class Julia(metaclass=LanguageCls):
             formatter=_format_datetime_julia,
             preamble_lines=("using Dates",),
         )
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
