@@ -398,22 +398,14 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 
 @beartype
 def _wrap_racket(content: str) -> str:
-    """Wrap Racket content with trailing whitespace stripped.
-
-    Trailing whitespace is stripped from each line because the
-    ``(list ``/``(hash ``/``(set `` opening delimiters produce a
-    trailing space before the newline in multi-line mode, which the
-    ``trim trailing whitespace`` pre-commit hook removes from the
-    committed golden files.
-    """
-    return "\n".join(line.rstrip() for line in content.splitlines())
+    """Return Racket content unchanged."""
+    return content
 
 
 @beartype
 def _wrap_racket_combined(declaration: str, assignment: str) -> str:
     """Wrap Racket declaration and assignment."""
-    combined = f"{declaration}\n{assignment}"
-    return "\n".join(line.rstrip() for line in combined.splitlines())
+    return f"{declaration}\n{assignment}"
 
 
 @beartype
