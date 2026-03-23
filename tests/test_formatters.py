@@ -255,6 +255,34 @@ def test_format_bytes(
     assert func(value) == expected
 
 
+_JS_LET = JavaScript(declaration_style=JavaScript.DeclarationStyles.LET)
+_JS_HEX = JavaScript(integer_format=JavaScript.IntegerFormats.HEX)
+_JS_UNDERSCORE = JavaScript(
+    numeric_separator=JavaScript.NumericSeparators.UNDERSCORE,
+)
+
+
+def test_format_variable_declaration_let() -> None:
+    """``_format_variable_declaration_let`` uses the ``let`` keyword."""
+    result = _JS_LET.format_variable_declaration("x", "[1, 2]", [1, 2])
+    assert result == "let x = [1, 2];"
+
+
+def test_format_integer_hex_negative() -> None:
+    """Hex formatter returns ``-0x`` prefix for negative integers."""
+    assert _JS_HEX.format_integer(-10) == "-0xa"
+
+
+def test_format_integer_underscore_large() -> None:
+    """Underscore formatter groups digits for large numbers."""
+    assert _JS_UNDERSCORE.format_integer(1000000) == "1_000_000"
+
+
+def test_format_integer_underscore_negative() -> None:
+    """Underscore formatter handles negative numbers."""
+    assert _JS_UNDERSCORE.format_integer(-1234) == "-1_234"
+
+
 _VB = VisualBasic()
 
 
