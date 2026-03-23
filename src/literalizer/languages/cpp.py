@@ -118,9 +118,9 @@ _ANY_PREAMBLE: tuple[str, ...] = (
 def _is_heterogeneous(data: Value) -> bool:
     """Check whether *data* is a collection with mixed element types.
 
-    Returns ``True`` when the top-level structure is a list or dict
-    whose elements cannot be unified into a single C++ type, making
-    ``auto`` deduction impossible.
+    Returns ``True`` when the top-level structure is a list, dict,
+    set, or frozenset whose elements cannot be unified into a single
+    C++ type, making ``auto`` deduction impossible.
     """
     if isinstance(data, list) and data:
         types: set[type] = set()
@@ -134,6 +134,11 @@ def _is_heterogeneous(data: Value) -> bool:
         return types != {int, float}
     if isinstance(data, dict) and data:
         return _is_heterogeneous(data=list(data.values()))
+    if isinstance(data, (set, frozenset)) and data:
+        types = {type(item) for item in data}
+        if len(types) == 1:
+            return False
+        return types != {int, float}
     return False
 
 
