@@ -275,9 +275,7 @@ def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
     lines = content.split(sep="\n")
 
     # Body-preamble lines start with "import " or "instance ", plus
-    # indented continuation lines of instance blocks.  Count
-    # consecutive body-preamble lines from the start using
-    # itertools.takewhile to avoid an uncoverable for/break branch.
+    # indented continuation lines of instance blocks.
     def _is_body_line(pair: tuple[int, str]) -> bool:
         """Return whether *pair* is a body-preamble line."""
         idx, line = pair
