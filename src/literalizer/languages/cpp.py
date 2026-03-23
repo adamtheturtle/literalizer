@@ -390,6 +390,7 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        self.static_preamble: Sequence[str] = ()
 
         def _format_var_decl(
             name: str,
@@ -410,7 +411,6 @@ class Cpp(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             str: ("#include <string>",),
             bytes: ("#include <string>",),
