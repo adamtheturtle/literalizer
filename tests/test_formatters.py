@@ -19,6 +19,7 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Kotlin,
+    Matlab,
     Python,
     Ruby,
     Rust,
@@ -186,6 +187,12 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_rust_microsecond",
         ),
         pytest.param(
+            Matlab.DatetimeFormats.MATLAB,
+            _SAMPLE_DATETIME_MICRO,
+            "datetime(2024, 1, 15, 12, 30, 0, 123.456)",
+            id="format_datetime_matlab_microsecond",
+        ),
+        pytest.param(
             Swift.DatetimeFormats.SWIFT,
             _SAMPLE_DATETIME_MICRO,
             "DateComponents("
@@ -206,7 +213,8 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
         pytest.param(
             Scala.DatetimeFormats.SCALA,
             _SAMPLE_DATETIME_MICRO,
-            "LocalDateTime.of(2024, 1, 15, 12, 30, 0, 123456000)",
+            "ZonedDateTime.of(2024, 1, 15, 12, 30, 0, "
+            '123456000, ZoneId.of("UTC"))',
             id="format_datetime_scala_microsecond",
         ),
     ],

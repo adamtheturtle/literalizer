@@ -39,16 +39,13 @@ def _format_date_scala(value: datetime.date) -> str:
 
 @beartype
 def _format_datetime_scala(value: datetime.datetime) -> str:
-    """Format a datetime as a Scala ``LocalDateTime.of(...)`` call."""
-    if value.microsecond:
-        nanos = value.microsecond * 1000
-        return (
-            f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
-            f"{value.hour}, {value.minute}, {value.second}, {nanos})"
-        )
+    """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
+    tz = value.tzname() or "UTC"
+    nanos = value.microsecond * 1000
     return (
-        f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
+        f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f'{nanos}, ZoneId.of("{tz}"))'
     )
 
 
@@ -60,7 +57,7 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     MixedNumeric: "Double",
     bytes: "String",
     datetime.date: "LocalDate",
-    datetime.datetime: "LocalDateTime",
+    datetime.datetime: "ZonedDateTime",
 }
 
 _scala_element_to_type = make_element_to_type(
@@ -102,24 +99,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 class Scala(metaclass=LanguageCls):
-    """Scala language specification.
-
-    Args:
-        date_format: How to format :class:`datetime.date` values.
-
-            * ``date_formats.SCALA`` — ``LocalDate.of(...)`` call,
-              e.g. ``LocalDate.of(2024, 1, 15)``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15"``.
-
-        datetime_format: How to format :class:`datetime.datetime` values.
-
-            * ``datetime_formats.SCALA`` —
-              ``LocalDateTime.of(...)`` call,
-              e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
-    """
+    """Scala language specification."""
 
     extension = ".scala"
     pygments_name = "scala"
@@ -282,7 +262,10 @@ class Scala(metaclass=LanguageCls):
             "SCALA": ("import java.time.LocalDate",),
         }
         _datetime_map: dict[str, tuple[str, ...]] = {
-            "SCALA": ("import java.time.LocalDateTime",),
+            "SCALA": (
+                "import java.time.ZoneId",
+                "import java.time.ZonedDateTime",
+            ),
         }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p

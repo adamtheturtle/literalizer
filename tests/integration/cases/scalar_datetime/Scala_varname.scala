@@ -1,4 +1,5 @@
-import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 object Check {
-val my_data = LocalDateTime.of(2024, 1, 15, 12, 30, 0)
+val my_data = ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("+00:00"))
 }

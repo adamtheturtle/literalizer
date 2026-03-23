@@ -26,22 +26,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-
-@beartype
-def _format_date_matlab(value: datetime.date) -> str:
-    """Format a date as a MATLAB ``datetime(...)`` call."""
-    return f"datetime({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_matlab(value: datetime.datetime) -> str:
-    """Format a datetime as a MATLAB ``datetime(...)`` call."""
-    return (
-        f"datetime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
-
-
 _MATLAB_CONTROL_CHAR_THRESHOLD = 32
 
 
@@ -152,6 +136,25 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a MATLAB variable assignment."""
     return f"{name} = {value};"
+
+
+@beartype
+def _format_date_matlab(value: datetime.date) -> str:
+    """Format a date as a MATLAB ``datetime`` expression."""
+    return f"datetime({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_matlab(value: datetime.datetime) -> str:
+    """Format a datetime as a MATLAB ``datetime`` expression."""
+    parts = (
+        f"datetime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}"
+    )
+    if value.microsecond:
+        millisecond = value.microsecond / 1000
+        parts += f", {millisecond}"
+    return parts + ")"
 
 
 _string_format: Callable[[str], str] = _format_string_matlab
