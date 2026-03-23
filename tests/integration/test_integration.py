@@ -102,19 +102,8 @@ def _wrap_csharp(content: str) -> str:
 
 @beartype
 def _wrap_rust(content: str) -> str:
-    """Wrap in a Rust main function with necessary imports.
-
-    Empty ``HashMap::from([])`` requires explicit type annotations
-    because ``rustc`` cannot infer the key/value types from an empty
-    array.
-    """
+    """Wrap in a Rust main function with necessary imports."""
     indented = content.replace("\n", "\n    ")
-    if content == "HashMap::from([])":
-        return (
-            "fn main() {\n"
-            "    let _: HashMap<&str, &str> = HashMap::from([]);\n"
-            "}"
-        )
     return f"fn main() {{\n    let _ = {indented};\n}}"
 
 
@@ -690,17 +679,7 @@ def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
 
 @beartype
 def _wrap_rust_varname(content: str) -> str:
-    """Wrap a Rust let binding in a main function.
-
-    When the binding uses ``HashMap::from([])``, add a type annotation
-    so ``rustc`` can infer the key/value types.
-    """
-    _empty_hash = "HashMap::from([])"
-    if _empty_hash in content:
-        content = content.replace(
-            f"let {_VARIABLE_NAME} = {_empty_hash}",
-            f"let {_VARIABLE_NAME}: HashMap<&str, &str> = {_empty_hash}",
-        )
+    """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
     return f"fn main() {{\n    {indented}\n    let _ = {_VARIABLE_NAME};\n}}"
 
@@ -832,31 +811,16 @@ def _wrap_swift_combined(declaration: str, assignment: str) -> str:
 def _wrap_rust_combined(declaration: str, assignment: str) -> str:
     """Rust: let declaration in an inner block, then a deferred-init
     let + assignment in the outer scope.
-
-    When using ``HashMap::from([])``, add type annotations so
-    ``rustc`` can infer the key/value types.
     """
-    _empty_hash = "HashMap::from([])"
-    _typed = "HashMap<&str, &str>"
-    if _empty_hash in declaration:
-        declaration = declaration.replace(
-            f"let {_VARIABLE_NAME} = {_empty_hash}",
-            f"let {_VARIABLE_NAME}: {_typed} = {_empty_hash}",
-        )
     decl_indented = "        " + declaration.replace("\n", "\n        ")
     assign_indented = "    " + assignment.replace("\n", "\n    ")
-    let_decl = (
-        f"    let {_VARIABLE_NAME}: {_typed};\n"
-        if _empty_hash in assignment
-        else f"    let {_VARIABLE_NAME};\n"
-    )
     return (
         "fn main() {\n"
         "    {\n"
         f"{decl_indented}\n"
         f"        let _ = {_VARIABLE_NAME};\n"
         "    }\n"
-        f"{let_decl}"
+        f"    let {_VARIABLE_NAME};\n"
         f"{assign_indented}\n"
         f"    let _ = {_VARIABLE_NAME};\n"
         "}"
