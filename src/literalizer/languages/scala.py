@@ -191,6 +191,7 @@ class Scala(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         SEQ = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="Seq("),
@@ -199,6 +200,7 @@ class Scala(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -212,6 +214,7 @@ class Scala(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

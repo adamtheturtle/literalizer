@@ -205,6 +205,7 @@ class VisualBasic(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence="New Object() {}",
             preamble_lines=("Imports System.Collections.Generic",),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

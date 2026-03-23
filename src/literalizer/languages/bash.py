@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer._language import (
@@ -127,6 +128,7 @@ class Bash(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

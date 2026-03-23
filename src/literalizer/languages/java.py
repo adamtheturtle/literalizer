@@ -208,9 +208,11 @@ class Java(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
         LIST = SequenceFormatConfig(
             sequence_open=_list_of_open,
+            format_entry=passthrough_sequence_entry,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
