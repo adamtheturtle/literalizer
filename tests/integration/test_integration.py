@@ -555,8 +555,8 @@ def _wrap_nim(content: str) -> str:
     """Wrap in a Nim expression.
 
     Flat sequences use ``@`` prefix (typed seq); nested or non-sequence
-    content uses ``%*`` (JSON node) to avoid Nim's fixed-size array
-    type mismatches.
+    content uses ``%*`` (JSON node) to avoid fixed-size array type
+    mismatches.
     """
     stripped = content.lstrip()
     if stripped.startswith("[") and "[[" not in content:
