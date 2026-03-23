@@ -25,8 +25,8 @@ jobs:
         if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
           == 'true'
         run: |-
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq cpanminus
+          sudo apt-get update
+          sudo apt-get install -y cpanminus
           sudo cpanm --notest DateTime
       - name: Check Perl syntax
         if: github.event_name != 'pull_request' || steps.changes.outputs.relevant
