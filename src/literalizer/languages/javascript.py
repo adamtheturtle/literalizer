@@ -295,7 +295,7 @@ class JavaScript(metaclass=LanguageCls):
                 empty_dict=None,
                 preamble_lines=(),
             )
-        self.multiline_trailing_comma = trailing_comma.name == "YES"
+        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
