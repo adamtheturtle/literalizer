@@ -1136,9 +1136,6 @@ def _resolve_yaml_comments(
         )
         return _ResolvedComments(result=result, pending=None)
 
-    if not base:
-        return _ResolvedComments(result=base, pending=None)
-
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
     ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
         stream=StringIO(initial_value=yaml_string),
