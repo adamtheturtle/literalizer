@@ -69,7 +69,7 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     Uses ``%*`` for JSON-compatible values; omits it for native types
     like ``dateTime(...)`` that cannot be wrapped in a JSON node.
     """
-    if "dateTime(" in value:
+    if "dateTime(" in value or value.lstrip().startswith("@"):
         return f"var {name} = {value}"
     return f"var {name} = %* {value}"
 
@@ -80,7 +80,7 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
     Uses ``%*`` for JSON-compatible values; omits it for native types.
     """
-    if "dateTime(" in value:
+    if "dateTime(" in value or value.lstrip().startswith("@"):
         return f"{name} = {value}"
     return f"{name} = %* {value}"
 

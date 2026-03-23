@@ -550,7 +550,7 @@ def _wrap_nim(content: str) -> str:
     Uses ``%*`` for JSON-compatible values; omits it for native types
     like ``dateTime(...)`` that cannot be wrapped in a JSON node.
     """
-    if "dateTime(" in content:
+    if "dateTime(" in content or content.lstrip().startswith("@"):
         return f"let _ = {content}"
     return f"let _ = %* {content}"
 

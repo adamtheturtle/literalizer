@@ -1,12 +1,12 @@
 import json
-var my_data = %* @[
+var my_data = @[
     "42",
     "3.14",
     "True",
     "False",
     "hello \"world\""
 ]
-my_data = %* @[
+my_data = @[
     "42",
     "3.14",
     "True",

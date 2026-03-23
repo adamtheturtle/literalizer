@@ -1,10 +1,10 @@
 import json
-var my_data = %* @[
+var my_data = @[
     "1",
     "hello",
     "True"
 ]
-my_data = %* @[
+my_data = @[
     "1",
     "hello",
     "True"
