@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    _infer_element_type,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
@@ -123,22 +124,11 @@ def _is_heterogeneous(data: Value) -> bool:
     C++ type, making ``auto`` deduction impossible.
     """
     if isinstance(data, list) and data:
-        types: set[type] = set()
-        for item in data:
-            if isinstance(item, list):
-                types.add(list)
-            else:
-                types.add(type(item))
-        if len(types) == 1:
-            return False
-        return types != {int, float}
+        return _infer_element_type(items=data) is None
     if isinstance(data, dict) and data:
-        return _is_heterogeneous(data=list(data.values()))
+        return _infer_element_type(items=list(data.values())) is None
     if isinstance(data, (set, frozenset)) and data:
-        types = {type(item) for item in data}
-        if len(types) == 1:
-            return False
-        return types != {int, float}
+        return _infer_element_type(items=list(data)) is None
     return False
 
 
