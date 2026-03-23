@@ -1,12 +1,12 @@
 object Declaration {
-  val my_data = List[Array[Double]](
+  val my_data = List[List[Double]](
       List[Double](1.5, 2.5),
       List[Double](3.5, 4.5),
   )
 }
 object Assignment {
   var my_data: Any = null
-  my_data = List[Array[Double]](
+  my_data = List[List[Double]](
       List[Double](1.5, 2.5),
       List[Double](3.5, 4.5),
   )

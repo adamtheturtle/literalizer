@@ -61,23 +61,28 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "ZonedDateTime",
 }
 
-_scala_element_to_type = make_element_to_type(
+_scala_list_element_to_type = make_element_to_type(
+    scalar_types=_SCALA_SCALAR_TYPES,
+    list_template="List[{inner}]",
+)
+
+_scala_array_element_to_type = make_element_to_type(
     scalar_types=_SCALA_SCALAR_TYPES,
     list_template="Array[{inner}]",
 )
 
 _scala_list_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_element_to_type,
+    element_to_type=_scala_list_element_to_type,
     opener_template="List[{type_name}](",
 )
 
 _scala_array_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_element_to_type,
+    element_to_type=_scala_array_element_to_type,
     opener_template="Array[{type_name}](",
 )
 
 _scala_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_element_to_type,
+    element_to_type=_scala_list_element_to_type,
     opener_template="Map[String, {type_name}](",
 )
 
