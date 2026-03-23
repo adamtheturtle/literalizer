@@ -14,6 +14,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_string_backslash,
@@ -356,13 +357,13 @@ class Python(metaclass=LanguageCls):
         """Set type options for Python."""
 
         SET = SetFormatConfig(
-            open_str="{",
+            set_open=fixed_set_open(open_str="{"),
             close="}",
             empty_set="set()",
             preamble_lines=(),
         )
         FROZENSET = SetFormatConfig(
-            open_str="frozenset({",
+            set_open=fixed_set_open(open_str="frozenset({"),
             close="})",
             empty_set="frozenset()",
             preamble_lines=(),

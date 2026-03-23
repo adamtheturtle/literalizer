@@ -10,6 +10,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
@@ -166,7 +167,7 @@ class Erlang(metaclass=LanguageCls):
         """Set type options for Erlang."""
 
         SET = SetFormatConfig(
-            open_str="sets:from_list([",
+            set_open=fixed_set_open(open_str="sets:from_list(["),
             close="])",
             empty_set="sets:from_list([])",
             preamble_lines=(),

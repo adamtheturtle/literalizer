@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     fixed_dict_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -209,7 +210,7 @@ class VisualBasic(metaclass=LanguageCls):
         """Set type options for Visual Basic."""
 
         HASH_SET = SetFormatConfig(
-            open_str="New HashSet(Of Object) From {",
+            set_open=fixed_set_open(open_str="New HashSet(Of Object) From {"),
             close="}",
             empty_set="New HashSet(Of Object)()",
             preamble_lines=(),

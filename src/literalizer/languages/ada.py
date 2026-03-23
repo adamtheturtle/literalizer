@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -167,7 +168,7 @@ class Ada(metaclass=LanguageCls):
         """Set type options for Ada."""
 
         SET = SetFormatConfig(
-            open_str="ASet'(",
+            set_open=fixed_set_open(open_str="ASet'("),
             close=")",
             empty_set="ASet'(1 .. 0 => ANull)",
             preamble_lines=(),

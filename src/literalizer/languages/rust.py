@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -202,7 +203,7 @@ class Rust(metaclass=LanguageCls):
         """Set type options for Rust."""
 
         HASH_SET = SetFormatConfig(
-            open_str="HashSet::from([",
+            set_open=fixed_set_open(open_str="HashSet::from(["),
             close="])",
             empty_set="HashSet::<String>::new()",
             preamble_lines=("use std::collections::HashSet;",),
