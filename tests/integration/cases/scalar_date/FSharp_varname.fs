@@ -12,4 +12,4 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let my_data: Val = FDate(System.DateTime(2024, 1, 15))
+let my_data: Val = FStr (string (System.DateOnly(2024, 1, 15)))

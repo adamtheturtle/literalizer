@@ -13,6 +13,6 @@ type Val =
     | FDatetime of System.DateTime
 
 let x: Val = FMap [
-    ("date", FDate(System.DateTime(2024, 1, 15)));
-    ("datetime", FDatetime(System.DateTime(2024, 1, 15, 12, 30, 0)))
+    ("date", FStr (string (System.DateOnly(2024, 1, 15))));
+    ("datetime", FStr (string (System.DateTime(2024, 1, 15, 12, 30, 0))))
 ]

@@ -27,16 +27,16 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_fsharp(value: datetime.date) -> str:
-    """Format a date as an F# ``FDate`` constructor."""
-    return f"FDate(System.DateTime({value.year}, {value.month}, {value.day}))"
+    """Format a date as an F# ``System.DateOnly(...)`` call."""
+    return f"System.DateOnly({value.year}, {value.month}, {value.day})"
 
 
 @beartype
 def _format_datetime_fsharp(value: datetime.datetime) -> str:
-    """Format a datetime as an F# ``FDatetime`` constructor."""
+    """Format a datetime as an F# ``System.DateTime(...)`` call."""
     return (
-        f"FDatetime(System.DateTime({value.year}, {value.month}, "
-        f"{value.day}, {value.hour}, {value.minute}, {value.second}))"
+        f"System.DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
     )
 
 
@@ -52,11 +52,11 @@ def _to_val(value: str) -> str:
         "FStr",
         "FInt",
         "FFloat",
-        "FDate",
-        "FDatetime",
     )
     if any(value.startswith(p) for p in _val_prefixes):
         return value
+    if value.startswith("System."):
+        return f"FStr (string ({value}))"
     if value.startswith('"') and value.endswith('"'):
         return f"FStr {value}"
     negative = value.startswith("-")
@@ -121,17 +121,13 @@ class FSharp(metaclass=LanguageCls):
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.FSHARP`` — ``System.DateTime(...)`` call,
-              e.g. ``System.DateTime(2024, 1, 15)``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15"``.
+            * ``date_formats.FSHARP`` — ``System.DateOnly(...)`` call,
+              e.g. ``System.DateOnly(2024, 1, 15)``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.FSHARP`` — ``System.DateTime(...)`` call,
               e.g. ``System.DateTime(2024, 1, 15, 12, 30, 0)``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".fs"
