@@ -1,2 +1,3 @@
+from std.collections import Set
 def main():
-    _ = List[String]()
+    _ = Set[String]()
