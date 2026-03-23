@@ -75,6 +75,16 @@ _scala_opener_config = TypedOpenerConfig(
     set_opener_template="Set[{type_name}](",
 )
 
+_SCALA_SET_OPENER_TEMPLATES: dict[str, tuple[str, str]] = {
+    "SET": ("Set[{type_name}](", "Set("),
+    "TREE_SET": ("TreeSet[{type_name}](", "TreeSet("),
+}
+
+_scala_element_to_type_default = make_element_to_type(
+    scalar_types=_SCALA_SCALAR_TYPES,
+    list_template="Array[{inner}]",
+)
+
 # The LIST format needs List[…] for nested type names, not Array[…].
 _scala_list_element_to_type = make_element_to_type(
     scalar_types=_SCALA_SCALAR_TYPES,
@@ -240,14 +250,27 @@ class Scala(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_scala_opener_config.build(
-                    scalar_type_overrides={},
-                ).set,
-                fallback="Set(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_scala_element_to_type_default,
+                    opener_template=_SCALA_SET_OPENER_TEMPLATES["SET"][0],
+                ),
+                fallback=_SCALA_SET_OPENER_TEMPLATES["SET"][1],
             ),
             close=")",
             empty_set=None,
             preamble_lines=(),
+        )
+        TREE_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_scala_element_to_type_default,
+                    opener_template=_SCALA_SET_OPENER_TEMPLATES["TREE_SET"][0],
+                ),
+                fallback=_SCALA_SET_OPENER_TEMPLATES["TREE_SET"][1],
+            ),
+            close=")",
+            empty_set=None,
+            preamble_lines=("import scala.collection.immutable.TreeSet",),
         )
 
     class CommentFormats(enum.Enum):
@@ -352,11 +375,25 @@ class Scala(metaclass=LanguageCls):
                 datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
             },
         )
+        _set_template, _set_fallback = _SCALA_SET_OPENER_TEMPLATES[
+            set_format.name
+        ]
+        _set_eto = make_element_to_type(
+            scalar_types={
+                **_SCALA_SCALAR_TYPES,
+                datetime.date: _SCALA_SCALAR_TYPES[date_tp],
+                datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
+            },
+            list_template="Array[{inner}]",
+        )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="Set(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_set_eto,
+                    opener_template=_set_template,
+                ),
+                fallback=_set_fallback,
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (

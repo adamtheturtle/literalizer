@@ -225,6 +225,12 @@ class Rust(metaclass=LanguageCls):
             empty_set="HashSet::<String>::new()",
             preamble_lines=("use std::collections::HashSet;",),
         )
+        BTREE_SET = SetFormatConfig(
+            set_open=fixed_set_open(open_str="BTreeSet::from(["),
+            close="])",
+            empty_set="BTreeSet::<String>::new()",
+            preamble_lines=("use std::collections::BTreeSet;",),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""

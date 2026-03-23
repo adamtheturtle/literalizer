@@ -16,6 +16,8 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -102,6 +104,16 @@ _kotlin_opener_config = TypedOpenerConfig(
     seq_opener_template="arrayOf(",
     dict_opener_template="mapOf<String, {type_name}>(",
     set_opener_template="setOf<{type_name}>(",
+)
+
+_KOTLIN_SET_OPENER_TEMPLATES: dict[str, tuple[str, str]] = {
+    "SET": ("setOf<{type_name}>(", "setOf<Any?>("),
+    "SORTED_SET": ("sortedSetOf<{type_name}>(", "sortedSetOf<Any?>("),
+}
+
+_kotlin_element_to_type_default = make_element_to_type(
+    scalar_types=_KOTLIN_SCALAR_TYPES,
+    list_template="Array<{inner}>",
 )
 
 
@@ -250,10 +262,25 @@ class Kotlin(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.build(
-                    scalar_type_overrides={},
-                ).set,
-                fallback="setOf<Any?>(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_element_to_type_default,
+                    opener_template=_KOTLIN_SET_OPENER_TEMPLATES["SET"][0],
+                ),
+                fallback=_KOTLIN_SET_OPENER_TEMPLATES["SET"][1],
+            ),
+            close=")",
+            empty_set=None,
+            preamble_lines=(),
+        )
+        SORTED_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_element_to_type_default,
+                    opener_template=_KOTLIN_SET_OPENER_TEMPLATES["SORTED_SET"][
+                        0
+                    ],
+                ),
+                fallback=_KOTLIN_SET_OPENER_TEMPLATES["SORTED_SET"][1],
             ),
             close=")",
             empty_set=None,
@@ -364,11 +391,25 @@ class Kotlin(metaclass=LanguageCls):
                 datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
             },
         )
+        _set_template, _set_fallback = _KOTLIN_SET_OPENER_TEMPLATES[
+            set_format.name
+        ]
+        _set_eto = make_element_to_type(
+            scalar_types={
+                **_KOTLIN_SCALAR_TYPES,
+                datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
+                datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
+            },
+            list_template="Array<{inner}>",
+        )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="setOf<Any?>(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_set_eto,
+                    opener_template=_set_template,
+                ),
+                fallback=_set_fallback,
             ),
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
