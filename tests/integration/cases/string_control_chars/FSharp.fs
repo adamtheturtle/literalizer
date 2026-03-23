@@ -13,7 +13,7 @@ type Val =
     | FDatetime of System.DateTime
 
 let x: Val = FList [
-    FStr "line1\nline2";
-    FStr "line1line2";
+    FStr "line1\r\nline2";
+    FStr "line1\rline2";
     FStr ""
 ]

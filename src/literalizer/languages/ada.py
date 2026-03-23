@@ -37,7 +37,10 @@ def _format_string_ada(value: str) -> str:
     since Ada string literals cannot span lines.
     """
     escaped = (
-        value.replace("\n", "\\n").replace("\t", "\\t").replace('"', '""')
+        value.replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace('"', '""')
     )
     return f'"{escaped}"'
 

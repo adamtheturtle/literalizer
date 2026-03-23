@@ -7,8 +7,8 @@ struct _Any {
 };
 void _check() {
     [[maybe_unused]] _Any _v = std::vector<std::string>{
-    "line1\nline2",
-    "line1line2",
+    "line1\r\nline2",
+    "line1\rline2",
     "",
 };
 }

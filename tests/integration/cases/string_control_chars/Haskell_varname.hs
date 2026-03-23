@@ -7,7 +7,7 @@ instance IsString Val where
     fromString = HStr
 my_data :: Val
 my_data = HList [
-    "line1\nline2",
-    "line1line2",
+    "line1\r\nline2",
+    "line1\rline2",
     ""
     ]

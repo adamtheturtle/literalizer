@@ -1,8 +1,8 @@
 defmodule Check do
   def x do
     my_data = [
-    "line1\nline2",
-    "line1line2",
+    "line1\r\nline2",
+    "line1\rline2",
     "",
 ]
     _ = my_data

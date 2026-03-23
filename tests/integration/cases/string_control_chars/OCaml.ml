@@ -13,8 +13,8 @@ type val_t =
   | ODatetime of ((int * int * int) * (int * int * int))
 
 let x : val_t = OList [
-    OStr "line1\nline2";
-    OStr "line1line2";
+    OStr "line1\r\nline2";
+    OStr "line1\rline2";
     OStr ""
 ]
 

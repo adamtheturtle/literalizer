@@ -11,8 +11,8 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const v: ZVal = .{ .arr = &.{
-        .{ .str = "line1\nline2" },
-        .{ .str = "line1line2" },
+        .{ .str = "line1\r\nline2" },
+        .{ .str = "line1\rline2" },
         .{ .str = "" },
     }};
     _ = v;

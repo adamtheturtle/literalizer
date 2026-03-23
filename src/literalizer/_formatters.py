@@ -224,6 +224,7 @@ def format_string_backslash(value: str) -> str:
     escaped = (
         value.replace("\\", "\\\\")
         .replace('"', '\\"')
+        .replace("\r", "\\r")
         .replace("\n", "\\n")
         .replace("\t", "\\t")
     )
@@ -242,6 +243,7 @@ def format_string_backslash_single(value: str) -> str:
     escaped = (
         value.replace("\\", "\\\\")
         .replace("'", "\\'")
+        .replace("\r", "\\r")
         .replace("\n", "\\n")
         .replace("\t", "\\t")
     )
@@ -260,6 +262,7 @@ def format_string_backslash_dollar(value: str) -> str:
     escaped = (
         value.replace("\\", "\\\\")
         .replace('"', '\\"')
+        .replace("\r", "\\r")
         .replace("\n", "\\n")
         .replace("\t", "\\t")
         .replace("$", "\\$")

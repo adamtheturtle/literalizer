@@ -15,13 +15,13 @@ struct _CVal {
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
 _CVal my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.s = "line1\nline2"}),
-    ((_CVal){.s = "line1line2"}),
+    ((_CVal){.s = "line1\r\nline2"}),
+    ((_CVal){.s = "line1\rline2"}),
     ((_CVal){.s = ""}),
 }});
 my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.s = "line1\nline2"}),
-    ((_CVal){.s = "line1line2"}),
+    ((_CVal){.s = "line1\r\nline2"}),
+    ((_CVal){.s = "line1\rline2"}),
     ((_CVal){.s = ""}),
 }});
     (void)my_data;

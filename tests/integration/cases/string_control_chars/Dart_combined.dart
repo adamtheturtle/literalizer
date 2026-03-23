@@ -1,7 +1,7 @@
 void _declaration() {
   final my_data = <String>[
-      "line1\nline2",
-      "line1line2",
+      "line1\r\nline2",
+      "line1\rline2",
       "",
   ];
   my_data.hashCode;
@@ -9,8 +9,8 @@ void _declaration() {
 void _assignment() {
   dynamic my_data;
   my_data = <String>[
-      "line1\nline2",
-      "line1line2",
+      "line1\r\nline2",
+      "line1\rline2",
       "",
   ];
   my_data.hashCode;
