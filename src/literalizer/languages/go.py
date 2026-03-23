@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     dict_entry_with_separator,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -211,7 +212,7 @@ class Go(metaclass=LanguageCls):
         """Set type options for Go."""
 
         SET = SetFormatConfig(
-            open_str="map[any]struct{}{",
+            set_open=fixed_set_open(open_str="map[any]struct{}{"),
             close="}",
             empty_set=None,
             preamble_lines=(),

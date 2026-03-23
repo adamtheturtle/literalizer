@@ -972,7 +972,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        Set[String](
+        Set[Int](
             1,
             2,
         )"""

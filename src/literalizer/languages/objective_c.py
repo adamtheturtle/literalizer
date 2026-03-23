@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
@@ -202,7 +203,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Set type options for Objective-C."""
 
         SET = SetFormatConfig(
-            open_str="[NSSet setWithArray:@[",
+            set_open=fixed_set_open(open_str="[NSSet setWithArray:@["),
             close="]]",
             empty_set="[NSSet set]",
             preamble_lines=(),
