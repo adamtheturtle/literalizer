@@ -138,6 +138,25 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value};"
 
 
+@beartype
+def _format_date_matlab(value: datetime.date) -> str:
+    """Format a date as a MATLAB ``datetime`` expression."""
+    return f"datetime({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_matlab(value: datetime.datetime) -> str:
+    """Format a datetime as a MATLAB ``datetime`` expression."""
+    parts = (
+        f"datetime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}"
+    )
+    if value.microsecond:
+        millisecond = value.microsecond / 1000
+        parts += f", {millisecond}"
+    return parts + ")"
+
+
 _string_format: Callable[[str], str] = _format_string_matlab
 
 
@@ -151,6 +170,7 @@ class Matlab(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Matlab."""
 
+        MATLAB = enum.member(value=_format_date_matlab)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -160,6 +180,7 @@ class Matlab(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Matlab."""
 
+        MATLAB = enum.member(value=_format_datetime_matlab)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -233,8 +254,8 @@ class Matlab(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.MATLAB,
+        datetime_format: DatetimeFormats = DatetimeFormats.MATLAB,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.CELL_ARRAY,
         set_format: SetFormats = SetFormats.SET,
