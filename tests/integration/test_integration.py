@@ -1871,7 +1871,14 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_declaration_style_variants(), "simple_sequence", None, ""),
         (_build_dict_format_variants(), "simple_dict", None, ""),
         (_build_integer_format_variants(), "int_list", None, ""),
+        (_build_integer_format_variants(), "int_list_large", None, "_large"),
         (_build_numeric_separator_variants(), "int_list", None, ""),
+        (
+            _build_numeric_separator_variants(),
+            "int_list_large",
+            None,
+            "_large",
+        ),
         (_build_string_format_variants(), "string_list", None, ""),
         (_build_trailing_comma_variants(), "simple_sequence", None, ""),
     ]

@@ -1,0 +1,5 @@
+procedure Check is
+   X : A_Val := AStr ("2024-01-15T12:30:45.123456");
+begin
+   null;
+end Check;
