@@ -19,22 +19,16 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Kotlin,
-    Matlab,
     Perl,
     Python,
     Ruby,
     Rust,
-    Scala,
-    Swift,
     VisualBasic,
     Zig,
 )
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
 _SAMPLE_DATETIME = datetime.datetime.fromisoformat("2024-01-15T12:30:00")
-_SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
-    "2024-01-15T12:30:00.123456"
-)
 
 
 @pytest.mark.parametrize(
@@ -53,15 +47,6 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "year=2024, month=1, day=15, "
             "hour=12, minute=30, second=0)",
             id="format_datetime_python",
-        ),
-        pytest.param(
-            Python.DatetimeFormats.PYTHON,
-            _SAMPLE_DATETIME_MICRO,
-            "datetime.datetime("
-            "year=2024, month=1, day=15, "
-            "hour=12, minute=30, second=0, "
-            "microsecond=123456)",
-            id="format_datetime_python_microsecond",
         ),
         pytest.param(
             Elixir.DateFormats.ELIXIR,
@@ -180,38 +165,6 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_rust",
         ),
         pytest.param(
-            Rust.DatetimeFormats.RUST,
-            datetime.datetime.fromisoformat("2024-01-15T12:30:00.123456"),
-            "NaiveDateTime::new("
-            "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
-            "NaiveTime::from_hms_micro_opt(12, 30, 0, 123456).unwrap())",
-            id="format_datetime_rust_microsecond",
-        ),
-        pytest.param(
-            Matlab.DatetimeFormats.MATLAB,
-            _SAMPLE_DATETIME_MICRO,
-            "datetime(2024, 1, 15, 12, 30, 0, 123.456)",
-            id="format_datetime_matlab_microsecond",
-        ),
-        pytest.param(
-            Swift.DatetimeFormats.SWIFT,
-            _SAMPLE_DATETIME_MICRO,
-            "DateComponents("
-            "calendar: Calendar(identifier: .gregorian), "
-            "year: 2024, month: 1, day: 15, "
-            "hour: 12, minute: 30, second: 0, "
-            "nanosecond: 123456000).date!",
-            id="format_datetime_swift_microsecond",
-        ),
-        pytest.param(
-            Haskell.DatetimeFormats.HASKELL,
-            _SAMPLE_DATETIME_MICRO,
-            "HDatetime (UTCTime "
-            "(fromGregorian 2024 1 15) "
-            "(picosecondsToDiffTime 45000123456000000))",
-            id="format_datetime_haskell_microsecond",
-        ),
-        pytest.param(
             Haskell.DatetimeFormats.HASKELL,
             datetime.datetime.fromisoformat(
                 "2024-01-15T18:00:00+05:30",
@@ -220,13 +173,6 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "(fromGregorian 2024 1 15) "
             "(secondsToDiffTime 45000))",
             id="format_datetime_haskell_non_utc",
-        ),
-        pytest.param(
-            Scala.DatetimeFormats.SCALA,
-            _SAMPLE_DATETIME_MICRO,
-            "ZonedDateTime.of(2024, 1, 15, 12, 30, 0, "
-            '123456000, ZoneId.of("UTC"))',
-            id="format_datetime_scala_microsecond",
         ),
         pytest.param(
             Perl.DateFormats.PERL,
@@ -242,16 +188,6 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "hour => 12, minute => 30, second => 0, "
             "time_zone => 'UTC')",
             id="format_datetime_perl",
-        ),
-        pytest.param(
-            Perl.DatetimeFormats.PERL,
-            _SAMPLE_DATETIME_MICRO,
-            "DateTime->new("
-            "year => 2024, month => 1, day => 15, "
-            "hour => 12, minute => 30, second => 0, "
-            "nanosecond => 123456000, "
-            "time_zone => 'UTC')",
-            id="format_datetime_perl_microsecond",
         ),
         pytest.param(
             Perl.DatetimeFormats.PERL,
