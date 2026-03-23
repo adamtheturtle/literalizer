@@ -108,8 +108,8 @@ def test_dict_include_delimiters() -> None:
     argvalues=[False, True],
 )
 def test_dict_empty(*, include_delimiters: bool) -> None:
-    """An empty dict produces an empty string regardless of
-    include_delimiters.
+    """An empty dict produces the language's empty-dict literal when
+    delimiters are included, or an empty string without delimiters.
     """
     result = literalize_json(
         json_string=json.dumps(obj={}),
@@ -121,7 +121,8 @@ def test_dict_empty(*, include_delimiters: bool) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.code == ""
+    expected = "{}" if include_delimiters else ""
+    assert result.code == expected
 
 
 def test_integers() -> None:
@@ -316,8 +317,8 @@ def test_include_delimiters_with_line_prefix() -> None:
     argvalues=[False, True],
 )
 def test_empty_data(*, include_delimiters: bool) -> None:
-    """An empty list produces an empty string regardless of
-    include_delimiters.
+    """An empty list produces the language's empty-sequence literal when
+    delimiters are included, or an empty string without delimiters.
     """
     result = literalize_json(
         json_string=json.dumps(obj=[]),
@@ -329,7 +330,8 @@ def test_empty_data(*, include_delimiters: bool) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.code == ""
+    expected = "()" if include_delimiters else ""
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(

@@ -51,7 +51,7 @@ PYTHON = Python(
 
 
 def test_literalize_yaml_empty_sequence() -> None:
-    """An empty YAML sequence produces an empty string."""
+    """An empty YAML sequence produces the empty-sequence literal."""
     result = literalize_yaml(
         yaml_string="[]\n",
         language=PYTHON,
@@ -62,7 +62,7 @@ def test_literalize_yaml_empty_sequence() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.code == ""
+    assert result.code == "()"
 
 
 def test_literalize_yaml_sequence() -> None:

@@ -88,9 +88,6 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    if not data:
-        assert result.code == ""
-        return
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == tuple(_lists_to_tuples(value=v) for v in data)
 
@@ -130,9 +127,6 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    if not data:
-        assert result.code == ""
-        return
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == _lists_to_tuples(value=data)
 

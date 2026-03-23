@@ -295,7 +295,7 @@ class Rust(metaclass=LanguageCls):
             open_fn=fixed_dict_open(open_str="HashMap::from(["),
             close="])",
             format_entry=_format_rust_dict_entry,
-            empty_dict=None,
+            empty_dict="HashMap::<&str, &str>::from([])",
             preamble_lines=("use std::collections::HashMap;",),
         )
         self.multiline_trailing_comma = True

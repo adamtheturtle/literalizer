@@ -801,6 +801,12 @@ def _literalize(
     if isinstance(data, scalar_types) or data is None:
         return f"{line_prefix}{_format_scalar(value=data, spec=spec)}"
 
+    # Empty collections have no elements to lay out line-by-line, so
+    # delegate to _format_value which already returns the correct
+    # compact representation (e.g. ``{}``, ``[]``).
+    if not data and include_delimiters:
+        return f"{line_prefix}{_format_value(value=data, spec=spec)}"
+
     body_prefix = line_prefix + indent if include_delimiters else line_prefix
     lines: list[str] = []
 
@@ -1129,9 +1135,6 @@ def _resolve_yaml_comments(
             line_prefix=line_prefix,
         )
         return _ResolvedComments(result=result, pending=None)
-
-    if not base:
-        return _ResolvedComments(result=base, pending=None)
 
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
     ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
