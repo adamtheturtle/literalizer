@@ -26,6 +26,24 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_zig(value: datetime.date) -> str:
+    """Format a date as epoch seconds (midnight UTC)."""
+    dt = datetime.datetime(
+        year=value.year,
+        month=value.month,
+        day=value.day,
+        tzinfo=datetime.UTC,
+    )
+    return str(object=int(dt.timestamp()))
+
+
+@beartype
+def _format_datetime_zig(value: datetime.datetime) -> str:
+    """Format a datetime as epoch seconds."""
+    return str(object=int(value.timestamp()))
+
+
+@beartype
 def _to_val(value: str) -> str:
     """Wrap a pre-formatted value string in a Zig ``ZVal`` union literal.
 
@@ -105,6 +123,7 @@ class Zig(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Zig."""
 
+        ZIG = enum.member(value=_format_date_zig)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -114,6 +133,7 @@ class Zig(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Zig."""
 
+        ZIG = enum.member(value=_format_datetime_zig)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -183,8 +203,8 @@ class Zig(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.ZIG,
+        datetime_format: DatetimeFormats = DatetimeFormats.ZIG,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
