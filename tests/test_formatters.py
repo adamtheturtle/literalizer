@@ -1,10 +1,5 @@
 """Tests for literalizer formatters."""
 
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownArgumentType=false
-# pyright: reportUnknownVariableType=false
-# pyright: reportAttributeAccessIssue=false
-
 import datetime
 from collections.abc import Callable
 
@@ -29,13 +24,13 @@ _NON_UTC_DATETIME = datetime.datetime.fromisoformat(
     argnames=("func", "value", "expected"),
     argvalues=[
         pytest.param(
-            Elixir.DatetimeFormats.ELIXIR,
+            Elixir.datetime_formats.ELIXIR,
             _NON_UTC_DATETIME,
             "~U[2024-01-15 12:30:00+00:00]",
             id="format_datetime_elixir_non_utc",
         ),
         pytest.param(
-            Haskell.DatetimeFormats.HASKELL,
+            Haskell.datetime_formats.HASKELL,
             _NON_UTC_DATETIME,
             "HDatetime (UTCTime "
             "(fromGregorian 2024 1 15) "
@@ -43,7 +38,7 @@ _NON_UTC_DATETIME = datetime.datetime.fromisoformat(
             id="format_datetime_haskell_non_utc",
         ),
         pytest.param(
-            Perl.DatetimeFormats.PERL,
+            Perl.datetime_formats.PERL,
             _NON_UTC_DATETIME,
             "DateTime->new("
             "year => 2024, month => 1, day => 15, "
@@ -64,7 +59,7 @@ def test_format_datetime_non_utc(
 
 def test_format_datetime_epoch() -> None:
     """``format_datetime_epoch`` returns a numeric timestamp."""
-    result = Python.DatetimeFormats.EPOCH(_SAMPLE_DATETIME)
+    result = Python.datetime_formats.EPOCH(_SAMPLE_DATETIME)
     # The exact value depends on local timezone for naive datetimes,
     # so just check it parses as a float.
     float(result)
