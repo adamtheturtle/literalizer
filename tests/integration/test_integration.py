@@ -554,11 +554,10 @@ def _wrap_r(content: str) -> str:
 def _wrap_nim(content: str) -> str:
     """Wrap in a Nim expression.
 
-    Uses ``%*`` for JSON-compatible values; omits it for native types
-    like ``dateTime(...)`` that cannot be wrapped in a JSON node.
+    Top-level sequences in default (SEQ) format use ``@`` prefix.
     """
-    if "dateTime(" in content or content.lstrip().startswith("@"):
-        return f"let _ = {content}"
+    if content.lstrip().startswith("["):
+        return f"let _ = @{content}"
     return f"let _ = %* {content}"
 
 

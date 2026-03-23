@@ -1,5 +1,5 @@
 import json
-let _ = %* [
+let _ = @[
     "apple",  # inline comment
     # before banana
     "banana"

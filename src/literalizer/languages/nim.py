@@ -47,26 +47,39 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Nim ``var`` declaration.
+def _make_variable_declaration(
+    *,
+    seq_mode: bool,
+) -> Callable[[str, str, Value], str]:
+    """Create a Nim variable declaration formatter."""
 
-    Uses ``%*`` for JSON-compatible values; omits it for native types
-    like ``dateTime(...)`` that cannot be wrapped in a JSON node.
-    """
-    if "dateTime(" in value or value.lstrip().startswith("@"):
-        return f"var {name} = {value}"
-    return f"var {name} = %* {value}"
+    @beartype
+    def _format(name: str, value: str, _data: Value) -> str:
+        """Format a ``var`` declaration, using ``@`` for top-level
+        seqs.
+        """
+        if seq_mode and isinstance(_data, list):
+            return f"var {name} = @{value}"
+        return f"var {name} = %* {value}"
+
+    return _format
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Nim assignment to an existing variable.
+def _make_variable_assignment(
+    *,
+    seq_mode: bool,
+) -> Callable[[str, str, Value], str]:
+    """Create a Nim variable assignment formatter."""
 
-    Uses ``%*`` for JSON-compatible values; omits it for native types.
-    """
-    if "dateTime(" in value or value.lstrip().startswith("@"):
-        return f"{name} = {value}"
-    return f"{name} = %* {value}"
+    @beartype
+    def _format(name: str, value: str, _data: Value) -> str:
+        """Format an assignment, using ``@`` for top-level seqs."""
+        if seq_mode and isinstance(_data, list):
+            return f"{name} = @{value}"
+        return f"{name} = %* {value}"
+
+    return _format
 
 
 _string_format: Callable[[str], str] = format_string_backslash
@@ -129,7 +142,7 @@ class Nim(metaclass=LanguageCls):
         """Sequence type options for Nim."""
 
         SEQ = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="@["),
+            sequence_open=fixed_sequence_open(open_str="["),
             close="]",
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
@@ -294,11 +307,12 @@ class Nim(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        _seq = sequence_format is self.sequence_formats.SEQ
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            _make_variable_declaration(seq_mode=_seq)
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _make_variable_assignment(seq_mode=_seq)
         )
         _json = ("import json",)
         _date_map: dict[str, tuple[str, ...]] = {
