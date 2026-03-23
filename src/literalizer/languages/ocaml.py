@@ -300,6 +300,7 @@ class OCaml(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
+        self.format_integer: Callable[[int], str] = str
         self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style

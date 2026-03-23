@@ -241,6 +241,7 @@ class Bash(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
+        self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             _format_bash_sequence_entry
         )

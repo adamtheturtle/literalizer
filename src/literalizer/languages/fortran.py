@@ -384,6 +384,7 @@ class Fortran(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _string_format
+        self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval
         self.comment_format = comment_format
