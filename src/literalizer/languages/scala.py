@@ -365,7 +365,7 @@ class Scala(metaclass=LanguageCls):
         self.set_format = set_format
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        _scalar_overrides = {
+        _scalar_overrides: dict[type, str] = {
             datetime.date: _SCALA_SCALAR_TYPES[date_tp],
             datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
         }

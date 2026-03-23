@@ -377,7 +377,7 @@ class Kotlin(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        _scalar_overrides = {
+        _scalar_overrides: dict[type, str] = {
             datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
             datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
         }

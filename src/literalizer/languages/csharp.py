@@ -311,7 +311,7 @@ class CSharp(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        _scalar_overrides = {
+        _scalar_overrides: dict[type, str] = {
             datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
             datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
         }
