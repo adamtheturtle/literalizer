@@ -10,6 +10,6 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    const v: ZVal = .{ .str = "2024-01-15T12:30:00+00:00" };
+    const v: ZVal = .{ .int = 1705321800 };
     _ = v;
 }
