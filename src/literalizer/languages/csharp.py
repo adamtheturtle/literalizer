@@ -306,11 +306,12 @@ class CSharp(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
+        _scalar_overrides: dict[type, str] = {
+            datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
+            datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
+        }
         openers = _csharp_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
-                datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
-            },
+            scalar_type_overrides=_scalar_overrides,
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(

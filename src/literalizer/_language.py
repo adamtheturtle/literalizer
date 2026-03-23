@@ -431,11 +431,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """
 
     scalar_body_preamble: dict[type, tuple[str, ...]]
-    """Maps Python scalar types to body-preamble lines that belong
-    *inside* the module rather than before it.
+    """Maps Python scalar types to body-preamble lines that are
+    prepended to the generated code.
 
     Most languages leave this empty.  Haskell uses it for typeclass
-    instance definitions that must appear after the ``module`` header.
+    instance definitions.
     """
 
     type_hint_collection_preamble_lines: tuple[str, ...]
