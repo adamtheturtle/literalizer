@@ -22,6 +22,22 @@ class SequenceFormatConfig:
 
 
 @dataclasses.dataclass(frozen=True)
+class DateFormatConfig:
+    """Configuration for a single date format."""
+
+    formatter: Callable[[datetime.date], str]
+    preamble_lines: tuple[str, ...] = ()
+
+
+@dataclasses.dataclass(frozen=True)
+class DatetimeFormatConfig:
+    """Configuration for a single datetime format."""
+
+    formatter: Callable[[datetime.datetime], str]
+    preamble_lines: tuple[str, ...] = ()
+
+
+@dataclasses.dataclass(frozen=True)
 class SetFormatConfig:
     """Configuration for a single set format."""
 

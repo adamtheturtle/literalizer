@@ -19,6 +19,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -113,20 +115,26 @@ class CSharp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for C#."""
 
-        CSHARP = enum.member(value=_format_date_csharp)
+        CSHARP = DateFormatConfig(
+            formatter=_format_date_csharp,
+            preamble_lines=("using System;",),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C#."""
 
-        CSHARP = enum.member(value=_format_datetime_csharp)
+        CSHARP = DatetimeFormatConfig(
+            formatter=_format_datetime_csharp,
+            preamble_lines=("using System;",),
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -312,20 +320,11 @@ class CSharp(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        _date_map: dict[str, tuple[str, ...]] = {
-            "CSHARP": ("using System;",),
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "CSHARP": ("using System;",),
-        }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p
             for t, p in (
-                (datetime.date, _date_map.get(date_format.name, ())),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, ()),
-                ),
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
             )
             if p
         }

@@ -19,6 +19,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -85,22 +87,28 @@ class Swift(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
 
-        SWIFT = enum.member(value=_format_date_swift)
-        ISO = enum.member(value=format_date_iso)
+        SWIFT = DateFormatConfig(
+            formatter=_format_date_swift,
+            preamble_lines=("import Foundation",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Swift."""
 
-        SWIFT = enum.member(value=_format_datetime_swift)
-        ISO = enum.member(value=format_datetime_iso)
+        SWIFT = DatetimeFormatConfig(
+            formatter=_format_datetime_swift,
+            preamble_lines=("import Foundation",),
+        )
+        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -279,21 +287,11 @@ class Swift(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        _foundation = ("import Foundation",)
-        _date_map: dict[str, tuple[str, ...]] = {
-            "SWIFT": _foundation,
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "SWIFT": _foundation,
-        }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p
             for t, p in (
-                (datetime.date, _date_map.get(date_format.name, ())),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, ()),
-                ),
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
             )
             if p
         }

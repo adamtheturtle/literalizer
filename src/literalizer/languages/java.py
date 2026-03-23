@@ -19,6 +19,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -145,21 +147,33 @@ class Java(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Java."""
 
-        JAVA = enum.member(value=_format_date_java)
+        JAVA = DateFormatConfig(
+            formatter=_format_date_java,
+            preamble_lines=("import java.time.LocalDate;",),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Java."""
 
-        INSTANT = enum.member(value=_format_datetime_java_instant)
-        ZONED = enum.member(value=_format_datetime_java_zoned)
+        INSTANT = DatetimeFormatConfig(
+            formatter=_format_datetime_java_instant,
+            preamble_lines=("import java.time.Instant;",),
+        )
+        ZONED = DatetimeFormatConfig(
+            formatter=_format_datetime_java_zoned,
+            preamble_lines=(
+                "import java.time.ZoneId;",
+                "import java.time.ZonedDateTime;",
+            ),
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -349,24 +363,11 @@ class Java(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        _date_map: dict[str, tuple[str, ...]] = {
-            "JAVA": ("import java.time.LocalDate;",),
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "INSTANT": ("import java.time.Instant;",),
-            "ZONED": (
-                "import java.time.ZoneId;",
-                "import java.time.ZonedDateTime;",
-            ),
-        }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p
             for t, p in (
-                (datetime.date, _date_map.get(date_format.name, ())),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, ()),
-                ),
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
             )
             if p
         }

@@ -16,6 +16,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -119,20 +121,30 @@ class Rust(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
 
-        RUST = enum.member(value=_format_date_rust)
+        RUST = DateFormatConfig(
+            formatter=_format_date_rust,
+            preamble_lines=("use chrono::NaiveDate;",),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Rust."""
 
-        RUST = enum.member(value=_format_datetime_rust)
+        RUST = DatetimeFormatConfig(
+            formatter=_format_datetime_rust,
+            preamble_lines=(
+                "use chrono::NaiveDate;",
+                "use chrono::NaiveDateTime;",
+                "use chrono::NaiveTime;",
+            ),
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -329,11 +341,11 @@ class Rust(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            datetime.date: ("use chrono::NaiveDate;",),
-            datetime.datetime: (
-                "use chrono::NaiveDate;",
-                "use chrono::NaiveDateTime;",
-                "use chrono::NaiveTime;",
-            ),
+            t: p
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
+            )
+            if p
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

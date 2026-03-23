@@ -8,6 +8,8 @@ from literalizer._core import (
 from literalizer._formatters import fixed_dict_open, fixed_sequence_open
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     Language,
     LanguageCls,
@@ -18,6 +20,8 @@ from literalizer._language import (
 
 __all__ = [
     "CommentConfig",
+    "DateFormatConfig",
+    "DatetimeFormatConfig",
     "DictFormatConfig",
     "Language",
     "LanguageCls",
