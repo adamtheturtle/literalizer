@@ -1,0 +1,13 @@
+import std.json;
+void _check() {
+auto my_data = JSONValue([
+    // line 1
+    // line 2
+    JSONValue("a"),
+]);
+my_data = JSONValue([
+    // line 1
+    // line 2
+    JSONValue("a"),
+]);
+}

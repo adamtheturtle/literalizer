@@ -1,0 +1,4 @@
+x <- list(
+    "a"
+    # trailing
+)

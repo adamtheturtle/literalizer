@@ -1,0 +1,8 @@
+@code json
+[
+    % first%
+    "a",
+    % second%
+    "b"
+]
+@end

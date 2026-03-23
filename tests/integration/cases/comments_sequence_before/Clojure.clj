@@ -1,0 +1,6 @@
+[
+    ; first
+    "a"
+    ; second
+    "b"
+]

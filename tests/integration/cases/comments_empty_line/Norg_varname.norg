@@ -1,0 +1,8 @@
+* my_data
+@code json
+[
+    "a",
+    %%
+    "b"
+]
+@end

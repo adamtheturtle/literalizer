@@ -1,0 +1,4 @@
+def x = [
+    // # section
+    "a",
+]
