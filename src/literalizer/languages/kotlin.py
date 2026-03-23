@@ -252,6 +252,7 @@ class Kotlin(metaclass=LanguageCls):
             set_open=typed_set_open(
                 type_to_opener=_kotlin_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).set,
                 fallback="setOf<Any?>(",
             ),

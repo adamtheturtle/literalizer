@@ -167,6 +167,7 @@ class CSharp(metaclass=LanguageCls):
             sequence_open=typed_sequence_open(
                 type_to_opener=_csharp_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).seq,
                 fallback="new object[] {",
             ),
@@ -192,6 +193,7 @@ class CSharp(metaclass=LanguageCls):
             set_open=typed_set_open(
                 type_to_opener=_csharp_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).set,
                 fallback="new HashSet<object> {",
             ),

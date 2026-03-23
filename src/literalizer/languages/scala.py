@@ -218,6 +218,7 @@ class Scala(metaclass=LanguageCls):
             sequence_open=typed_sequence_open(
                 type_to_opener=_scala_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).seq,
                 fallback="Array(",
             ),
@@ -243,6 +244,7 @@ class Scala(metaclass=LanguageCls):
             set_open=typed_set_open(
                 type_to_opener=_scala_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).set,
                 fallback="Set(",
             ),

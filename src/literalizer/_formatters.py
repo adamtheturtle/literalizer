@@ -118,7 +118,7 @@ class TypedOpenerConfig:
         self,
         *,
         scalar_type_overrides: Mapping[type, str],
-        set_opener_template: str | None = None,
+        set_opener_template: str | None,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.

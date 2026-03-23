@@ -200,6 +200,7 @@ class Java(metaclass=LanguageCls):
             sequence_open=typed_sequence_open(
                 type_to_opener=_java_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).seq,
                 fallback="new Object[]{",
             ),
@@ -350,6 +351,7 @@ class Java(metaclass=LanguageCls):
             scalar_type_overrides[datetime.datetime] = dt_tp
         openers = _java_opener_config.build(
             scalar_type_overrides=scalar_type_overrides,
+            set_opener_template=None,
         )
         seq_open: Callable[[list[Value]], str] = fmt.sequence_open
         if sequence_format.name == "ARRAY":
