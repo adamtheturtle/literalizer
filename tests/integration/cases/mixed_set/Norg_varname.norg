@@ -1,0 +1,8 @@
+* my_data
+@code json
+[
+    true,
+    42,
+    "apple"
+]
+@end
