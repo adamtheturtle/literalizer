@@ -54,6 +54,23 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{erlang_name} = {value}"
 
 
+@beartype
+def _format_date_erlang(value: datetime.date) -> str:
+    """Format a date as an Erlang ``{Year, Month, Day}`` tuple."""
+    return f"{{{value.year}, {value.month}, {value.day}}}"
+
+
+@beartype
+def _format_datetime_erlang(value: datetime.datetime) -> str:
+    """Format a datetime as an Erlang ``{{Y, M, D}, {H, Min, S}}``
+    tuple.
+    """
+    return (
+        f"{{{{{value.year}, {value.month}, {value.day}}}, "
+        f"{{{value.hour}, {value.minute}, {value.second}}}}}"
+    )
+
+
 _string_format: Callable[[str], str] = format_string_backslash
 
 
@@ -62,6 +79,20 @@ class Erlang(metaclass=LanguageCls):
     """Erlang language specification.
 
     Args:
+        date_format: Which date format to use.
+
+            * ``date_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15"``.
+            * ``date_formats.ERLANG`` — Erlang date tuple,
+              e.g. ``{2024, 1, 15}``.
+
+        datetime_format: Which datetime format to use.
+
+            * ``datetime_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
+            * ``datetime_formats.ERLANG`` — Erlang datetime tuple,
+              e.g. ``{{2024, 1, 15}, {12, 30, 0}}``.
+
         sequence_format: Which Erlang sequence type to use.
 
             * ``sequence_formats.LIST`` — list literal,
@@ -77,6 +108,7 @@ class Erlang(metaclass=LanguageCls):
         """Date format options for Erlang."""
 
         ISO = enum.member(value=format_date_iso)
+        ERLANG = enum.member(value=_format_date_erlang)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -86,6 +118,7 @@ class Erlang(metaclass=LanguageCls):
         """Datetime format options for Erlang."""
 
         ISO = enum.member(value=format_datetime_iso)
+        ERLANG = enum.member(value=_format_datetime_erlang)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
