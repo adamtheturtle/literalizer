@@ -338,11 +338,12 @@ class CSharp(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        date_preamble = date_format.value.preamble_lines
-        datetime_preamble = datetime_format.value.preamble_lines
-        if date_preamble:
-            self.scalar_preamble[datetime.date] = date_preamble
-        if datetime_preamble:
-            self.scalar_preamble[datetime.datetime] = datetime_preamble
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            k: v
+            for k, v in {
+                datetime.date: date_format.value.preamble_lines,
+                datetime.datetime: (datetime_format.value.preamble_lines),
+            }.items()
+            if v
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
