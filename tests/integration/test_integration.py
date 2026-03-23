@@ -993,9 +993,9 @@ def _wrap_vb(content: str) -> str:
     declaration = lang.format_variable_declaration(
         "x As Object",
         content,
-        None,  # type: ignore[arg-type]
+        None,
     )
-    return _wrap_vb_varname(declaration)
+    return _wrap_vb_varname(content=declaration)
 
 
 @beartype
