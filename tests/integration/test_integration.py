@@ -1584,7 +1584,7 @@ def _build_declaration_style_variants() -> dict[str, _Variant]:
                 spec=lang_config.lang_cls(
                     declaration_style=fmt,
                 ),
-                wrap=lang_config.wrap,
+                wrap=lang_config.varname_wrap,
             )
     return variants
 
