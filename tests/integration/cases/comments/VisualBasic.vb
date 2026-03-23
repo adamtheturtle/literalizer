@@ -1,9 +1,9 @@
 Imports System.Collections.Generic
 Module Check
-    Dim x As Object = ' Server configuration
+    ' Server configuration
     ' default host
     ' Enable debug mode
-    New Dictionary(Of String, Object) From {
+    Dim x As Object = New Dictionary(Of String, Object) From {
         {"host", "localhost"},
         {"port", 8080},
         {"debug", True}

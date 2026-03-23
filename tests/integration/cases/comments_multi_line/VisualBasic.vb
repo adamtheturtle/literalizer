@@ -1,8 +1,8 @@
 Imports System.Collections.Generic
 Module Check
-    Dim x As Object = ' line 1
+    ' line 1
     ' line 2
-    New String() {
+    Dim x As Object = New String() {
         "a"
     }
 End Module

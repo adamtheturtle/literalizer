@@ -984,10 +984,18 @@ def _wrap_julia(content: str) -> str:
 
 @beartype
 def _wrap_vb(content: str) -> str:
-    """Wrap in a VB.NET Module with a Dim declaration."""
-    content_indented = content.replace("\n", "\n    ")
-    body = f"    Dim x As Object = {content_indented}"
-    return f"Module Check\n{body}\nEnd Module"
+    """Wrap in a VB.NET Module with a Dim declaration.
+
+    Comment hoisting is delegated to the language module's
+    ``format_variable_declaration``.
+    """
+    lang = literalizer.languages.VisualBasic()
+    declaration = lang.format_variable_declaration(
+        "x As Object",
+        content,
+        None,  # type: ignore[arg-type]
+    )
+    return _wrap_vb_varname(declaration)
 
 
 @beartype
