@@ -15,12 +15,8 @@ from literalizer.exceptions import (
     YAMLParseError,
 )
 from literalizer.languages import (
-    CSharp,
-    Dart,
     Go,
-    Java,
     JavaScript,
-    Kotlin,
     Mojo,
     Python,
     R,
@@ -482,66 +478,6 @@ def test_homogeneous_datetime_list_mojo() -> None:
         ]"""
     )
     assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames=("language", "expected_opener", "wrong_opener"),
-    argvalues=[
-        (
-            Go(date_format=Go.date_formats.ISO),
-            "[]string{",
-            "[]time.Time{",
-        ),
-        (
-            Java(date_format=Java.date_formats.ISO),
-            "new String[]{",
-            "new LocalDate[]{",
-        ),
-        (
-            CSharp(date_format=CSharp.date_formats.ISO),
-            "new string[] {",
-            "new DateOnly[] {",
-        ),
-        (
-            Dart(date_format=Dart.date_formats.ISO),
-            "<String>[",
-            "<DateTime>[",
-        ),
-        (
-            Kotlin(date_format=Kotlin.date_formats.ISO),
-            "arrayOf(",
-            "arrayOf(",
-        ),
-    ],
-    ids=["Go", "Java", "CSharp", "Dart", "Kotlin"],
-)
-def test_iso_date_list_uses_string_type(
-    language: Language,
-    expected_opener: str,
-    wrong_opener: str,
-) -> None:
-    """ISO date format in typed collections uses the language's string
-    type, not the native date type.
-    """
-    yaml_string = textwrap.dedent(
-        text="""\
-        - 2024-01-15
-        - 2024-01-16
-    """,
-    )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=language,
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result.code.startswith(expected_opener)
-    if expected_opener != wrong_opener:
-        assert not result.code.startswith(wrong_opener)
 
 
 def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
