@@ -17,5 +17,5 @@ instance Num Val where
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"
-my_data :: Val
-my_data = HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000))
+x :: Val
+x = "2024-01-15T12:30:00"
