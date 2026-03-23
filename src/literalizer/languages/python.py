@@ -210,7 +210,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
             return f"{sequence_hint}[{elem_union}]"
-        case _:
+        case _:  # pragma: no cover
             assert_never(data)
 
 

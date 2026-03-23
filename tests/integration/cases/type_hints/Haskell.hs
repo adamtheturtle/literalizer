@@ -22,5 +22,8 @@ x = HMap [
     ("name", "Alice"),
     ("age", 30),
     ("active", HBool True),
-    ("score", HNull)
+    ("score", HNull),
+    ("joined", HDate (fromGregorian 2024 1 15)),
+    ("last_login", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000))),
+    ("avatar", "48656c6c6f")
     ]
