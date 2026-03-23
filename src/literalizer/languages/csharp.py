@@ -73,12 +73,17 @@ _csharp_opener_config = TypedOpenerConfig(
     set_opener_template="new HashSet<{type_name}> {{",
 )
 
-_csharp_sorted_set_type_to_opener = make_type_to_opener(
-    element_to_type=make_element_to_type(
-        scalar_types=_CSHARP_SCALAR_TYPES,
-        list_template="{inner}[]",
+_CSHARP_SET_OPENER_TEMPLATES: dict[str, tuple[str, str]] = {
+    "HASH_SET": ("new HashSet<{type_name}> {{", "new HashSet<object> {"),
+    "SORTED_SET": (
+        "new SortedSet<{type_name}> {{",
+        "new SortedSet<object> {",
     ),
-    opener_template="new SortedSet<{type_name}> {{",
+}
+
+_csharp_element_to_type_default = make_element_to_type(
+    scalar_types=_CSHARP_SCALAR_TYPES,
+    list_template="{inner}[]",
 )
 
 
@@ -90,24 +95,20 @@ def _build_set_format_config(
     scalar_type_overrides: dict[type, str],
 ) -> SetFormatConfig:
     """Build the resolved set format config for a chosen format."""
-    if set_format_name == "SORTED_SET":
-        eto = make_element_to_type(
-            scalar_types={**_CSHARP_SCALAR_TYPES, **scalar_type_overrides},
-            list_template="{inner}[]",
-        )
-        tto = make_type_to_opener(
-            element_to_type=eto,
-            opener_template="new SortedSet<{type_name}> {{",
-        )
-        fallback = "new SortedSet<object> {"
-    else:
-        tto = _csharp_opener_config.build(
-            scalar_type_overrides=scalar_type_overrides,
-        ).set
-        fallback = "new HashSet<object> {"
+    template, fallback = _CSHARP_SET_OPENER_TEMPLATES[set_format_name]
+    eto = make_element_to_type(
+        scalar_types={**_CSHARP_SCALAR_TYPES, **scalar_type_overrides},
+        list_template="{inner}[]",
+    )
     return dataclasses.replace(
         set_format_value,
-        set_open=typed_set_open(type_to_opener=tto, fallback=fallback),
+        set_open=typed_set_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=eto,
+                opener_template=template,
+            ),
+            fallback=fallback,
+        ),
     )
 
 
@@ -229,10 +230,13 @@ class CSharp(metaclass=LanguageCls):
 
         HASH_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_csharp_opener_config.build(
-                    scalar_type_overrides={},
-                ).set,
-                fallback="new HashSet<object> {",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_csharp_element_to_type_default,
+                    opener_template=_CSHARP_SET_OPENER_TEMPLATES["HASH_SET"][
+                        0
+                    ],
+                ),
+                fallback=_CSHARP_SET_OPENER_TEMPLATES["HASH_SET"][1],
             ),
             close="}",
             empty_set="new HashSet<object>()",
@@ -240,8 +244,13 @@ class CSharp(metaclass=LanguageCls):
         )
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_csharp_sorted_set_type_to_opener,
-                fallback="new SortedSet<object> {",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_csharp_element_to_type_default,
+                    opener_template=_CSHARP_SET_OPENER_TEMPLATES["SORTED_SET"][
+                        0
+                    ],
+                ),
+                fallback=_CSHARP_SET_OPENER_TEMPLATES["SORTED_SET"][1],
             ),
             close="}",
             empty_set="new SortedSet<object>()",

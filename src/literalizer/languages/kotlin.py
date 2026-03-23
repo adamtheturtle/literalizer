@@ -106,12 +106,14 @@ _kotlin_opener_config = TypedOpenerConfig(
     set_opener_template="setOf<{type_name}>(",
 )
 
-_kotlin_sorted_set_type_to_opener = make_type_to_opener(
-    element_to_type=make_element_to_type(
-        scalar_types=_KOTLIN_SCALAR_TYPES,
-        list_template="Array<{inner}>",
-    ),
-    opener_template="sortedSetOf<{type_name}>(",
+_KOTLIN_SET_OPENER_TEMPLATES: dict[str, tuple[str, str]] = {
+    "SET": ("setOf<{type_name}>(", "setOf<Any?>("),
+    "SORTED_SET": ("sortedSetOf<{type_name}>(", "sortedSetOf<Any?>("),
+}
+
+_kotlin_element_to_type_default = make_element_to_type(
+    scalar_types=_KOTLIN_SCALAR_TYPES,
+    list_template="Array<{inner}>",
 )
 
 
@@ -260,10 +262,11 @@ class Kotlin(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.build(
-                    scalar_type_overrides={},
-                ).set,
-                fallback="setOf<Any?>(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_element_to_type_default,
+                    opener_template=_KOTLIN_SET_OPENER_TEMPLATES["SET"][0],
+                ),
+                fallback=_KOTLIN_SET_OPENER_TEMPLATES["SET"][1],
             ),
             close=")",
             empty_set=None,
@@ -271,8 +274,13 @@ class Kotlin(metaclass=LanguageCls):
         )
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_sorted_set_type_to_opener,
-                fallback="sortedSetOf<Any?>(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_element_to_type_default,
+                    opener_template=_KOTLIN_SET_OPENER_TEMPLATES["SORTED_SET"][
+                        0
+                    ],
+                ),
+                fallback=_KOTLIN_SET_OPENER_TEMPLATES["SORTED_SET"][1],
             ),
             close=")",
             empty_set=None,
@@ -383,27 +391,24 @@ class Kotlin(metaclass=LanguageCls):
                 datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
             },
         )
-        if set_format.name == "SORTED_SET":
-            _eto = make_element_to_type(
-                scalar_types={
-                    **_KOTLIN_SCALAR_TYPES,
-                    datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
-                    datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
-                },
-                list_template="Array<{inner}>",
-            )
-            _set_tto = make_type_to_opener(
-                element_to_type=_eto,
-                opener_template="sortedSetOf<{type_name}>(",
-            )
-            _set_fallback = "sortedSetOf<Any?>("
-        else:
-            _set_tto = openers.set
-            _set_fallback = "setOf<Any?>("
+        _set_template, _set_fallback = _KOTLIN_SET_OPENER_TEMPLATES[
+            set_format.name
+        ]
+        _set_eto = make_element_to_type(
+            scalar_types={
+                **_KOTLIN_SCALAR_TYPES,
+                datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
+                datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
+            },
+            list_template="Array<{inner}>",
+        )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=_set_tto,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_set_eto,
+                    opener_template=_set_template,
+                ),
                 fallback=_set_fallback,
             ),
         )
