@@ -34,6 +34,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    date_scalar_preamble,
 )
 from literalizer._types import Value
 
@@ -466,13 +467,11 @@ class Kotlin(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            date_scalar_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
             )
-            if p
-        }
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
