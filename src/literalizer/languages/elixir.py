@@ -30,15 +30,26 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_elixir(value: datetime.date) -> str:
-    """Format a date as an Elixir ``~D`` sigil."""
+    """Format a date as an Elixir ``~D[...]`` sigil."""
     return f"~D[{value.isoformat()}]"
 
 
 @beartype
 def _format_datetime_elixir(value: datetime.datetime) -> str:
-    """Format a datetime as an Elixir ``~U`` sigil."""
-    naive = value.replace(tzinfo=None)
-    return f"~U[{naive.isoformat()}Z]"
+    """Format a datetime as an Elixir sigil.
+
+    Uses ``~U`` for timezone-aware datetimes (converted to UTC, since
+    the ``~U`` sigil only accepts UTC offsets) and ``~N`` for naive ones.
+    """
+    if value.tzinfo is not None:
+        utc_value = value.astimezone(tz=datetime.UTC)
+        iso = utc_value.isoformat()
+        # Elixir sigil syntax uses a space separator instead of T.
+        iso = iso.replace("T", " ")
+        return f"~U[{iso}]"
+    iso = value.isoformat()
+    iso = iso.replace("T", " ")
+    return f"~N[{iso}]"
 
 
 @beartype
@@ -73,19 +84,21 @@ class Elixir(metaclass=LanguageCls):
     """Elixir language specification.
 
     Args:
-        date_format: How to format :class:`datetime.date` values.
+        date_format: Which date format to use.
 
-            * ``date_formats.ELIXIR`` — ``~D`` sigil,
+            * ``date_formats.ELIXIR`` — Elixir ``~D`` sigil,
               e.g. ``~D[2024-01-15]``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
+            * ``date_formats.ISO`` — ISO 8601 string literal,
               e.g. ``"2024-01-15"``.
 
-        datetime_format: How to format :class:`datetime.datetime` values.
+        datetime_format: Which datetime format to use.
 
-            * ``datetime_formats.ELIXIR`` — ``~U`` sigil,
-              e.g. ``~U[2024-01-15T12:30:00Z]``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
+            * ``datetime_formats.ELIXIR`` — Elixir ``~U`` sigil for
+              timezone-aware datetimes (e.g. ``~U[2024-01-15 12:30:00+00:00]``)
+              or ``~N`` sigil for naive datetimes
+              (e.g. ``~N[2024-01-15 12:30:00]``).
+            * ``datetime_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
 
         sequence_format: Which Elixir sequence type to use.
 

@@ -7,10 +7,11 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
-    ListType,
     MixedNumeric,
     format_bytes_hex,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -53,34 +54,20 @@ _CSHARP_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "DateTime",
 }
 
+_csharp_element_to_type = make_element_to_type(
+    scalar_types=_CSHARP_SCALAR_TYPES,
+    list_template="{inner}[]",
+)
 
-@beartype
-def _csharp_element_to_type(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a C# type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _csharp_element_to_type(element_type=element_type.inner)
-        return f"{inner}[]" if inner is not None else None
-    return _CSHARP_SCALAR_TYPES.get(element_type)
+_csharp_type_to_opener = make_type_to_opener(
+    element_to_type=_csharp_element_to_type,
+    opener_template="new {type_name}[] {{",
+)
 
-
-@beartype
-def _csharp_type_to_opener(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a C# array opener."""
-    type_name = _csharp_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"new {type_name}[] {{"
-
-
-@beartype
-def _csharp_dict_type_to_opener(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a C# dictionary opener."""
-    type_name = _csharp_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"new Dictionary<string, {type_name}> {{"
+_csharp_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_csharp_element_to_type,
+    opener_template="new Dictionary<string, {type_name}> {{",
+)
 
 
 @beartype

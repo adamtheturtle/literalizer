@@ -5,6 +5,7 @@ import enum
 import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
+from typing import cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -128,6 +129,32 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
+def _element_union(*, types: list[str]) -> str:
+    """De-duplicate *types* and join into a union."""
+    unique: list[str] = list(dict.fromkeys(types))
+    if len(unique) == 1:
+        return unique[0]
+    return " | ".join(unique)
+
+
+@beartype
+def _collection_element_union(
+    *,
+    elements: frozenset[Value] | list[Value],
+    recurse: Callable[..., str],
+) -> str:
+    """Return the element union for a collection, or ``"Any"`` if
+    empty.
+    """
+    if not elements:
+        return "Any"
+    types = [recurse(data=e) for e in elements]
+    if isinstance(elements, frozenset):
+        types.sort()
+    return _element_union(types=types)
+
+
+@beartype
 def _python_type_hint(
     data: Value,
     *,
@@ -142,8 +169,7 @@ def _python_type_hint(
     """
     # Order matters: datetime before date (datetime is a date subclass),
     # bool before int (bool is an int subclass).
-    # OrderedDict / ordereddict before dict.
-    type_hints: tuple[tuple[type, str], ...] = (
+    scalar_hints: tuple[tuple[type, str], ...] = (
         (type(None), "None"),
         (bool, "bool"),
         (int, "int"),
@@ -152,17 +178,47 @@ def _python_type_hint(
         (bytes, bytes_hint),
         (datetime.datetime, datetime_hint),
         (datetime.date, date_hint),
-        (ordereddict, "OrderedDict[str, Any]"),
-        (OrderedDict, "OrderedDict[str, Any]"),
-        (dict, "dict[str, Any]"),
-        (set, set_hint),
-        (frozenset, set_hint),
     )
-    for typ, hint in type_hints:
+    for typ, hint in scalar_hints:
         if isinstance(data, typ):
             return hint
+
+    recurse = functools.partial(
+        _python_type_hint,
+        bytes_hint=bytes_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        sequence_hint=sequence_hint,
+        set_hint=set_hint,
+    )
+
+    if isinstance(data, dict):
+        outer = (
+            "OrderedDict"
+            if isinstance(data, (ordereddict, OrderedDict))
+            else "dict"
+        )
+        val_union = _collection_element_union(
+            elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            recurse=recurse,
+        )
+        return f"{outer}[str, {val_union}]"
+
+    if isinstance(data, (set, frozenset)):
+        elem_union = _collection_element_union(
+            elements=frozenset(data),
+            recurse=recurse,
+        )
+        return f"{set_hint}[{elem_union}]"
+
     # The only remaining Value type is list.
-    return sequence_hint
+    elem_union = _collection_element_union(
+        elements=cast("list[Value]", data),
+        recurse=recurse,
+    )
+    if sequence_hint == "tuple":
+        return f"{sequence_hint}[{elem_union}, ...]"
+    return f"{sequence_hint}[{elem_union}]"
 
 
 @beartype
@@ -296,10 +352,8 @@ class Python(metaclass=LanguageCls):
 
         @property
         def type_hint(self) -> str:
-            """The Python type hint for this sequence format."""
-            if self is type(self).LIST:
-                return "list[Any]"
-            return "tuple[Any, ...]"
+            """Python type hint name for this sequence format."""
+            return "tuple" if self is type(self).TUPLE else "list"
 
     class SetFormats(enum.Enum):
         """Set type options for Python."""
@@ -317,10 +371,8 @@ class Python(metaclass=LanguageCls):
 
         @property
         def type_hint(self) -> str:
-            """The Python type hint for this set format."""
-            if self is type(self).FROZENSET:
-                return "frozenset[Any]"
-            return "set[Any]"
+            """Python type hint name for this set format."""
+            return "frozenset" if self is type(self).FROZENSET else "set"
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""

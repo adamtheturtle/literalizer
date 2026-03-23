@@ -32,21 +32,26 @@ from literalizer._types import Value
 def _format_date_swift(value: datetime.date) -> str:
     """Format a date as a Swift ``DateComponents`` expression."""
     return (
-        f"DateComponents(calendar: Calendar(identifier: .gregorian), "
-        f"year: {value.year}, month: {value.month}, "
-        f"day: {value.day}).date!"
+        "DateComponents("
+        "calendar: Calendar(identifier: .gregorian), "
+        f"year: {value.year}, month: {value.month}, day: {value.day}"
+        ").date!"
     )
 
 
 @beartype
 def _format_datetime_swift(value: datetime.datetime) -> str:
     """Format a datetime as a Swift ``DateComponents`` expression."""
-    return (
-        f"DateComponents(calendar: Calendar(identifier: .gregorian), "
-        f"year: {value.year}, month: {value.month}, "
-        f"day: {value.day}, hour: {value.hour}, "
-        f"minute: {value.minute}, second: {value.second}).date!"
+    parts = (
+        "DateComponents("
+        "calendar: Calendar(identifier: .gregorian), "
+        f"year: {value.year}, month: {value.month}, day: {value.day}, "
+        f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
     )
+    if value.microsecond:
+        nanosecond = value.microsecond * 1000
+        parts += f", nanosecond: {nanosecond}"
+    return parts + ").date!"
 
 
 @beartype
@@ -72,11 +77,10 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
+    """Return required imports for Swift."""
     if "DateComponents(" in code:
-        lines.append("import Foundation")
-    return lines
+        return ("import Foundation",)
+    return ()
 
 
 @beartype

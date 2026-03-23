@@ -7,11 +7,12 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
-    ListType,
     MixedNumeric,
     dict_entry_with_separator,
     format_bytes_hex,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     typed_dict_open,
     typed_sequence_open,
@@ -74,34 +75,20 @@ _GO_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "time.Time",
 }
 
+_go_element_to_type = make_element_to_type(
+    scalar_types=_GO_SCALAR_TYPES,
+    list_template="[]{inner}",
+)
 
-@beartype
-def _go_element_to_type(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Go type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _go_element_to_type(element_type=element_type.inner)
-        return f"[]{inner}" if inner is not None else None
-    return _GO_SCALAR_TYPES.get(element_type)
+_go_type_to_opener = make_type_to_opener(
+    element_to_type=_go_element_to_type,
+    opener_template="[]{type_name}{{",
+)
 
-
-@beartype
-def _go_type_to_opener(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a Go slice opener."""
-    type_name = _go_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"[]{type_name}{{"
-
-
-@beartype
-def _go_dict_type_to_opener(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a Go map opener."""
-    type_name = _go_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"map[string]{type_name}{{"
+_go_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_go_element_to_type,
+    opener_template="map[string]{type_name}{{",
+)
 
 
 @beartype

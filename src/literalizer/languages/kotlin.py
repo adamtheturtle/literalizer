@@ -11,6 +11,8 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     format_bytes_hex,
     format_string_backslash_dollar,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -84,27 +86,15 @@ _KOTLIN_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "LocalDateTime",
 }
 
+_kotlin_element_to_type = make_element_to_type(
+    scalar_types=_KOTLIN_SCALAR_TYPES,
+    list_template="Array<{inner}>",
+)
 
-@beartype
-def _kotlin_element_to_type(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a Kotlin type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _kotlin_element_to_type(element_type=element_type.inner)
-        return f"Array<{inner}>" if inner is not None else None
-    return _KOTLIN_SCALAR_TYPES.get(element_type)
-
-
-@beartype
-def _kotlin_dict_type_to_opener(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a Kotlin map opener."""
-    type_name = _kotlin_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"mapOf<String, {type_name}>("
+_kotlin_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_kotlin_element_to_type,
+    opener_template="mapOf<String, {type_name}>(",
+)
 
 
 @beartype

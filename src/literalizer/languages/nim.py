@@ -54,13 +54,13 @@ def _preamble(_code: str) -> Sequence[str]:
 
 @beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Nim ``var`` declaration using ``%*`` for JSON nodes."""
+    """Format a Nim ``var`` declaration."""
     return f"var {name} = %*{value}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Nim assignment to an existing variable using ``%*``."""
+    """Format a Nim assignment to an existing variable."""
     return f"{name} = %*{value}"
 
 

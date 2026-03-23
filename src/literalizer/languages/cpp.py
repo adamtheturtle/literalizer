@@ -7,10 +7,11 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
-    ListType,
     MixedNumeric,
     format_bytes_hex,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -63,34 +64,20 @@ _CPP_SCALAR_TYPES: dict[type, str] = {
     bytes: "std::string",
 }
 
+_cpp_element_to_type = make_element_to_type(
+    scalar_types=_CPP_SCALAR_TYPES,
+    list_template="std::vector<{inner}>",
+)
 
-@beartype
-def _cpp_element_to_type(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a C++ type name, recursively."""
-    if isinstance(element_type, ListType):
-        inner = _cpp_element_to_type(element_type=element_type.inner)
-        return f"std::vector<{inner}>" if inner is not None else None
-    return _CPP_SCALAR_TYPES.get(element_type)
+_cpp_type_to_opener = make_type_to_opener(
+    element_to_type=_cpp_element_to_type,
+    opener_template="std::vector<{type_name}>{{",
+)
 
-
-@beartype
-def _cpp_type_to_opener(element_type: type | ListType) -> str | None:
-    """Map a Python element type to a C++ initializer-list opener."""
-    type_name = _cpp_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"std::vector<{type_name}>{{"
-
-
-@beartype
-def _cpp_dict_type_to_opener(
-    element_type: type | ListType,
-) -> str | None:
-    """Map a Python element type to a C++ map opener."""
-    type_name = _cpp_element_to_type(element_type=element_type)
-    if type_name is None:
-        return None
-    return f"std::map<std::string, {type_name}>{{"
+_cpp_dict_type_to_opener = make_type_to_opener(
+    element_to_type=_cpp_element_to_type,
+    opener_template="std::map<std::string, {type_name}>{{",
+)
 
 
 @beartype
