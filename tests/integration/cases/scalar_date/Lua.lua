@@ -1,1 +1,1 @@
-local _ = "2024-01-15"
+local _ = os.time({year = 2024, month = 1, day = 15, hour = 0, min = 0, sec = 0})
