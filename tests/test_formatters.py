@@ -18,6 +18,7 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Kotlin,
+    Perl,
     Python,
     Ruby,
     Rust,
@@ -191,6 +192,31 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "hour: 12, minute: 30, second: 0, "
             "nanosecond: 123456000).date!",
             id="format_datetime_swift_microsecond",
+        ),
+        pytest.param(
+            Perl.DateFormats.PERL,
+            _SAMPLE_DATE,
+            "DateTime->new(year => 2024, month => 1, day => 15)",
+            id="format_date_perl",
+        ),
+        pytest.param(
+            Perl.DatetimeFormats.PERL,
+            _SAMPLE_DATETIME,
+            "DateTime->new("
+            "year => 2024, month => 1, day => 15, "
+            "hour => 12, minute => 30, second => 0, "
+            "time_zone => 'UTC')",
+            id="format_datetime_perl",
+        ),
+        pytest.param(
+            Perl.DatetimeFormats.PERL,
+            _SAMPLE_DATETIME_MICRO,
+            "DateTime->new("
+            "year => 2024, month => 1, day => 15, "
+            "hour => 12, minute => 30, second => 0, "
+            "nanosecond => 123456000, "
+            "time_zone => 'UTC')",
+            id="format_datetime_perl_microsecond",
         ),
     ],
 )
