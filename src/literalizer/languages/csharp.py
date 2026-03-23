@@ -1,5 +1,6 @@
 """C# language specification."""
 
+import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -277,7 +278,6 @@ class CSharp(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
@@ -286,6 +286,13 @@ class CSharp(metaclass=LanguageCls):
                 datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
                 datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
             },
+        )
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=typed_set_open(
+                type_to_opener=openers.set,
+                fallback="new HashSet<object> {",
+            ),
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,
