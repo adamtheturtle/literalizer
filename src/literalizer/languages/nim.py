@@ -57,6 +57,7 @@ def _make_variable_declaration(
     *,
     seq_mode: bool,
     keyword: str,
+    force_seq: bool,
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable declaration formatter."""
 
@@ -66,10 +67,17 @@ def _make_variable_declaration(
         simple scalars.
         """
         if (
-            seq_mode
-            and isinstance(_data, list)
+            isinstance(_data, list)
             and _data
-            and all(isinstance(item, _NIM_SEQ_SAFE_TYPES) for item in _data)
+            and (
+                force_seq
+                or (
+                    seq_mode
+                    and all(
+                        isinstance(item, _NIM_SEQ_SAFE_TYPES) for item in _data
+                    )
+                )
+            )
         ):
             return f"{keyword} {name} = @{value}"
         return f"{keyword} {name} = %* {value}"
@@ -343,10 +351,12 @@ class Nim(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         _seq = sequence_format is self.sequence_formats.SEQ
+        _is_const = declaration_style is self.declaration_styles.CONST
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _make_variable_declaration(
                 seq_mode=_seq,
                 keyword=declaration_style.value,
+                force_seq=_is_const,
             )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
