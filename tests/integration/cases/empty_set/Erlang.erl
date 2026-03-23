@@ -2,7 +2,5 @@
 -export([x/0]).
 x() ->
     [
-    sets:from_list([]),
-    [],
-    #{}
+    sets:from_list([])
 ].

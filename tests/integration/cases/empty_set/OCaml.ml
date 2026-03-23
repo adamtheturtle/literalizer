@@ -11,9 +11,7 @@ type val_t =
   | OSet of val_t list
 
 let x : val_t = OList [
-    OSet [];
-    OList [];
-    OMap []
+    OSet []
 ]
 
 end

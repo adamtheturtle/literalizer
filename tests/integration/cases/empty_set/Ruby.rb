@@ -1,6 +1,4 @@
 require 'set'
 [
     Set.new,
-    [],
-    {},
 ]

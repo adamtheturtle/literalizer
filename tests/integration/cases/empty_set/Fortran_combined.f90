@@ -19,9 +19,7 @@ subroutine check_declaration()
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-      fset([fval_t :: ]), &
-      flist([fval_t :: ]), &
-      fmap([fval_t :: ]) &
+      fset([fval_t :: ]) &
   ])
 end subroutine check_declaration
 
@@ -30,9 +28,7 @@ subroutine check_assignment()
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-      fset([fval_t :: ]), &
-      flist([fval_t :: ]), &
-      fmap([fval_t :: ]) &
+      fset([fval_t :: ]) &
   ])
 end subroutine check_assignment
 

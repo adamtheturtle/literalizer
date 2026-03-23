@@ -1,9 +1,7 @@
 procedure Check is
    procedure Check_Declaration is
       my_data : A_Val := AList'(
-          ASet'(1 .. 0 => ANull),
-          AList'(1 .. 0 => ANull),
-          AMap'(1 .. 0 => ANull)
+          ASet'(1 .. 0 => ANull)
       );
    begin
       null;
@@ -11,9 +9,7 @@ procedure Check is
    procedure Check_Assignment is
    begin
       my_data := AList'(
-          ASet'(1 .. 0 => ANull),
-          AList'(1 .. 0 => ANull),
-          AMap'(1 .. 0 => ANull)
+          ASet'(1 .. 0 => ANull)
       );
    end Check_Assignment;
 begin

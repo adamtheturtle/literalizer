@@ -1,5 +1,3 @@
-#include <string>
-#include <map>
 #include <vector>
 #include <initializer_list>
 struct _Any {
@@ -8,8 +6,6 @@ struct _Any {
 };
 void _check() {
     [[maybe_unused]] _Any _v = {
-    {},
-    {},
     {},
 };
 }

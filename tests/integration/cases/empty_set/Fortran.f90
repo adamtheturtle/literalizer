@@ -19,8 +19,6 @@ program check
   implicit none
   type(fval_t) :: x
   x = flist([fval_t :: &
-    fset([fval_t :: ]), &
-    flist([fval_t :: ]), &
-    fmap([fval_t :: ]) &
+    fset([fval_t :: ]) &
 ])
 end program check

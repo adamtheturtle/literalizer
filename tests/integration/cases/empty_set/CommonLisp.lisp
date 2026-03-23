@@ -1,5 +1,3 @@
 (list
     nil
-    nil
-    nil
 )

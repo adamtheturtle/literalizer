@@ -13,9 +13,7 @@ MOBILE DATA TYPE LIT IS
 
 PROC check ()
   VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
-      MOBILE LIT(lit.set; MOBILE []MOBILE LIT []),
-      MOBILE LIT(lit.list; MOBILE []MOBILE LIT []),
-      MOBILE LIT(lit.map; MOBILE []MOBILE LIT [])
+      MOBILE LIT(lit.set; MOBILE []MOBILE LIT [])
   ]):
   SEQ
     SKIP

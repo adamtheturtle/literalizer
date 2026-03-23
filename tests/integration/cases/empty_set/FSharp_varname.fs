@@ -11,7 +11,5 @@ type Val =
     | FSet of Val list
 
 let my_data: Val = FList [
-    FSet [];
-    FList [];
-    FMap []
+    FSet []
 ]

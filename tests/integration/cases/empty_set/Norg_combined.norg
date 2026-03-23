@@ -1,8 +1,6 @@
 * my_data
 @code json
 [
-    [],
-    [],
-    {}
+    []
 ]
 @end

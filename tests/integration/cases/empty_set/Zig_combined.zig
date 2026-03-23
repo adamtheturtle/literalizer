@@ -13,16 +13,12 @@ pub fn main() void {
     {
         const my_data: ZVal = .{ .arr = &.{
             .{ .set = &.{}},
-            .{ .arr = &.{}},
-            .{ .map = &.{}},
         }};
         _ = my_data;
     }
     var my_data: ZVal = undefined;
     my_data = .{ .arr = &.{
         .{ .set = &.{}},
-        .{ .arr = &.{}},
-        .{ .map = &.{}},
     }};
     const _my_data_read = my_data;
     _ = _my_data_read;

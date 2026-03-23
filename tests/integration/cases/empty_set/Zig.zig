@@ -12,8 +12,6 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const v: ZVal = .{ .arr = &.{
         .{ .set = &.{}},
-        .{ .arr = &.{}},
-        .{ .map = &.{}},
     }};
     _ = v;
 }

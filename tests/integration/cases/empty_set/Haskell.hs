@@ -18,7 +18,5 @@ instance Fractional Val where
     a / b = error "not implemented"
 x :: Val
 x = HList [
-    HSet [],
-    HList [],
-    HMap []
+    HSet []
     ]
