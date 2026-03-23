@@ -49,6 +49,9 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
     )
 
 
+_NIM_SEQ_SAFE_TYPES = (str, int, float, bool, bytes)
+
+
 @beartype
 def _make_variable_declaration(
     *,
@@ -59,13 +62,13 @@ def _make_variable_declaration(
     @beartype
     def _format(name: str, value: str, _data: Value) -> str:
         """Format a ``var`` declaration, using ``@`` for flat
-        sequences.
+        sequences of simple scalars.
         """
         if (
             seq_mode
             and isinstance(_data, list)
             and _data
-            and not any(isinstance(item, list) for item in _data)
+            and all(isinstance(item, _NIM_SEQ_SAFE_TYPES) for item in _data)
         ):
             return f"var {name} = @{value}"
         return f"var {name} = %* {value}"
@@ -82,12 +85,14 @@ def _make_variable_assignment(
 
     @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format an assignment, using ``@`` for flat sequences."""
+        """Format an assignment, using ``@`` for flat sequences of
+        simple scalars.
+        """
         if (
             seq_mode
             and isinstance(_data, list)
             and _data
-            and not any(isinstance(item, list) for item in _data)
+            and all(isinstance(item, _NIM_SEQ_SAFE_TYPES) for item in _data)
         ):
             return f"{name} = @{value}"
         return f"{name} = %* {value}"
