@@ -1,4 +1,8 @@
 #include <initializer_list>
+struct _Any {
+    template<class T> _Any(T&&) noexcept {}
+    _Any(std::initializer_list<_Any>) noexcept {}
+};
 #include <chrono>
 #include <vector>
 void _check() {

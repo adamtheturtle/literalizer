@@ -182,14 +182,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
         declaration="var my_var = 42;", assignment="my_var = 42;"
     ),
     CPP: _VariableSyntax(
-        declaration=(
-            "struct _Any {\n"
-            "    template<class T> _Any(T&&) noexcept {}\n"
-            "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-            "};\n"
-            "_Any my_var = 42;"
-        ),
-        assignment="my_var = 42;",
+        declaration="_Any my_var = 42;", assignment="my_var = 42;"
     ),
     JAVA: _VariableSyntax(
         declaration="var my_var = 42;", assignment="my_var = 42;"
