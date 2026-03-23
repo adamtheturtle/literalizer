@@ -149,6 +149,7 @@ class LanguageCls(type):
     NumericSeparators: type[enum.Enum]
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
+    Semicolons: type[enum.Enum]
     extension: str
     pygments_name: str
 
@@ -263,6 +264,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def trailing_commas(self) -> type[enum.Enum]:
         """Enum class whose members list the trailing comma options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def semicolons(self) -> type[enum.Enum]:
+        """Enum class whose members list the semicolon options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -447,6 +455,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def trailing_comma(self) -> enum.Enum:
         """The trailing comma option chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def semicolon(self) -> enum.Enum:
+        """The semicolon option chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     static_preamble: Sequence[str]

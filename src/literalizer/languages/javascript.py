@@ -66,22 +66,52 @@ def _format_js_ordered_map_entry(key: str, value: str) -> str:
 def _format_variable_declaration_const(
     name: str, value: str, _data: Value
 ) -> str:
-    """Format a JavaScript ``const`` variable declaration."""
+    """Format a JavaScript ``const`` variable declaration with
+    semicolon.
+    """
     return f"const {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_const_no_semi(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a JavaScript ``const`` variable declaration without
+    semicolon.
+    """
+    return f"const {name} = {value}"
 
 
 @beartype
 def _format_variable_declaration_let(
     name: str, value: str, _data: Value
 ) -> str:
-    """Format a JavaScript ``let`` variable declaration."""
+    """Format a JavaScript ``let`` variable declaration with semicolon."""
     return f"let {name} = {value};"
 
 
 @beartype
+def _format_variable_declaration_let_no_semi(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a JavaScript ``let`` variable declaration without
+    semicolon.
+    """
+    return f"let {name} = {value}"
+
+
+@beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a JavaScript variable assignment."""
+    """Format a JavaScript variable assignment with semicolon."""
     return f"{name} = {value};"
+
+
+@beartype
+def _format_variable_assignment_no_semi(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a JavaScript variable assignment without semicolon."""
+    return f"{name} = {value}"
 
 
 @beartype
@@ -212,6 +242,12 @@ class JavaScript(metaclass=LanguageCls):
             suffix=" */",
         )
 
+    class Semicolons(enum.Enum):
+        """Semicolon options."""
+
+        YES = "yes"
+        NO = "no"
+
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
@@ -307,6 +343,7 @@ class JavaScript(metaclass=LanguageCls):
     integer_formats = IntegerFormats
     string_formats = StringFormats
     trailing_commas = TrailingCommas
+    semicolons = Semicolons
 
     def __init__(
         self,
@@ -325,6 +362,7 @@ class JavaScript(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
+        semicolon: Semicolons = Semicolons.YES,
     ) -> None:
         """Initialize JavaScript language specification."""
         self.variable_type_hints = variable_type_hints
@@ -362,6 +400,7 @@ class JavaScript(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.semicolon = semicolon
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -377,11 +416,26 @@ class JavaScript(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        _no_semi = semicolon is JavaScript.Semicolons.NO
+        _decl_formatters = {
+            JavaScript.DeclarationStyles.CONST: (
+                _format_variable_declaration_const_no_semi
+                if _no_semi
+                else _format_variable_declaration_const
+            ),
+            JavaScript.DeclarationStyles.LET: (
+                _format_variable_declaration_let_no_semi
+                if _no_semi
+                else _format_variable_declaration_let
+            ),
+        }
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _decl_formatters[declaration_style]
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _format_variable_assignment_no_semi
+            if _no_semi
+            else _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

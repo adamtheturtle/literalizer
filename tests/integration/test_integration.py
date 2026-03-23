@@ -1752,6 +1752,30 @@ def _build_trailing_comma_variants() -> dict[str, _Variant]:
 
 
 @beartype
+def _build_semicolon_variants() -> dict[str, _Variant]:
+    """Build semicolon variants for all languages with multiple
+    options.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_format = spec.semicolon
+        non_defaults = [
+            fmt for fmt in spec.semicolons if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_semicolon_"
+            variant_key = key + fmt.name.lower()
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(
+                    semicolon=fmt,
+                ),
+                wrap=lang_config.varname_wrap,
+            )
+    return variants
+
+
+@beartype
 def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
     cases_dir = Path(__file__).parent / "cases"
@@ -1944,6 +1968,18 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_string_format_variants(), "string_list", None, ""),
         (_build_bytes_format_variants(), "binary", None, ""),
         (_build_trailing_comma_variants(), "simple_sequence", None, ""),
+        (
+            _build_semicolon_variants(),
+            "simple_sequence",
+            _VARIABLE_NAME,
+            "",
+        ),
+        (
+            _build_semicolon_variants(),
+            "simple_dict",
+            _VARIABLE_NAME,
+            "_dict",
+        ),
     ]
     for variants, case_dir_name, variable_name, suffix in variant_sources:
         for variant_name, variant in variants.items():
@@ -2042,6 +2078,8 @@ def test_format_enumeration_properties(
     assert len(spec.string_formats) >= 1
     assert issubclass(spec.trailing_commas, enum.Enum)
     assert len(spec.trailing_commas) >= 1
+    assert issubclass(spec.semicolons, enum.Enum)
+    assert len(spec.semicolons) >= 1
 
 
 def test_fortran_comment_pos_escaped_single_quote() -> None:
