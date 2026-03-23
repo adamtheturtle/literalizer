@@ -5,6 +5,7 @@ import enum
 import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
+from typing import assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -143,7 +144,7 @@ def _collection_element_union(
 
 
 @beartype
-def _python_type_hint(  # noqa: C901, PLR0911
+def _python_type_hint(  # noqa: C901, PLR0911, PLR0912
     data: Value,
     *,
     bytes_hint: str,
@@ -208,6 +209,8 @@ def _python_type_hint(  # noqa: C901, PLR0911
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
             return f"{sequence_hint}[{elem_union}]"
+        case _:
+            assert_never(data)
 
 
 @beartype
