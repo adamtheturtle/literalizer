@@ -111,7 +111,7 @@ class Elixir(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Elixir."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
         ELIXIR = DateFormatConfig(formatter=_format_date_elixir)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -123,7 +123,7 @@ class Elixir(metaclass=LanguageCls):
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
         ELIXIR = DatetimeFormatConfig(formatter=_format_datetime_elixir)
 

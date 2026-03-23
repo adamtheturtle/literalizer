@@ -61,7 +61,6 @@ _DART_SCALAR_TYPES: dict[type, str] = {
 
 _dart_opener_config = TypedOpenerConfig(
     scalar_types=_DART_SCALAR_TYPES,
-    string_type="String",
     list_template="List<{inner}>",
     seq_opener_template="<{type_name}>[",
     dict_opener_template="<String, {type_name}>{{",
@@ -114,7 +113,7 @@ class Dart(metaclass=LanguageCls):
         """Date formatting options for Dart."""
 
         DART = DateFormatConfig(formatter=_format_date_dart)
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -126,7 +125,7 @@ class Dart(metaclass=LanguageCls):
         DART = DatetimeFormatConfig(formatter=_format_datetime_dart)
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -147,7 +146,7 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_dart_opener_config.default.seq,
+                type_to_opener=_dart_opener_config.build().seq,
                 fallback="[",
             ),
             close="]",
@@ -265,11 +264,14 @@ class Dart(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
 
-        # When ISO format is selected, dates become plain strings, so
-        # typed collections must use "String" instead of "DateTime".
-        openers = _dart_opener_config.resolve(
-            date_format=date_format.value,
-            datetime_format=datetime_format.value,
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _dart_opener_config.build(
+            scalar_types={
+                **_DART_SCALAR_TYPES,
+                datetime.date: _DART_SCALAR_TYPES[date_tp],
+                datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
+            },
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,

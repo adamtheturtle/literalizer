@@ -274,7 +274,7 @@ class Python(metaclass=LanguageCls):
             formatter=_format_date_python,
             preamble_lines=("import datetime",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
