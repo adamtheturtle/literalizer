@@ -27,22 +27,22 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_zig(value: datetime.date) -> str:
-    """Format a date as a Zig ``ZVal`` ``.date`` field."""
-    return (
-        f".{{ .date = .{{ .year = {value.year}, .month = {value.month}, "
-        f".day = {value.day} }} }}"
+    """Format a date as epoch seconds (midnight UTC)."""
+    dt = datetime.datetime(
+        year=value.year,
+        month=value.month,
+        day=value.day,
+        tzinfo=datetime.UTC,
     )
+    return str(object=int(dt.timestamp()))
 
 
 @beartype
 def _format_datetime_zig(value: datetime.datetime) -> str:
-    """Format a datetime as a Zig ``ZVal`` ``.datetime`` field."""
-    return (
-        f".{{ .datetime = .{{ .year = {value.year}, "
-        f".month = {value.month}, .day = {value.day}, "
-        f".hour = {value.hour}, .minute = {value.minute}, "
-        f".second = {value.second} }} }}"
-    )
+    """Format a datetime as epoch seconds (UTC)."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=datetime.UTC)
+    return str(object=int(value.timestamp()))
 
 
 @beartype
@@ -101,9 +101,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 _ZIG_PREAMBLE: tuple[str, ...] = (
-    "const ZDate = struct { year: i32, month: u8, day: u8 };",
-    "const ZDatetime = struct "
-    "{ year: i32, month: u8, day: u8, hour: u8, minute: u8, second: u8 };",
     "const ZVal = union(enum) {",
     "    nil,",
     "    bool: bool,",
@@ -113,8 +110,6 @@ _ZIG_PREAMBLE: tuple[str, ...] = (
     "    arr: []const ZVal,",
     "    map: []const ZKV,",
     "    set: []const ZVal,",
-    "    date: ZDate,",
-    "    datetime: ZDatetime,",
     "};",
     "const ZKV = struct { key: []const u8, val: ZVal };",
 )
@@ -122,24 +117,7 @@ _ZIG_PREAMBLE: tuple[str, ...] = (
 
 @beartype
 class Zig(metaclass=LanguageCls):
-    """Zig language specification.
-
-    Args:
-        date_format: How to format :class:`datetime.date` values.
-
-            * ``date_formats.ZIG`` — anonymous struct literal,
-              e.g. ``.{ .year = 2024, .month = 1, .day = 15 }``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15"``.
-
-        datetime_format: How to format :class:`datetime.datetime` values.
-
-            * ``datetime_formats.ZIG`` — anonymous struct literal,
-              e.g. ``.{ .year = 2024, .month = 1, .day = 15,
-              .hour = 12, .minute = 30, .second = 0 }``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
-    """
+    """Zig language specification."""
 
     extension = ".zig"
     pygments_name = "zig"

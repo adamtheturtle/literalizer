@@ -25,6 +25,7 @@ from literalizer.languages import (
     Scala,
     Swift,
     VisualBasic,
+    Zig,
 )
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
@@ -225,6 +226,12 @@ def test_format_datetime_epoch() -> None:
     # The exact value depends on local timezone for naive datetimes,
     # so just check it parses as a float.
     float(result)
+
+
+def test_format_datetime_zig_naive() -> None:
+    """Zig datetime treats naive datetimes as UTC."""
+    result = Zig.DatetimeFormats.ZIG(_SAMPLE_DATETIME)
+    assert result == "1705321800"
 
 
 def test_format_date_cpp() -> None:

@@ -28,7 +28,12 @@ from literalizer._types import Value
 
 @beartype
 def _format_date_lua(value: datetime.date) -> str:
-    """Format a date as a Lua ``os.time(...)`` call."""
+    """Format a date as a Lua ``os.time(...)`` call.
+
+    Example::
+
+        os.time({year = 2024, month = 1, day = 15, ...})
+    """
     return (
         f"os.time({{year = {value.year}, month = {value.month}, "
         f"day = {value.day}, hour = 0, min = 0, sec = 0}})"
@@ -37,7 +42,12 @@ def _format_date_lua(value: datetime.date) -> str:
 
 @beartype
 def _format_datetime_lua(value: datetime.datetime) -> str:
-    """Format a datetime as a Lua ``os.time(...)`` call."""
+    """Format a datetime as a Lua ``os.time(...)`` call.
+
+    Example::
+
+        os.time({year = 2024, month = 1, day = 15, ...})
+    """
     return (
         f"os.time({{year = {value.year}, month = {value.month}, "
         f"day = {value.day}, hour = {value.hour}, "
@@ -80,25 +90,7 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 class Lua(metaclass=LanguageCls):
-    """Lua language specification.
-
-    Args:
-        date_format: How to format :class:`datetime.date` values.
-
-            * ``date_formats.LUA`` — ``os.time(...)`` call,
-              e.g. ``os.time({year = 2024, month = 1, day = 15,
-              hour = 0, min = 0, sec = 0})``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15"``.
-
-        datetime_format: How to format :class:`datetime.datetime` values.
-
-            * ``datetime_formats.LUA`` — ``os.time(...)`` call,
-              e.g. ``os.time({year = 2024, month = 1, day = 15,
-              hour = 12, min = 30, sec = 0})``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
-    """
+    """Lua language specification."""
 
     extension = ".lua"
     pygments_name = "lua"
