@@ -984,19 +984,9 @@ def _wrap_julia(content: str) -> str:
 
 @beartype
 def _wrap_vb(content: str) -> str:
-    """Wrap in a VB.NET Module with a Dim declaration.
-
-    Leading comment lines (starting with ``'``) are hoisted before the
-    ``Dim`` statement so that the output remains valid VB.NET.
-    """
-    lines = content.split(sep="\n")
-    comment_lines: list[str] = []
-    while lines and lines[0].startswith("'"):
-        comment_lines.append("    " + lines.pop(0))
-    rest = "\n".join(lines)
-    rest_indented = rest.replace("\n", "\n    ")
-    dim_line = f"    Dim x As Object = {rest_indented}"
-    body = "\n".join([*comment_lines, dim_line]) if comment_lines else dim_line
+    """Wrap in a VB.NET Module with a Dim declaration."""
+    content_indented = content.replace("\n", "\n    ")
+    body = f"    Dim x As Object = {content_indented}"
     return f"Module Check\n{body}\nEnd Module"
 
 

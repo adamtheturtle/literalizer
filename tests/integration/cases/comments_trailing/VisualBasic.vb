@@ -1,7 +1,7 @@
 Imports System.Collections.Generic
 Module Check
-    ' trailing
-    Dim x As Object = New String() {
+    Dim x As Object = ' trailing
+    New String() {
         "a"
     }
 End Module

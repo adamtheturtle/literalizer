@@ -1,8 +1,8 @@
 Module Check
-    ' before apple
+    Dim x As Object = ' before apple
     ' banana inline
     ' trailing
-    Dim x As Object = New HashSet(Of String) From {
+    New HashSet(Of String) From {
         "apple",
         "banana"
     }

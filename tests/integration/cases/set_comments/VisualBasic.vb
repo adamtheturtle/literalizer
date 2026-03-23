@@ -1,8 +1,8 @@
 Module Check
-    ' inline comment
+    Dim x As Object = ' inline comment
     ' before banana
     ' trailing
-    Dim x As Object = New HashSet(Of String) From {
+    New HashSet(Of String) From {
         "apple",
         "banana"
     }
