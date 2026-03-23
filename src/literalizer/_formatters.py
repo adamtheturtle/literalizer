@@ -79,7 +79,7 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 @dataclass(frozen=True)
 class _TypeOpeners:
-    """Resolved type-to-opener callables for sequences and dicts."""
+    """Resolved type-to-opener functions for sequences and dicts."""
 
     seq: Callable[[type | ListType], str | None]
     dict: Callable[[type | ListType], str | None]
@@ -98,7 +98,7 @@ def resolve_type_openers(
     default_seq_opener: Callable[[type | ListType], str | None],
     default_dict_opener: Callable[[type | ListType], str | None],
 ) -> _TypeOpeners:
-    """Build type-to-opener callables, overriding date/datetime scalar
+    """Build type-to-opener functions, overriding date/datetime scalar
     types to *string_type* when ISO format functions are in use.
 
     Returns the default openers unchanged when no override is needed.

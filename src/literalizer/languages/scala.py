@@ -17,6 +17,7 @@ from literalizer._formatters import (
     make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    resolve_type_openers,
     typed_dict_open,
     typed_sequence_open,
 )
@@ -266,10 +267,26 @@ class Scala(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        # When ISO format is selected, dates become plain strings, so
+        # typed collections must use "String" instead of native types.
+        openers = resolve_type_openers(
+            base_scalar_types=_SCALA_SCALAR_TYPES,
+            string_type="String",
+            date_formatter=date_format.value.formatter,
+            datetime_formatter=datetime_format.value.formatter,
+            list_template="Array[{inner}]",
+            seq_opener_template="Array[{type_name}](",
+            dict_opener_template="Map[String, {type_name}](",
+            default_seq_opener=_scala_type_to_opener,
+            default_dict_opener=_scala_dict_type_to_opener,
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="List(",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_scala_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="Map(",
             ),
             close=")",
