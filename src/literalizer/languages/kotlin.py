@@ -383,7 +383,7 @@ class Kotlin(metaclass=LanguageCls):
                 datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
             },
         )
-        if set_format is self.SetFormats.SORTED_SET:
+        if set_format.name == "SORTED_SET":
             _eto = make_element_to_type(
                 scalar_types={
                     **_KOTLIN_SCALAR_TYPES,

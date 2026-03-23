@@ -369,7 +369,7 @@ class Scala(metaclass=LanguageCls):
                 datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
             },
         )
-        if set_format is self.SetFormats.TREE_SET:
+        if set_format.name == "TREE_SET":
             _eto = make_element_to_type(
                 scalar_types={
                     **_SCALA_SCALAR_TYPES,
