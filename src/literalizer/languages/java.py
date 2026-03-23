@@ -17,6 +17,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    resolve_sequence_open,
     typed_sequence_open,
 )
 from literalizer._language import (
@@ -340,13 +341,18 @@ class Java(metaclass=LanguageCls):
         openers = _java_opener_config.build(
             scalar_type_overrides=scalar_type_overrides,
         )
-        seq_open: Callable[[list[Value]], str] = fmt.sequence_open
-        if sequence_format.name == "ARRAY":
-            seq_open = typed_sequence_open(
-                type_to_opener=openers.seq,
-                fallback="new Object[]{",
+        self.sequence_open: Callable[[list[Value]], str] = (
+            resolve_sequence_open(
+                sequence_format=sequence_format,
+                typed_openers={
+                    self.sequence_formats.ARRAY: typed_sequence_open(
+                        type_to_opener=openers.seq,
+                        fallback="new Object[]{",
+                    ),
+                },
+                default=fmt.sequence_open,
             )
-        self.sequence_open: Callable[[list[Value]], str] = seq_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",

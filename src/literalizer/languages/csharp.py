@@ -17,6 +17,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    resolve_sequence_open,
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
@@ -305,15 +306,18 @@ class CSharp(metaclass=LanguageCls):
                 fallback="new HashSet<object> {",
             ),
         )
-        if sequence_format is self.sequence_formats.ARRAY:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    type_to_opener=openers.seq,
-                    fallback="new object[] {",
-                )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            resolve_sequence_open(
+                sequence_format=sequence_format,
+                typed_openers={
+                    self.sequence_formats.ARRAY: typed_sequence_open(
+                        type_to_opener=openers.seq,
+                        fallback="new object[] {",
+                    ),
+                },
+                default=fmt.sequence_open,
             )
-        else:
-            self.sequence_open = fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,

@@ -20,6 +20,7 @@ from literalizer._formatters import (
     make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    resolve_sequence_open,
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
@@ -360,17 +361,20 @@ class Scala(metaclass=LanguageCls):
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
-            _list_sequence_open(
-                date_type=_SCALA_SCALAR_TYPES[date_tp],
-                datetime_type=_SCALA_SCALAR_TYPES[dt_tp],
+            resolve_sequence_open(
+                sequence_format=sequence_format,
+                typed_openers={
+                    self.sequence_formats.LIST: _list_sequence_open(
+                        date_type=_SCALA_SCALAR_TYPES[date_tp],
+                        datetime_type=_SCALA_SCALAR_TYPES[dt_tp],
+                    ),
+                    self.sequence_formats.ARRAY: typed_sequence_open(
+                        type_to_opener=openers.seq,
+                        fallback="Array(",
+                    ),
+                },
+                default=fmt.sequence_open,
             )
-            if sequence_format is self.sequence_formats.LIST
-            else typed_sequence_open(
-                type_to_opener=openers.seq,
-                fallback="Array(",
-            )
-            if sequence_format is self.sequence_formats.ARRAY
-            else fmt.sequence_open
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(

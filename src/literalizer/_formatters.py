@@ -1,6 +1,7 @@
 """Functions for formatting scalars as language-specific literals."""
 
 import datetime
+import enum
 import functools
 import re
 from collections.abc import Callable, Mapping
@@ -487,6 +488,25 @@ def typed_sequence_open(
         type_to_opener=type_to_opener,
         fallback=fallback,
     )
+
+
+@beartype
+def resolve_sequence_open(
+    *,
+    sequence_format: enum.Enum,
+    typed_openers: Mapping[
+        enum.Enum,
+        Callable[[list[Value]], str],
+    ],
+    default: Callable[[list[Value]], str],
+) -> Callable[[list[Value]], str]:
+    """Return the ``sequence_open`` callable for *sequence_format*.
+
+    If *sequence_format* appears in *typed_openers*, return the
+    corresponding callable; otherwise return *default* (typically
+    ``fmt.sequence_open`` from the :class:`SequenceFormatConfig`).
+    """
+    return typed_openers.get(sequence_format, default)
 
 
 @beartype

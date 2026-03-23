@@ -18,6 +18,7 @@ from literalizer._formatters import (
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    resolve_sequence_open,
     typed_dict_open,
     typed_sequence_open,
 )
@@ -312,15 +313,18 @@ class Dart(metaclass=LanguageCls):
                 datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
             },
         )
-        if sequence_format is self.sequence_formats.LIST:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    type_to_opener=openers.seq,
-                    fallback="[",
-                )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            resolve_sequence_open(
+                sequence_format=sequence_format,
+                typed_openers={
+                    self.sequence_formats.LIST: typed_sequence_open(
+                        type_to_opener=openers.seq,
+                        fallback="[",
+                    ),
+                },
+                default=fmt.sequence_open,
             )
-        else:
-            self.sequence_open = fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
