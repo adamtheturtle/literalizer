@@ -562,6 +562,12 @@ def _wrap_nim(content: str) -> str:
 
 
 @beartype
+def _wrap_nim_array(content: str) -> str:
+    """Wrap in a Nim %* expression for ARRAY format."""
+    return f"let _ = %* {content}"
+
+
+@beartype
 def _wrap_nim_varname(content: str) -> str:
     """Pass through Nim content unchanged."""
     return content
@@ -1079,6 +1085,7 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
+    sequence_variant_wrap: Callable[[str], str] | None = None
 
 
 @beartype
@@ -1389,6 +1396,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_nim,
         varname_wrap=_wrap_nim_varname,
         combined_wrap=_wrap_nim_combined,
+        sequence_variant_wrap=_wrap_nim_array,
     ),
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
@@ -1521,9 +1529,10 @@ def _build_sequence_variants() -> dict[str, _Variant]:
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_sequence_{fmt.name.lower()}"
+            wrap_fn = lang_config.sequence_variant_wrap or lang_config.wrap
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(sequence_format=fmt),
-                wrap=lang_config.wrap,
+                wrap=wrap_fn,
             )
     return variants
 
