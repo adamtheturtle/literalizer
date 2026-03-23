@@ -105,7 +105,7 @@ class Scala(metaclass=LanguageCls):
             formatter=_format_date_scala,
             preamble_lines=("import java.time.LocalDate",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -121,7 +121,10 @@ class Scala(metaclass=LanguageCls):
                 "import java.time.ZonedDateTime",
             ),
         )
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -261,8 +264,8 @@ class Scala(metaclass=LanguageCls):
         # When ISO format is selected, dates become plain strings, so
         # typed collections must use "String" instead of native types.
         openers = _scala_opener_config.resolve(
-            date_formatter=date_format.value.formatter,
-            datetime_formatter=datetime_format.value.formatter,
+            date_format=date_format.value,
+            datetime_format=datetime_format.value,
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from beartype import beartype
 
+from literalizer._language import DateFormatConfig, DatetimeFormatConfig
 from literalizer._types import Value
 
 
@@ -136,18 +137,19 @@ class TypedOpenerConfig:
     def resolve(
         self,
         *,
-        date_formatter: Callable[[datetime.date], str],
-        datetime_formatter: Callable[[datetime.datetime], str],
+        date_format: DateFormatConfig,
+        datetime_format: DatetimeFormatConfig,
     ) -> TypeOpeners:
         """Return openers, overriding date/datetime types to the
-        language's string type when ISO formatters are in use.
+        language's string type when the format produces a string
+        literal instead of a native date value.
 
         Returns ``self.default`` unchanged when no override is needed.
         """
         overrides: dict[type, str] = {}
-        if date_formatter is format_date_iso:
+        if date_format.produces_string:
             overrides[datetime.date] = self._string_type
-        if datetime_formatter is format_datetime_iso:
+        if datetime_format.produces_string:
             overrides[datetime.datetime] = self._string_type
         if not overrides:
             return self.default

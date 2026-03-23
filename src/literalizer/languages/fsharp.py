@@ -139,7 +139,7 @@ class FSharp(metaclass=LanguageCls):
         """Date format options for FSharp."""
 
         FSHARP = DateFormatConfig(formatter=_format_date_fsharp)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -149,7 +149,10 @@ class FSharp(metaclass=LanguageCls):
         """Datetime format options for FSharp."""
 
         FSHARP = DatetimeFormatConfig(formatter=_format_datetime_fsharp)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

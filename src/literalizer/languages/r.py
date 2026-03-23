@@ -128,7 +128,7 @@ class R(metaclass=LanguageCls):
         """Date formatting options for R."""
 
         R = DateFormatConfig(formatter=_format_date_r)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -138,7 +138,10 @@ class R(metaclass=LanguageCls):
         """Datetime formatting options for R."""
 
         R = DatetimeFormatConfig(formatter=_format_datetime_r)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

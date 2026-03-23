@@ -97,6 +97,7 @@ class Nim(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=format_date_iso,
             preamble_lines=("import json",),
+            produces_string=True,
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -113,6 +114,7 @@ class Nim(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             preamble_lines=("import json",),
+            produces_string=True,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

@@ -154,7 +154,7 @@ class Java(metaclass=LanguageCls):
             formatter=_format_date_java,
             preamble_lines=("import java.time.LocalDate;",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -174,7 +174,10 @@ class Java(metaclass=LanguageCls):
                 "import java.time.ZonedDateTime;",
             ),
         )
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -325,8 +328,8 @@ class Java(metaclass=LanguageCls):
         # Only the ARRAY format uses typed openers; LIST uses a fixed
         # opener so no override is needed.
         openers = _java_opener_config.resolve(
-            date_formatter=date_format.value.formatter,
-            datetime_formatter=datetime_format.value.formatter,
+            date_format=date_format.value,
+            datetime_format=datetime_format.value,
         )
         seq_open: Callable[[list[Value]], str] = fmt.sequence_open
         if sequence_format.name == "ARRAY":

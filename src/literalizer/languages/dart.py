@@ -112,7 +112,7 @@ class Dart(metaclass=LanguageCls):
         """Date formatting options for Dart."""
 
         DART = DateFormatConfig(formatter=_format_date_dart)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -122,7 +122,10 @@ class Dart(metaclass=LanguageCls):
         """Datetime formatting options for Dart."""
 
         DART = DatetimeFormatConfig(formatter=_format_datetime_dart)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -263,8 +266,8 @@ class Dart(metaclass=LanguageCls):
         # When ISO format is selected, dates become plain strings, so
         # typed collections must use "String" instead of "DateTime".
         openers = _dart_opener_config.resolve(
-            date_formatter=date_format.value.formatter,
-            datetime_formatter=datetime_format.value.formatter,
+            date_format=date_format.value,
+            datetime_format=datetime_format.value,
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,

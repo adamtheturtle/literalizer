@@ -154,7 +154,10 @@ class ObjectiveC(metaclass=LanguageCls):
         """Date format options for ObjectiveC."""
 
         OBJC = DateFormatConfig(formatter=_format_objc_date)
-        ISO = DateFormatConfig(formatter=_format_objc_date_iso)
+        ISO = DateFormatConfig(
+            formatter=_format_objc_date_iso,
+            produces_string=True,
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -164,7 +167,10 @@ class ObjectiveC(metaclass=LanguageCls):
         """Datetime format options for ObjectiveC."""
 
         OBJC = DatetimeFormatConfig(formatter=_format_objc_datetime)
-        ISO = DatetimeFormatConfig(formatter=_format_objc_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=_format_objc_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

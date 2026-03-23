@@ -57,7 +57,7 @@ class Hcl(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Hcl."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -66,7 +66,10 @@ class Hcl(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Hcl."""
 
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

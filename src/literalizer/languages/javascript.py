@@ -138,7 +138,7 @@ class JavaScript(metaclass=LanguageCls):
         """Date formatting options for JavaScript."""
 
         JS = DateFormatConfig(formatter=_format_date_js)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -148,7 +148,10 @@ class JavaScript(metaclass=LanguageCls):
         """Datetime formatting options for JavaScript."""
 
         JS = DatetimeFormatConfig(formatter=_format_datetime_js)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

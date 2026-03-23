@@ -173,7 +173,7 @@ class Matlab(metaclass=LanguageCls):
         """Date format options for Matlab."""
 
         MATLAB = DateFormatConfig(formatter=_format_date_matlab)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -183,7 +183,10 @@ class Matlab(metaclass=LanguageCls):
         """Datetime format options for Matlab."""
 
         MATLAB = DatetimeFormatConfig(formatter=_format_datetime_matlab)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
