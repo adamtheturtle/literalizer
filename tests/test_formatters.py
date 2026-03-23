@@ -21,6 +21,7 @@ from literalizer.languages import (
     Python,
     Ruby,
     Rust,
+    Swift,
     VisualBasic,
 )
 
@@ -180,6 +181,16 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
             "NaiveTime::from_hms_micro_opt(12, 30, 0, 123456).unwrap())",
             id="format_datetime_rust_microsecond",
+        ),
+        pytest.param(
+            Swift.DatetimeFormats.SWIFT,
+            _SAMPLE_DATETIME_MICRO,
+            "DateComponents("
+            "calendar: Calendar(identifier: .gregorian), "
+            "year: 2024, month: 1, day: 15, "
+            "hour: 12, minute: 30, second: 0, "
+            "nanosecond: 123456000).date!",
+            id="format_datetime_swift_microsecond",
         ),
     ],
 )
