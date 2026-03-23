@@ -143,7 +143,7 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     ``Dim`` statement so that the result remains valid VB.NET when the
     value is used in a ``Dim`` declaration.
     """
-    lines = value.split("\n")
+    lines = value.split(sep="\n")
     comment_lines: list[str] = []
     while lines and lines[0].lstrip().startswith("'"):
         comment_lines.append(lines.pop(0))
