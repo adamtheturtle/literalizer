@@ -29,6 +29,31 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_perl(value: datetime.date) -> str:
+    """Format a date as a Perl ``DateTime`` constructor."""
+    return (
+        f"DateTime->new(year => {value.year}, "
+        f"month => {value.month}, day => {value.day})"
+    )
+
+
+@beartype
+def _format_datetime_perl(value: datetime.datetime) -> str:
+    """Format a datetime as a Perl ``DateTime`` constructor."""
+    if value.tzinfo is not None:
+        value = value.astimezone(tz=datetime.UTC)
+    parts = (
+        f"DateTime->new(year => {value.year}, "
+        f"month => {value.month}, day => {value.day}, "
+        f"hour => {value.hour}, minute => {value.minute}, "
+        f"second => {value.second}"
+    )
+    if value.microsecond:
+        parts += f", nanosecond => {value.microsecond * 1000}"
+    return parts + ", time_zone => 'UTC')"
+
+
+@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Perl variable declaration."""
     return f"my ${name} = {value};"
@@ -45,7 +70,25 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 class Perl(metaclass=LanguageCls):
-    """Perl language specification."""
+    """Perl language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.PERL`` — ``DateTime->new(...)`` call,
+              e.g. ``DateTime->new(year => 2024, month => 1, day => 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.PERL`` — ``DateTime->new(...)`` call,
+              e.g. ``DateTime->new(year => 2024, month => 1, day => 15,
+              hour => 12, minute => 30, second => 0,
+              time_zone => 'UTC')``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
+    """
 
     extension = ".pl"
     pygments_name = "perl"
@@ -53,6 +96,7 @@ class Perl(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Perl."""
 
+        PERL = enum.member(value=_format_date_perl)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -62,6 +106,7 @@ class Perl(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Perl."""
 
+        PERL = enum.member(value=_format_datetime_perl)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -114,6 +159,36 @@ class Perl(metaclass=LanguageCls):
             suffix="",
         )
 
+    class DeclarationStyles(enum.Enum):
+        """Declaration style options."""
+
+        MY = "my"
+
+    class DictFormats(enum.Enum):
+        """Dict/map format options."""
+
+        DEFAULT = "default"
+
+    class IntegerFormats(enum.Enum):
+        """Integer format options."""
+
+        DECIMAL = "decimal"
+
+    class NumericSeparators(enum.Enum):
+        """Numeric separator options."""
+
+        NONE = "none"
+
+    class StringFormats(enum.Enum):
+        """String format options."""
+
+        DOUBLE = "double"
+
+    class TrailingCommas(enum.Enum):
+        """Trailing comma options."""
+
+        YES = "yes"
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
@@ -127,18 +202,30 @@ class Perl(metaclass=LanguageCls):
         NONE = "none"
 
     variable_type_hints_formats = VariableTypeHints
+    declaration_styles = DeclarationStyles
+    dict_formats = DictFormats
+    integer_formats = IntegerFormats
+    numeric_separators = NumericSeparators
+    string_formats = StringFormats
+    trailing_commas = TrailingCommas
 
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.PERL,
+        datetime_format: DatetimeFormats = DatetimeFormats.PERL,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.HASH,
         _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        declaration_style: DeclarationStyles = DeclarationStyles.MY,
+        dict_format: DictFormats = DictFormats.DEFAULT,
+        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
+        numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        string_format: StringFormats = StringFormats.DOUBLE,
+        trailing_comma: TrailingCommas = TrailingCommas.YES,
     ) -> None:
         """Initialize Perl language specification."""
         self.variable_type_hints = variable_type_hints
@@ -170,6 +257,12 @@ class Perl(metaclass=LanguageCls):
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
         self.comment_format = comment_format
+        self.declaration_style = declaration_style
+        self.dict_format = dict_format
+        self.integer_format = integer_format
+        self.numeric_separator = numeric_separator
+        self.string_format = string_format
+        self.trailing_comma = trailing_comma
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -192,5 +285,25 @@ class Perl(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        _use_datetime = ("use DateTime;",)
+        _date_map: dict[str, tuple[str, ...]] = {
+            "PERL": _use_datetime,
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "PERL": _use_datetime,
+        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (
+                    datetime.date,
+                    _date_map.get(date_format.name, ()),
+                ),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, ()),
+                ),
+            )
+            if p
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
