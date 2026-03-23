@@ -354,15 +354,12 @@ def _coerce_heterogeneous_dict(
 @beartype
 def _coerce_heterogeneous_set(
     *,
-    data: set[Scalar] | frozenset[Scalar],
-) -> set[Scalar] | frozenset[Scalar]:
+    data: set[Scalar],
+) -> set[Scalar]:
     """Coerce a set with heterogeneous scalar values."""
     items: list[Value] = list(data)
     if _all_scalars_heterogeneous(values=items):
-        coerced: set[Scalar] = {_coerce_scalar_to_str(value=v) for v in items}
-        if isinstance(data, frozenset):
-            return frozenset(coerced)  # pragma: no cover
-        return coerced
+        return {_coerce_scalar_to_str(value=v) for v in items}
     return data
 
 
@@ -390,8 +387,10 @@ def _coerce_heterogeneous_scalars(
         return _coerce_heterogeneous_ordereddict(data=data)
     if isinstance(data, dict):
         return _coerce_heterogeneous_dict(data=data)
-    if isinstance(data, (set, frozenset)):
+    if isinstance(data, set):
         return _coerce_heterogeneous_set(data=data)
+    if isinstance(data, frozenset):
+        return data  # pragma: no cover
     if isinstance(data, list):
         return _coerce_heterogeneous_list(data=data)
     return data
