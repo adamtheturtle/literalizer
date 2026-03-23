@@ -77,6 +77,56 @@ def format_datetime_iso(value: datetime.datetime) -> str:
     return f'"{value.isoformat()}"'
 
 
+@dataclass(frozen=True)
+class _TypeOpeners:
+    """Resolved type-to-opener callables for sequences and dicts."""
+
+    seq: Callable[[type | ListType], str | None]
+    dict: Callable[[type | ListType], str | None]
+
+
+@beartype
+def resolve_type_openers(
+    *,
+    base_scalar_types: dict[type, str],
+    string_type: str,
+    date_formatter: Callable[[datetime.date], str],
+    datetime_formatter: Callable[[datetime.datetime], str],
+    list_template: str,
+    seq_opener_template: str,
+    dict_opener_template: str,
+    default_seq_opener: Callable[[type | ListType], str | None],
+    default_dict_opener: Callable[[type | ListType], str | None],
+) -> _TypeOpeners:
+    """Build type-to-opener callables, overriding date/datetime scalar
+    types to *string_type* when ISO format functions are in use.
+
+    Returns the default openers unchanged when no override is needed.
+    """
+    overrides: dict[type, str] = {}
+    if date_formatter is format_date_iso:
+        overrides[datetime.date] = string_type
+    if datetime_formatter is format_datetime_iso:
+        overrides[datetime.datetime] = string_type
+    if not overrides:
+        return _TypeOpeners(seq=default_seq_opener, dict=default_dict_opener)
+    effective = {**base_scalar_types, **overrides}
+    element_to_type = make_element_to_type(
+        scalar_types=effective,
+        list_template=list_template,
+    )
+    return _TypeOpeners(
+        seq=make_type_to_opener(
+            element_to_type=element_to_type,
+            opener_template=seq_opener_template,
+        ),
+        dict=make_type_to_opener(
+            element_to_type=element_to_type,
+            opener_template=dict_opener_template,
+        ),
+    )
+
+
 @beartype
 def format_bytes_hex(value: bytes) -> str:
     """Format bytes as a hex string literal.

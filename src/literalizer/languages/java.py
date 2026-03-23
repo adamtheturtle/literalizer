@@ -17,6 +17,7 @@ from literalizer._formatters import (
     make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    resolve_type_openers,
     typed_sequence_open,
 )
 from literalizer._language import (
@@ -322,7 +323,29 @@ class Java(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        # When ISO format is selected, dates become plain strings, so
+        # typed collections must use "String" instead of "LocalDate".
+        # Only the ARRAY format uses typed openers; LIST uses a fixed
+        # opener so no override is needed.
+        openers = resolve_type_openers(
+            base_scalar_types=_JAVA_SCALAR_TYPES,
+            string_type="String",
+            date_formatter=date_format.value.formatter,
+            datetime_formatter=datetime_format.value.formatter,
+            list_template="{inner}[]",
+            seq_opener_template="new {type_name}[]{{",
+            dict_opener_template="new {type_name}[]{{",
+            default_seq_opener=_java_type_to_opener,
+            default_dict_opener=_java_type_to_opener,
+        )
+        seq_open: Callable[[list[Value]], str] = fmt.sequence_open
+        if sequence_format.name == "ARRAY":
+            seq_open = typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback="new Object[]{",
+            )
+        self.sequence_open: Callable[[list[Value]], str] = seq_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",

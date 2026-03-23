@@ -16,6 +16,7 @@ from literalizer._formatters import (
     make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    resolve_type_openers,
     typed_dict_open,
     typed_sequence_open,
 )
@@ -275,10 +276,27 @@ class CSharp(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        # When ISO format is selected, dates become plain strings, so
+        # typed collections must use "string" instead of native types.
+        openers = resolve_type_openers(
+            base_scalar_types=_CSHARP_SCALAR_TYPES,
+            string_type="string",
+            date_formatter=date_format.value.formatter,
+            datetime_formatter=datetime_format.value.formatter,
+            list_template="{inner}[]",
+            seq_opener_template="new {type_name}[] {{",
+            dict_opener_template="new Dictionary<string, {type_name}> {{",
+            default_seq_opener=_csharp_type_to_opener,
+            default_dict_opener=_csharp_dict_type_to_opener,
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="new object[] {",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_csharp_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="new Dictionary<string, object> {",
             ),
             close="}",
