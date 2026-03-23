@@ -52,10 +52,11 @@ def _to_val(value: str) -> str:
         "FStr",
         "FInt",
         "FFloat",
-        "System.",
     )
     if any(value.startswith(p) for p in _val_prefixes):
         return value
+    if value.startswith("System."):
+        return f"FStr (string ({value}))"
     if value.startswith('"') and value.endswith('"'):
         return f"FStr {value}"
     negative = value.startswith("-")

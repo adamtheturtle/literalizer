@@ -11,6 +11,6 @@ type Val =
     | FSet of Val list
 
 let x: Val = FMap [
-    ("date", System.DateOnly(2024, 1, 15));
-    ("datetime", System.DateTime(2024, 1, 15, 12, 30, 0))
+    ("date", FStr (string (System.DateOnly(2024, 1, 15))));
+    ("datetime", FStr (string (System.DateTime(2024, 1, 15, 12, 30, 0))))
 ]

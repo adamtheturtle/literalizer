@@ -10,4 +10,4 @@ type Val =
     | FMap of (string * Val) list
     | FSet of Val list
 
-let x: Val = System.DateOnly(2024, 1, 15)
+let x: Val = FStr (string (System.DateOnly(2024, 1, 15)))
