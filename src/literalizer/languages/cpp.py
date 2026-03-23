@@ -106,8 +106,9 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
-_ANY_PREAMBLE: tuple[str, ...] = (
-    "#include <initializer_list>",
+_ANY_INCLUDE: tuple[str, ...] = ("#include <initializer_list>",)
+
+_ANY_STRUCT: tuple[str, ...] = (
     "struct _Any {",
     "    template<class T> _Any(T&&) noexcept {}",
     "    _Any(std::initializer_list<_Any>) noexcept {}",
@@ -378,7 +379,8 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.static_preamble: Sequence[str] = _ANY_PREAMBLE
+        self.static_preamble: Sequence[str] = _ANY_INCLUDE
+        self.static_body_preamble: Sequence[str] = _ANY_STRUCT
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )

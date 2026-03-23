@@ -462,6 +462,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     ``{datetime.date: ("import datetime",)}``.
     """
 
+    static_body_preamble: Sequence[str]
+    """Lines that are always prepended to the generated code,
+    regardless of what types appear in the data.  Appears after the
+    header preamble but before the code body.  Use an empty sequence
+    when none are needed.
+    """
+
     scalar_body_preamble: dict[type, tuple[str, ...]]
     """Maps Python scalar types to body-preamble lines that are
     prepended to the generated code.
