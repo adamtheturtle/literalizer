@@ -1,6 +1,6 @@
 def main():
-    _ = [
+    _ = Set[String](
         "42",
         "True",
         "apple",
-    ]
+    )

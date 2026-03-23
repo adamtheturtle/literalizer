@@ -121,9 +121,9 @@ class Mojo(metaclass=LanguageCls):
         """Set type options for Mojo."""
 
         SET = SetFormatConfig(
-            open_str="[",
-            close="]",
-            empty_set="List[String]()",
+            open_str="Set[String](",
+            close=")",
+            empty_set="Set[String]()",
             preamble_lines=(),
         )
 

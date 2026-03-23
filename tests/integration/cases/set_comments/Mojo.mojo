@@ -1,7 +1,7 @@
 def main():
-    _ = [
+    _ = Set[String](
         "apple",  # inline comment
         # before banana
         "banana",
         # trailing
-    ]
+    )

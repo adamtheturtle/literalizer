@@ -1,7 +1,7 @@
 def main():
-    var my_data = [
+    var my_data = Set[String](
         "42",
         "True",
         "apple",
-    ]
+    )
     _ = my_data

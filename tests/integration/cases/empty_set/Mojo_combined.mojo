@@ -1,5 +1,5 @@
 def main():
-    var my_data = List[String]()
+    var my_data = Set[String]()
     _ = my_data
-    my_data = List[String]()
+    my_data = Set[String]()
     _ = my_data
