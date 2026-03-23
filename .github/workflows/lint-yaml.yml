@@ -37,10 +37,13 @@ jobs:
           else
             find tests/integration/cases -name "*.yaml" ! -name "input.yaml" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install uv
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
       - name: Check YAML syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-to-lint

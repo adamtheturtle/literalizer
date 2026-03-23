@@ -36,11 +36,14 @@ jobs:
           else
             find tests/integration/cases -name "*.clj" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install clj-kondo
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: latest
       - name: Check Clojure syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 clj-kondo --lint < /tmp/files-to-lint

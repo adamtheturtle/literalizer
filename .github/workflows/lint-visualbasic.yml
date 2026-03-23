@@ -37,17 +37,20 @@ jobs:
           else
             find tests/integration/cases -name "*.vb" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Initialize .NET runtime
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
       - name: Install uv
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check VB.NET syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 uv run python check_vb_golden_syntax.py < /tmp/files-to-lint

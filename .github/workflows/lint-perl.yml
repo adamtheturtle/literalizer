@@ -36,14 +36,17 @@ jobs:
           else
             find tests/integration/cases -name "*.pl" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install Perl dependencies
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           sudo apt-get update
           sudo apt-get install -y cpanminus
           sudo cpanm --notest DateTime
       - name: Check Perl syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             perl -c "$f" || exit 1

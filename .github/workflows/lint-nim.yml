@@ -36,11 +36,14 @@ jobs:
           else
             find tests/integration/cases -name "*.nim" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install Nim
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: jiro4989/setup-nim-action@v2
       - name: Check Nim syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
