@@ -64,6 +64,7 @@ def _make_variable_declaration(
         if (
             seq_mode
             and isinstance(_data, list)
+            and _data
             and not any(isinstance(item, list) for item in _data)
         ):
             return f"var {name} = @{value}"
@@ -85,6 +86,7 @@ def _make_variable_assignment(
         if (
             seq_mode
             and isinstance(_data, list)
+            and _data
             and not any(isinstance(item, list) for item in _data)
         ):
             return f"{name} = @{value}"
