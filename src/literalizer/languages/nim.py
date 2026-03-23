@@ -155,7 +155,7 @@ class Nim(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence=None,
-            preamble_lines=(),
+            preamble_lines=("import json",),
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
