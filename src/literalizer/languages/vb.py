@@ -323,6 +323,7 @@ class VisualBasic(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
+        semicolon: Semicolons = Semicolons.YES,
     ) -> None:
         """Initialize VisualBasic language specification."""
         self.variable_type_hints = variable_type_hints
@@ -363,7 +364,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
-        self.semicolon = VisualBasic.Semicolons.YES
+        self.semicolon = semicolon
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
