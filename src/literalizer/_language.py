@@ -27,7 +27,7 @@ class DateFormatConfig:
 
     formatter: Callable[[datetime.date], str]
     preamble_lines: tuple[str, ...] = ()
-    produces_string: bool = False
+    type_produced: type = datetime.date
 
 
 @dataclasses.dataclass(frozen=True)
@@ -36,7 +36,7 @@ class DatetimeFormatConfig:
 
     formatter: Callable[[datetime.datetime], str]
     preamble_lines: tuple[str, ...] = ()
-    produces_string: bool = False
+    type_produced: type = datetime.datetime
 
 
 @dataclasses.dataclass(frozen=True)

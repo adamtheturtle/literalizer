@@ -63,7 +63,6 @@ _CSHARP_SCALAR_TYPES: dict[type, str] = {
 
 _csharp_opener_config = TypedOpenerConfig(
     scalar_types=_CSHARP_SCALAR_TYPES,
-    string_type="string",
     list_template="{inner}[]",
     seq_opener_template="new {type_name}[] {{",
     dict_opener_template="new Dictionary<string, {type_name}> {{",
@@ -118,7 +117,7 @@ class CSharp(metaclass=LanguageCls):
             formatter=_format_date_csharp,
             preamble_lines=("using System;",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -133,7 +132,7 @@ class CSharp(metaclass=LanguageCls):
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -154,7 +153,7 @@ class CSharp(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_csharp_opener_config.default.seq,
+                type_to_opener=_csharp_opener_config.build().seq,
                 fallback="new object[] {",
             ),
             close="}",
@@ -272,11 +271,14 @@ class CSharp(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
 
-        # When ISO format is selected, dates become plain strings, so
-        # typed collections must use "string" instead of native types.
-        openers = _csharp_opener_config.resolve(
-            date_format=date_format.value,
-            datetime_format=datetime_format.value,
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _csharp_opener_config.build(
+            scalar_types={
+                **_CSHARP_SCALAR_TYPES,
+                datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
+                datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
+            },
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,

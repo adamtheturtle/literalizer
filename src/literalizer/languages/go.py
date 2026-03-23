@@ -84,7 +84,6 @@ _GO_SCALAR_TYPES: dict[type, str] = {
 
 _go_opener_config = TypedOpenerConfig(
     scalar_types=_GO_SCALAR_TYPES,
-    string_type="string",
     list_template="[]{inner}",
     seq_opener_template="[]{type_name}{{",
     dict_opener_template="map[string]{type_name}{{",
@@ -150,7 +149,7 @@ class Go(metaclass=LanguageCls):
             formatter=_format_date_go,
             preamble_lines=('import "time"',),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -165,7 +164,7 @@ class Go(metaclass=LanguageCls):
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -186,7 +185,7 @@ class Go(metaclass=LanguageCls):
 
         SLICE = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_go_opener_config.default.seq,
+                type_to_opener=_go_opener_config.build().seq,
                 fallback="[]any{",
             ),
             close="}",
@@ -304,11 +303,14 @@ class Go(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
 
-        # When ISO format is selected, dates become plain strings, so
-        # typed collections must use "string" instead of "time.Time".
-        openers = _go_opener_config.resolve(
-            date_format=date_format.value,
-            datetime_format=datetime_format.value,
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _go_opener_config.build(
+            scalar_types={
+                **_GO_SCALAR_TYPES,
+                datetime.date: _GO_SCALAR_TYPES[date_tp],
+                datetime.datetime: _GO_SCALAR_TYPES[dt_tp],
+            },
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,

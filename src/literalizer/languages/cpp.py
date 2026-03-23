@@ -142,7 +142,7 @@ class Cpp(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=format_date_iso,
             preamble_lines=("#include <string>",),
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -159,7 +159,7 @@ class Cpp(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             preamble_lines=("#include <string>",),
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

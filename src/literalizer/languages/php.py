@@ -75,7 +75,7 @@ class Php(metaclass=LanguageCls):
         """Date format options for Php."""
 
         PHP = DateFormatConfig(formatter=_format_date)
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -87,7 +87,7 @@ class Php(metaclass=LanguageCls):
         PHP = DatetimeFormatConfig(formatter=_format_datetime)
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
