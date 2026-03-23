@@ -1907,6 +1907,18 @@ def _build_variant_cases() -> list[_VariantCase]:
             _VARIABLE_NAME,
             "",
         ),
+        (
+            _build_declaration_style_variants(),
+            "simple_dict",
+            _VARIABLE_NAME,
+            "",
+        ),
+        (
+            _build_declaration_style_variants(),
+            "empty_list",
+            _VARIABLE_NAME,
+            "",
+        ),
         (_build_dict_format_variants(), "simple_dict", None, ""),
         (_build_integer_format_variants(), "int_list", None, ""),
         (_build_integer_format_variants(), "int_list_large", None, "_large"),
