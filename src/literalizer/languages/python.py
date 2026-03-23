@@ -546,12 +546,12 @@ class Python(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
-            )
-            if p
+            k: v
+            for k, v in {
+                datetime.date: (date_format.value.preamble_lines),
+                datetime.datetime: (datetime_format.value.preamble_lines),
+            }.items()
+            if v
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = (
             ("from typing import Any",)

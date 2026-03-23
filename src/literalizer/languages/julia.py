@@ -305,12 +305,11 @@ class Julia(metaclass=LanguageCls):
             _format_variable_declaration
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
-            )
-            if p
-        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        date_preamble = date_format.value.preamble_lines
+        datetime_preamble = datetime_format.value.preamble_lines
+        if date_preamble:
+            self.scalar_preamble[datetime.date] = date_preamble
+        if datetime_preamble:
+            self.scalar_preamble[datetime.datetime] = datetime_preamble
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
