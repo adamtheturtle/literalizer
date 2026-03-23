@@ -84,6 +84,28 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 _string_format: Callable[[str], str] = format_string_backslash
 
+_is_string_import = "import Data.String (IsString(fromString))"
+
+_is_string_instance = "instance IsString Val where\n    fromString = HStr"
+
+_num_instance = (
+    "instance Num Val where\n"
+    "    fromInteger = HInt\n"
+    '    a + b = error "not implemented"\n'
+    '    a * b = error "not implemented"\n'
+    '    abs a = error "not implemented"\n'
+    '    signum a = error "not implemented"\n'
+    "    negate (HInt n) = HInt (negate n)\n"
+    "    negate (HFloat f) = HFloat (negate f)\n"
+    '    negate _ = error "not implemented"'
+)
+
+_fractional_instance = (
+    "instance Fractional Val where\n"
+    "    fromRational r = HFloat (realToFrac r)\n"
+    '    a / b = error "not implemented"'
+)
+
 
 @beartype
 class Haskell(metaclass=LanguageCls):
@@ -155,7 +177,11 @@ class Haskell(metaclass=LanguageCls):
         HASKELL = DateFormatConfig(formatter=_format_date_haskell)
         ISO = DateFormatConfig(
             formatter=format_date_iso,
-            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
+            preamble_lines=(
+                "{-# LANGUAGE OverloadedStrings #-}",
+                _is_string_import,
+                _is_string_instance,
+            ),
             produces_string=True,
         )
 
@@ -169,7 +195,11 @@ class Haskell(metaclass=LanguageCls):
         HASKELL = DatetimeFormatConfig(formatter=_format_datetime_haskell)
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
+            preamble_lines=(
+                "{-# LANGUAGE OverloadedStrings #-}",
+                _is_string_import,
+                _is_string_instance,
+            ),
             produces_string=True,
         )
 
@@ -356,8 +386,18 @@ class Haskell(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            str: _overloaded_strings,
-            bytes: _overloaded_strings,
+            str: (
+                *_overloaded_strings,
+                _is_string_import,
+                _is_string_instance,
+            ),
+            bytes: (
+                *_overloaded_strings,
+                _is_string_import,
+                _is_string_instance,
+            ),
+            int: (_num_instance,),
+            float: (_num_instance, _fractional_instance),
             **{
                 t: p
                 for t, p in (
