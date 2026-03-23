@@ -116,7 +116,7 @@ class Toml(metaclass=LanguageCls):
         """Date format options for Toml."""
 
         TOML = DateFormatConfig(formatter=_format_toml_date)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -126,7 +126,10 @@ class Toml(metaclass=LanguageCls):
         """Datetime format options for Toml."""
 
         TOML = DatetimeFormatConfig(formatter=_format_toml_datetime)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

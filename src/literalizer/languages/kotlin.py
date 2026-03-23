@@ -8,13 +8,12 @@ from beartype import beartype
 
 from literalizer._formatters import (
     ListType,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -94,19 +93,13 @@ _KOTLIN_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "LocalDateTime",
 }
 
-_kotlin_element_to_type = make_element_to_type(
+_kotlin_opener_config = TypedOpenerConfig(
     scalar_types=_KOTLIN_SCALAR_TYPES,
+    string_type="String",
     list_template="Array<{inner}>",
-)
-
-_kotlin_set_type_to_opener = make_type_to_opener(
-    element_to_type=_kotlin_element_to_type,
-    opener_template="setOf<{type_name}>(",
-)
-
-_kotlin_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_kotlin_element_to_type,
-    opener_template="mapOf<String, {type_name}>(",
+    seq_opener_template="arrayOf(",
+    dict_opener_template="mapOf<String, {type_name}>(",
+    set_opener_template="setOf<{type_name}>(",
 )
 
 
@@ -168,7 +161,7 @@ class Kotlin(metaclass=LanguageCls):
             formatter=_format_date_kotlin,
             preamble_lines=("import java.time.LocalDate",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -181,7 +174,10 @@ class Kotlin(metaclass=LanguageCls):
             formatter=_format_datetime_kotlin,
             preamble_lines=("import java.time.LocalDateTime",),
         )
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -231,7 +227,7 @@ class Kotlin(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_set_type_to_opener,
+                type_to_opener=_kotlin_opener_config.default.set,
                 fallback="setOf<Any?>(",
             ),
             close=")",
@@ -330,9 +326,14 @@ class Kotlin(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        openers = _kotlin_opener_config.resolve(
+            date_format=date_format.value,
+            datetime_format=datetime_format.value,
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_kotlin_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="mapOf<String, Any?>(",
             ),
             close=")",
