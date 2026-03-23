@@ -198,6 +198,7 @@ class CSharp(metaclass=LanguageCls):
             close="}",
             empty_set="new HashSet<object>()",
             preamble_lines=(),
+            set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(

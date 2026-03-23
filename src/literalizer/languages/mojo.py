@@ -154,6 +154,7 @@ class Mojo(metaclass=LanguageCls):
             close=")",
             empty_set="Set[String]()",
             preamble_lines=("from std.collections import Set",),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

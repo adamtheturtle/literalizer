@@ -219,6 +219,7 @@ class Nim(metaclass=LanguageCls):
             close="]",
             empty_set=None,
             preamble_lines=("import json",),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

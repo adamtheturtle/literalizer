@@ -129,6 +129,7 @@ class Crystal(metaclass=LanguageCls):
             close="}",
             empty_set="Set(Nil).new",
             preamble_lines=('require "set"',),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

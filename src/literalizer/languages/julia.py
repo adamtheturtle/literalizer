@@ -166,6 +166,7 @@ class Julia(metaclass=LanguageCls):
             close="])",
             empty_set="Set()",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

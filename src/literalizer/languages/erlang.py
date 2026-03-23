@@ -176,6 +176,7 @@ class Erlang(metaclass=LanguageCls):
             close="])",
             empty_set="sets:from_list([])",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

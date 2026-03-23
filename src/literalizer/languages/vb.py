@@ -239,6 +239,7 @@ class VisualBasic(metaclass=LanguageCls):
             close="}",
             empty_set="New HashSet(Of Object)()",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

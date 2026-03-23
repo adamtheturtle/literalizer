@@ -258,6 +258,7 @@ class Kotlin(metaclass=LanguageCls):
             close=")",
             empty_set=None,
             preamble_lines=(),
+            set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(

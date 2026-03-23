@@ -203,6 +203,7 @@ class Dart(metaclass=LanguageCls):
             close="}",
             empty_set="<dynamic>{}",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

@@ -196,6 +196,7 @@ class JavaScript(metaclass=LanguageCls):
             close="])",
             empty_set="new Set()",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):
