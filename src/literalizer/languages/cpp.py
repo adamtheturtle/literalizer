@@ -133,7 +133,7 @@ def _is_heterogeneous(data: Value) -> bool:
             return False
         return types != {int, float}
     if isinstance(data, dict) and data:
-        return _is_heterogeneous(list(data.values()))
+        return _is_heterogeneous(data=list(data.values()))
     return False
 
 
@@ -399,8 +399,7 @@ class Cpp(metaclass=LanguageCls):
             """Format a C++ variable declaration."""
             if _is_heterogeneous(data=_data):
                 self.static_preamble = (
-                    *self.static_preamble,
-                    *_ANY_PREAMBLE,
+                    tuple(self.static_preamble) + _ANY_PREAMBLE
                 )
                 return f"_Any {name} = {value};"
             return f"auto {name} = {value};"
