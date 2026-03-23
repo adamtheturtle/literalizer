@@ -87,7 +87,7 @@ def _format_integer_hex(value: int) -> str:
 @beartype
 def _format_integer_underscore(value: int) -> str:
     """Format an integer with underscore separators."""
-    s = str(abs(value))
+    s = str(object=abs(value))
     # Insert underscores every 3 digits from the right.
     group_size = 3
     groups: list[str] = []
