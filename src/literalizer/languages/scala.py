@@ -56,8 +56,8 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     float: "Double",
     MixedNumeric: "Double",
     bytes: "String",
-    datetime.date: "String",
-    datetime.datetime: "String",
+    datetime.date: "LocalDate",
+    datetime.datetime: "ZonedDateTime",
 }
 
 _scala_element_to_type = make_element_to_type(
