@@ -20,6 +20,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -111,20 +113,20 @@ class Dart(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 
-        DART = enum.member(value=_format_date_dart)
+        DART = DateFormatConfig(formatter=_format_date_dart)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        DART = enum.member(value=_format_datetime_dart)
+        DART = DatetimeFormatConfig(formatter=_format_datetime_dart)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

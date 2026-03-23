@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
 import Data.String (IsString(fromString))
 import Data.Time (Day, UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)

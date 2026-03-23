@@ -17,6 +17,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -85,20 +87,26 @@ class Julia(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Julia."""
 
-        JULIA = enum.member(value=_format_date_julia)
+        JULIA = DateFormatConfig(
+            formatter=_format_date_julia,
+            preamble_lines=("using Dates",),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Julia."""
 
-        JULIA = enum.member(value=_format_datetime_julia)
+        JULIA = DatetimeFormatConfig(
+            formatter=_format_datetime_julia,
+            preamble_lines=("using Dates",),
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -286,7 +294,11 @@ class Julia(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            datetime.date: ("using Dates",),
-            datetime.datetime: ("using Dates",),
+            t: p
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
+            )
+            if p
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

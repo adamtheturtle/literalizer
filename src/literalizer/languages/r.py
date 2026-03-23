@@ -16,6 +16,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -119,20 +121,20 @@ class R(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for R."""
 
-        R = enum.member(value=_format_date_r)
+        R = DateFormatConfig(formatter=_format_date_r)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for R."""
 
-        R = enum.member(value=_format_datetime_r)
+        R = DatetimeFormatConfig(formatter=_format_datetime_r)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class EmptyDictKey(enum.Enum):
         """How to handle empty-string dict keys in R.
