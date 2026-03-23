@@ -388,13 +388,6 @@ ignore_names = [
     "EPOCH",
     "FROZENSET",
     "ZONED",
-    # Format enumeration properties used by the Language protocol
-    "declaration_styles",
-    "dict_formats",
-    "integer_formats",
-    "numeric_separators",
-    "string_formats",
-    "trailing_commas",
     # Used in documentation code examples
     "custom",
     "result",
