@@ -1,4 +1,4 @@
-var x = new HashSet<object> {
+var x = new HashSet<string> {
     "apple",  // inline comment
     // before banana
     "banana"

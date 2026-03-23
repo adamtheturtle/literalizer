@@ -4,7 +4,6 @@ import datetime
 import functools
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import cast
 
 from beartype import beartype
 
@@ -206,16 +205,15 @@ def _typed_set_open(
     """Infer the common element type and return the language-specific
     opener for sets.
 
-    Sets are always coerced to homogeneous types before reaching this
-    function, so ``_infer_element_type`` will always succeed.  Uses
-    direct ``type()`` checks on the Python runtime objects to determine
-    the element type, then passes it to *type_to_opener* which returns
-    the language-specific opening delimiter.  When *type_to_opener*
-    returns ``None``, *fallback* is returned instead.
+    Uses direct ``type()`` checks on the Python runtime objects to
+    determine the element type, then passes it to *type_to_opener*
+    which returns the language-specific opening delimiter.  When
+    inference is not possible or *type_to_opener* returns ``None``,
+    *fallback* is returned instead.
     """
-    # Sets are always coerced to homogeneous types before reaching
-    # this function, so _infer_element_type always succeeds.
-    element_type = cast("type | ListType", _infer_element_type(items=items))
+    element_type = _infer_element_type(items=items)
+    if element_type is None:
+        return fallback
     return type_to_opener(element_type) or fallback
 
 

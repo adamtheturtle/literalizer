@@ -1,4 +1,4 @@
-val x: Any? = setOf<Any?>(
+val x: Any? = setOf<String>(
     "apple",  // inline comment
     // before banana
     "banana",

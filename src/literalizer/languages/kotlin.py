@@ -9,7 +9,6 @@ from beartype import beartype
 from literalizer._formatters import (
     ListType,
     dict_entry_with_separator,
-    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -20,6 +19,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
@@ -97,6 +97,11 @@ _KOTLIN_SCALAR_TYPES: dict[type, str] = {
 _kotlin_element_to_type = make_element_to_type(
     scalar_types=_KOTLIN_SCALAR_TYPES,
     list_template="Array<{inner}>",
+)
+
+_kotlin_set_type_to_opener = make_type_to_opener(
+    element_to_type=_kotlin_element_to_type,
+    opener_template="setOf<{type_name}>(",
 )
 
 _kotlin_dict_type_to_opener = make_type_to_opener(
@@ -225,7 +230,10 @@ class Kotlin(metaclass=LanguageCls):
         """Set type options for Kotlin."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="setOf<Any?>("),
+            set_open=typed_set_open(
+                type_to_opener=_kotlin_set_type_to_opener,
+                fallback="setOf<Any?>(",
+            ),
             close=")",
             empty_set=None,
             preamble_lines=(),

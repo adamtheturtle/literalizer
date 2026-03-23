@@ -9,7 +9,6 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     dict_entry_with_separator,
-    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -19,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
@@ -91,6 +91,11 @@ _go_element_to_type = make_element_to_type(
 _go_type_to_opener = make_type_to_opener(
     element_to_type=_go_element_to_type,
     opener_template="[]{type_name}{{",
+)
+
+_go_set_type_to_opener = make_type_to_opener(
+    element_to_type=_go_element_to_type,
+    opener_template="map[{type_name}]struct{{}}{{",
 )
 
 _go_dict_type_to_opener = make_type_to_opener(
@@ -212,7 +217,10 @@ class Go(metaclass=LanguageCls):
         """Set type options for Go."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="map[any]struct{}{"),
+            set_open=typed_set_open(
+                type_to_opener=_go_set_type_to_opener,
+                fallback="map[any]struct{}{",
+            ),
             close="}",
             empty_set=None,
             preamble_lines=(),
