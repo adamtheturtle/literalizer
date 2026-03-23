@@ -262,7 +262,7 @@ def _has_heterogeneous(*, data: Value) -> bool:
         children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
     elif isinstance(data, list):
         children = data
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         return _all_scalars_heterogeneous(values=list(data))
     else:
         return False
@@ -389,6 +389,8 @@ def _coerce_heterogeneous_scalars(
         return _coerce_heterogeneous_dict(data=data)
     if isinstance(data, set):
         return _coerce_heterogeneous_set(data=data)
+    if isinstance(data, frozenset):
+        return data  # pragma: no cover
     if isinstance(data, list):
         return _coerce_heterogeneous_list(data=data)
     return data
@@ -575,7 +577,9 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 
 
 @beartype
-def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
+def _format_set_value(
+    *, value: set[Scalar] | frozenset[Scalar], spec: Language
+) -> str:
     """Format a set value as a native language literal."""
     set_cfg = spec.set_format_config
 
@@ -681,7 +685,7 @@ def _format_value(
     if isinstance(value, dict):
         return _format_dict_value(value=value, spec=spec)
 
-    if isinstance(value, set):
+    if isinstance(value, (set, frozenset)):
         return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
@@ -695,7 +699,7 @@ def _wrap_body(
     *,
     body: str,
     is_ordered_map: bool,
-    data: list[Value] | dict[str, Value] | set[Scalar],
+    data: list[Value] | dict[str, Value] | set[Scalar] | frozenset[Scalar],
     spec: Language,
     line_prefix: str,
 ) -> str:
@@ -712,7 +716,7 @@ def _wrap_body(
 
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         sorted_set: list[Value] = sorted(
             data,
             key=lambda v: (type(v).__name__, repr(v)),
@@ -890,7 +894,7 @@ def _literalize(
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
@@ -1161,7 +1165,7 @@ def _resolve_yaml_comments(
     include_delimiters: bool,
 ) -> _ResolvedComments:
     """Parse YAML for comment metadata and resolve comments."""
-    if isinstance(data, set):
+    if isinstance(data, (set, frozenset)):
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
