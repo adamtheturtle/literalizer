@@ -1573,7 +1573,7 @@ def _build_declaration_style_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.declaration_style
-        for fmt in list(spec.declaration_styles_formats):
+        for fmt in list(spec.declaration_styles):  # pragma: no branch
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_declaration_style_{fmt.name.lower()}"
@@ -1593,7 +1593,7 @@ def _build_dict_format_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.dict_format
-        for fmt in list(spec.dict_formats_formats):
+        for fmt in list(spec.dict_formats):  # pragma: no branch
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_dict_format_{fmt.name.lower()}"
@@ -1613,7 +1613,7 @@ def _build_integer_format_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.integer_format
-        for fmt in list(spec.integer_formats_formats):
+        for fmt in list(spec.integer_formats):  # pragma: no branch
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_integer_format_{fmt.name.lower()}"
@@ -1633,7 +1633,7 @@ def _build_numeric_separator_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.numeric_separator
-        for fmt in list(spec.numeric_separators_formats):
+        for fmt in list(spec.numeric_separators):  # pragma: no branch
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_numeric_separator_{fmt.name.lower()}"
@@ -1653,7 +1653,7 @@ def _build_string_format_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.string_format
-        for fmt in list(spec.string_formats_formats):
+        for fmt in list(spec.string_formats):  # pragma: no branch
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_string_format_{fmt.name.lower()}"
@@ -1673,7 +1673,7 @@ def _build_trailing_comma_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.trailing_comma
-        for fmt in list(spec.trailing_commas_formats):
+        for fmt in list(spec.trailing_commas):  # pragma: no branch
             if fmt is default_format:
                 continue
             variant_key = f"{lang_name}_trailing_comma_{fmt.name.lower()}"
@@ -1937,18 +1937,18 @@ def test_format_enumeration_properties(
     assert len(spec.datetime_formats) >= 1
     assert issubclass(spec.comment_formats, enum.Enum)
     assert len(spec.comment_formats) >= 1
-    assert issubclass(spec.declaration_styles_formats, enum.Enum)
-    assert len(spec.declaration_styles_formats) >= 1
-    assert issubclass(spec.dict_formats_formats, enum.Enum)
-    assert len(spec.dict_formats_formats) >= 1
-    assert issubclass(spec.integer_formats_formats, enum.Enum)
-    assert len(spec.integer_formats_formats) >= 1
-    assert issubclass(spec.numeric_separators_formats, enum.Enum)
-    assert len(spec.numeric_separators_formats) >= 1
-    assert issubclass(spec.string_formats_formats, enum.Enum)
-    assert len(spec.string_formats_formats) >= 1
-    assert issubclass(spec.trailing_commas_formats, enum.Enum)
-    assert len(spec.trailing_commas_formats) >= 1
+    assert issubclass(spec.declaration_styles, enum.Enum)
+    assert len(spec.declaration_styles) >= 1
+    assert issubclass(spec.dict_formats, enum.Enum)
+    assert len(spec.dict_formats) >= 1
+    assert issubclass(spec.integer_formats, enum.Enum)
+    assert len(spec.integer_formats) >= 1
+    assert issubclass(spec.numeric_separators, enum.Enum)
+    assert len(spec.numeric_separators) >= 1
+    assert issubclass(spec.string_formats, enum.Enum)
+    assert len(spec.string_formats) >= 1
+    assert issubclass(spec.trailing_commas, enum.Enum)
+    assert len(spec.trailing_commas) >= 1
 
 
 def test_fortran_comment_pos_escaped_single_quote() -> None:

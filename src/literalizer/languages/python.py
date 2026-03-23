@@ -439,12 +439,12 @@ class Python(metaclass=LanguageCls):
     set_formats = SetFormats
     comment_formats = CommentFormats
     variable_type_hints_formats = VariableTypeHints
-    declaration_styles_formats = DeclarationStyles
-    dict_formats_formats = DictFormats
-    integer_formats_formats = IntegerFormats
-    numeric_separators_formats = NumericSeparators
-    string_formats_formats = StringFormats
-    trailing_commas_formats = TrailingCommas
+    declaration_styles = DeclarationStyles
+    dict_formats = DictFormats
+    integer_formats = IntegerFormats
+    numeric_separators = NumericSeparators
+    string_formats = StringFormats
+    trailing_commas = TrailingCommas
 
     def __init__(
         self,
