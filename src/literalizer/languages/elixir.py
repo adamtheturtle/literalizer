@@ -46,13 +46,31 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value}"
 
 
-_string_format: Callable[[str], str] = format_string_backslash
+@beartype
+def _format_date_elixir(value: datetime.date) -> str:
+    """Format a date as an Elixir ``~D[...]`` sigil."""
+    return f"~D[{value.isoformat()}]"
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
+def _format_datetime_elixir(value: datetime.datetime) -> str:
+    """Format a datetime as an Elixir sigil.
+
+    Uses ``~U`` for timezone-aware datetimes (converted to UTC, since
+    the ``~U`` sigil only accepts UTC offsets) and ``~N`` for naive ones.
+    """
+    if value.tzinfo is not None:
+        utc_value = value.astimezone(tz=datetime.UTC)
+        iso = utc_value.isoformat()
+        # Elixir sigil syntax uses a space separator instead of T.
+        iso = iso.replace("T", " ")
+        return f"~U[{iso}]"
+    iso = value.isoformat()
+    iso = iso.replace("T", " ")
+    return f"~N[{iso}]"
+
+
+_string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
@@ -60,6 +78,22 @@ class Elixir(metaclass=LanguageCls):
     """Elixir language specification.
 
     Args:
+        date_format: Which date format to use.
+
+            * ``date_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15"``.
+            * ``date_formats.ELIXIR`` — Elixir ``~D`` sigil,
+              e.g. ``~D[2024-01-15]``.
+
+        datetime_format: Which datetime format to use.
+
+            * ``datetime_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
+            * ``datetime_formats.ELIXIR`` — Elixir ``~U`` sigil for
+              timezone-aware datetimes (e.g. ``~U[2024-01-15 12:30:00+00:00]``)
+              or ``~N`` sigil for naive datetimes
+              (e.g. ``~N[2024-01-15 12:30:00]``).
+
         sequence_format: Which Elixir sequence type to use.
 
             * ``sequence_formats.LIST`` — list literal,
@@ -75,6 +109,7 @@ class Elixir(metaclass=LanguageCls):
         """Date format options for Elixir."""
 
         ISO = enum.member(value=format_date_iso)
+        ELIXIR = enum.member(value=_format_date_elixir)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -84,6 +119,7 @@ class Elixir(metaclass=LanguageCls):
         """Datetime format options for Elixir."""
 
         ISO = enum.member(value=format_datetime_iso)
+        ELIXIR = enum.member(value=_format_datetime_elixir)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -107,6 +143,7 @@ class Elixir(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="{"),
@@ -114,6 +151,7 @@ class Elixir(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -130,6 +168,7 @@ class Elixir(metaclass=LanguageCls):
             open_str="MapSet.new([",
             close="])",
             empty_set="MapSet.new()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -182,6 +221,7 @@ class Elixir(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=" => "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -200,6 +240,7 @@ class Elixir(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -215,4 +256,6 @@ class Elixir(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

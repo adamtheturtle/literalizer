@@ -98,17 +98,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code.
-
-    The ``Val`` discriminated union used by the generated output is
-    user-defined and must appear after the ``module`` declaration, so
-    it is not part of the preamble.
-    """
-    return ()
-
-
-@beartype
 class FSharp(metaclass=LanguageCls):
     """F# language specification."""
 
@@ -151,6 +140,7 @@ class FSharp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="[|"),
@@ -158,6 +148,7 @@ class FSharp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -174,6 +165,7 @@ class FSharp(metaclass=LanguageCls):
             open_str="FSet [",
             close="]",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -230,6 +222,7 @@ class FSharp(metaclass=LanguageCls):
             close="]",
             format_entry=_format_fsharp_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -245,6 +238,7 @@ class FSharp(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="FMap [",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -263,4 +257,6 @@ class FSharp(metaclass=LanguageCls):
         self.format_sequence_entry: Callable[[str], str] = (
             _format_fsharp_sequence_entry
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

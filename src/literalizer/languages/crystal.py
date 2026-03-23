@@ -29,14 +29,6 @@ from literalizer._types import Value
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    if "Set{" in code:
-        return ['require "set"']
-    return []
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Crystal variable declaration."""
     return f"{name} = {value}"
@@ -103,6 +95,7 @@ class Crystal(metaclass=LanguageCls):
             empty_sequence="[] of Nil",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="{"),
@@ -110,6 +103,7 @@ class Crystal(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -126,6 +120,7 @@ class Crystal(metaclass=LanguageCls):
             open_str="Set{",
             close="}",
             empty_set="Set(Nil).new",
+            preamble_lines=('require "set"',),
         )
 
     class CommentFormats(enum.Enum):
@@ -178,6 +173,7 @@ class Crystal(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=" => "),
             empty_dict="{} of Nil => Nil",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -196,6 +192,7 @@ class Crystal(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -211,4 +208,6 @@ class Crystal(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

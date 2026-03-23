@@ -27,6 +27,35 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_lua(value: datetime.date) -> str:
+    """Format a date as a Lua ``os.time(...)`` call.
+
+    Example::
+
+        os.time({year = 2024, month = 1, day = 15, ...})
+    """
+    return (
+        f"os.time({{year = {value.year}, month = {value.month}, "
+        f"day = {value.day}, hour = 0, min = 0, sec = 0}})"
+    )
+
+
+@beartype
+def _format_datetime_lua(value: datetime.datetime) -> str:
+    """Format a datetime as a Lua ``os.time(...)`` call.
+
+    Example::
+
+        os.time({year = 2024, month = 1, day = 15, ...})
+    """
+    return (
+        f"os.time({{year = {value.year}, month = {value.month}, "
+        f"day = {value.day}, hour = {value.hour}, "
+        f"min = {value.minute}, sec = {value.second}}})"
+    )
+
+
+@beartype
 def _format_lua_dict_entry(key: str, value: str) -> str:
     """Format a Lua table entry with a string key.
 
@@ -60,12 +89,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
-
-
-@beartype
 class Lua(metaclass=LanguageCls):
     """Lua language specification."""
 
@@ -75,6 +98,7 @@ class Lua(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Lua."""
 
+        LUA = enum.member(value=_format_date_lua)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -84,6 +108,7 @@ class Lua(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Lua."""
 
+        LUA = enum.member(value=_format_datetime_lua)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -108,6 +133,7 @@ class Lua(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -124,6 +150,7 @@ class Lua(metaclass=LanguageCls):
             open_str="{",
             close="}",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -155,8 +182,8 @@ class Lua(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.LUA,
+        datetime_format: DatetimeFormats = DatetimeFormats.LUA,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.TABLE,
         set_format: SetFormats = SetFormats.SET,
@@ -180,6 +207,7 @@ class Lua(metaclass=LanguageCls):
             close="}",
             format_entry=_format_lua_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -198,6 +226,7 @@ class Lua(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -213,4 +242,6 @@ class Lua(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -25,6 +25,9 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
 
 @beartype
 def _format_date_ruby(value: datetime.date) -> str:
@@ -45,17 +48,6 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
 def _format_ruby_ordered_map_entry(key: str, value: str) -> str:
     """Format a Ruby ordered-map entry."""
     return f"{key} => {value}"
-
-
-@beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    if "Date.new" in code:
-        lines.append("require 'date'")
-    if "Set.new(" in code:
-        lines.append("require 'set'")
-    return lines
 
 
 @beartype
@@ -125,6 +117,7 @@ class Ruby(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -141,6 +134,7 @@ class Ruby(metaclass=LanguageCls):
             open_str="Set.new([",
             close="])",
             empty_set="Set.new",
+            preamble_lines=("require 'set'",),
         )
 
     class CommentFormats(enum.Enum):
@@ -193,6 +187,7 @@ class Ruby(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=" => "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -212,6 +207,7 @@ class Ruby(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -227,4 +223,8 @@ class Ruby(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            datetime.date: ("require 'date'",),
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

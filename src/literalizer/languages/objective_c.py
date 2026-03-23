@@ -117,12 +117,6 @@ _string_format: Callable[[str], str] = _format_objc_string
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return ("#import <Foundation/Foundation.h>",)
-
-
-@beartype
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
@@ -165,6 +159,7 @@ class ObjectiveC(metaclass=LanguageCls):
             empty_sequence="@[]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            preamble_lines=(),
         )
 
         @property
@@ -181,6 +176,7 @@ class ObjectiveC(metaclass=LanguageCls):
             open_str="[NSSet setWithArray:@[",
             close="]]",
             empty_set="[NSSet set]",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -237,6 +233,7 @@ class ObjectiveC(metaclass=LanguageCls):
             close="}",
             format_entry=_format_objc_dict_entry,
             empty_dict="@{}",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -253,6 +250,7 @@ class ObjectiveC(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="@{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -268,4 +266,8 @@ class ObjectiveC(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = (
+            "#import <Foundation/Foundation.h>",
+        )
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

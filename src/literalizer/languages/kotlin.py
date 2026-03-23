@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -28,6 +28,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -102,17 +105,6 @@ _kotlin_dict_type_to_opener = make_type_to_opener(
 def _format_kotlin_ordered_map_entry(key: str, value: str) -> str:
     """Format a Kotlin ordered-map entry."""
     return f"{key} to {value}"
-
-
-@beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    if "LocalDate." in code:
-        lines.append("import java.time.LocalDate")
-    if "LocalDateTime" in code:
-        lines.append("import java.time.LocalDateTime")
-    return lines
 
 
 @beartype
@@ -195,6 +187,7 @@ class Kotlin(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="arrayOf<Any?>("),
@@ -202,6 +195,7 @@ class Kotlin(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=_kotlin_tuple_open,
@@ -209,6 +203,7 @@ class Kotlin(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -225,6 +220,7 @@ class Kotlin(metaclass=LanguageCls):
             open_str="setOf<Any?>(",
             close=")",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -284,6 +280,7 @@ class Kotlin(metaclass=LanguageCls):
             close=")",
             format_entry=dict_entry_with_separator(separator=" to "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -305,6 +302,7 @@ class Kotlin(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="linkedMapOf<String, Any?>(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -320,4 +318,22 @@ class Kotlin(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        _date_map: dict[str, tuple[str, ...]] = {
+            "KOTLIN": ("import java.time.LocalDate",),
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "KOTLIN": ("import java.time.LocalDateTime",),
+        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (datetime.date, _date_map.get(date_format.name, ())),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, ()),
+                ),
+            )
+            if p
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

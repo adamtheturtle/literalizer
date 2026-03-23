@@ -1,4 +1,4 @@
 local _ = {
-    ["date"] = "2024-01-15",
-    ["datetime"] = "2024-01-15T12:30:00+00:00",
+    ["date"] = os.time({year = 2024, month = 1, day = 15, hour = 0, min = 0, sec = 0}),
+    ["datetime"] = os.time({year = 2024, month = 1, day = 15, hour = 12, min = 30, sec = 0}),
 }

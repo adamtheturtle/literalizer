@@ -1,3 +1,4 @@
+Imports System.Collections.Generic
 Module Check
     Sub _declaration()
         Dim my_data = New Boolean() {

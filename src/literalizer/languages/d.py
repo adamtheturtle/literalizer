@@ -83,12 +83,6 @@ def _format_d_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return ["import std.json;"]
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a D ``auto`` variable declaration using ``JSONValue``."""
     return f"auto {name} = {_to_val(value=value)};"
@@ -146,6 +140,7 @@ class D(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence='parseJSON("[]")',
+            preamble_lines=(),
         )
 
         @property
@@ -162,6 +157,7 @@ class D(metaclass=LanguageCls):
             open_str="JSONValue([",
             close="])",
             empty_set='parseJSON("[]")',
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -218,6 +214,7 @@ class D(metaclass=LanguageCls):
             close="])",
             format_entry=_format_d_dict_entry,
             empty_dict='parseJSON("{}")',
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -236,6 +233,7 @@ class D(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="JSONValue([",
                 close="])",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -251,4 +249,6 @@ class D(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ("import std.json;",)
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -1,5 +1,6 @@
+import Foundation
 do {
-    let my_data: Any = "2024-01-15"
+    let my_data: Any = DateComponents(calendar: Calendar(identifier: .gregorian), year: 2024, month: 1, day: 15).date!
 }
 var my_data: Any
-my_data = "2024-01-15"
+my_data = DateComponents(calendar: Calendar(identifier: .gregorian), year: 2024, month: 1, day: 15).date!

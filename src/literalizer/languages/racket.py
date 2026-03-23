@@ -44,12 +44,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return ("#lang racket",)
-
-
-@beartype
 class Racket(metaclass=LanguageCls):
     """Racket language specification."""
 
@@ -92,6 +86,7 @@ class Racket(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="(list)",
+            preamble_lines=(),
         )
 
         @property
@@ -108,6 +103,7 @@ class Racket(metaclass=LanguageCls):
             open_str="(set ",
             close=")",
             empty_set="(set)",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -164,6 +160,7 @@ class Racket(metaclass=LanguageCls):
             close=")",
             format_entry=dict_entry_with_separator(separator=" "),
             empty_dict="(hash)",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -182,6 +179,7 @@ class Racket(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="(hash ",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -197,4 +195,6 @@ class Racket(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ("#lang racket",)
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

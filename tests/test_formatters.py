@@ -13,6 +13,7 @@ import pytest
 from literalizer.languages import (
     Cpp,
     CSharp,
+    Elixir,
     Go,
     Java,
     JavaScript,
@@ -20,6 +21,7 @@ from literalizer.languages import (
     Python,
     Ruby,
     Rust,
+    Swift,
     VisualBasic,
 )
 
@@ -55,6 +57,30 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "hour=12, minute=30, second=0, "
             "microsecond=123456)",
             id="format_datetime_python_microsecond",
+        ),
+        pytest.param(
+            Elixir.DateFormats.ELIXIR,
+            _SAMPLE_DATE,
+            "~D[2024-01-15]",
+            id="format_date_elixir",
+        ),
+        pytest.param(
+            Elixir.DatetimeFormats.ELIXIR,
+            _SAMPLE_DATETIME,
+            "~N[2024-01-15 12:30:00]",
+            id="format_datetime_elixir_naive",
+        ),
+        pytest.param(
+            Elixir.DatetimeFormats.ELIXIR,
+            datetime.datetime.fromisoformat("2024-01-15T12:30:00+00:00"),
+            "~U[2024-01-15 12:30:00+00:00]",
+            id="format_datetime_elixir_utc",
+        ),
+        pytest.param(
+            Elixir.DatetimeFormats.ELIXIR,
+            datetime.datetime.fromisoformat("2024-01-15T18:00:00+05:30"),
+            "~U[2024-01-15 12:30:00+00:00]",
+            id="format_datetime_elixir_non_utc",
         ),
         pytest.param(
             Java.DateFormats.JAVA,
@@ -155,6 +181,16 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
             "NaiveTime::from_hms_micro_opt(12, 30, 0, 123456).unwrap())",
             id="format_datetime_rust_microsecond",
+        ),
+        pytest.param(
+            Swift.DatetimeFormats.SWIFT,
+            _SAMPLE_DATETIME_MICRO,
+            "DateComponents("
+            "calendar: Calendar(identifier: .gregorian), "
+            "year: 2024, month: 1, day: 15, "
+            "hour: 12, minute: 30, second: 0, "
+            "nanosecond: 123456000).date!",
+            id="format_datetime_swift_microsecond",
         ),
     ],
 )
