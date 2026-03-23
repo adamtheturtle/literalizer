@@ -78,17 +78,13 @@ def _preamble_scalar_type(*, value: Value) -> type | None:
 
     Like :func:`_scalar_type_bucket` but distinguishes
     ``datetime.datetime`` from ``datetime.date`` (they need different
-    preamble lines) and omits ``bool``/``int``/``float`` (which never
-    need preamble).
+    preamble lines).
     """
     if isinstance(value, datetime.datetime):
         return datetime.datetime
     if isinstance(value, datetime.date):
         return datetime.date
-    bucket = _scalar_type_bucket(value=value)
-    if bucket in {str, bytes, type(None)}:
-        return bucket
-    return None
+    return _scalar_type_bucket(value=value)
 
 
 @beartype

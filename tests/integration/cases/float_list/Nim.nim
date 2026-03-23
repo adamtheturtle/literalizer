@@ -1,3 +1,4 @@
+import json
 let _ = %*[
     1.1,
     2.2,
