@@ -16,6 +16,8 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -64,20 +66,23 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "ZonedDateTime",
 }
 
-_scala_list_opener_config = TypedOpenerConfig(
-    scalar_types=_SCALA_SCALAR_TYPES,
-    list_template="List[{inner}]",
-    seq_opener_template="List[{type_name}](",
-    dict_opener_template="Map[String, {type_name}](",
-    set_opener_template="Set[{type_name}](",
-)
-
-_scala_array_opener_config = TypedOpenerConfig(
+_scala_opener_config = TypedOpenerConfig(
     scalar_types=_SCALA_SCALAR_TYPES,
     list_template="Array[{inner}]",
     seq_opener_template="Array[{type_name}](",
     dict_opener_template="Map[String, {type_name}](",
     set_opener_template="Set[{type_name}](",
+)
+
+# The LIST format needs List[…] for nested type names, not Array[…].
+_scala_list_element_to_type = make_element_to_type(
+    scalar_types=_SCALA_SCALAR_TYPES,
+    list_template="List[{inner}]",
+)
+
+_scala_list_type_to_opener = make_type_to_opener(
+    element_to_type=_scala_list_element_to_type,
+    opener_template="List[{type_name}](",
 )
 
 
@@ -155,9 +160,7 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_list_opener_config.build(
-                    scalar_type_overrides={},
-                ).seq,
+                type_to_opener=_scala_list_type_to_opener,
                 fallback="List(",
             ),
             close=")",
@@ -176,7 +179,7 @@ class Scala(metaclass=LanguageCls):
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_array_opener_config.build(
+                type_to_opener=_scala_opener_config.build(
                     scalar_type_overrides={},
                 ).seq,
                 fallback="Array(",
@@ -200,7 +203,7 @@ class Scala(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_scala_list_opener_config.build(
+                type_to_opener=_scala_opener_config.build(
                     scalar_type_overrides={},
                 ).set,
                 fallback="Set(",
@@ -301,7 +304,7 @@ class Scala(metaclass=LanguageCls):
         self.set_format = set_format
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        openers = _scala_list_opener_config.build(
+        openers = _scala_opener_config.build(
             scalar_type_overrides={
                 datetime.date: _SCALA_SCALAR_TYPES[date_tp],
                 datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
@@ -314,10 +317,7 @@ class Scala(metaclass=LanguageCls):
                 fallback="Set(",
             ),
         )
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            type_to_opener=openers.seq,
-            fallback="List(",
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
