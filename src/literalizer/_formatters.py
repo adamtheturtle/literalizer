@@ -506,7 +506,9 @@ def resolve_sequence_open(
     corresponding callable; otherwise return *default* (typically
     ``fmt.sequence_open`` from the :class:`SequenceFormatConfig`).
     """
-    return typed_openers.get(sequence_format, default)
+    if sequence_format in typed_openers:
+        return typed_openers[sequence_format]
+    return default
 
 
 @beartype
