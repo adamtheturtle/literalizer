@@ -13,6 +13,7 @@ import pytest
 from literalizer.languages import (
     Elixir,
     Haskell,
+    JavaScript,
     Perl,
     Python,
     VisualBasic,
@@ -106,6 +107,13 @@ def test_format_bytes(
 ) -> None:
     """Each bytes format function returns the expected string."""
     assert func(value) == expected
+
+
+def test_format_variable_declaration_let() -> None:
+    """``_format_variable_declaration_let`` uses the ``let`` keyword."""
+    js_let = JavaScript(declaration_style=JavaScript.DeclarationStyles.LET)
+    result = js_let.format_variable_declaration("x", "[1, 2]", [1, 2])
+    assert result == "let x = [1, 2];"
 
 
 _VB = VisualBasic()
