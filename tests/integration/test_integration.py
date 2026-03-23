@@ -95,7 +95,11 @@ def _wrap_cpp(content: str) -> str:
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
     if content.lstrip().startswith("("):
-        content = re.sub(r"\bnil\b", "nil as Any?", content)
+        content = re.sub(
+            pattern=r"\bnil\b",
+            repl="nil as Any?",
+            string=content,
+        )
     return f"let x: Any? = {content}"
 
 
