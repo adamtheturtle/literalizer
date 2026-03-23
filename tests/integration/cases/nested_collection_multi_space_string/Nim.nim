@@ -1,4 +1,4 @@
 import json
-let _ = %* [
-    {"key": "hello   world", "value": 1}
+let _ = %* @[
+    {"key": "hello   world", "value": "1"}
 ]

@@ -1,9 +1,9 @@
 import json
-var my_data = %* [
+var my_data = %* @[
     "price $10",
     "$HOME"
 ]
-my_data = %* [
+my_data = %* @[
     "price $10",
     "$HOME"
 ]

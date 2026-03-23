@@ -145,7 +145,7 @@ class CSharp(metaclass=LanguageCls):
             sequence_open=fixed_sequence_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
-            single_element_trailing_comma=False,
+            single_element_trailing_comma=True,
             empty_sequence="ValueTuple.Create()",
             preamble_lines=(),
         )

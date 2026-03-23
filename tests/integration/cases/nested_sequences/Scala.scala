@@ -1,6 +1,6 @@
 object Check {
-val x: Any = Array[Array[Array[Int]]](
-    Array[Array[Int]](Array[Int](1, 2), Array[Int](3, 4)),
-    Array[Array[Int]](Array[Int](5)),
+val x: Any = List[Array[Array[Int]]](
+    List[Array[Int]](List[Int](1, 2), List[Int](3, 4)),
+    List[Array[Int]](List[Int](5)),
 )
 }

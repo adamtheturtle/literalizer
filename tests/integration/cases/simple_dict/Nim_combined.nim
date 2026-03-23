@@ -1,13 +1,13 @@
 import json
 var my_data = %* {
     "name": "Alice",
-    "age": 30,
-    "active": true,
-    "score": nil
+    "age": "30",
+    "active": "True",
+    "score": "None"
 }
 my_data = %* {
     "name": "Alice",
-    "age": 30,
-    "active": true,
-    "score": nil
+    "age": "30",
+    "active": "True",
+    "score": "None"
 }

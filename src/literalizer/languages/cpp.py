@@ -181,7 +181,7 @@ class Cpp(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence=None,
-            preamble_lines=(),
+            preamble_lines=("#include <array>",),
         )
 
         @property

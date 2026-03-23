@@ -1,6 +1,6 @@
 import json
 var my_data = %* {
     "name": "Alice",
-    "age": 30,
-    "active": true
+    "age": "30",
+    "active": "True"
 }

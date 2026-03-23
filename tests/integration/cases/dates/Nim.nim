@@ -1,6 +1,6 @@
 import json
 import times
-let _ = {
-    "date": dateTime(2024, mJan, 15, 0, 0, 0, 0, utc()),
-    "datetime": dateTime(2024, mJan, 15, 12, 30, 0, 0, utc())
+let _ = %* {
+    "date": "2024-01-15",
+    "datetime": "2024-01-15T12:30:00+00:00"
 }

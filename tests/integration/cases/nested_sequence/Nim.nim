@@ -1,7 +1,7 @@
 import json
-let _ = %* [
-    true,
+let _ = %* @[
+    "True",
     "hi",
-    [1, 2],
-    nil
+    "[1, 2]",
+    "None"
 ]

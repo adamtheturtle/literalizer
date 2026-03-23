@@ -1,5 +1,4 @@
-import json
-var my_data = %* [
-    [],
-    []
+var my_data = %* @[
+    @[],
+    @[]
 ]

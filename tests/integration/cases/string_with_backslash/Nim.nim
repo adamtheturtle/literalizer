@@ -1,5 +1,5 @@
 import json
-let _ = %* [
+let _ = %* @[
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\""

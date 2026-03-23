@@ -1,6 +1,6 @@
 import json
 let _ = %* [
-    true,
-    42,
+    "42",
+    "True",
     "apple"
 ]

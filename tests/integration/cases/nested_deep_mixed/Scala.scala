@@ -1,5 +1,5 @@
 object Check {
 val x: Any = List(
-    List(Array[Int](1, 2), Array[String]("a", "b")),
+    List(List[Int](1, 2), List[String]("a", "b")),
 )
 }

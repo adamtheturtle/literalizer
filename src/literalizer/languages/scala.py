@@ -66,7 +66,12 @@ _scala_element_to_type = make_element_to_type(
     list_template="Array[{inner}]",
 )
 
-_scala_type_to_opener = make_type_to_opener(
+_scala_list_type_to_opener = make_type_to_opener(
+    element_to_type=_scala_element_to_type,
+    opener_template="List[{type_name}](",
+)
+
+_scala_array_type_to_opener = make_type_to_opener(
     element_to_type=_scala_element_to_type,
     opener_template="Array[{type_name}](",
 )
@@ -139,7 +144,7 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_type_to_opener,
+                type_to_opener=_scala_list_type_to_opener,
                 fallback="List(",
             ),
             close=")",
@@ -157,7 +162,10 @@ class Scala(metaclass=LanguageCls):
             preamble_lines=(),
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="Array("),
+            sequence_open=typed_sequence_open(
+                type_to_opener=_scala_array_type_to_opener,
+                fallback="Array(",
+            ),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,

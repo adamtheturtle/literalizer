@@ -1,9 +1,9 @@
 import json
-var my_data = %* [
-    1,
+var my_data = %* @[
+    "1",
     "hello"
 ]
-my_data = %* [
-    1,
+my_data = %* @[
+    "1",
     "hello"
 ]

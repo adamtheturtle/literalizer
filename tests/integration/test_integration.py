@@ -77,9 +77,7 @@ def _wrap_cpp(content: str) -> str:
     """Wrap in a C++ struct and function for type-flexible
     initialization.
     """
-    array = "#include <array>\n" if "std::array" in content else ""
     return (
-        f"{array}"
         "#include <initializer_list>\n"
         "struct _Any {\n"
         "    template<class T> _Any(T&&) noexcept {}\n"
@@ -336,9 +334,7 @@ def _wrap_cpp_varname(content: str) -> str:
         if content.startswith(old_prefix)
         else content
     )
-    array = "#include <array>\n" if "std::array" in content else ""
     return (
-        f"{array}"
         "#include <initializer_list>\n"
         "struct _Any {\n"
         "    template<class T> _Any(T&&) noexcept {}\n"
