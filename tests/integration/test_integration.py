@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -150,15 +151,17 @@ _OCCAM_LIT_TYPE = (
     ":"
 )
 
-_HASKELL_ADT = (
-    "import Data.String (IsString(fromString))\n"
-    "import Data.Time (Day, UTCTime(..), fromGregorian,"
-    " secondsToDiffTime, picosecondsToDiffTime)\n"
+_HASKELL_VAL_TYPE = (
     "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
     " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]"
     " | HDate Day | HDatetime UTCTime\n"
-    "instance IsString Val where\n"
-    "    fromString = HStr\n"
+)
+
+_HASKELL_IS_STRING_INSTANCE = (
+    "instance IsString Val where\n    fromString = HStr\n"
+)
+
+_HASKELL_NUM_INSTANCE = (
     "instance Num Val where\n"
     "    fromInteger = HInt\n"
     '    a + b = error "not implemented"\n'
@@ -168,10 +171,48 @@ _HASKELL_ADT = (
     "    negate (HInt n) = HInt (negate n)\n"
     "    negate (HFloat f) = HFloat (negate f)\n"
     '    negate _ = error "not implemented"\n'
+)
+
+_HASKELL_FRACTIONAL_INSTANCE = (
     "instance Fractional Val where\n"
     "    fromRational r = HFloat (realToFrac r)\n"
     '    a / b = error "not implemented"\n'
 )
+
+_HASKELL_QUOTED_RE = re.compile(pattern=r'"(?:[^"\\]|\\.)*"')
+
+
+@beartype
+def _haskell_preamble(content: str) -> str:
+    """Build a Haskell module preamble with only the parts needed.
+
+    The ``OverloadedStrings`` pragma is emitted by the language's
+    ``scalar_preamble`` and prepended by ``_prepend_preamble``, so it
+    is not included here.
+    """
+    stripped = _HASKELL_QUOTED_RE.sub(repl="", string=content)
+    needs_strings = '"' in content
+    needs_fractional = bool(re.search(pattern=r"\d\.\d", string=stripped))
+    needs_num = needs_fractional or bool(
+        re.search(pattern=r"\d", string=stripped)
+    )
+
+    parts: list[str] = []
+    parts.append("module Check where\n")
+    if needs_strings:
+        parts.append("import Data.String (IsString(fromString))\n")
+    parts.append(
+        "import Data.Time (Day, UTCTime(..), fromGregorian,"
+        " secondsToDiffTime, picosecondsToDiffTime)\n"
+    )
+    parts.append(_HASKELL_VAL_TYPE)
+    if needs_strings:
+        parts.append(_HASKELL_IS_STRING_INSTANCE)
+    if needs_num:
+        parts.append(_HASKELL_NUM_INSTANCE)
+    if needs_fractional:
+        parts.append(_HASKELL_FRACTIONAL_INSTANCE)
+    return "".join(parts)
 
 
 @beartype
@@ -251,9 +292,7 @@ def _wrap_fsharp_varname(content: str) -> str:
 @beartype
 def _wrap_haskell(content: str) -> str:
     """Wrap in a Haskell module with a Val binding."""
-    return (
-        "module Check where\n" + _HASKELL_ADT + "x :: Val\n" + f"x = {content}"
-    )
+    return _haskell_preamble(content=content) + "x :: Val\n" + f"x = {content}"
 
 
 @beartype
@@ -688,8 +727,7 @@ def _wrap_rust_varname(content: str) -> str:
 def _wrap_haskell_varname(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
     return (
-        "module Check where\n"
-        + _HASKELL_ADT
+        _haskell_preamble(content=content)
         + f"{_VARIABLE_NAME} :: Val\n"
         + f"{content}"
     )
