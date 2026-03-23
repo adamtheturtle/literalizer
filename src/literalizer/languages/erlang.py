@@ -28,21 +28,6 @@ from literalizer._types import Value
 
 
 @beartype
-def _format_date_erlang(value: datetime.date) -> str:
-    """Format a date as an Erlang calendar date tuple."""
-    return f"{{{value.year}, {value.month}, {value.day}}}"
-
-
-@beartype
-def _format_datetime_erlang(value: datetime.datetime) -> str:
-    """Format a datetime as an Erlang calendar datetime tuple."""
-    return (
-        f"{{{{{value.year}, {value.month}, {value.day}}}, "
-        f"{{{value.hour}, {value.minute}, {value.second}}}}}"
-    )
-
-
-@beartype
 def _format_erlang_ordered_map_entry(key: str, value: str) -> str:
     """Format an Erlang ordered-map entry as a ``{key, value}`` tuple."""
     return f"{{{key}, {value}}}"
@@ -69,6 +54,23 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{erlang_name} = {value}"
 
 
+@beartype
+def _format_date_erlang(value: datetime.date) -> str:
+    """Format a date as an Erlang ``{Year, Month, Day}`` tuple."""
+    return f"{{{value.year}, {value.month}, {value.day}}}"
+
+
+@beartype
+def _format_datetime_erlang(value: datetime.datetime) -> str:
+    """Format a datetime as an Erlang ``{{Y, M, D}, {H, Min, S}}``
+    tuple.
+    """
+    return (
+        f"{{{{{value.year}, {value.month}, {value.day}}}, "
+        f"{{{value.hour}, {value.minute}, {value.second}}}}}"
+    )
+
+
 _string_format: Callable[[str], str] = format_string_backslash
 
 
@@ -77,19 +79,19 @@ class Erlang(metaclass=LanguageCls):
     """Erlang language specification.
 
     Args:
-        date_format: How to format :class:`datetime.date` values.
+        date_format: Which date format to use.
 
-            * ``date_formats.ERLANG`` — calendar date tuple,
+            * ``date_formats.ERLANG`` — Erlang date tuple,
               e.g. ``{2024, 1, 15}``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
+            * ``date_formats.ISO`` — ISO 8601 string literal,
               e.g. ``"2024-01-15"``.
 
-        datetime_format: How to format :class:`datetime.datetime` values.
+        datetime_format: Which datetime format to use.
 
-            * ``datetime_formats.ERLANG`` — calendar datetime tuple,
+            * ``datetime_formats.ERLANG`` — Erlang datetime tuple,
               e.g. ``{{2024, 1, 15}, {12, 30, 0}}``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00"``.
+            * ``datetime_formats.ISO`` — ISO 8601 string literal,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
 
         sequence_format: Which Erlang sequence type to use.
 
