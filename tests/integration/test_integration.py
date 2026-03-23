@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import itertools
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -272,17 +273,25 @@ def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
     the correct structural position within the Haskell module.
     """
     lines = content.split(sep="\n")
+
     # Body-preamble lines start with "import " or "instance ", plus
-    # indented continuation lines of instance blocks.
-    expr_start = 0
-    for i, line in enumerate(iterable=lines):
-        if line.startswith(("import ", "instance ")):
-            expr_start = i + 1
-        elif line.startswith("    ") and expr_start > 0:
-            # Indented continuation of a preceding instance block.
-            expr_start = i + 1
-        else:
-            break
+    # indented continuation lines of instance blocks.  Count
+    # consecutive body-preamble lines from the start using
+    # itertools.takewhile to avoid an uncoverable for/break branch.
+    def _is_body_line(pair: tuple[int, str]) -> bool:
+        """Return whether *pair* is a body-preamble line."""
+        idx, line = pair
+        return line.startswith(("import ", "instance ")) or (
+            line.startswith("    ") and idx > 0
+        )
+
+    body_lines: list[tuple[int, str]] = list(
+        itertools.takewhile(
+            _is_body_line,
+            enumerate(iterable=lines),
+        ),
+    )
+    expr_start = len(body_lines)
     return _HaskellBodySplit(
         body_preamble="\n".join(lines[:expr_start]),
         expression="\n".join(lines[expr_start:]),
