@@ -1573,12 +1573,16 @@ def _build_declaration_style_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.declaration_style
-        for fmt in list(spec.declaration_styles):  # pragma: no branch
-            if fmt is default_format:
-                continue
-            variant_key = f"{lang_name}_declaration_style_{fmt.name.lower()}"
+        non_defaults = [
+            fmt for fmt in spec.declaration_styles if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_declaration_style_"
+            variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(declaration_style=fmt),
+                spec=lang_config.lang_cls(
+                    declaration_style=fmt,
+                ),
                 wrap=lang_config.wrap,
             )
     return variants
@@ -1593,12 +1597,16 @@ def _build_dict_format_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.dict_format
-        for fmt in list(spec.dict_formats):  # pragma: no branch
-            if fmt is default_format:
-                continue
-            variant_key = f"{lang_name}_dict_format_{fmt.name.lower()}"
+        non_defaults = [
+            fmt for fmt in spec.dict_formats if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_dict_format_"
+            variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(dict_format=fmt),
+                spec=lang_config.lang_cls(
+                    dict_format=fmt,
+                ),
                 wrap=lang_config.wrap,
             )
     return variants
@@ -1613,12 +1621,16 @@ def _build_integer_format_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.integer_format
-        for fmt in list(spec.integer_formats):  # pragma: no branch
-            if fmt is default_format:
-                continue
-            variant_key = f"{lang_name}_integer_format_{fmt.name.lower()}"
+        non_defaults = [
+            fmt for fmt in spec.integer_formats if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_integer_format_"
+            variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(integer_format=fmt),
+                spec=lang_config.lang_cls(
+                    integer_format=fmt,
+                ),
                 wrap=lang_config.wrap,
             )
     return variants
@@ -1633,12 +1645,16 @@ def _build_numeric_separator_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.numeric_separator
-        for fmt in list(spec.numeric_separators):  # pragma: no branch
-            if fmt is default_format:
-                continue
-            variant_key = f"{lang_name}_numeric_separator_{fmt.name.lower()}"
+        non_defaults = [
+            fmt for fmt in spec.numeric_separators if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_numeric_separator_"
+            variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(numeric_separator=fmt),
+                spec=lang_config.lang_cls(
+                    numeric_separator=fmt,
+                ),
                 wrap=lang_config.wrap,
             )
     return variants
@@ -1653,12 +1669,16 @@ def _build_string_format_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.string_format
-        for fmt in list(spec.string_formats):  # pragma: no branch
-            if fmt is default_format:
-                continue
-            variant_key = f"{lang_name}_string_format_{fmt.name.lower()}"
+        non_defaults = [
+            fmt for fmt in spec.string_formats if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_string_format_"
+            variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(string_format=fmt),
+                spec=lang_config.lang_cls(
+                    string_format=fmt,
+                ),
                 wrap=lang_config.wrap,
             )
     return variants
@@ -1673,12 +1693,16 @@ def _build_trailing_comma_variants() -> dict[str, _Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.trailing_comma
-        for fmt in list(spec.trailing_commas):  # pragma: no branch
-            if fmt is default_format:
-                continue
-            variant_key = f"{lang_name}_trailing_comma_{fmt.name.lower()}"
+        non_defaults = [
+            fmt for fmt in spec.trailing_commas if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_trailing_comma_"
+            variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(trailing_comma=fmt),
+                spec=lang_config.lang_cls(
+                    trailing_comma=fmt,
+                ),
                 wrap=lang_config.wrap,
             )
     return variants
