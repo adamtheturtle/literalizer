@@ -26,6 +26,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    date_scalar_preamble,
 )
 from literalizer._types import Value
 
@@ -402,18 +403,14 @@ class Haskell(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
         _is_string_body = (_IS_STRING_IMPORT, _IS_STRING_INSTANCE)
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            str: _overloaded_strings,
-            bytes: _overloaded_strings,
-            **{
-                t: p
-                for t, p in (
-                    (datetime.date, date_format.value.preamble_lines),
-                    (datetime.datetime, datetime_format.value.preamble_lines),
-                )
-                if p
+        self.scalar_preamble = date_scalar_preamble(
+            date_format=date_format,
+            datetime_format=datetime_format,
+            extra={
+                str: _overloaded_strings,
+                bytes: _overloaded_strings,
             },
-        }
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
             str: _is_string_body,
             bytes: _is_string_body,
