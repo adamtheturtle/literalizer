@@ -63,30 +63,70 @@ def _format_ts_ordered_map_entry(key: str, value: str) -> str:
 def _format_variable_declaration_const(
     name: str, value: str, _data: Value
 ) -> str:
-    """Format a TypeScript ``const`` variable declaration."""
+    """Format a TypeScript ``const`` variable declaration with
+    semicolon.
+    """
     return f"const {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_const_no_semi(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a TypeScript ``const`` variable declaration without
+    semicolon.
+    """
+    return f"const {name} = {value}"
 
 
 @beartype
 def _format_variable_declaration_let(
     name: str, value: str, _data: Value
 ) -> str:
-    """Format a TypeScript ``let`` variable declaration."""
+    """Format a TypeScript ``let`` variable declaration with semicolon."""
     return f"let {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_let_no_semi(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a TypeScript ``let`` variable declaration without
+    semicolon.
+    """
+    return f"let {name} = {value}"
 
 
 @beartype
 def _format_variable_declaration_var(
     name: str, value: str, _data: Value
 ) -> str:
-    """Format a TypeScript ``var`` variable declaration."""
+    """Format a TypeScript ``var`` variable declaration with semicolon."""
     return f"var {name} = {value};"
 
 
 @beartype
+def _format_variable_declaration_var_no_semi(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a TypeScript ``var`` variable declaration without
+    semicolon.
+    """
+    return f"var {name} = {value}"
+
+
+@beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a TypeScript variable assignment."""
+    """Format a TypeScript variable assignment with semicolon."""
     return f"{name} = {value};"
+
+
+@beartype
+def _format_variable_assignment_no_semi(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a TypeScript variable assignment without semicolon."""
+    return f"{name} = {value}"
 
 
 @beartype
@@ -206,6 +246,12 @@ class TypeScript(metaclass=LanguageCls):
             suffix=" */",
         )
 
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+        NONE = "none"
+
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
@@ -263,6 +309,7 @@ class TypeScript(metaclass=LanguageCls):
     numeric_separators = NumericSeparators
     string_formats = StringFormats
     trailing_commas = TrailingCommas
+    line_endings = LineEndings
 
     def __init__(
         self,
@@ -281,6 +328,7 @@ class TypeScript(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize TypeScript language specification."""
         self.variable_type_hints = variable_type_hints
@@ -320,6 +368,7 @@ class TypeScript(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -335,11 +384,28 @@ class TypeScript(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+        _no_semi = line_ending.value == "none"
+        _const_no = _format_variable_declaration_const_no_semi
+        _let_no = _format_variable_declaration_let_no_semi
+        _var_no = _format_variable_declaration_var_no_semi
+        _no_semi_decl: dict[
+            Callable[[str, str, Value], str],
+            Callable[[str, str, Value], str],
+        ] = {
+            _format_variable_declaration_const: _const_no,
+            _format_variable_declaration_let: _let_no,
+            _format_variable_declaration_var: _var_no,
+        }
+        _base_decl: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            _no_semi_decl[_base_decl] if _no_semi else _base_decl
+        )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _format_variable_assignment_no_semi
+            if _no_semi
+            else _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
