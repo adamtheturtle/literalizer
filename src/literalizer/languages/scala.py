@@ -145,7 +145,9 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_opener_config.build().seq,
+                type_to_opener=_scala_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="List(",
             ),
             close=")",
@@ -167,7 +169,9 @@ class Scala(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_scala_opener_config.build().set,
+                type_to_opener=_scala_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
                 fallback="Set(",
             ),
             close=")",
@@ -268,8 +272,7 @@ class Scala(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _scala_opener_config.build(
-            scalar_types={
-                **_SCALA_SCALAR_TYPES,
+            scalar_type_overrides={
                 datetime.date: _SCALA_SCALAR_TYPES[date_tp],
                 datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
             },

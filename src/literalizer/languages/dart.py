@@ -146,7 +146,9 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_dart_opener_config.build().seq,
+                type_to_opener=_dart_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="[",
             ),
             close="]",
@@ -267,8 +269,7 @@ class Dart(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _dart_opener_config.build(
-            scalar_types={
-                **_DART_SCALAR_TYPES,
+            scalar_type_overrides={
                 datetime.date: _DART_SCALAR_TYPES[date_tp],
                 datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
             },
