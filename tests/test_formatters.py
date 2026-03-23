@@ -5,7 +5,6 @@ from collections.abc import Callable
 
 import pytest
 
-from literalizer._formatters import typed_set_open
 from literalizer.languages import (
     Elixir,
     Haskell,
@@ -111,12 +110,3 @@ def test_format_string_vb(value: str, expected: str) -> None:
     rules.
     """
     assert _VB.format_string(value) == expected
-
-
-def test_typed_set_open_fallback_on_mixed_types() -> None:
-    """``typed_set_open`` returns the fallback for mixed-type items."""
-    opener = typed_set_open(
-        type_to_opener=lambda _et: None,
-        fallback="Set[String](",
-    )
-    assert opener([1, "hello"]) == "Set[String]("

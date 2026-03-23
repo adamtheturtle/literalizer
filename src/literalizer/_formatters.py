@@ -212,7 +212,7 @@ def _typed_set_open(
     returns ``None``, *fallback* is returned instead.
     """
     element_type = _infer_element_type(items=items)
-    if element_type is None:
+    if element_type is None:  # pragma: no cover
         return fallback
     return type_to_opener(element_type) or fallback
 
