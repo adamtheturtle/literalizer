@@ -1,5 +1,5 @@
 import json
-var my_data = %* [
-    1,
+let _ = %* @[
+    "1",
     "hello"
 ]

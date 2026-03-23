@@ -89,7 +89,7 @@ class Nim(metaclass=LanguageCls):
         SEQ = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="@["),
             close="]",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence=None,
         )
@@ -149,7 +149,7 @@ class Nim(metaclass=LanguageCls):
         date_format: DateFormats = DateFormats.ISO,
         datetime_format: DatetimeFormats = DatetimeFormats.ISO,
         bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.SEQ,
+        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.HASH,

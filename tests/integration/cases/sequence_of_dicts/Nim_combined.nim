@@ -1,9 +1,9 @@
 import json
-var my_data = %* @[
+var my_data = %* [
     {"name": "Alice", "age": 30},
     {"name": "Bob", "age": 25}
 ]
-my_data = %* @[
+my_data = %* [
     {"name": "Alice", "age": 30},
     {"name": "Bob", "age": 25}
 ]

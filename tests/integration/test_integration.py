@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -94,7 +95,7 @@ def _wrap_cpp(content: str) -> str:
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
     if content.lstrip().startswith("("):
-        content = content.replace("nil", "nil as Any?")
+        content = re.sub(r"\bnil\b", "nil as Any?", content)
     return f"let x: Any? = {content}"
 
 
