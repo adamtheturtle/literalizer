@@ -354,10 +354,10 @@ def test_coerce_heterogeneous_set() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        [
+        Set[String](
             "1",
             "hello",
-        ]"""
+        )"""
     )
     assert result.code == expected
 
@@ -972,10 +972,10 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        [
+        Set[String](
             1,
             2,
-        ]"""
+        )"""
     )
     assert result.code == expected
 

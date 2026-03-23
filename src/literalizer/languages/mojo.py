@@ -124,7 +124,7 @@ class Mojo(metaclass=LanguageCls):
             open_str="Set[String](",
             close=")",
             empty_set="Set[String]()",
-            preamble_lines=(),
+            preamble_lines=("from std.collections import Set",),
         )
 
     class CommentFormats(enum.Enum):
