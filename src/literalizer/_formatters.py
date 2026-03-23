@@ -121,7 +121,8 @@ class TypedOpenerConfig:
         """Build openers from the base scalar type mapping plus
         overrides.
         """
-        scalar_types = self._scalar_types | scalar_type_overrides
+        scalar_types = dict(self._scalar_types)
+        scalar_types.update(scalar_type_overrides)
         element_to_type = make_element_to_type(
             scalar_types=scalar_types,
             list_template=self._list_template,

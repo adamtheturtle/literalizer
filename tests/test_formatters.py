@@ -53,6 +53,6 @@ def test_format_string_vb(value: str, expected: str) -> None:
 def test_typed_opener_config_build_requires_scalar_type_overrides() -> None:
     """``TypedOpenerConfig.build`` has no default override mapping."""
     scalar_type_overrides = inspect.signature(
-        TypedOpenerConfig.build,
+        obj=TypedOpenerConfig.build,
     ).parameters["scalar_type_overrides"]
     assert scalar_type_overrides.default is inspect.Signature.empty
