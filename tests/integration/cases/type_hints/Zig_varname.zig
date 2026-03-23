@@ -15,6 +15,9 @@ pub fn main() void {
         .{ .key = "age", .val = .{ .int = 30 } },
         .{ .key = "active", .val = .{ .bool = true } },
         .{ .key = "score", .val = .nil },
+        .{ .key = "joined", .val = .{ .int = 1705276800 } },
+        .{ .key = "last_login", .val = .{ .int = 1705321800 } },
+        .{ .key = "avatar", .val = .{ .str = "48656c6c6f" } },
     }};
     _ = my_data;
 }

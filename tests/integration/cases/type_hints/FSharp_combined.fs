@@ -16,5 +16,8 @@ let my_data: Val = FMap [
     ("name", FStr "Alice");
     ("age", FInt 30L);
     ("active", FBool true);
-    ("score", FNull)
+    ("score", FNull);
+    ("joined", FStr (string (System.DateOnly(2024, 1, 15))));
+    ("last_login", FStr (string (System.DateTime(2024, 1, 15, 12, 30, 0))));
+    ("avatar", FStr "48656c6c6f")
 ]
