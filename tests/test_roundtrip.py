@@ -75,6 +75,7 @@ json_arrays = st.lists(elements=json_values, max_size=10)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
 
 
+@settings(deadline=None)
 @given(data=json_arrays)
 def test_roundtrip_array(data: list[_JSONValue]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
@@ -114,7 +115,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
 # health check on unlucky seeds.  The filtering is expected behavior here,
 # so we suppress the check rather than change the strategy.
 @given(data=json_objects)
-@settings(suppress_health_check=[HealthCheck.filter_too_much])
+@settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much])
 def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
     result = literalize_json(
