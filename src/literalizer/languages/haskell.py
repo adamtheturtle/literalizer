@@ -403,13 +403,15 @@ class Haskell(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
         _is_string_body = (_IS_STRING_IMPORT, _IS_STRING_INSTANCE)
-        self.scalar_preamble = date_scalar_preamble(
-            date_format=date_format,
-            datetime_format=datetime_format,
-            extra={
-                str: _overloaded_strings,
-                bytes: _overloaded_strings,
-            },
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            date_scalar_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
+                extra={
+                    str: _overloaded_strings,
+                    bytes: _overloaded_strings,
+                },
+            )
         )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
             str: _is_string_body,
