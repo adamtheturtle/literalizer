@@ -303,7 +303,15 @@ class CSharp(metaclass=LanguageCls):
                 fallback="new HashSet<object> {",
             ),
         )
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        if sequence_format is self.sequence_formats.ARRAY:
+            self.sequence_open: Callable[[list[Value]], str] = (
+                typed_sequence_open(
+                    type_to_opener=openers.seq,
+                    fallback="new object[] {",
+                )
+            )
+        else:
+            self.sequence_open = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,

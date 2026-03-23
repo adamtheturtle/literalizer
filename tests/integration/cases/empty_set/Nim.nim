@@ -1,2 +1,2 @@
 import json
-let _ = @[]
+let _ = %* []
