@@ -64,6 +64,7 @@ _dart_opener_config = TypedOpenerConfig(
     list_template="List<{inner}>",
     seq_opener_template="<{type_name}>[",
     dict_opener_template="<String, {type_name}>{{",
+    set_opener_template="<{type_name}>{{",
 )
 
 

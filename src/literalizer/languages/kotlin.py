@@ -10,7 +10,6 @@ from literalizer._formatters import (
     ListType,
     TypedOpenerConfig,
     dict_entry_with_separator,
-    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -19,6 +18,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
@@ -98,6 +98,7 @@ _kotlin_opener_config = TypedOpenerConfig(
     list_template="Array<{inner}>",
     seq_opener_template="arrayOf(",
     dict_opener_template="mapOf<String, {type_name}>(",
+    set_opener_template="setOf<{type_name}>(",
 )
 
 
@@ -224,7 +225,10 @@ class Kotlin(metaclass=LanguageCls):
         """Set type options for Kotlin."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="setOf<Any?>("),
+            set_open=typed_set_open(
+                type_to_opener=_kotlin_opener_config.build().set,
+                fallback="setOf<Any?>(",
+            ),
             close=")",
             empty_set=None,
             preamble_lines=(),

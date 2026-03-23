@@ -1,5 +1,5 @@
 Module Check
-    Dim my_data = New HashSet(Of Object) From {
+    Dim my_data = New HashSet(Of Integer) From {
         1,
         2,
         3

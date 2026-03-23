@@ -9,7 +9,6 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     fixed_dict_open,
-    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -18,6 +17,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
@@ -118,6 +118,11 @@ _vb_element_to_type = make_element_to_type(
     list_template="{inner}()",
 )
 
+_vb_set_type_to_opener = make_type_to_opener(
+    element_to_type=_vb_element_to_type,
+    opener_template="New HashSet(Of {type_name}) From {{",
+)
+
 _vb_type_to_opener = make_type_to_opener(
     element_to_type=_vb_element_to_type,
     opener_template="New {type_name}() {{",
@@ -213,7 +218,10 @@ class VisualBasic(metaclass=LanguageCls):
         """Set type options for Visual Basic."""
 
         HASH_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="New HashSet(Of Object) From {"),
+            set_open=typed_set_open(
+                type_to_opener=_vb_set_type_to_opener,
+                fallback="New HashSet(Of Object) From {",
+            ),
             close="}",
             empty_set="New HashSet(Of Object)()",
             preamble_lines=(),

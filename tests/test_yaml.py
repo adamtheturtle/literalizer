@@ -254,7 +254,7 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.code == 'map[any]struct{}{"a": struct{}{}},'
+    assert result.code == 'map[string]struct{}{"a": struct{}{}},'
 
 
 def test_yaml_empty_set_inline() -> None:

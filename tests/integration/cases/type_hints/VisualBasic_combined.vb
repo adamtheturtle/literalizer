@@ -5,7 +5,10 @@ Module Check
             {"name", "Alice"},
             {"age", 30},
             {"active", True},
-            {"score", Nothing}
+            {"score", Nothing},
+            {"joined", "2024-01-15"},
+            {"last_login", "2024-01-15T12:30:00+00:00"},
+            {"avatar", "48656c6c6f"}
         }
     End Sub
     Sub _assignment()
@@ -14,7 +17,10 @@ Module Check
             {"name", "Alice"},
             {"age", 30},
             {"active", True},
-            {"score", Nothing}
+            {"score", Nothing},
+            {"joined", "2024-01-15"},
+            {"last_login", "2024-01-15T12:30:00+00:00"},
+            {"avatar", "48656c6c6f"}
         }
     End Sub
 End Module
