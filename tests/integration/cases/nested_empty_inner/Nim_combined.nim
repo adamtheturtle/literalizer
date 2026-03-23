@@ -1,8 +1,8 @@
-var my_data = @[
+var my_data = %* [
     [],
     []
 ]
-my_data = @[
+my_data = %* [
     [],
     []
 ]

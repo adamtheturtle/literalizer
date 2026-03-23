@@ -55,10 +55,14 @@ def _make_variable_declaration(
 
     @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format a ``var`` declaration, using ``@`` for top-level
+        """Format a ``var`` declaration, using ``@`` for flat
         sequences.
         """
-        if seq_mode and isinstance(_data, list):
+        if (
+            seq_mode
+            and isinstance(_data, list)
+            and not any(isinstance(item, list) for item in _data)
+        ):
             return f"var {name} = @{value}"
         return f"var {name} = %* {value}"
 
@@ -74,8 +78,12 @@ def _make_variable_assignment(
 
     @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format an assignment, using ``@`` for top-level sequences."""
-        if seq_mode and isinstance(_data, list):
+        """Format an assignment, using ``@`` for flat sequences."""
+        if (
+            seq_mode
+            and isinstance(_data, list)
+            and not any(isinstance(item, list) for item in _data)
+        ):
             return f"{name} = @{value}"
         return f"{name} = %* {value}"
 
