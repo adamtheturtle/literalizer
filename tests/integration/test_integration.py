@@ -73,19 +73,8 @@ def _wrap_kotlin_varname(content: str) -> str:
 
 @beartype
 def _wrap_cpp(content: str) -> str:
-    """Wrap in a C++ struct and function for type-flexible
-    initialization.
-    """
-    return (
-        "#include <initializer_list>\n"
-        "struct _Any {\n"
-        "    template<class T> _Any(T&&) noexcept {}\n"
-        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-        "};\n"
-        "void _check() {\n"
-        f"    [[maybe_unused]] _Any _v = {content};\n"
-        "}"
-    )
+    """Wrap a C++ expression in a function body."""
+    return f"void _check() {{\n    [[maybe_unused]] _Any _v = {content};\n}}"
 
 
 @beartype
