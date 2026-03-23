@@ -20,6 +20,7 @@ class SequenceFormatConfig:
     empty_sequence: str | None
     preamble_lines: tuple[str, ...]
     format_entry: Callable[[str], str]
+    typed_opener_fallback: str | None
 
 
 @dataclasses.dataclass(frozen=True)

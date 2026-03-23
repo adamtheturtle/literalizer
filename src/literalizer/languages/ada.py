@@ -176,6 +176,7 @@ class Ada(metaclass=LanguageCls):
             empty_sequence="AList'(1 .. 0 => ANull)",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property

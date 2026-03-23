@@ -211,10 +211,12 @@ class Java(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="new Object[]{",
         )
         LIST = SequenceFormatConfig(
             sequence_open=_list_of_open,
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -354,13 +356,14 @@ class Java(metaclass=LanguageCls):
             scalar_type_overrides=scalar_type_overrides,
             set_opener_template=None,
         )
-        seq_open: Callable[[list[Value]], str] = fmt.sequence_open
-        if sequence_format.name == "ARRAY":
-            seq_open = typed_sequence_open(
+        self.sequence_open: Callable[[list[Value]], str] = (
+            typed_sequence_open(
                 type_to_opener=openers.seq,
-                fallback="new Object[]{",
+                fallback=fmt.typed_opener_fallback,
             )
-        self.sequence_open: Callable[[list[Value]], str] = seq_open
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",

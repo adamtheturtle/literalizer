@@ -219,6 +219,7 @@ class VisualBasic(metaclass=LanguageCls):
             empty_sequence="New Object() {}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property

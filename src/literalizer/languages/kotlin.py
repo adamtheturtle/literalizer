@@ -219,6 +219,7 @@ class Kotlin(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="arrayOf<Any?>("),
@@ -228,10 +229,12 @@ class Kotlin(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=_kotlin_tuple_open,
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,

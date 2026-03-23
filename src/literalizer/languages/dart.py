@@ -178,6 +178,7 @@ class Dart(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="[",
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="("),
@@ -187,6 +188,7 @@ class Dart(metaclass=LanguageCls):
             empty_sequence="()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property
@@ -315,15 +317,14 @@ class Dart(metaclass=LanguageCls):
             },
             set_opener_template=None,
         )
-        if sequence_format is self.sequence_formats.LIST:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    type_to_opener=openers.seq,
-                    fallback="[",
-                )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback=fmt.typed_opener_fallback,
             )
-        else:
-            self.sequence_open = fmt.sequence_open
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,

@@ -150,6 +150,7 @@ class Erlang(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="{"),
@@ -159,6 +160,7 @@ class Erlang(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property

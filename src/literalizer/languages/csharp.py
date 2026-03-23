@@ -163,6 +163,7 @@ class CSharp(metaclass=LanguageCls):
             empty_sequence="ValueTuple.Create()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -178,6 +179,7 @@ class CSharp(metaclass=LanguageCls):
             empty_sequence="Array.Empty<object>()",
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="new object[] {",
         )
 
         @property
@@ -324,15 +326,14 @@ class CSharp(metaclass=LanguageCls):
                 fallback=set_format.value.set_open([]),
             ),
         )
-        if sequence_format is self.sequence_formats.ARRAY:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    type_to_opener=openers.seq,
-                    fallback="new object[] {",
-                )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback=fmt.typed_opener_fallback,
             )
-        else:
-            self.sequence_open = fmt.sequence_open
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,

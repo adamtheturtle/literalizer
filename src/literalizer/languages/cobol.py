@@ -266,6 +266,7 @@ class Cobol(metaclass=LanguageCls):
             empty_sequence="05 FILLER PIC X(1) VALUE SPACES.",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property

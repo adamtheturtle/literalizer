@@ -336,6 +336,7 @@ class Python(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         LIST = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
@@ -345,6 +346,7 @@ class Python(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property
