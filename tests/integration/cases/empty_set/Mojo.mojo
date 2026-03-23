@@ -1,2 +1,2 @@
 def main():
-    _ = Set[String]()
+    _ = List[String]()
