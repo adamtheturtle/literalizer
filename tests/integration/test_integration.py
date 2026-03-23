@@ -190,7 +190,7 @@ def _haskell_preamble(content: str) -> str:
     ``scalar_preamble`` and prepended by ``_prepend_preamble``, so it
     is not included here.
     """
-    stripped = _HASKELL_QUOTED_RE.sub("", content)
+    stripped = _HASKELL_QUOTED_RE.sub(repl="", string=content)
     needs_strings = '"' in content
     needs_fractional = bool(re.search(pattern=r"\d\.\d", string=stripped))
     needs_num = needs_fractional or bool(
