@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 
 from beartype import beartype
@@ -33,16 +34,26 @@ def _format_string_ada(value: str) -> str:
 
     Ada has no backslash escaping — backslashes are literal characters.
     Only double quotes are escaped, by doubling them (``""``).
-    Newlines and tabs are rendered as ``\n`` / ``\t`` for readability
-    since Ada string literals cannot span lines.
+    Control characters (code points 0-31) are emitted as
+    ``Character'Val(N)`` expressions concatenated with ``&``.
     """
-    escaped = (
-        value.replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace('"', '""')
-    )
-    return f'"{escaped}"'
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if len(segment) == 1 and ord(segment) < _ADA_CONTROL_CHAR_THRESHOLD:
+            parts.append(f"Character'Val({ord(segment)})")
+        else:
+            escaped = segment.replace('"', '""')
+            parts.append(f'"{escaped}"')
+    if not parts:
+        return '""'
+    if len(parts) == 1:
+        return parts[0]
+    return " & ".join(parts)
+
+
+_ADA_CONTROL_CHAR_THRESHOLD = 32
 
 
 @beartype
@@ -68,6 +79,8 @@ def _to_ada_val(value: str) -> str:
     if any(value.startswith(p) for p in _val_prefixes):
         return value
     if value.startswith('"') and value.endswith('"'):
+        return f"AStr ({value})"
+    if "Character'Val(" in value:
         return f"AStr ({value})"
     negative = value.startswith("-")
     rest = value[1:] if negative else value

@@ -13,7 +13,7 @@ pub fn main() void {
     const v: ZVal = .{ .arr = &.{
         .{ .str = "line1\r\nline2" },
         .{ .str = "line1\rline2" },
-        .{ .str = "" },
+        .{ .str = "\x01" },
     }};
     _ = v;
 }

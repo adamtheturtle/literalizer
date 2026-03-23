@@ -8,13 +8,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    escape_control_chars,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -32,6 +32,20 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+
+@beartype
+def _format_string_yaml(value: str) -> str:
+    r"""Format a string with backslash escaping and ``\xNN`` control chars."""
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    escaped = escape_control_chars(value=escaped, fmt="\\x{:02x}")
+    return f'"{escaped}"'
 
 
 @beartype
@@ -246,7 +260,7 @@ class Yaml(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = _format_string_yaml
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry

@@ -14,7 +14,7 @@ pub fn main() void {
         const my_data: ZVal = .{ .arr = &.{
             .{ .str = "line1\r\nline2" },
             .{ .str = "line1\rline2" },
-            .{ .str = "" },
+            .{ .str = "\x01" },
         }};
         _ = my_data;
     }
@@ -22,7 +22,7 @@ pub fn main() void {
     my_data = .{ .arr = &.{
         .{ .str = "line1\r\nline2" },
         .{ .str = "line1\rline2" },
-        .{ .str = "" },
+        .{ .str = "\x01" },
     }};
     const _my_data_read = my_data;
     _ = _my_data_read;

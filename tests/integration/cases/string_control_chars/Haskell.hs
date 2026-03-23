@@ -9,5 +9,5 @@ x :: Val
 x = HList [
     "line1\r\nline2",
     "line1\rline2",
-    ""
+    "\x01"
     ]

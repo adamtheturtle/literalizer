@@ -8,13 +8,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    escape_control_chars,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -75,7 +75,21 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value}"
 
 
-_string_format: Callable[[str], str] = format_string_backslash
+@beartype
+def _format_string_swift(value: str) -> str:
+    r"""Format a string with backslash escaping and ``\u{N}`` control chars."""
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    escaped = escape_control_chars(value=escaped, fmt="\\u{{{:x}}}")
+    return f'"{escaped}"'
+
+
+_string_format: Callable[[str], str] = _format_string_swift
 
 
 @beartype
