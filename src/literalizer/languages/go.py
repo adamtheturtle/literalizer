@@ -186,7 +186,9 @@ class Go(metaclass=LanguageCls):
 
         SLICE = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_go_opener_config.build().seq,
+                type_to_opener=_go_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="[]any{",
             ),
             close="}",
@@ -208,7 +210,9 @@ class Go(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_go_opener_config.build().set,
+                type_to_opener=_go_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
                 fallback="map[any]struct{}{",
             ),
             close="}",
@@ -310,8 +314,7 @@ class Go(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _go_opener_config.build(
-            scalar_types={
-                **_GO_SCALAR_TYPES,
+            scalar_type_overrides={
                 datetime.date: _GO_SCALAR_TYPES[date_tp],
                 datetime.datetime: _GO_SCALAR_TYPES[dt_tp],
             },
@@ -380,4 +383,5 @@ class Go(metaclass=LanguageCls):
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

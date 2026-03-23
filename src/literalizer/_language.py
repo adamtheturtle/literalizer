@@ -421,6 +421,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     ``{datetime.date: ("import datetime",)}``.
     """
 
+    scalar_body_preamble: dict[type, tuple[str, ...]]
+    """Maps Python scalar types to body-preamble lines that belong
+    *inside* the module rather than before it.
+
+    Most languages leave this empty.  Haskell uses it for typeclass
+    instance definitions that must appear after the ``module`` header.
+    """
+
     type_hint_collection_preamble_lines: tuple[str, ...]
     """Preamble lines required when the language produces type-hinted
     variable declarations *and* the data contains collections.

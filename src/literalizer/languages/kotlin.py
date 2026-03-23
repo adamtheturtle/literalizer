@@ -226,7 +226,9 @@ class Kotlin(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.build().set,
+                type_to_opener=_kotlin_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
                 fallback="setOf<Any?>(",
             ),
             close=")",
@@ -329,8 +331,7 @@ class Kotlin(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _kotlin_opener_config.build(
-            scalar_types={
-                **_KOTLIN_SCALAR_TYPES,
+            scalar_type_overrides={
                 datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
                 datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
             },
@@ -397,4 +398,5 @@ class Kotlin(metaclass=LanguageCls):
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

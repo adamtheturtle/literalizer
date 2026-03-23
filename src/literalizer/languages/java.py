@@ -198,7 +198,9 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_java_opener_config.build().seq,
+                type_to_opener=_java_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="new Object[]{",
             ),
             close="}",
@@ -325,17 +327,16 @@ class Java(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
-        scalar_types = {
-            **_JAVA_SCALAR_TYPES,
+        scalar_type_overrides: dict[type, str] = {
             datetime.date: _JAVA_SCALAR_TYPES[date_tp],
         }
         dt_tp = _JAVA_SCALAR_TYPES.get(
             datetime_format.value.type_produced,
         )
         if dt_tp is not None:
-            scalar_types[datetime.datetime] = dt_tp
+            scalar_type_overrides[datetime.datetime] = dt_tp
         openers = _java_opener_config.build(
-            scalar_types=scalar_types,
+            scalar_type_overrides=scalar_type_overrides,
         )
         seq_open: Callable[[list[Value]], str] = fmt.sequence_open
         if sequence_format.name == "ARRAY":
@@ -400,4 +401,5 @@ class Java(metaclass=LanguageCls):
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

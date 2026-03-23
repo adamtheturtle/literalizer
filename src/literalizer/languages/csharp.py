@@ -154,7 +154,9 @@ class CSharp(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_csharp_opener_config.build().seq,
+                type_to_opener=_csharp_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="new object[] {",
             ),
             close="}",
@@ -176,7 +178,9 @@ class CSharp(metaclass=LanguageCls):
 
         HASH_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_csharp_opener_config.build().set,
+                type_to_opener=_csharp_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
                 fallback="new HashSet<object> {",
             ),
             close="}",
@@ -278,8 +282,7 @@ class CSharp(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _csharp_opener_config.build(
-            scalar_types={
-                **_CSHARP_SCALAR_TYPES,
+            scalar_type_overrides={
                 datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
                 datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
             },
@@ -348,4 +351,5 @@ class CSharp(metaclass=LanguageCls):
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
