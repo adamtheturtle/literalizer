@@ -511,6 +511,42 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
 
 
 @beartype
+def _has_mixed_dict_values(*, data: Value) -> bool:
+    """Recursively check whether data contains any dict whose values span
+    multiple type families.
+    """
+    if isinstance(data, (ordereddict, dict)):
+        values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        if _dict_values_mixed_types(values=values):
+            return True
+        return any(_has_mixed_dict_values(data=v) for v in values)
+
+    if isinstance(data, list):
+        return any(_has_mixed_dict_values(data=v) for v in data)
+
+    return False
+
+
+@beartype
+def _has_mixed_list_values(*, data: Value) -> bool:
+    """Recursively check whether data contains any list whose elements span
+    multiple type families.
+    """
+    if isinstance(data, (ordereddict, dict)):
+        return any(
+            _has_mixed_list_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        )
+
+    if isinstance(data, list):
+        if _dict_values_mixed_types(values=data):
+            return True
+        return any(_has_mixed_list_values(data=v) for v in data)
+
+    return False
+
+
+@beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     if value is None:
@@ -729,11 +765,23 @@ def _apply_coercions(
                     "that would be coerced to strings"
                 )
                 raise HeterogeneousCoercionError(msg)
+            if _has_mixed_dict_values(data=data):
+                msg = (
+                    "Dict contains values of mixed types "
+                    "that would be coerced to strings"
+                )
+                raise HeterogeneousCoercionError(msg)
+            if _has_mixed_list_values(data=data):
+                msg = (
+                    "List contains elements of mixed types "
+                    "that would be coerced to strings"
+                )
+                raise HeterogeneousCoercionError(msg)
         else:
             data = _coerce_heterogeneous_scalars(data=data)
             data = _coerce_heterogeneous_sibling_lists(data=data)
-        data = _coerce_mixed_dict_values(data=data)
-        data = _coerce_mixed_list_values(data=data)
+            data = _coerce_mixed_dict_values(data=data)
+            data = _coerce_mixed_list_values(data=data)
     return data
 
 
