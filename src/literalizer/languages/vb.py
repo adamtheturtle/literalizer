@@ -316,6 +316,7 @@ class VisualBasic(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _format_string_vb
+        self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )

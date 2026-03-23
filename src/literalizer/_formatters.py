@@ -141,6 +141,24 @@ def format_string_backslash(value: str) -> str:
 
 
 @beartype
+def format_string_backslash_single(value: str) -> str:
+    r"""Format a string using backslash escaping with single quotes.
+
+    Escapes backslashes, single quotes, and newlines with a backslash
+    prefix, then wraps the result in single quotes.
+
+    Example: ``hello 'world'`` → ``'hello \'world\''``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    return f"'{escaped}'"
+
+
+@beartype
 def format_string_backslash_dollar(value: str) -> str:
     r"""Format a string using backslash escaping, including ``$``.
 

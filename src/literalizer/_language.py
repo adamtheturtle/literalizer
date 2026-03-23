@@ -334,6 +334,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def variable_type_hints(self) -> enum.Enum:
         """The variable type hint option chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis

@@ -518,7 +518,7 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     elif isinstance(value, bool):
         result = spec.true_literal if value else spec.false_literal
     elif isinstance(value, int):
-        result = str(object=value)
+        result = spec.format_integer(value)
     elif isinstance(value, float):
         result = repr(value)
     elif isinstance(value, str):

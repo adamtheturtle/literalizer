@@ -288,6 +288,7 @@ class R(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
