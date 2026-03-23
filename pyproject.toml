@@ -386,10 +386,16 @@ ignore_names = [
     # Enum members accessed by consumers iterating format enums
     "BLOCK",
     "HASH_SET",
+    "HEX",
+    "LET",
+    "MAP",
     "MAP_SET",
     "EPOCH",
     "FROZENSET",
     "ERLANG",
+    "NO",
+    "SINGLE",
+    "UNDERSCORE",
     "ZONED",
     # Used in documentation code examples
     "custom",

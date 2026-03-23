@@ -279,7 +279,7 @@ class JavaScript(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        if dict_format is JavaScript.DictFormats.MAP:
+        if dict_format.name == "MAP":
             self.dict_format_config: DictFormatConfig = DictFormatConfig(
                 open_fn=fixed_dict_open(open_str="new Map(["),
                 close="])",
@@ -295,9 +295,7 @@ class JavaScript(metaclass=LanguageCls):
                 empty_dict=None,
                 preamble_lines=(),
             )
-        self.multiline_trailing_comma = (
-            trailing_comma is JavaScript.TrailingCommas.YES
-        )
+        self.multiline_trailing_comma = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -306,16 +304,16 @@ class JavaScript(metaclass=LanguageCls):
 
         self.format_string: Callable[[str], str] = (
             format_string_backslash_single
-            if string_format is JavaScript.StringFormats.SINGLE
+            if string_format.name == "SINGLE"
             else format_string_backslash
         )
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
         )
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry
-        if integer_format is JavaScript.IntegerFormats.HEX:
+        if integer_format.name == "HEX":
             fmt_int: Callable[[int], str] = _format_integer_hex
-        elif numeric_separator is JavaScript.NumericSeparators.UNDERSCORE:
+        elif numeric_separator.name == "UNDERSCORE":
             fmt_int = _format_integer_underscore
         else:
             fmt_int = str
@@ -344,7 +342,7 @@ class JavaScript(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration_let
-            if declaration_style is JavaScript.DeclarationStyles.LET
+            if declaration_style.name == "LET"
             else _format_variable_declaration_const
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
