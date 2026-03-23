@@ -347,7 +347,7 @@ class CSharp(metaclass=LanguageCls):
         openers = _csharp_opener_config.build(
             scalar_type_overrides=_scalar_overrides,
         )
-        self.set_format_config = _build_set_format_config(
+        self.set_format_config: SetFormatConfig = _build_set_format_config(
             set_format_value=set_format.value,
             set_format_name=set_format.name,
             scalar_type_overrides=_scalar_overrides,
