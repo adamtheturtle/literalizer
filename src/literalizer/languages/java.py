@@ -96,7 +96,6 @@ _JAVA_SCALAR_TYPES: dict[type, str] = {
 
 _java_opener_config = TypedOpenerConfig(
     scalar_types=_JAVA_SCALAR_TYPES,
-    string_type="String",
     list_template="{inner}[]",
     seq_opener_template="new {type_name}[]{{",
     dict_opener_template="new {type_name}[]{{",
@@ -156,7 +155,7 @@ class Java(metaclass=LanguageCls):
             formatter=_format_date_java,
             preamble_lines=("import java.time.LocalDate;",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -178,7 +177,7 @@ class Java(metaclass=LanguageCls):
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -199,7 +198,7 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_java_opener_config.default.seq,
+                type_to_opener=_java_opener_config.build().seq,
                 fallback="new Object[]{",
             ),
             close="}",
@@ -325,13 +324,18 @@ class Java(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
 
-        # When ISO format is selected, dates become plain strings, so
-        # typed collections must use "String" instead of "LocalDate".
-        # Only the ARRAY format uses typed openers; LIST uses a fixed
-        # opener so no override is needed.
-        openers = _java_opener_config.resolve(
-            date_format=date_format.value,
-            datetime_format=datetime_format.value,
+        date_tp = date_format.value.type_produced
+        scalar_types = {
+            **_JAVA_SCALAR_TYPES,
+            datetime.date: _JAVA_SCALAR_TYPES[date_tp],
+        }
+        dt_tp = _JAVA_SCALAR_TYPES.get(
+            datetime_format.value.type_produced,
+        )
+        if dt_tp is not None:
+            scalar_types[datetime.datetime] = dt_tp
+        openers = _java_opener_config.build(
+            scalar_types=scalar_types,
         )
         seq_open: Callable[[list[Value]], str] = fmt.sequence_open
         if sequence_format.name == "ARRAY":

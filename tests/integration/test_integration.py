@@ -1925,6 +1925,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_date_variants(), "date_list", None, ""),
         (_build_datetime_variants(), "scalar_datetime", None, ""),
         (_build_datetime_variants(), "scalar_datetime_naive", None, "_naive"),
+        (
+            _build_datetime_variants(),
+            "scalar_datetime_non_utc",
+            None,
+            "_non_utc",
+        ),
         (_build_sequence_variants(), "simple_sequence", None, ""),
         (_build_sequence_variants(), "pair_sequence", None, "_pair"),
         (_build_sequence_variants(), "triple_sequence", None, "_triple"),

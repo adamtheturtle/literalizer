@@ -157,7 +157,7 @@ class ObjectiveC(metaclass=LanguageCls):
         OBJC = DateFormatConfig(formatter=_format_objc_date)
         ISO = DateFormatConfig(
             formatter=_format_objc_date_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -170,7 +170,7 @@ class ObjectiveC(metaclass=LanguageCls):
         OBJC = DatetimeFormatConfig(formatter=_format_objc_datetime)
         ISO = DatetimeFormatConfig(
             formatter=_format_objc_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

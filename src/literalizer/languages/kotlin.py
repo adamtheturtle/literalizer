@@ -95,7 +95,6 @@ _KOTLIN_SCALAR_TYPES: dict[type, str] = {
 
 _kotlin_opener_config = TypedOpenerConfig(
     scalar_types=_KOTLIN_SCALAR_TYPES,
-    string_type="String",
     list_template="Array<{inner}>",
     seq_opener_template="arrayOf(",
     dict_opener_template="mapOf<String, {type_name}>(",
@@ -161,7 +160,7 @@ class Kotlin(metaclass=LanguageCls):
             formatter=_format_date_kotlin,
             preamble_lines=("import java.time.LocalDate",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -176,7 +175,7 @@ class Kotlin(metaclass=LanguageCls):
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -227,7 +226,7 @@ class Kotlin(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.default.set,
+                type_to_opener=_kotlin_opener_config.build().set,
                 fallback="setOf<Any?>(",
             ),
             close=")",
@@ -327,9 +326,14 @@ class Kotlin(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
 
-        openers = _kotlin_opener_config.resolve(
-            date_format=date_format.value,
-            datetime_format=datetime_format.value,
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _kotlin_opener_config.build(
+            scalar_types={
+                **_KOTLIN_SCALAR_TYPES,
+                datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
+                datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
+            },
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(

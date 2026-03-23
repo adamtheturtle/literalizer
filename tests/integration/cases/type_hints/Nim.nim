@@ -3,5 +3,8 @@ let _ = %*{
     "name": "Alice",
     "age": 30,
     "active": true,
-    "score": nil
+    "score": nil,
+    "joined": {"year": 2024, "month": 1, "day": 15},
+    "last_login": {"year": 2024, "month": 1, "day": 15, "hour": 12, "minute": 30, "second": 0},
+    "avatar": "48656c6c6f"
 }

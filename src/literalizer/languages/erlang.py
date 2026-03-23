@@ -110,7 +110,7 @@ class Erlang(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
         ERLANG = DateFormatConfig(formatter=_format_date_erlang)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -122,7 +122,7 @@ class Erlang(metaclass=LanguageCls):
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
         ERLANG = DatetimeFormatConfig(formatter=_format_datetime_erlang)
 

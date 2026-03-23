@@ -103,7 +103,7 @@ class Yaml(metaclass=LanguageCls):
         """Date format options for Yaml."""
 
         YAML = DateFormatConfig(formatter=_format_yaml_date)
-        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -115,7 +115,7 @@ class Yaml(metaclass=LanguageCls):
         YAML = DatetimeFormatConfig(formatter=_format_yaml_datetime)
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            produces_string=True,
+            type_produced=str,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
