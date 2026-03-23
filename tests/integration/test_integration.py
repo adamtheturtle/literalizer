@@ -1686,6 +1686,30 @@ def _build_string_format_variants() -> dict[str, _Variant]:
 
 
 @beartype
+def _build_bytes_format_variants() -> dict[str, _Variant]:
+    """Build bytes-format variants for all languages with multiple
+    formats.
+    """
+    variants: dict[str, _Variant] = {}
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_format = spec.format_bytes
+        non_defaults = [
+            fmt for fmt in spec.bytes_formats if fmt is not default_format
+        ]
+        for fmt in non_defaults:
+            key = f"{lang_name}_bytes_format_"
+            variant_key = key + fmt.name.lower()
+            variants[variant_key] = _Variant(
+                spec=lang_config.lang_cls(
+                    bytes_format=fmt,
+                ),
+                wrap=lang_config.wrap,
+            )
+    return variants
+
+
+@beartype
 def _build_trailing_comma_variants() -> dict[str, _Variant]:
     """Build trailing-comma variants for all languages with multiple
     options.
@@ -1880,6 +1904,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             "_large",
         ),
         (_build_string_format_variants(), "string_list", None, ""),
+        (_build_bytes_format_variants(), "binary", None, ""),
         (_build_trailing_comma_variants(), "simple_sequence", None, ""),
     ]
     for variants, case_dir_name, variable_name, suffix in variant_sources:
