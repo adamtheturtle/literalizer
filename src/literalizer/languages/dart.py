@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     dict_entry_with_separator,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -171,7 +172,7 @@ class Dart(metaclass=LanguageCls):
         """Set type options for Dart."""
 
         SET = SetFormatConfig(
-            open_str="{",
+            set_open=fixed_set_open(open_str="{"),
             close="}",
             empty_set="<dynamic>{}",
             preamble_lines=(),

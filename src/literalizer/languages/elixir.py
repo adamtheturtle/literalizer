@@ -10,6 +10,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -167,7 +168,7 @@ class Elixir(metaclass=LanguageCls):
         """Set type options for Elixir."""
 
         MAP_SET = SetFormatConfig(
-            open_str="MapSet.new([",
+            set_open=fixed_set_open(open_str="MapSet.new(["),
             close="])",
             empty_set="MapSet.new()",
             preamble_lines=(),

@@ -4,6 +4,7 @@ import datetime
 import functools
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import cast
 
 from beartype import beartype
 
@@ -175,6 +176,78 @@ def format_string_backslash_dollar(value: str) -> str:
         .replace("$", "\\$")
     )
     return f'"{escaped}"'
+
+
+@beartype
+def fixed_set_open(*, open_str: str) -> Callable[[list[Value]], str]:
+    """Return a ``set_open`` callable that always returns *open_str*.
+
+    Use this as ``set_open`` when the opening delimiter for sets
+    is a fixed string that does not depend on the set contents.
+
+    Example: ``fixed_set_open(open_str="{")([1, 2, 3])`` → ``"{"``.
+    """
+
+    @beartype
+    def _open(_items: list[Value]) -> str:
+        """Return the fixed opening delimiter."""
+        return open_str
+
+    return _open
+
+
+@beartype
+def _typed_set_open(
+    items: list[Value],
+    *,
+    type_to_opener: Callable[[type | ListType], str | None],
+    fallback: str,
+) -> str:
+    """Infer the common element type and return the language-specific
+    opener for sets.
+
+    Sets are always coerced to homogeneous types before reaching this
+    function, so ``_infer_element_type`` will always succeed.  Uses
+    direct ``type()`` checks on the Python runtime objects to determine
+    the element type, then passes it to *type_to_opener* which returns
+    the language-specific opening delimiter.  When *type_to_opener*
+    returns ``None``, *fallback* is returned instead.
+    """
+    # Sets are always coerced to homogeneous types before reaching
+    # this function, so _infer_element_type always succeeds.
+    element_type = cast("type | ListType", _infer_element_type(items=items))
+    return type_to_opener(element_type) or fallback
+
+
+@beartype
+def typed_set_open(
+    *,
+    type_to_opener: Callable[[type | ListType], str | None],
+    fallback: str,
+) -> Callable[[list[Value]], str]:
+    """Return a ``set_open`` callable that infers the common
+    element type and delegates to *type_to_opener*.
+
+    When inference is not possible or *type_to_opener* returns
+    ``None``, *fallback* is used instead.
+
+    Example::
+
+        def my_opener(element_type: type | ListType) -> str | None:
+            if element_type is str:
+                return "Set[String]("
+            return None
+
+        set_open = typed_set_open(
+            type_to_opener=my_opener,
+            fallback="Set[String](",
+        )
+    """
+    return functools.partial(
+        _typed_set_open,
+        type_to_opener=type_to_opener,
+        fallback=fallback,
+    )
 
 
 @beartype

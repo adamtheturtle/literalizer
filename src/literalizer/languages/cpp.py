@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -198,7 +199,7 @@ class Cpp(metaclass=LanguageCls):
         """Set type options for C++."""
 
         SET = SetFormatConfig(
-            open_str="{",
+            set_open=fixed_set_open(open_str="{"),
             close="}",
             empty_set=None,
             preamble_lines=(),

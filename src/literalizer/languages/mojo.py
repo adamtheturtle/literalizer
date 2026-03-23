@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -14,8 +15,11 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
@@ -49,6 +53,24 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Mojo variable assignment."""
     return f"{name} = {value}"
 
+
+_MOJO_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "Bool",
+    int: "Int",
+    float: "Float64",
+    MixedNumeric: "String",
+}
+
+_mojo_element_to_type = make_element_to_type(
+    scalar_types=_MOJO_SCALAR_TYPES,
+    list_template="List[{inner}]",
+)
+
+_mojo_set_type_to_opener = make_type_to_opener(
+    element_to_type=_mojo_element_to_type,
+    opener_template="Set[{type_name}](",
+)
 
 _string_format: Callable[[str], str] = format_string_backslash
 
@@ -121,7 +143,10 @@ class Mojo(metaclass=LanguageCls):
         """Set type options for Mojo."""
 
         SET = SetFormatConfig(
-            open_str="Set[String](",
+            set_open=typed_set_open(
+                type_to_opener=_mojo_set_type_to_opener,
+                fallback="Set[String](",
+            ),
             close=")",
             empty_set="Set[String]()",
             preamble_lines=("from std.collections import Set",),

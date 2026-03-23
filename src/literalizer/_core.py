@@ -584,10 +584,11 @@ def _format_set_value(
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+    items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [spec.format_set_entry(item) for item in formatted]
     joined = spec.element_separator.join(entries)
-    return set_cfg.open_str + joined + set_cfg.close
+    return set_cfg.set_open(items_as_values) + joined + set_cfg.close
 
 
 @beartype
@@ -714,7 +715,11 @@ def _wrap_body(
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
     elif isinstance(data, (set, frozenset)):
-        opening = f"{line_prefix}{spec.set_format_config.open_str}"
+        sorted_set: list[Value] = sorted(
+            data,
+            key=lambda v: (type(v).__name__, repr(v)),
+        )
+        opening = f"{line_prefix}{spec.set_format_config.set_open(sorted_set)}"
         closing = f"{close_prefix}{spec.set_format_config.close}"
     else:
         opening = f"{line_prefix}{spec.sequence_open(data)}"

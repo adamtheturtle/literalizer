@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -206,7 +207,7 @@ class Haskell(metaclass=LanguageCls):
         """Set type options for Haskell."""
 
         SET = SetFormatConfig(
-            open_str="HSet [",
+            set_open=fixed_set_open(open_str="HSet ["),
             close="]",
             empty_set=None,
             preamble_lines=(),

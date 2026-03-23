@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -179,7 +180,7 @@ class CSharp(metaclass=LanguageCls):
         """Set type options for C#."""
 
         HASH_SET = SetFormatConfig(
-            open_str="new HashSet<object> {",
+            set_open=fixed_set_open(open_str="new HashSet<object> {"),
             close="}",
             empty_set="new HashSet<object>()",
             preamble_lines=(),

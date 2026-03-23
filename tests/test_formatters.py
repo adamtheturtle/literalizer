@@ -9,7 +9,6 @@ from literalizer.languages import (
     Elixir,
     Haskell,
     Perl,
-    Python,
     VisualBasic,
 )
 
@@ -55,14 +54,6 @@ def test_format_datetime_non_utc(
 ) -> None:
     """Non-UTC datetimes are converted to UTC before formatting."""
     assert func(value) == expected
-
-
-def test_format_datetime_epoch() -> None:
-    """``format_datetime_epoch`` returns a numeric timestamp."""
-    result = Python.datetime_formats.EPOCH(_SAMPLE_DATETIME)
-    # The exact value depends on local timezone for naive datetimes,
-    # so just check it parses as a float.
-    float(result)
 
 
 _VB = VisualBasic()

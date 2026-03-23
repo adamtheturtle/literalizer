@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     ListType,
     dict_entry_with_separator,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -224,7 +225,7 @@ class Kotlin(metaclass=LanguageCls):
         """Set type options for Kotlin."""
 
         SET = SetFormatConfig(
-            open_str="setOf<Any?>(",
+            set_open=fixed_set_open(open_str="setOf<Any?>("),
             close=")",
             empty_set=None,
             preamble_lines=(),
