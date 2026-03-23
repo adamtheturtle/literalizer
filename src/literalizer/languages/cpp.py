@@ -105,10 +105,36 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
+_ANY_PREAMBLE: tuple[str, ...] = (
+    "#include <initializer_list>",
+    "struct _Any {",
+    "    template<class T> _Any(T&&) noexcept {}",
+    "    _Any(std::initializer_list<_Any>) noexcept {}",
+    "};",
+)
+
+
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a C++ variable declaration."""
-    return f"auto {name} = {value};"
+def _is_heterogeneous(data: Value) -> bool:
+    """Check whether *data* is a collection with mixed element types.
+
+    Returns ``True`` when the top-level structure is a list or dict
+    whose elements cannot be unified into a single C++ type, making
+    ``auto`` deduction impossible.
+    """
+    if isinstance(data, list) and data:
+        types: set[type] = set()
+        for item in data:
+            if isinstance(item, list):
+                types.add(list)
+            else:
+                types.add(type(item))
+        if len(types) == 1:
+            return False
+        return types != {int, float}
+    if isinstance(data, dict) and data:
+        return _is_heterogeneous(list(data.values()))
+    return False
 
 
 @beartype
@@ -364,8 +390,23 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+
+        def _format_var_decl(
+            name: str,
+            value: str,
+            _data: Value,
+        ) -> str:
+            """Format a C++ variable declaration."""
+            if _is_heterogeneous(data=_data):
+                self.static_preamble = (
+                    *self.static_preamble,
+                    *_ANY_PREAMBLE,
+                )
+                return f"_Any {name} = {value};"
+            return f"auto {name} = {value};"
+
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            _format_var_decl
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
