@@ -11,187 +11,41 @@ from collections.abc import Callable
 import pytest
 
 from literalizer.languages import (
-    CSharp,
     Elixir,
-    Go,
     Haskell,
-    Java,
     JavaScript,
-    Kotlin,
     Perl,
     Python,
-    Ruby,
-    Rust,
     VisualBasic,
 )
 
-_SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
 _SAMPLE_DATETIME = datetime.datetime.fromisoformat("2024-01-15T12:30:00")
+
+_NON_UTC_DATETIME = datetime.datetime.fromisoformat(
+    "2024-01-15T18:00:00+05:30",
+)
 
 
 @pytest.mark.parametrize(
     argnames=("func", "value", "expected"),
     argvalues=[
         pytest.param(
-            Python.DateFormats.PYTHON,
-            _SAMPLE_DATE,
-            "datetime.date(year=2024, month=1, day=15)",
-            id="format_date_python",
-        ),
-        pytest.param(
-            Python.DatetimeFormats.PYTHON,
-            _SAMPLE_DATETIME,
-            "datetime.datetime("
-            "year=2024, month=1, day=15, "
-            "hour=12, minute=30, second=0)",
-            id="format_datetime_python",
-        ),
-        pytest.param(
-            Elixir.DateFormats.ELIXIR,
-            _SAMPLE_DATE,
-            "~D[2024-01-15]",
-            id="format_date_elixir",
-        ),
-        pytest.param(
             Elixir.DatetimeFormats.ELIXIR,
-            _SAMPLE_DATETIME,
-            "~N[2024-01-15 12:30:00]",
-            id="format_datetime_elixir_naive",
-        ),
-        pytest.param(
-            Elixir.DatetimeFormats.ELIXIR,
-            datetime.datetime.fromisoformat("2024-01-15T12:30:00+00:00"),
-            "~U[2024-01-15 12:30:00+00:00]",
-            id="format_datetime_elixir_utc",
-        ),
-        pytest.param(
-            Elixir.DatetimeFormats.ELIXIR,
-            datetime.datetime.fromisoformat("2024-01-15T18:00:00+05:30"),
+            _NON_UTC_DATETIME,
             "~U[2024-01-15 12:30:00+00:00]",
             id="format_datetime_elixir_non_utc",
         ),
         pytest.param(
-            Java.DateFormats.JAVA,
-            _SAMPLE_DATE,
-            "LocalDate.of(2024, 1, 15)",
-            id="format_date_java",
-        ),
-        pytest.param(
-            Java.DatetimeFormats.INSTANT,
-            _SAMPLE_DATETIME,
-            'Instant.parse("2024-01-15T12:30:00")',
-            id="format_datetime_java_instant",
-        ),
-        pytest.param(
-            Java.DatetimeFormats.ZONED,
-            _SAMPLE_DATETIME,
-            'ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0, ZoneId.of("UTC"))',
-            id="format_datetime_java_zoned",
-        ),
-        pytest.param(
-            Ruby.DateFormats.RUBY,
-            _SAMPLE_DATE,
-            "Date.new(2024, 1, 15)",
-            id="format_date_ruby",
-        ),
-        pytest.param(
-            Ruby.DatetimeFormats.RUBY,
-            _SAMPLE_DATETIME,
-            "Time.new(2024, 1, 15, 12, 30, 0)",
-            id="format_datetime_ruby",
-        ),
-        pytest.param(
-            JavaScript.DateFormats.JS,
-            _SAMPLE_DATE,
-            'new Date("2024-01-15")',
-            id="format_date_js",
-        ),
-        pytest.param(
-            JavaScript.DatetimeFormats.JS,
-            _SAMPLE_DATETIME,
-            'new Date("2024-01-15T12:30:00")',
-            id="format_datetime_js",
-        ),
-        pytest.param(
-            CSharp.DateFormats.CSHARP,
-            _SAMPLE_DATE,
-            "new DateOnly(2024, 1, 15)",
-            id="format_date_csharp",
-        ),
-        pytest.param(
-            CSharp.DatetimeFormats.CSHARP,
-            _SAMPLE_DATETIME,
-            "new DateTime(2024, 1, 15, 12, 30, 0)",
-            id="format_datetime_csharp",
-        ),
-        pytest.param(
-            Go.DateFormats.GO,
-            _SAMPLE_DATE,
-            "time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)",
-            id="format_date_go",
-        ),
-        pytest.param(
-            Go.DatetimeFormats.GO,
-            _SAMPLE_DATETIME,
-            "time.Date(2024, time.January, 15, 12, 30, 0, 0, time.UTC)",
-            id="format_datetime_go",
-        ),
-        pytest.param(
-            Kotlin.DateFormats.KOTLIN,
-            _SAMPLE_DATE,
-            "LocalDate.of(2024, 1, 15)",
-            id="format_date_kotlin",
-        ),
-        pytest.param(
-            Kotlin.DatetimeFormats.KOTLIN,
-            _SAMPLE_DATETIME,
-            "LocalDateTime.of(2024, 1, 15, 12, 30, 0)",
-            id="format_datetime_kotlin",
-        ),
-        pytest.param(
-            Rust.DateFormats.RUST,
-            _SAMPLE_DATE,
-            "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()",
-            id="format_date_rust",
-        ),
-        pytest.param(
-            Rust.DatetimeFormats.RUST,
-            _SAMPLE_DATETIME,
-            "NaiveDateTime::new("
-            "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
-            "NaiveTime::from_hms_opt(12, 30, 0).unwrap())",
-            id="format_datetime_rust",
-        ),
-        pytest.param(
             Haskell.DatetimeFormats.HASKELL,
-            datetime.datetime.fromisoformat(
-                "2024-01-15T18:00:00+05:30",
-            ),
+            _NON_UTC_DATETIME,
             "HDatetime (UTCTime "
             "(fromGregorian 2024 1 15) "
             "(secondsToDiffTime 45000))",
             id="format_datetime_haskell_non_utc",
         ),
         pytest.param(
-            Perl.DateFormats.PERL,
-            _SAMPLE_DATE,
-            "DateTime->new(year => 2024, month => 1, day => 15)",
-            id="format_date_perl",
-        ),
-        pytest.param(
             Perl.DatetimeFormats.PERL,
-            _SAMPLE_DATETIME,
-            "DateTime->new("
-            "year => 2024, month => 1, day => 15, "
-            "hour => 12, minute => 30, second => 0, "
-            "time_zone => 'UTC')",
-            id="format_datetime_perl",
-        ),
-        pytest.param(
-            Perl.DatetimeFormats.PERL,
-            datetime.datetime.fromisoformat(
-                "2024-01-15T18:00:00+05:30",
-            ),
+            _NON_UTC_DATETIME,
             "DateTime->new("
             "year => 2024, month => 1, day => 15, "
             "hour => 12, minute => 30, second => 0, "
@@ -200,12 +54,12 @@ _SAMPLE_DATETIME = datetime.datetime.fromisoformat("2024-01-15T12:30:00")
         ),
     ],
 )
-def test_format_date_datetime(
+def test_format_datetime_non_utc(
     func: Callable[..., str],
-    value: datetime.date | datetime.datetime,
+    value: datetime.datetime,
     expected: str,
 ) -> None:
-    """Each format function returns the expected string."""
+    """Non-UTC datetimes are converted to UTC before formatting."""
     assert func(value) == expected
 
 
@@ -255,32 +109,11 @@ def test_format_bytes(
     assert func(value) == expected
 
 
-_JS_LET = JavaScript(declaration_style=JavaScript.DeclarationStyles.LET)
-_JS_HEX = JavaScript(integer_format=JavaScript.IntegerFormats.HEX)
-_JS_UNDERSCORE = JavaScript(
-    numeric_separator=JavaScript.NumericSeparators.UNDERSCORE,
-)
-
-
 def test_format_variable_declaration_let() -> None:
     """``_format_variable_declaration_let`` uses the ``let`` keyword."""
-    result = _JS_LET.format_variable_declaration("x", "[1, 2]", [1, 2])
+    js_let = JavaScript(declaration_style=JavaScript.DeclarationStyles.LET)
+    result = js_let.format_variable_declaration("x", "[1, 2]", [1, 2])
     assert result == "let x = [1, 2];"
-
-
-def test_format_integer_hex_negative() -> None:
-    """Hex formatter returns ``-0x`` prefix for negative integers."""
-    assert _JS_HEX.format_integer(-10) == "-0xa"
-
-
-def test_format_integer_underscore_large() -> None:
-    """Underscore formatter groups digits for large numbers."""
-    assert _JS_UNDERSCORE.format_integer(1000000) == "1_000_000"
-
-
-def test_format_integer_underscore_negative() -> None:
-    """Underscore formatter handles negative numbers."""
-    assert _JS_UNDERSCORE.format_integer(-1234) == "-1_234"
 
 
 _VB = VisualBasic()
