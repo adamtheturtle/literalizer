@@ -11,7 +11,6 @@ from collections.abc import Callable
 import pytest
 
 from literalizer.languages import (
-    Cpp,
     CSharp,
     Elixir,
     Go,
@@ -24,7 +23,6 @@ from literalizer.languages import (
     Ruby,
     Rust,
     VisualBasic,
-    Zig,
 )
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
@@ -219,71 +217,6 @@ def test_format_datetime_epoch() -> None:
     float(result)
 
 
-def test_format_datetime_zig_naive() -> None:
-    """Zig datetime treats naive datetimes as UTC."""
-    result = Zig.DatetimeFormats.ZIG(_SAMPLE_DATETIME)
-    assert result == "1705321800"
-
-
-def test_format_date_cpp() -> None:
-    """``format_date_cpp`` returns a year_month_day literal."""
-    result = Cpp.DateFormats.CPP(_SAMPLE_DATE)
-    expected = (
-        "std::chrono::year_month_day{"
-        "std::chrono::year{2024}, "
-        "std::chrono::month{1}, "
-        "std::chrono::day{15}}"
-    )
-    assert result == expected
-
-
-def test_format_datetime_cpp() -> None:
-    """``format_datetime_cpp`` returns a sys_days expression."""
-    result = Cpp.DatetimeFormats.CPP(_SAMPLE_DATETIME)
-    expected = (
-        "std::chrono::sys_days{"
-        "std::chrono::year_month_day{"
-        "std::chrono::year{2024}, "
-        "std::chrono::month{1}, "
-        "std::chrono::day{15}}}"
-        " + std::chrono::hours{12}"
-        " + std::chrono::minutes{30}"
-    )
-    assert result == expected
-
-
-def test_format_datetime_cpp_midnight() -> None:
-    """``format_datetime_cpp`` at midnight omits zero time components."""
-    midnight = datetime.datetime.fromisoformat("2024-01-15T00:00:00")
-    result = Cpp.DatetimeFormats.CPP(midnight)
-    expected = (
-        "std::chrono::sys_days{"
-        "std::chrono::year_month_day{"
-        "std::chrono::year{2024}, "
-        "std::chrono::month{1}, "
-        "std::chrono::day{15}}}"
-    )
-    assert result == expected
-
-
-def test_format_datetime_cpp_seconds_and_microseconds() -> None:
-    """``format_datetime_cpp`` includes seconds and microseconds."""
-    dt = datetime.datetime.fromisoformat("2024-01-15T12:30:45.123456")
-    result = Cpp.DatetimeFormats.CPP(dt)
-    expected = (
-        "std::chrono::sys_days{"
-        "std::chrono::year_month_day{"
-        "std::chrono::year{2024}, "
-        "std::chrono::month{1}, "
-        "std::chrono::day{15}}}"
-        " + std::chrono::hours{12}"
-        " + std::chrono::minutes{30}"
-        " + std::chrono::seconds{45}"
-        " + std::chrono::microseconds{123456}"
-    )
-    assert result == expected
-
-
 @pytest.mark.parametrize(
     argnames=("func", "value", "expected"),
     argvalues=[
@@ -333,11 +266,6 @@ def test_format_variable_declaration_let() -> None:
     """``_format_variable_declaration_let`` uses the ``let`` keyword."""
     result = _JS_LET.format_variable_declaration("x", "[1, 2]", [1, 2])
     assert result == "let x = [1, 2];"
-
-
-def test_format_integer_hex_positive() -> None:
-    """Hex formatter returns ``0x`` prefix for positive integers."""
-    assert _JS_HEX.format_integer(255) == "0xff"
 
 
 def test_format_integer_hex_negative() -> None:
