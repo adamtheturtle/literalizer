@@ -29,6 +29,32 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_swift(value: datetime.date) -> str:
+    """Format a date as a Swift ``DateComponents`` expression."""
+    return (
+        "DateComponents("
+        "calendar: Calendar(identifier: .gregorian), "
+        f"year: {value.year}, month: {value.month}, day: {value.day}"
+        ").date!"
+    )
+
+
+@beartype
+def _format_datetime_swift(value: datetime.datetime) -> str:
+    """Format a datetime as a Swift ``DateComponents`` expression."""
+    parts = (
+        "DateComponents("
+        "calendar: Calendar(identifier: .gregorian), "
+        f"year: {value.year}, month: {value.month}, day: {value.day}, "
+        f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
+    )
+    if value.microsecond:
+        nanosecond = value.microsecond * 1000
+        parts += f", nanosecond: {nanosecond}"
+    return parts + ").date!"
+
+
+@beartype
 def _format_swift_ordered_map_entry(key: str, value: str) -> str:
     """Format a Swift dictionary entry."""
     return f"{key}: {value}"
@@ -59,6 +85,7 @@ class Swift(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
 
+        SWIFT = enum.member(value=_format_date_swift)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -68,6 +95,7 @@ class Swift(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Swift."""
 
+        SWIFT = enum.member(value=_format_datetime_swift)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -141,8 +169,8 @@ class Swift(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.SWIFT,
+        datetime_format: DatetimeFormats = DatetimeFormats.SWIFT,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
@@ -202,5 +230,22 @@ class Swift(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        _foundation = ("import Foundation",)
+        _date_map: dict[str, tuple[str, ...]] = {
+            "SWIFT": _foundation,
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "SWIFT": _foundation,
+        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (datetime.date, _date_map.get(date_format.name, ())),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, ()),
+                ),
+            )
+            if p
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
