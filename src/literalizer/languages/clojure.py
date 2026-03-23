@@ -171,12 +171,12 @@ class Clojure(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
-    class Semicolons(enum.Enum):
-        """Semicolon options."""
+    class LineEndings(enum.Enum):
+        """Line ending options."""
 
-        YES = "yes"
+        SEMICOLON = "semicolon"
 
-    semicolons = Semicolons
+    line_endings = LineEndings
 
     def __init__(
         self,
@@ -195,7 +195,7 @@ class Clojure(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
-        semicolon: Semicolons = Semicolons.YES,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize Clojure language specification."""
         self.variable_type_hints = variable_type_hints
@@ -234,7 +234,7 @@ class Clojure(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
-        self.semicolon = semicolon
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
