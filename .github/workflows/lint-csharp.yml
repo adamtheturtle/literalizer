@@ -19,7 +19,6 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
-              - '**/*.toml'
               - 'check_csharp_golden_syntax.py'
             lang:
               - 'tests/integration/cases/**/*.cs'

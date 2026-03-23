@@ -19,7 +19,6 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
-              - '**/*.toml'
             lang:
               - 'tests/integration/cases/**/*.mojo'
       - name: Find files to lint
@@ -48,16 +47,25 @@ jobs:
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
       # The Mojo runtime has a known bug where it randomly crashes
       # with "mojo: error: execution crashed" (see #558).
-      # This is not caused by our code. Retrying works around it.
+      # This is not caused by our code. Retry each file individually
+      # so that a crash on one file does not block the rest.
       - name: Check Mojo syntax
         if: steps.files.outputs.found == 'true'
-        uses: nick-fields/retry@v4
-        with:
-          max_attempts: 3
-          timeout_minutes: 10
-          command: |-
-            while IFS= read -r -d '' f; do
-              if ! mojo run --Werror "$f"; then
-                exit 1
+        run: |-
+          failed=0
+          while IFS= read -r -d '' f; do
+            ok=0
+            for attempt in 1 2 3; do
+              if mojo run --Werror "$f"; then
+                ok=1
+                break
               fi
-            done < /tmp/files-to-lint
+              echo "::warning::Attempt $attempt failed for $f, retrying..."
+              sleep 2
+            done
+            if [ "$ok" -eq 0 ]; then
+              echo "::error::Failed after 3 attempts: $f"
+              failed=1
+            fi
+          done < /tmp/files-to-lint
+          exit "$failed"
