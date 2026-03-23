@@ -1,9 +1,9 @@
-var my_data = new int[] {
+var my_data = (
     1,
     2,
     3
 );
-my_data = new int[] {
+my_data = (
     1,
     2,
     3

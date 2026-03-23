@@ -1,8 +1,8 @@
-var my_data = new int[][][] {
-    new int[][] {new int[] {1, 2), new int[] {3, 4)),
-    new int[][] {new int[] {5))
+var my_data = (
+    ((1, 2), (3, 4)),
+    ((5))
 );
-my_data = new int[][][] {
-    new int[][] {new int[] {1, 2), new int[] {3, 4)),
-    new int[][] {new int[] {5))
+my_data = (
+    ((1, 2), (3, 4)),
+    ((5))
 );

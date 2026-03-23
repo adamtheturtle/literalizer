@@ -1,4 +1,4 @@
-var x = new string[] {
+var x = (
     // # section
     "a"
 );

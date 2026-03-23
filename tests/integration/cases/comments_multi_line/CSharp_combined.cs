@@ -1,9 +1,9 @@
-var my_data = new string[] {
+var my_data = (
     // line 1
     // line 2
     "a"
 );
-my_data = new string[] {
+my_data = (
     // line 1
     // line 2
     "a"

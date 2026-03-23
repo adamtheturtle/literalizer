@@ -1,11 +1,11 @@
-var my_data = new object[] {
+var my_data = (
     42,
     3.14,
     true,
     false,
     "hello \"world\""
 );
-my_data = new object[] {
+my_data = (
     42,
     3.14,
     true,

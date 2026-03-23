@@ -1,4 +1,4 @@
-var x = new object[] {
+var x = (
     1,
     "hello"
 );

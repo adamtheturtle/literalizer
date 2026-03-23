@@ -1,8 +1,8 @@
-var my_data = new string[] {
+var my_data = (
     "price $10",
     "$HOME"
 );
-my_data = new string[] {
+my_data = (
     "price $10",
     "$HOME"
 );

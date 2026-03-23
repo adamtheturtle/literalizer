@@ -1,9 +1,9 @@
-var my_data = new bool[] {
+var my_data = (
     true,
     false,
     true
 );
-my_data = new bool[] {
+my_data = (
     true,
     false,
     true

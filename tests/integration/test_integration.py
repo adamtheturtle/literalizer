@@ -533,6 +533,20 @@ def _wrap_r(content: str) -> str:
     return f"x <- {content}"
 
 
+def _nim_has_mixed_types(content: str) -> bool:
+    """Check if a Nim sequence literal contains mixed types.
+
+    Returns ``True`` when both quoted strings and unquoted literals
+    (numbers, booleans, nil) appear as elements, which means a typed
+    ``@[...]`` seq cannot hold them.
+    """
+    inner = content.strip().strip("[]").strip()
+    elements = [e.strip() for e in inner.split(",") if e.strip()]
+    has_quoted = any(e.startswith('"') for e in elements)
+    has_unquoted = any(not e.startswith('"') for e in elements)
+    return has_quoted and has_unquoted
+
+
 @beartype
 def _wrap_nim(content: str) -> str:
     """Wrap in a Nim expression.
@@ -542,7 +556,11 @@ def _wrap_nim(content: str) -> str:
     mismatches.
     """
     stripped = content.lstrip()
-    if stripped.startswith("[") and "[[" not in content:
+    if (
+        stripped.startswith("[")
+        and "[[" not in content
+        and not _nim_has_mixed_types(content)
+    ):
         return f"let _ = @{content}"
     return f"let _ = %* {content}"
 

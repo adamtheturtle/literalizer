@@ -1,4 +1,4 @@
-var my_data = new string[] {
+var my_data = (
     "a"
     // trailing
 );

@@ -1,4 +1,4 @@
-var x = new object[] {
+var x = (
     42,
     3.14,
     true,

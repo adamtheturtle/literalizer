@@ -1,8 +1,8 @@
-var my_data = new bool[][] {
-    new bool[] {true, false),
-    new bool[] {true, true)
+var my_data = (
+    (true, false),
+    (true, true)
 );
-my_data = new bool[][] {
-    new bool[] {true, false),
-    new bool[] {true, true)
+my_data = (
+    (true, false),
+    (true, true)
 );

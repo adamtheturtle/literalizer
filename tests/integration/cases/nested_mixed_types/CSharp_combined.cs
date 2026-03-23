@@ -1,8 +1,8 @@
-var my_data = new object[] {
-    new int[] {1, 2),
-    new string[] {"a", "b")
+var my_data = (
+    (1, 2),
+    ("a", "b")
 );
-my_data = new object[] {
-    new int[] {1, 2),
-    new string[] {"a", "b")
+my_data = (
+    (1, 2),
+    ("a", "b")
 );

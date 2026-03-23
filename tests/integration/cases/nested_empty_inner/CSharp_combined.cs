@@ -1,8 +1,8 @@
-var my_data = new object[] {
+var my_data = (
     ValueTuple.Create(),
     ValueTuple.Create()
 );
-my_data = new object[] {
+my_data = (
     ValueTuple.Create(),
     ValueTuple.Create()
 );

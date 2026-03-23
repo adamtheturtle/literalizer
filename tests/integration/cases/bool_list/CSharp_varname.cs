@@ -1,4 +1,4 @@
-var my_data = new bool[] {
+var my_data = (
     true,
     false,
     true

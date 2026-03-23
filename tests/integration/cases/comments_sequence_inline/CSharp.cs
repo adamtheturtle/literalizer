@@ -1,4 +1,4 @@
-var x = new string[] {
+var x = (
     "a",  // note a
     "b"  // note b
 );

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-var my_data = new object[] {
+var my_data = (
     new Dictionary<string, object> {["name"] = "Alice", ["age"] = 30},
     new Dictionary<string, object> {["name"] = "Bob", ["age"] = 25}
 );
-my_data = new object[] {
+my_data = (
     new Dictionary<string, object> {["name"] = "Alice", ["age"] = 30},
     new Dictionary<string, object> {["name"] = "Bob", ["age"] = 25}
 );

@@ -1,8 +1,8 @@
-var my_data = new string[] {
+var my_data = (
     "a",  // note a
     "b"  // note b
 );
-my_data = new string[] {
+my_data = (
     "a",  // note a
     "b"  // note b
 );

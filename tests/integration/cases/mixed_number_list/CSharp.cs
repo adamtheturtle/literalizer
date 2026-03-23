@@ -1,4 +1,4 @@
-var x = new double[] {
+var x = (
     1,
     2.5,
     3

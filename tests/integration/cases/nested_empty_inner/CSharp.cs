@@ -1,4 +1,4 @@
-var x = new object[] {
+var x = (
     ValueTuple.Create(),
     ValueTuple.Create()
 );

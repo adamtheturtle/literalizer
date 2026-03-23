@@ -296,10 +296,7 @@ class CSharp(metaclass=LanguageCls):
                 datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
             },
         )
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            type_to_opener=openers.seq,
-            fallback="new object[] {",
-        )
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,

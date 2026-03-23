@@ -1,4 +1,4 @@
-var my_data = new int[] {
+var my_data = (
     1000000,
     -1234,
     255,

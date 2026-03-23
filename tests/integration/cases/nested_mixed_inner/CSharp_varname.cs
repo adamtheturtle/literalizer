@@ -1,4 +1,4 @@
-var my_data = new object[] {
-    new object[] {1, "a"),
-    new object[] {2, "b")
+var my_data = (
+    (1, "a"),
+    (2, "b")
 );
