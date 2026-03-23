@@ -14,9 +14,6 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
     negate (HFloat f) = HFloat (negate f)
     negate _ = error "not implemented"
-instance Fractional Val where
-    fromRational r = HFloat (realToFrac r)
-    a / b = error "not implemented"
 my_data :: Val
 my_data = HMap [
     ("level1", HMap [("level2", HMap [("level3", HMap [("level4", HMap [("value", "deep"), ("items", HList ["a", "b"])])]), ("sibling", 42)]), ("tags", HList [HMap [("name", "tag1"), ("meta", HMap [("priority", 1), ("labels", HList ["x", "y"])])]])])
