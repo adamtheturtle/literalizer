@@ -324,14 +324,19 @@ class Java(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
 
-        scalar_types = {**_JAVA_SCALAR_TYPES}
-        date_tp = _JAVA_SCALAR_TYPES.get(date_format.value.type_produced)
-        if date_tp is not None:
-            scalar_types[datetime.date] = date_tp
-        dt_tp = _JAVA_SCALAR_TYPES.get(datetime_format.value.type_produced)
+        date_tp = date_format.value.type_produced
+        scalar_types = {
+            **_JAVA_SCALAR_TYPES,
+            datetime.date: _JAVA_SCALAR_TYPES[date_tp],
+        }
+        dt_tp = _JAVA_SCALAR_TYPES.get(
+            datetime_format.value.type_produced,
+        )
         if dt_tp is not None:
             scalar_types[datetime.datetime] = dt_tp
-        openers = _java_opener_config.build(scalar_types=scalar_types)
+        openers = _java_opener_config.build(
+            scalar_types=scalar_types,
+        )
         seq_open: Callable[[list[Value]], str] = fmt.sequence_open
         if sequence_format.name == "ARRAY":
             seq_open = typed_sequence_open(
