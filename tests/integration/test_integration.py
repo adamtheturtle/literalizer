@@ -1904,6 +1904,7 @@ def _build_variant_cases() -> list[_VariantCase]:
     variant_sources: list[tuple[dict[str, _Variant], str, str | None, str]] = [
         (_build_date_variants(), "scalar_date", None, ""),
         (_build_date_variants(), "date_list", None, ""),
+        (_build_date_variants(), "date_set", None, ""),
         (_build_datetime_variants(), "scalar_datetime", None, ""),
         (_build_datetime_variants(), "scalar_datetime_naive", None, "_naive"),
         (
