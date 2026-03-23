@@ -36,9 +36,12 @@ jobs:
           else
             find tests/integration/cases -name "*.lisp" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install SBCL
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: sudo apt-get install -y sbcl
       - name: Check Common Lisp syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 -I{} sbcl --script {} < /tmp/files-to-lint

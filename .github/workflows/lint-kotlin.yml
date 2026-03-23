@@ -36,10 +36,13 @@ jobs:
           else
             find tests/integration/cases -name "*.kts" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install Kotlin
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1
       - name: Check Kotlin syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           xargs -0 -P "$(nproc)" -n 1 kotlinc -script < /tmp/files-to-lint

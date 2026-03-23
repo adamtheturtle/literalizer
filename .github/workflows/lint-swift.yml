@@ -36,13 +36,16 @@ jobs:
           else
             find tests/integration/cases -name "*.swift" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install Swift
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: SwiftyLab/setup-swift@v1
         with:
           cache-snapshot: true
       - name: Check Swift syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)

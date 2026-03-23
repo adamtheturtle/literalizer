@@ -37,12 +37,15 @@ jobs:
           else
             find tests/integration/cases -name "*.occ" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install uv
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: xargs -0 uv run python check_occam_golden_syntax.py < /tmp/files-to-lint

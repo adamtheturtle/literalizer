@@ -36,12 +36,15 @@ jobs:
           else
             find tests/integration/cases -name "*.hs" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: haskell-actions/setup@v2
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         with:
           ghc-version: latest
       - name: Check Haskell syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           while IFS= read -r -d '' f; do

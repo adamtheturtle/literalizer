@@ -36,8 +36,11 @@ jobs:
           else
             find tests/integration/cases -name "*.rs" -print0
           fi > /tmp/files-to-lint
+          if [ -s /tmp/files-to-lint ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check Rust syntax
-        if: steps.files.outcome == 'success'
+        if: steps.files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
