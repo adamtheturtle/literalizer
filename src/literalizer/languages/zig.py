@@ -96,12 +96,6 @@ _ZIG_PREAMBLE: tuple[str, ...] = (
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    return _ZIG_PREAMBLE
-
-
-@beartype
 class Zig(metaclass=LanguageCls):
     """Zig language specification."""
 
@@ -144,6 +138,7 @@ class Zig(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -160,6 +155,7 @@ class Zig(metaclass=LanguageCls):
             open_str=".{ .set = &.{",
             close="}}",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -212,6 +208,7 @@ class Zig(metaclass=LanguageCls):
             close="}}",
             format_entry=_format_zig_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -230,6 +227,7 @@ class Zig(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str=".{ .map = &.{",
                 close="}}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -245,4 +243,6 @@ class Zig(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = _ZIG_PREAMBLE
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

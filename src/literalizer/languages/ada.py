@@ -109,12 +109,6 @@ _string_format: Callable[[str], str] = _format_string_ada
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
-
-
-@beartype
 class Ada(metaclass=LanguageCls):
     """Ada language specification."""
 
@@ -157,6 +151,7 @@ class Ada(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="AList'(1 .. 0 => ANull)",
+            preamble_lines=(),
         )
 
         @property
@@ -173,6 +168,7 @@ class Ada(metaclass=LanguageCls):
             open_str="ASet'(",
             close=")",
             empty_set="ASet'(1 .. 0 => ANull)",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -225,6 +221,7 @@ class Ada(metaclass=LanguageCls):
             close=")",
             format_entry=_format_ada_dict_entry,
             empty_dict="AMap'(1 .. 0 => ANull)",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -241,6 +238,7 @@ class Ada(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="AMap'(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -256,4 +254,6 @@ class Ada(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

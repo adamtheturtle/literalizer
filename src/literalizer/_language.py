@@ -18,6 +18,7 @@ class SequenceFormatConfig:
     supports_heterogeneity: bool
     single_element_trailing_comma: bool
     empty_sequence: str | None
+    preamble_lines: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -27,6 +28,7 @@ class SetFormatConfig:
     open_str: str
     close: str
     empty_set: str | None
+    preamble_lines: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -45,6 +47,7 @@ class DictFormatConfig:
     close: str
     format_entry: Callable[[str, str], str]
     empty_dict: str | None
+    preamble_lines: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -53,6 +56,7 @@ class OrderedMapFormatConfig:
 
     open_str: str
     close: str
+    preamble_lines: tuple[str, ...]
 
 
 class SequenceFormat(Protocol):
@@ -301,13 +305,22 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """The comment format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @property
-    def preamble(self) -> Callable[[str], Sequence[str]]:
-        """Callable that returns preamble lines for the formatted output.
+    static_preamble: Sequence[str]
+    """Lines (imports, package declarations, etc.) that are always
+    emitted before the generated code, regardless of what types appear
+    in the data.  Use an empty sequence when none are needed.
+    """
 
-        Called as ``preamble(code)`` where *code* is the
-        already-formatted literal string.  Returns a (possibly empty)
-        sequence of lines (imports, package declarations, etc.) that
-        must precede the generated code.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
+    scalar_preamble: dict[type, tuple[str, ...]]
+    """Maps Python scalar types to the preamble lines required when
+    that type appears in the data.  For example, a language that needs
+    ``import datetime`` when dates are present would include
+    ``{datetime.date: ("import datetime",)}``.
+    """
+
+    type_hint_collection_preamble_lines: tuple[str, ...]
+    """Preamble lines required when the language produces type-hinted
+    variable declarations *and* the data contains collections.
+    Empty for most languages; Python sets this to
+    ``("from typing import Any",)`` when inline hints are enabled.
+    """

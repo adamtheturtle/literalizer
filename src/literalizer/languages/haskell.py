@@ -55,19 +55,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code.
-
-    Only the ``OverloadedStrings`` pragma is emitted here because it
-    must appear before the ``module`` declaration.  The ``Val`` ADT and
-    typeclass instances are user-defined (see the class doc string) and
-    must be placed after the module header, so they are not part of the
-    preamble.
-    """
-    return ("{-# LANGUAGE OverloadedStrings #-}",)
-
-
-@beartype
 class Haskell(metaclass=LanguageCls):
     """Haskell language specification.
 
@@ -149,6 +136,7 @@ class Haskell(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -165,6 +153,7 @@ class Haskell(metaclass=LanguageCls):
             open_str="HSet [",
             close="]",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -221,6 +210,7 @@ class Haskell(metaclass=LanguageCls):
             close="]",
             format_entry=_format_haskell_dict_entry,
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -239,6 +229,7 @@ class Haskell(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="HMap [",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -254,4 +245,8 @@ class Haskell(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = (
+            "{-# LANGUAGE OverloadedStrings #-}",
+        )
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -63,19 +63,6 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code.
-
-    ``dateTime(...)`` values are native Nim types that cannot be wrapped
-    by the ``%*`` JSON macro, so when they appear we emit
-    ``import times`` instead of ``import json``.
-    """
-    if "dateTime(" in code:
-        return ["import times"]
-    return ["import json"]
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Nim ``var`` declaration.
 
@@ -162,6 +149,7 @@ class Nim(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=("import json",),
         )
 
         @property
@@ -178,6 +166,7 @@ class Nim(metaclass=LanguageCls):
             open_str="[",
             close="]",
             empty_set=None,
+            preamble_lines=("import json",),
         )
 
     class CommentFormats(enum.Enum):
@@ -234,6 +223,7 @@ class Nim(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict=None,
+            preamble_lines=("import json",),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -252,6 +242,7 @@ class Nim(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="{",
                 close="}",
+                preamble_lines=("import json",),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -267,4 +258,32 @@ class Nim(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        _json = ("import json",)
+        _date_map: dict[str, tuple[str, ...]] = {
+            "NIM": ("import times",),
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "NIM": ("import times",),
+        }
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (str, _json),
+                (int, _json),
+                (float, _json),
+                (bool, _json),
+                (type(None), _json),
+                (bytes, _json),
+                (
+                    datetime.date,
+                    _date_map.get(date_format.name, _json),
+                ),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, _json),
+                ),
+            )
+            if p
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

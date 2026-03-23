@@ -142,12 +142,6 @@ _string_format: Callable[[str], str] = _format_string_matlab
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
-
-
-@beartype
 class Matlab(metaclass=LanguageCls):
     """MATLAB language specification."""
 
@@ -190,6 +184,7 @@ class Matlab(metaclass=LanguageCls):
             empty_sequence="{}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            preamble_lines=(),
         )
 
         @property
@@ -206,6 +201,7 @@ class Matlab(metaclass=LanguageCls):
             open_str="{",
             close="}",
             empty_set="{}",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -262,6 +258,7 @@ class Matlab(metaclass=LanguageCls):
             close=")",
             format_entry=_format_matlab_dict_entry,
             empty_dict="struct()",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -280,6 +277,7 @@ class Matlab(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="struct(",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -295,4 +293,6 @@ class Matlab(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

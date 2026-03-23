@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -26,6 +26,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 _GO_MONTHS: dict[int, str] = {
     1: "time.January",
@@ -107,15 +110,6 @@ def _format_go_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = ["package main"]
-    if "time." in code:
-        lines.append('import "time"')
-    return lines
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a Go variable declaration."""
     return f"{name} := {value}"
@@ -187,6 +181,7 @@ class Go(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -203,6 +198,7 @@ class Go(metaclass=LanguageCls):
             open_str="map[any]struct{}{",
             close="}",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -262,6 +258,7 @@ class Go(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -281,6 +278,7 @@ class Go(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[][2]any{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -296,4 +294,9 @@ class Go(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ("package main",)
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            datetime.date: ('import "time"',),
+            datetime.datetime: ('import "time"',),
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

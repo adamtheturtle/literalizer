@@ -44,6 +44,107 @@ class LiteralizeResult:
 
 
 @beartype
+def _collect_value_types(*, data: Value) -> frozenset[type]:
+    """Return the set of Python types present in *data*."""
+    if isinstance(data, ordereddict):
+        child_types: frozenset[type] = frozenset()
+        for v in data.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            child_types = child_types | _collect_value_types(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        return frozenset({ordereddict, str}) | child_types
+    if isinstance(data, dict):
+        child_types = frozenset()
+        for v in data.values():
+            child_types = child_types | _collect_value_types(data=v)
+        return frozenset({dict, str}) | child_types
+    if isinstance(data, (set, frozenset)):
+        scalar_types: frozenset[type] = frozenset(
+            t
+            for v in data
+            if (t := _preamble_scalar_type(value=v)) is not None
+        )
+        return frozenset({set}) | scalar_types
+    if isinstance(data, list):
+        child_types = frozenset()
+        for v in data:
+            child_types = child_types | _collect_value_types(data=v)
+        return frozenset({list}) | child_types
+    result = _preamble_scalar_type(value=data)
+    return frozenset({result}) if result is not None else frozenset()
+
+
+@beartype
+def _preamble_scalar_type(*, value: Value) -> type | None:
+    """Return the preamble-relevant type for a scalar.
+
+    Like :func:`_scalar_type_bucket` but distinguishes
+    ``datetime.datetime`` from ``datetime.date`` (they need different
+    preamble lines).
+    """
+    if isinstance(value, datetime.datetime):
+        return datetime.datetime
+    if isinstance(value, datetime.date):
+        return datetime.date
+    return _scalar_type_bucket(value=value)
+
+
+@beartype
+def _collection_preamble(
+    *,
+    types: frozenset[type],
+    language: Language,
+) -> tuple[str, ...]:
+    """Return collection-config preamble lines for present types."""
+    lines: list[str] = []
+    if dict in types:
+        lines.extend(language.dict_format_config.preamble_lines)
+    if set in types:
+        lines.extend(language.set_format_config.preamble_lines)
+    if list in types:
+        lines.extend(language.sequence_format_config.preamble_lines)
+    if ordereddict in types:
+        lines.extend(language.ordered_map_format_config.preamble_lines)
+    return tuple(lines)
+
+
+@beartype
+def _deduplicate(*, lines: tuple[str, ...]) -> tuple[str, ...]:
+    """Remove duplicates from *lines* preserving insertion order."""
+    seen: set[str] = set()
+    result: list[str] = []
+    for line in lines:
+        if line not in seen:
+            seen.add(line)
+            result.append(line)
+    return tuple(result)
+
+
+@beartype
+def _compute_preamble(
+    *,
+    data: Value,
+    language: Language,
+) -> tuple[str, ...]:
+    """Compute preamble lines from the data types present and the
+    language configuration.
+    """
+    types = _collect_value_types(data=data)
+
+    scalar = tuple(
+        line
+        for scalar_type, preamble in language.scalar_preamble.items()
+        if scalar_type in types
+        for line in preamble
+    )
+    collection = _collection_preamble(types=types, language=language)
+    type_hint = (
+        language.type_hint_collection_preamble_lines
+        if types & {dict, list, set, ordereddict}
+        else ()
+    )
+    return _deduplicate(lines=scalar + collection + type_hint)
+
+
+@beartype
 def _scalar_type_bucket(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
     collections.
@@ -440,13 +541,14 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 @beartype
 def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     """Format a set value as a native language literal."""
-    if not value and spec.set_format_config.empty_set is not None:
-        return spec.set_format_config.empty_set
+    set_cfg = spec.set_format_config
+
+    if not value and set_cfg.empty_set is not None:
+        return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [spec.format_set_entry(item) for item in formatted]
     joined = spec.element_separator.join(entries)
-    set_cfg = spec.set_format_config
     return set_cfg.open_str + joined + set_cfg.close
 
 
@@ -457,6 +559,8 @@ def _format_ordered_map_value(
     spec: Language,
 ) -> str:
     """Format an ordered map as a native language literal."""
+    ordered_map_cfg = spec.ordered_map_format_config
+
     ordered_map_items: list[tuple[str, Value]] = [
         (k, v)
         for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
@@ -470,7 +574,6 @@ def _format_ordered_map_value(
         for k, v in ordered_map_items
     ]
     joined = spec.element_separator.join(pairs)
-    ordered_map_cfg = spec.ordered_map_format_config
     return ordered_map_cfg.open_str + joined + ordered_map_cfg.close
 
 
@@ -481,12 +584,13 @@ def _format_dict_value(
     spec: Language,
 ) -> str:
     """Format a dict as a native language literal."""
+    dict_cfg = spec.dict_format_config
+
     dict_items: dict[str, Value] = {
         k: v
         for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
     }
-    dict_cfg = spec.dict_format_config
     if not dict_items and dict_cfg.empty_dict is not None:
         return dict_cfg.empty_dict
     pairs = [
@@ -509,6 +613,7 @@ def _format_list_value(
 ) -> str:
     """Format a list as a native language literal."""
     seq_cfg = spec.sequence_format_config
+
     if not value and seq_cfg.empty_sequence is not None:
         return seq_cfg.empty_sequence
     items = [
@@ -562,10 +667,12 @@ def _wrap_body(
     close_prefix = f"{line_prefix}{ci}"
     if is_ordered_map:
         ordered_map_cfg = spec.ordered_map_format_config
+
         opening = f"{line_prefix}{ordered_map_cfg.open_str}"
         closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
         dict_cfg = spec.dict_format_config
+
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
     elif isinstance(data, set):
@@ -850,16 +957,20 @@ def literalize_json(
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
-    result = _apply_variable_wrapper(
-        result=result,
-        language=language,
+    if variable_name is not None:
+        formatter = (
+            language.format_variable_declaration
+            if new_variable
+            else language.format_variable_assignment
+        )
+        result = formatter(variable_name, result, data)
+    preamble = tuple(language.static_preamble) + _compute_preamble(
         data=data,
-        variable_name=variable_name,
-        new_variable=new_variable,
+        language=language,
     )
     return LiteralizeResult(
         code=result,
-        preamble=tuple(language.preamble(result)),
+        preamble=preamble,
     )
 
 
@@ -1149,7 +1260,11 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
+    preamble = tuple(language.static_preamble) + _compute_preamble(
+        data=coerced_data,
+        language=language,
+    )
     return LiteralizeResult(
         code=result,
-        preamble=tuple(language.preamble(result)),
+        preamble=preamble,
     )

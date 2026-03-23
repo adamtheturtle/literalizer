@@ -52,12 +52,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
-
-
-@beartype
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
 
@@ -111,6 +105,7 @@ class Mojo(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             empty_sequence="List[String]()",
+            preamble_lines=(),
         )
 
         @property
@@ -127,6 +122,7 @@ class Mojo(metaclass=LanguageCls):
             open_str="[",
             close="]",
             empty_set="Set[String]()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -179,6 +175,7 @@ class Mojo(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict="Dict[String, String]()",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -197,6 +194,7 @@ class Mojo(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -212,4 +210,6 @@ class Mojo(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

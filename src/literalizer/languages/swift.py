@@ -76,14 +76,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return required imports for Swift."""
-    if "DateComponents(" in code:
-        return ("import Foundation",)
-    return ()
-
-
-@beartype
 class Swift(metaclass=LanguageCls):
     """Swift language specification."""
 
@@ -128,6 +120,7 @@ class Swift(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="[Any]()",
+            preamble_lines=(),
         )
 
         @property
@@ -144,6 +137,7 @@ class Swift(metaclass=LanguageCls):
             open_str="Set<AnyHashable>([",
             close="])",
             empty_set="Set<AnyHashable>()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -200,6 +194,7 @@ class Swift(metaclass=LanguageCls):
             close="]",
             format_entry=dict_entry_with_separator(separator=": "),
             empty_dict="[String: Any]()",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -218,6 +213,7 @@ class Swift(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[",
                 close="]",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -233,4 +229,23 @@ class Swift(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        _foundation = ("import Foundation",)
+        _date_map: dict[str, tuple[str, ...]] = {
+            "SWIFT": _foundation,
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "SWIFT": _foundation,
+        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (datetime.date, _date_map.get(date_format.name, ())),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, ()),
+                ),
+            )
+            if p
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
