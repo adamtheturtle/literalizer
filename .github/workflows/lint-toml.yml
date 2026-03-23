@@ -19,7 +19,7 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
-              - '**/*.toml'
+              - 'pyproject.toml'
             lang:
               - 'tests/integration/cases/**/*.toml'
       - name: Find files to lint
