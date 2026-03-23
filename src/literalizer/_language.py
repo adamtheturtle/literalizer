@@ -84,6 +84,12 @@ class LanguageCls(type):
     SetFormats: type[enum.Enum]
     CommentFormats: type[enum.Enum]
     VariableTypeHints: type[enum.Enum]
+    DeclarationStyles: type[enum.Enum]
+    DictFormats: type[enum.Enum]
+    IntegerFormats: type[enum.Enum]
+    NumericSeparators: type[enum.Enum]
+    StringFormats: type[enum.Enum]
+    TrailingCommas: type[enum.Enum]
     extension: str
     pygments_name: str
 
@@ -156,6 +162,48 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def variable_type_hints_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the variable type hint options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def declaration_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the declaration style options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def dict_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the dict/map format options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def integer_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the integer format options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def numeric_separators(self) -> type[enum.Enum]:
+        """Enum class whose members list the numeric separator options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def string_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the string format options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def trailing_commas(self) -> type[enum.Enum]:
+        """Enum class whose members list the trailing comma options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -303,6 +351,38 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def comment_format(self) -> enum.Enum:
         """The comment format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def declaration_style(self) -> enum.Enum:
+        """The declaration style chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def dict_format(self) -> enum.Enum:
+        """The dict/map format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def integer_format(self) -> enum.Enum:
+        """The integer format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def numeric_separator(self) -> enum.Enum:
+        """The numeric separator option chosen for this language
+        instance.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def string_format(self) -> enum.Enum:
+        """The string format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def trailing_comma(self) -> enum.Enum:
+        """The trailing comma option chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     static_preamble: Sequence[str]
