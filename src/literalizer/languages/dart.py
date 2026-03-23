@@ -8,14 +8,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -60,19 +59,12 @@ _DART_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "DateTime",
 }
 
-_dart_element_to_type = make_element_to_type(
+_dart_opener_config = TypedOpenerConfig(
     scalar_types=_DART_SCALAR_TYPES,
+    string_type="String",
     list_template="List<{inner}>",
-)
-
-_dart_type_to_opener = make_type_to_opener(
-    element_to_type=_dart_element_to_type,
-    opener_template="<{type_name}>[",
-)
-
-_dart_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_dart_element_to_type,
-    opener_template="<String, {type_name}>{{",
+    seq_opener_template="<{type_name}>[",
+    dict_opener_template="<String, {type_name}>{{",
 )
 
 
@@ -121,7 +113,7 @@ class Dart(metaclass=LanguageCls):
         """Date formatting options for Dart."""
 
         DART = DateFormatConfig(formatter=_format_date_dart)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -131,7 +123,10 @@ class Dart(metaclass=LanguageCls):
         """Datetime formatting options for Dart."""
 
         DART = DatetimeFormatConfig(formatter=_format_datetime_dart)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -151,7 +146,7 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_dart_type_to_opener,
+                type_to_opener=_dart_opener_config.default.seq,
                 fallback="[",
             ),
             close="]",
@@ -268,10 +263,20 @@ class Dart(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        # When ISO format is selected, dates become plain strings, so
+        # typed collections must use "String" instead of "DateTime".
+        openers = _dart_opener_config.resolve(
+            date_format=date_format.value,
+            datetime_format=datetime_format.value,
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="[",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_dart_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="{",
             ),
             close="}",

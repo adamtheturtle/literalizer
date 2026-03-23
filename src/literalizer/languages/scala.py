@@ -8,14 +8,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -63,19 +62,12 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "ZonedDateTime",
 }
 
-_scala_element_to_type = make_element_to_type(
+_scala_opener_config = TypedOpenerConfig(
     scalar_types=_SCALA_SCALAR_TYPES,
+    string_type="String",
     list_template="Array[{inner}]",
-)
-
-_scala_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_element_to_type,
-    opener_template="Array[{type_name}](",
-)
-
-_scala_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_element_to_type,
-    opener_template="Map[String, {type_name}](",
+    seq_opener_template="Array[{type_name}](",
+    dict_opener_template="Map[String, {type_name}](",
 )
 
 
@@ -114,7 +106,7 @@ class Scala(metaclass=LanguageCls):
             formatter=_format_date_scala,
             preamble_lines=("import java.time.LocalDate",),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -130,7 +122,10 @@ class Scala(metaclass=LanguageCls):
                 "import java.time.ZonedDateTime",
             ),
         )
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -150,7 +145,7 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_type_to_opener,
+                type_to_opener=_scala_opener_config.default.seq,
                 fallback="List(",
             ),
             close=")",
@@ -267,10 +262,19 @@ class Scala(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        # When ISO format is selected, dates become plain strings, so
+        # typed collections must use "String" instead of native types.
+        openers = _scala_opener_config.resolve(
+            date_format=date_format.value,
+            datetime_format=datetime_format.value,
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="List(",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_scala_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="Map(",
             ),
             close=")",

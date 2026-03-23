@@ -8,6 +8,7 @@ from typing import cast
 
 from beartype import beartype
 
+from literalizer._language import DateFormatConfig, DatetimeFormatConfig
 from literalizer._types import Value
 
 
@@ -76,6 +77,86 @@ def format_datetime_iso(value: datetime.datetime) -> str:
     ``"2024-01-15T12:30:00"``.
     """
     return f'"{value.isoformat()}"'
+
+
+@dataclass(frozen=True)
+class TypeOpeners:
+    """Resolved type-to-opener functions for sequences and dicts."""
+
+    seq: Callable[[type | ListType], str | None]
+    dict: Callable[[type | ListType], str | None]
+
+
+class TypedOpenerConfig:
+    """Configuration for typed collection openers in a language.
+
+    Holds scalar type mappings and template strings needed to build
+    type-to-opener functions.  Templates and types are defined once
+    at module level; ``resolve`` produces ISO-overridden variants
+    when needed.
+    """
+
+    @beartype
+    def __init__(
+        self,
+        *,
+        scalar_types: dict[type, str],
+        string_type: str,
+        list_template: str,
+        seq_opener_template: str,
+        dict_opener_template: str,
+    ) -> None:
+        """Initialize with scalar type mappings and template strings."""
+        self._scalar_types = scalar_types
+        self._string_type = string_type
+        self._list_template = list_template
+        self._seq_opener_template = seq_opener_template
+        self._dict_opener_template = dict_opener_template
+        self.default: TypeOpeners = self._build(
+            scalar_types=scalar_types,
+        )
+
+    @beartype
+    def _build(self, scalar_types: dict[type, str]) -> TypeOpeners:
+        """Build openers from the given scalar type mapping."""
+        element_to_type = make_element_to_type(
+            scalar_types=scalar_types,
+            list_template=self._list_template,
+        )
+        return TypeOpeners(
+            seq=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._seq_opener_template,
+            ),
+            dict=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._dict_opener_template,
+            ),
+        )
+
+    @beartype
+    def resolve(
+        self,
+        *,
+        date_format: DateFormatConfig,
+        datetime_format: DatetimeFormatConfig,
+    ) -> TypeOpeners:
+        """Return openers, overriding date/datetime types to the
+        language's string type when the format produces a string
+        literal instead of a native date value.
+
+        Returns ``self.default`` unchanged when no override is needed.
+        """
+        overrides: dict[type, str] = {}
+        if date_format.produces_string:
+            overrides[datetime.date] = self._string_type
+        if datetime_format.produces_string:
+            overrides[datetime.datetime] = self._string_type
+        if not overrides:
+            return self.default
+        return self._build(
+            scalar_types={**self._scalar_types, **overrides},
+        )
 
 
 @beartype

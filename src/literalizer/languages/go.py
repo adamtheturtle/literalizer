@@ -8,14 +8,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     typed_dict_open,
     typed_sequence_open,
@@ -83,19 +82,12 @@ _GO_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "time.Time",
 }
 
-_go_element_to_type = make_element_to_type(
+_go_opener_config = TypedOpenerConfig(
     scalar_types=_GO_SCALAR_TYPES,
+    string_type="string",
     list_template="[]{inner}",
-)
-
-_go_type_to_opener = make_type_to_opener(
-    element_to_type=_go_element_to_type,
-    opener_template="[]{type_name}{{",
-)
-
-_go_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_go_element_to_type,
-    opener_template="map[string]{type_name}{{",
+    seq_opener_template="[]{type_name}{{",
+    dict_opener_template="map[string]{type_name}{{",
 )
 
 
@@ -158,7 +150,7 @@ class Go(metaclass=LanguageCls):
             formatter=_format_date_go,
             preamble_lines=('import "time"',),
         )
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, produces_string=True)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -171,7 +163,10 @@ class Go(metaclass=LanguageCls):
             formatter=_format_datetime_go,
             preamble_lines=('import "time"',),
         )
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            produces_string=True,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -191,7 +186,7 @@ class Go(metaclass=LanguageCls):
 
         SLICE = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_go_type_to_opener,
+                type_to_opener=_go_opener_config.default.seq,
                 fallback="[]any{",
             ),
             close="}",
@@ -308,10 +303,20 @@ class Go(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        # When ISO format is selected, dates become plain strings, so
+        # typed collections must use "string" instead of "time.Time".
+        openers = _go_opener_config.resolve(
+            date_format=date_format.value,
+            datetime_format=datetime_format.value,
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="[]any{",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_go_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="map[string]any{",
             ),
             close="}",
