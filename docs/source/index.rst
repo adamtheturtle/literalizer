@@ -67,6 +67,11 @@ Use cases
 * Convert API responses to language-native data structures for documentation.
 * Create type-safe literal data from JSON config files.
 
+CLI
+---
+
+A command-line interface is available at `literalizer-cli <https://github.com/adamtheturtle/literalizer-cli>`__.
+
 Reference
 ---------
 

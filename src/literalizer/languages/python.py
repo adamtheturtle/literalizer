@@ -120,7 +120,7 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 @beartype
 def _element_union(*, types: list[str]) -> str:
-    """De-duplicate *types* and join into a union."""
+    """Remove duplicate *types* and join them into a union."""
     unique: list[str] = list(dict.fromkeys(types))
     if len(unique) == 1:
         return unique[0]

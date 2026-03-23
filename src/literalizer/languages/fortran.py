@@ -84,6 +84,8 @@ def _to_fval(value: str) -> str:
         value.startswith('"') and value.endswith('"')
     ):
         return f"fstr({value})"
+    if "achar(" in value:
+        return f"fstr({value})"
     negative = value.startswith("-")
     rest = value[1:] if negative else value
     int_result = None

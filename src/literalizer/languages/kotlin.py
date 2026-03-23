@@ -1,5 +1,6 @@
 """Kotlin language specification."""
 
+import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -334,7 +335,6 @@ class Kotlin(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
 
         date_tp = date_format.value.type_produced
@@ -344,6 +344,13 @@ class Kotlin(metaclass=LanguageCls):
                 datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
                 datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
             },
+        )
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=typed_set_open(
+                type_to_opener=openers.set,
+                fallback="setOf<Any?>(",
+            ),
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(

@@ -13,6 +13,7 @@ Bool
 CPP
 CSharp
 Changelog
+Cobol
 Cpp
 Enum
 FBool
@@ -37,6 +38,7 @@ HashiCorp
 Hcl
 JSONDecodeError
 Lua
+Mojo
 NEL
 Nim
 Norg
@@ -62,6 +64,7 @@ beartype
 bool
 booleans
 chrono
+coercions
 commonjs
 config
 dataclass
@@ -73,6 +76,7 @@ durations
 elixirc
 enum
 erlc
+fmt
 fnull
 formatter
 formatters
@@ -87,6 +91,7 @@ init
 initialisation
 initializer
 initializers
+iterable
 javac
 json
 kotlinc
@@ -112,7 +117,9 @@ ofEntries
 omap
 optimisation
 ordereddict
+os
 paren
+parsers
 pragma
 pre
 prepended
@@ -126,16 +133,20 @@ reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
+roundtrip
 ruamel
 scala
 scalac
+sigil
 stdin
+str
 struct
 subclasses
 subdirectory
 swiftc
 ty
 typeclass
+unhandled
 uv
 val_t
 whitespace

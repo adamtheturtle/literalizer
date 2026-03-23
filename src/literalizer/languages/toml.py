@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    escape_control_chars,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -34,6 +34,25 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 _BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
+
+
+@beartype
+def _format_string_toml(value: str) -> str:
+    r"""Format a string with backslash escaping.
+
+    Control characters are escaped as ``\uNNNN``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    escaped = escape_control_chars(value=escaped, fmt="\\u{:04x}")
+    return f'"{escaped}"'
+
+
 _MIN_QUOTED_KEY_LENGTH = 2
 
 
@@ -273,7 +292,7 @@ class Toml(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = _format_string_toml
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
