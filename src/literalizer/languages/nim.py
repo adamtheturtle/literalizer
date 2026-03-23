@@ -27,16 +27,61 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+_NIM_MONTHS: dict[int, str] = {
+    1: "mJan",
+    2: "mFeb",
+    3: "mMar",
+    4: "mApr",
+    5: "mMay",
+    6: "mJun",
+    7: "mJul",
+    8: "mAug",
+    9: "mSep",
+    10: "mOct",
+    11: "mNov",
+    12: "mDec",
+}
+
+
+@beartype
+def _format_date_nim(value: datetime.date) -> str:
+    """Format a date as a Nim ``dateTime(...)`` call."""
+    month = _NIM_MONTHS[value.month]
+    return f"dateTime({value.year}, {month}, {value.day}, 0, 0, 0, 0, utc())"
+
+
+@beartype
+def _format_datetime_nim(value: datetime.datetime) -> str:
+    """Format a datetime as a Nim ``dateTime(...)`` call."""
+    month = _NIM_MONTHS[value.month]
+    nanos = value.microsecond * 1000
+    return (
+        f"dateTime({value.year}, {month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}, "
+        f"{nanos}, utc())"
+    )
+
 
 @beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Nim ``var`` declaration using ``%*`` for JSON nodes."""
+    """Format a Nim ``var`` declaration.
+
+    Uses ``%*`` for JSON-compatible values; omits it for native types
+    like ``dateTime(...)`` that cannot be wrapped in a JSON node.
+    """
+    if "dateTime(" in value:
+        return f"var {name} = {value}"
     return f"var {name} = %*{value}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Nim assignment to an existing variable using ``%*``."""
+    """Format a Nim assignment to an existing variable.
+
+    Uses ``%*`` for JSON-compatible values; omits it for native types.
+    """
+    if "dateTime(" in value:
+        return f"{name} = {value}"
     return f"{name} = %*{value}"
 
 
@@ -45,7 +90,23 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 class Nim(metaclass=LanguageCls):
-    """Nim language specification."""
+    """Nim language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.NIM`` — ``dateTime`` call,
+              e.g. ``dateTime(2024, mJan, 15, 0, 0, 0, 0, utc())``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.NIM`` — ``dateTime`` call,
+              e.g. ``dateTime(2024, mJan, 15, 12, 30, 0, 0, utc())``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00+00:00"``.
+    """
 
     extension = ".nim"
     pygments_name = "nim"
@@ -53,6 +114,7 @@ class Nim(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Nim."""
 
+        NIM = enum.member(value=_format_date_nim)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -62,6 +124,7 @@ class Nim(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Nim."""
 
+        NIM = enum.member(value=_format_datetime_nim)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -135,8 +198,8 @@ class Nim(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.NIM,
+        datetime_format: DatetimeFormats = DatetimeFormats.NIM,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
@@ -195,6 +258,32 @@ class Nim(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = ("import json",)
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        _json = ("import json",)
+        _date_map: dict[str, tuple[str, ...]] = {
+            "NIM": ("import times",),
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "NIM": ("import times",),
+        }
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (str, _json),
+                (int, _json),
+                (float, _json),
+                (bool, _json),
+                (type(None), _json),
+                (bytes, _json),
+                (
+                    datetime.date,
+                    _date_map.get(date_format.name, _json),
+                ),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, _json),
+                ),
+            )
+            if p
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
