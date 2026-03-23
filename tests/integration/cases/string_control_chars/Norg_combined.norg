@@ -1,0 +1,8 @@
+* my_data
+@code json
+[
+    "line1\nline2",
+    "line1line2",
+    ""
+]
+@end
