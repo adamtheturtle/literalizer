@@ -10,6 +10,7 @@ from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
+    passthrough_sequence_entry,
 )
 from literalizer._language import (
     CommentConfig,
@@ -196,6 +197,7 @@ class ObjectiveC(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property

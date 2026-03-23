@@ -14,7 +14,6 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -92,12 +91,6 @@ def _wrap_cpp(content: str) -> str:
 @beartype
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
-    if content.lstrip().startswith("("):
-        content = re.sub(
-            pattern=r"\bnil\b",
-            repl="nil as Any?",
-            string=content,
-        )
     return f"let x: Any? = {content}"
 
 
@@ -727,17 +720,7 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
     )
 
 
-@beartype
-def _wrap_swift_varname(content: str) -> str:
-    """Add type annotation to Swift let declaration for mixed-type
-    collections.
-
-    The content from format_variable_declaration_swift is like
-    "let my_data = [...]", and we need to add a type annotation for Swift
-    to accept heterogeneous collections.
-    """
-    prefix = f"let {_VARIABLE_NAME}"
-    return prefix + ": Any =" + content[len(prefix) + 2 :]
+_wrap_swift_varname = _wrap_identity
 
 
 @beartype
@@ -781,11 +764,10 @@ def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
 
 @beartype
 def _wrap_swift_combined(declaration: str, assignment: str) -> str:
-    """Swift: let declaration (with type annotation) in a do block,
+    """Swift: let declaration in a do block,
     then var + assignment in the outer scope.
     """
-    annotated = _wrap_swift_varname(content=declaration)
-    decl_indented = "    " + annotated.replace("\n", "\n    ")
+    decl_indented = "    " + declaration.replace("\n", "\n    ")
     return (
         f"do {{\n{decl_indented}\n}}\nvar {_VARIABLE_NAME}: Any\n{assignment}"
     )

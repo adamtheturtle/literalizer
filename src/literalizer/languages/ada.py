@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    passthrough_sequence_entry,
 )
 from literalizer._language import (
     CommentConfig,
@@ -174,6 +175,7 @@ class Ada(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             empty_sequence="AList'(1 .. 0 => ANull)",
             preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
         )
 
         @property
