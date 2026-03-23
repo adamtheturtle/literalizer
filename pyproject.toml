@@ -386,6 +386,7 @@ ignore_names = [
     # Enum members accessed by consumers iterating format enums
     "ARRAY",
     "BLOCK",
+    "BTREE_SET",
     "HASH_SET",
     "HEX",
     "LET",
@@ -399,6 +400,8 @@ ignore_names = [
     "NO",
     "SEQ",
     "SINGLE",
+    "SORTED_SET",
+    "TREE_SET",
     "TUPLE",
     "UNDERSCORE",
     "ZONED",

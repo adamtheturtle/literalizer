@@ -75,6 +75,14 @@ _scala_opener_config = TypedOpenerConfig(
     set_opener_template="Set[{type_name}](",
 )
 
+_scala_tree_set_opener_config = TypedOpenerConfig(
+    scalar_types=_SCALA_SCALAR_TYPES,
+    list_template="Array[{inner}]",
+    seq_opener_template="Array[{type_name}](",
+    dict_opener_template="Map[String, {type_name}](",
+    set_opener_template="TreeSet[{type_name}](",
+)
+
 # The LIST format needs List[…] for nested type names, not Array[…].
 _scala_list_element_to_type = make_element_to_type(
     scalar_types=_SCALA_SCALAR_TYPES,
@@ -249,6 +257,17 @@ class Scala(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
         )
+        TREE_SET = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=_scala_tree_set_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
+                fallback="TreeSet(",
+            ),
+            close=")",
+            empty_set=None,
+            preamble_lines=("import scala.collection.immutable.TreeSet",),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -346,17 +365,26 @@ class Scala(metaclass=LanguageCls):
         self.set_format = set_format
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
+        _scalar_overrides = {
+            datetime.date: _SCALA_SCALAR_TYPES[date_tp],
+            datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
+        }
         openers = _scala_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _SCALA_SCALAR_TYPES[date_tp],
-                datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
-            },
+            scalar_type_overrides=_scalar_overrides,
+        )
+        _set_cfg = (
+            _scala_tree_set_opener_config
+            if set_format is self.SetFormats.TREE_SET
+            else _scala_opener_config
+        )
+        _set_openers = _set_cfg.build(
+            scalar_type_overrides=_scalar_overrides,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback="Set(",
+                type_to_opener=_set_openers.set,
+                fallback=set_format.value.set_open([]),
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (

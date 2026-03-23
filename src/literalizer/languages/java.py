@@ -236,6 +236,15 @@ class Java(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
         )
+        TREE_SET = SetFormatConfig(
+            set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
+            close="))",
+            empty_set="new TreeSet<>()",
+            preamble_lines=(
+                "import java.util.Set;",
+                "import java.util.TreeSet;",
+            ),
+        )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
