@@ -40,6 +40,8 @@ def _format_date_perl(value: datetime.date) -> str:
 @beartype
 def _format_datetime_perl(value: datetime.datetime) -> str:
     """Format a datetime as a Perl ``DateTime`` constructor."""
+    if value.tzinfo is not None:
+        value = value.astimezone(tz=datetime.UTC)
     parts = (
         f"DateTime->new(year => {value.year}, "
         f"month => {value.month}, day => {value.day}, "

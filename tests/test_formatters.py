@@ -226,6 +226,15 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             "time_zone => 'UTC')",
             id="format_datetime_perl_microsecond",
         ),
+        pytest.param(
+            Perl.DatetimeFormats.PERL,
+            datetime.datetime.fromisoformat("2024-01-15T18:00:00+05:30"),
+            "DateTime->new("
+            "year => 2024, month => 1, day => 15, "
+            "hour => 12, minute => 30, second => 0, "
+            "time_zone => 'UTC')",
+            id="format_datetime_perl_non_utc",
+        ),
     ],
 )
 def test_format_date_datetime(
