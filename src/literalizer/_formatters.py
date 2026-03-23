@@ -78,53 +78,82 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 
 @dataclass(frozen=True)
-class _TypeOpeners:
+class TypeOpeners:
     """Resolved type-to-opener functions for sequences and dicts."""
 
     seq: Callable[[type | ListType], str | None]
     dict: Callable[[type | ListType], str | None]
 
 
-@beartype
-def resolve_type_openers(
-    *,
-    base_scalar_types: dict[type, str],
-    string_type: str,
-    date_formatter: Callable[[datetime.date], str],
-    datetime_formatter: Callable[[datetime.datetime], str],
-    list_template: str,
-    seq_opener_template: str,
-    dict_opener_template: str,
-    default_seq_opener: Callable[[type | ListType], str | None],
-    default_dict_opener: Callable[[type | ListType], str | None],
-) -> _TypeOpeners:
-    """Build type-to-opener functions, overriding date/datetime scalar
-    types to *string_type* when ISO format functions are in use.
+class TypedOpenerConfig:
+    """Configuration for typed collection openers in a language.
 
-    Returns the default openers unchanged when no override is needed.
+    Holds scalar type mappings and template strings needed to build
+    type-to-opener functions.  Templates and types are defined once
+    at module level; ``resolve`` produces ISO-overridden variants
+    when needed.
     """
-    overrides: dict[type, str] = {}
-    if date_formatter is format_date_iso:
-        overrides[datetime.date] = string_type
-    if datetime_formatter is format_datetime_iso:
-        overrides[datetime.datetime] = string_type
-    if not overrides:
-        return _TypeOpeners(seq=default_seq_opener, dict=default_dict_opener)
-    effective = {**base_scalar_types, **overrides}
-    element_to_type = make_element_to_type(
-        scalar_types=effective,
-        list_template=list_template,
-    )
-    return _TypeOpeners(
-        seq=make_type_to_opener(
-            element_to_type=element_to_type,
-            opener_template=seq_opener_template,
-        ),
-        dict=make_type_to_opener(
-            element_to_type=element_to_type,
-            opener_template=dict_opener_template,
-        ),
-    )
+
+    @beartype
+    def __init__(
+        self,
+        *,
+        scalar_types: dict[type, str],
+        string_type: str,
+        list_template: str,
+        seq_opener_template: str,
+        dict_opener_template: str,
+    ) -> None:
+        """Initialize with scalar type mappings and template strings."""
+        self._scalar_types = scalar_types
+        self._string_type = string_type
+        self._list_template = list_template
+        self._seq_opener_template = seq_opener_template
+        self._dict_opener_template = dict_opener_template
+        self.default: TypeOpeners = self._build(
+            scalar_types=scalar_types,
+        )
+
+    @beartype
+    def _build(self, scalar_types: dict[type, str]) -> TypeOpeners:
+        """Build openers from the given scalar type mapping."""
+        element_to_type = make_element_to_type(
+            scalar_types=scalar_types,
+            list_template=self._list_template,
+        )
+        return TypeOpeners(
+            seq=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._seq_opener_template,
+            ),
+            dict=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._dict_opener_template,
+            ),
+        )
+
+    @beartype
+    def resolve(
+        self,
+        *,
+        date_formatter: Callable[[datetime.date], str],
+        datetime_formatter: Callable[[datetime.datetime], str],
+    ) -> TypeOpeners:
+        """Return openers, overriding date/datetime types to the
+        language's string type when ISO formatters are in use.
+
+        Returns ``self.default`` unchanged when no override is needed.
+        """
+        overrides: dict[type, str] = {}
+        if date_formatter is format_date_iso:
+            overrides[datetime.date] = self._string_type
+        if datetime_formatter is format_datetime_iso:
+            overrides[datetime.datetime] = self._string_type
+        if not overrides:
+            return self.default
+        return self._build(
+            scalar_types={**self._scalar_types, **overrides},
+        )
 
 
 @beartype

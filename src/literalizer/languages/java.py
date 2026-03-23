@@ -8,16 +8,14 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     fixed_dict_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    resolve_type_openers,
     typed_sequence_open,
 )
 from literalizer._language import (
@@ -95,14 +93,12 @@ _JAVA_SCALAR_TYPES: dict[type, str] = {
     datetime.date: "LocalDate",
 }
 
-_java_element_to_type = make_element_to_type(
+_java_opener_config = TypedOpenerConfig(
     scalar_types=_JAVA_SCALAR_TYPES,
+    string_type="String",
     list_template="{inner}[]",
-)
-
-_java_type_to_opener = make_type_to_opener(
-    element_to_type=_java_element_to_type,
-    opener_template="new {type_name}[]{{",
+    seq_opener_template="new {type_name}[]{{",
+    dict_opener_template="new {type_name}[]{{",
 )
 
 
@@ -198,7 +194,7 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_java_type_to_opener,
+                type_to_opener=_java_opener_config.default.seq,
                 fallback="new Object[]{",
             ),
             close="}",
@@ -328,16 +324,9 @@ class Java(metaclass=LanguageCls):
         # typed collections must use "String" instead of "LocalDate".
         # Only the ARRAY format uses typed openers; LIST uses a fixed
         # opener so no override is needed.
-        openers = resolve_type_openers(
-            base_scalar_types=_JAVA_SCALAR_TYPES,
-            string_type="String",
+        openers = _java_opener_config.resolve(
             date_formatter=date_format.value.formatter,
             datetime_formatter=datetime_format.value.formatter,
-            list_template="{inner}[]",
-            seq_opener_template="new {type_name}[]{{",
-            dict_opener_template="new {type_name}[]{{",
-            default_seq_opener=_java_type_to_opener,
-            default_dict_opener=_java_type_to_opener,
         )
         seq_open: Callable[[list[Value]], str] = fmt.sequence_open
         if sequence_format.name == "ARRAY":

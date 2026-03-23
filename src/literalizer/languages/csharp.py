@@ -8,15 +8,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    resolve_type_openers,
     typed_dict_open,
     typed_sequence_open,
 )
@@ -62,19 +60,12 @@ _CSHARP_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "DateTime",
 }
 
-_csharp_element_to_type = make_element_to_type(
+_csharp_opener_config = TypedOpenerConfig(
     scalar_types=_CSHARP_SCALAR_TYPES,
+    string_type="string",
     list_template="{inner}[]",
-)
-
-_csharp_type_to_opener = make_type_to_opener(
-    element_to_type=_csharp_element_to_type,
-    opener_template="new {type_name}[] {{",
-)
-
-_csharp_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_csharp_element_to_type,
-    opener_template="new Dictionary<string, {type_name}> {{",
+    seq_opener_template="new {type_name}[] {{",
+    dict_opener_template="new Dictionary<string, {type_name}> {{",
 )
 
 
@@ -159,7 +150,7 @@ class CSharp(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_csharp_type_to_opener,
+                type_to_opener=_csharp_opener_config.default.seq,
                 fallback="new object[] {",
             ),
             close="}",
@@ -279,16 +270,9 @@ class CSharp(metaclass=LanguageCls):
 
         # When ISO format is selected, dates become plain strings, so
         # typed collections must use "string" instead of native types.
-        openers = resolve_type_openers(
-            base_scalar_types=_CSHARP_SCALAR_TYPES,
-            string_type="string",
+        openers = _csharp_opener_config.resolve(
             date_formatter=date_format.value.formatter,
             datetime_formatter=datetime_format.value.formatter,
-            list_template="{inner}[]",
-            seq_opener_template="new {type_name}[] {{",
-            dict_opener_template="new Dictionary<string, {type_name}> {{",
-            default_seq_opener=_csharp_type_to_opener,
-            default_dict_opener=_csharp_dict_type_to_opener,
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,

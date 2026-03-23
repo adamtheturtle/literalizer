@@ -8,16 +8,14 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    resolve_type_openers,
     typed_dict_open,
     typed_sequence_open,
 )
@@ -60,19 +58,12 @@ _DART_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "DateTime",
 }
 
-_dart_element_to_type = make_element_to_type(
+_dart_opener_config = TypedOpenerConfig(
     scalar_types=_DART_SCALAR_TYPES,
+    string_type="String",
     list_template="List<{inner}>",
-)
-
-_dart_type_to_opener = make_type_to_opener(
-    element_to_type=_dart_element_to_type,
-    opener_template="<{type_name}>[",
-)
-
-_dart_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_dart_element_to_type,
-    opener_template="<String, {type_name}>{{",
+    seq_opener_template="<{type_name}>[",
+    dict_opener_template="<String, {type_name}>{{",
 )
 
 
@@ -151,7 +142,7 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_dart_type_to_opener,
+                type_to_opener=_dart_opener_config.default.seq,
                 fallback="[",
             ),
             close="]",
@@ -271,16 +262,9 @@ class Dart(metaclass=LanguageCls):
 
         # When ISO format is selected, dates become plain strings, so
         # typed collections must use "String" instead of "DateTime".
-        openers = resolve_type_openers(
-            base_scalar_types=_DART_SCALAR_TYPES,
-            string_type="String",
+        openers = _dart_opener_config.resolve(
             date_formatter=date_format.value.formatter,
             datetime_formatter=datetime_format.value.formatter,
-            list_template="List<{inner}>",
-            seq_opener_template="<{type_name}>[",
-            dict_opener_template="<String, {type_name}>{{",
-            default_seq_opener=_dart_type_to_opener,
-            default_dict_opener=_dart_dict_type_to_opener,
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=openers.seq,

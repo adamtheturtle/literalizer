@@ -8,16 +8,14 @@ from beartype import beartype
 
 from literalizer._formatters import (
     ListType,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    resolve_type_openers,
     typed_dict_open,
     typed_sequence_open,
 )
@@ -94,14 +92,12 @@ _KOTLIN_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "LocalDateTime",
 }
 
-_kotlin_element_to_type = make_element_to_type(
+_kotlin_opener_config = TypedOpenerConfig(
     scalar_types=_KOTLIN_SCALAR_TYPES,
+    string_type="String",
     list_template="Array<{inner}>",
-)
-
-_kotlin_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_kotlin_element_to_type,
-    opener_template="mapOf<String, {type_name}>(",
+    seq_opener_template="arrayOf(",
+    dict_opener_template="mapOf<String, {type_name}>(",
 )
 
 
@@ -323,20 +319,9 @@ class Kotlin(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
 
-        # When ISO format is selected, dates become plain strings, so
-        # typed dict collections must use "String" instead of native
-        # types.  Sequence openers already map date types to
-        # "arrayOf(" (same as String), so no sequence override needed.
-        openers = resolve_type_openers(
-            base_scalar_types=_KOTLIN_SCALAR_TYPES,
-            string_type="String",
+        openers = _kotlin_opener_config.resolve(
             date_formatter=date_format.value.formatter,
             datetime_formatter=datetime_format.value.formatter,
-            list_template="Array<{inner}>",
-            seq_opener_template="arrayOf(",
-            dict_opener_template="mapOf<String, {type_name}>(",
-            default_seq_opener=_kotlin_type_to_opener,
-            default_dict_opener=_kotlin_dict_type_to_opener,
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
