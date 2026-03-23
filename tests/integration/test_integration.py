@@ -163,8 +163,6 @@ _HASKELL_MODULE_HEADER = (
     " secondsToDiffTime, picosecondsToDiffTime)\n"
 )
 
-_HASKELL_STATIC_HEADER = _HASKELL_MODULE_HEADER + _HASKELL_VAL_TYPE
-
 
 @beartype
 def _wrap_fsharp(content: str) -> str:
