@@ -18,11 +18,13 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Kotlin,
+    Matlab,
     Python,
     Ruby,
     Rust,
     Swift,
     VisualBasic,
+    Zig,
 )
 
 _SAMPLE_DATE = datetime.date(year=2024, month=1, day=15)
@@ -183,6 +185,12 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_rust_microsecond",
         ),
         pytest.param(
+            Matlab.DatetimeFormats.MATLAB,
+            _SAMPLE_DATETIME_MICRO,
+            "datetime(2024, 1, 15, 12, 30, 0, 123.456)",
+            id="format_datetime_matlab_microsecond",
+        ),
+        pytest.param(
             Swift.DatetimeFormats.SWIFT,
             _SAMPLE_DATETIME_MICRO,
             "DateComponents("
@@ -209,6 +217,12 @@ def test_format_datetime_epoch() -> None:
     # The exact value depends on local timezone for naive datetimes,
     # so just check it parses as a float.
     float(result)
+
+
+def test_format_datetime_zig_naive() -> None:
+    """Zig datetime treats naive datetimes as UTC."""
+    result = Zig.DatetimeFormats.ZIG(_SAMPLE_DATETIME)
+    assert result == "1705321800"
 
 
 def test_format_date_cpp() -> None:
