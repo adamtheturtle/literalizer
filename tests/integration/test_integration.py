@@ -558,8 +558,7 @@ def _wrap_nim(content: str) -> str:
     stripped = content.lstrip()
     if (
         stripped.startswith("[")
-        and "[[" not in content
-        and stripped != "[]"
+        and "[" not in stripped[1:]
         and not _nim_has_mixed_types(content=content)
     ):
         return f"let _ = @{content}"
