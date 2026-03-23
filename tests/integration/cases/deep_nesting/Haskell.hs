@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Check where
+import Data.Time (Day, UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
 import Data.String (IsString(fromString))
 instance IsString Val where
     fromString = HStr

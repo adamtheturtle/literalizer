@@ -106,12 +106,6 @@ _FRACTIONAL_INSTANCE = (
     '    a / b = error "not implemented"'
 )
 
-_DATA_TIME_IMPORT = (
-    "import Data.Time"
-    " (Day, UTCTime(..), fromGregorian,"
-    " secondsToDiffTime, picosecondsToDiffTime)"
-)
-
 
 @beartype
 class Haskell(metaclass=LanguageCls):
@@ -396,22 +390,21 @@ class Haskell(metaclass=LanguageCls):
                 if p
             },
         }
-        _date_body = (_DATA_TIME_IMPORT,)
-        _iso_date_body = (_DATA_TIME_IMPORT, *_is_string_body)
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
             str: _is_string_body,
             bytes: _is_string_body,
             int: (_NUM_INSTANCE,),
             float: (_NUM_INSTANCE, _FRACTIONAL_INSTANCE),
-            datetime.date: (
-                _iso_date_body
-                if date_format.value.preamble_lines
-                else _date_body
-            ),
-            datetime.datetime: (
-                _iso_date_body
-                if datetime_format.value.preamble_lines
-                else _date_body
-            ),
+            **{
+                t: _is_string_body
+                for t, p in (
+                    (datetime.date, date_format.value.preamble_lines),
+                    (
+                        datetime.datetime,
+                        datetime_format.value.preamble_lines,
+                    ),
+                )
+                if p
+            },
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

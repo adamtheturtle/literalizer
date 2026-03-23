@@ -1,4 +1,5 @@
 module Check where
+import Data.Time (Day, UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"

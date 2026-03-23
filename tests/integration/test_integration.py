@@ -156,7 +156,11 @@ _HASKELL_VAL_TYPE = (
     " | HDate Day | HDatetime UTCTime\n"
 )
 
-_HASKELL_STATIC_HEADER = "module Check where\n" + _HASKELL_VAL_TYPE
+_HASKELL_STATIC_HEADER = (
+    "module Check where\n"
+    "import Data.Time (Day, UTCTime(..), fromGregorian,"
+    " secondsToDiffTime, picosecondsToDiffTime)\n" + _HASKELL_VAL_TYPE
+)
 
 
 @beartype
