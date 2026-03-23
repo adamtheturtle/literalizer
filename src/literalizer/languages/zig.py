@@ -39,7 +39,9 @@ def _format_date_zig(value: datetime.date) -> str:
 
 @beartype
 def _format_datetime_zig(value: datetime.datetime) -> str:
-    """Format a datetime as epoch seconds."""
+    """Format a datetime as epoch seconds (UTC)."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=datetime.UTC)
     return str(object=int(value.timestamp()))
 
 
