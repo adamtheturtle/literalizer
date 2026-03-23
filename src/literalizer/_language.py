@@ -77,6 +77,13 @@ class OrderedMapFormatConfig:
     preamble_lines: tuple[str, ...]
 
 
+@dataclasses.dataclass(frozen=True)
+class DeclarationStyleConfig:
+    """Configuration for a single declaration style."""
+
+    formatter: Callable[[str, str, Value], str]
+
+
 class SequenceFormat(Protocol):
     """Protocol for sequence format Enum members."""
 

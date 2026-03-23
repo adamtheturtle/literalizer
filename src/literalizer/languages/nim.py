@@ -53,22 +53,21 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
 def _make_variable_declaration(
     *,
     seq_mode: bool,
+    keyword: str,
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable declaration formatter."""
 
     @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format a ``var`` declaration, using ``@`` for flat
-        sequences.
-        """
+        """Format a declaration, using ``@`` for flat sequences."""
         if (
             seq_mode
             and isinstance(_data, list)
             and _data
             and not any(isinstance(item, list) for item in _data)
         ):
-            return f"var {name} = @{value}"
-        return f"var {name} = %* {value}"
+            return f"{keyword} {name} = @{value}"
+        return f"{keyword} {name} = %* {value}"
 
     return _format
 
@@ -218,6 +217,8 @@ class Nim(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = "var"
+        LET = "let"
+        CONST = "const"
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -336,7 +337,10 @@ class Nim(metaclass=LanguageCls):
         self.supports_collection_comments = True
         _seq = sequence_format is self.sequence_formats.SEQ
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _make_variable_declaration(seq_mode=_seq)
+            _make_variable_declaration(
+                seq_mode=_seq,
+                keyword=declaration_style.value,
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _make_variable_assignment(seq_mode=_seq)

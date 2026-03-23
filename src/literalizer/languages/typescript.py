@@ -22,6 +22,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -59,9 +60,27 @@ def _format_ts_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a TypeScript variable declaration."""
+def _format_variable_declaration_const(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a TypeScript ``const`` variable declaration."""
     return f"const {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_let(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a TypeScript ``let`` variable declaration."""
+    return f"let {name} = {value};"
+
+
+@beartype
+def _format_variable_declaration_var(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a TypeScript ``var`` variable declaration."""
+    return f"var {name} = {value};"
 
 
 @beartype
@@ -185,7 +204,15 @@ class TypeScript(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        CONST = "const"
+        CONST = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_const,
+        )
+        LET = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_let,
+        )
+        VAR = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_var,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -304,7 +331,7 @@ class TypeScript(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment

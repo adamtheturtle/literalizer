@@ -389,6 +389,8 @@ ignore_names = [
     "HASH_SET",
     "HEX",
     "LET",
+    "LET_MUT",
+    "LET_MUTABLE",
     "MAP",
     "MAP_SET",
     "EPOCH",

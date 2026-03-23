@@ -776,15 +776,18 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
 
 @beartype
 def _wrap_swift_varname(content: str) -> str:
-    """Add type annotation to Swift let declaration for mixed-type
+    """Add type annotation to Swift let/var declaration for mixed-type
     collections.
 
-    The content from format_variable_declaration_swift is like
-    "let my_data = [...]", and we need to add a type annotation for Swift
-    to accept heterogeneous collections.
+    The content from format_variable_declaration is like
+    "let my_data = [...]" or "var my_data = [...]", and we need to add
+    a type annotation for Swift to accept heterogeneous collections.
     """
-    prefix = f"let {_VARIABLE_NAME}"
-    return prefix + ": Any =" + content[len(prefix) + 2 :]
+    for keyword in ("let", "var"):
+        prefix = f"{keyword} {_VARIABLE_NAME}"
+        if content.startswith(prefix):
+            return prefix + ": Any =" + content[len(prefix) + 2 :]
+    return content
 
 
 @beartype

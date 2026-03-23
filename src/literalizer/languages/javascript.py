@@ -23,6 +23,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -211,8 +212,12 @@ class JavaScript(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        CONST = "const"
-        LET = "let"
+        CONST = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_const,
+        )
+        LET = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_let,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -355,9 +360,7 @@ class JavaScript(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration_let
-            if declaration_style.name == "LET"
-            else _format_variable_declaration_const
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment

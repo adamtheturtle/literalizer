@@ -28,6 +28,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -93,9 +94,19 @@ def _format_scala_ordered_map_entry(key: str, value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Scala variable declaration."""
+def _format_variable_declaration_val(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Scala ``val`` variable declaration."""
     return f"val {name} = {value}"
+
+
+@beartype
+def _format_variable_declaration_var(
+    name: str, value: str, _data: Value
+) -> str:
+    """Format a Scala ``var`` variable declaration."""
+    return f"var {name} = {value}"
 
 
 @beartype
@@ -251,7 +262,12 @@ class Scala(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        VAL = "val"
+        VAL = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_val,
+        )
+        VAR = DeclarationStyleConfig(
+            formatter=_format_variable_declaration_var,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -398,7 +414,7 @@ class Scala(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
