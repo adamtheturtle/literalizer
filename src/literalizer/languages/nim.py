@@ -10,6 +10,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -19,6 +20,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -120,22 +123,36 @@ class Nim(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Nim."""
 
-        NIM = enum.member(value=_format_date_nim)
-        ISO = enum.member(value=format_date_iso)
+        NIM = DateFormatConfig(
+            formatter=_format_date_nim,
+            preamble_lines=("import json",),
+        )
+        ISO = DateFormatConfig(
+            formatter=format_date_iso,
+            preamble_lines=("import json",),
+            type_produced=str,
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Nim."""
 
-        NIM = enum.member(value=_format_datetime_nim)
-        ISO = enum.member(value=format_datetime_iso)
+        NIM = DatetimeFormatConfig(
+            formatter=_format_datetime_nim,
+            preamble_lines=("import json",),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            preamble_lines=("import json",),
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -177,7 +194,7 @@ class Nim(metaclass=LanguageCls):
         """Set type options for Nim."""
 
         SET = SetFormatConfig(
-            open_str="[",
+            set_open=fixed_set_open(open_str="["),
             close="]",
             empty_set=None,
             preamble_lines=("import json",),
@@ -323,31 +340,16 @@ class Nim(metaclass=LanguageCls):
             _make_variable_assignment(seq_mode=_seq)
         )
         _json = ("import json",)
-        _date_map: dict[str, tuple[str, ...]] = {
-            "NIM": _json,
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "NIM": _json,
-        }
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            t: p
-            for t, p in (
-                (str, _json),
-                (int, _json),
-                (float, _json),
-                (bool, _json),
-                (type(None), _json),
-                (bytes, _json),
-                (
-                    datetime.date,
-                    _date_map.get(date_format.name, _json),
-                ),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, _json),
-                ),
-            )
-            if p
+            str: _json,
+            int: _json,
+            float: _json,
+            bool: _json,
+            type(None): _json,
+            bytes: _json,
+            datetime.date: date_format.value.preamble_lines,
+            datetime.datetime: datetime_format.value.preamble_lines,
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

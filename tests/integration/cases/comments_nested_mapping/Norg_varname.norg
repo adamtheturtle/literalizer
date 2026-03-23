@@ -1,0 +1,7 @@
+* my_data
+@code json
+{
+    "a": {"x": 1},
+    "b": 2
+}
+@end

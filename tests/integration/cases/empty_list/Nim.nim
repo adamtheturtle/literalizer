@@ -1,0 +1,2 @@
+import json
+let _ = @[]

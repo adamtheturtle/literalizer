@@ -9,13 +9,18 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -90,6 +95,8 @@ class Rust(metaclass=LanguageCls):
               ``NaiveDate::from_ymd_opt(...)`` call,
               e.g. ``NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()``.
               Requires the ``chrono`` crate.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -98,6 +105,8 @@ class Rust(metaclass=LanguageCls):
               ``NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15)
               .unwrap(), NaiveTime::from_hms_opt(12, 30, 0).unwrap())``.
               Requires the ``chrono`` crate.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: Which Rust sequence type to use.
 
@@ -119,20 +128,35 @@ class Rust(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
 
-        RUST = enum.member(value=_format_date_rust)
+        RUST = DateFormatConfig(
+            formatter=_format_date_rust,
+            preamble_lines=("use chrono::NaiveDate;",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Rust."""
 
-        RUST = enum.member(value=_format_datetime_rust)
+        RUST = DatetimeFormatConfig(
+            formatter=_format_datetime_rust,
+            preamble_lines=(
+                "use chrono::NaiveDate;",
+                "use chrono::NaiveDateTime;",
+                "use chrono::NaiveTime;",
+            ),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -182,9 +206,9 @@ class Rust(metaclass=LanguageCls):
         """Set type options for Rust."""
 
         HASH_SET = SetFormatConfig(
-            open_str="HashSet::from([",
+            set_open=fixed_set_open(open_str="HashSet::from(["),
             close="])",
-            empty_set=None,
+            empty_set="HashSet::<String>::new()",
             preamble_lines=("use std::collections::HashSet;",),
         )
 
@@ -283,7 +307,7 @@ class Rust(metaclass=LanguageCls):
             open_fn=fixed_dict_open(open_str="HashMap::from(["),
             close="])",
             format_entry=_format_rust_dict_entry,
-            empty_dict=None,
+            empty_dict="HashMap::<&str, &str>::from([])",
             preamble_lines=("use std::collections::HashMap;",),
         )
         self.multiline_trailing_comma = True
@@ -329,11 +353,12 @@ class Rust(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            datetime.date: ("use chrono::NaiveDate;",),
-            datetime.datetime: (
-                "use chrono::NaiveDate;",
-                "use chrono::NaiveDateTime;",
-                "use chrono::NaiveTime;",
-            ),
+            t: p
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
+            )
+            if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -18,6 +19,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -80,6 +83,28 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
 
 
 _string_format: Callable[[str], str] = format_string_backslash
+
+_IS_STRING_IMPORT = "import Data.String (IsString(fromString))"
+
+_IS_STRING_INSTANCE = "instance IsString Val where\n    fromString = HStr"
+
+_NUM_INSTANCE = (
+    "instance Num Val where\n"
+    "    fromInteger = HInt\n"
+    '    a + b = error "not implemented"\n'
+    '    a * b = error "not implemented"\n'
+    '    abs a = error "not implemented"\n'
+    '    signum a = error "not implemented"\n'
+    "    negate (HInt n) = HInt (negate n)\n"
+    "    negate (HFloat f) = HFloat (negate f)\n"
+    '    negate _ = error "not implemented"'
+)
+
+_FRACTIONAL_INSTANCE = (
+    "instance Fractional Val where\n"
+    "    fromRational r = HFloat (realToFrac r)\n"
+    '    a / b = error "not implemented"'
+)
 
 
 @beartype
@@ -149,22 +174,30 @@ class Haskell(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
 
-        HASKELL = enum.member(value=_format_date_haskell)
-        ISO = enum.member(value=format_date_iso)
+        HASKELL = DateFormatConfig(formatter=_format_date_haskell)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso,
+            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
+            type_produced=str,
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Haskell."""
 
-        HASKELL = enum.member(value=_format_datetime_haskell)
-        ISO = enum.member(value=format_datetime_iso)
+        HASKELL = DatetimeFormatConfig(formatter=_format_datetime_haskell)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -206,7 +239,7 @@ class Haskell(metaclass=LanguageCls):
         """Set type options for Haskell."""
 
         SET = SetFormatConfig(
-            open_str="HSet [",
+            set_open=fixed_set_open(open_str="HSet ["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -352,10 +385,34 @@ class Haskell(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
+        _is_string_body = (_IS_STRING_IMPORT, _IS_STRING_INSTANCE)
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             str: _overloaded_strings,
             bytes: _overloaded_strings,
-            datetime.date: _overloaded_strings,
-            datetime.datetime: _overloaded_strings,
+            **{
+                t: p
+                for t, p in (
+                    (datetime.date, date_format.value.preamble_lines),
+                    (datetime.datetime, datetime_format.value.preamble_lines),
+                )
+                if p
+            },
+        }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
+            str: _is_string_body,
+            bytes: _is_string_body,
+            int: (_NUM_INSTANCE,),
+            float: (_NUM_INSTANCE, _FRACTIONAL_INSTANCE),
+            **{
+                t: _is_string_body
+                for t, p in (
+                    (datetime.date, date_format.value.preamble_lines),
+                    (
+                        datetime.datetime,
+                        datetime_format.value.preamble_lines,
+                    ),
+                )
+                if p
+            },
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

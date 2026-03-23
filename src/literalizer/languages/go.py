@@ -8,17 +8,21 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -78,19 +82,12 @@ _GO_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "time.Time",
 }
 
-_go_element_to_type = make_element_to_type(
+_go_opener_config = TypedOpenerConfig(
     scalar_types=_GO_SCALAR_TYPES,
     list_template="[]{inner}",
-)
-
-_go_type_to_opener = make_type_to_opener(
-    element_to_type=_go_element_to_type,
-    opener_template="[]{type_name}{{",
-)
-
-_go_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_go_element_to_type,
-    opener_template="map[string]{type_name}{{",
+    seq_opener_template="[]{type_name}{{",
+    dict_opener_template="map[string]{type_name}{{",
+    set_opener_template="map[{type_name}]struct{{}}{{",
 )
 
 
@@ -131,12 +128,16 @@ class Go(metaclass=LanguageCls):
             * ``date_formats.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 0, 0, 0, 0,
               time.UTC)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.GO`` — ``time.Date`` call,
               e.g. ``time.Date(2024, time.January, 15, 12, 30, 0, 0,
               time.UTC)``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".go"
@@ -145,20 +146,31 @@ class Go(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Go."""
 
-        GO = enum.member(value=_format_date_go)
+        GO = DateFormatConfig(
+            formatter=_format_date_go,
+            preamble_lines=('import "time"',),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Go."""
 
-        GO = enum.member(value=_format_datetime_go)
+        GO = DatetimeFormatConfig(
+            formatter=_format_datetime_go,
+            preamble_lines=('import "time"',),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -174,7 +186,9 @@ class Go(metaclass=LanguageCls):
 
         SLICE = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_go_type_to_opener,
+                type_to_opener=_go_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="[]any{",
             ),
             close="}",
@@ -195,7 +209,12 @@ class Go(metaclass=LanguageCls):
         """Set type options for Go."""
 
         SET = SetFormatConfig(
-            open_str="map[any]struct{}{",
+            set_open=typed_set_open(
+                type_to_opener=_go_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
+                fallback="map[any]struct{}{",
+            ),
             close="}",
             empty_set=None,
             preamble_lines=(),
@@ -291,10 +310,22 @@ class Go(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _go_opener_config.build(
+            scalar_type_overrides={
+                datetime.date: _GO_SCALAR_TYPES[date_tp],
+                datetime.datetime: _GO_SCALAR_TYPES[dt_tp],
+            },
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="[]any{",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_go_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="map[string]any{",
             ),
             close="}",
@@ -345,7 +376,12 @@ class Go(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ("package main",)
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            datetime.date: ('import "time"',),
-            datetime.datetime: ('import "time"',),
+            t: p
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
+            )
+            if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

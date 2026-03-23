@@ -1,9 +1,9 @@
-var my_data = (
+var my_data = new object[] {
     1,
     "hello",
     true
 );
-my_data = (
+my_data = new object[] {
     1,
     "hello",
     true

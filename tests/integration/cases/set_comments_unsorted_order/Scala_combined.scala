@@ -1,5 +1,5 @@
 object Declaration {
-  val my_data = Set(
+  val my_data = Set[String](
       // before apple
       "apple",
       "banana",  // banana inline
@@ -8,7 +8,7 @@ object Declaration {
 }
 object Assignment {
   var my_data: Any = null
-  my_data = Set(
+  my_data = Set[String](
       // before apple
       "apple",
       "banana",  // banana inline

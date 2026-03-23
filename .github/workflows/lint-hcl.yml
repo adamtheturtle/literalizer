@@ -19,7 +19,6 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
-              - '**/*.toml'
             lang:
               - 'tests/integration/cases/**/*.hcl'
       - name: Find files to lint

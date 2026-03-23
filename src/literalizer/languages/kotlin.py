@@ -8,19 +8,23 @@ from beartype import beartype
 
 from literalizer._formatters import (
     ListType,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash_dollar,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -90,14 +94,12 @@ _KOTLIN_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "LocalDateTime",
 }
 
-_kotlin_element_to_type = make_element_to_type(
+_kotlin_opener_config = TypedOpenerConfig(
     scalar_types=_KOTLIN_SCALAR_TYPES,
     list_template="Array<{inner}>",
-)
-
-_kotlin_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_kotlin_element_to_type,
-    opener_template="mapOf<String, {type_name}>(",
+    seq_opener_template="arrayOf(",
+    dict_opener_template="mapOf<String, {type_name}>(",
+    set_opener_template="setOf<{type_name}>(",
 )
 
 
@@ -128,11 +130,15 @@ class Kotlin(metaclass=LanguageCls):
 
             * ``date_formats.KOTLIN`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.KOTLIN`` — ``LocalDateTime.of(...)`` call,
               e.g. ``LocalDateTime.of(2024, 1, 15, 12, 30, 0)``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: Which Kotlin sequence type to use.
 
@@ -151,20 +157,31 @@ class Kotlin(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Kotlin."""
 
-        KOTLIN = enum.member(value=_format_date_kotlin)
+        KOTLIN = DateFormatConfig(
+            formatter=_format_date_kotlin,
+            preamble_lines=("import java.time.LocalDate",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Kotlin."""
 
-        KOTLIN = enum.member(value=_format_datetime_kotlin)
+        KOTLIN = DatetimeFormatConfig(
+            formatter=_format_datetime_kotlin,
+            preamble_lines=("import java.time.LocalDateTime",),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -217,7 +234,12 @@ class Kotlin(metaclass=LanguageCls):
         """Set type options for Kotlin."""
 
         SET = SetFormatConfig(
-            open_str="setOf<Any?>(",
+            set_open=typed_set_open(
+                type_to_opener=_kotlin_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
+                fallback="setOf<Any?>(",
+            ),
             close=")",
             empty_set=None,
             preamble_lines=(),
@@ -314,9 +336,18 @@ class Kotlin(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _kotlin_opener_config.build(
+            scalar_type_overrides={
+                datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
+                datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
+            },
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_kotlin_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="mapOf<String, Any?>(",
             ),
             close=")",
@@ -368,21 +399,13 @@ class Kotlin(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        _date_map: dict[str, tuple[str, ...]] = {
-            "KOTLIN": ("import java.time.LocalDate",),
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "KOTLIN": ("import java.time.LocalDateTime",),
-        }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p
             for t, p in (
-                (datetime.date, _date_map.get(date_format.name, ())),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, ()),
-                ),
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

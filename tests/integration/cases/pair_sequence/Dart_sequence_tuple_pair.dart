@@ -1,4 +1,4 @@
-final x = (
+final x = [
     1,
     "hello",
 );

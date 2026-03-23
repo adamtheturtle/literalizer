@@ -1,6 +1,6 @@
-var x = (
+var x = new object[] {
     true,
     "hi",
-    (1, 2),
+    new int[] {1, 2),
     (object?)null
 );

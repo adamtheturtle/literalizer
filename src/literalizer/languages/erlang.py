@@ -10,6 +10,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
@@ -18,6 +19,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -107,22 +110,25 @@ class Erlang(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
 
-        ISO = enum.member(value=format_date_iso)
-        ERLANG = enum.member(value=_format_date_erlang)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ERLANG = DateFormatConfig(formatter=_format_date_erlang)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Erlang."""
 
-        ISO = enum.member(value=format_datetime_iso)
-        ERLANG = enum.member(value=_format_datetime_erlang)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
+        ERLANG = DatetimeFormatConfig(formatter=_format_datetime_erlang)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -164,7 +170,7 @@ class Erlang(metaclass=LanguageCls):
         """Set type options for Erlang."""
 
         SET = SetFormatConfig(
-            open_str="sets:from_list([",
+            set_open=fixed_set_open(open_str="sets:from_list(["),
             close="])",
             empty_set="sets:from_list([])",
             preamble_lines=(),
@@ -306,4 +312,5 @@ class Erlang(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

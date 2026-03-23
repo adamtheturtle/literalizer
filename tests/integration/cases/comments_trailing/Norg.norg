@@ -1,0 +1,6 @@
+@code json
+[
+    "a"
+    % trailing%
+]
+@end

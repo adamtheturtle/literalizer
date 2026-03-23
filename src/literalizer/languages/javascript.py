@@ -10,7 +10,10 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     format_string_backslash_single,
     passthrough_sequence_entry,
@@ -18,6 +21,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -116,11 +121,15 @@ class JavaScript(metaclass=LanguageCls):
 
             * ``date_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15")``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.JS`` — ``new Date(...)`` call,
               e.g. ``new Date("2024-01-15T12:30:00")``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".js"
@@ -129,20 +138,25 @@ class JavaScript(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for JavaScript."""
 
-        JS = enum.member(value=_format_date_js)
+        JS = DateFormatConfig(formatter=_format_date_js)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for JavaScript."""
 
-        JS = enum.member(value=_format_datetime_js)
+        JS = DatetimeFormatConfig(formatter=_format_datetime_js)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -176,7 +190,7 @@ class JavaScript(metaclass=LanguageCls):
         """Set type options for JavaScript."""
 
         SET = SetFormatConfig(
-            open_str="new Set([",
+            set_open=fixed_set_open(open_str="new Set(["),
             close="])",
             empty_set="new Set()",
             preamble_lines=(),
@@ -350,4 +364,5 @@ class JavaScript(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

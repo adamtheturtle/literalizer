@@ -1,12 +1,12 @@
-var my_data = (
+var my_data = new object[] {
     true,
     "hi",
-    (1, 2),
+    new int[] {1, 2),
     (object?)null
 );
-my_data = (
+my_data = new object[] {
     true,
     "hi",
-    (1, 2),
+    new int[] {1, 2),
     (object?)null
 );

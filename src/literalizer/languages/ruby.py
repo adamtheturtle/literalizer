@@ -10,13 +10,18 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -71,11 +76,15 @@ class Ruby(metaclass=LanguageCls):
 
             * ``date_formats.RUBY`` — ``Date.new(...)`` call,
               e.g. ``Date.new(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.RUBY`` — ``Time.new(...)`` call,
               e.g. ``Time.new(2024, 1, 15, 12, 30, 0)``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".rb"
@@ -84,20 +93,30 @@ class Ruby(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Ruby."""
 
-        RUBY = enum.member(value=_format_date_ruby)
+        RUBY = DateFormatConfig(
+            formatter=_format_date_ruby,
+            preamble_lines=("require 'date'",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Ruby."""
 
-        RUBY = enum.member(value=_format_datetime_ruby)
+        RUBY = DatetimeFormatConfig(
+            formatter=_format_datetime_ruby,
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -131,7 +150,7 @@ class Ruby(metaclass=LanguageCls):
         """Set type options for Ruby."""
 
         SET = SetFormatConfig(
-            open_str="Set.new([",
+            set_open=fixed_set_open(open_str="Set.new(["),
             close="])",
             empty_set="Set.new",
             preamble_lines=("require 'set'",),
@@ -274,6 +293,12 @@ class Ruby(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            datetime.date: ("require 'date'",),
+            t: p
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
+            )
+            if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

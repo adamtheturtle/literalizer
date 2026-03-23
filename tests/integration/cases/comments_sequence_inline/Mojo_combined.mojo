@@ -1,0 +1,11 @@
+def main():
+    var my_data = [
+        "a",  # note a
+        "b",  # note b
+    ]
+    _ = my_data
+    my_data = [
+        "a",  # note a
+        "b",  # note b
+    ]
+    _ = my_data

@@ -22,10 +22,28 @@ class SequenceFormatConfig:
 
 
 @dataclasses.dataclass(frozen=True)
+class DateFormatConfig:
+    """Configuration for a single date format."""
+
+    formatter: Callable[[datetime.date], str]
+    preamble_lines: tuple[str, ...] = ()
+    type_produced: type = datetime.date
+
+
+@dataclasses.dataclass(frozen=True)
+class DatetimeFormatConfig:
+    """Configuration for a single datetime format."""
+
+    formatter: Callable[[datetime.datetime], str]
+    preamble_lines: tuple[str, ...] = ()
+    type_produced: type = datetime.datetime
+
+
+@dataclasses.dataclass(frozen=True)
 class SetFormatConfig:
     """Configuration for a single set format."""
 
-    open_str: str
+    set_open: Callable[[list[Value]], str]
     close: str
     empty_set: str | None
     preamble_lines: tuple[str, ...]
@@ -401,6 +419,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     that type appears in the data.  For example, a language that needs
     ``import datetime`` when dates are present would include
     ``{datetime.date: ("import datetime",)}``.
+    """
+
+    scalar_body_preamble: dict[type, tuple[str, ...]]
+    """Maps Python scalar types to body-preamble lines that belong
+    *inside* the module rather than before it.
+
+    Most languages leave this empty.  Haskell uses it for typeclass
+    instance definitions that must appear after the ``module`` header.
     """
 
     type_hint_collection_preamble_lines: tuple[str, ...]

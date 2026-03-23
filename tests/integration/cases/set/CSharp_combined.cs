@@ -1,9 +1,9 @@
-var my_data = new HashSet<object> {
+var my_data = new HashSet<string> {
     "apple",
     "banana",
     "cherry"
 };
-my_data = new HashSet<object> {
+my_data = new HashSet<string> {
     "apple",
     "banana",
     "cherry"

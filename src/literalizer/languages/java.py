@@ -8,17 +8,21 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     fixed_dict_open,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -90,14 +94,12 @@ _JAVA_SCALAR_TYPES: dict[type, str] = {
     datetime.date: "LocalDate",
 }
 
-_java_element_to_type = make_element_to_type(
+_java_opener_config = TypedOpenerConfig(
     scalar_types=_JAVA_SCALAR_TYPES,
     list_template="{inner}[]",
-)
-
-_java_type_to_opener = make_type_to_opener(
-    element_to_type=_java_element_to_type,
-    opener_template="new {type_name}[]{{",
+    seq_opener_template="new {type_name}[]{{",
+    dict_opener_template="new {type_name}[]{{",
+    set_opener_template="Set.of(",
 )
 
 
@@ -122,6 +124,8 @@ class Java(metaclass=LanguageCls):
 
             * ``date_formats.JAVA`` — ``LocalDate.of(...)`` call,
               e.g. ``LocalDate.of(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -130,6 +134,8 @@ class Java(metaclass=LanguageCls):
             * ``datetime_formats.ZONED`` — ``ZonedDateTime.of(...)`` call,
               e.g. ``ZonedDateTime.of(2024, 1, 15, 12, 30, 0, 0,
               ZoneId.of("UTC"))``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         sequence_format: How to format sequences.
 
@@ -145,21 +151,38 @@ class Java(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Java."""
 
-        JAVA = enum.member(value=_format_date_java)
+        JAVA = DateFormatConfig(
+            formatter=_format_date_java,
+            preamble_lines=("import java.time.LocalDate;",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Java."""
 
-        INSTANT = enum.member(value=_format_datetime_java_instant)
-        ZONED = enum.member(value=_format_datetime_java_zoned)
+        INSTANT = DatetimeFormatConfig(
+            formatter=_format_datetime_java_instant,
+            preamble_lines=("import java.time.Instant;",),
+        )
+        ZONED = DatetimeFormatConfig(
+            formatter=_format_datetime_java_zoned,
+            preamble_lines=(
+                "import java.time.ZoneId;",
+                "import java.time.ZonedDateTime;",
+            ),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -175,7 +198,9 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_java_type_to_opener,
+                type_to_opener=_java_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="new Object[]{",
             ),
             close="}",
@@ -204,7 +229,7 @@ class Java(metaclass=LanguageCls):
         """Set type options for Java."""
 
         SET = SetFormatConfig(
-            open_str="Set.of(",
+            set_open=fixed_set_open(open_str="Set.of("),
             close=")",
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
@@ -300,7 +325,26 @@ class Java(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        date_tp = date_format.value.type_produced
+        scalar_type_overrides: dict[type, str] = {
+            datetime.date: _JAVA_SCALAR_TYPES[date_tp],
+        }
+        dt_tp = _JAVA_SCALAR_TYPES.get(
+            datetime_format.value.type_produced,
+        )
+        if dt_tp is not None:
+            scalar_type_overrides[datetime.datetime] = dt_tp
+        openers = _java_opener_config.build(
+            scalar_type_overrides=scalar_type_overrides,
+        )
+        seq_open: Callable[[list[Value]], str] = fmt.sequence_open
+        if sequence_format.name == "ARRAY":
+            seq_open = typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback="new Object[]{",
+            )
+        self.sequence_open: Callable[[list[Value]], str] = seq_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",
@@ -349,25 +393,13 @@ class Java(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        _date_map: dict[str, tuple[str, ...]] = {
-            "JAVA": ("import java.time.LocalDate;",),
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "INSTANT": ("import java.time.Instant;",),
-            "ZONED": (
-                "import java.time.ZoneId;",
-                "import java.time.ZonedDateTime;",
-            ),
-        }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p
             for t, p in (
-                (datetime.date, _date_map.get(date_format.name, ())),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, ()),
-                ),
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

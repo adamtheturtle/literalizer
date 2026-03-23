@@ -19,7 +19,6 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
-              - '**/*.toml'
               - 'check_csharp_golden_syntax.py'
             lang:
               - 'tests/integration/cases/**/*.cs'
@@ -53,4 +52,4 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check C# syntax
         if: steps.files.outputs.found == 'true'
-        run: xargs -0 uv run python check_csharp_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 uv run --no-project python check_csharp_golden_syntax.py < /tmp/files-to-lint

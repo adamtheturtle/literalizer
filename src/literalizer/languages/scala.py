@@ -8,21 +8,23 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -61,29 +63,20 @@ _SCALA_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "ZonedDateTime",
 }
 
-_scala_list_element_to_type = make_element_to_type(
+_scala_list_opener_config = TypedOpenerConfig(
     scalar_types=_SCALA_SCALAR_TYPES,
     list_template="List[{inner}]",
+    seq_opener_template="List[{type_name}](",
+    dict_opener_template="Map[String, {type_name}](",
+    set_opener_template="Set[{type_name}](",
 )
 
-_scala_array_element_to_type = make_element_to_type(
+_scala_array_opener_config = TypedOpenerConfig(
     scalar_types=_SCALA_SCALAR_TYPES,
     list_template="Array[{inner}]",
-)
-
-_scala_list_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_list_element_to_type,
-    opener_template="List[{type_name}](",
-)
-
-_scala_array_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_array_element_to_type,
-    opener_template="Array[{type_name}](",
-)
-
-_scala_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_list_element_to_type,
-    opener_template="Map[String, {type_name}](",
+    seq_opener_template="Array[{type_name}](",
+    dict_opener_template="Map[String, {type_name}](",
+    set_opener_template="Set[{type_name}](",
 )
 
 
@@ -118,22 +111,34 @@ class Scala(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Scala."""
 
-        SCALA = enum.member(value=_format_date_scala)
-        ISO = enum.member(value=format_date_iso)
+        SCALA = DateFormatConfig(
+            formatter=_format_date_scala,
+            preamble_lines=("import java.time.LocalDate",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Scala."""
 
-        SCALA = enum.member(value=_format_datetime_scala)
-        ISO = enum.member(value=format_datetime_iso)
+        SCALA = DatetimeFormatConfig(
+            formatter=_format_datetime_scala,
+            preamble_lines=(
+                "import java.time.ZoneId",
+                "import java.time.ZonedDateTime",
+            ),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -149,7 +154,9 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_list_type_to_opener,
+                type_to_opener=_scala_list_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="List(",
             ),
             close=")",
@@ -168,7 +175,9 @@ class Scala(metaclass=LanguageCls):
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_array_type_to_opener,
+                type_to_opener=_scala_array_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="Array(",
             ),
             close=")",
@@ -189,7 +198,12 @@ class Scala(metaclass=LanguageCls):
         """Set type options for Scala."""
 
         SET = SetFormatConfig(
-            open_str="Set(",
+            set_open=typed_set_open(
+                type_to_opener=_scala_list_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
+                fallback="Set(",
+            ),
             close=")",
             empty_set=None,
             preamble_lines=(),
@@ -285,10 +299,21 @@ class Scala(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _scala_list_opener_config.build(
+            scalar_type_overrides={
+                datetime.date: _SCALA_SCALAR_TYPES[date_tp],
+                datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
+            },
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="List(",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_scala_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="Map(",
             ),
             close=")",
@@ -337,24 +362,13 @@ class Scala(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        _date_map: dict[str, tuple[str, ...]] = {
-            "SCALA": ("import java.time.LocalDate",),
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "SCALA": (
-                "import java.time.ZoneId",
-                "import java.time.ZonedDateTime",
-            ),
-        }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p
             for t, p in (
-                (datetime.date, _date_map.get(date_format.name, ())),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, ()),
-                ),
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

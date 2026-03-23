@@ -17,9 +17,12 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -115,6 +118,11 @@ _vb_element_to_type = make_element_to_type(
     list_template="{inner}()",
 )
 
+_vb_set_type_to_opener = make_type_to_opener(
+    element_to_type=_vb_element_to_type,
+    opener_template="New HashSet(Of {type_name}) From {{",
+)
+
 _vb_type_to_opener = make_type_to_opener(
     element_to_type=_vb_element_to_type,
     opener_template="New {type_name}() {{",
@@ -157,20 +165,23 @@ class VisualBasic(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
 
-        ISO = enum.member(value=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for VisualBasic."""
 
-        ISO = enum.member(value=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -207,7 +218,10 @@ class VisualBasic(metaclass=LanguageCls):
         """Set type options for Visual Basic."""
 
         HASH_SET = SetFormatConfig(
-            open_str="New HashSet(Of Object) From {",
+            set_open=typed_set_open(
+                type_to_opener=_vb_set_type_to_opener,
+                fallback="New HashSet(Of Object) From {",
+            ),
             close="}",
             empty_set="New HashSet(Of Object)()",
             preamble_lines=(),
@@ -351,4 +365,5 @@ class VisualBasic(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

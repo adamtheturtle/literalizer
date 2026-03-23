@@ -5,7 +5,7 @@ import enum
 import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
-from typing import cast
+from typing import assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -14,6 +14,7 @@ from literalizer._formatters import (
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_string_backslash,
@@ -22,6 +23,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -142,7 +145,7 @@ def _collection_element_union(
 
 
 @beartype
-def _python_type_hint(
+def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
     data: Value,
     *,
     bytes_hint: str,
@@ -154,22 +157,6 @@ def _python_type_hint(
     """Derive a Python type hint from the original data and format
     config.
     """
-    # Order matters: datetime before date (datetime is a date subclass),
-    # bool before int (bool is an int subclass).
-    scalar_hints: tuple[tuple[type, str], ...] = (
-        (type(None), "None"),
-        (bool, "bool"),
-        (int, "int"),
-        (float, "float"),
-        (str, "str"),
-        (bytes, bytes_hint),
-        (datetime.datetime, datetime_hint),
-        (datetime.date, date_hint),
-    )
-    for typ, hint in scalar_hints:
-        if isinstance(data, typ):
-            return hint
-
     recurse = functools.partial(
         _python_type_hint,
         bytes_hint=bytes_hint,
@@ -179,33 +166,52 @@ def _python_type_hint(
         set_hint=set_hint,
     )
 
-    if isinstance(data, dict):
-        outer = (
-            "OrderedDict"
-            if isinstance(data, (ordereddict, OrderedDict))
-            else "dict"
-        )
-        val_union = _collection_element_union(
-            elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            recurse=recurse,
-        )
-        return f"{outer}[str, {val_union}]"
-
-    if isinstance(data, (set, frozenset)):
-        elem_union = _collection_element_union(
-            elements=frozenset(data),
-            recurse=recurse,
-        )
-        return f"{set_hint}[{elem_union}]"
-
-    # The only remaining Value type is list.
-    elem_union = _collection_element_union(
-        elements=cast("list[Value]", data),
-        recurse=recurse,
-    )
-    if sequence_hint == "tuple":
-        return f"{sequence_hint}[{elem_union}, ...]"
-    return f"{sequence_hint}[{elem_union}]"
+    # Order matters: datetime before date (datetime is a date subclass),
+    # bool before int (bool is an int subclass).
+    match data:
+        case bool():
+            return "bool"
+        case int():
+            return "int"
+        case float():
+            return "float"
+        case str():
+            return "str"
+        case bytes():
+            return bytes_hint
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "None"
+        case dict():
+            outer = (
+                "OrderedDict"
+                if isinstance(data, (ordereddict, OrderedDict))
+                else "dict"
+            )
+            val_union = _collection_element_union(
+                elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                recurse=recurse,
+            )
+            return f"{outer}[str, {val_union}]"
+        case set() | frozenset():
+            elem_union = _collection_element_union(
+                elements=frozenset(data),
+                recurse=recurse,
+            )
+            return f"{set_hint}[{elem_union}]"
+        case list():
+            elem_union = _collection_element_union(
+                elements=data,
+                recurse=recurse,
+            )
+            if sequence_hint == "tuple":
+                return f"{sequence_hint}[{elem_union}, ...]"
+            return f"{sequence_hint}[{elem_union}]"
+        case _:  # pragma: no cover
+            assert_never(data)
 
 
 @beartype
@@ -264,12 +270,15 @@ class Python(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Python."""
 
-        PYTHON = enum.member(value=_format_date_python)
-        ISO = enum.member(value=format_date_iso)
+        PYTHON = DateFormatConfig(
+            formatter=_format_date_python,
+            preamble_lines=("import datetime",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
         @property
         def type_hint(self) -> str:
@@ -281,12 +290,15 @@ class Python(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Python."""
 
-        PYTHON = enum.member(value=_format_datetime_python)
-        EPOCH = enum.member(value=_format_datetime_epoch)
+        PYTHON = DatetimeFormatConfig(
+            formatter=_format_datetime_python,
+            preamble_lines=("import datetime",),
+        )
+        EPOCH = DatetimeFormatConfig(formatter=_format_datetime_epoch)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
         @property
         def type_hint(self) -> str:
@@ -348,13 +360,13 @@ class Python(metaclass=LanguageCls):
         """Set type options for Python."""
 
         SET = SetFormatConfig(
-            open_str="{",
+            set_open=fixed_set_open(open_str="{"),
             close="}",
             empty_set="set()",
             preamble_lines=(),
         )
         FROZENSET = SetFormatConfig(
-            open_str="frozenset({",
+            set_open=fixed_set_open(open_str="frozenset({"),
             close="})",
             empty_set="frozenset()",
             preamble_lines=(),
@@ -537,9 +549,14 @@ class Python(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            datetime.date: ("import datetime",),
-            datetime.datetime: ("import datetime",),
+            t: p
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
+            )
+            if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = (
             ("from typing import Any",)
             if variable_type_hints.name == "INLINE"

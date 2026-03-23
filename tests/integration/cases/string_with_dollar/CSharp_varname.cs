@@ -1,4 +1,4 @@
-var my_data = (
+var my_data = new string[] {
     "price $10",
     "$HOME"
 );

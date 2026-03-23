@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
+    MixedNumeric,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -14,11 +15,16 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -48,6 +54,24 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value}"
 
 
+_MOJO_SCALAR_TYPES: dict[type, str] = {
+    str: "String",
+    bool: "Bool",
+    int: "Int",
+    float: "Float64",
+    MixedNumeric: "String",
+}
+
+_mojo_element_to_type = make_element_to_type(
+    scalar_types=_MOJO_SCALAR_TYPES,
+    list_template="List[{inner}]",
+)
+
+_mojo_set_type_to_opener = make_type_to_opener(
+    element_to_type=_mojo_element_to_type,
+    opener_template="Set[{type_name}](",
+)
+
 _string_format: Callable[[str], str] = format_string_backslash
 
 
@@ -72,20 +96,23 @@ class Mojo(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
 
-        ISO = enum.member(value=format_date_iso)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Mojo."""
 
-        ISO = enum.member(value=format_datetime_iso)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -119,10 +146,13 @@ class Mojo(metaclass=LanguageCls):
         """Set type options for Mojo."""
 
         SET = SetFormatConfig(
-            open_str="[",
-            close="]",
+            set_open=typed_set_open(
+                type_to_opener=_mojo_set_type_to_opener,
+                fallback="Set[String](",
+            ),
+            close=")",
             empty_set="Set[String]()",
-            preamble_lines=(),
+            preamble_lines=("from std.collections import Set",),
         )
 
     class CommentFormats(enum.Enum):
@@ -261,4 +291,5 @@ class Mojo(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

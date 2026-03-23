@@ -2,7 +2,7 @@
 
 import datetime
 import functools
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from beartype import beartype
@@ -75,6 +75,72 @@ def format_datetime_iso(value: datetime.datetime) -> str:
     ``"2024-01-15T12:30:00"``.
     """
     return f'"{value.isoformat()}"'
+
+
+@dataclass(frozen=True)
+class TypeOpeners:
+    """Resolved type-to-opener functions for sequences, dicts, and
+    sets.
+    """
+
+    seq: Callable[[type | ListType], str | None]
+    dict: Callable[[type | ListType], str | None]
+    set: Callable[[type | ListType], str | None]
+
+
+class TypedOpenerConfig:
+    """Configuration for typed collection openers in a language.
+
+    Holds scalar type mappings and template strings needed to build
+    type-to-opener functions.
+    """
+
+    @beartype
+    def __init__(
+        self,
+        *,
+        scalar_types: dict[type, str],
+        list_template: str,
+        seq_opener_template: str,
+        dict_opener_template: str,
+        set_opener_template: str,
+    ) -> None:
+        """Initialize with scalar type mappings and template strings."""
+        self._scalar_types = scalar_types
+        self._list_template = list_template
+        self._seq_opener_template = seq_opener_template
+        self._dict_opener_template = dict_opener_template
+        self._set_opener_template = set_opener_template
+
+    @beartype
+    def build(
+        self,
+        *,
+        scalar_type_overrides: Mapping[type, str],
+    ) -> TypeOpeners:
+        """Build openers from the base scalar type mapping plus
+        overrides.
+        """
+        scalar_types = dict(self._scalar_types)
+        scalar_types.update(scalar_type_overrides)
+        element_to_type = make_element_to_type(
+            scalar_types=scalar_types,
+            list_template=self._list_template,
+        )
+        return TypeOpeners(
+            seq=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._seq_opener_template,
+            ),
+            dict=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._dict_opener_template,
+            ),
+            set=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._set_opener_template,
+            ),
+        )
 
 
 @beartype
@@ -175,6 +241,77 @@ def format_string_backslash_dollar(value: str) -> str:
         .replace("$", "\\$")
     )
     return f'"{escaped}"'
+
+
+@beartype
+def fixed_set_open(*, open_str: str) -> Callable[[list[Value]], str]:
+    """Return a ``set_open`` callable that always returns *open_str*.
+
+    Use this as ``set_open`` when the opening delimiter for sets
+    is a fixed string that does not depend on the set contents.
+
+    Example: ``fixed_set_open(open_str="{")([1, 2, 3])`` → ``"{"``.
+    """
+
+    @beartype
+    def _open(_items: list[Value]) -> str:
+        """Return the fixed opening delimiter."""
+        return open_str
+
+    return _open
+
+
+@beartype
+def _typed_set_open(
+    items: list[Value],
+    *,
+    type_to_opener: Callable[[type | ListType], str | None],
+    fallback: str,
+) -> str:
+    """Infer the common element type and return the language-specific
+    opener for sets.
+
+    Uses direct ``type()`` checks on the Python runtime objects to
+    determine the element type, then passes it to *type_to_opener*
+    which returns the language-specific opening delimiter.  When
+    inference is not possible or *type_to_opener* returns ``None``,
+    *fallback* is returned instead.
+    """
+    element_type = _infer_element_type(items=items)
+    if element_type is None:
+        return fallback
+    return type_to_opener(element_type) or fallback
+
+
+@beartype
+def typed_set_open(
+    *,
+    type_to_opener: Callable[[type | ListType], str | None],
+    fallback: str,
+) -> Callable[[list[Value]], str]:
+    """Return a ``set_open`` callable that infers the common
+    element type and delegates to *type_to_opener*.
+
+    When inference is not possible or *type_to_opener* returns
+    ``None``, *fallback* is used instead.
+
+    Example::
+
+        def my_opener(element_type: type | ListType) -> str | None:
+            if element_type is str:
+                return "Set[String]("
+            return None
+
+        set_open = typed_set_open(
+            type_to_opener=my_opener,
+            fallback="Set[String](",
+        )
+    """
+    return functools.partial(
+        _typed_set_open,
+        type_to_opener=type_to_opener,
+        fallback=fallback,
+    )
 
 
 @beartype

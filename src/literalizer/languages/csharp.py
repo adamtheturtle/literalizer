@@ -8,18 +8,22 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     fixed_sequence_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -58,19 +62,12 @@ _CSHARP_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "DateTime",
 }
 
-_csharp_element_to_type = make_element_to_type(
+_csharp_opener_config = TypedOpenerConfig(
     scalar_types=_CSHARP_SCALAR_TYPES,
     list_template="{inner}[]",
-)
-
-_csharp_type_to_opener = make_type_to_opener(
-    element_to_type=_csharp_element_to_type,
-    opener_template="new {type_name}[] {{",
-)
-
-_csharp_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_csharp_element_to_type,
-    opener_template="new Dictionary<string, {type_name}> {{",
+    seq_opener_template="new {type_name}[] {{",
+    dict_opener_template="new Dictionary<string, {type_name}> {{",
+    set_opener_template="new HashSet<{type_name}> {{",
 )
 
 
@@ -101,11 +98,15 @@ class CSharp(metaclass=LanguageCls):
 
             * ``date_formats.CSHARP`` — ``new DateOnly(...)`` call,
               e.g. ``new DateOnly(2024, 1, 15)``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.CSHARP`` — ``new DateTime(...)`` call,
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".cs"
@@ -114,20 +115,31 @@ class CSharp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for C#."""
 
-        CSHARP = enum.member(value=_format_date_csharp)
+        CSHARP = DateFormatConfig(
+            formatter=_format_date_csharp,
+            preamble_lines=("using System;",),
+        )
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C#."""
 
-        CSHARP = enum.member(value=_format_datetime_csharp)
+        CSHARP = DatetimeFormatConfig(
+            formatter=_format_datetime_csharp,
+            preamble_lines=("using System;",),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -151,7 +163,9 @@ class CSharp(metaclass=LanguageCls):
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_csharp_type_to_opener,
+                type_to_opener=_csharp_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="new object[] {",
             ),
             close="}",
@@ -172,7 +186,12 @@ class CSharp(metaclass=LanguageCls):
         """Set type options for C#."""
 
         HASH_SET = SetFormatConfig(
-            open_str="new HashSet<object> {",
+            set_open=typed_set_open(
+                type_to_opener=_csharp_opener_config.build(
+                    scalar_type_overrides={},
+                ).set,
+                fallback="new HashSet<object> {",
+            ),
             close="}",
             empty_set="new HashSet<object>()",
             preamble_lines=(),
@@ -268,10 +287,22 @@ class CSharp(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _csharp_opener_config.build(
+            scalar_type_overrides={
+                datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
+                datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
+            },
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="new object[] {",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_csharp_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="new Dictionary<string, object> {",
             ),
             close="}",
@@ -321,21 +352,13 @@ class CSharp(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
-        _date_map: dict[str, tuple[str, ...]] = {
-            "CSHARP": ("using System;",),
-        }
-        _datetime_map: dict[str, tuple[str, ...]] = {
-            "CSHARP": ("using System;",),
-        }
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             t: p
             for t, p in (
-                (datetime.date, _date_map.get(date_format.name, ())),
-                (
-                    datetime.datetime,
-                    _datetime_map.get(datetime_format.name, ()),
-                ),
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

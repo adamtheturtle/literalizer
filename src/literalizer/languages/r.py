@@ -9,13 +9,18 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -99,11 +104,15 @@ class R(metaclass=LanguageCls):
 
             * ``date_formats.R`` — ``as.Date(...)`` call,
               e.g. ``as.Date("2024-01-15")``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.R`` — ``as.POSIXct(...)`` call,
               e.g. ``as.POSIXct("2024-01-15T12:30:00")``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
 
         empty_dict_key: How to handle empty-string dict keys.
 
@@ -119,20 +128,25 @@ class R(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for R."""
 
-        R = enum.member(value=_format_date_r)
+        R = DateFormatConfig(formatter=_format_date_r)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for R."""
 
-        R = enum.member(value=_format_datetime_r)
+        R = DatetimeFormatConfig(formatter=_format_datetime_r)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class EmptyDictKey(enum.Enum):
         """How to handle empty-string dict keys in R.
@@ -180,7 +194,7 @@ class R(metaclass=LanguageCls):
         """Set type options for R."""
 
         SET = SetFormatConfig(
-            open_str="list(",
+            set_open=fixed_set_open(open_str="list("),
             close=")",
             empty_set=None,
             preamble_lines=(),
@@ -323,4 +337,5 @@ class R(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

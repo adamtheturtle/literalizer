@@ -8,12 +8,14 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    TypedOpenerConfig,
     dict_entry_with_separator,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash_dollar,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -21,6 +23,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -56,19 +60,12 @@ _DART_SCALAR_TYPES: dict[type, str] = {
     datetime.datetime: "DateTime",
 }
 
-_dart_element_to_type = make_element_to_type(
+_dart_opener_config = TypedOpenerConfig(
     scalar_types=_DART_SCALAR_TYPES,
     list_template="List<{inner}>",
-)
-
-_dart_type_to_opener = make_type_to_opener(
-    element_to_type=_dart_element_to_type,
-    opener_template="<{type_name}>[",
-)
-
-_dart_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_dart_element_to_type,
-    opener_template="<String, {type_name}>{{",
+    seq_opener_template="<{type_name}>[",
+    dict_opener_template="<String, {type_name}>{{",
+    set_opener_template="<{type_name}>{{",
 )
 
 
@@ -99,11 +96,15 @@ class Dart(metaclass=LanguageCls):
 
             * ``date_formats.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15")``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
             * ``datetime_formats.DART`` — ``DateTime.parse(...)`` call,
               e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".dart"
@@ -112,20 +113,25 @@ class Dart(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 
-        DART = enum.member(value=_format_date_dart)
+        DART = DateFormatConfig(formatter=_format_date_dart)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        DART = enum.member(value=_format_datetime_dart)
+        DART = DatetimeFormatConfig(formatter=_format_datetime_dart)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -141,7 +147,9 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_dart_type_to_opener,
+                type_to_opener=_dart_opener_config.build(
+                    scalar_type_overrides={},
+                ).seq,
                 fallback="[",
             ),
             close="]",
@@ -170,7 +178,7 @@ class Dart(metaclass=LanguageCls):
         """Set type options for Dart."""
 
         SET = SetFormatConfig(
-            open_str="{",
+            set_open=fixed_set_open(open_str="{"),
             close="}",
             empty_set="<dynamic>{}",
             preamble_lines=(),
@@ -266,10 +274,22 @@ class Dart(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+
+        date_tp = date_format.value.type_produced
+        dt_tp = datetime_format.value.type_produced
+        openers = _dart_opener_config.build(
+            scalar_type_overrides={
+                datetime.date: _DART_SCALAR_TYPES[date_tp],
+                datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
+            },
+        )
+        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback="[",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_dart_dict_type_to_opener,
+                type_to_opener=openers.dict,
                 fallback="{",
             ),
             close="}",
@@ -321,4 +341,5 @@ class Dart(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

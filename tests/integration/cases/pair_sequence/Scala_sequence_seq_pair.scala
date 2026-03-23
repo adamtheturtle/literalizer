@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Seq(
+val x: Any = List(
     1,
     "hello",
 )

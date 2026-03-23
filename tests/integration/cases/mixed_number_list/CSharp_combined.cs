@@ -1,9 +1,9 @@
-var my_data = (
+var my_data = new double[] {
     1,
     2.5,
     3
 );
-my_data = (
+my_data = new double[] {
     1,
     2.5,
     3

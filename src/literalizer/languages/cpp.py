@@ -8,7 +8,10 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     make_element_to_type,
     make_type_to_opener,
@@ -19,6 +22,8 @@ from literalizer._formatters import (
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -122,6 +127,8 @@ class Cpp(metaclass=LanguageCls):
             * ``date_formats.CPP`` — ``std::chrono::year_month_day`` literal,
               e.g. ``std::chrono::year_month_day{std::chrono::year{2024},
               std::chrono::month{1}, std::chrono::day{15}}``.
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -129,6 +136,8 @@ class Cpp(metaclass=LanguageCls):
               time-of-day durations,
               e.g. ``std::chrono::sys_days{...} + std::chrono::hours{12}
               + std::chrono::minutes{30}``.
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".cpp"
@@ -137,20 +146,36 @@ class Cpp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for C++."""
 
-        CPP = enum.member(value=_format_date_cpp)
+        CPP = DateFormatConfig(
+            formatter=_format_date_cpp,
+            preamble_lines=("#include <chrono>",),
+        )
+        ISO = DateFormatConfig(
+            formatter=format_date_iso,
+            preamble_lines=("#include <string>",),
+            type_produced=str,
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C++."""
 
-        CPP = enum.member(value=_format_datetime_cpp)
+        CPP = DatetimeFormatConfig(
+            formatter=_format_datetime_cpp,
+            preamble_lines=("#include <chrono>",),
+        )
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            preamble_lines=("#include <string>",),
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -195,7 +220,7 @@ class Cpp(metaclass=LanguageCls):
         """Set type options for C++."""
 
         SET = SetFormatConfig(
-            open_str="{",
+            set_open=fixed_set_open(open_str="{"),
             close="}",
             empty_set=None,
             preamble_lines=(),
@@ -348,7 +373,14 @@ class Cpp(metaclass=LanguageCls):
             str: ("#include <string>",),
             bytes: ("#include <string>",),
             type(None): ("#include <cstddef>",),
-            datetime.date: ("#include <chrono>",),
-            datetime.datetime: ("#include <chrono>",),
+            **{
+                t: p
+                for t, p in (
+                    (datetime.date, date_format.value.preamble_lines),
+                    (datetime.datetime, datetime_format.value.preamble_lines),
+                )
+                if p
+            },
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

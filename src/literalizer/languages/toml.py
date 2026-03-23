@@ -10,13 +10,18 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
+    format_date_iso,
+    format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -110,20 +115,25 @@ class Toml(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Toml."""
 
-        TOML = enum.member(value=_format_toml_date)
+        TOML = DateFormatConfig(formatter=_format_toml_date)
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Toml."""
 
-        TOML = enum.member(value=_format_toml_datetime)
+        TOML = DatetimeFormatConfig(formatter=_format_toml_datetime)
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -157,7 +167,7 @@ class Toml(metaclass=LanguageCls):
         """Set type options for TOML."""
 
         SET = SetFormatConfig(
-            open_str="[",
+            set_open=fixed_set_open(open_str="["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -299,4 +309,5 @@ class Toml(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

@@ -42,6 +42,14 @@ class LiteralizeResult:
     the generated code.  Empty when none are needed.
     """
 
+    body_preamble: tuple[str, ...]
+    """Lines that belong inside the module body rather than before it.
+
+    Most languages produce an empty tuple.  Haskell uses this for
+    typeclass instance definitions that must follow the ``module``
+    header.
+    """
+
 
 @beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
@@ -118,12 +126,20 @@ def _deduplicate(*, lines: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(result)
 
 
+@dataclasses.dataclass(frozen=True)
+class _PreambleResult:
+    """Header and body preamble lines."""
+
+    header: tuple[str, ...]
+    body: tuple[str, ...]
+
+
 @beartype
 def _compute_preamble(
     *,
     data: Value,
     language: Language,
-) -> tuple[str, ...]:
+) -> _PreambleResult:
     """Compute preamble lines from the data types present and the
     language configuration.
     """
@@ -141,7 +157,18 @@ def _compute_preamble(
         if types & {dict, list, set, ordereddict}
         else ()
     )
-    return _deduplicate(lines=scalar + collection + type_hint)
+    body = _deduplicate(
+        lines=tuple(
+            line
+            for scalar_type, preamble in language.scalar_body_preamble.items()
+            if scalar_type in types
+            for line in preamble
+        ),
+    )
+    return _PreambleResult(
+        header=_deduplicate(lines=scalar + collection + type_hint),
+        body=body,
+    )
 
 
 @beartype
@@ -262,7 +289,7 @@ def _has_heterogeneous(*, data: Value) -> bool:
         children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
     elif isinstance(data, list):
         children = data
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         return _all_scalars_heterogeneous(values=list(data))
     else:
         return False
@@ -389,6 +416,8 @@ def _coerce_heterogeneous_scalars(
         return _coerce_heterogeneous_dict(data=data)
     if isinstance(data, set):
         return _coerce_heterogeneous_set(data=data)
+    if isinstance(data, frozenset):
+        return data  # pragma: no cover
     if isinstance(data, list):
         return _coerce_heterogeneous_list(data=data)
     return data
@@ -511,6 +540,42 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
 
 
 @beartype
+def _has_mixed_dict_values(*, data: Value) -> bool:
+    """Recursively check whether data contains any dict whose values span
+    multiple type families.
+    """
+    if isinstance(data, (ordereddict, dict)):
+        values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        if _dict_values_mixed_types(values=values):
+            return True
+        return any(_has_mixed_dict_values(data=v) for v in values)
+
+    if isinstance(data, list):
+        return any(_has_mixed_dict_values(data=v) for v in data)
+
+    return False
+
+
+@beartype
+def _has_mixed_list_values(*, data: Value) -> bool:
+    """Recursively check whether data contains any list whose elements span
+    multiple type families.
+    """
+    if isinstance(data, (ordereddict, dict)):
+        return any(
+            _has_mixed_list_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        )
+
+    if isinstance(data, list):
+        if _dict_values_mixed_types(values=data):
+            return True
+        return any(_has_mixed_list_values(data=v) for v in data)
+
+    return False
+
+
+@beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     if value is None:
@@ -539,17 +604,20 @@ def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
 
 
 @beartype
-def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
+def _format_set_value(
+    *, value: set[Scalar] | frozenset[Scalar], spec: Language
+) -> str:
     """Format a set value as a native language literal."""
     set_cfg = spec.set_format_config
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+    items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [spec.format_set_entry(item) for item in formatted]
     joined = spec.element_separator.join(entries)
-    return set_cfg.open_str + joined + set_cfg.close
+    return set_cfg.set_open(items_as_values) + joined + set_cfg.close
 
 
 @beartype
@@ -644,7 +712,7 @@ def _format_value(
     if isinstance(value, dict):
         return _format_dict_value(value=value, spec=spec)
 
-    if isinstance(value, set):
+    if isinstance(value, (set, frozenset)):
         return _format_set_value(value=value, spec=spec)
 
     if isinstance(value, list):
@@ -658,7 +726,7 @@ def _wrap_body(
     *,
     body: str,
     is_ordered_map: bool,
-    data: list[Value] | dict[str, Value] | set[Scalar],
+    data: list[Value] | dict[str, Value] | set[Scalar] | frozenset[Scalar],
     spec: Language,
     line_prefix: str,
 ) -> str:
@@ -675,8 +743,12 @@ def _wrap_body(
 
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
-    elif isinstance(data, set):
-        opening = f"{line_prefix}{spec.set_format_config.open_str}"
+    elif isinstance(data, (set, frozenset)):
+        sorted_set: list[Value] = sorted(
+            data,
+            key=lambda v: (type(v).__name__, repr(v)),
+        )
+        opening = f"{line_prefix}{spec.set_format_config.set_open(sorted_set)}"
         closing = f"{close_prefix}{spec.set_format_config.close}"
     else:
         opening = f"{line_prefix}{spec.sequence_open(data)}"
@@ -729,11 +801,23 @@ def _apply_coercions(
                     "that would be coerced to strings"
                 )
                 raise HeterogeneousCoercionError(msg)
+            if _has_mixed_dict_values(data=data):
+                msg = (
+                    "Dict contains values of mixed types "
+                    "that would be coerced to strings"
+                )
+                raise HeterogeneousCoercionError(msg)
+            if _has_mixed_list_values(data=data):
+                msg = (
+                    "List contains elements of mixed types "
+                    "that would be coerced to strings"
+                )
+                raise HeterogeneousCoercionError(msg)
         else:
             data = _coerce_heterogeneous_scalars(data=data)
             data = _coerce_heterogeneous_sibling_lists(data=data)
-        data = _coerce_mixed_dict_values(data=data)
-        data = _coerce_mixed_list_values(data=data)
+            data = _coerce_mixed_dict_values(data=data)
+            data = _coerce_mixed_list_values(data=data)
     return data
 
 
@@ -801,6 +885,12 @@ def _literalize(
     if isinstance(data, scalar_types) or data is None:
         return f"{line_prefix}{_format_scalar(value=data, spec=spec)}"
 
+    # Empty collections have no elements to lay out line-by-line, so
+    # delegate to _format_value which already returns the correct
+    # compact representation (e.g. ``{}``, ``[]``).
+    if not data and include_delimiters:
+        return f"{line_prefix}{_format_value(value=data, spec=spec)}"
+
     body_prefix = line_prefix + indent if include_delimiters else line_prefix
     lines: list[str] = []
 
@@ -831,7 +921,7 @@ def _literalize(
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
@@ -964,13 +1054,12 @@ def literalize_json(
             else language.format_variable_assignment
         )
         result = formatter(variable_name, result, data)
-    preamble = tuple(language.static_preamble) + _compute_preamble(
-        data=data,
-        language=language,
-    )
+    computed = _compute_preamble(data=data, language=language)
+    preamble = tuple(language.static_preamble) + computed.header
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )
 
 
@@ -1102,7 +1191,7 @@ def _resolve_yaml_comments(
     include_delimiters: bool,
 ) -> _ResolvedComments:
     """Parse YAML for comment metadata and resolve comments."""
-    if isinstance(data, set):
+    if isinstance(data, (set, frozenset)):
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
@@ -1129,9 +1218,6 @@ def _resolve_yaml_comments(
             line_prefix=line_prefix,
         )
         return _ResolvedComments(result=result, pending=None)
-
-    if not base:
-        return _ResolvedComments(result=base, pending=None)
 
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
     ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
@@ -1260,11 +1346,10 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
-    preamble = tuple(language.static_preamble) + _compute_preamble(
-        data=coerced_data,
-        language=language,
-    )
+    computed = _compute_preamble(data=coerced_data, language=language)
+    preamble = tuple(language.static_preamble) + computed.header
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )

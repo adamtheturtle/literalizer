@@ -9,9 +9,12 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
+    fixed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -84,9 +87,34 @@ def _format_objc_date(value: datetime.date) -> str:
 
 
 @beartype
+def _format_objc_date_iso(value: datetime.date) -> str:
+    """Format a date as an Objective-C ``NSString`` ISO 8601 literal.
+
+    This is the ISO format variant, producing the same ``@"..."``
+    ``NSString`` output as the native format.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``@"2024-01-15"``.
+    """
+    return f'@"{value.isoformat()}"'
+
+
+@beartype
 def _format_objc_datetime(value: datetime.datetime) -> str:
     """Format a datetime as an Objective-C ``NSString`` ISO 8601
     literal.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
+    ``@"2024-01-15T12:30:00"``.
+    """
+    return f'@"{value.isoformat()}"'
+
+
+@beartype
+def _format_objc_datetime_iso(value: datetime.datetime) -> str:
+    """Format a datetime as an Objective-C ``NSString`` ISO 8601 literal.
+
+    This is the ISO format variant, producing the same ``@"..."``
+    ``NSString`` output as the native format.
 
     Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
     ``@"2024-01-15T12:30:00"``.
@@ -126,20 +154,28 @@ class ObjectiveC(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for ObjectiveC."""
 
-        OBJC = enum.member(value=_format_objc_date)
+        OBJC = DateFormatConfig(formatter=_format_objc_date)
+        ISO = DateFormatConfig(
+            formatter=_format_objc_date_iso,
+            type_produced=str,
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value(value=date_value)
+            return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for ObjectiveC."""
 
-        OBJC = enum.member(value=_format_objc_datetime)
+        OBJC = DatetimeFormatConfig(formatter=_format_objc_datetime)
+        ISO = DatetimeFormatConfig(
+            formatter=_format_objc_datetime_iso,
+            type_produced=str,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value(value=dt_value)
+            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -173,7 +209,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Set type options for Objective-C."""
 
         SET = SetFormatConfig(
-            open_str="[NSSet setWithArray:@[",
+            set_open=fixed_set_open(open_str="[NSSet setWithArray:@["),
             close="]]",
             empty_set="[NSSet set]",
             preamble_lines=(),
@@ -319,4 +355,5 @@ class ObjectiveC(metaclass=LanguageCls):
             "#import <Foundation/Foundation.h>",
         )
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
