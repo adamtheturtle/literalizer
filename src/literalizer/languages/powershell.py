@@ -70,12 +70,6 @@ _string_format: Callable[[str], str] = _format_string
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
-
-
-@beartype
 class PowerShell(metaclass=LanguageCls):
     """PowerShell language specification."""
 
@@ -118,6 +112,7 @@ class PowerShell(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence=None,
+            preamble_lines=(),
         )
 
         @property
@@ -134,6 +129,7 @@ class PowerShell(metaclass=LanguageCls):
             open_str="@(",
             close=")",
             empty_set=None,
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -190,6 +186,7 @@ class PowerShell(metaclass=LanguageCls):
             close="}",
             format_entry=dict_entry_with_separator(separator=" = "),
             empty_dict=None,
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -208,6 +205,7 @@ class PowerShell(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="[ordered]@{",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -223,4 +221,6 @@ class PowerShell(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

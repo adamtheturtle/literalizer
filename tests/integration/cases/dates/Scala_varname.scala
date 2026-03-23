@@ -1,4 +1,5 @@
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDate
+import java.time.LocalDateTime
 object Check {
 val my_data = Map(
     "date" -> LocalDate.of(2024, 1, 15),

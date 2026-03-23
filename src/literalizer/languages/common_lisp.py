@@ -49,12 +49,6 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
-def _preamble(_code: str) -> Sequence[str]:
-    """Return required imports (none for this language)."""
-    return ()
-
-
-@beartype
 class CommonLisp(metaclass=LanguageCls):
     """Common Lisp language specification."""
 
@@ -97,6 +91,7 @@ class CommonLisp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="nil",
+            preamble_lines=(),
         )
 
         @property
@@ -113,6 +108,7 @@ class CommonLisp(metaclass=LanguageCls):
             open_str="(list ",
             close=")",
             empty_set="nil",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -169,6 +165,7 @@ class CommonLisp(metaclass=LanguageCls):
             close=")",
             format_entry=_format_cons_entry,
             empty_dict="nil",
+            preamble_lines=(),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -187,6 +184,7 @@ class CommonLisp(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="(list ",
                 close=")",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -202,4 +200,6 @@ class CommonLisp(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

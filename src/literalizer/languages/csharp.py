@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -26,6 +26,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -74,17 +77,6 @@ _csharp_dict_type_to_opener = make_type_to_opener(
 def _format_csharp_dict_entry(key: str, value: str) -> str:
     """Format a C# dictionary indexer entry."""
     return f"[{key}] = {value}"
-
-
-@beartype
-def _preamble(code: str) -> Sequence[str]:
-    """Return preamble lines for the generated code."""
-    lines: list[str] = []
-    if "DateOnly" in code or "DateTime" in code:
-        lines.append("using System;")
-    if "Dictionary" in code or "List<" in code:
-        lines.append("using System.Collections.Generic;")
-    return lines
 
 
 @beartype
@@ -157,6 +149,7 @@ class CSharp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="Array.Empty<object>()",
+            preamble_lines=("using System.Collections.Generic;",),
         )
 
         @property
@@ -173,6 +166,7 @@ class CSharp(metaclass=LanguageCls):
             open_str="new HashSet<object> {",
             close="}",
             empty_set="new HashSet<object>()",
+            preamble_lines=(),
         )
 
     class CommentFormats(enum.Enum):
@@ -232,6 +226,7 @@ class CSharp(metaclass=LanguageCls):
             close="}",
             format_entry=_format_csharp_dict_entry,
             empty_dict=None,
+            preamble_lines=("using System.Collections.Generic;",),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -251,6 +246,7 @@ class CSharp(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="new Dictionary<string, object> {",
                 close="}",
+                preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -266,4 +262,22 @@ class CSharp(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.preamble: Callable[[str], Sequence[str]] = _preamble
+        self.static_preamble: Sequence[str] = ()
+        _date_map: dict[str, tuple[str, ...]] = {
+            "CSHARP": ("using System;",),
+        }
+        _datetime_map: dict[str, tuple[str, ...]] = {
+            "CSHARP": ("using System;",),
+        }
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {
+            t: p
+            for t, p in (
+                (datetime.date, _date_map.get(date_format.name, ())),
+                (
+                    datetime.datetime,
+                    _datetime_map.get(datetime_format.name, ()),
+                ),
+            )
+            if p
+        }
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

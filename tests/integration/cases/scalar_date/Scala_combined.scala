@@ -1,4 +1,4 @@
-import java.time.{LocalDate}
+import java.time.LocalDate
 object Declaration {
   val my_data = LocalDate.of(2024, 1, 15)
 }
