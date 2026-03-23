@@ -262,7 +262,7 @@ def _has_heterogeneous(*, data: Value) -> bool:
         children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
     elif isinstance(data, list):
         children = data
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         return _all_scalars_heterogeneous(values=list(data))
     else:
         return False
@@ -354,8 +354,8 @@ def _coerce_heterogeneous_dict(
 @beartype
 def _coerce_heterogeneous_set(
     *,
-    data: set[Scalar],
-) -> set[Scalar]:
+    data: set[Scalar] | frozenset[Scalar],
+) -> set[Scalar] | frozenset[Scalar]:
     """Coerce a set with heterogeneous scalar values."""
     items: list[Value] = list(data)
     if _all_scalars_heterogeneous(values=items):
@@ -387,7 +387,7 @@ def _coerce_heterogeneous_scalars(
         return _coerce_heterogeneous_ordereddict(data=data)
     if isinstance(data, dict):
         return _coerce_heterogeneous_dict(data=data)
-    if isinstance(data, set):
+    if isinstance(data, (set, frozenset)):
         return _coerce_heterogeneous_set(data=data)
     if isinstance(data, list):
         return _coerce_heterogeneous_list(data=data)
@@ -892,7 +892,7 @@ def _literalize(
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
-    elif isinstance(data, set):
+    elif isinstance(data, (set, frozenset)):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
@@ -1163,7 +1163,7 @@ def _resolve_yaml_comments(
     include_delimiters: bool,
 ) -> _ResolvedComments:
     """Parse YAML for comment metadata and resolve comments."""
-    if isinstance(data, set):
+    if isinstance(data, (set, frozenset)):
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
