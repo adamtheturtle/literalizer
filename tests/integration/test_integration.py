@@ -117,6 +117,8 @@ _FSHARP_VAL_TYPE = (
     "    | FList of Val list\n"
     "    | FMap of (string * Val) list\n"
     "    | FSet of Val list\n"
+    "    | FDate of System.DateTime\n"
+    "    | FDatetime of System.DateTime\n"
 )
 
 _OCAML_VAL_TYPE = (
@@ -129,6 +131,8 @@ _OCAML_VAL_TYPE = (
     "  | OList of val_t list\n"
     "  | OMap of (string * val_t) list\n"
     "  | OSet of val_t list\n"
+    "  | ODate of (int * int * int)\n"
+    "  | ODatetime of ((int * int * int) * (int * int * int))\n"
 )
 
 _OCCAM_LIT_TYPE = (
@@ -148,8 +152,11 @@ _OCCAM_LIT_TYPE = (
 
 _HASKELL_ADT = (
     "import Data.String (IsString(fromString))\n"
+    "import Data.Time (Day, UTCTime(..), fromGregorian,"
+    " secondsToDiffTime, picosecondsToDiffTime)\n"
     "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]\n"
+    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]"
+    " | HDate Day | HDatetime UTCTime\n"
     "instance IsString Val where\n"
     "    fromString = HStr\n"
     "instance Num Val where\n"
@@ -519,13 +526,7 @@ def _wrap_r(content: str) -> str:
 
 @beartype
 def _wrap_nim(content: str) -> str:
-    """Wrap in a Nim expression.
-
-    Uses ``%*`` for JSON-compatible values; omits it for native types
-    like ``dateTime(...)`` that cannot be wrapped in a JSON node.
-    """
-    if "dateTime(" in content:
-        return f"let _ = {content}"
+    """Wrap in a Nim JSON expression."""
     return f"let _ = %*{content}"
 
 

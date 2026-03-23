@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Check where
 import Data.String (IsString(fromString))
-data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]
+import Data.Time (Day, UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
+data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 instance IsString Val where
     fromString = HStr
 instance Num Val where
@@ -18,6 +19,6 @@ instance Fractional Val where
     a / b = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("date", "2024-01-15"),
-    ("datetime", "2024-01-15T12:30:00+00:00")
+    ("date", HDate (fromGregorian 2024 1 15)),
+    ("datetime", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000)))
     ]

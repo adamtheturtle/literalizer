@@ -27,61 +27,34 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_NIM_MONTHS: dict[int, str] = {
-    1: "mJan",
-    2: "mFeb",
-    3: "mMar",
-    4: "mApr",
-    5: "mMay",
-    6: "mJun",
-    7: "mJul",
-    8: "mAug",
-    9: "mSep",
-    10: "mOct",
-    11: "mNov",
-    12: "mDec",
-}
-
 
 @beartype
 def _format_date_nim(value: datetime.date) -> str:
-    """Format a date as a Nim ``dateTime(...)`` call."""
-    month = _NIM_MONTHS[value.month]
-    return f"dateTime({value.year}, {month}, {value.day}, 0, 0, 0, 0, utc())"
+    """Format a date as a Nim table literal."""
+    return (
+        f'{{"year": {value.year}, "month": {value.month}, "day": {value.day}}}'
+    )
 
 
 @beartype
 def _format_datetime_nim(value: datetime.datetime) -> str:
-    """Format a datetime as a Nim ``dateTime(...)`` call."""
-    month = _NIM_MONTHS[value.month]
-    nanos = value.microsecond * 1000
+    """Format a datetime as a Nim table literal."""
     return (
-        f"dateTime({value.year}, {month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second}, "
-        f"{nanos}, utc())"
+        f'{{"year": {value.year}, "month": {value.month}, '
+        f'"day": {value.day}, "hour": {value.hour}, '
+        f'"minute": {value.minute}, "second": {value.second}}}'
     )
 
 
 @beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Nim ``var`` declaration.
-
-    Uses ``%*`` for JSON-compatible values; omits it for native types
-    like ``dateTime(...)`` that cannot be wrapped in a JSON node.
-    """
-    if "dateTime(" in value:
-        return f"var {name} = {value}"
+    """Format a Nim ``var`` declaration."""
     return f"var {name} = %*{value}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Nim assignment to an existing variable.
-
-    Uses ``%*`` for JSON-compatible values; omits it for native types.
-    """
-    if "dateTime(" in value:
-        return f"{name} = {value}"
+    """Format a Nim assignment to an existing variable."""
     return f"{name} = %*{value}"
 
 
@@ -95,17 +68,18 @@ class Nim(metaclass=LanguageCls):
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.NIM`` — ``dateTime`` call,
-              e.g. ``dateTime(2024, mJan, 15, 0, 0, 0, 0, utc())``.
+            * ``date_formats.NIM`` — table literal,
+              e.g. ``{"year": 2024, "month": 1, "day": 15}``.
             * ``date_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.NIM`` — ``dateTime`` call,
-              e.g. ``dateTime(2024, mJan, 15, 12, 30, 0, 0, utc())``.
+            * ``datetime_formats.NIM`` — table literal,
+              e.g. ``{"year": 2024, "month": 1, "day": 15,
+              "hour": 12, "minute": 30, "second": 0}``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
-              e.g. ``"2024-01-15T12:30:00+00:00"``.
+              e.g. ``"2024-01-15T12:30:00"``.
     """
 
     extension = ".nim"
@@ -308,10 +282,10 @@ class Nim(metaclass=LanguageCls):
         )
         _json = ("import json",)
         _date_map: dict[str, tuple[str, ...]] = {
-            "NIM": ("import times",),
+            "NIM": _json,
         }
         _datetime_map: dict[str, tuple[str, ...]] = {
-            "NIM": ("import times",),
+            "NIM": _json,
         }
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {

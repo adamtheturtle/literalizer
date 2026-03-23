@@ -9,6 +9,8 @@ type Val =
     | FList of Val list
     | FMap of (string * Val) list
     | FSet of Val list
+    | FDate of System.DateTime
+    | FDatetime of System.DateTime
 
 let x: Val = FList [
     FList [FFloat 1.5; FFloat 2.5];

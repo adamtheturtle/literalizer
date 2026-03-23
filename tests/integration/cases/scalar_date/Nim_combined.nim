@@ -1,3 +1,3 @@
-import times
-var my_data = dateTime(2024, mJan, 15, 0, 0, 0, 0, utc())
-my_data = dateTime(2024, mJan, 15, 0, 0, 0, 0, utc())
+import json
+var my_data = %*{"year": 2024, "month": 1, "day": 15}
+my_data = %*{"year": 2024, "month": 1, "day": 15}

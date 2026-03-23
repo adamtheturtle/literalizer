@@ -81,6 +81,7 @@ frozenset
 ghc
 gnatmake
 gofmt
+gregorian
 haskell
 init
 initialisation

@@ -15,6 +15,7 @@ from literalizer.languages import (
     CSharp,
     Elixir,
     Go,
+    Haskell,
     Java,
     JavaScript,
     Kotlin,
@@ -23,6 +24,7 @@ from literalizer.languages import (
     Python,
     Ruby,
     Rust,
+    Scala,
     Swift,
     VisualBasic,
     Zig,
@@ -202,6 +204,31 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
             id="format_datetime_swift_microsecond",
         ),
         pytest.param(
+            Haskell.DatetimeFormats.HASKELL,
+            _SAMPLE_DATETIME_MICRO,
+            "HDatetime (UTCTime "
+            "(fromGregorian 2024 1 15) "
+            "(picosecondsToDiffTime 45000123456000000))",
+            id="format_datetime_haskell_microsecond",
+        ),
+        pytest.param(
+            Haskell.DatetimeFormats.HASKELL,
+            datetime.datetime.fromisoformat(
+                "2024-01-15T18:00:00+05:30",
+            ),
+            "HDatetime (UTCTime "
+            "(fromGregorian 2024 1 15) "
+            "(secondsToDiffTime 45000))",
+            id="format_datetime_haskell_non_utc",
+        ),
+        pytest.param(
+            Scala.DatetimeFormats.SCALA,
+            _SAMPLE_DATETIME_MICRO,
+            "ZonedDateTime.of(2024, 1, 15, 12, 30, 0, "
+            '123456000, ZoneId.of("UTC"))',
+            id="format_datetime_scala_microsecond",
+        ),
+        pytest.param(
             Perl.DateFormats.PERL,
             _SAMPLE_DATE,
             "DateTime->new(year => 2024, month => 1, day => 15)",
@@ -228,7 +255,9 @@ _SAMPLE_DATETIME_MICRO = datetime.datetime.fromisoformat(
         ),
         pytest.param(
             Perl.DatetimeFormats.PERL,
-            datetime.datetime.fromisoformat("2024-01-15T18:00:00+05:30"),
+            datetime.datetime.fromisoformat(
+                "2024-01-15T18:00:00+05:30",
+            ),
             "DateTime->new("
             "year => 2024, month => 1, day => 15, "
             "hour => 12, minute => 30, second => 0, "
