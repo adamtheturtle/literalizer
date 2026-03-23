@@ -7,13 +7,13 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
+    escape_control_chars,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
-    format_string_backslash,
 )
 from literalizer._language import (
     CommentConfig,
@@ -100,7 +100,21 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {_to_val(value=value)};"
 
 
-_string_format: Callable[[str], str] = format_string_backslash
+@beartype
+def _format_string_zig(value: str) -> str:
+    r"""Format a string with backslash escaping and ``\xNN`` control chars."""
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    escaped = escape_control_chars(value=escaped, fmt="\\x{:02x}")
+    return f'"{escaped}"'
+
+
+_string_format: Callable[[str], str] = _format_string_zig
 
 
 _ZIG_PREAMBLE: tuple[str, ...] = (

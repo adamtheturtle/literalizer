@@ -51,6 +51,7 @@ def _format_string(value: str) -> str:
         value.replace("`", "``")
         .replace("$", "`$")
         .replace('"', '`"')
+        .replace("\r", "`r")
         .replace("\n", "`n")
         .replace("\t", "`t")
     )

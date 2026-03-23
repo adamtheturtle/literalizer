@@ -2,6 +2,7 @@
 
 import datetime
 import functools
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
@@ -188,6 +189,25 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     return _format
 
 
+_CONTROL_CHAR_RE = re.compile(pattern=r"[\x00-\x1f]")
+
+
+@beartype
+def escape_control_chars(value: str, *, fmt: str) -> str:
+    r"""Replace C0 control characters (U+0000-U+001F) with escape sequences.
+
+    Call **after** replacing named escapes (``\t``, ``\n``, ``\r``) so that
+    only truly unhandled control characters are affected.
+
+    The format pattern passed in ``fmt`` receives the code point as a
+    positional integer, e.g. ``"\\x{:02x}"`` → ``\\x01``.
+    """
+    return _CONTROL_CHAR_RE.sub(
+        repl=lambda m: fmt.format(ord(m.group())),
+        string=value,
+    )
+
+
 @beartype
 def format_string_backslash(value: str) -> str:
     r"""Format a string using backslash escaping.
@@ -200,6 +220,7 @@ def format_string_backslash(value: str) -> str:
     escaped = (
         value.replace("\\", "\\\\")
         .replace('"', '\\"')
+        .replace("\r", "\\r")
         .replace("\n", "\\n")
         .replace("\t", "\\t")
     )
@@ -218,6 +239,7 @@ def format_string_backslash_single(value: str) -> str:
     escaped = (
         value.replace("\\", "\\\\")
         .replace("'", "\\'")
+        .replace("\r", "\\r")
         .replace("\n", "\\n")
         .replace("\t", "\\t")
     )
@@ -236,6 +258,7 @@ def format_string_backslash_dollar(value: str) -> str:
     escaped = (
         value.replace("\\", "\\\\")
         .replace('"', '\\"')
+        .replace("\r", "\\r")
         .replace("\n", "\\n")
         .replace("\t", "\\t")
         .replace("$", "\\$")
