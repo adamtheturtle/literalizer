@@ -26,6 +26,21 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_date_fsharp(value: datetime.date) -> str:
+    """Format a date as an F# ``System.DateOnly(...)`` call."""
+    return f"System.DateOnly({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_fsharp(value: datetime.datetime) -> str:
+    """Format a datetime as an F# ``System.DateTime(...)`` call."""
+    return (
+        f"System.DateTime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second})"
+    )
+
+
+@beartype
 def _to_val(value: str) -> str:
     """Convert a value to an F# union type expression."""
     _val_prefixes = (
@@ -37,6 +52,7 @@ def _to_val(value: str) -> str:
         "FStr",
         "FInt",
         "FFloat",
+        "System.",
     )
     if any(value.startswith(p) for p in _val_prefixes):
         return value
@@ -99,7 +115,19 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 @beartype
 class FSharp(metaclass=LanguageCls):
-    """F# language specification."""
+    """F# language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.FSHARP`` — ``System.DateOnly(...)`` call,
+              e.g. ``System.DateOnly(2024, 1, 15)``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.FSHARP`` — ``System.DateTime(...)`` call,
+              e.g. ``System.DateTime(2024, 1, 15, 12, 30, 0)``.
+    """
 
     extension = ".fs"
     pygments_name = "fsharp"
@@ -107,6 +135,7 @@ class FSharp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for FSharp."""
 
+        FSHARP = enum.member(value=_format_date_fsharp)
         ISO = enum.member(value=format_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -116,6 +145,7 @@ class FSharp(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for FSharp."""
 
+        FSHARP = enum.member(value=_format_datetime_fsharp)
         ISO = enum.member(value=format_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -225,8 +255,8 @@ class FSharp(metaclass=LanguageCls):
     def __init__(
         self,
         *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
+        date_format: DateFormats = DateFormats.FSHARP,
+        datetime_format: DatetimeFormats = DatetimeFormats.FSHARP,
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
