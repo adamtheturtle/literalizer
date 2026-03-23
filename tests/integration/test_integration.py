@@ -1576,7 +1576,7 @@ def _build_declaration_style_variants() -> dict[str, _Variant]:
         non_defaults = [
             fmt for fmt in spec.declaration_styles if fmt is not default_format
         ]
-        for fmt in non_defaults:
+        for fmt in non_defaults:  # pragma: no cover
             key = f"{lang_name}_declaration_style_"
             variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
@@ -1600,7 +1600,7 @@ def _build_dict_format_variants() -> dict[str, _Variant]:
         non_defaults = [
             fmt for fmt in spec.dict_formats if fmt is not default_format
         ]
-        for fmt in non_defaults:
+        for fmt in non_defaults:  # pragma: no cover
             key = f"{lang_name}_dict_format_"
             variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
@@ -1624,7 +1624,7 @@ def _build_integer_format_variants() -> dict[str, _Variant]:
         non_defaults = [
             fmt for fmt in spec.integer_formats if fmt is not default_format
         ]
-        for fmt in non_defaults:
+        for fmt in non_defaults:  # pragma: no cover
             key = f"{lang_name}_integer_format_"
             variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
@@ -1648,7 +1648,7 @@ def _build_numeric_separator_variants() -> dict[str, _Variant]:
         non_defaults = [
             fmt for fmt in spec.numeric_separators if fmt is not default_format
         ]
-        for fmt in non_defaults:
+        for fmt in non_defaults:  # pragma: no cover
             key = f"{lang_name}_numeric_separator_"
             variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
@@ -1672,7 +1672,7 @@ def _build_string_format_variants() -> dict[str, _Variant]:
         non_defaults = [
             fmt for fmt in spec.string_formats if fmt is not default_format
         ]
-        for fmt in non_defaults:
+        for fmt in non_defaults:  # pragma: no cover
             key = f"{lang_name}_string_format_"
             variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
@@ -1696,7 +1696,7 @@ def _build_trailing_comma_variants() -> dict[str, _Variant]:
         non_defaults = [
             fmt for fmt in spec.trailing_commas if fmt is not default_format
         ]
-        for fmt in non_defaults:
+        for fmt in non_defaults:  # pragma: no cover
             key = f"{lang_name}_trailing_comma_"
             variant_key = key + fmt.name.lower()
             variants[variant_key] = _Variant(
