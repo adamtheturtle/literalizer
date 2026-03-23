@@ -9,8 +9,6 @@ from beartype import beartype
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
-    format_date_iso,
-    format_datetime_iso,
 )
 from literalizer._language import (
     CommentConfig,
@@ -88,9 +86,34 @@ def _format_objc_date(value: datetime.date) -> str:
 
 
 @beartype
+def _format_objc_date_iso(value: datetime.date) -> str:
+    """Format a date as an Objective-C ``NSString`` ISO 8601 literal.
+
+    This is the ISO format variant, producing the same ``@"..."``
+    ``NSString`` output as the native format.
+
+    Example: ``datetime.date(2024, 1, 15)`` → ``@"2024-01-15"``.
+    """
+    return f'@"{value.isoformat()}"'
+
+
+@beartype
 def _format_objc_datetime(value: datetime.datetime) -> str:
     """Format a datetime as an Objective-C ``NSString`` ISO 8601
     literal.
+
+    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
+    ``@"2024-01-15T12:30:00"``.
+    """
+    return f'@"{value.isoformat()}"'
+
+
+@beartype
+def _format_objc_datetime_iso(value: datetime.datetime) -> str:
+    """Format a datetime as an Objective-C ``NSString`` ISO 8601 literal.
+
+    This is the ISO format variant, producing the same ``@"..."``
+    ``NSString`` output as the native format.
 
     Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
     ``@"2024-01-15T12:30:00"``.
@@ -131,7 +154,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Date format options for ObjectiveC."""
 
         OBJC = DateFormatConfig(formatter=_format_objc_date)
-        ISO = DateFormatConfig(formatter=format_date_iso)
+        ISO = DateFormatConfig(formatter=_format_objc_date_iso)
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -141,7 +164,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Datetime format options for ObjectiveC."""
 
         OBJC = DatetimeFormatConfig(formatter=_format_objc_datetime)
-        ISO = DatetimeFormatConfig(formatter=format_datetime_iso)
+        ISO = DatetimeFormatConfig(formatter=_format_objc_datetime_iso)
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
