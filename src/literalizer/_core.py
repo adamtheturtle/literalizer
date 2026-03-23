@@ -361,7 +361,7 @@ def _coerce_heterogeneous_set(
     if _all_scalars_heterogeneous(values=items):
         coerced: set[Scalar] = {_coerce_scalar_to_str(value=v) for v in items}
         if isinstance(data, frozenset):
-            return frozenset(coerced)
+            return frozenset(coerced)  # pragma: no cover
         return coerced
     return data
 
