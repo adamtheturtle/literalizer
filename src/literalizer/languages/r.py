@@ -322,7 +322,7 @@ class R(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
-        self.semicolon = self.Semicolons.YES
+        self.semicolon = R.Semicolons.YES
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
