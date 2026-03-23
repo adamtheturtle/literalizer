@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Check where
 import Data.String (IsString(fromString))
-import Data.Time (Day, UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
-data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 instance IsString Val where
     fromString = HStr
 instance Num Val where
@@ -14,6 +12,7 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
     negate (HFloat f) = HFloat (negate f)
     negate _ = error "not implemented"
+data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 x :: Val
 x = HList [
     HList [HList [1, 2], HList ["a", "b"]]

@@ -553,6 +553,7 @@ class Python(metaclass=LanguageCls):
             )
             if p
         }
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = (
             ("from typing import Any",)
             if variable_type_hints.name == "INLINE"

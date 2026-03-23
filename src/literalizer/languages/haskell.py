@@ -106,6 +106,12 @@ _fractional_instance = (
     '    a / b = error "not implemented"'
 )
 
+_data_time_import = (
+    "import Data.Time"
+    " (Day, UTCTime(..), fromGregorian,"
+    " secondsToDiffTime, picosecondsToDiffTime)"
+)
+
 
 @beartype
 class Haskell(metaclass=LanguageCls):
@@ -177,11 +183,7 @@ class Haskell(metaclass=LanguageCls):
         HASKELL = DateFormatConfig(formatter=_format_date_haskell)
         ISO = DateFormatConfig(
             formatter=format_date_iso,
-            preamble_lines=(
-                "{-# LANGUAGE OverloadedStrings #-}",
-                _is_string_import,
-                _is_string_instance,
-            ),
+            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
             produces_string=True,
         )
 
@@ -195,11 +197,7 @@ class Haskell(metaclass=LanguageCls):
         HASKELL = DatetimeFormatConfig(formatter=_format_datetime_haskell)
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            preamble_lines=(
-                "{-# LANGUAGE OverloadedStrings #-}",
-                _is_string_import,
-                _is_string_instance,
-            ),
+            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
             produces_string=True,
         )
 
@@ -385,19 +383,10 @@ class Haskell(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
+        _is_string_body = (_is_string_import, _is_string_instance)
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
-            str: (
-                *_overloaded_strings,
-                _is_string_import,
-                _is_string_instance,
-            ),
-            bytes: (
-                *_overloaded_strings,
-                _is_string_import,
-                _is_string_instance,
-            ),
-            int: (_num_instance,),
-            float: (_num_instance, _fractional_instance),
+            str: _overloaded_strings,
+            bytes: _overloaded_strings,
             **{
                 t: p
                 for t, p in (
@@ -406,5 +395,23 @@ class Haskell(metaclass=LanguageCls):
                 )
                 if p
             },
+        }
+        _date_body = (_data_time_import,)
+        _iso_date_body = (_data_time_import, *_is_string_body)
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
+            str: _is_string_body,
+            bytes: _is_string_body,
+            int: (_num_instance,),
+            float: (_num_instance, _fractional_instance),
+            datetime.date: (
+                _iso_date_body
+                if date_format.value.preamble_lines
+                else _date_body
+            ),
+            datetime.datetime: (
+                _iso_date_body
+                if datetime_format.value.preamble_lines
+                else _date_body
+            ),
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

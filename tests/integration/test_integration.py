@@ -156,11 +156,7 @@ _HASKELL_VAL_TYPE = (
     " | HDate Day | HDatetime UTCTime\n"
 )
 
-_HASKELL_STATIC_HEADER = (
-    "module Check where\n"
-    "import Data.Time (Day, UTCTime(..), fromGregorian,"
-    " secondsToDiffTime, picosecondsToDiffTime)\n" + _HASKELL_VAL_TYPE
-)
+_HASKELL_STATIC_HEADER = "module Check where\n" + _HASKELL_VAL_TYPE
 
 
 @beartype
@@ -1015,40 +1011,26 @@ def _prepend_preamble(
 
 
 @beartype
-def _apply_haskell_preamble(
+def _insert_haskell_body_preamble(
     wrapped: str,
-    preamble: tuple[str, ...],
+    body_preamble: tuple[str, ...],
 ) -> str:
-    """Insert Haskell preamble lines at the correct positions.
-
-    Pragmas (``{-# ... #-}``) go before the module declaration,
-    imports go after it, and definitions (instances) go after
-    the ``data Val`` type definition.
+    """Insert *body_preamble* lines before the ``data Val`` type
+    definition in *wrapped*.
     """
-    if not preamble:
+    if not body_preamble:
         return wrapped
-    pragmas = tuple(line for line in preamble if line.startswith("{-#"))
-    imports = tuple(line for line in preamble if line.startswith("import "))
-    defs = tuple(
-        line
-        for line in preamble
-        if not line.startswith("{-#") and not line.startswith("import ")
-    )
-    result = wrapped
-    if pragmas:
-        result = "\n".join(pragmas) + "\n" + result
-    if imports:
-        marker = "module Check where\n"
-        idx = result.index(marker) + len(marker)
-        result = result[:idx] + "\n".join(imports) + "\n" + result[idx:]
-    if defs:
-        data_idx = result.index("data Val")
-        end_idx = result.index("\n", data_idx) + 1
-        result = result[:end_idx] + "\n".join(defs) + "\n" + result[end_idx:]
-    return result
+    data_idx = wrapped.index("data Val")
+    body = "\n".join(body_preamble) + "\n"
+    return wrapped[:data_idx] + body + wrapped[data_idx:]
 
 
-_PreambleApplier = Callable[[str, tuple[str, ...]], str]
+_BodyPreambleInserter = Callable[[str, tuple[str, ...]], str]
+
+
+def _no_body_preamble(wrapped: str, _body_preamble: tuple[str, ...]) -> str:
+    """Default no-op: return *wrapped* unchanged."""
+    return wrapped
 
 
 @dataclasses.dataclass
@@ -1057,7 +1039,7 @@ class _Variant:
 
     spec: literalizer.Language
     wrap: Callable[[str], str]
-    apply_preamble: _PreambleApplier = _prepend_preamble
+    insert_body_preamble: _BodyPreambleInserter = _no_body_preamble
 
 
 @dataclasses.dataclass
@@ -1068,7 +1050,7 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
-    apply_preamble: _PreambleApplier = _prepend_preamble
+    insert_body_preamble: _BodyPreambleInserter = _no_body_preamble
 
 
 @beartype
@@ -1271,7 +1253,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_haskell,
         varname_wrap=_wrap_haskell_varname,
         combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
-        apply_preamble=_apply_haskell_preamble,
+        insert_body_preamble=_insert_haskell_body_preamble,
     ),
     literalizer.languages.Hcl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
@@ -1469,7 +1451,7 @@ def _build_date_variants() -> dict[str, _Variant]:
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(date_format=fmt),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1493,7 +1475,7 @@ def _build_datetime_variants() -> dict[str, _Variant]:
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(datetime_format=fmt),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1517,7 +1499,7 @@ def _build_sequence_variants() -> dict[str, _Variant]:
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(sequence_format=fmt),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1540,7 +1522,7 @@ def _build_set_variants() -> dict[str, _Variant]:
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(set_format=fmt),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1564,7 +1546,7 @@ def _build_comment_variants() -> dict[str, _Variant]:
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(comment_format=fmt),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1588,7 +1570,7 @@ def _build_type_hint_variants() -> dict[str, _Variant]:
             variants[variant_key] = _Variant(
                 spec=lang_config.lang_cls(variable_type_hints=fmt),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1613,7 +1595,7 @@ def _build_declaration_style_variants() -> dict[str, _Variant]:
                     declaration_style=fmt,
                 ),
                 wrap=lang_config.varname_wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1638,7 +1620,7 @@ def _build_dict_format_variants() -> dict[str, _Variant]:
                     dict_format=fmt,
                 ),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1663,7 +1645,7 @@ def _build_integer_format_variants() -> dict[str, _Variant]:
                     integer_format=fmt,
                 ),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1688,7 +1670,7 @@ def _build_numeric_separator_variants() -> dict[str, _Variant]:
                     numeric_separator=fmt,
                 ),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1713,7 +1695,7 @@ def _build_string_format_variants() -> dict[str, _Variant]:
                     string_format=fmt,
                 ),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1738,7 +1720,7 @@ def _build_bytes_format_variants() -> dict[str, _Variant]:
                     bytes_format=fmt,
                 ),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1763,7 +1745,7 @@ def _build_trailing_comma_variants() -> dict[str, _Variant]:
                     trailing_comma=fmt,
                 ),
                 wrap=lang_config.wrap,
-                apply_preamble=lang_config.apply_preamble,
+                insert_body_preamble=lang_config.insert_body_preamble,
             )
     return variants
 
@@ -1808,10 +1790,8 @@ def test_golden_file(
         error_on_coercion=False,
     )
     wrapped = lang_config.wrap(result.code)
-    wrapped = lang_config.apply_preamble(
-        wrapped,
-        result.preamble,
-    )
+    wrapped = lang_config.insert_body_preamble(wrapped, result.body_preamble)
+    wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.lang_cls.extension,
@@ -1849,10 +1829,8 @@ def test_golden_file_with_variable_name(
         error_on_coercion=False,
     )
     wrapped = lang_config.varname_wrap(result.code)
-    wrapped = lang_config.apply_preamble(
-        wrapped,
-        result.preamble,
-    )
+    wrapped = lang_config.insert_body_preamble(wrapped, result.body_preamble)
+    wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.lang_cls.extension,
@@ -1901,9 +1879,11 @@ def test_golden_file_combined_variable_forms(
         error_on_coercion=False,
     )
     combined = lang_config.combined_wrap(declaration.code, assignment.code)
-    combined = lang_config.apply_preamble(
-        combined,
-        declaration.preamble,
+    combined = lang_config.insert_body_preamble(
+        combined, declaration.body_preamble
+    )
+    combined = _prepend_preamble(
+        wrapped=combined, preamble=declaration.preamble
     )
     file_regression.check(
         contents=combined + "\n",
@@ -1996,10 +1976,8 @@ def test_format_variant_golden_file(
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
     wrapped = variant.wrap(result.code)
-    wrapped = variant.apply_preamble(
-        wrapped,
-        result.preamble,
-    )
+    wrapped = variant.insert_body_preamble(wrapped, result.body_preamble)
+    wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
         contents=wrapped + "\n",
         extension=variant.spec.extension,
