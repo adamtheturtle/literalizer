@@ -359,7 +359,10 @@ def _coerce_heterogeneous_set(
     """Coerce a set with heterogeneous scalar values."""
     items: list[Value] = list(data)
     if _all_scalars_heterogeneous(values=items):
-        return {_coerce_scalar_to_str(value=v) for v in items}
+        coerced: set[Scalar] = {_coerce_scalar_to_str(value=v) for v in items}
+        if isinstance(data, frozenset):
+            return frozenset(coerced)
+        return coerced
     return data
 
 
