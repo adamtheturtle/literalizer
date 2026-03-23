@@ -52,4 +52,4 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check VB.NET syntax
         if: steps.files.outputs.found == 'true'
-        run: xargs -0 uv run python check_vb_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 uv run --no-project python check_vb_golden_syntax.py < /tmp/files-to-lint

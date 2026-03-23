@@ -50,4 +50,4 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Ada syntax
         if: steps.files.outputs.found == 'true'
-        run: xargs -0 uv run python check_ada_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 uv run --no-project python check_ada_golden_syntax.py < /tmp/files-to-lint
