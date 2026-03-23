@@ -1,6 +1,6 @@
 package main
 
-var _ = map[any]struct{}{
+var _ = map[string]struct{}{
     // before apple
     "apple": struct{}{},
     "banana": struct{}{},  // banana inline

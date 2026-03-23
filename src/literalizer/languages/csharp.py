@@ -9,7 +9,6 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
-    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -18,6 +17,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    typed_set_open,
 )
 from literalizer._language import (
     CommentConfig,
@@ -67,6 +67,7 @@ _csharp_opener_config = TypedOpenerConfig(
     list_template="{inner}[]",
     seq_opener_template="new {type_name}[] {{",
     dict_opener_template="new Dictionary<string, {type_name}> {{",
+    set_opener_template="new HashSet<{type_name}> {{",
 )
 
 
@@ -175,7 +176,10 @@ class CSharp(metaclass=LanguageCls):
         """Set type options for C#."""
 
         HASH_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new HashSet<object> {"),
+            set_open=typed_set_open(
+                type_to_opener=_csharp_opener_config.default.set,
+                fallback="new HashSet<object> {",
+            ),
             close="}",
             empty_set="new HashSet<object>()",
             preamble_lines=(),

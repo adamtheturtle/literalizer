@@ -4,7 +4,6 @@ import datetime
 import functools
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import cast
 
 from beartype import beartype
 
@@ -81,10 +80,13 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 @dataclass(frozen=True)
 class TypeOpeners:
-    """Resolved type-to-opener functions for sequences and dicts."""
+    """Resolved type-to-opener functions for sequences, dicts, and
+    sets.
+    """
 
     seq: Callable[[type | ListType], str | None]
     dict: Callable[[type | ListType], str | None]
+    set: Callable[[type | ListType], str | None]
 
 
 class TypedOpenerConfig:
@@ -105,6 +107,7 @@ class TypedOpenerConfig:
         list_template: str,
         seq_opener_template: str,
         dict_opener_template: str,
+        set_opener_template: str,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
         self._scalar_types = scalar_types
@@ -112,6 +115,7 @@ class TypedOpenerConfig:
         self._list_template = list_template
         self._seq_opener_template = seq_opener_template
         self._dict_opener_template = dict_opener_template
+        self._set_opener_template = set_opener_template
         self.default: TypeOpeners = self._build(
             scalar_types=scalar_types,
         )
@@ -131,6 +135,10 @@ class TypedOpenerConfig:
             dict=make_type_to_opener(
                 element_to_type=element_to_type,
                 opener_template=self._dict_opener_template,
+            ),
+            set=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=self._set_opener_template,
             ),
         )
 
@@ -287,16 +295,15 @@ def _typed_set_open(
     """Infer the common element type and return the language-specific
     opener for sets.
 
-    Sets are always coerced to homogeneous types before reaching this
-    function, so ``_infer_element_type`` will always succeed.  Uses
-    direct ``type()`` checks on the Python runtime objects to determine
-    the element type, then passes it to *type_to_opener* which returns
-    the language-specific opening delimiter.  When *type_to_opener*
-    returns ``None``, *fallback* is returned instead.
+    Uses direct ``type()`` checks on the Python runtime objects to
+    determine the element type, then passes it to *type_to_opener*
+    which returns the language-specific opening delimiter.  When
+    inference is not possible or *type_to_opener* returns ``None``,
+    *fallback* is returned instead.
     """
-    # Sets are always coerced to homogeneous types before reaching
-    # this function, so _infer_element_type always succeeds.
-    element_type = cast("type | ListType", _infer_element_type(items=items))
+    element_type = _infer_element_type(items=items)
+    if element_type is None:
+        return fallback
     return type_to_opener(element_type) or fallback
 
 

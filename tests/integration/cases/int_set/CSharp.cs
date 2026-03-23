@@ -1,4 +1,4 @@
-var x = new HashSet<object> {
+var x = new HashSet<int> {
     1,
     2,
     3
