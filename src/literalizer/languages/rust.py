@@ -184,7 +184,7 @@ class Rust(metaclass=LanguageCls):
         HASH_SET = SetFormatConfig(
             open_str="HashSet::from([",
             close="])",
-            empty_set=None,
+            empty_set="HashSet::<String>::from([])",
             preamble_lines=("use std::collections::HashSet;",),
         )
 

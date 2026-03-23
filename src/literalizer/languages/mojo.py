@@ -121,7 +121,7 @@ class Mojo(metaclass=LanguageCls):
         SET = SetFormatConfig(
             open_str="[",
             close="]",
-            empty_set="Set[String]()",
+            empty_set="[]",
             preamble_lines=(),
         )
 
