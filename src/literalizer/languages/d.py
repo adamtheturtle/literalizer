@@ -166,6 +166,7 @@ class D(metaclass=LanguageCls):
             close="])",
             empty_set='parseJSON("[]")',
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

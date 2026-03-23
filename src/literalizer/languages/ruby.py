@@ -156,6 +156,7 @@ class Ruby(metaclass=LanguageCls):
             close="])",
             empty_set="Set.new",
             preamble_lines=("require 'set'",),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

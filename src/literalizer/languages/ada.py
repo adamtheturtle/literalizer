@@ -193,6 +193,7 @@ class Ada(metaclass=LanguageCls):
             close=")",
             empty_set="ASet'(1 .. 0 => ANull)",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

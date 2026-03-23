@@ -194,6 +194,7 @@ class Swift(metaclass=LanguageCls):
             close="])",
             empty_set="Set<AnyHashable>()",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

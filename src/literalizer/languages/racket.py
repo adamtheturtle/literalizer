@@ -111,6 +111,7 @@ class Racket(metaclass=LanguageCls):
             close=")",
             empty_set="(set)",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

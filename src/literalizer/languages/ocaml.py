@@ -214,6 +214,7 @@ class OCaml(metaclass=LanguageCls):
             close="]",
             empty_set=None,
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

@@ -168,6 +168,7 @@ class Dart(metaclass=LanguageCls):
             sequence_open=typed_sequence_open(
                 type_to_opener=_dart_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).seq,
                 fallback="[",
             ),
@@ -203,6 +204,7 @@ class Dart(metaclass=LanguageCls):
             close="}",
             empty_set="<dynamic>{}",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):
@@ -311,6 +313,7 @@ class Dart(metaclass=LanguageCls):
                 datetime.date: _DART_SCALAR_TYPES[date_tp],
                 datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
             },
+            set_opener_template=None,
         )
         if sequence_format is self.sequence_formats.LIST:
             self.sequence_open: Callable[[list[Value]], str] = (

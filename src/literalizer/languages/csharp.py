@@ -15,8 +15,6 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -73,44 +71,6 @@ _csharp_opener_config = TypedOpenerConfig(
     dict_opener_template="new Dictionary<string, {type_name}> {{",
     set_opener_template="new HashSet<{type_name}> {{",
 )
-
-_CSHARP_SET_OPENER_TEMPLATES: dict[str, tuple[str, str]] = {
-    "HASH_SET": ("new HashSet<{type_name}> {{", "new HashSet<object> {"),
-    "SORTED_SET": (
-        "new SortedSet<{type_name}> {{",
-        "new SortedSet<object> {",
-    ),
-}
-
-_csharp_element_to_type_default = make_element_to_type(
-    scalar_types=_CSHARP_SCALAR_TYPES,
-    list_template="{inner}[]",
-)
-
-
-@beartype
-def _build_set_format_config(
-    *,
-    set_format_value: SetFormatConfig,
-    set_format_name: str,
-    scalar_type_overrides: dict[type, str],
-) -> SetFormatConfig:
-    """Build the resolved set format config for a chosen format."""
-    template, fallback = _CSHARP_SET_OPENER_TEMPLATES[set_format_name]
-    eto = make_element_to_type(
-        scalar_types={**_CSHARP_SCALAR_TYPES, **scalar_type_overrides},
-        list_template="{inner}[]",
-    )
-    return dataclasses.replace(
-        set_format_value,
-        set_open=typed_set_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=eto,
-                opener_template=template,
-            ),
-            fallback=fallback,
-        ),
-    )
 
 
 @beartype
@@ -208,6 +168,7 @@ class CSharp(metaclass=LanguageCls):
             sequence_open=typed_sequence_open(
                 type_to_opener=_csharp_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).seq,
                 fallback="new object[] {",
             ),
@@ -231,31 +192,29 @@ class CSharp(metaclass=LanguageCls):
 
         HASH_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_csharp_element_to_type_default,
-                    opener_template=_CSHARP_SET_OPENER_TEMPLATES["HASH_SET"][
-                        0
-                    ],
-                ),
-                fallback=_CSHARP_SET_OPENER_TEMPLATES["HASH_SET"][1],
+                type_to_opener=_csharp_opener_config.build(
+                    scalar_type_overrides={},
+                    set_opener_template=None,
+                ).set,
+                fallback="new HashSet<object> {",
             ),
             close="}",
             empty_set="new HashSet<object>()",
             preamble_lines=(),
+            set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_csharp_element_to_type_default,
-                    opener_template=_CSHARP_SET_OPENER_TEMPLATES["SORTED_SET"][
-                        0
-                    ],
-                ),
-                fallback=_CSHARP_SET_OPENER_TEMPLATES["SORTED_SET"][1],
+                type_to_opener=_csharp_opener_config.build(
+                    scalar_type_overrides={},
+                    set_opener_template="new SortedSet<{type_name}> {{",
+                ).set,
+                fallback="new SortedSet<object> {",
             ),
             close="}",
             empty_set="new SortedSet<object>()",
-            preamble_lines=("using System.Collections.Generic;",),
+            preamble_lines=(),
+            set_opener_template="new SortedSet<{type_name}> {{",
         )
 
     class CommentFormats(enum.Enum):
@@ -356,11 +315,14 @@ class CSharp(metaclass=LanguageCls):
         }
         openers = _csharp_opener_config.build(
             scalar_type_overrides=_scalar_overrides,
+            set_opener_template=set_format.value.set_opener_template or None,
         )
-        self.set_format_config: SetFormatConfig = _build_set_format_config(
-            set_format_value=set_format.value,
-            set_format_name=set_format.name,
-            scalar_type_overrides=_scalar_overrides,
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=typed_set_open(
+                type_to_opener=openers.set,
+                fallback=set_format.value.set_open([]),
+            ),
         )
         if sequence_format is self.sequence_formats.ARRAY:
             self.sequence_open: Callable[[list[Value]], str] = (

@@ -111,6 +111,7 @@ class Groovy(metaclass=LanguageCls):
             close="] as Set<Object>",
             empty_set="[] as Set<Object>",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

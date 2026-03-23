@@ -230,6 +230,7 @@ class Matlab(metaclass=LanguageCls):
             close="}",
             empty_set="{}",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

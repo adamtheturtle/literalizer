@@ -177,6 +177,7 @@ class Elixir(metaclass=LanguageCls):
             close="])",
             empty_set="MapSet.new()",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):

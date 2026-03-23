@@ -201,6 +201,7 @@ class Go(metaclass=LanguageCls):
             sequence_open=typed_sequence_open(
                 type_to_opener=_go_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).seq,
                 fallback="[]any{",
             ),
@@ -226,12 +227,14 @@ class Go(metaclass=LanguageCls):
             set_open=typed_set_open(
                 type_to_opener=_go_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).set,
                 fallback="map[any]struct{}{",
             ),
             close="}",
             empty_set=None,
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):
@@ -336,6 +339,7 @@ class Go(metaclass=LanguageCls):
                 datetime.date: _GO_SCALAR_TYPES[date_tp],
                 datetime.datetime: _GO_SCALAR_TYPES[dt_tp],
             },
+            set_opener_template=None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,

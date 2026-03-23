@@ -201,6 +201,7 @@ class Java(metaclass=LanguageCls):
             sequence_open=typed_sequence_open(
                 type_to_opener=_java_opener_config.build(
                     scalar_type_overrides={},
+                    set_opener_template=None,
                 ).seq,
                 fallback="new Object[]{",
             ),
@@ -236,6 +237,7 @@ class Java(metaclass=LanguageCls):
             close=")",
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
+            set_opener_template="",
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
@@ -245,6 +247,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.Set;",
                 "import java.util.TreeSet;",
             ),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):
@@ -349,6 +352,7 @@ class Java(metaclass=LanguageCls):
             scalar_type_overrides[datetime.datetime] = dt_tp
         openers = _java_opener_config.build(
             scalar_type_overrides=scalar_type_overrides,
+            set_opener_template=None,
         )
         seq_open: Callable[[list[Value]], str] = fmt.sequence_open
         if sequence_format.name == "ARRAY":

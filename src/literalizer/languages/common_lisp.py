@@ -116,6 +116,7 @@ class CommonLisp(metaclass=LanguageCls):
             close=")",
             empty_set="nil",
             preamble_lines=(),
+            set_opener_template="",
         )
 
     class CommentFormats(enum.Enum):
