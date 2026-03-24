@@ -1,6 +1,6 @@
 import java.util.Map;
 class Check {
-    Object x = new Object[]{
+    Object my_data = new Object[]{
     new Object[]{},
     Map.ofEntries()
 };

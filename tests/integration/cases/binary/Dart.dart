@@ -1,3 +1,3 @@
-final x = <String>[
+final my_data = <String>[
     "48656c6c6f",
 ];

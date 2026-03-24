@@ -1,6 +1,6 @@
 Imports System.Collections.Generic
 Module Check
-    Dim x As Object = New Boolean() {
+    Dim my_data As Object = New Boolean() {
         True,
         False,
         True

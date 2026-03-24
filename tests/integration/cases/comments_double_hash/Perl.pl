@@ -1,4 +1,4 @@
-my $x = [
+my $my_data = [
     # # section
     "a",
 ];

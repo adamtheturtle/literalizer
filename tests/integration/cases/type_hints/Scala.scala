@@ -2,7 +2,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 object Check {
-val x: Any = Map(
+val my_data: Any = Map(
     "name" -> "Alice",
     "age" -> 30,
     "active" -> true,

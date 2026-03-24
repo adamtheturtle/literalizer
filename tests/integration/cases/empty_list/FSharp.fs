@@ -12,4 +12,4 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FList []
+let my_data: Val = FList []

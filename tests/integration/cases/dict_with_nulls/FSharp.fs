@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FMap [
+let my_data: Val = FMap [
     ("name", FStr "Alice");
     ("score", FNull);
     ("age", FInt 30L)

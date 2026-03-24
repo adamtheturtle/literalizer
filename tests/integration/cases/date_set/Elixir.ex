@@ -1,5 +1,5 @@
 defmodule Check do
-  def x do
+  def my_data do
     MapSet.new([
     "2024-01-15",
     "2024-06-01",

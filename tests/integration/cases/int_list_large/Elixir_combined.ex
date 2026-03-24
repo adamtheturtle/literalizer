@@ -1,5 +1,5 @@
 defmodule Check do
-  def x do
+  def my_data do
     my_data = [
     1000000,
     -1234,

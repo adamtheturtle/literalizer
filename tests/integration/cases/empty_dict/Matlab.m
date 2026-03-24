@@ -1,1 +1,1 @@
-x = struct();
+my_data = struct();

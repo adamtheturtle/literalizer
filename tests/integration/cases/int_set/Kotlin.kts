@@ -1,4 +1,4 @@
-val x: Any? = setOf<Int>(
+val my_data: Any? = setOf<Int>(
     1,
     2,
     3,

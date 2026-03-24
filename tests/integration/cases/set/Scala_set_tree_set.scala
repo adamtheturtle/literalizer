@@ -1,6 +1,6 @@
 import scala.collection.immutable.TreeSet
 object Check {
-val x: Any = TreeSet[String](
+val my_data: Any = TreeSet[String](
     "apple",
     "banana",
     "cherry",

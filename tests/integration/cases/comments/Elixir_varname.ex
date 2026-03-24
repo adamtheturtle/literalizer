@@ -1,5 +1,5 @@
 defmodule Check do
-  def x do
+  def my_data do
     my_data = %{
     # Server configuration
     "host" => "localhost",  # default host

@@ -1,1 +1,1 @@
-def x = [] as Set<Object>
+def my_data = [] as Set<Object>

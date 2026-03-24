@@ -12,4 +12,4 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FStr "hello \"world\" -- not a comment"
+let my_data: Val = FStr "hello \"world\" -- not a comment"

@@ -1,4 +1,4 @@
-$x = @(
+$my_data = @(
     # first
     "a";
     # second

@@ -1,4 +1,4 @@
-final x = <bool>[
+final my_data = <bool>[
     true,
     false,
     true,

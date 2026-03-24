@@ -1,3 +1,3 @@
 Module Check
-    Dim x As Object = "2024-01-15T12:30:00.123456+00:00"
+    Dim my_data As Object = "2024-01-15T12:30:00.123456+00:00"
 End Module

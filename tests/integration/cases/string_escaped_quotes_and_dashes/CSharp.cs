@@ -1,1 +1,1 @@
-var x = "hello \"world\" -- not a comment";
+var my_data = "hello \"world\" -- not a comment";

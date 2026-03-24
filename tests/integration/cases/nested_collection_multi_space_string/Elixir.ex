@@ -1,5 +1,5 @@
 defmodule Check do
-  def x do
+  def my_data do
     [
     %{"key" => "hello   world", "value" => 1},
 ]

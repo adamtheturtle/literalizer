@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var x = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object> {
     /* Server configuration */
     ["host"] = "localhost",  /* default host */
     ["port"] = 8080,

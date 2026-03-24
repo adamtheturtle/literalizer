@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FList [
+let my_data: Val = FList [
     FStr (string (System.DateOnly(2024, 1, 15)));
     FStr (string (System.DateOnly(2024, 2, 20)))
 ]

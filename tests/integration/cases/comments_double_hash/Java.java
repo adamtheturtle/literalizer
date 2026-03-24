@@ -1,5 +1,5 @@
 class Check {
-    Object x = new String[]{
+    Object my_data = new String[]{
     // # section
     "a"
 };

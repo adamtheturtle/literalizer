@@ -1,3 +1,3 @@
 class Check {
-    Object x = "2024-01-15";
+    Object my_data = "2024-01-15";
 }

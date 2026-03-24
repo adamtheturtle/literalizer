@@ -1,4 +1,4 @@
-val x: Any? = arrayOf(
+val my_data: Any? = arrayOf(
     "a",  // note a
     "b",  // note b
 )

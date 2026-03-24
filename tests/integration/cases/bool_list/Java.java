@@ -1,5 +1,5 @@
 class Check {
-    Object x = new boolean[]{
+    Object my_data = new boolean[]{
     true,
     false,
     true

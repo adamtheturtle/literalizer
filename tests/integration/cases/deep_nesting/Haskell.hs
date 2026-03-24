@@ -14,7 +14,7 @@ instance Num Val where
     negate (HFloat f) = HFloat (negate f)
     negate _ = error "not implemented"
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
-x :: Val
-x = HMap [
+my_data :: Val
+my_data = HMap [
     ("level1", HMap [("level2", HMap [("level3", HMap [("level4", HMap [("value", "deep"), ("items", HList ["a", "b"])])]), ("sibling", 42)]), ("tags", HList [HMap [("name", "tag1"), ("meta", HMap [("priority", 1), ("labels", HList ["x", "y"])])]])])
     ]

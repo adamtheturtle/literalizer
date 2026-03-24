@@ -1,3 +1,3 @@
 class Check {
-    Object x = "hello \"world\" -- not a comment";
+    Object my_data = "hello \"world\" -- not a comment";
 }

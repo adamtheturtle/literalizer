@@ -17,8 +17,8 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fmap([fval_t :: &
+  type(fval_t) :: my_data
+  my_data = fmap([fval_t :: &
     fentry('key' // achar(10) // 'with' // achar(10) // 'newlines', fstr('value1')), &
     fentry('key' // achar(9) // 'with' // achar(9) // 'tabs', fstr('value2')), &
     fentry('', fstr('value3')) &

@@ -12,7 +12,7 @@ type val_t =
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
 
-let x : val_t = OMap [
+let my_data : val_t = OMap [
     (* Server configuration *)
     ("host", OStr "localhost");  (* default host *)
     ("port", OInt 8080);

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var x = new HashSet<string> {
+var my_data = new HashSet<string> {
     "apple",
     "banana",
     "cherry"

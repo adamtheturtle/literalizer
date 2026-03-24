@@ -1,4 +1,4 @@
-final x = <String>[
+final my_data = <String>[
     // first
     "a",
     // second

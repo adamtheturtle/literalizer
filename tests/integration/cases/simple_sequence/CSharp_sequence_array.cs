@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var x = new object[] {
+var my_data = new object[] {
     1,
     "hello",
     true,
