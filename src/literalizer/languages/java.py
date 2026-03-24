@@ -17,6 +17,8 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
+    make_element_to_type,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -66,22 +68,6 @@ def _list_of_open(items: list[Any]) -> str:
         )
         raise NullInCollectionError(msg)
     return "List.of("
-
-
-_java_opener_config = TypedOpenerConfig(
-    str_type="String",
-    bool_type="boolean",
-    int_type="int",
-    float_type="double",
-    mixed_numeric_type="double",
-    bytes_type="String",
-    date_type="LocalDate",
-    datetime_type=None,
-    list_template="{inner}[]",
-    seq_opener_template="new {type_name}[]{{",
-    dict_opener_template="new {type_name}[]{{",
-    set_opener_template="Set.of(",
-)
 
 
 @beartype
@@ -171,7 +157,19 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_java_opener_config.build().seq,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=make_element_to_type(
+                        str_type="String",
+                        bool_type="boolean",
+                        int_type="int",
+                        float_type="double",
+                        mixed_numeric_type="double",
+                        bytes_type="String",
+                        date_type="LocalDate",
+                        list_template="{inner}[]",
+                    ),
+                    opener_template="new {type_name}[]{{",
+                ),
                 fallback="new Object[]{",
             ),
             close="}",
@@ -324,9 +322,23 @@ class Java(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
-        openers = _java_opener_config.build(
-            date_type=_java_opener_config.type_name(py_type=date_tp),
-            datetime_type=_java_opener_config.type_name(
+        opener_config = TypedOpenerConfig(
+            str_type="String",
+            bool_type="boolean",
+            int_type="int",
+            float_type="double",
+            mixed_numeric_type="double",
+            bytes_type="String",
+            date_type="LocalDate",
+            datetime_type=None,
+            list_template="{inner}[]",
+            seq_opener_template="new {type_name}[]{{",
+            dict_opener_template="new {type_name}[]{{",
+            set_opener_template="Set.of(",
+        )
+        openers = opener_config.build(
+            date_type=opener_config.type_name(py_type=date_tp),
+            datetime_type=opener_config.type_name(
                 py_type=datetime_format.value.type_produced,
             ),
         )
