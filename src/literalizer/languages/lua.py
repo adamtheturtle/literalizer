@@ -63,7 +63,7 @@ def _format_datetime_lua(value: datetime.datetime) -> str:
     )
 
 
-_format_lua_dict_entry = dict_entry_with_template("[{key}] = {value}")
+_format_lua_dict_entry = dict_entry_with_template(template="[{key}] = {value}")
 
 
 @beartype

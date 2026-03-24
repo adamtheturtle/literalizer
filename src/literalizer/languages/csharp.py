@@ -76,7 +76,9 @@ _csharp_opener_config = TypedOpenerConfig(
 )
 
 
-_format_csharp_dict_entry = dict_entry_with_template("[{key}] = {value}")
+_format_csharp_dict_entry = dict_entry_with_template(
+    template="[{key}] = {value}",
+)
 
 
 @beartype

@@ -64,7 +64,7 @@ _format_integer_hex = format_integer_hex
 _format_integer_underscore = format_integer_underscore
 
 
-_format_map_entry = dict_entry_with_template("[{key}, {value}]")
+_format_map_entry = dict_entry_with_template(template="[{key}, {value}]")
 
 
 @beartype

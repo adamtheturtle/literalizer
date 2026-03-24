@@ -619,6 +619,7 @@ def typed_dict_open(
 
 @beartype
 def dict_entry_with_template(
+    *,
     template: str,
 ) -> Callable[[str, str], str]:
     """Return a ``format_dict_entry`` callable from a template string.

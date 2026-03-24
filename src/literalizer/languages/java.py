@@ -82,7 +82,9 @@ def _list_of_open(items: list[Any]) -> str:
     return _LIST_OF_OPEN
 
 
-_format_java_dict_entry = dict_entry_with_template("Map.entry({key}, {value})")
+_format_java_dict_entry = dict_entry_with_template(
+    template="Map.entry({key}, {value})",
+)
 
 
 _JAVA_SCALAR_TYPES: dict[type, str] = {
