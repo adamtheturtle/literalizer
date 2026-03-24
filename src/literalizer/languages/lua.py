@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    dict_entry_with_template,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -62,13 +63,7 @@ def _format_datetime_lua(value: datetime.datetime) -> str:
     )
 
 
-@beartype
-def _format_lua_dict_entry(key: str, value: str) -> str:
-    """Format a Lua table entry with a string key.
-
-    Example: ``'"name"'`` and ``'"Alice"'`` → ``'["name"] = "Alice"'``.
-    """
-    return f"[{key}] = {value}"
+_format_lua_dict_entry = dict_entry_with_template(template="[{key}] = {value}")
 
 
 @beartype

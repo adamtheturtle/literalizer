@@ -272,6 +272,34 @@ def format_string_backslash(value: str) -> str:
 
 
 @beartype
+def format_string_backslash_control(
+    value: str,
+    *,
+    control_char_fmt: str,
+) -> str:
+    r"""Format a string using backslash escaping plus control-char escaping.
+
+    Combines :func:`format_string_backslash`-style replacements with
+    :func:`escape_control_chars` in one step.  The *control_char_fmt*
+    is passed directly to :func:`escape_control_chars`.
+
+    Example with ``control_char_fmt="\\x{:02x}"``::
+
+        format_string_backslash_control("\x01hi", control_char_fmt="\\x{:02x}")
+        # => '"\\x01hi"'
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    escaped = escape_control_chars(value=escaped, fmt=control_char_fmt)
+    return f'"{escaped}"'
+
+
+@beartype
 def format_string_backslash_single(value: str) -> str:
     r"""Format a string using backslash escaping with single quotes.
 
@@ -585,3 +613,56 @@ def typed_dict_open(
         type_to_opener=type_to_opener,
         fallback=fallback,
     )
+
+
+@beartype
+def dict_entry_with_template(
+    *,
+    template: str,
+) -> Callable[[str, str], str]:
+    """Return a ``format_dict_entry`` callable from a template string.
+
+    The *template* must contain ``{key}`` and ``{value}`` placeholders.
+
+    Example: ``dict_entry_with_template("Map.entry({key}, {value})")``
+    returns a callable producing ``"Map.entry(k, v)"``.
+    """
+
+    @beartype
+    def _format(key: str, value: str) -> str:
+        """Format a dict entry using the template."""
+        return template.format(key=key, value=value)
+
+    return _format
+
+
+@beartype
+def format_integer_hex(value: int) -> str:
+    """Format an integer as a hexadecimal literal.
+
+    Negative values are formatted with a leading ``-``.
+
+    Example: ``255`` → ``"0xff"``, ``-10`` → ``"-0xa"``.
+    """
+    if value < 0:
+        return f"-0x{abs(value):x}"
+    return f"0x{value:x}"
+
+
+@beartype
+def format_integer_underscore(value: int) -> str:
+    """Format an integer with underscore separators every 3 digits.
+
+    Example: ``1000000`` → ``"1_000_000"``.
+    """
+    s = str(object=abs(value))
+    group_size = 3
+    groups: list[str] = []
+    while len(s) > group_size:
+        groups.append(s[-group_size:])
+        s = s[:-group_size]
+    groups.append(s)
+    formatted = "_".join(reversed(groups))
+    if value < 0:
+        return f"-{formatted}"
+    return formatted

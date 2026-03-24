@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
@@ -9,13 +10,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
-    escape_control_chars,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash_control,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_formatter,
@@ -63,18 +64,10 @@ def _format_datetime_swift(value: datetime.datetime) -> str:
     return parts + ").date!"
 
 
-@beartype
-def _format_string_swift(value: str) -> str:
-    r"""Format a string with backslash escaping and ``\u{N}`` control chars."""
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
-    escaped = escape_control_chars(value=escaped, fmt="\\u{{{:x}}}")
-    return f'"{escaped}"'
+_format_string_swift = functools.partial(
+    format_string_backslash_control,
+    control_char_fmt="\\u{{{:x}}}",
+)
 
 
 @beartype
