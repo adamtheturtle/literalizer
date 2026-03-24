@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -27,6 +27,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -96,9 +99,6 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a D assignment to an existing variable."""
     return f"{name} = {_to_val(value=value)};"
-
-
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
@@ -282,7 +282,7 @@ class D(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             _format_d_sequence_entry

@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-[|
+let my_data: Val array = [|
     FInt 1L;
     FStr "hello";
     FBool true

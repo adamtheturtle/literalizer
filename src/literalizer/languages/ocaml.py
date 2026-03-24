@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -27,6 +27,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -60,6 +63,8 @@ def _to_val(value: str) -> str:
         "ODatetime",
     )
     if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.lstrip().startswith("[|"):
         return value
     if value.startswith('"') and value.endswith('"'):
         return f"OStr {value}"
@@ -110,16 +115,14 @@ def _format_ocaml_sequence_entry(item: str) -> str:
 @beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an OCaml variable declaration."""
-    return f"let {name} : val_t = {_to_val(value=value)}"
+    val_type = "val_t array" if value.lstrip().startswith("[|") else "val_t"
+    return f"let {name} : {val_type} = {_to_val(value=value)}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an OCaml variable assignment."""
     return _format_variable_declaration(name=name, value=value, _data=_data)
-
-
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
@@ -327,7 +330,7 @@ class OCaml(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
         self.comment_format = comment_format

@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -31,6 +30,8 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from literalizer._types import Value
 
 
@@ -63,9 +64,6 @@ def _format_datetime_lua(value: datetime.datetime) -> str:
     )
 
 
-_format_lua_dict_entry = dict_entry_with_template(template="[{key}] = {value}")
-
-
 @beartype
 def _format_lua_set_entry(item: str) -> str:
     """Format a Lua set entry as a table key with a ``true`` value.
@@ -73,9 +71,6 @@ def _format_lua_set_entry(item: str) -> str:
     Example: ``'"apple"'`` → ``'["apple"] = true'``.
     """
     return f"[{item}] = true"
-
-
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
@@ -248,10 +243,13 @@ class Lua(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        lua_dict_entry = dict_entry_with_template(
+            template="[{key}] = {value}",
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
-            format_entry=_format_lua_dict_entry,
+            format_entry=lua_dict_entry,
             empty_dict=None,
             preamble_lines=(),
         )
@@ -261,7 +259,7 @@ class Lua(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
@@ -284,7 +282,7 @@ class Lua(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_lua_dict_entry
+            lua_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

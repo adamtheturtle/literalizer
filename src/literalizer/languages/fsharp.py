@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -31,6 +31,9 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
 
 @beartype
 def _to_val(value: str) -> str:
@@ -46,6 +49,8 @@ def _to_val(value: str) -> str:
         "FFloat",
     )
     if any(value.startswith(p) for p in _val_prefixes):
+        return value
+    if value.lstrip().startswith("[|"):
         return value
     if value.startswith("System."):
         return f"FStr (string ({value}))"
@@ -96,7 +101,8 @@ def _format_variable_declaration_let(
     name: str, value: str, _data: Value
 ) -> str:
     """Format an F# ``let`` variable declaration."""
-    return f"let {name}: Val = {_to_val(value=value)}"
+    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
+    return f"let {name}: {val_type} = {_to_val(value=value)}"
 
 
 @beartype
@@ -104,16 +110,15 @@ def _format_variable_declaration_let_mutable(
     name: str, value: str, _data: Value
 ) -> str:
     """Format an F# ``let mutable`` variable declaration."""
-    return f"let mutable {name}: Val = {_to_val(value=value)}"
+    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
+    return f"let mutable {name}: {val_type} = {_to_val(value=value)}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an F# variable assignment."""
-    return f"let {name}: Val = {_to_val(value=value)}"
-
-
-_string_format: Callable[[str], str] = format_string_backslash
+    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
+    return f"let {name}: {val_type} = {_to_val(value=value)}"
 
 
 @beartype
@@ -335,7 +340,7 @@ class FSharp(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_set_entry: Callable[[str], str] = _format_fsharp_set_entry
         self.comment_format = comment_format
