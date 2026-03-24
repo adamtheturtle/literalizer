@@ -12,6 +12,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_tick,
     format_string_backslash,
     make_element_to_type,
     make_type_to_opener,
@@ -245,6 +246,7 @@ class Cpp(metaclass=LanguageCls):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -336,7 +338,11 @@ class Cpp(metaclass=LanguageCls):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            format_integer_tick
+            if numeric_separator.name == "UNDERSCORE"
+            else str
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

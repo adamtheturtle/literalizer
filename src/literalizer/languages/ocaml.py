@@ -13,6 +13,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_underscore,
     format_string_backslash,
     passthrough_sequence_entry,
     tuple_dict_entry,
@@ -210,6 +211,7 @@ class OCaml(metaclass=LanguageCls):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -294,7 +296,11 @@ class OCaml(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            format_integer_underscore
+            if numeric_separator.name == "UNDERSCORE"
+            else str
+        )
         self.format_set_entry: Callable[[Value, str], str] = (
             _format_ocaml_entry
         )

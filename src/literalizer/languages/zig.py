@@ -15,6 +15,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_underscore,
     format_string_backslash_control,
     passthrough_sequence_entry,
 )
@@ -187,6 +188,7 @@ class Zig(metaclass=LanguageCls):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -275,7 +277,11 @@ class Zig(metaclass=LanguageCls):
             format_string_backslash_control,
             control_char_fmt="\\x{:02x}",
         )
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            format_integer_underscore
+            if numeric_separator.name == "UNDERSCORE"
+            else str
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_zig_entry
         )

@@ -17,6 +17,7 @@ from literalizer._formatters import (
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
+    format_integer_underscore,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -432,6 +433,7 @@ class Python(metaclass=LanguageCls):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -512,7 +514,11 @@ class Python(metaclass=LanguageCls):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            format_integer_underscore
+            if numeric_separator.name == "UNDERSCORE"
+            else str
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
