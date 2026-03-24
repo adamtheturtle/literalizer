@@ -5,6 +5,7 @@ import enum
 from typing import TYPE_CHECKING
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
     date_ymd_formatter,
@@ -365,33 +366,31 @@ class FSharp(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        _type_val: tuple[str, ...] = (
-            "type Val =\n"
-            "    | FNull\n"
-            "    | FBool of bool\n"
-            "    | FInt of int64\n"
-            "    | FFloat of float\n"
-            "    | FStr of string\n"
-            "    | FList of Val list\n"
-            "    | FMap of (string * Val) list\n"
-            "    | FSet of Val list\n"
-            "    | FDate of System.DateTime\n"
-            "    | FDatetime of System.DateTime",
-        )
-        _all_types = (
-            type(None),
-            bool,
-            int,
-            float,
-            str,
-            bytes,
-            datetime.date,
-            datetime.datetime,
-            list,
-            set,
-        )
+        _header = "type Val ="
+        _f_str = "    | FStr of string"
         self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
-        ] = dict.fromkeys(_all_types, _type_val)
+        ] = {
+            type(None): (_header, "    | FNull"),
+            bool: (_header, "    | FBool of bool"),
+            int: (_header, "    | FInt of int64"),
+            float: (_header, "    | FFloat of float"),
+            str: (_header, _f_str),
+            bytes: (_header, _f_str),
+            list: (_header, "    | FList of Val list"),
+            dict: (_header, "    | FMap of (string * Val) list"),
+            ordereddict: (_header, "    | FMap of (string * Val) list"),
+            set: (_header, "    | FSet of Val list"),
+            datetime.date: (
+                _header,
+                _f_str,
+                "    | FDate of System.DateTime",
+            ),
+            datetime.datetime: (
+                _header,
+                _f_str,
+                "    | FDatetime of System.DateTime",
+            ),
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
