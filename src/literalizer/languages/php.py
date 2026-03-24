@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -32,6 +31,8 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from literalizer._types import Value
 
 
@@ -45,9 +46,6 @@ def _format_date(value: datetime.date) -> str:
 def _format_datetime(value: datetime.datetime) -> str:
     """Format a datetime as a PHP DateTime object."""
     return f'new DateTime("{value.isoformat()}")'
-
-
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
@@ -233,7 +231,7 @@ class Php(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
