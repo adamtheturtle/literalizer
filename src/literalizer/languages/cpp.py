@@ -102,16 +102,6 @@ def _cpp_array_open(items: list[Value]) -> str:
     return f"std::array<{type_name}, {len(items)}>{{"
 
 
-_ANY_INCLUDE: tuple[str, ...] = ("#include <initializer_list>",)
-
-_ANY_STRUCT: tuple[str, ...] = (
-    "struct _Any {",
-    "    template<class T> _Any(T&&) noexcept {}",
-    "    _Any(std::initializer_list<_Any>) noexcept {}",
-    "};",
-)
-
-
 @beartype
 def _format_variable_declaration(
     name: str,
@@ -381,8 +371,13 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.static_preamble: Sequence[str] = _ANY_INCLUDE
-        self.static_body_preamble: Sequence[str] = _ANY_STRUCT
+        self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
+        self.static_body_preamble: Sequence[str] = (
+            "struct _Any {",
+            "    template<class T> _Any(T&&) noexcept {}",
+            "    _Any(std::initializer_list<_Any>) noexcept {}",
+            "};",
+        )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )

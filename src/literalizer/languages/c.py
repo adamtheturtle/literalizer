@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -27,6 +27,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -78,28 +81,6 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a C variable assignment."""
     return f"{name} = {_to_val(value=value)};"
-
-
-_string_format: Callable[[str], str] = format_string_backslash
-
-
-_C_PREAMBLE: tuple[str, ...] = (
-    "#include <stdbool.h>",
-    "#include <stddef.h>",
-    "typedef struct _CVal _CVal;",
-    "typedef struct _CKV _CKV;",
-    "struct _CVal {",
-    "    union {",
-    "        _Bool b;",
-    "        long long i;",
-    "        double f;",
-    "        const char *s;",
-    "        const _CVal *a;",
-    "        const _CKV *m;",
-    "    };",
-    "};",
-    "struct _CKV { const char *k; _CVal v; };",
-)
 
 
 @beartype
@@ -285,7 +266,7 @@ class C(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = _format_c_list_entry
         self.format_set_entry: Callable[[str], str] = _format_c_set_entry
@@ -318,7 +299,23 @@ class C(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = _C_PREAMBLE
+        self.static_preamble: Sequence[str] = (
+            "#include <stdbool.h>",
+            "#include <stddef.h>",
+            "typedef struct _CVal _CVal;",
+            "typedef struct _CKV _CKV;",
+            "struct _CVal {",
+            "    union {",
+            "        _Bool b;",
+            "        long long i;",
+            "        double f;",
+            "        const char *s;",
+            "        const _CVal *a;",
+            "        const _CKV *m;",
+            "    };",
+            "};",
+            "struct _CKV { const char *k; _CVal v; };",
+        )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}

@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -27,6 +27,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -113,24 +116,6 @@ def _format_string_zig(value: str) -> str:
     )
     escaped = escape_control_chars(value=escaped, fmt="\\x{:02x}")
     return f'"{escaped}"'
-
-
-_string_format: Callable[[str], str] = _format_string_zig
-
-
-_ZIG_PREAMBLE: tuple[str, ...] = (
-    "const ZVal = union(enum) {",
-    "    nil,",
-    "    bool: bool,",
-    "    int: i64,",
-    "    float: f64,",
-    "    str: []const u8,",
-    "    arr: []const ZVal,",
-    "    map: []const ZKV,",
-    "    set: []const ZVal,",
-    "};",
-    "const ZKV = struct { key: []const u8, val: ZVal };",
-)
 
 
 @beartype
@@ -312,7 +297,7 @@ class Zig(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = _format_string_zig
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             _format_zig_sequence_entry
@@ -347,7 +332,19 @@ class Zig(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = _ZIG_PREAMBLE
+        self.static_preamble: Sequence[str] = (
+            "const ZVal = union(enum) {",
+            "    nil,",
+            "    bool: bool,",
+            "    int: i64,",
+            "    float: f64,",
+            "    str: []const u8,",
+            "    arr: []const ZVal,",
+            "    map: []const ZKV,",
+            "    set: []const ZVal,",
+            "};",
+            "const ZKV = struct { key: []const u8, val: ZVal };",
+        )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
