@@ -1098,6 +1098,7 @@ def _build_sequence_varname_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(sequence_format=fmt),
                     wrap=lang_config.varname_wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1567,91 +1568,42 @@ def test_golden_file_combined_variable_forms(
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    variant_sources: list[tuple[Iterable[_Variant], str, str | None, str]] = [
-        (_build_date_variants(), "scalar_date", None, ""),
-        (_build_date_variants(), "date_list", None, ""),
-        (_build_date_variants(), "date_set", None, ""),
-        (_build_datetime_variants(), "scalar_datetime", None, ""),
-        (_build_datetime_variants(), "scalar_datetime_naive", None, "_naive"),
-        (
-            _build_datetime_variants(),
-            "scalar_datetime_non_utc",
-            None,
-            "_non_utc",
-        ),
-        (_build_sequence_variants(), "simple_sequence", None, ""),
-        (_build_sequence_variants(), "pair_sequence", None, "_pair"),
-        (_build_sequence_variants(), "triple_sequence", None, "_triple"),
-        (
-            _build_sequence_varname_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "_varname",
-        ),
-        (_build_set_variants(), "set", None, ""),
-        (_build_comment_variants(), "comments", None, ""),
-        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME, ""),
-        (
-            _build_declaration_style_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (
-            _build_declaration_style_variants(),
-            "simple_dict",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (
-            _build_declaration_style_variants(),
-            "empty_list",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (_build_dict_format_variants(), "simple_dict", None, ""),
-        (_build_integer_format_variants(), "int_list", None, ""),
-        (_build_integer_format_variants(), "int_list_large", None, "_large"),
-        (_build_numeric_separator_variants(), "int_list", None, ""),
-        (
-            _build_numeric_separator_variants(),
-            "int_list_large",
-            None,
-            "_large",
-        ),
-        (_build_string_format_variants(), "string_list", None, ""),
-        (_build_bytes_format_variants(), "binary", None, ""),
-        (_build_trailing_comma_variants(), "simple_sequence", None, ""),
-        (
-            _build_line_ending_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (
-            _build_line_ending_variants(),
-            "simple_dict",
-            _VARIABLE_NAME,
-            "_dict",
-        ),
-        (
-            _build_line_ending_decl_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "",
-        ),
+    variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
+        (_build_date_variants(), "scalar_date", ""),
+        (_build_date_variants(), "date_list", ""),
+        (_build_date_variants(), "date_set", ""),
+        (_build_datetime_variants(), "scalar_datetime", ""),
+        (_build_datetime_variants(), "scalar_datetime_naive", "_naive"),
+        (_build_datetime_variants(), "scalar_datetime_non_utc", "_non_utc"),
+        (_build_sequence_variants(), "simple_sequence", ""),
+        (_build_sequence_variants(), "pair_sequence", "_pair"),
+        (_build_sequence_variants(), "triple_sequence", "_triple"),
+        (_build_sequence_varname_variants(), "simple_sequence", "_varname"),
+        (_build_set_variants(), "set", ""),
+        (_build_comment_variants(), "comments", ""),
+        (_build_type_hint_variants(), "type_hints", ""),
+        (_build_declaration_style_variants(), "simple_sequence", ""),
+        (_build_declaration_style_variants(), "simple_dict", ""),
+        (_build_declaration_style_variants(), "empty_list", ""),
+        (_build_dict_format_variants(), "simple_dict", ""),
+        (_build_integer_format_variants(), "int_list", ""),
+        (_build_integer_format_variants(), "int_list_large", "_large"),
+        (_build_numeric_separator_variants(), "int_list", ""),
+        (_build_numeric_separator_variants(), "int_list_large", "_large"),
+        (_build_string_format_variants(), "string_list", ""),
+        (_build_bytes_format_variants(), "binary", ""),
+        (_build_trailing_comma_variants(), "simple_sequence", ""),
+        (_build_line_ending_variants(), "simple_sequence", ""),
+        (_build_line_ending_variants(), "simple_dict", "_dict"),
+        (_build_line_ending_decl_variants(), "simple_sequence", ""),
     ]
-    for variants, case_dir_name, variable_name, suffix in variant_sources:
+    for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
             _VariantCase(
                 variant_name=f"{variant.name}{suffix}",
                 variant=variant,
                 case_dir_name=case_dir_name,
-                variable_name=(
-                    variable_name
-                    if variable_name is not None
-                    else variant.wrap_variable_name
-                ),
+                variable_name=variant.wrap_variable_name,
             )
             for variant in variants
         )
@@ -1690,8 +1642,6 @@ def test_format_variant_golden_file(
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
-    except ValueError:
-        pytest.skip("Format incompatible with variable_name")
     wrapped = variant.wrap(result.code)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
