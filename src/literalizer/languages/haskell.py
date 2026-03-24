@@ -488,9 +488,9 @@ class Haskell(metaclass=LanguageCls):
         )
 
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: (
-            Callable[[frozenset[type]], tuple[str, ...]] | None
-        ) = _build_scalar_body_preamble(
+        self.compute_body_preamble: Callable[
+            [frozenset[type]], tuple[str, ...]
+        ] = _build_scalar_body_preamble(
             date_format=date_format,
             datetime_format=datetime_format,
             is_string_body=_is_string_body,

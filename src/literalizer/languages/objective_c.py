@@ -26,6 +26,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
+    body_preamble_from_scalars,
 )
 from literalizer._types import Value
 
@@ -359,8 +360,10 @@ class ObjectiveC(metaclass=LanguageCls):
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: (
-            Callable[[frozenset[type]], tuple[str, ...]] | None
-        ) = None
+        self.compute_body_preamble: Callable[
+            [frozenset[type]], tuple[str, ...]
+        ] = body_preamble_from_scalars(
+            scalar_body_preamble=self.scalar_body_preamble,
+        )
 
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
