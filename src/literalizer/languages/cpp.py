@@ -66,17 +66,15 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
-_CPP_SCALAR_TYPES: dict[type, str] = {
-    str: "std::string",
-    bool: "bool",
-    int: "int",
-    float: "double",
-    MixedNumeric: "double",
-    bytes: "std::string",
-}
-
 _cpp_element_to_type = make_element_to_type(
-    scalar_types=_CPP_SCALAR_TYPES,
+    scalar_types={
+        str: "std::string",
+        bool: "bool",
+        int: "int",
+        float: "double",
+        MixedNumeric: "double",
+        bytes: "std::string",
+    },
     list_template="std::vector<{inner}>",
 )
 

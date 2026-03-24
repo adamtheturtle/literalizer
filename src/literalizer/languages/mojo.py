@@ -45,23 +45,6 @@ def _format_mojo_ordered_map_entry(key: str, value: str) -> str:
     return f"Tuple({key}, {value})"
 
 
-_MOJO_SCALAR_TYPES: dict[type, str] = {
-    str: "String",
-    bool: "Bool",
-    int: "Int",
-    float: "Float64",
-    MixedNumeric: "String",
-}
-
-_mojo_set_type_to_opener = make_type_to_opener(
-    element_to_type=make_element_to_type(
-        scalar_types=_MOJO_SCALAR_TYPES,
-        list_template="List[{inner}]",
-    ),
-    opener_template="Set[{type_name}](",
-)
-
-
 @beartype
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
@@ -136,7 +119,19 @@ class Mojo(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_mojo_set_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=make_element_to_type(
+                        scalar_types={
+                            str: "String",
+                            bool: "Bool",
+                            int: "Int",
+                            float: "Float64",
+                            MixedNumeric: "String",
+                        },
+                        list_template="List[{inner}]",
+                    ),
+                    opener_template="Set[{type_name}](",
+                ),
                 fallback="Set[String](",
             ),
             close=")",

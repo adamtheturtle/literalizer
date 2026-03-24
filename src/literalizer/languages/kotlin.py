@@ -43,17 +43,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 
-_KOTLIN_SCALAR_OPENERS: dict[type, str] = {
-    str: "arrayOf(",
-    bool: "booleanArrayOf(",
-    int: "intArrayOf(",
-    float: "doubleArrayOf(",
-    bytes: "arrayOf(",
-    datetime.date: "arrayOf(",
-    datetime.datetime: "arrayOf(",
-}
-
-
 @beartype
 def _kotlin_tuple_open(items: list[Value]) -> str:
     """Return the Kotlin tuple opener based on element count."""
@@ -72,7 +61,16 @@ def _kotlin_type_to_opener(
     if isinstance(element_type, ListType):
         inner = _kotlin_type_to_opener(element_type=element_type.inner)
         return "arrayOf(" if inner is not None else None
-    return _KOTLIN_SCALAR_OPENERS.get(element_type)
+    scalar_openers: dict[type, str] = {
+        str: "arrayOf(",
+        bool: "booleanArrayOf(",
+        int: "intArrayOf(",
+        float: "doubleArrayOf(",
+        bytes: "arrayOf(",
+        datetime.date: "arrayOf(",
+        datetime.datetime: "arrayOf(",
+    }
+    return scalar_openers.get(element_type)
 
 
 _KOTLIN_SCALAR_TYPES: dict[type, str] = {

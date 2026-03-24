@@ -107,9 +107,6 @@ def _list_sequence_open(
     )
 
 
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 @beartype
 def _resolve_sequence_open(
     *,
@@ -408,7 +405,7 @@ class Scala(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
