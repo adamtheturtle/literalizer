@@ -67,8 +67,8 @@ def _build_csharp_dict_config(
     *,
     dict_format: enum.Enum,
     openers: TypeOpeners,
-    date_tp: type | None,
-    dt_tp: type | None,
+    date_type_name: str | None,
+    datetime_type_name: str | None,
     format_entry: Callable[[str, Value, str], str],
 ) -> DictFormatConfig:
     """Build the dict format config, switching opener for
@@ -77,8 +77,8 @@ def _build_csharp_dict_config(
     if dict_format.name == "SORTED_DICTIONARY":
         dict_type_to_opener = make_type_to_opener(
             element_to_type=_csharp_opener_config.element_to_type(
-                date_type=_csharp_opener_config.type_name(py_type=date_tp),
-                datetime_type=_csharp_opener_config.type_name(py_type=dt_tp),
+                date_type=date_type_name,
+                datetime_type=datetime_type_name,
             ),
             opener_template="new SortedDictionary<string, {type_name}> {{",
         )
@@ -359,8 +359,8 @@ class CSharp(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = _build_csharp_dict_config(
             dict_format=dict_format,
             openers=openers,
-            date_tp=date_tp,
-            dt_tp=dt_tp,
+            date_type_name=_csharp_opener_config.type_name(py_type=date_tp),
+            datetime_type_name=_csharp_opener_config.type_name(py_type=dt_tp),
             format_entry=csharp_dict_entry,
         )
         self.multiline_trailing_comma = False
