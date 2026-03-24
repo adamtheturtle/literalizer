@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -32,7 +33,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
 
 @beartype
@@ -70,31 +71,11 @@ def _format_variable_declaration_const(
 
 
 @beartype
-def _format_variable_declaration_const_no_semi(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a TypeScript ``const`` variable declaration without
-    semicolon.
-    """
-    return f"const {name} = {value}"
-
-
-@beartype
 def _format_variable_declaration_let(
     name: str, value: str, _data: Value
 ) -> str:
     """Format a TypeScript ``let`` variable declaration with semicolon."""
     return f"let {name} = {value};"
-
-
-@beartype
-def _format_variable_declaration_let_no_semi(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a TypeScript ``let`` variable declaration without
-    semicolon.
-    """
-    return f"let {name} = {value}"
 
 
 @beartype
@@ -106,27 +87,9 @@ def _format_variable_declaration_var(
 
 
 @beartype
-def _format_variable_declaration_var_no_semi(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a TypeScript ``var`` variable declaration without
-    semicolon.
-    """
-    return f"var {name} = {value}"
-
-
-@beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format a TypeScript variable assignment with semicolon."""
     return f"{name} = {value};"
-
-
-@beartype
-def _format_variable_assignment_no_semi(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a TypeScript variable assignment without semicolon."""
-    return f"{name} = {value}"
 
 
 @beartype
@@ -251,6 +214,20 @@ class TypeScript(metaclass=LanguageCls):
 
         SEMICOLON = "semicolon"
         NONE = "none"
+
+        def wrap_formatter(
+            self,
+            formatter: Callable[[str, str, Value], str],
+        ) -> Callable[[str, str, Value], str]:
+            """Wrap a formatter to match this line ending style."""
+            if self.value != "none":
+                return formatter
+
+            def without_semicolon(name: str, value: str, data: Value) -> str:
+                """Format without a trailing semicolon."""
+                return formatter(name, value, data).removesuffix(";")
+
+            return without_semicolon
 
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
@@ -384,28 +361,14 @@ class TypeScript(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        _no_semi = line_ending.value == "none"
-        _const_no = _format_variable_declaration_const_no_semi
-        _let_no = _format_variable_declaration_let_no_semi
-        _var_no = _format_variable_declaration_var_no_semi
-        _no_semi_decl: dict[
-            Callable[[str, str, Value], str],
-            Callable[[str, str, Value], str],
-        ] = {
-            _format_variable_declaration_const: _const_no,
-            _format_variable_declaration_let: _let_no,
-            _format_variable_declaration_var: _var_no,
-        }
         _base_decl: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _no_semi_decl[_base_decl] if _no_semi else _base_decl
+            line_ending.wrap_formatter(formatter=_base_decl)
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment_no_semi
-            if _no_semi
-            else _format_variable_assignment
+            line_ending.wrap_formatter(formatter=_format_variable_assignment)
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
