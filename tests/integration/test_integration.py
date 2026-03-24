@@ -28,7 +28,13 @@ import literalizer.languages
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
 
-_CASES_REL = Path("tests") / "integration" / "cases"
+
+@pytest.fixture(name="cases_dir")
+def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
+    """Return the absolute path to the integration test cases
+    directory.
+    """
+    return request.config.rootpath / "tests" / "integration" / "cases"
 
 
 @beartype
@@ -1737,11 +1743,10 @@ _CASES = _discover_cases()
 def test_golden_file(
     _case_name: str,
     language: str,
-    request: pytest.FixtureRequest,
+    cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
-    cases_dir = request.config.rootpath / _CASES_REL
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
@@ -1774,13 +1779,12 @@ def test_golden_file(
 def test_golden_file_with_variable_name(
     _case_name: str,
     language: str,
-    request: pytest.FixtureRequest,
+    cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml with variable_name matches golden
     file.
     """
-    cases_dir = request.config.rootpath / _CASES_REL
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
@@ -1813,14 +1817,13 @@ def test_golden_file_with_variable_name(
 def test_golden_file_combined_variable_forms(
     _case_name: str,
     language: str,
-    request: pytest.FixtureRequest,
+    cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml with new_variable=True (declaration) and
     new_variable=False (assignment to existing variable) produce expected
     golden output, combined in one file to show the difference in syntax.
     """
-    cases_dir = request.config.rootpath / _CASES_REL
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
@@ -1951,15 +1954,13 @@ _FORMAT_VARIANT_CASES = _build_variant_cases()
 )
 def test_format_variant_golden_file(
     variant_case: _VariantCase,
-    request: pytest.FixtureRequest,
+    cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test format-variant options (dates, sequences, sets, type hints)
     against golden files.
     """
-    case_dir = (
-        request.config.rootpath / _CASES_REL / variant_case.case_dir_name
-    )
+    case_dir = cases_dir / variant_case.case_dir_name
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
     try:
@@ -2035,13 +2036,12 @@ _LINE_ENDING_COMBINED_CASES = _build_line_ending_combined_cases()
 )
 def test_line_ending_combined_variable_forms(
     case: _LineEndingCombinedCase,
-    request: pytest.FixtureRequest,
+    cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that combined (declaration + assignment) output with a
     non-default line ending matches the golden file.
     """
-    cases_dir = request.config.rootpath / _CASES_REL
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     spec = case.lang_config.lang_cls(line_ending=case.line_ending)
