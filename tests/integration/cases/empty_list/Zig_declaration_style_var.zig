@@ -11,5 +11,5 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .arr = &.{}};
-    _ = my_data;
+    my_data = .nil;
 }
