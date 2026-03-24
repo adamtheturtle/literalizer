@@ -1,3 +1,3 @@
-let x: Any? = [
+let my_data: Any = [
     [[Any](), [Any]()],
 ]

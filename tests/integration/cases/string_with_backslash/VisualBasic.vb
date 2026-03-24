@@ -1,6 +1,6 @@
 Imports System.Collections.Generic
 Module Check
-    Dim x As Object = New String() {
+    Dim my_data = New String() {
         "C:\path\to\file",
         "back\\slash",
         "hello \""world\"""

@@ -1,3 +1,4 @@
 fn main() {
-    let _ = Vec::<String>::new();
+    let my_data = Vec::<String>::new();
+    let _ = my_data;
 }

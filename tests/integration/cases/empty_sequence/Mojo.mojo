@@ -1,5 +1,6 @@
 def main():
-    _ = [
+    var my_data = [
         "[]",
         "{}",
     ]
+    _ = my_data

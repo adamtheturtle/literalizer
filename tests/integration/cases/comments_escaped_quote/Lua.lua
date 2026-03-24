@@ -1,3 +1,3 @@
-local _ = {
+local my_data = {
     ["key"] = "value \" # not a comment",  -- real
 }

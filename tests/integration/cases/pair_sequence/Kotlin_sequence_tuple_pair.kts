@@ -1,4 +1,4 @@
-val x: Any? = Pair(
+Pair(
     1,
     "hello",
 )

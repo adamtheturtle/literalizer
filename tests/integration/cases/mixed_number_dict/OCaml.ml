@@ -12,7 +12,7 @@ type val_t =
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
 
-let x : val_t = OMap [
+let my_data : val_t = OMap [
     ("a", OInt 1);
     ("b", OFloat 2.5);
     ("c", OInt 3)

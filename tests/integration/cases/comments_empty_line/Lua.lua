@@ -1,4 +1,4 @@
-local _ = {
+local my_data = {
     "a",
     --
     "b",

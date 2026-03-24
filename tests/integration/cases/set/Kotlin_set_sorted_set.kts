@@ -1,4 +1,4 @@
-val x: Any? = sortedSetOf<String>(
+sortedSetOf<String>(
     "apple",
     "banana",
     "cherry",

@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := AMap'(
+   my_data : A_Val := AMap'(
        -- Server configuration
        AEntry ("host", AStr ("localhost")),  -- default host
        AEntry ("port", AInt (8080)),

@@ -1,5 +1,6 @@
 defmodule Check do
   def x do
-    MapSet.new()
+    my_data = MapSet.new()
+    _ = my_data
   end
 end

@@ -17,10 +17,10 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fset([fval_t :: &
-    fint(1), &
-    fint(2), &
-    fint(3) &
-])
+  type(fval_t) :: my_data
+  my_data = fset([fval_t :: &
+      fint(1), &
+      fint(2), &
+      fint(3) &
+  ])
 end program check

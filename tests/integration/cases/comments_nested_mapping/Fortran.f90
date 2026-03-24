@@ -17,9 +17,9 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fmap([fval_t :: &
-    fentry('a', fmap([fval_t :: fentry('x', fint(1))])), &
-    fentry('b', fint(2)) &
-])
+  type(fval_t) :: my_data
+  my_data = fmap([fval_t :: &
+      fentry('a', fmap([fval_t :: fentry('x', fint(1))])), &
+      fentry('b', fint(2)) &
+  ])
 end program check

@@ -1,3 +1,5 @@
 class Check {
-    Object x = "hello \"world\" -- not a comment";
+    public static void check() {
+var my_data = "hello \"world\" -- not a comment";
+    }
 }

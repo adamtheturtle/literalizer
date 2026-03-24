@@ -1,4 +1,4 @@
-local _ = {
+local my_data = {
     ["a"] = {["x"] = 1},
     ["b"] = 2,
 }

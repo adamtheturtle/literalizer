@@ -1,6 +1,6 @@
 import std.json;
 void _check() {
-    auto _v = JSONValue([
+auto my_data = JSONValue([
     "key": JSONValue("value \" # not a comment"),  // real
 ]);
 }

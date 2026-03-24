@@ -17,8 +17,8 @@ instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
-x :: Val
-x = HMap [
+my_data :: Val
+my_data = HMap [
     ("a", 1),
     ("b", 2.5),
     ("c", 3)

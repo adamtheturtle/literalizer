@@ -1,7 +1,10 @@
 package main
 
-var _ = []float64{
+func main() {
+my_data := []float64{
     1,
     2.5,
     3,
+}
+_ = my_data
 }

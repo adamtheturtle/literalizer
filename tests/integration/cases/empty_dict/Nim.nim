@@ -1,2 +1,2 @@
 import json
-let _ = %* {}
+var my_data = %* {}

@@ -17,11 +17,11 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = flist([fval_t :: &
-    ! first
-    fstr('a'), &
-    ! second
-    fstr('b') &
-])
+  type(fval_t) :: my_data
+  my_data = flist([fval_t :: &
+      ! first
+      fstr('a'), &
+      ! second
+      fstr('b') &
+  ])
 end program check

@@ -1,4 +1,6 @@
 import java.util.Map;
 class Check {
-    Object x = Map.ofEntries();
+    public static void check() {
+var my_data = Map.ofEntries();
+    }
 }

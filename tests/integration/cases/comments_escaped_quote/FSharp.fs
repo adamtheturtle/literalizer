@@ -12,6 +12,6 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FMap [
+let my_data: Val = FMap [
     ("key", FStr "value \" # not a comment")  // real
 ]

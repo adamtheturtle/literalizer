@@ -1,8 +1,10 @@
 import java.util.List;
 class Check {
-    Object x = List.of(
+    public static void check() {
+List.of(
     1,
     "hello",
     true
-);
+)
+    }
 }

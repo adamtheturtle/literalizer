@@ -1,7 +1,9 @@
 import java.util.Map;
 class Check {
-    Object x = new Object[]{
+    public static void check() {
+var my_data = new Object[]{
     new Object[]{},
     Map.ofEntries()
 };
+    }
 }

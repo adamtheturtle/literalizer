@@ -1,4 +1,4 @@
-val x: Any? = listOf<Any?>(
+listOf<Any?>(
     1,
     "hello",
     true,

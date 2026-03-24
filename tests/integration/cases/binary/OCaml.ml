@@ -12,7 +12,7 @@ type val_t =
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
 
-let x : val_t = OList [
+let my_data : val_t = OList [
     OStr "48656c6c6f"
 ]
 

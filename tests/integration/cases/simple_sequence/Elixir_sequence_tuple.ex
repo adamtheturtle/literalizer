@@ -6,5 +6,6 @@ defmodule Check do
     true,
     nil,
 }
+    _ = my_data
   end
 end

@@ -1,4 +1,4 @@
 Imports System.Collections.Generic
 Module Check
-    Dim x As Object = New Object() {}
+    Dim my_data = New Object() {}
 End Module

@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := AList'(
+   my_data : A_Val := AList'(
        AStr ("a")
        -- trailing
    );

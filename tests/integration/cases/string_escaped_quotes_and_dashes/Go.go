@@ -1,3 +1,6 @@
 package main
 
-var _ = "hello \"world\" -- not a comment"
+func main() {
+my_data := "hello \"world\" -- not a comment"
+_ = my_data
+}

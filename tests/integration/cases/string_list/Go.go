@@ -1,7 +1,10 @@
 package main
 
-var _ = []string{
+func main() {
+my_data := []string{
     "foo",
     "bar",
     "baz",
+}
+_ = my_data
 }

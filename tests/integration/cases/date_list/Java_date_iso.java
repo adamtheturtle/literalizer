@@ -1,6 +1,8 @@
 class Check {
-    Object x = new String[]{
+    public static void check() {
+new String[]{
     "2024-01-15",
     "2024-02-20"
-};
+}
+    }
 }

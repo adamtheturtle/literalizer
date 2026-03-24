@@ -10,10 +10,10 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    const v: ZVal = .{ .arr = &.{
+    const my_data: ZVal = .{ .arr = &.{
         .{ .str = "C:\\path\\to\\file" },
         .{ .str = "back\\\\slash" },
         .{ .str = "hello \\\"world\\\"" },
     }};
-    _ = v;
+    _ = my_data;
 }

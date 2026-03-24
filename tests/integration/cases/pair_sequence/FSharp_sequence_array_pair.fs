@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val array = [|
+[|
     FInt 1L;
     FStr "hello"
 |]

@@ -1,5 +1,6 @@
 def main():
-    _ = [
+    var my_data = [
         "price $10",
         "$HOME",
     ]
+    _ = my_data

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 fn main() {
-    let _ = vec![
+    let my_data = vec![
         "[]",
         "{}",
     ];
+    let _ = my_data;
 }

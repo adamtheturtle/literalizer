@@ -5,7 +5,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-    [[maybe_unused]] _Any _v = std::vector<double>{
+_Any my_data = std::vector<double>{
     1.1,
     2.2,
     3.3,

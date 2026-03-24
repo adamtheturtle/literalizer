@@ -1,9 +1,11 @@
 import java.util.Set;
 class Check {
-    Object x = Set.of(
+    public static void check() {
+var my_data = Set.of(
     // before apple
     "apple",
     "banana"  // banana inline
     // trailing
 );
+    }
 }

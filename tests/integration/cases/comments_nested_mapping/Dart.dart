@@ -1,4 +1,4 @@
-final x = {
+final my_data = {
     "a": <String, int>{"x": 1},
     "b": 2,
 };

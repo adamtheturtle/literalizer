@@ -1,1 +1,1 @@
-final x = "hello \"world\" -- not a comment";
+final my_data = "hello \"world\" -- not a comment";

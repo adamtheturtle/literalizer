@@ -1,1 +1,1 @@
-local _ = "hello \"world\" -- not a comment"
+local my_data = "hello \"world\" -- not a comment"

@@ -14,10 +14,10 @@ struct _CVal {
 };
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
-    _CVal _v = ((_CVal){.a = (_CVal[]){
+_CVal my_data = ((_CVal){.a = (_CVal[]){
     ((_CVal){.s = "C:\\path\\to\\file"}),
     ((_CVal){.s = "back\\\\slash"}),
     ((_CVal){.s = "hello \\\"world\\\""}),
 }});
-    (void)_v;
+    (void)my_data;
 }

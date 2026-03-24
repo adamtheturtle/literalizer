@@ -17,6 +17,6 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fstr('hello "world" -- not a comment')
+  type(fval_t) :: my_data
+  my_data = fstr('hello "world" -- not a comment')
 end program check

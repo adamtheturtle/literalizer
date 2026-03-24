@@ -12,4 +12,4 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FStr "2024-01-15T12:30:00"
+"2024-01-15T12:30:00"

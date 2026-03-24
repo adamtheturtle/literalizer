@@ -1,2 +1,3 @@
 def main():
-    _ = Dict[String, String]()
+    var my_data = Dict[String, String]()
+    _ = my_data

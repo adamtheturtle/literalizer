@@ -1,4 +1,3 @@
-void (
 {
     /* Server configuration */
     "host": "localhost",  /* default host */
@@ -6,4 +5,4 @@ void (
     /* Enable debug mode */
     "debug": true,
 }
-)
+export {};

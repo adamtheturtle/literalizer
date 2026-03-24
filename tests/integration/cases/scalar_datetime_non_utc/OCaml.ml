@@ -12,6 +12,6 @@ type val_t =
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
 
-let x : val_t = ODatetime ((2024, 1, 15), (18, 0, 0))
+let my_data : val_t = ODatetime ((2024, 1, 15), (18, 0, 0))
 
 end

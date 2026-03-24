@@ -17,9 +17,9 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = flist([fval_t :: &
-    fint(1), &
-    fstr('hello') &
-])
+  type(fval_t) :: my_data
+  my_data = flist([fval_t :: &
+      fint(1), &
+      fstr('hello') &
+  ])
 end program check

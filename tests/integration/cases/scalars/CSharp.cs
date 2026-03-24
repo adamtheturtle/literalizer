@@ -1,5 +1,5 @@
 using System;
-var x = (
+var my_data = (
     42,
     3.14,
     true,

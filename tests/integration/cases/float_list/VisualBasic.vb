@@ -1,6 +1,6 @@
 Imports System.Collections.Generic
 Module Check
-    Dim x As Object = New Double() {
+    Dim my_data = New Double() {
         1.1,
         2.2,
         3.3

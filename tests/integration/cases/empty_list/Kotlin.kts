@@ -1,1 +1,1 @@
-val x: Any? = listOf<Any?>()
+val my_data = listOf<Any?>()

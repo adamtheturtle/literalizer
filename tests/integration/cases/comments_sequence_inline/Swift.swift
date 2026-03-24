@@ -1,4 +1,4 @@
-let x: Any? = [
+let my_data: Any = [
     "a",  // note a
     "b",  // note b
 ]

@@ -1,5 +1,5 @@
 import json
-let _ = %* [
+var my_data = %* [
     # before apple
     "apple",
     "banana"  # banana inline

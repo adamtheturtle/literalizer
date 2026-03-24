@@ -1,7 +1,9 @@
 class Check {
-    Object x = new String[]{
+    public static void check() {
+var my_data = new String[]{
     "foo",
     "bar",
     "baz"
 };
+    }
 }

@@ -14,10 +14,10 @@ struct _CVal {
 };
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
-    _CVal _v = ((_CVal){.m = (_CKV[]){
+_CVal my_data = ((_CVal){.m = (_CKV[]){
     {"key\nwith\nnewlines", ((_CVal){.s = "value1"})},
     {"key\twith\ttabs", ((_CVal){.s = "value2"})},
     {"", ((_CVal){.s = "value3"})},
 }});
-    (void)_v;
+    (void)my_data;
 }

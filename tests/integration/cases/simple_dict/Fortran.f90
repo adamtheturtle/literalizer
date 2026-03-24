@@ -17,11 +17,11 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fmap([fval_t :: &
-    fentry('name', fstr('Alice')), &
-    fentry('age', fint(30)), &
-    fentry('active', fbool(.true.)), &
-    fentry('score', fnull()) &
-])
+  type(fval_t) :: my_data
+  my_data = fmap([fval_t :: &
+      fentry('name', fstr('Alice')), &
+      fentry('age', fint(30)), &
+      fentry('active', fbool(.true.)), &
+      fentry('score', fnull()) &
+  ])
 end program check

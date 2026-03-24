@@ -1,3 +1,1 @@
-void (
-[]
-)
+const my_data = [];

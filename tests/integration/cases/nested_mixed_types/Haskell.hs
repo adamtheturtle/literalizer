@@ -14,8 +14,8 @@ instance Num Val where
     negate (HFloat f) = HFloat (negate f)
     negate _ = error "not implemented"
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
-x :: Val
-x = HList [
+my_data :: Val
+my_data = HList [
     HList [1, 2],
     HList ["a", "b"]
     ]

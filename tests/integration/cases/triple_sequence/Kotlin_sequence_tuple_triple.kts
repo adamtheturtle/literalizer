@@ -1,4 +1,4 @@
-val x: Any? = Triple(
+Triple(
     1,
     "hello",
     true,

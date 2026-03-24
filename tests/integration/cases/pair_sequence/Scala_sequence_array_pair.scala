@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Array(
+Array(
     1,
     "hello",
 )

@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FMap [
+FMap [
     (* Server configuration *)
     ("host", FStr "localhost");  (* default host *)
     ("port", FInt 8080L);

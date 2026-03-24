@@ -1,6 +1,6 @@
 Imports System.Collections.Generic
 Module Check
-    Dim x As Object = New Object() {
+    Dim my_data = New Object() {
         1,
         "hello",
         True

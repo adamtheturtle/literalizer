@@ -1,3 +1,3 @@
 object Check {
-val x: Any = Set()
+val my_data = Set()
 }

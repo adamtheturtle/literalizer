@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := ASet'(
+   my_data : A_Val := ASet'(
        AInt (1),
        AInt (2),
        AInt (3)

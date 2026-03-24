@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @{
+id my_data = @{
     @"name": @"Alice",
     @"age": @(30),
     @"active": @YES,
 };
-    (void)_v;
+    (void)my_data;
 }

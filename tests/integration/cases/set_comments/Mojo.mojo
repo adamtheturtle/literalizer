@@ -1,8 +1,9 @@
 from std.collections import Set
 def main():
-    _ = Set[String](
+    var my_data = Set[String](
         "apple",  # inline comment
         # before banana
         "banana",
         # trailing
     )
+    _ = my_data

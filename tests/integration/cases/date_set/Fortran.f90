@@ -17,9 +17,9 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fset([fval_t :: &
-    fstr("2024-01-15"), &
-    fstr("2024-06-01") &
-])
+  type(fval_t) :: my_data
+  my_data = fset([fval_t :: &
+      fstr("2024-01-15"), &
+      fstr("2024-06-01") &
+  ])
 end program check

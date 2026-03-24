@@ -1,1 +1,1 @@
-val x: Any? = setOf<Any?>()
+val my_data = setOf<Any?>()

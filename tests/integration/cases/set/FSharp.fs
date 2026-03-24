@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FSet [
+let my_data: Val = FSet [
     FStr "apple";
     FStr "banana";
     FStr "cherry"

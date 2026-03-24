@@ -10,11 +10,11 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    const v: ZVal = .{ .set = &.{
+    const my_data: ZVal = .{ .set = &.{
         .{ .str = "apple" },  // inline comment
         // before banana
         .{ .str = "banana" },
         // trailing
     }};
-    _ = v;
+    _ = my_data;
 }

@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @[
+id my_data = @[
     @YES,
     @"hi",
     @[@(1), @(2)],
     [NSNull null],
 ];
-    (void)_v;
+    (void)my_data;
 }

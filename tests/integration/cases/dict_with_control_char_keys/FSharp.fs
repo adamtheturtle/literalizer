@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FMap [
+let my_data: Val = FMap [
     ("key\nwith\nnewlines", FStr "value1");
     ("key\twith\ttabs", FStr "value2");
     ("", FStr "value3")

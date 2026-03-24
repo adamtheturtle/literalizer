@@ -1,3 +1,5 @@
 class Check {
-    Object x = "2024-01-15";
+    public static void check() {
+"2024-01-15"
+    }
 }

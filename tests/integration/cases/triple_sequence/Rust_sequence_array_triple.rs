@@ -1,7 +1,8 @@
 fn main() {
-    let _ = [
+    [
         "1",
         "hello",
         "True",
-    ];
+    ]
+    let _ = my_data;
 }

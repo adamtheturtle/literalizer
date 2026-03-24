@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Set[String](
+val my_data = Set[String](
     // before apple
     "apple",
     "banana",  // banana inline

@@ -1,4 +1,5 @@
 use std::collections::HashSet;
 fn main() {
-    let _ = HashSet::<String>::new();
+    let my_data = HashSet::<String>::new();
+    let _ = my_data;
 }

@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := AMap'(
+   my_data : A_Val := AMap'(
        AEntry ("a", AMap'(AEntry ("x", AInt (1)))),
        AEntry ("b", AInt (2))
    );

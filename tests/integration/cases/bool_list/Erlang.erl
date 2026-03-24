@@ -1,8 +1,9 @@
 -module(check).
 -export([x/0]).
 x() ->
-    [
+    My_data = [
     true,
     false,
     true
-].
+],
+    My_data.

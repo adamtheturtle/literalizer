@@ -1,4 +1,4 @@
-val x: Any? = arrayOf(
+val my_data = arrayOf(
     "a",
     //
     "b",

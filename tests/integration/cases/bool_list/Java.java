@@ -1,7 +1,9 @@
 class Check {
-    Object x = new boolean[]{
+    public static void check() {
+var my_data = new boolean[]{
     true,
     false,
     true
 };
+    }
 }

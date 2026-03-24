@@ -1,3 +1,6 @@
 package main
 
-var _ = map[any]struct{}{}
+func main() {
+my_data := map[any]struct{}{}
+_ = my_data
+}

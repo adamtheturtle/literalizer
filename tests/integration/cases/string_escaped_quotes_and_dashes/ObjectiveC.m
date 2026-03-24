@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @"hello \"world\" -- not a comment";
-    (void)_v;
+id my_data = @"hello \"world\" -- not a comment";
+    (void)my_data;
 }

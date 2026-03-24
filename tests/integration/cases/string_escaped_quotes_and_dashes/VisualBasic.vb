@@ -1,3 +1,3 @@
 Module Check
-    Dim x As Object = "hello ""world"" -- not a comment"
+    Dim my_data = "hello ""world"" -- not a comment"
 End Module

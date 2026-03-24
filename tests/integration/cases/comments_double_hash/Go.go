@@ -1,6 +1,9 @@
 package main
 
-var _ = []string{
+func main() {
+my_data := []string{
     // # section
     "a",
+}
+_ = my_data
 }

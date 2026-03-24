@@ -1,9 +1,10 @@
 defmodule Check do
   def x do
-    MapSet.new([
+    my_data = MapSet.new([
     1,
     2,
     3,
 ])
+    _ = my_data
   end
 end

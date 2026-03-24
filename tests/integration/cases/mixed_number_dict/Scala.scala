@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Map[String, Double](
+val my_data = Map[String, Double](
     "a" -> 1,
     "b" -> 2.5,
     "c" -> 3,

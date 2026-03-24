@@ -1,6 +1,9 @@
 package main
 
-var _ = []any{
+func main() {
+my_data := []any{
     []any{},
     map[string]any{},
+}
+_ = my_data
 }

@@ -1,7 +1,5 @@
-void (
 [
     'foo',
     'bar',
     'baz',
 ]
-)

@@ -1,8 +1,11 @@
 package main
 
-var _ = []string{
+func main() {
+my_data := []string{
     // first
     "a",
     // second
     "b",
+}
+_ = my_data
 }

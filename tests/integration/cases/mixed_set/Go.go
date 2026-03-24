@@ -1,7 +1,10 @@
 package main
 
-var _ = map[any]struct{}{
+func main() {
+my_data := map[any]struct{}{
     true: struct{}{},
     42: struct{}{},
     "apple": struct{}{},
+}
+_ = my_data
 }

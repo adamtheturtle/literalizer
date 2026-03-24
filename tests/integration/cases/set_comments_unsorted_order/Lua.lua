@@ -1,4 +1,4 @@
-local _ = {
+local my_data = {
     -- before apple
     ["apple"] = true,
     ["banana"] = true,  -- banana inline

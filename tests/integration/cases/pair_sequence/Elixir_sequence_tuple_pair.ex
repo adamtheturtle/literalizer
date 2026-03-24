@@ -4,5 +4,6 @@ defmodule Check do
     1,
     "hello",
 }
+    _ = my_data
   end
 end

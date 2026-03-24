@@ -1,6 +1,7 @@
 def main():
-    _ = [
+    var my_data = [
         "C:\\path\\to\\file",
         "back\\\\slash",
         "hello \\\"world\\\"",
     ]
+    _ = my_data

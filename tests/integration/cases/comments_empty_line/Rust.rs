@@ -1,7 +1,8 @@
 fn main() {
-    let _ = vec![
+    let my_data = vec![
         "a",
         //
         "b",
     ];
+    let _ = my_data;
 }

@@ -1,4 +1,4 @@
-local _ = {
+local my_data = {
     ["apple"] = true,  -- inline comment
     -- before banana
     ["banana"] = true,
