@@ -38,11 +38,12 @@ def _format_string_ada(value: str) -> str:
     Control characters (code points 0-31) are emitted as
     ``Character'Val(N)`` expressions concatenated with ``&``.
     """
+    control_char_threshold = 32
     parts: list[str] = []
     for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
         if not segment:
             continue
-        if len(segment) == 1 and ord(segment) < _ADA_CONTROL_CHAR_THRESHOLD:
+        if len(segment) == 1 and ord(segment) < control_char_threshold:
             parts.append(f"Character'Val({ord(segment)})")
         else:
             escaped = segment.replace('"', '""')
@@ -52,9 +53,6 @@ def _format_string_ada(value: str) -> str:
     if len(parts) == 1:
         return parts[0]
     return " & ".join(parts)
-
-
-_ADA_CONTROL_CHAR_THRESHOLD = 32
 
 
 @beartype
