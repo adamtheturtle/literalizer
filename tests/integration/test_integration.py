@@ -250,24 +250,22 @@ def _wrap_scala_combined(declaration: str, assignment: str) -> str:
 
 @beartype
 def _wrap_dart_combined(declaration: str, assignment: str) -> str:
-    """Dart: final declaration in one function, dynamic + assignment in
-    another, with a main that calls both to avoid unused-element warnings.
+    """Dart: final declaration and dynamic + assignment in block scopes
+    within one function, avoiding unused-element warnings.
     """
-    decl_indented = "  " + declaration.replace("\n", "\n  ")
-    assign_indented = "  " + assignment.replace("\n", "\n  ")
+    decl_indented = "    " + declaration.replace("\n", "\n    ")
+    assign_indented = "    " + assignment.replace("\n", "\n    ")
     return (
-        f"void _declaration() {{\n"
-        f"{decl_indented}\n"
-        f"  {_VARIABLE_NAME}.hashCode;\n"
-        f"}}\n"
-        f"void _assignment() {{\n"
-        f"  dynamic {_VARIABLE_NAME};\n"
-        f"{assign_indented}\n"
-        f"  {_VARIABLE_NAME}.hashCode;\n"
-        f"}}\n"
         f"void main() {{\n"
-        f"  _declaration();\n"
-        f"  _assignment();\n"
+        f"  {{\n"
+        f"{decl_indented}\n"
+        f"    {_VARIABLE_NAME}.hashCode;\n"
+        f"  }}\n"
+        f"  {{\n"
+        f"    dynamic {_VARIABLE_NAME};\n"
+        f"{assign_indented}\n"
+        f"    {_VARIABLE_NAME}.hashCode;\n"
+        f"  }}\n"
         f"}}"
     )
 
