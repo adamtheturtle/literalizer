@@ -201,6 +201,13 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
     ),
     HASKELL: _VariableSyntax(
         declaration=(
+            "import Data.Time (Day, UTCTime(..)"
+            ", fromGregorian"
+            ", secondsToDiffTime, picosecondsToDiffTime)\n"
+            "data Val = HNull | HBool Bool | HInt Integer"
+            " | HFloat Double | HStr String | HList [Val]"
+            " | HMap [(String, Val)] | HSet [Val]"
+            " | HDate Day | HDatetime UTCTime\n"
             "instance Num Val where\n"
             "    fromInteger = HInt\n"
             '    a + b = error "not implemented"\n'
@@ -213,6 +220,13 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
             "my_var = 42"
         ),
         assignment=(
+            "import Data.Time (Day, UTCTime(..)"
+            ", fromGregorian"
+            ", secondsToDiffTime, picosecondsToDiffTime)\n"
+            "data Val = HNull | HBool Bool | HInt Integer"
+            " | HFloat Double | HStr String | HList [Val]"
+            " | HMap [(String, Val)] | HSet [Val]"
+            " | HDate Day | HDatetime UTCTime\n"
             "instance Num Val where\n"
             "    fromInteger = HInt\n"
             '    a + b = error "not implemented"\n'
@@ -232,8 +246,34 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
         declaration="my_var = 42", assignment="my_var = 42"
     ),
     FSHARP: _VariableSyntax(
-        declaration="let my_var: Val = FInt 42L",
-        assignment="let my_var: Val = FInt 42L",
+        declaration=(
+            "type Val =\n"
+            "    | FNull\n"
+            "    | FBool of bool\n"
+            "    | FInt of int64\n"
+            "    | FFloat of float\n"
+            "    | FStr of string\n"
+            "    | FList of Val list\n"
+            "    | FMap of (string * Val) list\n"
+            "    | FSet of Val list\n"
+            "    | FDate of System.DateTime\n"
+            "    | FDatetime of System.DateTime\n"
+            "let my_var: Val = FInt 42L"
+        ),
+        assignment=(
+            "type Val =\n"
+            "    | FNull\n"
+            "    | FBool of bool\n"
+            "    | FInt of int64\n"
+            "    | FFloat of float\n"
+            "    | FStr of string\n"
+            "    | FList of Val list\n"
+            "    | FMap of (string * Val) list\n"
+            "    | FSet of Val list\n"
+            "    | FDate of System.DateTime\n"
+            "    | FDatetime of System.DateTime\n"
+            "let my_var: Val = FInt 42L"
+        ),
     ),
     CLOJURE: _VariableSyntax(
         declaration="(def my_var 42)", assignment="(def my_var 42)"
