@@ -1,6 +1,7 @@
 def main():
-    _ = {
+    var my_data = {
         "name": "Alice",
         "score": "None",
         "age": "30",
     }
+    _ = my_data

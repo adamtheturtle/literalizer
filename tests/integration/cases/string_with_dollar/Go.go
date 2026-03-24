@@ -1,6 +1,9 @@
 package main
 
-var _ = []string{
+func main() {
+my_data := []string{
     "price $10",
     "$HOME",
+}
+_ = my_data
 }

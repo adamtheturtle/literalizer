@@ -6,7 +6,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-    _Any my_data = std::vector<std::string>{
+_Any my_data = std::vector<std::string>{
     "line1\r\nline2",
     "line1\rline2",
     "",

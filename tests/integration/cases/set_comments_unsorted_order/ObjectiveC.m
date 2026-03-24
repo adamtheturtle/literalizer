@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id my_data = [NSSet setWithArray:@[
+id my_data = [NSSet setWithArray:@[
     // before apple
     @"apple",
     @"banana",  // banana inline

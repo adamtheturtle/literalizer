@@ -1,7 +1,10 @@
 package main
 
-var _ = []bool{
+func main() {
+my_data := []bool{
     true,
     false,
     true,
+}
+_ = my_data
 }

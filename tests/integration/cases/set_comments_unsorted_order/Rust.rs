@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 fn main() {
-    let _ = HashSet::from([
+    let my_data = HashSet::from([
         // before apple
         "apple",
         "banana",  // banana inline
         // trailing
     ]);
+    let _ = my_data;
 }

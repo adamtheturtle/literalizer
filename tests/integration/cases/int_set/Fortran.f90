@@ -19,8 +19,8 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fset([fval_t :: &
-    fint(1), &
-    fint(2), &
-    fint(3) &
-])
+      fint(1), &
+      fint(2), &
+      fint(3) &
+  ])
 end program check

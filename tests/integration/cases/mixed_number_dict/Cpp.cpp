@@ -6,7 +6,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-    _Any my_data = std::map<std::string, double>{
+_Any my_data = std::map<std::string, double>{
     {"a", 1},
     {"b", 2.5},
     {"c", 3},

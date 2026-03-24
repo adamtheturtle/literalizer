@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 fn main() {
-    let _ = HashMap::from([
+    let my_data = HashMap::from([
         ("key", "value \" # not a comment"),  // real
     ]);
+    let _ = my_data;
 }

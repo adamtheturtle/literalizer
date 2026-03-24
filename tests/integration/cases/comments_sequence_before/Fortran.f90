@@ -19,9 +19,9 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    ! first
-    fstr('a'), &
-    ! second
-    fstr('b') &
-])
+      ! first
+      fstr('a'), &
+      ! second
+      fstr('b') &
+  ])
 end program check

@@ -43,60 +43,6 @@ def _wrap_identity(content: str) -> str:
     return content
 
 
-@beartype
-def _wrap_js(content: str) -> str:
-    """Wrap in ``void(...)`` so bare object/array literals parse as
-    expressions in JavaScript and TypeScript.
-    """
-    return f"void (\n{content}\n)"
-
-
-@beartype
-def _wrap_go(content: str) -> str:
-    """Wrap in a Go package-level variable declaration."""
-    return f"\nvar _ = {content}"
-
-
-@beartype
-def _wrap_java(content: str) -> str:
-    """Wrap in a Java class with necessary imports."""
-    return f"""\
-class Check {{
-    Object {_VARIABLE_NAME} = {content};
-}}"""
-
-
-@beartype
-def _wrap_kotlin(content: str) -> str:
-    """Wrap in a Kotlin variable assignment."""
-    return f"val {_VARIABLE_NAME} = {content}"
-
-
-@beartype
-def _wrap_cpp(content: str) -> str:
-    """Wrap a C++ expression in a function body."""
-    return f"void _check() {{\n    _Any {_VARIABLE_NAME} = {content};\n}}"
-
-
-@beartype
-def _wrap_swift(content: str) -> str:
-    """Wrap in a Swift variable assignment."""
-    return f"let {_VARIABLE_NAME}: Any = {content}"
-
-
-@beartype
-def _wrap_csharp(content: str) -> str:
-    """Wrap in C# variable assignment."""
-    return f"var {_VARIABLE_NAME} = {content};"
-
-
-@beartype
-def _wrap_rust(content: str) -> str:
-    """Wrap in a Rust main function with necessary imports."""
-    indented = content.replace("\n", "\n    ")
-    return f"fn main() {{\n    let _ = {indented};\n}}"
-
-
 _FSHARP_VAL_TYPE = (
     "type Val =\n"
     "    | FNull\n"
@@ -154,44 +100,7 @@ _HASKELL_MODULE_HEADER = (
 
 
 @beartype
-def _wrap_fsharp(content: str) -> str:
-    """Wrap in an F# module with a Val assignment."""
-    fsharp = literalizer.languages.FSharp()
-    if content.lstrip().startswith("[|"):
-        val_type = "Val array"
-        typed = content
-    else:
-        val_type = "Val"
-        typed = fsharp.format_sequence_entry(content)
-    return (
-        "module Check\n\n"
-        + _FSHARP_VAL_TYPE
-        + "\n"
-        + f"let {_VARIABLE_NAME}: {val_type} = {typed}"
-    )
-
-
-@beartype
 def _wrap_ocaml(content: str) -> str:
-    """Wrap in an OCaml module with a val_t assignment."""
-    ocaml = literalizer.languages.OCaml()
-    if content.lstrip().startswith("[|"):
-        val_type = "val_t array"
-        typed = content
-    else:
-        val_type = "val_t"
-        typed = ocaml.format_sequence_entry(content)
-    return (
-        "module Check = struct\n\n"
-        + _OCAML_VAL_TYPE
-        + "\n"
-        + f"let {_VARIABLE_NAME} : {val_type} = {typed}\n\n"
-        + "end"
-    )
-
-
-@beartype
-def _wrap_ocaml_varname(content: str) -> str:
     """Wrap an OCaml ``let`` declaration in a module."""
     return (
         "module Check = struct\n\n"
@@ -204,22 +113,6 @@ def _wrap_ocaml_varname(content: str) -> str:
 
 @beartype
 def _wrap_occam(content: str) -> str:
-    """Wrap in an occam-pi PROC."""
-    occam = literalizer.languages.Occam()
-    typed = occam.format_sequence_entry(content)
-    return (
-        _OCCAM_LIT_TYPE
-        + "\n\n"
-        + "PROC check ()\n"
-        + f"  VAL MOBILE LIT {_VARIABLE_NAME} IS {typed}:\n"
-        + "  SEQ\n"
-        + "    SKIP\n"
-        + ":"
-    )
-
-
-@beartype
-def _wrap_occam_varname(content: str) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC."""
     indented = "  " + content.replace("\n", "\n  ")
     return (
@@ -235,7 +128,7 @@ def _wrap_occam_varname(content: str) -> str:
 
 
 @beartype
-def _wrap_fsharp_varname(content: str) -> str:
+def _wrap_fsharp(content: str) -> str:
     """Wrap an F# ``let`` declaration in a module."""
     return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
 
@@ -283,40 +176,17 @@ def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
     )
 
 
-@beartype
-def _wrap_haskell(content: str) -> str:
-    """Wrap in a Haskell module with a Val binding."""
-    split = _split_haskell_body_preamble(content=content)
-    header = _HASKELL_MODULE_HEADER
-    if split.body_preamble:
-        header += split.body_preamble + "\n"
-    header += _HASKELL_VAL_TYPE
-    if split.expression.lstrip().startswith("("):
-        return header + f"{_VARIABLE_NAME} = {split.expression}"
-    return (
-        header
-        + f"{_VARIABLE_NAME} :: Val\n"
-        + f"{_VARIABLE_NAME} = {split.expression}"
-    )
-
-
-@beartype
-def _wrap_hcl(content: str) -> str:
-    """Wrap in an HCL attribute assignment for syntax validation."""
-    return f"{_VARIABLE_NAME} = {content}"
-
-
 _VARIABLE_NAME = "my_data"
 
 
 @beartype
-def _wrap_go_varname(content: str) -> str:
+def _wrap_go(content: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
     return f"\nfunc main() {{\n{content}\n_ = {_VARIABLE_NAME}\n}}"
 
 
 @beartype
-def _wrap_java_varname(content: str) -> str:
+def _wrap_java(content: str) -> str:
     """Wrap a Java var declaration in a static method."""
     return (
         "class Check {\n"
@@ -328,7 +198,7 @@ def _wrap_java_varname(content: str) -> str:
 
 
 @beartype
-def _wrap_ts_varname(content: str) -> str:
+def _wrap_ts(content: str) -> str:
     """Wrap a TypeScript variable declaration as a module.
 
     Adding ``export {}`` turns the file into a module so that ``const``
@@ -340,19 +210,13 @@ def _wrap_ts_varname(content: str) -> str:
 
 
 @beartype
-def _wrap_cpp_varname(content: str) -> str:
+def _wrap_cpp(content: str) -> str:
     """Wrap a C++ variable declaration in a function body."""
     return f"void _check() {{\n{content}\n}}"
 
 
 @beartype
 def _wrap_scala(content: str) -> str:
-    """Wrap in a Scala object with a typed variable assignment."""
-    return f"object Check {{\nval {_VARIABLE_NAME} = {content}\n}}"
-
-
-@beartype
-def _wrap_scala_varname(content: str) -> str:
     """Wrap a Scala variable declaration in an object."""
     return f"object Check {{\n{content}\n}}"
 
@@ -373,12 +237,6 @@ def _wrap_scala_combined(declaration: str, assignment: str) -> str:
         f"{assign_indented}\n"
         f"}}"
     )
-
-
-@beartype
-def _wrap_dart(content: str) -> str:
-    """Wrap in a Dart final variable assignment."""
-    return f"final {_VARIABLE_NAME} = {content};"
 
 
 @beartype
@@ -406,32 +264,7 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_perl(content: str) -> str:
-    """Wrap in a Perl variable assignment."""
-    return f"my ${_VARIABLE_NAME} = {content};"
-
-
-@beartype
-def _wrap_php(content: str) -> str:
-    """Wrap in a PHP variable assignment."""
-    return f"${_VARIABLE_NAME} = {content};"
-
-
-@beartype
 def _wrap_elixir(content: str) -> str:
-    """Wrap in an Elixir module function."""
-    return (
-        f"defmodule Check do\n"
-        f"  def x do\n"
-        f"    {_VARIABLE_NAME} = {content}\n"
-        f"    _ = {_VARIABLE_NAME}\n"
-        f"  end\n"
-        f"end"
-    )
-
-
-@beartype
-def _wrap_elixir_varname(content: str) -> str:
     """Wrap an Elixir variable assignment in a module function."""
     return (
         f"defmodule Check do\n"
@@ -445,19 +278,6 @@ def _wrap_elixir_varname(content: str) -> str:
 
 @beartype
 def _wrap_erlang(content: str) -> str:
-    """Wrap in an Erlang module function."""
-    erlang_varname = _VARIABLE_NAME[0].upper() + _VARIABLE_NAME[1:]
-    return (
-        f"-module(check).\n"
-        f"-export([x/0]).\n"
-        f"x() ->\n"
-        f"    {erlang_varname} = {content},\n"
-        f"    {erlang_varname}."
-    )
-
-
-@beartype
-def _wrap_erlang_varname(content: str) -> str:
     """Wrap an Erlang variable binding in a module function.
 
     The variable is referenced at the end of the function body so that
@@ -474,28 +294,7 @@ def _wrap_erlang_varname(content: str) -> str:
 
 
 @beartype
-def _wrap_groovy(content: str) -> str:
-    """Wrap in a Groovy variable assignment."""
-    return f"def {_VARIABLE_NAME} = {content}"
-
-
-@beartype
 def _wrap_ada(content: str) -> str:
-    """Wrap in an Ada procedure with a local variable assignment."""
-    ada = literalizer.languages.Ada()
-    typed = ada.format_sequence_entry(content)
-    indented = typed.replace("\n", "\n   ")
-    return (
-        "procedure Check is\n"
-        f"   {_VARIABLE_NAME} : A_Val := {indented};\n"
-        "begin\n"
-        "   null;\n"
-        "end Check;"
-    )
-
-
-@beartype
-def _wrap_ada_varname(content: str) -> str:
     """Wrap an Ada object declaration inside a procedure."""
     indented = "   " + content.replace("\n", "\n   ")
     return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
@@ -525,39 +324,7 @@ def _wrap_ada_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_lua(content: str) -> str:
-    """Wrap a Lua table constructor in a local variable assignment."""
-    return f"local {_VARIABLE_NAME} = {content}"
-
-
-@beartype
-def _wrap_r(content: str) -> str:
-    """Wrap in an R variable assignment."""
-    return f"{_VARIABLE_NAME} <- {content}"
-
-
-@beartype
-def _wrap_nim(content: str) -> str:
-    """Wrap in a Nim ``%*`` JSON-node expression."""
-    return f"let _ = %* {content}"
-
-
-@beartype
-def _wrap_norg(content: str) -> str:
-    """Wrap in a Norg ranged verbatim tag."""
-    return f"@code json\n{content}\n@end"
-
-
-@beartype
 def _wrap_d(content: str) -> str:
-    """Wrap in a D function."""
-    d_lang = literalizer.languages.D()
-    typed = d_lang.format_sequence_entry(content)
-    return f"void _check() {{\n    auto {_VARIABLE_NAME} = {typed};\n}}"
-
-
-@beartype
-def _wrap_d_varname(content: str) -> str:
     """Wrap a D ``auto`` declaration in a function."""
     return f"void _check() {{\n{content}\n}}"
 
@@ -569,24 +336,7 @@ def _wrap_d_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_powershell(content: str) -> str:
-    """Wrap in a PowerShell variable assignment."""
-    return f"${_VARIABLE_NAME} = {content}"
-
-
-@beartype
 def _wrap_c(content: str) -> str:
-    """Wrap in a C function."""
-    c_lang = literalizer.languages.C()
-    typed = c_lang.format_sequence_entry(content)
-    vn = _VARIABLE_NAME
-    return (
-        f"void _check(void) {{\n    _CVal {vn} = {typed};\n    (void){vn};\n}}"
-    )
-
-
-@beartype
-def _wrap_c_varname(content: str) -> str:
     """Wrap a C _CVal declaration in a function."""
     return f"void _check(void) {{\n{content}\n    (void){_VARIABLE_NAME};\n}}"
 
@@ -604,22 +354,7 @@ def _wrap_c_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_matlab(content: str) -> str:
-    """Wrap in a MATLAB/Octave variable assignment."""
-    return f"{_VARIABLE_NAME} = {content};"
-
-
-@beartype
 def _wrap_objc(content: str) -> str:
-    """Wrap in an Objective-C function."""
-    vn = _VARIABLE_NAME
-    return (
-        f"void _check(void) {{\n    id {vn} = {content};\n    (void){vn};\n}}"
-    )
-
-
-@beartype
-def _wrap_objc_varname(content: str) -> str:
     """Wrap an Objective-C variable declaration in a function."""
     return f"void _check(void) {{\n{content}\n    (void){_VARIABLE_NAME};\n}}"
 
@@ -656,14 +391,6 @@ def _in_mojo_main(content: str) -> str:
 
 @beartype
 def _wrap_mojo(content: str) -> str:
-    """Wrap in a Mojo main function with assignment for syntax
-    validation.
-    """
-    return _in_mojo_main(content=f"_ = {content}")
-
-
-@beartype
-def _wrap_mojo_varname(content: str) -> str:
     """Wrap a Mojo variable declaration in a main function."""
     # Consume the variable so ``--Werror`` does not flag the
     # "assignment was never used" warning.
@@ -684,14 +411,14 @@ def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_rust_varname(content: str) -> str:
+def _wrap_rust(content: str) -> str:
     """Wrap a Rust let binding in a main function."""
     indented = content.replace("\n", "\n    ")
     return f"fn main() {{\n    {indented}\n    let _ = {_VARIABLE_NAME};\n}}"
 
 
 @beartype
-def _wrap_haskell_varname(content: str) -> str:
+def _wrap_haskell(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
     split = _split_haskell_body_preamble(content=content)
     header = _HASKELL_MODULE_HEADER
@@ -708,20 +435,6 @@ def _wrap_haskell_varname(content: str) -> str:
 
 @beartype
 def _wrap_zig(content: str) -> str:
-    """Wrap in a Zig main function."""
-    zig = literalizer.languages.Zig()
-    typed = zig.format_sequence_entry(content)
-    indented = typed.replace("\n", "\n    ")
-    return (
-        "pub fn main() void {\n"
-        f"    const {_VARIABLE_NAME}: ZVal = {indented};\n"
-        f"    _ = {_VARIABLE_NAME};\n"
-        "}"
-    )
-
-
-@beartype
-def _wrap_zig_varname(content: str) -> str:
     """Wrap a Zig ``const`` declaration in a main function."""
     indented = "    " + content.replace("\n", "\n    ")
     return f"pub fn main() void {{\n{indented}\n    _ = {_VARIABLE_NAME};\n}}"
@@ -819,75 +532,7 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _fortran_comment_pos(line: str) -> int | None:
-    """Return the index of the ``!`` comment in *line* outside strings."""
-    in_single_quote = False
-    in_double_quote = False
-    i = 0
-    while i < len(line):
-        c = line[i]
-        if c == "'" and not in_double_quote:
-            next_also_quote = i + 1 < len(line) and line[i + 1] == "'"
-            if in_single_quote and next_also_quote:
-                i += 2
-                continue
-            in_single_quote = not in_single_quote
-        elif c == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
-        elif c == "!" and not in_single_quote and not in_double_quote:
-            return i
-        i += 1
-    return None
-
-
-@beartype
-def _add_fortran_continuation(content: str) -> str:
-    """Add Fortran ``&`` line-continuation to non-comment, non-last
-    lines.
-
-    Pure comment lines (blank or starting with ``!``) are transparent to
-    the Fortran continuation mechanism and receive no ``&``.  For lines
-    with inline comments the ``&`` is inserted before the ``!``.
-    """
-    lines = content.splitlines()
-    if len(lines) <= 1:
-        return content
-    result: list[str] = []
-    for i, line in enumerate(iterable=lines):
-        is_last = i == len(lines) - 1
-        stripped = line.strip()
-        is_pure_comment = not stripped or stripped.startswith("!")
-        if is_last or is_pure_comment:
-            result.append(line)
-        else:
-            pos = _fortran_comment_pos(line=line)
-            if pos is not None:
-                result.append(line[:pos].rstrip() + " &  " + line[pos:])
-            else:
-                result.append(line + " &")
-    return "\n".join(result)
-
-
-@beartype
 def _wrap_fortran(content: str) -> str:
-    """Wrap in a self-contained Fortran program with the ``fval_m``
-    module embedded.
-    """
-    fortran = literalizer.languages.Fortran()
-    typed = fortran.format_sequence_entry(content)
-    continued = _add_fortran_continuation(content=typed)
-    return (
-        "program check\n"
-        "  use fval_m\n"
-        "  implicit none\n"
-        f"  type(fval_t) :: {_VARIABLE_NAME}\n"
-        f"  {_VARIABLE_NAME} = {continued}\n"
-        "end program check"
-    )
-
-
-@beartype
-def _wrap_fortran_varname(content: str) -> str:
     """Wrap a Fortran variable declaration in a program."""
     indented = "  " + content.replace("\n", "\n  ")
     return (
@@ -932,31 +577,7 @@ def _wrap_combined_newline(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_crystal(content: str) -> str:
-    """Wrap in a Crystal variable assignment to suppress unused-expression
-    warnings.
-    """
-    return f"{_VARIABLE_NAME} = {content}"
-
-
-@beartype
 def _wrap_vb(content: str) -> str:
-    """Wrap in a VB.NET Module with a Dim declaration.
-
-    Comment hoisting is delegated to the language module's
-    ``format_variable_declaration``.
-    """
-    lang = literalizer.languages.VisualBasic()
-    declaration = lang.format_variable_declaration(
-        _VARIABLE_NAME,
-        content,
-        None,
-    )
-    return _wrap_vb_varname(content=declaration)
-
-
-@beartype
-def _wrap_vb_varname(content: str) -> str:
     """Wrap a VB.NET Dim declaration inside a Module."""
     indented = "    " + content.replace("\n", "\n    ")
     return f"Module Check\n{indented}\nEnd Module"
@@ -998,6 +619,7 @@ class _Variant:
     name: str
     spec: literalizer.Language
     wrap: Callable[[str], str]
+    wrap_variable_name: str | None = None
 
 
 @dataclasses.dataclass
@@ -1008,28 +630,7 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
-
-
-@beartype
-def _wrap_bash(content: str) -> str:
-    """Wrap in a Bash ``declare`` statement for syntax validation."""
-    flag = (
-        " -A"
-        if any(line.lstrip().startswith("[") for line in content.splitlines())
-        else ""
-    )
-    return f"declare{flag} {_VARIABLE_NAME}={content}"
-
-
-@beartype
-def _wrap_toml(content: str) -> str:
-    """Wrap in a TOML key assignment for syntax validation.
-
-    TOML v1.1 permits newlines and comments within inline tables, so the
-    multiline output from ``_literalize`` can be used directly as a TOML
-    value.
-    """
-    return f"{_VARIABLE_NAME} = {content}"
+    wrap_variable_name: str | None = None
 
 
 _COBOL_PROGRAM_PREFIX = (
@@ -1044,34 +645,6 @@ _COBOL_PROGRAM_SUFFIX = "PROCEDURE DIVISION.\n    STOP RUN."
 
 @beartype
 def _wrap_cobol(content: str) -> str:
-    """Wrap in a free-format GnuCOBOL program for syntax checking."""
-    cobol_level_field_sep = 2
-    cobol_level_min_len = 3
-    stripped = content.strip("\n")
-    scalar = stripped.strip()
-    is_data_entry = (
-        scalar
-        and scalar[0].isdigit()
-        and len(scalar) > cobol_level_min_len
-        and scalar[cobol_level_field_sep] == " "
-    )
-    if "\n" in stripped or is_data_entry:
-        # Already DATA DIVISION entries
-        data_body = stripped
-    else:
-        # Scalar literal - convert to a DATA entry
-        cobol = literalizer.languages.Cobol()
-        entry = cobol.format_sequence_entry(scalar)
-        data_body = f"    {entry}"
-    return (
-        _COBOL_PROGRAM_PREFIX
-        + f"01 MY-DATA.\n{data_body}\n"
-        + _COBOL_PROGRAM_SUFFIX
-    )
-
-
-@beartype
-def _wrap_cobol_varname(content: str) -> str:
     """Wrap a COBOL variable declaration in a complete program."""
     return _COBOL_PROGRAM_PREFIX + f"{content}\n" + _COBOL_PROGRAM_SUFFIX
 
@@ -1094,32 +667,37 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Ada.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ada,
         wrap=_wrap_ada,
-        varname_wrap=_wrap_ada_varname,
+        varname_wrap=_wrap_ada,
         combined_wrap=_wrap_ada_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Bash.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Bash,
-        wrap=_wrap_bash,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.C.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.C,
         wrap=_wrap_c,
-        varname_wrap=_wrap_c_varname,
+        varname_wrap=_wrap_c,
         combined_wrap=_wrap_c_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Cobol.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Cobol,
         wrap=_wrap_cobol,
-        varname_wrap=_wrap_cobol_varname,
+        varname_wrap=_wrap_cobol,
         combined_wrap=_wrap_cobol_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.D.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.D,
         wrap=_wrap_d,
-        varname_wrap=_wrap_d_varname,
+        varname_wrap=_wrap_d,
         combined_wrap=_wrap_d_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.CommonLisp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CommonLisp,
@@ -1141,21 +719,24 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
-        wrap=_wrap_js,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_js_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
-        wrap=_wrap_js,
-        varname_wrap=_wrap_ts_varname,
+        wrap=_wrap_ts,
+        varname_wrap=_wrap_ts,
         combined_wrap=_wrap_ts_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Kotlin.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Kotlin,
-        wrap=_wrap_kotlin,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_kotlin_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Ruby.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ruby,
@@ -1166,56 +747,65 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
         wrap=_wrap_go,
-        varname_wrap=_wrap_go_varname,
-        combined_wrap=lambda d, a: _wrap_go_varname(content=d + "\n" + a),
+        varname_wrap=_wrap_go,
+        combined_wrap=lambda d, a: _wrap_go(content=d + "\n" + a),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Java.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Java,
         wrap=_wrap_java,
-        varname_wrap=_wrap_java_varname,
-        combined_wrap=lambda d, a: _wrap_java_varname(content=d + "\n" + a),
+        varname_wrap=_wrap_java,
+        combined_wrap=lambda d, a: _wrap_java(content=d + "\n" + a),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.CSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CSharp,
-        wrap=_wrap_csharp,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Dart.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
-        wrap=_wrap_dart,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_dart_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Swift.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
-        wrap=_wrap_swift,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_swift_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Cpp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Cpp,
         wrap=_wrap_cpp,
-        varname_wrap=_wrap_cpp_varname,
-        combined_wrap=lambda d, a: _wrap_cpp_varname(content=d + "\n" + a),
+        varname_wrap=_wrap_cpp,
+        combined_wrap=lambda d, a: _wrap_cpp(content=d + "\n" + a),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Rust.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Rust,
         wrap=_wrap_rust,
-        varname_wrap=_wrap_rust_varname,
+        varname_wrap=_wrap_rust,
         combined_wrap=_wrap_rust_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Haskell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Haskell,
         wrap=_wrap_haskell,
-        varname_wrap=_wrap_haskell_varname,
-        combined_wrap=lambda d, _a: _wrap_haskell_varname(content=d),
+        varname_wrap=_wrap_haskell,
+        combined_wrap=lambda d, _a: _wrap_haskell(content=d),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Hcl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
-        wrap=_wrap_hcl,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Julia.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Julia,
@@ -1225,69 +815,80 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Lua.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Lua,
-        wrap=_wrap_lua,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Perl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Perl,
-        wrap=_wrap_perl,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Php.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Php,
-        wrap=_wrap_php,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Elixir.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elixir,
         wrap=_wrap_elixir,
-        varname_wrap=_wrap_elixir_varname,
-        combined_wrap=lambda d, _a: _wrap_elixir_varname(content=d),
+        varname_wrap=_wrap_elixir,
+        combined_wrap=lambda d, _a: _wrap_elixir(content=d),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Erlang.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Erlang,
         wrap=_wrap_erlang,
-        varname_wrap=_wrap_erlang_varname,
-        combined_wrap=lambda d, _a: _wrap_erlang_varname(content=d),
+        varname_wrap=_wrap_erlang,
+        combined_wrap=lambda d, _a: _wrap_erlang(content=d),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.FSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.FSharp,
         wrap=_wrap_fsharp,
-        varname_wrap=_wrap_fsharp_varname,
-        combined_wrap=lambda d, _a: _wrap_fsharp_varname(content=d),
+        varname_wrap=_wrap_fsharp,
+        combined_wrap=lambda d, _a: _wrap_fsharp(content=d),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.OCaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.OCaml,
         wrap=_wrap_ocaml,
-        varname_wrap=_wrap_ocaml_varname,
-        combined_wrap=lambda d, _a: _wrap_ocaml_varname(content=d),
+        varname_wrap=_wrap_ocaml,
+        combined_wrap=lambda d, _a: _wrap_ocaml(content=d),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Occam.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Occam,
         wrap=_wrap_occam,
-        varname_wrap=_wrap_occam_varname,
-        combined_wrap=lambda d, _a: _wrap_occam_varname(content=d),
+        varname_wrap=_wrap_occam,
+        combined_wrap=lambda d, _a: _wrap_occam(content=d),
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Groovy.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Groovy,
-        wrap=_wrap_groovy,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Scala.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Scala,
         wrap=_wrap_scala,
-        varname_wrap=_wrap_scala_varname,
+        varname_wrap=_wrap_scala,
         combined_wrap=_wrap_scala_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.R.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.R,
-        wrap=_wrap_r,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Racket.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Racket,
@@ -1297,69 +898,80 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
-        wrap=_wrap_crystal,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Matlab.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Matlab,
-        wrap=_wrap_matlab,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Mojo.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Mojo,
         wrap=_wrap_mojo,
-        varname_wrap=_wrap_mojo_varname,
+        varname_wrap=_wrap_mojo,
         combined_wrap=_wrap_mojo_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Nim.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Nim,
-        wrap=_wrap_nim,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
-        wrap=_wrap_norg,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.VisualBasic.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.VisualBasic,
         wrap=_wrap_vb,
-        varname_wrap=_wrap_vb_varname,
+        varname_wrap=_wrap_vb,
         combined_wrap=_wrap_vb_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Zig.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Zig,
         wrap=_wrap_zig,
-        varname_wrap=_wrap_zig_varname,
+        varname_wrap=_wrap_zig,
         combined_wrap=_wrap_zig_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.PowerShell,
-        wrap=_wrap_powershell,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Toml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Toml,
-        wrap=_wrap_toml,
+        wrap=_wrap_identity,
         varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.ObjectiveC.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.ObjectiveC,
         wrap=_wrap_objc,
-        varname_wrap=_wrap_objc_varname,
+        varname_wrap=_wrap_objc,
         combined_wrap=_wrap_objc_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Fortran.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Fortran,
         wrap=_wrap_fortran,
-        varname_wrap=_wrap_fortran_varname,
+        varname_wrap=_wrap_fortran,
         combined_wrap=_wrap_fortran_combined,
+        wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Yaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Yaml,
@@ -1408,6 +1020,7 @@ def _build_date_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_date_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(date_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1433,6 +1046,7 @@ def _build_datetime_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_datetime_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(datetime_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1458,6 +1072,7 @@ def _build_sequence_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(sequence_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1483,6 +1098,7 @@ def _build_sequence_varname_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(sequence_format=fmt),
                     wrap=lang_config.varname_wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1507,6 +1123,7 @@ def _build_set_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_set_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(set_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1532,6 +1149,7 @@ def _build_comment_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_comment_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(comment_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1557,6 +1175,7 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_type_hints_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(variable_type_hints=fmt),
                     wrap=lang_config.varname_wrap,
+                    wrap_variable_name=_VARIABLE_NAME,
                 )
             )
     return variants
@@ -1581,6 +1200,7 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
                     declaration_style=fmt,
                 ),
                 wrap=lang_config.varname_wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1606,6 +1226,7 @@ def _build_dict_format_variants() -> Iterable[_Variant]:
                     dict_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1631,6 +1252,7 @@ def _build_integer_format_variants() -> Iterable[_Variant]:
                     integer_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1656,6 +1278,7 @@ def _build_numeric_separator_variants() -> Iterable[_Variant]:
                     numeric_separator=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1681,6 +1304,7 @@ def _build_string_format_variants() -> Iterable[_Variant]:
                     string_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1706,6 +1330,7 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
                     bytes_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1731,6 +1356,7 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
                     trailing_comma=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1756,6 +1382,7 @@ def _build_line_ending_variants() -> Iterable[_Variant]:
                     line_ending=fmt,
                 ),
                 wrap=lang_config.varname_wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1792,6 +1419,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
                     declaration_style=ds,
                 ),
                 wrap=lang_config.varname_wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for le in non_default_le
             for ds in non_default_ds
@@ -1833,7 +1461,7 @@ def test_golden_file(
         line_prefix="",
         indent="    ",
         include_delimiters=True,
-        variable_name=None,
+        variable_name=lang_config.wrap_variable_name,
         new_variable=True,
         error_on_coercion=False,
     )
@@ -1940,95 +1568,45 @@ def test_golden_file_combined_variable_forms(
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    variant_sources: list[tuple[Iterable[_Variant], str, str | None, str]] = [
-        (_build_date_variants(), "scalar_date", None, ""),
-        (_build_date_variants(), "date_list", None, ""),
-        (_build_date_variants(), "date_set", None, ""),
-        (_build_datetime_variants(), "scalar_datetime", None, ""),
-        (_build_datetime_variants(), "scalar_datetime_naive", None, "_naive"),
-        (
-            _build_datetime_variants(),
-            "scalar_datetime_non_utc",
-            None,
-            "_non_utc",
-        ),
-        (_build_sequence_variants(), "simple_sequence", None, ""),
-        (_build_sequence_variants(), "pair_sequence", None, "_pair"),
-        (_build_sequence_variants(), "triple_sequence", None, "_triple"),
-        (
-            _build_sequence_varname_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "_varname",
-        ),
-        (_build_set_variants(), "set", None, ""),
-        (_build_comment_variants(), "comments", None, ""),
-        (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME, ""),
-        (_build_type_hint_variants(), "scalar_date", _VARIABLE_NAME, ""),
-        (
-            _build_type_hint_variants(),
-            "scalar_datetime",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (_build_type_hint_variants(), "binary", _VARIABLE_NAME, ""),
-        (
-            _build_declaration_style_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (
-            _build_declaration_style_variants(),
-            "simple_dict",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (
-            _build_declaration_style_variants(),
-            "empty_list",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (_build_dict_format_variants(), "simple_dict", None, ""),
-        (_build_integer_format_variants(), "int_list", None, ""),
-        (_build_integer_format_variants(), "int_list_large", None, "_large"),
-        (_build_numeric_separator_variants(), "int_list", None, ""),
-        (
-            _build_numeric_separator_variants(),
-            "int_list_large",
-            None,
-            "_large",
-        ),
-        (_build_string_format_variants(), "string_list", None, ""),
-        (_build_bytes_format_variants(), "binary", None, ""),
-        (_build_trailing_comma_variants(), "simple_sequence", None, ""),
-        (
-            _build_line_ending_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "",
-        ),
-        (
-            _build_line_ending_variants(),
-            "simple_dict",
-            _VARIABLE_NAME,
-            "_dict",
-        ),
-        (
-            _build_line_ending_decl_variants(),
-            "simple_sequence",
-            _VARIABLE_NAME,
-            "",
-        ),
+    variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
+        (_build_date_variants(), "scalar_date", ""),
+        (_build_date_variants(), "date_list", ""),
+        (_build_date_variants(), "date_set", ""),
+        (_build_datetime_variants(), "scalar_datetime", ""),
+        (_build_datetime_variants(), "scalar_datetime_naive", "_naive"),
+        (_build_datetime_variants(), "scalar_datetime_non_utc", "_non_utc"),
+        (_build_sequence_variants(), "simple_sequence", ""),
+        (_build_sequence_variants(), "pair_sequence", "_pair"),
+        (_build_sequence_variants(), "triple_sequence", "_triple"),
+        (_build_sequence_varname_variants(), "simple_sequence", "_varname"),
+        (_build_set_variants(), "set", ""),
+        (_build_comment_variants(), "comments", ""),
+        (_build_type_hint_variants(), "type_hints", ""),
+        (_build_type_hint_variants(), "scalar_date", ""),
+        (_build_type_hint_variants(), "scalar_datetime", ""),
+        (_build_type_hint_variants(), "binary", ""),
+        (_build_declaration_style_variants(), "simple_sequence", ""),
+        (_build_declaration_style_variants(), "simple_dict", ""),
+        (_build_declaration_style_variants(), "empty_list", ""),
+        (_build_dict_format_variants(), "simple_dict", ""),
+        (_build_integer_format_variants(), "int_list", ""),
+        (_build_integer_format_variants(), "int_list_large", "_large"),
+        (_build_numeric_separator_variants(), "int_list", ""),
+        (_build_numeric_separator_variants(), "int_list_large", "_large"),
+        (_build_string_format_variants(), "string_list", ""),
+        (_build_bytes_format_variants(), "binary", ""),
+        (_build_trailing_comma_variants(), "simple_sequence", ""),
+        (_build_line_ending_variants(), "simple_sequence", ""),
+        (_build_line_ending_variants(), "simple_dict", "_dict"),
+        (_build_line_ending_decl_variants(), "simple_sequence", ""),
     ]
-    for variants, case_dir_name, variable_name, suffix in variant_sources:
+    for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
             _VariantCase(
                 variant_name=f"{variant.name}{suffix}",
                 variant=variant,
                 case_dir_name=case_dir_name,
-                variable_name=variable_name,
+                variable_name=variant.wrap_variable_name,
             )
             for variant in variants
         )

@@ -19,8 +19,8 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fset([fval_t :: &
-    fstr('apple'), &
-    fstr('banana'), &
-    fstr('cherry') &
-])
+      fstr('apple'), &
+      fstr('banana'), &
+      fstr('cherry') &
+  ])
 end program check

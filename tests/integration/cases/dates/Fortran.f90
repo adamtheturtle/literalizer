@@ -19,7 +19,7 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fmap([fval_t :: &
-    fentry('date', fstr("2024-01-15")), &
-    fentry('datetime', fstr("2024-01-15T12:30:00+00:00")) &
-])
+      fentry('date', fstr("2024-01-15")), &
+      fentry('datetime', fstr("2024-01-15T12:30:00+00:00")) &
+  ])
 end program check

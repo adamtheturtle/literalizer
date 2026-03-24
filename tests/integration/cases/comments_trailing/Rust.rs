@@ -1,6 +1,7 @@
 fn main() {
-    let _ = vec![
+    let my_data = vec![
         "a",
         // trailing
     ];
+    let _ = my_data;
 }

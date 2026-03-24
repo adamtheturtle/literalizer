@@ -1,8 +1,10 @@
 class Check {
-    Object my_data = new int[]{
+    public static void check() {
+var my_data = new int[]{
     1000000,
     -1234,
     255,
     -10
 };
+    }
 }

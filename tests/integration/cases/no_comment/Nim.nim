@@ -1,4 +1,4 @@
 import json
-let _ = %* {
+var my_data = %* {
     "message": "no comment here"
 }

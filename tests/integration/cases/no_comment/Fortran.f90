@@ -19,6 +19,6 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fmap([fval_t :: &
-    fentry('message', fstr('no comment here')) &
-])
+      fentry('message', fstr('no comment here')) &
+  ])
 end program check

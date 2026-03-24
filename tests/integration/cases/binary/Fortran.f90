@@ -19,6 +19,6 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    fstr("48656c6c6f") &
-])
+      fstr("48656c6c6f") &
+  ])
 end program check

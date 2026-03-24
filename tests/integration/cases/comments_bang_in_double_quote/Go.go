@@ -1,5 +1,8 @@
 package main
 
-var _ = map[string]string{
+func main() {
+my_data := map[string]string{
     "key": "\"bang!\"",  // real
+}
+_ = my_data
 }

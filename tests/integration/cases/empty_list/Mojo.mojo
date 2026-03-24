@@ -1,2 +1,3 @@
 def main():
-    _ = List[String]()
+    var my_data = List[String]()
+    _ = my_data

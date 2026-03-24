@@ -19,10 +19,10 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    fint(42), &
-    freal(3.14), &
-    fbool(.true.), &
-    fbool(.false.), &
-    fstr('hello "world"') &
-])
+      fint(42), &
+      freal(3.14), &
+      fbool(.true.), &
+      fbool(.false.), &
+      fstr('hello "world"') &
+  ])
 end program check

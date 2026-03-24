@@ -19,7 +19,7 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    fstr('price $10'), &
-    fstr('$HOME') &
-])
+      fstr('price $10'), &
+      fstr('$HOME') &
+  ])
 end program check

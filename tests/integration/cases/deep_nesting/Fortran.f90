@@ -19,6 +19,6 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fmap([fval_t :: &
-    fentry('level1', fmap([fval_t :: fentry('level2', fmap([fval_t :: fentry('level3', fmap([fval_t :: fentry('level4', fmap([fval_t :: fentry('value', fstr('deep')), fentry('items', flist([fval_t :: fstr('a'), fstr('b')]))]))])), fentry('sibling', fint(42))])), fentry('tags', flist([fval_t :: fmap([fval_t :: fentry('name', fstr('tag1')), fentry('meta', fmap([fval_t :: fentry('priority', fint(1)), fentry('labels', flist([fval_t :: fstr('x'), fstr('y')]))]))])]))])) &
-])
+      fentry('level1', fmap([fval_t :: fentry('level2', fmap([fval_t :: fentry('level3', fmap([fval_t :: fentry('level4', fmap([fval_t :: fentry('value', fstr('deep')), fentry('items', flist([fval_t :: fstr('a'), fstr('b')]))]))])), fentry('sibling', fint(42))])), fentry('tags', flist([fval_t :: fmap([fval_t :: fentry('name', fstr('tag1')), fentry('meta', fmap([fval_t :: fentry('priority', fint(1)), fentry('labels', flist([fval_t :: fstr('x'), fstr('y')]))]))])]))])) &
+  ])
 end program check

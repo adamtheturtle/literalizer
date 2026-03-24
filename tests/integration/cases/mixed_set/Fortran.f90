@@ -19,8 +19,8 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fset([fval_t :: &
-    fbool(.true.), &
-    fint(42), &
-    fstr('apple') &
-])
+      fbool(.true.), &
+      fint(42), &
+      fstr('apple') &
+  ])
 end program check

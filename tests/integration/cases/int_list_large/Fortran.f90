@@ -19,9 +19,9 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    fint(1000000), &
-    fint(-1234), &
-    fint(255), &
-    fint(-10) &
-])
+      fint(1000000), &
+      fint(-1234), &
+      fint(255), &
+      fint(-10) &
+  ])
 end program check

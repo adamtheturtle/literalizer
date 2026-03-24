@@ -1,7 +1,8 @@
 from std.collections import Set
 def main():
-    _ = Set[String](
+    var my_data = Set[String](
         "apple",
         "banana",
         "cherry",
     )
+    _ = my_data

@@ -1,3 +1,5 @@
 class Check {
-    Object my_data = "2024-01-15T18:00:00+05:30";
+    public static void check() {
+var my_data = "2024-01-15T18:00:00+05:30";
+    }
 }

@@ -1,3 +1,5 @@
 class Check {
-    Object my_data = "2024-01-15";
+    public static void check() {
+var my_data = "2024-01-15";
+    }
 }

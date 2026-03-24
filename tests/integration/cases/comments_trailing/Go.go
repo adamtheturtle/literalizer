@@ -1,6 +1,9 @@
 package main
 
-var _ = []string{
+func main() {
+my_data := []string{
     "a",
     // trailing
+}
+_ = my_data
 }

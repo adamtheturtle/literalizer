@@ -19,8 +19,8 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    fstr('line1' // achar(13) // achar(10) // 'line2'), &
-    fstr('line1' // achar(13) // 'line2'), &
-    fstr(achar(1)) &
-])
+      fstr('line1' // achar(13) // achar(10) // 'line2'), &
+      fstr('line1' // achar(13) // 'line2'), &
+      fstr(achar(1)) &
+  ])
 end program check

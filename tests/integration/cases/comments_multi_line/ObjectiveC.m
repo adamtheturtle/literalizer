@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id my_data = @[
+id my_data = @[
     // line 1
     // line 2
     @"a",

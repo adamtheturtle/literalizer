@@ -1,4 +1,5 @@
 use std::collections::HashMap;
 fn main() {
-    let _ = HashMap::<&str, &str>::from([]);
+    let my_data = HashMap::<&str, &str>::from([]);
+    let _ = my_data;
 }

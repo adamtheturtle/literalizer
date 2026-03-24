@@ -1,6 +1,4 @@
-void (
-[
+const my_data = [
     "a",
     // trailing
-]
-)
+];

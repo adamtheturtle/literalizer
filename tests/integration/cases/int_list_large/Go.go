@@ -1,8 +1,11 @@
 package main
 
-var _ = []int{
+func main() {
+my_data := []int{
     1000000,
     -1234,
     255,
     -10,
+}
+_ = my_data
 }

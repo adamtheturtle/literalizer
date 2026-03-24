@@ -19,7 +19,7 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    fstr('a') &
-    ! trailing
-])
+      fstr('a') &
+      ! trailing
+  ])
 end program check

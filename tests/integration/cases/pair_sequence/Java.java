@@ -1,6 +1,8 @@
 class Check {
-    Object my_data = new Object[]{
+    public static void check() {
+var my_data = new Object[]{
     1,
     "hello"
 };
+    }
 }

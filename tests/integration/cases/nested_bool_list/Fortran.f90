@@ -19,7 +19,7 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    flist([fval_t :: fbool(.true.), fbool(.false.)]), &
-    flist([fval_t :: fbool(.true.), fbool(.true.)]) &
-])
+      flist([fval_t :: fbool(.true.), fbool(.false.)]), &
+      flist([fval_t :: fbool(.true.), fbool(.true.)]) &
+  ])
 end program check

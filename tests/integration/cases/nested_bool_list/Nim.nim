@@ -1,5 +1,5 @@
 import json
-let _ = %* [
+var my_data = %* [
     [true, false],
     [true, true]
 ]

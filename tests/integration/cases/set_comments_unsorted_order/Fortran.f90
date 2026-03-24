@@ -19,9 +19,9 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fset([fval_t :: &
-    ! before apple
-    fstr('apple'), &
-    fstr('banana') &  ! banana inline
-    ! trailing
-])
+      ! before apple
+      fstr('apple'), &
+      fstr('banana') &  ! banana inline
+      ! trailing
+  ])
 end program check

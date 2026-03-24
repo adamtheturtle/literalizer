@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 fn main() {
-    let _ = HashSet::from([
+    let my_data = HashSet::from([
         1,
         2,
         3,
     ]);
+    let _ = my_data;
 }

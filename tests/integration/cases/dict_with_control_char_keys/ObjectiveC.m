@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id my_data = @{
+id my_data = @{
     @"key\nwith\nnewlines": @"value1",
     @"key\twith\ttabs": @"value2",
     @"": @"value3",

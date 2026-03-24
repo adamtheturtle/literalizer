@@ -1,4 +1,5 @@
 def main():
-    _ = {
+    var my_data = {
         "message": "no comment here",
     }
+    _ = my_data

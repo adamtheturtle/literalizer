@@ -19,7 +19,7 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-    fmap([fval_t :: fentry('name', fstr('Alice')), fentry('age', fint(30))]), &
-    fmap([fval_t :: fentry('name', fstr('Bob')), fentry('age', fint(25))]) &
-])
+      fmap([fval_t :: fentry('name', fstr('Alice')), fentry('age', fint(30))]), &
+      fmap([fval_t :: fentry('name', fstr('Bob')), fentry('age', fint(25))]) &
+  ])
 end program check

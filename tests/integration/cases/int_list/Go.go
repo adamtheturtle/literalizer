@@ -1,7 +1,10 @@
 package main
 
-var _ = []int{
+func main() {
+my_data := []int{
     1,
     2,
     3,
+}
+_ = my_data
 }

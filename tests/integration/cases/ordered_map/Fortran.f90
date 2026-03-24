@@ -19,8 +19,8 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = fmap([fval_t :: &
-    fentry('name', fstr('Alice')), &
-    fentry('age', fint(30)), &
-    fentry('active', fbool(.true.)) &
-])
+      fentry('name', fstr('Alice')), &
+      fentry('age', fint(30)), &
+      fentry('active', fbool(.true.)) &
+  ])
 end program check
