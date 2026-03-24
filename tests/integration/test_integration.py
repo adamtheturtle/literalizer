@@ -1479,7 +1479,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_numeric_separator_variants(), "int_list", ""),
         (_build_numeric_separator_variants(), "int_list_large", "_large"),
         (_build_string_format_variants(), "string_list", ""),
-        (_build_string_format_variants(), "string_control_chars", ""),
+        (_build_string_format_variants(), "string_with_backslash", ""),
         (_build_bytes_format_variants(), "binary", ""),
         (_build_trailing_comma_variants(), "simple_sequence", ""),
         (_build_line_ending_variants(), "simple_sequence", ""),
