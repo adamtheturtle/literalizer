@@ -118,7 +118,7 @@ class OrderedMapFormatConfig:
 
 @dataclasses.dataclass(frozen=True)
 class TrailingCommaConfig:
-    """Configuration for trailing-comma behaviour."""
+    """Configuration for trailing-comma behavior."""
 
     multiline_trailing_comma: bool
 
@@ -319,7 +319,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Configuration for dict formatting."""
 
     trailing_comma_config: TrailingCommaConfig
-    """Configuration for trailing-comma behaviour."""
+    """Configuration for trailing-comma behavior."""
 
     @property
     def format_bytes(self) -> Callable[[bytes], str]:
