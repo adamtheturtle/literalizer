@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -26,6 +25,8 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from literalizer._types import Value
 
 
@@ -120,9 +121,6 @@ def _format_objc_datetime_iso(value: datetime.datetime) -> str:
     ``@"2024-01-15T12:30:00"``.
     """
     return f'@"{value.isoformat()}"'
-
-
-_string_format: Callable[[str], str] = _format_objc_string
 
 
 @beartype
@@ -311,7 +309,7 @@ class ObjectiveC(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = _format_objc_string
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = _to_objc_val
         self.format_set_entry: Callable[[str], str] = _to_objc_val
