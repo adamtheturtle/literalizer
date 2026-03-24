@@ -1,0 +1,3 @@
+Dict(
+    "key" => "\"bang!\"",  # real
+)

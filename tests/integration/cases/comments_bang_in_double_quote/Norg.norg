@@ -1,0 +1,5 @@
+@code json
+{
+    "key": "\"bang!\""  % real%
+}
+@end
