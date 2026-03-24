@@ -61,7 +61,7 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
         for v in data.values():
             child_types = child_types | _collect_value_types(data=v)
         return frozenset({dict, str}) | child_types
-    if isinstance(data, (set, frozenset)):
+    if isinstance(data, set):
         scalar_types: frozenset[type] = frozenset(
             t
             for v in data
@@ -87,7 +87,7 @@ def _has_empty_collection(*, data: Value) -> bool:
             _has_empty_collection(data=v)  # pyright: ignore[reportUnknownArgumentType]
             for v in data.values()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
         )
-    if isinstance(data, (set, frozenset)):
+    if isinstance(data, set):
         return len(data) == 0
     if isinstance(data, list):
         if not data:
@@ -307,14 +307,15 @@ def _has_heterogeneous(*, data: Value) -> bool:
     """Recursively check whether data contains any heterogeneous
     all-scalar collections.
     """
-    if isinstance(data, (ordereddict, dict)):
-        children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-    elif isinstance(data, list):
-        children = data
-    elif isinstance(data, (set, frozenset)):
-        return _all_scalars_heterogeneous(values=list(data))
-    else:
-        return False
+    match data:
+        case ordereddict() | dict():
+            children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case list():
+            children = data
+        case set():
+            return _all_scalars_heterogeneous(values=list(data))
+        case _:
+            return False
 
     return any(
         _has_heterogeneous(data=v) for v in children
@@ -432,17 +433,17 @@ def _coerce_heterogeneous_scalars(
     """Recursively coerce heterogeneous all-scalar collections to
     strings.
     """
-    if isinstance(data, ordereddict):
-        return _coerce_heterogeneous_ordereddict(data=data)
-    if isinstance(data, dict):
-        return _coerce_heterogeneous_dict(data=data)
-    if isinstance(data, set):
-        return _coerce_heterogeneous_set(data=data)
-    if isinstance(data, frozenset):
-        return data  # pragma: no cover
-    if isinstance(data, list):
-        return _coerce_heterogeneous_list(data=data)
-    return data
+    match data:
+        case ordereddict():
+            return _coerce_heterogeneous_ordereddict(data=data)
+        case dict():
+            return _coerce_heterogeneous_dict(data=data)
+        case set():
+            return _coerce_heterogeneous_set(data=data)
+        case list():
+            return _coerce_heterogeneous_list(data=data)
+        case _:
+            return data
 
 
 @beartype
@@ -597,22 +598,23 @@ def _has_mixed_list_values(*, data: Value) -> bool:
 @beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
-    if value is None:
-        result = spec.null_literal
-    elif isinstance(value, bool):
-        result = spec.true_literal if value else spec.false_literal
-    elif isinstance(value, int):
-        result = spec.format_integer(value)
-    elif isinstance(value, float):
-        result = repr(value)
-    elif isinstance(value, str):
-        result = spec.format_string(value)
-    elif isinstance(value, bytes):
-        result = spec.format_bytes(value)
-    elif isinstance(value, datetime.datetime):
-        result = spec.format_datetime(value)
-    else:
-        result = spec.format_date(value)
+    match value:
+        case None:
+            result = spec.null_literal
+        case bool():
+            result = spec.true_literal if value else spec.false_literal
+        case int():
+            result = spec.format_integer(value)
+        case float():
+            result = repr(value)
+        case str():
+            result = spec.format_string(value)
+        case bytes():
+            result = spec.format_bytes(value)
+        case datetime.datetime():
+            result = spec.format_datetime(value)
+        case _:
+            result = spec.format_date(value)
     return result
 
 
@@ -625,9 +627,7 @@ def _build_dict_entry(
 
 
 @beartype
-def _format_set_value(
-    *, value: set[Scalar] | frozenset[Scalar], spec: Language
-) -> str:
+def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     """Format a set value as a native language literal."""
     set_cfg = spec.set_format_config
 
@@ -732,19 +732,17 @@ def _format_value(
 
     Handles scalars, lists (recursively), dicts, and sets.
     """
-    if isinstance(value, ordereddict):
-        return _format_ordered_map_value(value=value, spec=spec)
-
-    if isinstance(value, dict):
-        return _format_dict_value(value=value, spec=spec)
-
-    if isinstance(value, (set, frozenset)):
-        return _format_set_value(value=value, spec=spec)
-
-    if isinstance(value, list):
-        return _format_list_value(value=value, spec=spec)
-
-    return _format_scalar(value=value, spec=spec)
+    match value:
+        case ordereddict():
+            return _format_ordered_map_value(value=value, spec=spec)
+        case dict():
+            return _format_dict_value(value=value, spec=spec)
+        case set():
+            return _format_set_value(value=value, spec=spec)
+        case list():
+            return _format_list_value(value=value, spec=spec)
+        case _:
+            return _format_scalar(value=value, spec=spec)
 
 
 @beartype
@@ -752,7 +750,7 @@ def _wrap_body(
     *,
     body: str,
     is_ordered_map: bool,
-    data: list[Value] | dict[str, Value] | set[Scalar] | frozenset[Scalar],
+    data: list[Value] | dict[str, Value] | set[Scalar],
     spec: Language,
     line_prefix: str,
 ) -> str:
@@ -769,7 +767,7 @@ def _wrap_body(
 
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
-    elif isinstance(data, (set, frozenset)):
+    elif isinstance(data, set):
         sorted_set: list[Value] = sorted(
             data,
             key=lambda v: (type(v).__name__, repr(v)),
@@ -950,7 +948,7 @@ def _literalize(
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
-    elif isinstance(data, (set, frozenset)):
+    elif isinstance(data, set):
         sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
@@ -1221,7 +1219,7 @@ def _resolve_yaml_comments(
     include_delimiters: bool,
 ) -> _ResolvedComments:
     """Parse YAML for comment metadata and resolve comments."""
-    if isinstance(data, (set, frozenset)):
+    if isinstance(data, set):
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),

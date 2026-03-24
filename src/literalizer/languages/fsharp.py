@@ -40,19 +40,23 @@ def _format_fsharp_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
     """
-    if isinstance(original, bool):
-        return formatted
-    if isinstance(original, int):
-        negative = formatted.startswith("-")
-        return f"FInt({formatted}L)" if negative else f"FInt {formatted}L"
-    if isinstance(original, float):
-        negative = formatted.startswith("-")
-        return f"FFloat({formatted})" if negative else f"FFloat {formatted}"
-    if isinstance(original, (str, bytes, datetime.date)):
-        if formatted.startswith("System."):
-            return f"FStr (string ({formatted}))"
-        return f"FStr {formatted}"
-    return formatted
+    match original:
+        case bool():
+            return formatted
+        case int():
+            negative = formatted.startswith("-")
+            return f"FInt({formatted}L)" if negative else f"FInt {formatted}L"
+        case float():
+            negative = formatted.startswith("-")
+            return (
+                f"FFloat({formatted})" if negative else f"FFloat {formatted}"
+            )
+        case str() | bytes() | datetime.date():
+            if formatted.startswith("System."):
+                return f"FStr (string ({formatted}))"
+            return f"FStr {formatted}"
+        case _:
+            return formatted
 
 
 @beartype

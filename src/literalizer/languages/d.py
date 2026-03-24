@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 @beartype
 def _format_d_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in ``JSONValue(...)``."""
-    if isinstance(original, (list, dict, set, frozenset)):
+    if isinstance(original, (list, dict, set)):
         return formatted
     return f"JSONValue({formatted})"
 

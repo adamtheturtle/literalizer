@@ -5,6 +5,4 @@ import datetime
 type Scalar = (
     str | int | float | bool | None | datetime.date | datetime.datetime | bytes
 )
-type Value = (
-    Scalar | list[Value] | dict[str, Value] | set[Scalar] | frozenset[Scalar]
-)
+type Value = Scalar | list[Value] | dict[str, Value] | set[Scalar]

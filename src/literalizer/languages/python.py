@@ -121,8 +121,9 @@ def _element_union(*, types: list[str]) -> str:
 @beartype
 def _collection_element_union(
     *,
-    elements: frozenset[Value] | list[Value],
+    elements: list[Value],
     recurse: Callable[..., str],
+    sort: bool = False,
 ) -> str:
     """Return the element union for a collection, or ``"Any"`` if
     empty.
@@ -130,7 +131,7 @@ def _collection_element_union(
     if not elements:
         return "Any"
     types = [recurse(data=e) for e in elements]
-    if isinstance(elements, frozenset):
+    if sort:
         types.sort()
     return _element_union(types=types)
 
@@ -187,10 +188,11 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 recurse=recurse,
             )
             return f"{outer}[str, {val_union}]"
-        case set() | frozenset():
+        case set():
             elem_union = _collection_element_union(
-                elements=frozenset(data),
+                elements=list(data),
                 recurse=recurse,
+                sort=True,
             )
             return f"{set_hint}[{elem_union}]"
         case list():

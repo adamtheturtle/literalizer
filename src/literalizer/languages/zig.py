@@ -58,18 +58,20 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
     tag.
     """
-    if isinstance(original, bool):
-        return formatted
-    if isinstance(original, int):
-        return f".{{ .int = {formatted} }}"
-    if isinstance(original, float):
-        return f".{{ .float = {formatted} }}"
-    if isinstance(original, (str, bytes)):
-        return f".{{ .str = {formatted} }}"
-    if isinstance(original, datetime.date):
-        tag = "str" if formatted.startswith('"') else "int"
-        return f".{{ .{tag} = {formatted} }}"
-    return formatted
+    match original:
+        case bool():
+            return formatted
+        case int():
+            return f".{{ .int = {formatted} }}"
+        case float():
+            return f".{{ .float = {formatted} }}"
+        case str() | bytes():
+            return f".{{ .str = {formatted} }}"
+        case datetime.date():
+            tag = "str" if formatted.startswith('"') else "int"
+            return f".{{ .{tag} = {formatted} }}"
+        case _:
+            return formatted
 
 
 @beartype
