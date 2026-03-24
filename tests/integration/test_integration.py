@@ -519,12 +519,6 @@ def _wrap_nim(content: str) -> str:
 
 
 @beartype
-def _wrap_nim_combined(declaration: str, assignment: str) -> str:
-    """Join Nim declaration and assignment with a newline."""
-    return f"{declaration}\n{assignment}"
-
-
-@beartype
 def _wrap_norg(content: str) -> str:
     """Wrap in a Norg ranged verbatim tag."""
     return f"@code json\n{content}\n@end"
@@ -911,12 +905,6 @@ def _wrap_crystal(content: str) -> str:
 
 
 @beartype
-def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
-    """Join Crystal declaration and assignment with a newline."""
-    return declaration + "\n" + assignment
-
-
-@beartype
 def _wrap_vb(content: str) -> str:
     """Wrap in a VB.NET Module with a Dim declaration.
 
@@ -1275,7 +1263,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Crystal,
         wrap=_wrap_crystal,
         varname_wrap=_wrap_identity,
-        combined_wrap=_wrap_crystal_combined,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Matlab.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Matlab,
@@ -1293,7 +1281,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Nim,
         wrap=_wrap_nim,
         varname_wrap=_wrap_identity,
-        combined_wrap=_wrap_nim_combined,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
