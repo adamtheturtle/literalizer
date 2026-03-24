@@ -68,15 +68,6 @@ _scala_opener_config = TypedOpenerConfig(
 )
 
 
-# The LIST format needs List[…] for nested type names, not Array[…].
-_scala_list_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_opener_config.element_to_type(
-        list_template="List[{inner}]",
-    ),
-    opener_template="List[{type_name}](",
-)
-
-
 @beartype
 def _list_sequence_open(
     *,
@@ -176,7 +167,12 @@ class Scala(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_list_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_scala_opener_config.element_to_type(
+                        list_template="List[{inner}]",
+                    ),
+                    opener_template="List[{type_name}](",
+                ),
                 fallback="List(",
             ),
             close=")",
