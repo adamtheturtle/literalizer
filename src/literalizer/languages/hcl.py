@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -32,9 +31,9 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from literalizer._types import Value
+    from collections.abc import Callable, Sequence
 
-_string_format: Callable[[str], str] = format_string_backslash
+    from literalizer._types import Value
 
 
 @beartype
@@ -218,7 +217,7 @@ class Hcl(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry

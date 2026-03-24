@@ -58,11 +58,6 @@ _csharp_opener_config = TypedOpenerConfig(
 )
 
 
-_format_csharp_dict_entry = dict_entry_with_template(
-    template="[{key}] = {value}",
-)
-
-
 @beartype
 class CSharp(metaclass=LanguageCls):
     """C# language specification.
@@ -286,6 +281,9 @@ class CSharp(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
+        csharp_dict_entry = dict_entry_with_template(
+            template="[{key}] = {value}",
+        )
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
@@ -315,7 +313,7 @@ class CSharp(metaclass=LanguageCls):
                 fallback="new Dictionary<string, object> {",
             ),
             close="}",
-            format_entry=_format_csharp_dict_entry,
+            format_entry=csharp_dict_entry,
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
         )
@@ -349,7 +347,7 @@ class CSharp(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_csharp_dict_entry
+            csharp_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

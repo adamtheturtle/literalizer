@@ -68,11 +68,6 @@ def _list_of_open(items: list[Any]) -> str:
     return "List.of("
 
 
-_format_java_dict_entry = dict_entry_with_template(
-    template="Map.entry({key}, {value})",
-)
-
-
 _java_opener_config = TypedOpenerConfig(
     str_type="String",
     bool_type="boolean",
@@ -323,6 +318,9 @@ class Java(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
+        java_dict_entry = dict_entry_with_template(
+            template="Map.entry({key}, {value})",
+        )
         self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
@@ -343,7 +341,7 @@ class Java(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",
-            format_entry=_format_java_dict_entry,
+            format_entry=java_dict_entry,
             empty_dict=None,
             preamble_lines=("import java.util.Map;",),
         )
@@ -376,7 +374,7 @@ class Java(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_java_dict_entry
+            java_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
