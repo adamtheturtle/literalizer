@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from types import MappingProxyType
 
 from beartype import beartype
 
@@ -17,6 +18,7 @@ from literalizer._formatters import (
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
+    format_integer_underscore,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -252,20 +254,46 @@ class Nim(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
-        OCTAL = enum.member(value=format_integer_octal)
-        BINARY = enum.member(value=format_integer_binary)
+        DECIMAL = MappingProxyType(
+            mapping={
+                "NONE": str,
+                "UNDERSCORE": format_integer_underscore,
+            }
+        )
+        HEX = MappingProxyType(
+            mapping={
+                "NONE": format_integer_hex,
+                "UNDERSCORE": format_integer_hex,
+            }
+        )
+        OCTAL = MappingProxyType(
+            mapping={
+                "NONE": format_integer_octal,
+                "UNDERSCORE": format_integer_octal,
+            }
+        )
+        BINARY = MappingProxyType(
+            mapping={
+                "NONE": format_integer_binary,
+                "UNDERSCORE": format_integer_binary,
+            }
+        )
 
-        def __call__(self, value: int, /) -> str:
-            """Format an integer."""
-            formatter: Callable[[int], str] = self.value
-            return formatter(value)
+        def get_formatter(
+            self,
+            numeric_separator: enum.Enum,
+        ) -> Callable[[int], str]:
+            """Return the integer formatter for the given separator."""
+            formatter: Callable[[int], str] = self.value[
+                numeric_separator.name
+            ]
+            return formatter
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -351,7 +379,11 @@ class Nim(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = integer_format
+        self.format_integer: Callable[[int], str] = (
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

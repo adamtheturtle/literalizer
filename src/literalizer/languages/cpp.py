@@ -2,6 +2,8 @@
 
 import datetime
 import enum
+from collections.abc import Callable
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -15,6 +17,7 @@ from literalizer._formatters import (
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
+    format_integer_tick,
     format_string_backslash,
     make_element_to_type,
     make_type_to_opener,
@@ -38,7 +41,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
 
 @beartype
@@ -242,20 +245,46 @@ class Cpp(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
-        OCTAL = enum.member(value=format_integer_octal_c_style)
-        BINARY = enum.member(value=format_integer_binary)
+        DECIMAL = MappingProxyType(
+            mapping={
+                "NONE": str,
+                "UNDERSCORE": format_integer_tick,
+            }
+        )
+        HEX = MappingProxyType(
+            mapping={
+                "NONE": format_integer_hex,
+                "UNDERSCORE": format_integer_hex,
+            }
+        )
+        OCTAL = MappingProxyType(
+            mapping={
+                "NONE": format_integer_octal_c_style,
+                "UNDERSCORE": format_integer_octal_c_style,
+            }
+        )
+        BINARY = MappingProxyType(
+            mapping={
+                "NONE": format_integer_binary,
+                "UNDERSCORE": format_integer_binary,
+            }
+        )
 
-        def __call__(self, value: int, /) -> str:
-            """Format an integer."""
-            formatter: Callable[[int], str] = self.value
-            return formatter(value)
+        def get_formatter(
+            self,
+            numeric_separator: enum.Enum,
+        ) -> Callable[[int], str]:
+            """Return the integer formatter for the given separator."""
+            formatter: Callable[[int], str] = self.value[
+                numeric_separator.name
+            ]
+            return formatter
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -347,7 +376,11 @@ class Cpp(metaclass=LanguageCls):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = integer_format
+        self.format_integer: Callable[[int], str] = (
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

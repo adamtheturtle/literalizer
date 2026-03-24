@@ -1033,10 +1033,11 @@ def format_integer_binary_erlang(value: int) -> str:
 
 
 @beartype
-def format_integer_underscore(value: int) -> str:
-    """Format an integer with underscore separators every 3 digits.
+def _format_integer_grouped(value: int, *, separator: str) -> str:
+    """Format an integer with digit-group separators every 3 digits.
 
-    Example: ``1000000`` → ``"1_000_000"``.
+    Example: ``_format_integer_grouped(1000000, separator="_")``
+    → ``"1_000_000"``.
     """
     s = str(object=abs(value))
     group_size = 3
@@ -1045,7 +1046,28 @@ def format_integer_underscore(value: int) -> str:
         groups.append(s[-group_size:])
         s = s[:-group_size]
     groups.append(s)
-    formatted = "_".join(reversed(groups))
+    formatted = separator.join(reversed(groups))
     if value < 0:
         return f"-{formatted}"
     return formatted
+
+
+format_integer_underscore: Callable[[int], str] = functools.partial(
+    _format_integer_grouped,
+    separator="_",
+)
+"""Format an integer with underscore separators every 3 digits.
+
+Example: ``1000000`` → ``"1_000_000"``.
+"""
+
+format_integer_tick: Callable[[int], str] = functools.partial(
+    _format_integer_grouped,
+    separator="'",
+)
+"""Format an integer with tick (apostrophe) separators every 3 digits.
+
+Used by C++ digit separators.
+
+Example: ``1000000`` → ``"1'000'000"``.
+"""
