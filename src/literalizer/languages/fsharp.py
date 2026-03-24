@@ -392,4 +392,8 @@ class FSharp(metaclass=LanguageCls):
             type,
             tuple[str, ...],
         ] = dict.fromkeys(_all_types, _type_val)
+        self.compute_body_preamble: (
+            Callable[[frozenset[type]], tuple[str, ...]] | None
+        ) = None
+
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

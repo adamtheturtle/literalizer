@@ -502,6 +502,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     instance definitions.
     """
 
+    compute_body_preamble: Callable[[frozenset[type]], tuple[str, ...]] | None
+    """Optional callable that dynamically computes body-preamble lines
+    based on which types are present in the data.  When not ``None``,
+    takes precedence over :attr:`scalar_body_preamble`.  Most languages
+    set this to ``None``; Haskell uses it to compose the ``data Val``
+    declaration and imports based on which types actually appear.
+    """
+
     type_hint_collection_preamble_lines: tuple[str, ...]
     """Preamble lines required when the language produces type-hinted
     variable declarations *and* the data contains collections.

@@ -377,4 +377,8 @@ class Swift(metaclass=LanguageCls):
             )
         )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        self.compute_body_preamble: (
+            Callable[[frozenset[type]], tuple[str, ...]] | None
+        ) = None
+
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
