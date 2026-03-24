@@ -595,7 +595,7 @@ def format_string_backslash_single_minimal(value: str) -> str:
     r"""Format a string with single quotes, escaping only ``\\`` and ``\'``.
 
     For languages like Ruby, Perl, and PHP where single-quoted strings
-    only recognise ``\\`` and ``\'`` as escape sequences.  Actual
+    only recognize ``\\`` and ``\'`` as escape sequences.  Actual
     newline, carriage-return, and tab characters are embedded literally.
 
     Example: ``hello 'world'`` → ``'hello \'world\''``.
