@@ -88,18 +88,20 @@ def _kotlin_type_to_opener(
     return _KOTLIN_SCALAR_OPENERS.get(element_type)
 
 
-_KOTLIN_SCALAR_TYPES: dict[type, str] = {
+_KOTLIN_TYPE_NAMES: dict[type, str] = {
     str: "String",
-    bool: "Boolean",
-    int: "Int",
-    float: "Double",
-    bytes: "String",
     datetime.date: "LocalDate",
     datetime.datetime: "LocalDateTime",
 }
 
 _kotlin_opener_config = TypedOpenerConfig(
-    scalar_types=_KOTLIN_SCALAR_TYPES,
+    str_type="String",
+    bool_type="Boolean",
+    int_type="Int",
+    float_type="Double",
+    bytes_type="String",
+    date_type="LocalDate",
+    datetime_type="LocalDateTime",
     list_template="Array<{inner}>",
     seq_opener_template="arrayOf(",
     dict_opener_template="mapOf<String, {type_name}>(",
@@ -227,10 +229,7 @@ class Kotlin(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).set,
+                type_to_opener=_kotlin_opener_config.build().set,
                 fallback="setOf<Any?>(",
             ),
             close=")",
@@ -241,7 +240,6 @@ class Kotlin(metaclass=LanguageCls):
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(
                 type_to_opener=_kotlin_opener_config.build(
-                    scalar_type_overrides={},
                     set_opener_template="sortedSetOf<{type_name}>(",
                 ).set,
                 fallback="sortedSetOf<Any?>(",
@@ -359,10 +357,8 @@ class Kotlin(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _kotlin_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _KOTLIN_SCALAR_TYPES[date_tp],
-                datetime.datetime: _KOTLIN_SCALAR_TYPES[dt_tp],
-            },
+            date_type=_KOTLIN_TYPE_NAMES[date_tp],
+            datetime_type=_KOTLIN_TYPE_NAMES[dt_tp],
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(

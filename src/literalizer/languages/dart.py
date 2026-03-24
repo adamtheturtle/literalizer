@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     TypedOpenerConfig,
     dict_entry_with_separator,
     fixed_sequence_open,
@@ -52,19 +51,21 @@ def _format_datetime_dart(value: datetime.datetime) -> str:
     return f'DateTime.parse("{value.isoformat()}")'
 
 
-_DART_SCALAR_TYPES: dict[type, str] = {
+_DART_TYPE_NAMES: dict[type, str] = {
     str: "String",
-    bool: "bool",
-    int: "int",
-    float: "double",
-    MixedNumeric: "double",
-    bytes: "String",
     datetime.date: "DateTime",
     datetime.datetime: "DateTime",
 }
 
 _dart_opener_config = TypedOpenerConfig(
-    scalar_types=_DART_SCALAR_TYPES,
+    str_type="String",
+    bool_type="bool",
+    int_type="int",
+    float_type="double",
+    mixed_numeric_type="double",
+    bytes_type="String",
+    date_type="DateTime",
+    datetime_type="DateTime",
     list_template="List<{inner}>",
     seq_opener_template="<{type_name}>[",
     dict_opener_template="<String, {type_name}>{{",
@@ -132,10 +133,7 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_dart_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).seq,
+                type_to_opener=_dart_opener_config.build().seq,
                 fallback="[",
             ),
             close="]",
@@ -285,11 +283,8 @@ class Dart(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _dart_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _DART_SCALAR_TYPES[date_tp],
-                datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
-            },
-            set_opener_template=None,
+            date_type=_DART_TYPE_NAMES[date_tp],
+            datetime_type=_DART_TYPE_NAMES[dt_tp],
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

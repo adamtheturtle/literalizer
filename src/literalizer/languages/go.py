@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     TypedOpenerConfig,
     braced_dict_entry,
     dict_entry_with_separator,
@@ -77,19 +76,21 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     )
 
 
-_GO_SCALAR_TYPES: dict[type, str] = {
+_GO_TYPE_NAMES: dict[type, str] = {
     str: "string",
-    bool: "bool",
-    int: "int",
-    float: "float64",
-    MixedNumeric: "float64",
-    bytes: "string",
     datetime.date: "time.Time",
     datetime.datetime: "time.Time",
 }
 
 _go_opener_config = TypedOpenerConfig(
-    scalar_types=_GO_SCALAR_TYPES,
+    str_type="string",
+    bool_type="bool",
+    int_type="int",
+    float_type="float64",
+    mixed_numeric_type="float64",
+    bytes_type="string",
+    date_type="time.Time",
+    datetime_type="time.Time",
     list_template="[]{inner}",
     seq_opener_template="[]{type_name}{{",
     dict_opener_template="map[string]{type_name}{{",
@@ -174,10 +175,7 @@ class Go(metaclass=LanguageCls):
 
         SLICE = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_go_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).seq,
+                type_to_opener=_go_opener_config.build().seq,
                 fallback="[]any{",
             ),
             close="}",
@@ -201,10 +199,7 @@ class Go(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_go_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).set,
+                type_to_opener=_go_opener_config.build().set,
                 fallback="map[any]struct{}{",
             ),
             close="}",
@@ -319,11 +314,8 @@ class Go(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _go_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _GO_SCALAR_TYPES[date_tp],
-                datetime.datetime: _GO_SCALAR_TYPES[dt_tp],
-            },
-            set_opener_template=None,
+            date_type=_GO_TYPE_NAMES[date_tp],
+            datetime_type=_GO_TYPE_NAMES[dt_tp],
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,

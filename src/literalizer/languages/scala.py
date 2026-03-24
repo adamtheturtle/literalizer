@@ -8,7 +8,6 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     TypedOpenerConfig,
     TypeOpeners,
     dict_entry_with_separator,
@@ -59,19 +58,25 @@ def _format_datetime_scala(value: datetime.datetime) -> str:
     )
 
 
-_SCALA_SCALAR_TYPES: dict[type, str] = {
+_SCALA_TYPE_NAMES: dict[type, str] = {
     str: "String",
-    bool: "Boolean",
-    int: "Int",
-    float: "Double",
-    MixedNumeric: "Double",
-    bytes: "String",
     datetime.date: "LocalDate",
     datetime.datetime: "ZonedDateTime",
 }
 
+_SCALA_ELEMENT_TO_TYPE_KWARGS = {
+    "str_type": "String",
+    "bool_type": "Boolean",
+    "int_type": "Int",
+    "float_type": "Double",
+    "mixed_numeric_type": "Double",
+    "bytes_type": "String",
+    "date_type": "LocalDate",
+    "datetime_type": "ZonedDateTime",
+}
+
 _scala_opener_config = TypedOpenerConfig(
-    scalar_types=_SCALA_SCALAR_TYPES,
+    **_SCALA_ELEMENT_TO_TYPE_KWARGS,
     list_template="Array[{inner}]",
     seq_opener_template="Array[{type_name}](",
     dict_opener_template="Map[String, {type_name}](",
@@ -82,7 +87,7 @@ _scala_opener_config = TypedOpenerConfig(
 # The LIST format needs List[…] for nested type names, not Array[…].
 _scala_list_type_to_opener = make_type_to_opener(
     element_to_type=make_element_to_type(
-        scalar_types=_SCALA_SCALAR_TYPES,
+        **_SCALA_ELEMENT_TO_TYPE_KWARGS,
         list_template="List[{inner}]",
     ),
     opener_template="List[{type_name}](",
@@ -96,11 +101,13 @@ def _list_sequence_open(
     datetime_type: str,
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the List format."""
-    scalar_types = dict(_SCALA_SCALAR_TYPES)
-    scalar_types[datetime.date] = date_type
-    scalar_types[datetime.datetime] = datetime_type
+    kwargs = {
+        **_SCALA_ELEMENT_TO_TYPE_KWARGS,
+        "date_type": date_type,
+        "datetime_type": datetime_type,
+    }
     list_eto = make_element_to_type(
-        scalar_types=scalar_types,
+        **kwargs,
         list_template="List[{inner}]",
     )
     return typed_sequence_open(
@@ -215,10 +222,7 @@ class Scala(metaclass=LanguageCls):
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_scala_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).seq,
+                type_to_opener=_scala_opener_config.build().seq,
                 fallback="Array(",
             ),
             close=")",
@@ -242,10 +246,7 @@ class Scala(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_scala_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).set,
+                type_to_opener=_scala_opener_config.build().set,
                 fallback="Set(",
             ),
             close=")",
@@ -256,7 +257,6 @@ class Scala(metaclass=LanguageCls):
         TREE_SET = SetFormatConfig(
             set_open=typed_set_open(
                 type_to_opener=_scala_opener_config.build(
-                    scalar_type_overrides={},
                     set_opener_template="TreeSet[{type_name}](",
                 ).set,
                 fallback="TreeSet(",
@@ -371,11 +371,11 @@ class Scala(metaclass=LanguageCls):
         self.set_format = set_format
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
+        date_type_name = _SCALA_TYPE_NAMES[date_tp]
+        datetime_type_name = _SCALA_TYPE_NAMES[dt_tp]
         openers = _scala_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _SCALA_SCALAR_TYPES[date_tp],
-                datetime.datetime: _SCALA_SCALAR_TYPES[dt_tp],
-            },
+            date_type=date_type_name,
+            datetime_type=datetime_type_name,
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
@@ -391,8 +391,8 @@ class Scala(metaclass=LanguageCls):
                 list_member=self.sequence_formats.LIST,
                 fmt=fmt,
                 openers=openers,
-                date_type=_SCALA_SCALAR_TYPES[date_tp],
-                datetime_type=_SCALA_SCALAR_TYPES[dt_tp],
+                date_type=date_type_name,
+                datetime_type=datetime_type_name,
             )
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
