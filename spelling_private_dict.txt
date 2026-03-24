@@ -37,6 +37,7 @@ HStr
 HashiCorp
 Hcl
 JSONDecodeError
+LocalDate
 Lua
 Mojo
 NEL
@@ -91,6 +92,7 @@ init
 initialisation
 initializer
 initializers
+iso
 iterable
 javac
 json
