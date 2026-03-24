@@ -1474,6 +1474,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_declaration_style_variants(), "simple_dict", ""),
         (_build_declaration_style_variants(), "empty_list", ""),
         (_build_dict_format_variants(), "simple_dict", ""),
+        (_build_dict_format_variants(), "dict_with_list_value", "_list_val"),
         (_build_integer_format_variants(), "int_list", ""),
         (_build_integer_format_variants(), "int_list_large", "_large"),
         (_build_numeric_separator_variants(), "int_list", ""),
