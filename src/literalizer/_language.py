@@ -6,6 +6,8 @@ import enum
 from collections.abc import Callable, Sequence
 from typing import Protocol, runtime_checkable
 
+from beartype import beartype
+
 from literalizer._types import Value
 
 
@@ -41,6 +43,7 @@ class DatetimeFormatConfig:
     type_produced: type = datetime.datetime
 
 
+@beartype
 def date_scalar_preamble(
     *,
     date_format: enum.Enum,
