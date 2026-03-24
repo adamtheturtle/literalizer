@@ -2,19 +2,20 @@
 
 import datetime
 import enum
+import functools
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 from literalizer._formatters import (
-    escape_control_chars,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash_control,
     passthrough_sequence_entry,
     passthrough_set_entry,
     tuple_dict_entry,
@@ -64,18 +65,10 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
     )
 
 
-@beartype
-def _format_string_haskell(value: str) -> str:
-    r"""Format a string with backslash escaping and ``\xNN`` control chars."""
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
-    escaped = escape_control_chars(value=escaped, fmt="\\x{:02x}")
-    return f'"{escaped}"'
+_format_string_haskell = functools.partial(
+    format_string_backslash_control,
+    control_char_fmt="\\x{:02x}",
+)
 
 
 _string_format: Callable[[str], str] = _format_string_haskell
