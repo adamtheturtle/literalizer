@@ -226,7 +226,7 @@ class TypeScript(metaclass=LanguageCls):
             preamble_lines=(),
         )
         MAP = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="new Map(["),
+            open_fn=fixed_dict_open(open_str="new Map<string, unknown>(["),
             close="])",
             format_entry=dict_entry_with_template(
                 template="[{key}, {value}]",
