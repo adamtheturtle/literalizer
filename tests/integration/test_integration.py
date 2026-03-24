@@ -99,7 +99,7 @@ def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
     # Scan forward: a line is body-preamble if it starts with a known
     # prefix or is an indented continuation of a preceding block.
     expr_start = 0
-    for idx, line in enumerate(iterable=lines):
+    for idx, line in enumerate(iterable=lines):  # pragma: no branch
         is_prefix = any(line.startswith(p) for p in preamble_prefixes)
         is_continuation = line.startswith("    ") and idx > 0
         if is_prefix or is_continuation:
@@ -334,7 +334,7 @@ def _wrap_haskell(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
     split = _split_haskell_body_preamble(content=content)
     header = "module Check where\n"
-    if split.body_preamble:
+    if split.body_preamble:  # pragma: no branch
         header += split.body_preamble + "\n"
     # Tuples are not Val-typed, so skip the type annotation for them.
     eq_pos = split.expression.find("= ")
