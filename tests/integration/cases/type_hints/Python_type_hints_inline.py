@@ -1,5 +1,4 @@
 import datetime
-from typing import Any
 my_data: dict[str, str | int | bool | None | datetime.date | datetime.datetime] = {
     "name": "Alice",
     "age": 30,
