@@ -382,7 +382,7 @@ class Cobol(metaclass=LanguageCls):
             empty_dict="05 FILLER PIC X(1) VALUE SPACES.",
             preamble_lines=(),
         )
-        self.trailing_comma_config = TrailingCommaConfig(
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
         )
         self.format_bytes: Callable[[bytes], str] = bytes_format

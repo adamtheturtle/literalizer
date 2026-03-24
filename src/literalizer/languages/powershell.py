@@ -240,7 +240,7 @@ class PowerShell(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
         )
-        self.trailing_comma_config = TrailingCommaConfig(
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
         )
         self.format_bytes: Callable[[bytes], str] = bytes_format
