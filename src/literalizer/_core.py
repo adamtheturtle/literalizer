@@ -920,7 +920,8 @@ def _literalize(
     lines: list[str] = []
 
     is_ordered_map = isinstance(data, ordereddict)
-    trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
+    trailing_cfg = spec.trailing_comma_config
+    multiline_trailing_comma = trailing_cfg.multiline_trailing_comma
     if isinstance(data, dict):
         dict_data = data
         entries = [
@@ -947,7 +948,7 @@ def _literalize(
                     spec=spec,
                 )
             )
-            add_sep = i < last_idx or trailing_comma
+            add_sep = i < last_idx or multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
     elif isinstance(data, set):
@@ -956,18 +957,22 @@ def _literalize(
         for i, item in enumerate(iterable=sorted_items):
             formatted = _format_value(value=item, spec=spec)
             entry = spec.format_set_entry(item, formatted)
-            add_sep = i < last_idx or trailing_comma
+            add_sep = i < last_idx or multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
     else:
         # data must be a list (other types handled above)
+        seq_trailing = (
+            multiline_trailing_comma
+            and spec.sequence_format_config.supports_trailing_comma
+        )
         items: list[Value] = list(data)
         last_idx = len(items) - 1
         for i, element in enumerate(iterable=items):
             formatted = spec.format_sequence_entry(
                 element, _format_value(value=element, spec=spec)
             )
-            add_sep = i < last_idx or trailing_comma
+            add_sep = i < last_idx or seq_trailing
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{formatted}{sep}")
 

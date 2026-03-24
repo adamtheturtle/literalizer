@@ -1,7 +1,7 @@
-using System.Collections.Generic;
-var my_data = new object[] {
+using System;
+var my_data = (
     1,
     "hello",
     true,
-    (object?)null,
-};
+    (object?)null
+);

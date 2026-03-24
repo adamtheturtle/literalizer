@@ -23,6 +23,7 @@ class SequenceFormatConfig:
     preamble_lines: tuple[str, ...]
     format_entry: Callable[[Value, str], str]
     typed_opener_fallback: str | None
+    supports_trailing_comma: bool = True
 
 
 @dataclasses.dataclass(frozen=True)

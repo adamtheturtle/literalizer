@@ -151,6 +151,7 @@ class CSharp(metaclass=LanguageCls):
             preamble_lines=("using System;",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            supports_trailing_comma=False,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(

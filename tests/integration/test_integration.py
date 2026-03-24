@@ -1201,15 +1201,6 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
     return variants
 
 
-_TRAILING_COMMA_EXTRA_KWARGS: dict[str, dict[str, enum.Enum]] = {
-    literalizer.languages.CSharp.__name__: {
-        "sequence_format": (
-            literalizer.languages.CSharp.sequence_formats.ARRAY
-        ),
-    },
-}
-
-
 @beartype
 def _build_trailing_comma_variants() -> Iterable[_Variant]:
     """Build trailing-comma variants for all languages with multiple
@@ -1222,16 +1213,11 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
         non_defaults = [
             fmt for fmt in spec.trailing_commas if fmt is not default_format
         ]
-        extra_kwargs = _TRAILING_COMMA_EXTRA_KWARGS.get(
-            lang_name,
-            {},
-        )
         variants.extend(
             _Variant(
                 name=f"{lang_name}_trailing_comma_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     trailing_comma=fmt,
-                    **extra_kwargs,
                 ),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
