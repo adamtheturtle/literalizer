@@ -16,6 +16,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_hex,
     format_string_backslash_dollar,
     make_element_to_type,
     make_type_to_opener,
@@ -197,7 +198,13 @@ class Dart(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.member(value=str)
+        HEX = enum.member(value=format_integer_hex)
+
+        def __call__(self, value: int, /) -> str:
+            """Format an integer."""
+            formatter: Callable[[int], str] = self.value
+            return formatter(value)
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -321,7 +328,7 @@ class Dart(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = (
             format_string_backslash_dollar
         )
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
