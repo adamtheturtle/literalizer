@@ -1,3 +1,4 @@
+using System;
 var x = (
     // first
     "a",

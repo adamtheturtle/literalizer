@@ -53,7 +53,7 @@ def main() -> None:
             "    <OutputType>Exe</OutputType>\n"
             f"    <TargetFramework>{target_framework}</TargetFramework>\n"
             "    <Nullable>disable</Nullable>\n"
-            "    <ImplicitUsings>enable</ImplicitUsings>\n"
+            "    <ImplicitUsings>disable</ImplicitUsings>\n"
             "    <EnableDefaultCompileItems>false"
             "</EnableDefaultCompileItems>\n"
             "    <EnableDefaultEmbeddedResourceItems>false"

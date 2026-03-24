@@ -20,6 +20,7 @@ class SequenceFormatConfig:
     empty_sequence: str | None
     preamble_lines: tuple[str, ...]
     format_entry: Callable[[str], str]
+    typed_opener_fallback: str | None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -150,6 +151,7 @@ class LanguageCls(type):
     NumericSeparators: type[enum.Enum]
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
+    LineEndings: type[enum.Enum]
     extension: str
     pygments_name: str
 
@@ -264,6 +266,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def trailing_commas(self) -> type[enum.Enum]:
         """Enum class whose members list the trailing comma options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def line_endings(self) -> type[enum.Enum]:
+        """Enum class whose members list the line ending options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -450,6 +459,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """The trailing comma option chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def line_ending(self) -> enum.Enum:
+        """The line ending option chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
     static_preamble: Sequence[str]
     """Lines (imports, package declarations, etc.) that are always
     emitted before the generated code, regardless of what types appear
@@ -461,6 +475,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     that type appears in the data.  For example, a language that needs
     ``import datetime`` when dates are present would include
     ``{datetime.date: ("import datetime",)}``.
+    """
+
+    static_body_preamble: Sequence[str]
+    """Lines that are always prepended to the generated code,
+    regardless of what types appear in the data.  Appears after the
+    header preamble but before the code body.  Use an empty sequence
+    when none are needed.
     """
 
     scalar_body_preamble: dict[type, tuple[str, ...]]

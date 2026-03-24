@@ -1,3 +1,4 @@
+using System;
 var x = (
     "C:\\path\\to\\file",
     "back\\\\slash",

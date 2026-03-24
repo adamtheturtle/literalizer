@@ -124,6 +124,7 @@ class Mojo(metaclass=LanguageCls):
             empty_sequence="List[String]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property
@@ -205,6 +206,13 @@ class Mojo(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+
+    line_endings = LineEndings
+
     def __init__(
         self,
         *,
@@ -222,6 +230,7 @@ class Mojo(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize Mojo language specification."""
         self.variable_type_hints = variable_type_hints
@@ -260,6 +269,7 @@ class Mojo(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -282,6 +292,7 @@ class Mojo(metaclass=LanguageCls):
             variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

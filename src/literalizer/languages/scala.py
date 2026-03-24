@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
+    TypeOpeners,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
@@ -117,6 +118,30 @@ _string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
+def _resolve_sequence_open(
+    *,
+    sequence_format: enum.Enum,
+    list_member: enum.Enum,
+    fmt: SequenceFormatConfig,
+    openers: TypeOpeners,
+    date_type: str,
+    datetime_type: str,
+) -> Callable[[list[Value]], str]:
+    """Resolve the sequence opener for a Scala sequence format."""
+    if sequence_format is list_member:
+        return _list_sequence_open(
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+    if fmt.typed_opener_fallback is not None:
+        return typed_sequence_open(
+            type_to_opener=openers.seq,
+            fallback=fmt.typed_opener_fallback,
+        )
+    return fmt.sequence_open
+
+
+@beartype
 class Scala(metaclass=LanguageCls):
     """Scala language specification."""
 
@@ -178,6 +203,7 @@ class Scala(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         SEQ = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="Seq("),
@@ -187,6 +213,7 @@ class Scala(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -202,6 +229,7 @@ class Scala(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="Array(",
         )
 
         @property
@@ -308,6 +336,13 @@ class Scala(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+
+    line_endings = LineEndings
+
     def __init__(
         self,
         *,
@@ -325,6 +360,7 @@ class Scala(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize Scala language specification."""
         self.variable_type_hints = variable_type_hints
@@ -352,17 +388,14 @@ class Scala(metaclass=LanguageCls):
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
-            _list_sequence_open(
+            _resolve_sequence_open(
+                sequence_format=sequence_format,
+                list_member=self.sequence_formats.LIST,
+                fmt=fmt,
+                openers=openers,
                 date_type=_SCALA_SCALAR_TYPES[date_tp],
                 datetime_type=_SCALA_SCALAR_TYPES[dt_tp],
             )
-            if sequence_format is self.sequence_formats.LIST
-            else typed_sequence_open(
-                type_to_opener=openers.seq,
-                fallback="Array(",
-            )
-            if sequence_format is self.sequence_formats.ARRAY
-            else fmt.sequence_open
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
@@ -393,6 +426,7 @@ class Scala(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -415,6 +449,7 @@ class Scala(metaclass=LanguageCls):
             variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

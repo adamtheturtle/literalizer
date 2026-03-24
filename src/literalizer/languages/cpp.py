@@ -102,6 +102,26 @@ def _cpp_array_open(items: list[Value]) -> str:
     return f"std::array<{type_name}, {len(items)}>{{"
 
 
+_ANY_INCLUDE: tuple[str, ...] = ("#include <initializer_list>",)
+
+_ANY_STRUCT: tuple[str, ...] = (
+    "struct _Any {",
+    "    template<class T> _Any(T&&) noexcept {}",
+    "    _Any(std::initializer_list<_Any>) noexcept {}",
+    "};",
+)
+
+
+@beartype
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+) -> str:
+    """Format a C++ variable declaration."""
+    return f"_Any {name} = {value};"
+
+
 @beartype
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
@@ -185,6 +205,7 @@ class Cpp(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=("#include <vector>",),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=_cpp_array_open,
@@ -194,6 +215,7 @@ class Cpp(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=("#include <array>",),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property
@@ -276,6 +298,13 @@ class Cpp(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+
+    line_endings = LineEndings
+
     def __init__(
         self,
         *,
@@ -293,6 +322,7 @@ class Cpp(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize Cpp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -335,6 +365,7 @@ class Cpp(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -350,13 +381,14 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        self.static_preamble: Sequence[str] = _ANY_INCLUDE
+        self.static_body_preamble: Sequence[str] = _ANY_STRUCT
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_formatter(template="auto {name} = {value};")
+            _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
         )
-        self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

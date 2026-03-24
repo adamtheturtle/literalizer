@@ -201,10 +201,12 @@ class Java(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="new Object[]{",
         )
         LIST = SequenceFormatConfig(
             sequence_open=_list_of_open,
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -302,6 +304,13 @@ class Java(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+
+    line_endings = LineEndings
+
     def __init__(
         self,
         *,
@@ -319,6 +328,7 @@ class Java(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize Java language specification."""
         self.variable_type_hints = variable_type_hints
@@ -344,13 +354,14 @@ class Java(metaclass=LanguageCls):
             scalar_type_overrides=scalar_type_overrides,
             set_opener_template=None,
         )
-        seq_open: Callable[[list[Value]], str] = fmt.sequence_open
-        if sequence_format.name == "ARRAY":
-            seq_open = typed_sequence_open(
+        self.sequence_open: Callable[[list[Value]], str] = (
+            typed_sequence_open(
                 type_to_opener=openers.seq,
-                fallback="new Object[]{",
+                fallback=fmt.typed_opener_fallback,
             )
-        self.sequence_open: Callable[[list[Value]], str] = seq_open
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",
@@ -377,6 +388,7 @@ class Java(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -399,6 +411,7 @@ class Java(metaclass=LanguageCls):
             variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

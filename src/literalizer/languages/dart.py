@@ -144,6 +144,7 @@ class Dart(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="[",
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="("),
@@ -153,6 +154,7 @@ class Dart(metaclass=LanguageCls):
             empty_sequence="()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property
@@ -243,6 +245,13 @@ class Dart(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+
+    line_endings = LineEndings
+
     def __init__(
         self,
         *,
@@ -260,6 +269,7 @@ class Dart(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize Dart language specification."""
         self.variable_type_hints = variable_type_hints
@@ -281,15 +291,14 @@ class Dart(metaclass=LanguageCls):
             },
             set_opener_template=None,
         )
-        if sequence_format is self.sequence_formats.LIST:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    type_to_opener=openers.seq,
-                    fallback="[",
-                )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback=fmt.typed_opener_fallback,
             )
-        else:
-            self.sequence_open = fmt.sequence_open
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
@@ -321,6 +330,7 @@ class Dart(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -343,6 +353,7 @@ class Dart(metaclass=LanguageCls):
             variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

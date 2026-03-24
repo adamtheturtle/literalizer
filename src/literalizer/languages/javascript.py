@@ -33,11 +33,10 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from literalizer._types import Value
 
 
 @beartype
@@ -155,6 +154,7 @@ class JavaScript(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
 
         @property
@@ -186,6 +186,26 @@ class JavaScript(metaclass=LanguageCls):
             prefix="/*",
             suffix=" */",
         )
+
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+        NONE = "none"
+
+        def wrap_formatter(
+            self,
+            formatter: Callable[[str, str, Value], str],
+        ) -> Callable[[str, str, Value], str]:
+            """Wrap a formatter to match this line ending style."""
+            if self.value != "none":
+                return formatter
+
+            def without_semicolon(name: str, value: str, data: Value) -> str:
+                """Format without a trailing semicolon."""
+                return formatter(name, value, data).removesuffix(";")
+
+            return without_semicolon
 
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
@@ -282,6 +302,7 @@ class JavaScript(metaclass=LanguageCls):
     integer_formats = IntegerFormats
     string_formats = StringFormats
     trailing_commas = TrailingCommas
+    line_endings = LineEndings
 
     def __init__(
         self,
@@ -300,6 +321,7 @@ class JavaScript(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize JavaScript language specification."""
         self.variable_type_hints = variable_type_hints
@@ -337,6 +359,7 @@ class JavaScript(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
@@ -352,13 +375,19 @@ class JavaScript(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+        _base_decl: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            line_ending.wrap_formatter(formatter=_base_decl)
+        )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
+            line_ending.wrap_formatter(
+                formatter=variable_formatter(template="{name} = {value};"),
+            )
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

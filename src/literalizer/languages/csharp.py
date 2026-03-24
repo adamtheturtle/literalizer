@@ -151,8 +151,9 @@ class CSharp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="ValueTuple.Create()",
-            preamble_lines=(),
+            preamble_lines=("using System;",),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -168,6 +169,7 @@ class CSharp(metaclass=LanguageCls):
             empty_sequence="Array.Empty<object>()",
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
+            typed_opener_fallback="new object[] {",
         )
 
         @property
@@ -190,7 +192,7 @@ class CSharp(metaclass=LanguageCls):
             ),
             close="}",
             empty_set="new HashSet<object>()",
-            preamble_lines=(),
+            preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
@@ -203,7 +205,7 @@ class CSharp(metaclass=LanguageCls):
             ),
             close="}",
             empty_set="new SortedSet<object>()",
-            preamble_lines=(),
+            preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="new SortedSet<{type_name}> {{",
         )
 
@@ -269,6 +271,13 @@ class CSharp(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
+    class LineEndings(enum.Enum):
+        """Line ending options."""
+
+        SEMICOLON = "semicolon"
+
+    line_endings = LineEndings
+
     def __init__(
         self,
         *,
@@ -286,6 +295,7 @@ class CSharp(metaclass=LanguageCls):
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
+        line_ending: LineEndings = LineEndings.SEMICOLON,
     ) -> None:
         """Initialize CSharp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -314,15 +324,14 @@ class CSharp(metaclass=LanguageCls):
                 fallback=set_format.value.set_open([]),
             ),
         )
-        if sequence_format is self.sequence_formats.ARRAY:
-            self.sequence_open: Callable[[list[Value]], str] = (
-                typed_sequence_open(
-                    type_to_opener=openers.seq,
-                    fallback="new object[] {",
-                )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            typed_sequence_open(
+                type_to_opener=openers.seq,
+                fallback=fmt.typed_opener_fallback,
             )
-        else:
-            self.sequence_open = fmt.sequence_open
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
@@ -353,12 +362,13 @@ class CSharp(metaclass=LanguageCls):
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
+        self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str="new Dictionary<string, object> {",
                 close="}",
-                preamble_lines=(),
+                preamble_lines=("using System.Collections.Generic;",),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
@@ -375,6 +385,7 @@ class CSharp(metaclass=LanguageCls):
             variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
