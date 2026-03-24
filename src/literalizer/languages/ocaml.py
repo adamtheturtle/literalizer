@@ -61,6 +61,8 @@ def _to_val(value: str) -> str:
     )
     if any(value.startswith(p) for p in _val_prefixes):
         return value
+    if value.lstrip().startswith("[|"):
+        return value
     if value.startswith('"') and value.endswith('"'):
         return f"OStr {value}"
     negative = value.startswith("-")
@@ -110,13 +112,15 @@ def _format_ocaml_sequence_entry(item: str) -> str:
 @beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format an OCaml variable declaration."""
-    return f"let {name} : val_t = {_to_val(value=value)}"
+    val_type = "val_t array" if value.lstrip().startswith("[|") else "val_t"
+    return f"let {name} : {val_type} = {_to_val(value=value)}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an OCaml variable assignment."""
-    return _format_variable_declaration(name=name, value=value, _data=_data)
+    val_type = "val_t array" if value.lstrip().startswith("[|") else "val_t"
+    return f"let {name} : {val_type} = {_to_val(value=value)}"
 
 
 _string_format: Callable[[str], str] = format_string_backslash

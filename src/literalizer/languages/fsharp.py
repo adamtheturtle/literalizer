@@ -47,6 +47,8 @@ def _to_val(value: str) -> str:
     )
     if any(value.startswith(p) for p in _val_prefixes):
         return value
+    if value.lstrip().startswith("[|"):
+        return value
     if value.startswith("System."):
         return f"FStr (string ({value}))"
     if value.startswith('"') and value.endswith('"'):
@@ -96,7 +98,8 @@ def _format_variable_declaration_let(
     name: str, value: str, _data: Value
 ) -> str:
     """Format an F# ``let`` variable declaration."""
-    return f"let {name}: Val = {_to_val(value=value)}"
+    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
+    return f"let {name}: {val_type} = {_to_val(value=value)}"
 
 
 @beartype
@@ -104,13 +107,15 @@ def _format_variable_declaration_let_mutable(
     name: str, value: str, _data: Value
 ) -> str:
     """Format an F# ``let mutable`` variable declaration."""
-    return f"let mutable {name}: Val = {_to_val(value=value)}"
+    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
+    return f"let mutable {name}: {val_type} = {_to_val(value=value)}"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an F# variable assignment."""
-    return f"let {name}: Val = {_to_val(value=value)}"
+    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
+    return f"let {name}: {val_type} = {_to_val(value=value)}"
 
 
 _string_format: Callable[[str], str] = format_string_backslash
