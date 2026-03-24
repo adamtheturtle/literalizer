@@ -15,8 +15,9 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 import itertools
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 import pytest
@@ -614,8 +615,8 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
     wrap_variable_name: str | None = None
-    declaration_style_wraps: dict[str, Callable[[str], str]] = (
-        dataclasses.field(default_factory=dict)
+    declaration_style_wraps: Mapping[str, Callable[[str], str]] = (
+        MappingProxyType({})
     )
 
 
