@@ -303,6 +303,7 @@ class Nim(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
+        YES = "yes"
         NO = "no"
 
     date_formats = DateFormats
@@ -372,7 +373,7 @@ class Nim(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("import json",),
         )
-        self.multiline_trailing_comma = False
+        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

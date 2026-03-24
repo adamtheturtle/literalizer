@@ -199,6 +199,7 @@ class D(metaclass=LanguageCls):
         """Trailing comma options."""
 
         YES = "yes"
+        NO = "no"
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -267,7 +268,7 @@ class D(metaclass=LanguageCls):
             empty_dict='parseJSON("{}")',
             preamble_lines=(),
         )
-        self.multiline_trailing_comma = True
+        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
