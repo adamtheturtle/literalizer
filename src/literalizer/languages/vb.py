@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    braced_dict_entry,
     fixed_dict_open,
     format_bytes_hex,
     format_date_iso,
@@ -18,6 +19,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_sequence_open,
     typed_set_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -28,6 +30,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
 )
 from literalizer._types import Value
 
@@ -130,12 +133,6 @@ _vb_type_to_opener = make_type_to_opener(
 
 
 @beartype
-def _format_vb_dict_entry(key: str, value: str) -> str:
-    """Format a VB.NET dictionary initializer entry."""
-    return f"{{{key}, {value}}}"
-
-
-@beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     """Format a VB.NET variable declaration.
 
@@ -152,12 +149,6 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     if comment_lines:
         return "\n".join([*comment_lines, dim_line])
     return dim_line
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a VB.NET variable assignment."""
-    return f"{name} = {value}"
 
 
 @beartype
@@ -205,7 +196,7 @@ class VisualBasic(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Visual Basic."""
 
         ARRAY = SequenceFormatConfig(
@@ -220,13 +211,6 @@ class VisualBasic(metaclass=LanguageCls):
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Visual Basic."""
@@ -334,7 +318,7 @@ class VisualBasic(metaclass=LanguageCls):
                 open_str="New Dictionary(Of String, Object) From {",
             ),
             close="}",
-            format_entry=_format_vb_dict_entry,
+            format_entry=braced_dict_entry,
             empty_dict=None,
             preamble_lines=("Imports System.Collections.Generic",),
         )
@@ -366,7 +350,7 @@ class VisualBasic(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_vb_dict_entry
+            braced_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -376,7 +360,7 @@ class VisualBasic(metaclass=LanguageCls):
             _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -16,6 +17,8 @@ from literalizer._formatters import (
     format_datetime_iso,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    tuple_dict_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -26,9 +29,12 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
-from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -57,30 +63,6 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
         f"(fromGregorian {value.year} {value.month} {value.day}) "
         f"({time_part}))"
     )
-
-
-@beartype
-def _format_haskell_dict_entry(key: str, value: str) -> str:
-    """Format a Haskell dict entry as a tuple pair."""
-    return f"({key}, {value})"
-
-
-@beartype
-def _format_haskell_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Haskell ordered-map entry as a tuple pair."""
-    return f"({key}, {value})"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Haskell variable declaration."""
-    return f"{name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Haskell variable assignment."""
-    return f"{name} = {value}"
 
 
 @beartype
@@ -223,7 +205,7 @@ class Haskell(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Haskell."""
 
         LIST = SequenceFormatConfig(
@@ -244,13 +226,6 @@ class Haskell(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Haskell."""
@@ -357,7 +332,7 @@ class Haskell(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="HMap ["),
             close="]",
-            format_entry=_format_haskell_dict_entry,
+            format_entry=tuple_dict_entry,
             empty_dict=None,
             preamble_lines=(),
         )
@@ -389,17 +364,17 @@ class Haskell(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_haskell_ordered_map_entry
+            tuple_dict_entry
         )
         self.multiline_close_indent = "    "
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="{name} = {value}")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)

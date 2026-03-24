@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -11,6 +12,7 @@ from literalizer._formatters import (
     fixed_sequence_open,
     fixed_set_open,
     passthrough_sequence_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -21,8 +23,11 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
 )
-from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 _OBJC_PREFIXES = (
     "@",
@@ -123,25 +128,6 @@ def _format_objc_datetime_iso(value: datetime.datetime) -> str:
     return f'@"{value.isoformat()}"'
 
 
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format an Objective-C ``id`` variable declaration.
-
-    Example: ``"x"`` and ``@[@YES, @NO]`` →
-    ``"id x = @[@YES, @NO];"``.
-    """
-    return f"id {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format an Objective-C variable assignment.
-
-    Example: ``"x"`` and ``@[@YES, @NO]`` → ``"x = @[@YES, @NO];"``
-    """
-    return f"{name} = {value};"
-
-
 _string_format: Callable[[str], str] = _format_objc_string
 
 
@@ -187,7 +173,7 @@ class ObjectiveC(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Objective-C."""
 
         ARRAY = SequenceFormatConfig(
@@ -199,13 +185,6 @@ class ObjectiveC(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Objective-C."""
@@ -349,10 +328,10 @@ class ObjectiveC(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="id {name} = {value};")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = (
             "#import <Foundation/Foundation.h>",

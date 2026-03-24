@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    braced_dict_entry,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
@@ -19,6 +20,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -29,6 +31,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
 from literalizer._types import Value
@@ -101,24 +104,6 @@ def _cpp_array_open(items: list[Value]) -> str:
 
 
 @beartype
-def _format_cpp_dict_entry(key: str, value: str) -> str:
-    """Format a C++ dict entry as a brace-enclosed pair."""
-    return f"{{{key}, {value}}}"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a C++ variable declaration."""
-    return f"auto {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a C++ variable assignment."""
-    return f"{name} = {value};"
-
-
-@beartype
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
 
@@ -187,7 +172,7 @@ class Cpp(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for C++."""
 
         INITIALIZER_LIST = SequenceFormatConfig(
@@ -211,13 +196,6 @@ class Cpp(metaclass=LanguageCls):
             preamble_lines=("#include <array>",),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C++."""
@@ -327,7 +305,7 @@ class Cpp(metaclass=LanguageCls):
                 fallback="{",
             ),
             close="}",
-            format_entry=_format_cpp_dict_entry,
+            format_entry=braced_dict_entry,
             empty_dict=None,
             preamble_lines=("#include <map>",),
         )
@@ -360,17 +338,17 @@ class Cpp(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_cpp_dict_entry
+            braced_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="auto {name} = {value};")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (

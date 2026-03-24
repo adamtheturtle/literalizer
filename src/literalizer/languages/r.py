@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -16,6 +17,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -26,12 +28,14 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
 )
-from literalizer._types import Value
 from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -70,24 +74,6 @@ def _format_r_dict_entry_error(key: str, value: str) -> str:
         )
         raise EmptyDictKeyError(msg)
     return f"{key} = {value}"
-
-
-@beartype
-def _format_r_ordered_map_entry(key: str, value: str) -> str:
-    """Format an R named list entry for an ordered map."""
-    return f"{key} = {value}"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format an R variable declaration."""
-    return f"{name} <- {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format an R variable assignment."""
-    return f"{name} <- {value}"
 
 
 @beartype
@@ -171,7 +157,7 @@ class R(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for R."""
 
         LIST = SequenceFormatConfig(
@@ -183,13 +169,6 @@ class R(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for R."""
@@ -325,17 +304,17 @@ class R(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_r_ordered_map_entry
+            dict_entry_with_separator(separator=" = ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="{name} <- {value}")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} <- {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -17,6 +18,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -27,9 +29,12 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
-from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -55,18 +60,6 @@ def _format_datetime_perl(value: datetime.datetime) -> str:
     if value.microsecond:
         parts += f", nanosecond => {value.microsecond * 1000}"
     return parts + ", time_zone => 'UTC')"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Perl variable declaration."""
-    return f"my ${name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Perl variable assignment."""
-    return f"${name} = {value};"
 
 
 _string_format: Callable[[str], str] = format_string_backslash
@@ -135,7 +128,7 @@ class Perl(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Perl."""
 
         ARRAY = SequenceFormatConfig(
@@ -147,13 +140,6 @@ class Perl(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Perl."""
@@ -295,10 +281,10 @@ class Perl(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="my ${name} = {value};")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="${name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (

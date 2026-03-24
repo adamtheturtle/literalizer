@@ -17,6 +17,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -28,11 +29,13 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -51,42 +54,6 @@ def _format_datetime_ts(value: datetime.datetime) -> str:
     Example: ``new Date("2024-01-15T12:30:00")``.
     """
     return f'new Date("{value.isoformat()}")'
-
-
-@beartype
-def _format_ts_ordered_map_entry(key: str, value: str) -> str:
-    """Format a TypeScript ordered-map entry."""
-    return f"{key}: {value}"
-
-
-@beartype
-def _format_variable_declaration_const(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a TypeScript ``const`` variable declaration."""
-    return f"const {name} = {value};"
-
-
-@beartype
-def _format_variable_declaration_let(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a TypeScript ``let`` variable declaration."""
-    return f"let {name} = {value};"
-
-
-@beartype
-def _format_variable_declaration_var(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a TypeScript ``var`` variable declaration."""
-    return f"var {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a TypeScript variable assignment."""
-    return f"{name} = {value};"
 
 
 @beartype
@@ -152,7 +119,7 @@ class TypeScript(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for TypeScript."""
 
         ARRAY = SequenceFormatConfig(
@@ -173,13 +140,6 @@ class TypeScript(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for TypeScript."""
@@ -208,13 +168,13 @@ class TypeScript(metaclass=LanguageCls):
         """Declaration style options."""
 
         CONST = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_const,
+            formatter=variable_formatter(template="const {name} = {value};"),
         )
         LET = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_let,
+            formatter=variable_formatter(template="let {name} = {value};"),
         )
         VAR = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_var,
+            formatter=variable_formatter(template="var {name} = {value};"),
         )
 
     class DictFormats(enum.Enum):
@@ -327,7 +287,7 @@ class TypeScript(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_ts_ordered_map_entry
+            dict_entry_with_separator(separator=": ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -337,7 +297,7 @@ class TypeScript(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

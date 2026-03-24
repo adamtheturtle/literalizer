@@ -60,6 +60,45 @@ def _infer_element_type(
 
 
 @beartype
+def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
+    """Return a ``format_variable_declaration`` or
+    ``format_variable_assignment`` callable from a template string.
+
+    The *template* must contain ``{name}`` and ``{value}`` placeholders.
+
+    Example::
+
+        assign = variable_formatter(template="{name} = {value};")
+        assign("x", "42", None)  # => "x = 42;"
+    """
+
+    @beartype
+    def _format(name: str, value: str, _data: Value) -> str:
+        """Format a variable declaration or assignment."""
+        return template.format(name=name, value=value)
+
+    return _format
+
+
+@beartype
+def tuple_dict_entry(key: str, value: str) -> str:
+    """Format a dict/map entry as a tuple ``(key, value)``.
+
+    Example: ``tuple_dict_entry("k", "v")`` → ``"(k, v)"``.
+    """
+    return f"({key}, {value})"
+
+
+@beartype
+def braced_dict_entry(key: str, value: str) -> str:
+    r"""Format a dict/map entry as ``{key, value}``.
+
+    Example: ``braced_dict_entry("k", "v")`` → ``"{k, v}"``.
+    """
+    return f"{{{key}, {value}}}"
+
+
+@beartype
 def format_date_iso(value: datetime.date) -> str:
     """Format a date as an ISO 8601 quoted string literal.
 

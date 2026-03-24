@@ -17,6 +17,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -27,11 +28,13 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 _BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
 
@@ -96,23 +99,6 @@ def _format_toml_datetime(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a TOML key-value assignment as ``name = value``."""
-    return f"{name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a TOML key-value assignment as ``name = value``.
-
-    TOML has no distinction between declaration and re-assignment;
-    this produces the same output as
-    :func:`_format_variable_declaration`.
-    """
-    return f"{name} = {value}"
-
-
-@beartype
 class Toml(metaclass=LanguageCls):
     """TOML language specification.
 
@@ -163,7 +149,7 @@ class Toml(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for TOML."""
 
         ARRAY = SequenceFormatConfig(
@@ -175,13 +161,6 @@ class Toml(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for TOML."""
@@ -323,10 +302,10 @@ class Toml(metaclass=LanguageCls):
         self.skip_null_dict_values = True
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="{name} = {value}")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

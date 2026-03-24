@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -15,6 +16,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -25,8 +27,11 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
 )
-from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -76,18 +81,6 @@ def _format_occam_set_entry(item: str) -> str:
     return _to_val(value=item)
 
 
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format an occam-pi variable declaration."""
-    return f"VAL MOBILE LIT {name} IS {value}:"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format an occam-pi variable assignment."""
-    return f"{name} := {value}"
-
-
 _string_format: Callable[[str], str] = format_string_backslash
 
 
@@ -129,7 +122,7 @@ class Occam(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Occam."""
 
         LIST = SequenceFormatConfig(
@@ -143,13 +136,6 @@ class Occam(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Occam."""
@@ -295,10 +281,12 @@ class Occam(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(
+                template="VAL MOBILE LIT {name} IS {value}:",
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} := {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

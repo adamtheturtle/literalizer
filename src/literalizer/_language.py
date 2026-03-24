@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import Protocol, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 from literalizer._types import Value
 
@@ -126,6 +126,23 @@ class SequenceFormat(Protocol):
     def supports_heterogeneity(self) -> bool:
         """Whether this sequence format supports mixed-type elements."""
         ...  # pylint: disable=unnecessary-ellipsis
+
+
+class SupportsHeterogeneityMixin:
+    """Mixin for ``SequenceFormats`` enums.
+
+    Provides the :attr:`supports_heterogeneity` property by delegating
+    to the underlying :class:`SequenceFormatConfig` value.  Use as::
+
+        class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
+            ARRAY = SequenceFormatConfig(...)
+    """
+
+    @property
+    def supports_heterogeneity(self) -> bool:
+        """Whether this sequence format supports mixed-type elements."""
+        config = cast("SequenceFormatConfig", cast("enum.Enum", self).value)
+        return config.supports_heterogeneity
 
 
 class LanguageCls(type):

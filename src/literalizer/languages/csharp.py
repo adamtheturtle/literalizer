@@ -20,6 +20,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -30,12 +31,14 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -77,18 +80,6 @@ _csharp_opener_config = TypedOpenerConfig(
 def _format_csharp_dict_entry(key: str, value: str) -> str:
     """Format a C# dictionary indexer entry."""
     return f"[{key}] = {value}"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a C# variable declaration."""
-    return f"var {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a C# variable assignment."""
-    return f"{name} = {value};"
 
 
 @beartype
@@ -152,7 +143,7 @@ class CSharp(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for C#."""
 
         TUPLE = SequenceFormatConfig(
@@ -179,13 +170,6 @@ class CSharp(metaclass=LanguageCls):
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C#."""
@@ -379,10 +363,10 @@ class CSharp(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="var {name} = {value};")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (

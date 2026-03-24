@@ -21,6 +21,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -32,6 +33,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
 from literalizer._types import Value
@@ -107,34 +109,6 @@ _kotlin_opener_config = TypedOpenerConfig(
 
 
 @beartype
-def _format_kotlin_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Kotlin ordered-map entry."""
-    return f"{key} to {value}"
-
-
-@beartype
-def _format_variable_declaration_val(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Kotlin ``val`` variable declaration."""
-    return f"val {name} = {value}"
-
-
-@beartype
-def _format_variable_declaration_var(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Kotlin ``var`` variable declaration."""
-    return f"var {name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Kotlin variable assignment."""
-    return f"{name} = {value}"
-
-
-@beartype
 class Kotlin(metaclass=LanguageCls):
     """Kotlin language specification.
 
@@ -205,7 +179,7 @@ class Kotlin(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Kotlin."""
 
         LIST = SequenceFormatConfig(
@@ -238,13 +212,6 @@ class Kotlin(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Kotlin."""
@@ -292,10 +259,10 @@ class Kotlin(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAL = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_val,
+            formatter=variable_formatter(template="val {name} = {value}"),
         )
         VAR = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_var,
+            formatter=variable_formatter(template="var {name} = {value}"),
         )
 
     class DictFormats(enum.Enum):
@@ -429,7 +396,7 @@ class Kotlin(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_kotlin_ordered_map_entry
+            dict_entry_with_separator(separator=" to ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -439,7 +406,7 @@ class Kotlin(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (

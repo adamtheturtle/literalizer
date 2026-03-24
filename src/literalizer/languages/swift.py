@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -17,6 +18,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -28,9 +30,12 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
-from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -57,34 +62,6 @@ def _format_datetime_swift(value: datetime.datetime) -> str:
         nanosecond = value.microsecond * 1000
         parts += f", nanosecond: {nanosecond}"
     return parts + ").date!"
-
-
-@beartype
-def _format_swift_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Swift dictionary entry."""
-    return f"{key}: {value}"
-
-
-@beartype
-def _format_variable_declaration_let(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Swift ``let`` variable declaration."""
-    return f"let {name}: Any = {value}"
-
-
-@beartype
-def _format_variable_declaration_var(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Swift ``var`` variable declaration."""
-    return f"var {name}: Any = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Swift variable assignment."""
-    return f"{name} = {value}"
 
 
 @beartype
@@ -157,7 +134,7 @@ class Swift(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Swift."""
 
         ARRAY = SequenceFormatConfig(
@@ -178,13 +155,6 @@ class Swift(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=_tuple_sequence_entry,
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Swift."""
@@ -213,10 +183,10 @@ class Swift(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_let,
+            formatter=variable_formatter(template="let {name}: Any = {value}"),
         )
         VAR = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_var,
+            formatter=variable_formatter(template="var {name}: Any = {value}"),
         )
 
     class DictFormats(enum.Enum):
@@ -326,7 +296,7 @@ class Swift(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_swift_ordered_map_entry
+            dict_entry_with_separator(separator=": ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -336,7 +306,7 @@ class Swift(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (

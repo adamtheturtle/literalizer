@@ -18,6 +18,7 @@ from literalizer._formatters import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -28,13 +29,15 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
-from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -102,18 +105,6 @@ _java_opener_config = TypedOpenerConfig(
     dict_opener_template="new {type_name}[]{{",
     set_opener_template="Set.of(",
 )
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Java variable declaration."""
-    return f"var {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Java variable assignment."""
-    return f"{name} = {value};"
 
 
 @beartype
@@ -194,7 +185,7 @@ class Java(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
         """Sequence type options for Java."""
 
         ARRAY = SequenceFormatConfig(
@@ -221,13 +212,6 @@ class Java(metaclass=LanguageCls):
             empty_sequence="List.of()",
             preamble_lines=("import java.util.List;",),
         )
-
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Java."""
@@ -403,10 +387,10 @@ class Java(metaclass=LanguageCls):
         self.skip_null_dict_values = True
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="var {name} = {value};")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
