@@ -689,6 +689,11 @@ def _wrap_haskell_varname(content: str) -> str:
     if split.body_preamble:
         header += split.body_preamble + "\n"
     header += _HASKELL_VAL_TYPE
+    # Tuples are not Val-typed, so skip the type annotation for them.
+    eq_pos = split.expression.find("= ")
+    rhs = split.expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
+    if rhs.startswith("("):
+        return header + split.expression
     return header + f"{_VARIABLE_NAME} :: Val\n" + split.expression
 
 
@@ -1450,6 +1455,31 @@ def _build_sequence_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_sequence_varname_variants() -> Iterable[_Variant]:
+    """Build sequence-format variants with variable declarations.
+
+    Like :func:`_build_sequence_variants` but uses ``varname_wrap`` so
+    that the test exercises ``_format_variable_declaration`` for each
+    non-default sequence format.
+    """
+    variants: list[_Variant] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_format: Any = spec.sequence_format
+        for fmt in list(spec.sequence_formats):
+            if fmt is default_format:
+                continue
+            variants.append(
+                _Variant(
+                    name=f"{lang_name}_sequence_{fmt.name.lower()}",
+                    spec=lang_config.lang_cls(sequence_format=fmt),
+                    wrap=lang_config.varname_wrap,
+                )
+            )
+    return variants
+
+
+@beartype
 def _build_set_variants() -> Iterable[_Variant]:
     """Build set-format variants for all languages with multiple formats.
 
@@ -1916,6 +1946,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_sequence_variants(), "simple_sequence", None, ""),
         (_build_sequence_variants(), "pair_sequence", None, "_pair"),
         (_build_sequence_variants(), "triple_sequence", None, "_triple"),
+        (
+            _build_sequence_varname_variants(),
+            "simple_sequence",
+            _VARIABLE_NAME,
+            "_varname",
+        ),
         (_build_set_variants(), "set", None, ""),
         (_build_comment_variants(), "comments", None, ""),
         (_build_type_hint_variants(), "type_hints", _VARIABLE_NAME, ""),
