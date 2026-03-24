@@ -532,28 +532,6 @@ def _wrap_rust_combined(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _fortran_comment_pos(line: str) -> int | None:
-    """Return the index of the ``!`` comment in *line* outside strings."""
-    in_single_quote = False
-    in_double_quote = False
-    i = 0
-    while i < len(line):
-        c = line[i]
-        if c == "'" and not in_double_quote:
-            next_also_quote = i + 1 < len(line) and line[i + 1] == "'"
-            if in_single_quote and next_also_quote:
-                i += 2
-                continue
-            in_single_quote = not in_single_quote
-        elif c == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
-        elif c == "!" and not in_single_quote and not in_double_quote:
-            return i
-        i += 1
-    return None
-
-
-@beartype
 def _wrap_fortran(content: str) -> str:
     """Wrap a Fortran variable declaration in a program."""
     indented = "  " + content.replace("\n", "\n  ")
