@@ -15,9 +15,8 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 import itertools
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from types import MappingProxyType
 from typing import Any
 
 import pytest
@@ -615,8 +614,8 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
     wrap_variable_name: str | None = None
-    declaration_style_wraps: Mapping[str, Callable[[str], str]] = (
-        MappingProxyType(mapping={})
+    declaration_style_wraps: dict[str, Callable[[str], str]] = (
+        dataclasses.field(default_factory=dict)
     )
 
 
@@ -1137,7 +1136,7 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
         for fmt in non_defaults:
             wrap = lang_config.declaration_style_wraps.get(
                 fmt.name,
-                default=lang_config.wrap,
+                lang_config.wrap,
             )
             variants.append(
                 _Variant(
