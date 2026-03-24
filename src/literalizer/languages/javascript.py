@@ -44,13 +44,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-_format_integer_hex = format_integer_hex
-_format_integer_underscore = format_integer_underscore
-
-
-_format_map_entry = dict_entry_with_template(template="[{key}, {value}]")
-
-
 @beartype
 class JavaScript(metaclass=LanguageCls):
     """JavaScript language specification.
