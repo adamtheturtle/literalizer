@@ -849,6 +849,79 @@ def _apply_coercions(
     return data
 
 
+def _format_collection_lines(
+    *,
+    data: dict[str, Value] | set[Scalar] | list[Value],
+    spec: Language,
+    body_prefix: str,
+    trailing_comma: bool,
+    is_ordered_map: bool,
+    include_delimiters: bool,
+) -> list[str] | str:
+    """Format collection elements as indented lines.
+
+    Returns a list of formatted lines, or a ``str`` when the caller
+    should return that string immediately (e.g. an all-null dict that
+    collapses to the empty-collection literal).
+    """
+    lines: list[str] = []
+    match data:
+        case dict() as dict_data:
+            entries = [
+                (k, v)
+                for k, v in dict_data.items()
+                if not (spec.skip_null_dict_values and v is None)
+            ]
+            if not entries and include_delimiters and dict_data:
+                empty_value: ordereddict | dict[str, Value] = (
+                    ordereddict() if is_ordered_map else {}
+                )
+                return _format_value(value=empty_value, spec=spec)
+            last_idx = len(entries) - 1
+            for i, (k, v) in enumerate(iterable=entries):
+                formatted_key = _format_value(value=k, spec=spec)
+                formatted_val = _format_value(value=v, spec=spec)
+                entry = (
+                    spec.format_ordered_map_entry(
+                        formatted_key, v, formatted_val
+                    )
+                    if is_ordered_map
+                    else _build_dict_entry(
+                        key_str=formatted_key,
+                        val=v,
+                        val_str=formatted_val,
+                        spec=spec,
+                    )
+                )
+                add_sep = i < last_idx or trailing_comma
+                sep = spec.element_separator.strip() if add_sep else ""
+                lines.append(f"{body_prefix}{entry}{sep}")
+        case set() as set_data:
+            sorted_items = sorted(
+                set_data,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            last_idx = len(sorted_items) - 1
+            for i, item in enumerate(iterable=sorted_items):
+                formatted = _format_value(value=item, spec=spec)
+                entry = spec.format_set_entry(item, formatted)
+                add_sep = i < last_idx or trailing_comma
+                sep = spec.element_separator.strip() if add_sep else ""
+                lines.append(f"{body_prefix}{entry}{sep}")
+        case list() as list_data:
+            last_idx = len(list_data) - 1
+            for i, element in enumerate(iterable=list_data):
+                formatted = spec.format_sequence_entry(
+                    element, _format_value(value=element, spec=spec)
+                )
+                add_sep = i < last_idx or trailing_comma
+                sep = spec.element_separator.strip() if add_sep else ""
+                lines.append(f"{body_prefix}{formatted}{sep}")
+        case _:  # pragma: no cover
+            pass
+    return lines
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize(
     *,
@@ -920,61 +993,22 @@ def _literalize(
         return f"{line_prefix}{_format_value(value=data, spec=spec)}"
 
     body_prefix = line_prefix + indent if include_delimiters else line_prefix
-    lines: list[str] = []
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
-    if isinstance(data, dict):
-        dict_data = data
-        entries = [
-            (k, v)
-            for k, v in dict_data.items()
-            if not (spec.skip_null_dict_values and v is None)
-        ]
-        if not entries and include_delimiters and dict_data:
-            empty_value: ordereddict | dict[str, Value] = (
-                ordereddict() if is_ordered_map else {}
-            )
-            return _format_value(value=empty_value, spec=spec)
-        last_idx = len(entries) - 1
-        for i, (k, v) in enumerate(iterable=entries):
-            formatted_key = _format_value(value=k, spec=spec)
-            formatted_val = _format_value(value=v, spec=spec)
-            entry = (
-                spec.format_ordered_map_entry(formatted_key, v, formatted_val)
-                if is_ordered_map
-                else _build_dict_entry(
-                    key_str=formatted_key,
-                    val=v,
-                    val_str=formatted_val,
-                    spec=spec,
-                )
-            )
-            add_sep = i < last_idx or trailing_comma
-            sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{body_prefix}{entry}{sep}")
-    elif isinstance(data, set):
-        sorted_items = sorted(data, key=lambda v: (type(v).__name__, repr(v)))
-        last_idx = len(sorted_items) - 1
-        for i, item in enumerate(iterable=sorted_items):
-            formatted = _format_value(value=item, spec=spec)
-            entry = spec.format_set_entry(item, formatted)
-            add_sep = i < last_idx or trailing_comma
-            sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{body_prefix}{entry}{sep}")
-    else:
-        # data must be a list (other types handled above)
-        items: list[Value] = list(data)
-        last_idx = len(items) - 1
-        for i, element in enumerate(iterable=items):
-            formatted = spec.format_sequence_entry(
-                element, _format_value(value=element, spec=spec)
-            )
-            add_sep = i < last_idx or trailing_comma
-            sep = spec.element_separator.strip() if add_sep else ""
-            lines.append(f"{body_prefix}{formatted}{sep}")
+    lines_or_early = _format_collection_lines(
+        data=data,
+        spec=spec,
+        body_prefix=body_prefix,
+        trailing_comma=trailing_comma,
+        is_ordered_map=is_ordered_map,
+        include_delimiters=include_delimiters,
+    )
 
-    body = "\n".join(lines)
+    if isinstance(lines_or_early, str):
+        return lines_or_early
+
+    body = "\n".join(lines_or_early)
 
     if not include_delimiters or not body:
         return body
