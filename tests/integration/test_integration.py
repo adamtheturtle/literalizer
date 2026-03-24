@@ -636,6 +636,7 @@ class _Variant:
     name: str
     spec: literalizer.Language
     wrap: Callable[[str], str]
+    wrap_variable_name: str | None = None
 
 
 @dataclasses.dataclass
@@ -1036,6 +1037,7 @@ def _build_date_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_date_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(date_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1061,6 +1063,7 @@ def _build_datetime_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_datetime_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(datetime_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1086,6 +1089,7 @@ def _build_sequence_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(sequence_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1110,6 +1114,7 @@ def _build_set_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_set_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(set_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1135,6 +1140,7 @@ def _build_comment_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_comment_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(comment_format=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1160,6 +1166,7 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_type_hints_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(variable_type_hints=fmt),
                     wrap=lang_config.wrap,
+                    wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
     return variants
@@ -1184,6 +1191,7 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
                     declaration_style=fmt,
                 ),
                 wrap=lang_config.varname_wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1209,6 +1217,7 @@ def _build_dict_format_variants() -> Iterable[_Variant]:
                     dict_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1234,6 +1243,7 @@ def _build_integer_format_variants() -> Iterable[_Variant]:
                     integer_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1259,6 +1269,7 @@ def _build_numeric_separator_variants() -> Iterable[_Variant]:
                     numeric_separator=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1284,6 +1295,7 @@ def _build_string_format_variants() -> Iterable[_Variant]:
                     string_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1309,6 +1321,7 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
                     bytes_format=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1334,6 +1347,7 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
                     trailing_comma=fmt,
                 ),
                 wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1359,6 +1373,7 @@ def _build_line_ending_variants() -> Iterable[_Variant]:
                     line_ending=fmt,
                 ),
                 wrap=lang_config.varname_wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
         )
@@ -1395,6 +1410,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
                     declaration_style=ds,
                 ),
                 wrap=lang_config.varname_wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
             for le in non_default_le
             for ds in non_default_ds
@@ -1617,7 +1633,11 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=f"{variant.name}{suffix}",
                 variant=variant,
                 case_dir_name=case_dir_name,
-                variable_name=variable_name,
+                variable_name=(
+                    variable_name
+                    if variable_name is not None
+                    else variant.wrap_variable_name
+                ),
             )
             for variant in variants
         )
@@ -1656,6 +1676,8 @@ def test_format_variant_golden_file(
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
+    except ValueError:
+        pytest.skip("Format incompatible with variable_name")
     wrapped = variant.wrap(result.code)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(

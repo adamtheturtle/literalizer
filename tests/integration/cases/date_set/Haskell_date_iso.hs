@@ -6,7 +6,7 @@ instance IsString Val where
     fromString = HStr
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 my_data :: Val
-HSet [
+my_data = HSet [
     "2024-01-15",
     "2024-06-01"
     ]

@@ -12,4 +12,4 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-"2024-01-15T12:30:00+00:00"
+let my_data: Val = FStr "2024-01-15T12:30:00+00:00"

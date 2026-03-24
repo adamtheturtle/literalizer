@@ -15,7 +15,7 @@ instance Num Val where
     negate _ = error "not implemented"
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 my_data :: Val
-HMap [
+my_data = HMap [
     {- Server configuration -}
     ("host", "localhost"),  {- default host -}
     ("port", 8080),

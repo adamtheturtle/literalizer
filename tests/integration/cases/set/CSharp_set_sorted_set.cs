@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-new SortedSet<string> {
+var my_data = new SortedSet<string> {
     "apple",
     "banana",
     "cherry"
-}
+};

@@ -1,4 +1,4 @@
-Triple(
+val my_data = Triple(
     1,
     "hello",
     true,

@@ -1,6 +1,6 @@
 defmodule Check do
   def x do
-    MapSet.new([
+    my_data = MapSet.new([
     ~D[2024-01-15],
     ~D[2024-06-01],
 ])

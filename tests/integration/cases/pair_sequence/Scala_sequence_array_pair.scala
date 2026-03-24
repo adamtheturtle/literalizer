@@ -1,5 +1,5 @@
 object Check {
-Array(
+val my_data = Array(
     1,
     "hello",
 )

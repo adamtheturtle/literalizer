@@ -12,7 +12,7 @@ type val_t =
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
 
-OList [
+let my_data : val_t = OList [
     OStr "2024-01-15";
     OStr "2024-02-20"
 ]

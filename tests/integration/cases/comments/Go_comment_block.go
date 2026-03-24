@@ -1,7 +1,7 @@
 package main
 
 func main() {
-map[string]any{
+my_data := map[string]any{
     /* Server configuration */
     "host": "localhost",  /* default host */
     "port": 8080,
