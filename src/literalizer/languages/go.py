@@ -34,11 +34,10 @@ from literalizer._language import (
     SetFormatConfig,
     date_scalar_preamble,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-    from literalizer._types import Value
 
 
 @beartype
@@ -97,7 +96,7 @@ _go_element_to_type = make_element_to_type(
 
 
 @beartype
-def _format_go_set_entry(item: str) -> str:
+def _format_go_set_entry(_original: Value, item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
 
     Example: ``"apple"`` → ``"apple": struct{}{}``.
@@ -374,10 +373,12 @@ class Go(metaclass=LanguageCls):
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = _format_go_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            _format_go_set_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -394,7 +395,7 @@ class Go(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry
         )
         self.multiline_close_indent = ""

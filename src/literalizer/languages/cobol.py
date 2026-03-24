@@ -112,12 +112,12 @@ def _bump_levels(content: str) -> str:
 
 
 @beartype
-def _format_cobol_sequence_entry(item: str) -> str:
+def _format_cobol_sequence_entry(_original: Value, item: str) -> str:
     """Format a sequence item as a COBOL DATA DIVISION entry.
 
     Scalar values become ``05 FILLER PIC … VALUE …`` items.
-    Nested collections (detected by an embedded newline) are wrapped in
-    a ``05 FILLER.`` group with inner level numbers bumped by 5.
+    Nested collections are wrapped in a ``05 FILLER.`` group with
+    inner level numbers bumped by 5.
     """
     if "\n" in item:
         bumped = _bump_levels(content=item)
@@ -146,7 +146,7 @@ def _key_to_cobol_name(key_str: str) -> str:
 
 
 @beartype
-def _format_cobol_dict_entry(key: str, value: str) -> str:
+def _format_cobol_dict_entry(key: str, _val: Value, value: str) -> str:
     """Format a COBOL DATA DIVISION entry for a dict key-value pair.
 
     The key string is converted to a valid COBOL data name.  Scalar
@@ -389,10 +389,10 @@ class Cobol(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = _format_string_cobol
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_cobol_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = (
+        self.format_set_entry: Callable[[Value, str], str] = (
             _format_cobol_sequence_entry
         )
         self.comment_format = comment_format
@@ -411,7 +411,7 @@ class Cobol(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_cobol_dict_entry
         )
         self.multiline_close_indent = ""

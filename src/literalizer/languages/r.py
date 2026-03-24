@@ -29,12 +29,11 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-    from literalizer._types import Value
 
 
 @beartype
@@ -50,7 +49,7 @@ def _format_datetime_r(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_r_dict_entry_positional(key: str, value: str) -> str:
+def _format_r_dict_entry_positional(key: str, _val: Value, value: str) -> str:
     """Format an R named list entry.
 
     R list syntax does not allow zero-length names (``"" = value`` is a
@@ -63,7 +62,7 @@ def _format_r_dict_entry_positional(key: str, value: str) -> str:
 
 
 @beartype
-def _format_r_dict_entry_error(key: str, value: str) -> str:
+def _format_r_dict_entry_error(key: str, _val: Value, value: str) -> str:
     """Format an R named list entry, raising on empty-string keys."""
     if key == '""':
         msg = (
@@ -143,9 +142,9 @@ class R(metaclass=LanguageCls):
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
-        def __call__(self, key: str, value: str, /) -> str:
+        def __call__(self, key: str, val: Value, value: str, /) -> str:
             """Format a dict entry."""
-            return self.value(key=key, value=value)
+            return self.value(key=key, _val=val, value=value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -299,10 +298,12 @@ class R(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            passthrough_set_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -319,7 +320,7 @@ class R(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_separator(separator=" = ")
         )
         self.multiline_close_indent = ""

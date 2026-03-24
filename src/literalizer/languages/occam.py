@@ -27,58 +27,36 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from literalizer._types import Value
+
+@beartype
+def _format_occam_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate occam-pi ``LIT``
+    constructor.
+    """
+    if isinstance(original, bool):
+        return formatted
+    if isinstance(original, int):
+        return f"MOBILE LIT(lit.int; {formatted})"
+    if isinstance(original, float):
+        return f"MOBILE LIT(lit.float; {formatted}(REAL32))"
+    if isinstance(original, (str, bytes, datetime.date)):
+        return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
+    return formatted
 
 
 @beartype
-def _to_val(value: str) -> str:
-    """Convert a value to an occam-pi MOBILE LIT expression."""
-    if value.startswith("MOBILE LIT("):
-        return value
-    if value.startswith('"') and value.endswith('"'):
-        return f"MOBILE LIT(lit.str; MOBILE []BYTE {value})"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    int_result = None
-    try:
-        int(rest)
-        int_result = f"MOBILE LIT(lit.int; {value})"
-    except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float(rest)
-    return f"MOBILE LIT(lit.float; {value}(REAL32))"
-
-
-@beartype
-def _format_occam_dict_entry(key: str, value: str) -> str:
+def _format_occam_dict_entry(key: str, val: Value, value: str) -> str:
     """Format an occam-pi dict or ordered-map entry as a ``MOBILE
     LIT(lit.pair;
     ...)`` constructor.
     """
-    val = _to_val(value=value)
-    return f"MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {val})"
-
-
-@beartype
-def _format_occam_list_entry(item: str) -> str:
-    """Format an occam-pi list entry with the appropriate ``LIT``
-    constructor.
-    """
-    return _to_val(value=item)
-
-
-@beartype
-def _format_occam_set_entry(item: str) -> str:
-    """Format an occam-pi set entry with the appropriate ``LIT``
-    constructor.
-    """
-    return _to_val(value=item)
+    wrapped = _format_occam_entry(original=val, formatted=value)
+    return f"MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {wrapped})"
 
 
 @beartype
@@ -267,10 +245,12 @@ class Occam(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
-            _format_occam_list_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_occam_entry
         )
-        self.format_set_entry: Callable[[str], str] = _format_occam_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            _format_occam_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -287,7 +267,7 @@ class Occam(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_occam_dict_entry
         )
         self.multiline_close_indent = ""

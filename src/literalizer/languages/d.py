@@ -33,72 +33,40 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _to_val(value: str) -> str:
-    """Wrap a pre-formatted value string in a D ``JSONValue(...)`` call.
-
-    Inspects the string representation to determine whether wrapping is
-    needed.  Values that are already ``JSONValue(...)`` or ``parseJSON(...)``
-    expressions are returned unchanged; ``null``, ``true``, and ``false``
-    literals and numeric and string literals are all wrapped.
-    """
-    if value.startswith(("JSONValue(", 'parseJSON("')):
-        return value
-    if value in {"null", "true", "false"}:
-        return f"JSONValue({value})"
-    if value.startswith('"') and value.endswith('"'):
-        return f"JSONValue({value})"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    int_result = None
-    try:
-        int(rest)
-        int_result = f"JSONValue({value})"
-    except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float(rest)
-    return f"JSONValue({value})"
+def _format_d_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in ``JSONValue(...)``."""
+    if isinstance(original, (list, dict, set, frozenset)):
+        return formatted
+    return f"JSONValue({formatted})"
 
 
 @beartype
-def _format_d_dict_entry(key: str, value: str) -> str:
+def _format_d_dict_entry(key: str, val: Value, value: str) -> str:
     """Format a D associative-array entry as ``key: JSONValue(value)``."""
-    return f"{key}: {_to_val(value=value)}"
+    return f"{key}: {_format_d_entry(original=val, formatted=value)}"
 
 
 @beartype
-def _format_d_sequence_entry(item: str) -> str:
-    """Format a D array entry as a ``JSONValue(item)`` call."""
-    return _to_val(value=item)
-
-
-@beartype
-def _format_d_set_entry(item: str) -> str:
-    """Format a D set entry (represented as array) as
-    ``JSONValue(item)``.
-    """
-    return _to_val(value=item)
-
-
-@beartype
-def _format_d_ordered_map_entry(key: str, value: str) -> str:
+def _format_d_ordered_map_entry(key: str, val: Value, value: str) -> str:
     """Format a D ordered-map entry as a two-element ``JSONValue``
     array.
     """
-    return f"JSONValue([JSONValue({key}), {_to_val(value=value)}])"
+    wrapped = _format_d_entry(original=val, formatted=value)
+    return f"JSONValue([JSONValue({key}), {wrapped}])"
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format a D ``auto`` variable declaration using ``JSONValue``."""
-    return f"auto {name} = {_to_val(value=value)};"
+    wrapped = _format_d_entry(original=data, formatted=value)
+    return f"auto {name} = {wrapped};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format a D assignment to an existing variable."""
-    return f"{name} = {_to_val(value=value)};"
+    wrapped = _format_d_entry(original=data, formatted=value)
+    return f"{name} = {wrapped};"
 
 
 @beartype
@@ -284,10 +252,10 @@ class D(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
-            _format_d_sequence_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_d_entry
         )
-        self.format_set_entry: Callable[[str], str] = _format_d_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = _format_d_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -304,7 +272,7 @@ class D(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_d_ordered_map_entry
         )
         self.multiline_close_indent = ""

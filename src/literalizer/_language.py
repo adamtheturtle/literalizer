@@ -21,7 +21,7 @@ class SequenceFormatConfig:
     single_element_trailing_comma: bool
     empty_sequence: str | None
     preamble_lines: tuple[str, ...]
-    format_entry: Callable[[str], str]
+    format_entry: Callable[[Value, str], str]
     typed_opener_fallback: str | None
 
 
@@ -102,7 +102,7 @@ class DictFormatConfig:
 
     open_fn: Callable[[dict[str, Value]], str]
     close: str
-    format_entry: Callable[[str, str], str]
+    format_entry: Callable[[str, Value, str], str]
     empty_dict: str | None
     preamble_lines: tuple[str, ...]
 
@@ -339,12 +339,12 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Configuration for the chosen set format."""
 
     @property
-    def format_sequence_entry(self) -> Callable[[str], str]:
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_set_entry(self) -> Callable[[str], str]:
+    def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a set entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -355,7 +355,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Configuration for ordered-map formatting."""
 
     @property
-    def format_ordered_map_entry(self) -> Callable[[str, str], str]:
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 

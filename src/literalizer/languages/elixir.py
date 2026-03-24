@@ -274,10 +274,12 @@ class Elixir(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            passthrough_set_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -294,7 +296,7 @@ class Elixir(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry
         )
         self.multiline_close_indent = ""

@@ -597,9 +597,11 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
 
 
 @beartype
-def _build_dict_entry(*, key_str: str, val_str: str, spec: Language) -> str:
+def _build_dict_entry(
+    *, key_str: str, val: Value, val_str: str, spec: Language
+) -> str:
     """Format a single dict key-value entry using the language spec."""
-    return spec.dict_format_config.format_entry(key_str, val_str)
+    return spec.dict_format_config.format_entry(key_str, val, val_str)
 
 
 @beartype
@@ -614,7 +616,10 @@ def _format_set_value(
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
-    entries = [spec.format_set_entry(item) for item in formatted]
+    entries = [
+        spec.format_set_entry(v, item)
+        for v, item in zip(sorted_items, formatted, strict=True)
+    ]
     joined = spec.element_separator.join(entries)
     return set_cfg.set_open(items_as_values) + joined + set_cfg.close
 
@@ -636,6 +641,7 @@ def _format_ordered_map_value(
     pairs = [
         spec.format_ordered_map_entry(
             _format_value(value=k, spec=spec),
+            v,
             _format_value(value=v, spec=spec),
         )
         for k, v in ordered_map_items
@@ -663,6 +669,7 @@ def _format_dict_value(
     pairs = [
         _build_dict_entry(
             key_str=_format_value(value=k, spec=spec),
+            val=v,
             val_str=_format_value(value=v, spec=spec),
             spec=spec,
         )
@@ -684,7 +691,7 @@ def _format_list_value(
     if not value and seq_cfg.empty_sequence is not None:
         return seq_cfg.empty_sequence
     items = [
-        spec.format_sequence_entry(_format_value(value=v, spec=spec))
+        spec.format_sequence_entry(v, _format_value(value=v, spec=spec))
         for v in value
     ]
     joined = spec.element_separator.join(items)
@@ -911,10 +918,13 @@ def _literalize(
             formatted_key = _format_value(value=k, spec=spec)
             formatted_val = _format_value(value=v, spec=spec)
             entry = (
-                spec.format_ordered_map_entry(formatted_key, formatted_val)
+                spec.format_ordered_map_entry(formatted_key, v, formatted_val)
                 if is_ordered_map
                 else _build_dict_entry(
-                    key_str=formatted_key, val_str=formatted_val, spec=spec
+                    key_str=formatted_key,
+                    val=v,
+                    val_str=formatted_val,
+                    spec=spec,
                 )
             )
             add_sep = i < last_idx or spec.multiline_trailing_comma
@@ -925,7 +935,7 @@ def _literalize(
         last_idx = len(sorted_items) - 1
         for i, item in enumerate(iterable=sorted_items):
             formatted = _format_value(value=item, spec=spec)
-            entry = spec.format_set_entry(formatted)
+            entry = spec.format_set_entry(item, formatted)
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""
             lines.append(f"{body_prefix}{entry}{sep}")
@@ -935,7 +945,7 @@ def _literalize(
         last_idx = len(items) - 1
         for i, element in enumerate(iterable=items):
             formatted = spec.format_sequence_entry(
-                _format_value(value=element, spec=spec)
+                element, _format_value(value=element, spec=spec)
             )
             add_sep = i < last_idx or spec.multiline_trailing_comma
             sep = spec.element_separator.strip() if add_sep else ""

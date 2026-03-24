@@ -48,81 +48,51 @@ def _format_datetime_ocaml(value: datetime.datetime) -> str:
 
 
 @beartype
-def _to_val(value: str) -> str:
-    """Convert a value to an OCaml union type expression."""
-    _val_prefixes = (
-        "ONull",
-        "OBool",
-        "OList",
-        "OMap",
-        "OSet",
-        "OStr",
-        "OInt",
-        "OFloat",
-        "ODate",
-        "ODatetime",
-    )
-    if any(value.startswith(p) for p in _val_prefixes):
-        return value
-    if value.lstrip().startswith("[|"):
-        return value
-    if value.startswith('"') and value.endswith('"'):
-        return f"OStr {value}"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    int_result = None
-    try:
-        int(rest)
-        int_result = f"OInt ({value})" if negative else f"OInt {value}"
-    except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float(rest)
-    return f"OFloat ({value})" if negative else f"OFloat {value}"
+def _format_ocaml_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate OCaml ``val_t``
+    constructor.
+    """
+    if isinstance(original, bool):
+        return formatted
+    if isinstance(original, int):
+        negative = formatted.startswith("-")
+        return f"OInt ({formatted})" if negative else f"OInt {formatted}"
+    if isinstance(original, float):
+        negative = formatted.startswith("-")
+        return f"OFloat ({formatted})" if negative else f"OFloat {formatted}"
+    if isinstance(original, (str, bytes)):
+        return f"OStr {formatted}"
+    if isinstance(original, datetime.date) and formatted.startswith('"'):
+        return f"OStr {formatted}"
+    return formatted
 
 
 @beartype
-def _format_ocaml_dict_entry(key: str, value: str) -> str:
+def _format_ocaml_dict_entry(key: str, val: Value, value: str) -> str:
     """Format an OCaml dict entry as a ``(key, OXxx value)`` tuple."""
-    return f"({key}, {_to_val(value=value)})"
+    return f"({key}, {_format_ocaml_entry(original=val, formatted=value)})"
 
 
 @beartype
-def _format_ocaml_ordered_map_entry(key: str, value: str) -> str:
+def _format_ocaml_ordered_map_entry(key: str, val: Value, value: str) -> str:
     """Format an OCaml ordered-map entry as a ``(key, OXxx value)``
     tuple.
     """
-    return f"({key}, {_to_val(value=value)})"
+    return f"({key}, {_format_ocaml_entry(original=val, formatted=value)})"
 
 
 @beartype
-def _format_ocaml_set_entry(item: str) -> str:
-    """Format an OCaml set entry with the appropriate ``val_t``
-    constructor.
-    """
-    return _to_val(value=item)
-
-
-@beartype
-def _format_ocaml_sequence_entry(item: str) -> str:
-    """Format an OCaml list entry with the appropriate ``val_t``
-    constructor.
-    """
-    return _to_val(value=item)
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format an OCaml variable declaration."""
     val_type = "val_t array" if value.lstrip().startswith("[|") else "val_t"
-    return f"let {name} : {val_type} = {_to_val(value=value)}"
+    wrapped = _format_ocaml_entry(original=data, formatted=value)
+    return f"let {name} : {val_type} = {wrapped}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format an OCaml variable assignment."""
-    return _format_variable_declaration(name=name, value=value, _data=_data)
+    return _format_variable_declaration(name=name, value=value, data=data)
 
 
 @beartype
@@ -332,7 +302,9 @@ class OCaml(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_set_entry: Callable[[str], str] = _format_ocaml_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            _format_ocaml_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -349,7 +321,7 @@ class OCaml(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_ocaml_ordered_map_entry
         )
         self.multiline_close_indent = ""
@@ -362,8 +334,8 @@ class OCaml(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.element_separator = "; "
-        self.format_sequence_entry: Callable[[str], str] = (
-            _format_ocaml_sequence_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_ocaml_entry
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
