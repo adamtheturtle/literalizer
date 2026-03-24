@@ -3,12 +3,14 @@
 import dataclasses
 import datetime
 import enum
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 from literalizer._formatters import (
     TypedOpenerConfig,
+    TypeOpeners,
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     dict_entry_with_template,
@@ -19,6 +21,7 @@ from literalizer._formatters import (
     format_integer_binary,
     format_integer_hex,
     format_string_backslash,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -37,11 +40,10 @@ from literalizer._language import (
     SetFormatConfig,
     date_scalar_preamble,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
-    from literalizer._types import Value
+    from collections.abc import Sequence
 
 
 _csharp_opener_config = TypedOpenerConfig(
@@ -58,6 +60,42 @@ _csharp_opener_config = TypedOpenerConfig(
     dict_opener_template="new Dictionary<string, {type_name}> {{",
     set_opener_template="new HashSet<{type_name}> {{",
 )
+
+
+@beartype
+def _build_csharp_dict_config(
+    *,
+    dict_format: enum.Enum,
+    openers: TypeOpeners,
+    date_tp: type | None,
+    dt_tp: type | None,
+    format_entry: Callable[[str, Value, str], str],
+) -> DictFormatConfig:
+    """Build the dict format config, switching opener for
+    SortedDictionary.
+    """
+    if dict_format.name == "SORTED_DICTIONARY":
+        dict_type_to_opener = make_type_to_opener(
+            element_to_type=_csharp_opener_config.element_to_type(
+                date_type=_csharp_opener_config.type_name(py_type=date_tp),
+                datetime_type=_csharp_opener_config.type_name(py_type=dt_tp),
+            ),
+            opener_template="new SortedDictionary<string, {type_name}> {{",
+        )
+        fallback = "new SortedDictionary<string, object> {"
+    else:
+        dict_type_to_opener = openers.dict
+        fallback = "new Dictionary<string, object> {"
+    return DictFormatConfig(
+        open_fn=typed_dict_open(
+            type_to_opener=dict_type_to_opener,
+            fallback=fallback,
+        ),
+        close="}",
+        format_entry=format_entry,
+        empty_dict=None,
+        preamble_lines=("using System.Collections.Generic;",),
+    )
 
 
 @beartype
@@ -207,6 +245,7 @@ class CSharp(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DICTIONARY = "dictionary"
+        SORTED_DICTIONARY = "sorted_dictionary"
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -317,15 +356,12 @@ class CSharp(metaclass=LanguageCls):
             if fmt.typed_opener_fallback is not None
             else fmt.sequence_open
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=typed_dict_open(
-                type_to_opener=openers.dict,
-                fallback="new Dictionary<string, object> {",
-            ),
-            close="}",
+        self.dict_format_config: DictFormatConfig = _build_csharp_dict_config(
+            dict_format=dict_format,
+            openers=openers,
+            date_tp=date_tp,
+            dt_tp=dt_tp,
             format_entry=csharp_dict_entry,
-            empty_dict=None,
-            preamble_lines=("using System.Collections.Generic;",),
         )
         self.multiline_trailing_comma = False
         self.format_bytes: Callable[[bytes], str] = bytes_format

@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     ListType,
     TypedOpenerConfig,
+    TypeOpeners,
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     dict_entry_with_separator,
@@ -20,6 +21,7 @@ from literalizer._formatters import (
     format_integer_binary,
     format_integer_hex,
     format_string_backslash_dollar,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -89,6 +91,42 @@ _kotlin_opener_config = TypedOpenerConfig(
     dict_opener_template="mapOf<String, {type_name}>(",
     set_opener_template="setOf<{type_name}>(",
 )
+
+
+@beartype
+def _build_kotlin_dict_config(
+    *,
+    dict_format: enum.Enum,
+    openers: TypeOpeners,
+    date_tp: type | None,
+    dt_tp: type | None,
+) -> DictFormatConfig:
+    """Build the dict format config, switching opener for hashMapOf."""
+    if dict_format.name == "HASH_MAP":
+        dict_type_to_opener = make_type_to_opener(
+            element_to_type=_kotlin_opener_config.element_to_type(
+                date_type=_kotlin_opener_config.type_name(py_type=date_tp),
+                datetime_type=_kotlin_opener_config.type_name(py_type=dt_tp),
+            ),
+            opener_template="hashMapOf<String, {type_name}>(",
+        )
+        fallback = "hashMapOf<String, Any?>("
+    else:
+        dict_type_to_opener = openers.dict
+        fallback = "mapOf<String, Any?>("
+    return DictFormatConfig(
+        open_fn=typed_dict_open(
+            type_to_opener=dict_type_to_opener,
+            fallback=fallback,
+        ),
+        close=")",
+        format_entry=dict_entry_with_separator(
+            separator=" to ",
+            format_value=passthrough_sequence_entry,
+        ),
+        empty_dict=None,
+        preamble_lines=(),
+    )
 
 
 @beartype
@@ -263,6 +301,7 @@ class Kotlin(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP = "map"
+        HASH_MAP = "hash_map"
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -362,18 +401,11 @@ class Kotlin(metaclass=LanguageCls):
                 fallback=set_format.value.set_open([]),
             ),
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=typed_dict_open(
-                type_to_opener=openers.dict,
-                fallback="mapOf<String, Any?>(",
-            ),
-            close=")",
-            format_entry=dict_entry_with_separator(
-                separator=" to ",
-                format_value=passthrough_sequence_entry,
-            ),
-            empty_dict=None,
-            preamble_lines=(),
+        self.dict_format_config: DictFormatConfig = _build_kotlin_dict_config(
+            dict_format=dict_format,
+            openers=openers,
+            date_tp=date_tp,
+            dt_tp=dt_tp,
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format

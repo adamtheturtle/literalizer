@@ -114,6 +114,46 @@ def _resolve_sequence_open(
 
 
 @beartype
+def _build_scala_dict_config(
+    *,
+    dict_format: enum.Enum,
+    openers: TypeOpeners,
+    date_type_name: str | None,
+    datetime_type_name: str | None,
+) -> DictFormatConfig:
+    """Build the dict format config, switching opener for ListMap."""
+    if dict_format.name == "LIST_MAP":
+        dict_type_to_opener = make_type_to_opener(
+            element_to_type=_scala_opener_config.element_to_type(
+                date_type=date_type_name,
+                datetime_type=datetime_type_name,
+            ),
+            opener_template="ListMap[String, {type_name}](",
+        )
+        fallback = "ListMap("
+        preamble: tuple[str, ...] = (
+            "import scala.collection.immutable.ListMap",
+        )
+    else:
+        dict_type_to_opener = openers.dict
+        fallback = "Map("
+        preamble = ()
+    return DictFormatConfig(
+        open_fn=typed_dict_open(
+            type_to_opener=dict_type_to_opener,
+            fallback=fallback,
+        ),
+        close=")",
+        format_entry=dict_entry_with_separator(
+            separator=" -> ",
+            format_value=passthrough_sequence_entry,
+        ),
+        empty_dict=None,
+        preamble_lines=preamble,
+    )
+
+
+@beartype
 class Scala(metaclass=LanguageCls):
     """Scala language specification."""
 
@@ -267,6 +307,7 @@ class Scala(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP = "map"
+        LIST_MAP = "list_map"
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -375,18 +416,11 @@ class Scala(metaclass=LanguageCls):
                 datetime_type=datetime_type_name,
             )
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=typed_dict_open(
-                type_to_opener=openers.dict,
-                fallback="Map(",
-            ),
-            close=")",
-            format_entry=dict_entry_with_separator(
-                separator=" -> ",
-                format_value=passthrough_sequence_entry,
-            ),
-            empty_dict=None,
-            preamble_lines=(),
+        self.dict_format_config: DictFormatConfig = _build_scala_dict_config(
+            dict_format=dict_format,
+            openers=openers,
+            date_type_name=date_type_name,
+            datetime_type_name=datetime_type_name,
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
