@@ -239,32 +239,10 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
     ),
     FSHARP: _VariableSyntax(
         declaration=(
-            "type Val =\n"
-            "    | FNull\n"
-            "    | FBool of bool\n"
-            "    | FInt of int64\n"
-            "    | FFloat of float\n"
-            "    | FStr of string\n"
-            "    | FList of Val list\n"
-            "    | FMap of (string * Val) list\n"
-            "    | FSet of Val list\n"
-            "    | FDate of System.DateTime\n"
-            "    | FDatetime of System.DateTime\n"
-            "let my_var: Val = FInt 42L"
+            "type Val =\n    | FInt of int64\nlet my_var: Val = FInt 42L"
         ),
         assignment=(
-            "type Val =\n"
-            "    | FNull\n"
-            "    | FBool of bool\n"
-            "    | FInt of int64\n"
-            "    | FFloat of float\n"
-            "    | FStr of string\n"
-            "    | FList of Val list\n"
-            "    | FMap of (string * Val) list\n"
-            "    | FSet of Val list\n"
-            "    | FDate of System.DateTime\n"
-            "    | FDatetime of System.DateTime\n"
-            "let my_var: Val = FInt 42L"
+            "type Val =\n    | FInt of int64\nlet my_var: Val = FInt 42L"
         ),
     ),
     CLOJURE: _VariableSyntax(
