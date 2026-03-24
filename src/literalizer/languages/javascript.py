@@ -32,7 +32,6 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
-    SupportsHeterogeneityMixin,
 )
 
 if TYPE_CHECKING:
@@ -145,7 +144,7 @@ class JavaScript(metaclass=LanguageCls):
             """Format bytes."""
             return self.value(value=data)
 
-    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for JavaScript."""
 
         ARRAY = SequenceFormatConfig(
@@ -157,6 +156,13 @@ class JavaScript(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
         )
+
+        @property
+        def supports_heterogeneity(self) -> bool:
+            """Whether this sequence format supports mixed-type
+            elements.
+            """
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for JavaScript."""

@@ -32,7 +32,6 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
-    SupportsHeterogeneityMixin,
     date_scalar_preamble,
 )
 from literalizer._types import Value
@@ -316,7 +315,7 @@ class Python(metaclass=LanguageCls):
                 return "bytes"
             return "str"
 
-    class SequenceFormats(SupportsHeterogeneityMixin, enum.Enum):
+    class SequenceFormats(enum.Enum):
         """Sequence type options for Python."""
 
         TUPLE = SequenceFormatConfig(
@@ -342,6 +341,13 @@ class Python(metaclass=LanguageCls):
         def type_hint(self) -> str:
             """Python type hint name for this sequence format."""
             return "tuple" if self is type(self).TUPLE else "list"
+
+        @property
+        def supports_heterogeneity(self) -> bool:
+            """Whether this sequence format supports mixed-type
+            elements.
+            """
+            return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Python."""
