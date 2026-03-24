@@ -12,7 +12,6 @@ from beartype import beartype
 from literalizer._formatters import (
     ListType,
     TypedOpenerConfig,
-    TypeOpeners,
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     dict_entry_with_separator,
@@ -97,40 +96,12 @@ _kotlin_opener_config = TypedOpenerConfig(
 )
 
 
-@beartype
-def _build_kotlin_dict_config(
-    *,
-    dict_format: enum.Enum,
-    openers: TypeOpeners,
-    date_type_name: str | None,
-    datetime_type_name: str | None,
-) -> DictFormatConfig:
-    """Build the dict format config, switching opener for hashMapOf."""
-    if dict_format.name == "HASH_MAP":
-        dict_type_to_opener = make_type_to_opener(
-            element_to_type=_kotlin_opener_config.element_to_type(
-                date_type=date_type_name,
-                datetime_type=datetime_type_name,
-            ),
-            opener_template="hashMapOf<String, {type_name}>(",
-        )
-        fallback = "hashMapOf<String, Any?>("
-    else:
-        dict_type_to_opener = openers.dict
-        fallback = "mapOf<String, Any?>("
-    return DictFormatConfig(
-        open_fn=typed_dict_open(
-            type_to_opener=dict_type_to_opener,
-            fallback=fallback,
-        ),
-        close=")",
-        format_entry=dict_entry_with_separator(
-            separator=" to ",
-            format_value=passthrough_sequence_entry,
-        ),
-        empty_dict=None,
-        preamble_lines=(),
-    )
+@dataclasses.dataclass(frozen=True)
+class _KotlinDictSpec:
+    """Per-format dict config pieces resolved at init time."""
+
+    opener_template: str
+    fallback: str
 
 
 @beartype
@@ -304,8 +275,14 @@ class Kotlin(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = "map"
-        HASH_MAP = "hash_map"
+        MAP = _KotlinDictSpec(
+            opener_template="mapOf<String, {type_name}>(",
+            fallback="mapOf<String, Any?>(",
+        )
+        HASH_MAP = _KotlinDictSpec(
+            opener_template="hashMapOf<String, {type_name}>(",
+            fallback="hashMapOf<String, Any?>(",
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -427,11 +404,29 @@ class Kotlin(metaclass=LanguageCls):
                 fallback=set_format.value.set_open([]),
             ),
         )
-        self.dict_format_config: DictFormatConfig = _build_kotlin_dict_config(
-            dict_format=dict_format,
-            openers=openers,
-            date_type_name=_kotlin_opener_config.type_name(py_type=date_tp),
-            datetime_type_name=_kotlin_opener_config.type_name(py_type=dt_tp),
+        dict_spec: _KotlinDictSpec = dict_format.value
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=typed_dict_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_opener_config.element_to_type(
+                        date_type=_kotlin_opener_config.type_name(
+                            py_type=date_tp
+                        ),
+                        datetime_type=_kotlin_opener_config.type_name(
+                            py_type=dt_tp
+                        ),
+                    ),
+                    opener_template=dict_spec.opener_template,
+                ),
+                fallback=dict_spec.fallback,
+            ),
+            close=")",
+            format_entry=dict_entry_with_separator(
+                separator=" to ",
+                format_value=passthrough_sequence_entry,
+            ),
+            empty_dict=None,
+            preamble_lines=(),
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

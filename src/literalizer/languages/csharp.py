@@ -11,7 +11,6 @@ from beartype import beartype
 
 from literalizer._formatters import (
     TypedOpenerConfig,
-    TypeOpeners,
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     dict_entry_with_template,
@@ -43,10 +42,11 @@ from literalizer._language import (
     TrailingCommaConfig,
     date_scalar_preamble,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from literalizer._types import Value
 
 
 _csharp_opener_config = TypedOpenerConfig(
@@ -65,40 +65,12 @@ _csharp_opener_config = TypedOpenerConfig(
 )
 
 
-@beartype
-def _build_csharp_dict_config(
-    *,
-    dict_format: enum.Enum,
-    openers: TypeOpeners,
-    date_type_name: str | None,
-    datetime_type_name: str | None,
-    format_entry: Callable[[str, Value, str], str],
-) -> DictFormatConfig:
-    """Build the dict format config, switching opener for
-    SortedDictionary.
-    """
-    if dict_format.name == "SORTED_DICTIONARY":
-        dict_type_to_opener = make_type_to_opener(
-            element_to_type=_csharp_opener_config.element_to_type(
-                date_type=date_type_name,
-                datetime_type=datetime_type_name,
-            ),
-            opener_template="new SortedDictionary<string, {type_name}> {{",
-        )
-        fallback = "new SortedDictionary<string, object> {"
-    else:
-        dict_type_to_opener = openers.dict
-        fallback = "new Dictionary<string, object> {"
-    return DictFormatConfig(
-        open_fn=typed_dict_open(
-            type_to_opener=dict_type_to_opener,
-            fallback=fallback,
-        ),
-        close="}",
-        format_entry=format_entry,
-        empty_dict=None,
-        preamble_lines=("using System.Collections.Generic;",),
-    )
+@dataclasses.dataclass(frozen=True)
+class _CSharpDictSpec:
+    """Per-format dict config pieces resolved at init time."""
+
+    opener_template: str
+    fallback: str
 
 
 @beartype
@@ -247,8 +219,14 @@ class CSharp(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        DICTIONARY = "dictionary"
-        SORTED_DICTIONARY = "sorted_dictionary"
+        DICTIONARY = _CSharpDictSpec(
+            opener_template="new Dictionary<string, {type_name}> {{",
+            fallback="new Dictionary<string, object> {",
+        )
+        SORTED_DICTIONARY = _CSharpDictSpec(
+            opener_template="new SortedDictionary<string, {type_name}> {{",
+            fallback="new SortedDictionary<string, object> {",
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -380,12 +358,26 @@ class CSharp(metaclass=LanguageCls):
             if fmt.typed_opener_fallback is not None
             else fmt.sequence_open
         )
-        self.dict_format_config: DictFormatConfig = _build_csharp_dict_config(
-            dict_format=dict_format,
-            openers=openers,
-            date_type_name=_csharp_opener_config.type_name(py_type=date_tp),
-            datetime_type_name=_csharp_opener_config.type_name(py_type=dt_tp),
+        dict_spec: _CSharpDictSpec = dict_format.value
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=typed_dict_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_csharp_opener_config.element_to_type(
+                        date_type=_csharp_opener_config.type_name(
+                            py_type=date_tp
+                        ),
+                        datetime_type=_csharp_opener_config.type_name(
+                            py_type=dt_tp
+                        ),
+                    ),
+                    opener_template=dict_spec.opener_template,
+                ),
+                fallback=dict_spec.fallback,
+            ),
+            close="}",
             format_entry=csharp_dict_entry,
+            empty_dict=None,
+            preamble_lines=("using System.Collections.Generic;",),
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
