@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
+    dict_entry_with_template,
     fixed_dict_open,
     fixed_set_open,
     format_bytes_hex,
@@ -81,10 +82,7 @@ def _list_of_open(items: list[Any]) -> str:
     return _LIST_OF_OPEN
 
 
-@beartype
-def _format_java_dict_entry(key: str, value: str) -> str:
-    """Format a Java ``Map.entry(key, value)`` call."""
-    return f"Map.entry({key}, {value})"
+_format_java_dict_entry = dict_entry_with_template("Map.entry({key}, {value})")
 
 
 _JAVA_SCALAR_TYPES: dict[type, str] = {

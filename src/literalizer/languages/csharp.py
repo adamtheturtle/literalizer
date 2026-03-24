@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
+    dict_entry_with_template,
     fixed_sequence_open,
     format_bytes_hex,
     format_date_iso,
@@ -75,10 +76,7 @@ _csharp_opener_config = TypedOpenerConfig(
 )
 
 
-@beartype
-def _format_csharp_dict_entry(key: str, value: str) -> str:
-    """Format a C# dictionary indexer entry."""
-    return f"[{key}] = {value}"
+_format_csharp_dict_entry = dict_entry_with_template("[{key}] = {value}")
 
 
 @beartype

@@ -2,19 +2,20 @@
 
 import datetime
 import enum
+import functools
 import re
 from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 from literalizer._formatters import (
-    escape_control_chars,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_backslash_control,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_formatter,
@@ -38,21 +39,10 @@ if TYPE_CHECKING:
 _BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
 
 
-@beartype
-def _format_string_toml(value: str) -> str:
-    r"""Format a string with backslash escaping.
-
-    Control characters are escaped as ``\uNNNN``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
-    escaped = escape_control_chars(value=escaped, fmt="\\u{:04x}")
-    return f'"{escaped}"'
+_format_string_toml = functools.partial(
+    format_string_backslash_control,
+    control_char_fmt="\\u{:04x}",
+)
 
 
 _MIN_QUOTED_KEY_LENGTH = 2

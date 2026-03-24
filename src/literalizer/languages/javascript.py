@@ -10,12 +10,15 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
+    dict_entry_with_template,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_hex,
+    format_integer_underscore,
     format_string_backslash,
     format_string_backslash_single,
     passthrough_sequence_entry,
@@ -57,35 +60,11 @@ def _format_datetime_js(value: datetime.datetime) -> str:
     return f'new Date("{value.isoformat()}")'
 
 
-@beartype
-def _format_integer_hex(value: int) -> str:
-    """Format an integer as a JavaScript hexadecimal literal."""
-    if value < 0:
-        return f"-0x{abs(value):x}"
-    return f"0x{value:x}"
+_format_integer_hex = format_integer_hex
+_format_integer_underscore = format_integer_underscore
 
 
-@beartype
-def _format_integer_underscore(value: int) -> str:
-    """Format an integer with underscore separators."""
-    s = str(object=abs(value))
-    # Insert underscores every 3 digits from the right.
-    group_size = 3
-    groups: list[str] = []
-    while len(s) > group_size:
-        groups.append(s[-group_size:])
-        s = s[:-group_size]
-    groups.append(s)
-    formatted = "_".join(reversed(groups))
-    if value < 0:
-        return f"-{formatted}"
-    return formatted
-
-
-@beartype
-def _format_map_entry(key: str, value: str) -> str:
-    """Format a JavaScript ``Map`` entry as ``[key, value]``."""
-    return f"[{key}, {value}]"
+_format_map_entry = dict_entry_with_template("[{key}, {value}]")
 
 
 @beartype
