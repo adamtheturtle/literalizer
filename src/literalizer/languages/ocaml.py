@@ -7,6 +7,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
     fixed_dict_open,
@@ -380,33 +381,32 @@ class OCaml(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        _type_val_t: tuple[str, ...] = (
-            "type val_t =\n"
-            "  | ONull\n"
-            "  | OBool of bool\n"
-            "  | OInt of int\n"
-            "  | OFloat of float\n"
-            "  | OStr of string\n"
-            "  | OList of val_t list\n"
-            "  | OMap of (string * val_t) list\n"
-            "  | OSet of val_t list\n"
-            "  | ODate of (int * int * int)\n"
-            "  | ODatetime of ((int * int * int) * (int * int * int))",
+        _h = "type val_t ="
+        _date_constructor = (
+            "  | OStr of string"
+            if date_format.value.type_produced is str
+            else "  | ODate of (int * int * int)"
         )
-        _all_types = (
-            type(None),
-            bool,
-            int,
-            float,
-            str,
-            bytes,
-            datetime.date,
-            datetime.datetime,
-            list,
-            set,
+        _datetime_constructor = (
+            "  | OStr of string"
+            if datetime_format.value.type_produced is str
+            else "  | ODatetime of ((int * int * int) * (int * int * int))"
         )
         self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
-        ] = dict.fromkeys(_all_types, _type_val_t)
+        ] = {
+            type(None): (_h, "  | ONull"),
+            bool: (_h, "  | OBool of bool"),
+            int: (_h, "  | OInt of int"),
+            float: (_h, "  | OFloat of float"),
+            str: (_h, "  | OStr of string"),
+            bytes: (_h, "  | OStr of string"),
+            datetime.date: (_h, _date_constructor),
+            datetime.datetime: (_h, _datetime_constructor),
+            list: (_h, "  | OList of val_t list"),
+            dict: (_h, "  | OMap of (string * val_t) list"),
+            ordereddict: (_h, "  | OMap of (string * val_t) list"),
+            set: (_h, "  | OSet of val_t list"),
+        }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
