@@ -30,6 +30,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
 )
 from literalizer._types import Value
 
@@ -241,7 +242,9 @@ class Mojo(metaclass=LanguageCls):
             empty_dict="Dict[String, String]()",
             preamble_lines=(),
         )
-        self.multiline_trailing_comma = True
+        self.trailing_comma_config = TrailingCommaConfig(
+            multiline_trailing_comma=True,
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
