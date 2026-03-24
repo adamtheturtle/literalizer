@@ -15,7 +15,7 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 import itertools
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
@@ -960,6 +960,7 @@ def _prepend_preamble(
 class _Variant:
     """A formatting variant for a language (date, sequence, set, etc.)."""
 
+    name: str
     spec: literalizer.Language
     wrap: Callable[[str], str]
 
@@ -1350,13 +1351,13 @@ class _VariantCase:
 
 
 @beartype
-def _build_date_variants() -> dict[str, _Variant]:
+def _build_date_variants() -> Iterable[_Variant]:
     """Build date-format variants for scalar dates.
 
     For each language, create a variant for every non-default date format,
     using ``wrap``.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.format_date
@@ -1367,22 +1368,24 @@ def _build_date_variants() -> dict[str, _Variant]:
             # within the same language (e.g. Python has both
             # DateFormats.ISO and DatetimeFormats.ISO), so we include
             # a "_date_" infix to keep keys unique.
-            variant_key = f"{lang_name}_date_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(date_format=fmt),
-                wrap=lang_config.wrap,
+            variants.append(
+                _Variant(
+                    name=f"{lang_name}_date_{fmt.name.lower()}",
+                    spec=lang_config.lang_cls(date_format=fmt),
+                    wrap=lang_config.wrap,
+                )
             )
     return variants
 
 
 @beartype
-def _build_datetime_variants() -> dict[str, _Variant]:
+def _build_datetime_variants() -> Iterable[_Variant]:
     """Build datetime-format variants for scalar datetimes.
 
     For each language, create a variant for every non-default datetime format,
     using ``wrap``.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.format_datetime
@@ -1390,306 +1393,324 @@ def _build_datetime_variants() -> dict[str, _Variant]:
             if fmt is default_format:
                 continue
             # See _build_date_variants for why "_datetime_" is needed.
-            variant_key = f"{lang_name}_datetime_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(datetime_format=fmt),
-                wrap=lang_config.wrap,
+            variants.append(
+                _Variant(
+                    name=f"{lang_name}_datetime_{fmt.name.lower()}",
+                    spec=lang_config.lang_cls(datetime_format=fmt),
+                    wrap=lang_config.wrap,
+                )
             )
     return variants
 
 
 @beartype
-def _build_sequence_variants() -> dict[str, _Variant]:
+def _build_sequence_variants() -> Iterable[_Variant]:
     """Build sequence-format variants for all languages with multiple
     formats.
 
     For each language that has more than one sequence format, create a variant
     for every non-default format.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format: Any = spec.sequence_format
         for fmt in list(spec.sequence_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_sequence_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(sequence_format=fmt),
-                wrap=lang_config.wrap,
+            variants.append(
+                _Variant(
+                    name=f"{lang_name}_sequence_{fmt.name.lower()}",
+                    spec=lang_config.lang_cls(sequence_format=fmt),
+                    wrap=lang_config.wrap,
+                )
             )
     return variants
 
 
 @beartype
-def _build_set_variants() -> dict[str, _Variant]:
+def _build_set_variants() -> Iterable[_Variant]:
     """Build set-format variants for all languages with multiple formats.
 
     For each language that has more than one set format, create a variant
     for every non-default set format.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.set_format
         for fmt in list(spec.set_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_set_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(set_format=fmt),
-                wrap=lang_config.wrap,
+            variants.append(
+                _Variant(
+                    name=f"{lang_name}_set_{fmt.name.lower()}",
+                    spec=lang_config.lang_cls(set_format=fmt),
+                    wrap=lang_config.wrap,
+                )
             )
     return variants
 
 
 @beartype
-def _build_comment_variants() -> dict[str, _Variant]:
+def _build_comment_variants() -> Iterable[_Variant]:
     """Build comment-format variants for all languages with multiple
     formats.
 
     For each language that has more than one comment format, create a variant
     for every non-default format.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.comment_format
         for fmt in list(spec.comment_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_comment_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(comment_format=fmt),
-                wrap=lang_config.wrap,
+            variants.append(
+                _Variant(
+                    name=f"{lang_name}_comment_{fmt.name.lower()}",
+                    spec=lang_config.lang_cls(comment_format=fmt),
+                    wrap=lang_config.wrap,
+                )
             )
     return variants
 
 
 @beartype
-def _build_type_hint_variants() -> dict[str, _Variant]:
+def _build_type_hint_variants() -> Iterable[_Variant]:
     """Build variable-type-hint variants for all languages with multiple
     formats.
 
     For each language that has more than one variable type-hint format,
     create a variant for every non-default type-hint style.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.variable_type_hints
         for fmt in list(spec.variable_type_hints_formats):
             if fmt is default_format:
                 continue
-            variant_key = f"{lang_name}_type_hints_{fmt.name.lower()}"
-            variants[variant_key] = _Variant(
-                spec=lang_config.lang_cls(variable_type_hints=fmt),
-                wrap=lang_config.wrap,
+            variants.append(
+                _Variant(
+                    name=f"{lang_name}_type_hints_{fmt.name.lower()}",
+                    spec=lang_config.lang_cls(variable_type_hints=fmt),
+                    wrap=lang_config.wrap,
+                )
             )
     return variants
 
 
 @beartype
-def _build_declaration_style_variants() -> dict[str, _Variant]:
+def _build_declaration_style_variants() -> Iterable[_Variant]:
     """Build declaration-style variants for all languages with multiple
     styles.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.declaration_style
         non_defaults = [
             fmt for fmt in spec.declaration_styles if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_declaration_style_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_declaration_style_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     declaration_style=fmt,
                 ),
                 wrap=lang_config.varname_wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_dict_format_variants() -> dict[str, _Variant]:
+def _build_dict_format_variants() -> Iterable[_Variant]:
     """Build dict/map-format variants for all languages with multiple
     formats.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.dict_format
         non_defaults = [
             fmt for fmt in spec.dict_formats if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_dict_format_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_dict_format_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     dict_format=fmt,
                 ),
                 wrap=lang_config.wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_integer_format_variants() -> dict[str, _Variant]:
+def _build_integer_format_variants() -> Iterable[_Variant]:
     """Build integer-format variants for all languages with multiple
     formats.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.integer_format
         non_defaults = [
             fmt for fmt in spec.integer_formats if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_integer_format_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_integer_format_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     integer_format=fmt,
                 ),
                 wrap=lang_config.wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_numeric_separator_variants() -> dict[str, _Variant]:
+def _build_numeric_separator_variants() -> Iterable[_Variant]:
     """Build numeric-separator variants for all languages with multiple
     options.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.numeric_separator
         non_defaults = [
             fmt for fmt in spec.numeric_separators if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_numeric_separator_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_numeric_separator_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     numeric_separator=fmt,
                 ),
                 wrap=lang_config.wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_string_format_variants() -> dict[str, _Variant]:
+def _build_string_format_variants() -> Iterable[_Variant]:
     """Build string-format variants for all languages with multiple
     formats.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.string_format
         non_defaults = [
             fmt for fmt in spec.string_formats if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_string_format_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_string_format_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     string_format=fmt,
                 ),
                 wrap=lang_config.wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_bytes_format_variants() -> dict[str, _Variant]:
+def _build_bytes_format_variants() -> Iterable[_Variant]:
     """Build bytes-format variants for all languages with multiple
     formats.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.format_bytes
         non_defaults = [
             fmt for fmt in spec.bytes_formats if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_bytes_format_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_bytes_format_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     bytes_format=fmt,
                 ),
                 wrap=lang_config.wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_trailing_comma_variants() -> dict[str, _Variant]:
+def _build_trailing_comma_variants() -> Iterable[_Variant]:
     """Build trailing-comma variants for all languages with multiple
     options.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.trailing_comma
         non_defaults = [
             fmt for fmt in spec.trailing_commas if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_trailing_comma_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_trailing_comma_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     trailing_comma=fmt,
                 ),
                 wrap=lang_config.wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_line_ending_variants() -> dict[str, _Variant]:
+def _build_line_ending_variants() -> Iterable[_Variant]:
     """Build line-ending variants for all languages with multiple
     options.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_format = spec.line_ending
         non_defaults = [
             fmt for fmt in spec.line_endings if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            key = f"{lang_name}_line_ending_"
-            variant_key = key + fmt.name.lower()
-            variants[variant_key] = _Variant(
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_line_ending_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     line_ending=fmt,
                 ),
                 wrap=lang_config.varname_wrap,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
 @beartype
-def _build_line_ending_decl_variants() -> dict[str, _Variant]:
+def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     """Build line-ending + declaration-style cross-option variants.
 
     For each language with multiple line endings *and* multiple
     declaration styles, create a variant for every non-default
     line ending paired with every non-default declaration style.
     """
-    variants: dict[str, _Variant] = {}
+    variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_le = spec.line_ending
@@ -1700,19 +1721,21 @@ def _build_line_ending_decl_variants() -> dict[str, _Variant]:
         non_default_ds = [
             ds for ds in spec.declaration_styles if ds is not default_ds
         ]
-        for le in non_default_le:
-            for ds in non_default_ds:
-                key = (
+        variants.extend(
+            _Variant(
+                name=(
                     f"{lang_name}_line_ending_{le.name.lower()}"
                     f"_decl_{ds.name.lower()}"
-                )
-                variants[key] = _Variant(
-                    spec=lang_config.lang_cls(
-                        line_ending=le,
-                        declaration_style=ds,
-                    ),
-                    wrap=lang_config.varname_wrap,
-                )
+                ),
+                spec=lang_config.lang_cls(
+                    line_ending=le,
+                    declaration_style=ds,
+                ),
+                wrap=lang_config.varname_wrap,
+            )
+            for le in non_default_le
+            for ds in non_default_ds
+        )
     return variants
 
 
@@ -1860,7 +1883,7 @@ def test_golden_file_combined_variable_forms(
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
-    variant_sources: list[tuple[dict[str, _Variant], str, str | None, str]] = [
+    variant_sources: list[tuple[Iterable[_Variant], str, str | None, str]] = [
         (_build_date_variants(), "scalar_date", None, ""),
         (_build_date_variants(), "date_list", None, ""),
         (_build_date_variants(), "date_set", None, ""),
@@ -1929,15 +1952,15 @@ def _build_variant_cases() -> list[_VariantCase]:
         ),
     ]
     for variants, case_dir_name, variable_name, suffix in variant_sources:
-        for variant_name, variant in variants.items():
-            cases.append(
-                _VariantCase(
-                    variant_name=f"{variant_name}{suffix}",
-                    variant=variant,
-                    case_dir_name=case_dir_name,
-                    variable_name=variable_name,
-                )
+        cases.extend(
+            _VariantCase(
+                variant_name=f"{variant.name}{suffix}",
+                variant=variant,
+                case_dir_name=case_dir_name,
+                variable_name=variable_name,
             )
+            for variant in variants
+        )
     return cases
 
 
