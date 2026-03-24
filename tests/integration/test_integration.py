@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import itertools
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -96,17 +97,24 @@ def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
 
     preamble_prefixes = ("import ", "instance ", "data ")
 
-    # Scan forward: a line is body-preamble if it starts with a known
-    # prefix or is an indented continuation of a preceding block.
-    expr_start = 0
-    for idx, line in enumerate(iterable=lines):  # pragma: no branch
+    # Find the first line that is NOT body-preamble.  A line counts as
+    # preamble when it starts with a known prefix or is an indented
+    # continuation of a preceding block.
+    def _is_preamble(idx_line: tuple[int, str]) -> bool:
+        """Check whether a line is part of the body preamble."""
+        idx, line = idx_line
         is_prefix = any(line.startswith(p) for p in preamble_prefixes)
         is_continuation = line.startswith("    ") and idx > 0
-        if is_prefix or is_continuation:
-            expr_start = idx + 1
-        else:
-            break
+        return is_prefix or is_continuation
 
+    expr_start = len(
+        list(
+            itertools.takewhile(
+                _is_preamble,
+                enumerate(iterable=lines),
+            )
+        )
+    )
     preamble_lines = lines[:expr_start]
     # Reorder: imports first, then everything else (data types,
     # instances), so the output is valid Haskell.
@@ -334,8 +342,7 @@ def _wrap_haskell(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
     split = _split_haskell_body_preamble(content=content)
     header = "module Check where\n"
-    if split.body_preamble:  # pragma: no branch
-        header += split.body_preamble + "\n"
+    header += split.body_preamble + "\n"
     # Tuples are not Val-typed, so skip the type annotation for them.
     eq_pos = split.expression.find("= ")
     rhs = split.expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
