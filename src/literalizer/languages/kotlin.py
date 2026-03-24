@@ -73,12 +73,6 @@ def _kotlin_type_to_opener(
     return scalar_openers.get(element_type)
 
 
-_KOTLIN_TYPE_NAMES: dict[type, str] = {
-    str: "String",
-    datetime.date: "LocalDate",
-    datetime.datetime: "LocalDateTime",
-}
-
 _kotlin_opener_config = TypedOpenerConfig(
     str_type="String",
     bool_type="Boolean",
@@ -347,8 +341,8 @@ class Kotlin(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _kotlin_opener_config.build(
-            date_type=_KOTLIN_TYPE_NAMES[date_tp],
-            datetime_type=_KOTLIN_TYPE_NAMES[dt_tp],
+            date_type=_kotlin_opener_config.type_name(py_type=date_tp),
+            datetime_type=_kotlin_opener_config.type_name(py_type=dt_tp),
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(

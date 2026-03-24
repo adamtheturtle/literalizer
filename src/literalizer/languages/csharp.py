@@ -42,12 +42,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-_CSHARP_TYPE_NAMES: dict[type, str] = {
-    str: "string",
-    datetime.date: "DateOnly",
-    datetime.datetime: "DateTime",
-}
-
 _csharp_opener_config = TypedOpenerConfig(
     str_type="string",
     bool_type="bool",
@@ -296,8 +290,8 @@ class CSharp(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _csharp_opener_config.build(
-            date_type=_CSHARP_TYPE_NAMES[date_tp],
-            datetime_type=_CSHARP_TYPE_NAMES[dt_tp],
+            date_type=_csharp_opener_config.type_name(py_type=date_tp),
+            datetime_type=_csharp_opener_config.type_name(py_type=dt_tp),
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(

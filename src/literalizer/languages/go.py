@@ -76,12 +76,6 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     )
 
 
-_GO_TYPE_NAMES: dict[type, str] = {
-    str: "string",
-    datetime.date: "time.Time",
-    datetime.datetime: "time.Time",
-}
-
 _go_opener_config = TypedOpenerConfig(
     str_type="string",
     bool_type="bool",
@@ -314,8 +308,8 @@ class Go(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _go_opener_config.build(
-            date_type=_GO_TYPE_NAMES[date_tp],
-            datetime_type=_GO_TYPE_NAMES[dt_tp],
+            date_type=_go_opener_config.type_name(py_type=date_tp),
+            datetime_type=_go_opener_config.type_name(py_type=dt_tp),
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,

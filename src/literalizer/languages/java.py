@@ -73,11 +73,6 @@ _format_java_dict_entry = dict_entry_with_template(
 )
 
 
-_JAVA_TYPE_NAMES: dict[type, str] = {
-    str: "String",
-    datetime.date: "LocalDate",
-}
-
 _java_opener_config = TypedOpenerConfig(
     str_type="String",
     bool_type="boolean",
@@ -331,9 +326,9 @@ class Java(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         openers = _java_opener_config.build(
-            date_type=_JAVA_TYPE_NAMES[date_tp],
-            datetime_type=_JAVA_TYPE_NAMES.get(
-                datetime_format.value.type_produced,
+            date_type=_java_opener_config.type_name(py_type=date_tp),
+            datetime_type=_java_opener_config.type_name(
+                py_type=datetime_format.value.type_produced,
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (

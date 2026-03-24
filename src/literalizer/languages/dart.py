@@ -41,12 +41,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-_DART_TYPE_NAMES: dict[type, str] = {
-    str: "String",
-    datetime.date: "DateTime",
-    datetime.datetime: "DateTime",
-}
-
 _dart_opener_config = TypedOpenerConfig(
     str_type="String",
     bool_type="bool",
@@ -281,8 +275,8 @@ class Dart(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _dart_opener_config.build(
-            date_type=_DART_TYPE_NAMES[date_tp],
-            datetime_type=_DART_TYPE_NAMES[dt_tp],
+            date_type=_dart_opener_config.type_name(py_type=date_tp),
+            datetime_type=_dart_opener_config.type_name(py_type=dt_tp),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

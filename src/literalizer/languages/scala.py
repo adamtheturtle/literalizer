@@ -17,7 +17,6 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    make_element_to_type,
     make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -53,25 +52,15 @@ def _format_datetime_scala(value: datetime.datetime) -> str:
     )
 
 
-_SCALA_TYPE_NAMES: dict[type, str] = {
-    str: "String",
-    datetime.date: "LocalDate",
-    datetime.datetime: "ZonedDateTime",
-}
-
-_SCALA_ELEMENT_TO_TYPE_KWARGS = {
-    "str_type": "String",
-    "bool_type": "Boolean",
-    "int_type": "Int",
-    "float_type": "Double",
-    "mixed_numeric_type": "Double",
-    "bytes_type": "String",
-    "date_type": "LocalDate",
-    "datetime_type": "ZonedDateTime",
-}
-
 _scala_opener_config = TypedOpenerConfig(
-    **_SCALA_ELEMENT_TO_TYPE_KWARGS,
+    str_type="String",
+    bool_type="Boolean",
+    int_type="Int",
+    float_type="Double",
+    mixed_numeric_type="Double",
+    bytes_type="String",
+    date_type="LocalDate",
+    datetime_type="ZonedDateTime",
     list_template="Array[{inner}]",
     seq_opener_template="Array[{type_name}](",
     dict_opener_template="Map[String, {type_name}](",
@@ -81,8 +70,7 @@ _scala_opener_config = TypedOpenerConfig(
 
 # The LIST format needs List[…] for nested type names, not Array[…].
 _scala_list_type_to_opener = make_type_to_opener(
-    element_to_type=make_element_to_type(
-        **_SCALA_ELEMENT_TO_TYPE_KWARGS,
+    element_to_type=_scala_opener_config.element_to_type(
         list_template="List[{inner}]",
     ),
     opener_template="List[{type_name}](",
@@ -92,22 +80,17 @@ _scala_list_type_to_opener = make_type_to_opener(
 @beartype
 def _list_sequence_open(
     *,
-    date_type: str,
-    datetime_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the List format."""
-    kwargs = {
-        **_SCALA_ELEMENT_TO_TYPE_KWARGS,
-        "date_type": date_type,
-        "datetime_type": datetime_type,
-    }
-    list_eto = make_element_to_type(
-        **kwargs,
-        list_template="List[{inner}]",
-    )
     return typed_sequence_open(
         type_to_opener=make_type_to_opener(
-            element_to_type=list_eto,
+            element_to_type=_scala_opener_config.element_to_type(
+                list_template="List[{inner}]",
+                date_type=date_type,
+                datetime_type=datetime_type,
+            ),
             opener_template="List[{type_name}](",
         ),
         fallback="List(",
@@ -121,8 +104,8 @@ def _resolve_sequence_open(
     list_member: enum.Enum,
     fmt: SequenceFormatConfig,
     openers: TypeOpeners,
-    date_type: str,
-    datetime_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
 ) -> Callable[[list[Value]], str]:
     """Resolve the sequence opener for a Scala sequence format."""
     if sequence_format is list_member:
@@ -365,8 +348,8 @@ class Scala(metaclass=LanguageCls):
         self.set_format = set_format
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        date_type_name = _SCALA_TYPE_NAMES[date_tp]
-        datetime_type_name = _SCALA_TYPE_NAMES[dt_tp]
+        date_type_name = _scala_opener_config.type_name(py_type=date_tp)
+        datetime_type_name = _scala_opener_config.type_name(py_type=dt_tp)
         openers = _scala_opener_config.build(
             date_type=date_type_name,
             datetime_type=datetime_type_name,

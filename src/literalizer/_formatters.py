@@ -283,6 +283,54 @@ class TypedOpenerConfig:
         self._set_opener_template = set_opener_template
 
     @beartype
+    def type_name(self, py_type: type) -> str | None:
+        """Look up the language type name for a Python type."""
+        return self._scalar_types().get(py_type)
+
+    def _scalar_types(self) -> dict[type, str]:
+        """Build a dict mapping Python types to language type names."""
+        return {
+            py_type: name
+            for py_type, name in (
+                (str, self._str_type),
+                (bool, self._bool_type),
+                (int, self._int_type),
+                (float, self._float_type),
+                (bytes, self._bytes_type),
+                (MixedNumeric, self._mixed_numeric_type),
+                (datetime.date, self._date_type),
+                (datetime.datetime, self._datetime_type),
+            )
+            if name is not None
+        }
+
+    @beartype
+    def element_to_type(
+        self,
+        *,
+        list_template: str | None = None,
+        date_type: str | None = None,
+        datetime_type: str | None = None,
+    ) -> Callable[[type | ListType], str | None]:
+        """Build an element-to-type resolver.
+
+        If *list_template* is given it overrides the default.
+        If *date_type* or *datetime_type* is given they override the
+        base values.
+        """
+        return make_element_to_type(
+            str_type=self._str_type,
+            bool_type=self._bool_type,
+            int_type=self._int_type,
+            float_type=self._float_type,
+            bytes_type=self._bytes_type,
+            mixed_numeric_type=self._mixed_numeric_type,
+            date_type=date_type or self._date_type,
+            datetime_type=datetime_type or self._datetime_type,
+            list_template=list_template or self._list_template,
+        )
+
+    @beartype
     def build(
         self,
         *,
@@ -298,28 +346,21 @@ class TypedOpenerConfig:
         the template used for ``set`` openers, allowing a single
         ``TypedOpenerConfig`` to serve multiple set formats.
         """
-        element_to_type = make_element_to_type(
-            str_type=self._str_type,
-            bool_type=self._bool_type,
-            int_type=self._int_type,
-            float_type=self._float_type,
-            bytes_type=self._bytes_type,
-            mixed_numeric_type=self._mixed_numeric_type,
-            date_type=date_type or self._date_type,
-            datetime_type=datetime_type or self._datetime_type,
-            list_template=self._list_template,
+        eto = self.element_to_type(
+            date_type=date_type,
+            datetime_type=datetime_type,
         )
         return TypeOpeners(
             seq=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=self._seq_opener_template,
             ),
             dict=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=self._dict_opener_template,
             ),
             set=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=(
                     set_opener_template or self._set_opener_template
                 ),
