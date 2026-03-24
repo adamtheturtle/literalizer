@@ -117,6 +117,7 @@ class Ada(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence="AList'(1 .. 0 => ANull)",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,

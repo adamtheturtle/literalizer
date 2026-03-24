@@ -279,6 +279,7 @@ class VisualBasic(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence="New Object() {}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,

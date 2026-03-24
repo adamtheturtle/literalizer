@@ -118,6 +118,7 @@ class JavaScript(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,

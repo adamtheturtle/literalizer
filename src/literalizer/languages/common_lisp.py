@@ -86,6 +86,7 @@ class CommonLisp(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=False,
             empty_sequence="nil",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
