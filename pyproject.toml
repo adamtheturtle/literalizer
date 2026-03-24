@@ -276,7 +276,6 @@ max_supported_python = "3.14"
 [tool.pytest]
 ini_options.xfail_strict = true
 ini_options.log_cli = true
-ini_options.addopts = "-n auto"
 
 [tool.coverage]
 run.branch = true
