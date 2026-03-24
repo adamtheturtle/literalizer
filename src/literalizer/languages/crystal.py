@@ -2,6 +2,8 @@
 
 import datetime
 import enum
+from collections.abc import Callable
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -32,7 +34,7 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from literalizer._types import Value
 
@@ -146,7 +148,22 @@ class Crystal(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = MappingProxyType(
+            mapping={
+                "NONE": str,
+                "UNDERSCORE": format_integer_underscore,
+            }
+        )
+
+        def get_formatter(
+            self,
+            numeric_separator: enum.Enum,
+        ) -> Callable[[int], str]:
+            """Return the integer formatter for the given separator."""
+            formatter: Callable[[int], str] = self.value[  # type: ignore[assignment]
+                numeric_separator.name
+            ]
+            return formatter
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -239,9 +256,9 @@ class Crystal(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = (
-            format_integer_underscore
-            if numeric_separator.name == "UNDERSCORE"
-            else str
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
