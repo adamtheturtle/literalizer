@@ -1833,3 +1833,15 @@ def test_fortran_comment_pos_escaped_single_quote() -> None:
     line = "fstr('it''s here')  ! note"
     expected = 20
     assert _fortran_comment_pos(line=line) == expected
+
+
+def test_fortran_comment_pos_double_quote() -> None:
+    """A ``!`` inside double-quoted strings is not a comment."""
+    line = '"bang!" ! real'
+    expected = 8
+    assert _fortran_comment_pos(line=line) == expected
+
+
+def test_fortran_comment_pos_no_comment() -> None:
+    """Return ``None`` when there is no ``!`` comment."""
+    assert _fortran_comment_pos(line="no comment here") is None
