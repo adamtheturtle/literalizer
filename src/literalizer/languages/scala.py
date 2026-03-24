@@ -11,6 +11,7 @@ from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
     TypeOpeners,
+    date_ymd_formatter,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
@@ -39,12 +40,6 @@ from literalizer._language import (
     date_scalar_preamble,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_date_scala(value: datetime.date) -> str:
-    """Format a date as a Scala ``LocalDate.of(...)`` call."""
-    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
 
 
 @beartype
@@ -150,7 +145,9 @@ class Scala(metaclass=LanguageCls):
         """Date format options for Scala."""
 
         SCALA = DateFormatConfig(
-            formatter=_format_date_scala,
+            formatter=date_ymd_formatter(
+                template="LocalDate.of({year}, {month}, {day})",
+            ),
             preamble_lines=("import java.time.LocalDate",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)

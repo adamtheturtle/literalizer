@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     dict_entry_with_template,
     fixed_dict_open,
@@ -40,24 +42,6 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-
-@beartype
-def _format_date_js(value: datetime.date) -> str:
-    """Format a date as a JavaScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15")``.
-    """
-    return f'new Date("{value.isoformat()}")'
-
-
-@beartype
-def _format_datetime_js(value: datetime.datetime) -> str:
-    """Format a datetime as a JavaScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15T12:30:00")``.
-    """
-    return f'new Date("{value.isoformat()}")'
 
 
 _format_integer_hex = format_integer_hex
@@ -93,7 +77,11 @@ class JavaScript(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for JavaScript."""
 
-        JS = DateFormatConfig(formatter=_format_date_js)
+        JS = DateFormatConfig(
+            formatter=date_iso_formatter(
+                template='new Date("{iso}")',
+            ),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -103,7 +91,11 @@ class JavaScript(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for JavaScript."""
 
-        JS = DatetimeFormatConfig(formatter=_format_datetime_js)
+        JS = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(
+                template='new Date("{iso}")',
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
