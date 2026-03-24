@@ -33,7 +33,7 @@ from literalizer._language import (
 if TYPE_CHECKING:
     from literalizer._types import Value
 
-_MATLAB_CONTROL_CHAR_THRESHOLD = 32
+_CONTROL_CHAR_THRESHOLD = 32
 
 
 @beartype
@@ -50,7 +50,7 @@ def _format_string_matlab(value: str) -> str:
     for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
         if not segment:
             continue
-        if len(segment) == 1 and ord(segment) < _MATLAB_CONTROL_CHAR_THRESHOLD:
+        if len(segment) == 1 and ord(segment) < _CONTROL_CHAR_THRESHOLD:
             parts.append(f"char({ord(segment)})")
         else:
             escaped = segment.replace("\\", "\\\\").replace('"', '""')
@@ -60,9 +60,6 @@ def _format_string_matlab(value: str) -> str:
     if len(parts) == 1:
         return parts[0]
     return " + ".join(parts)
-
-
-_CONTROL_CHAR_THRESHOLD = 32
 
 
 @beartype

@@ -63,9 +63,6 @@ def _format_datetime_java_zoned(value: datetime.datetime) -> str:
     )
 
 
-_LIST_OF_OPEN = "List.of("
-
-
 @beartype
 def _list_of_open(items: list[Any]) -> str:
     """Return ``List.of(`` after checking for null elements.
@@ -78,7 +75,7 @@ def _list_of_open(items: list[Any]) -> str:
             "Use sequence_format=ARRAY instead."
         )
         raise NullInCollectionError(msg)
-    return _LIST_OF_OPEN
+    return "List.of("
 
 
 @beartype

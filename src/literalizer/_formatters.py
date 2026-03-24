@@ -235,9 +235,6 @@ def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
     return _format
 
 
-_CONTROL_CHAR_RE = re.compile(pattern=r"[\x00-\x1f]")
-
-
 @beartype
 def escape_control_chars(value: str, *, fmt: str) -> str:
     r"""Replace C0 control characters (U+0000-U+001F) with escape sequences.
@@ -248,7 +245,8 @@ def escape_control_chars(value: str, *, fmt: str) -> str:
     The format pattern passed in ``fmt`` receives the code point as a
     positional integer, e.g. ``"\\x{:02x}"`` → ``\\x01``.
     """
-    return _CONTROL_CHAR_RE.sub(
+    return re.sub(
+        pattern=r"[\x00-\x1f]",
         repl=lambda m: fmt.format(ord(m.group())),
         string=value,
     )
