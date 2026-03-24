@@ -7,6 +7,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
     fixed_dict_open,
@@ -405,6 +406,7 @@ class OCaml(metaclass=LanguageCls):
             datetime.datetime: (_h, _datetime_constructor),
             list: (_h, "  | OList of val_t list"),
             dict: (_h, "  | OMap of (string * val_t) list"),
+            ordereddict: (_h, "  | OMap of (string * val_t) list"),
             set: (_h, "  | OSet of val_t list"),
         }
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
