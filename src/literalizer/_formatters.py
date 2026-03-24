@@ -191,6 +191,64 @@ class TypedOpenerConfig:
 
 
 @beartype
+def format_string_concat_control(
+    *,
+    quote_char: str,
+    quote_escape: str,
+    control_char_template: str,
+    concat_operator: str,
+    escape_backslash: bool,
+) -> Callable[[str], str]:
+    """Return a string formatter that splits on control characters and
+    concatenates parts with a language-specific operator.
+
+    Text segments are wrapped in *quote_char* with embedded quotes
+    escaped to *quote_escape*.  Control characters (code points 0-31)
+    are emitted using *control_char_template* (which receives the code
+    point as a positional format argument) and joined with
+    *concat_operator*.
+
+    When *escape_backslash* is ``True``, literal backslashes in text
+    segments are doubled before quote escaping.
+
+    Example::
+
+        format_string = format_string_concat_control(
+            quote_char="'",
+            quote_escape="''",
+            control_char_template="achar({})",
+            concat_operator=" // ",
+        )
+        format_string("hello")  # => "'hello'"
+    """
+    empty = f"{quote_char}{quote_char}"
+
+    @beartype
+    def _format(value: str) -> str:
+        """Format a string with control character concatenation."""
+        control_char_threshold = 32
+        parts: list[str] = []
+        for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+            if not segment:
+                continue
+            if len(segment) == 1 and ord(segment) < control_char_threshold:
+                parts.append(control_char_template.format(ord(segment)))
+            else:
+                escaped = segment
+                if escape_backslash:
+                    escaped = escaped.replace("\\", "\\\\")
+                escaped = escaped.replace(quote_char, quote_escape)
+                parts.append(f"{quote_char}{escaped}{quote_char}")
+        if not parts:
+            return empty
+        if len(parts) == 1:
+            return parts[0]
+        return concat_operator.join(parts)
+
+    return _format
+
+
+@beartype
 def format_bytes_hex(value: bytes) -> str:
     """Format bytes as a hex string literal.
 

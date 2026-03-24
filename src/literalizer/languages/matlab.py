@@ -3,8 +3,10 @@
 import datetime
 import enum
 import re
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 from beartype import beartype
 
@@ -15,6 +17,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_concat_control,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_formatter,
@@ -32,33 +35,6 @@ from literalizer._language import (
 
 if TYPE_CHECKING:
     from literalizer._types import Value
-
-
-@beartype
-def _format_string_matlab(value: str) -> str:
-    r"""Format a string using MATLAB double-quoted string escaping rules.
-
-    MATLAB double-quoted strings (the ``string`` type) interpret backslash
-    escape sequences: ``\\`` for a literal backslash, ``\n`` for newline,
-    ``\t`` for tab, etc.  Double quotes are escaped by doubling (``""``).
-    Control characters (code points 0-31) are emitted as ``char(N)``
-    expressions joined with ``+``.
-    """
-    control_char_threshold = 32
-    parts: list[str] = []
-    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
-        if not segment:
-            continue
-        if len(segment) == 1 and ord(segment) < control_char_threshold:
-            parts.append(f"char({ord(segment)})")
-        else:
-            escaped = segment.replace("\\", "\\\\").replace('"', '""')
-            parts.append(f'"{escaped}"')
-    if not parts:
-        return '""'
-    if len(parts) == 1:
-        return parts[0]
-    return " + ".join(parts)
 
 
 @beartype
@@ -147,9 +123,6 @@ def _format_datetime_matlab(value: datetime.datetime) -> str:
         millisecond = value.microsecond / 1000
         parts += f", {millisecond}"
     return parts + ")"
-
-
-_string_format: Callable[[str], str] = _format_string_matlab
 
 
 @beartype
@@ -335,7 +308,15 @@ class Matlab(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = (
+            format_string_concat_control(
+                quote_char='"',
+                quote_escape='""',
+                control_char_template="char({})",
+                concat_operator=" + ",
+                escape_backslash=True,
+            )
+        )
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
