@@ -24,7 +24,7 @@ pub fn main() void {
             .{ .str = "hello" },
             .{ .bool = true },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

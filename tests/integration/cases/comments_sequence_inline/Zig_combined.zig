@@ -22,7 +22,7 @@ pub fn main() void {
             .{ .str = "a" },  // note a
             .{ .str = "b" },  // note b
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

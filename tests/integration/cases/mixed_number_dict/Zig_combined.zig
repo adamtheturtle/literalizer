@@ -24,7 +24,7 @@ pub fn main() void {
             .{ .key = "b", .val = .{ .float = 2.5 } },
             .{ .key = "c", .val = .{ .int = 3 } },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

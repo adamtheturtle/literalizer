@@ -24,7 +24,7 @@ pub fn main() void {
             .{ .float = 2.2 },
             .{ .float = 3.3 },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

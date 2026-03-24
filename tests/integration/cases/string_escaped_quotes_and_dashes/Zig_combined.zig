@@ -16,7 +16,7 @@ pub fn main() void {
     }
     {
         var my_data: ZVal = .{ .str = "hello \"world\" -- not a comment" };
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

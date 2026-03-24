@@ -26,7 +26,7 @@ pub fn main() void {
             .{ .str = "banana" },
             // trailing
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

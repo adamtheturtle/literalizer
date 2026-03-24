@@ -26,7 +26,7 @@ pub fn main() void {
             // Port setting
             .{ .key = "port", .val = .{ .int = 3000 } },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

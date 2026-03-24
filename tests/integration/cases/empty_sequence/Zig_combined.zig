@@ -22,7 +22,7 @@ pub fn main() void {
             .{ .arr = &.{}},
             .{ .map = &.{}},
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

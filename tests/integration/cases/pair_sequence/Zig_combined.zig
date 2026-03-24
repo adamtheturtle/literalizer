@@ -22,7 +22,7 @@ pub fn main() void {
             .{ .int = 1 },
             .{ .str = "hello" },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

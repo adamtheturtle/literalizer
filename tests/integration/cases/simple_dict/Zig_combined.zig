@@ -26,7 +26,7 @@ pub fn main() void {
             .{ .key = "active", .val = .{ .bool = true } },
             .{ .key = "score", .val = .nil },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

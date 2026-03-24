@@ -22,7 +22,7 @@ pub fn main() void {
             .{ .arr = &.{.{ .bool = true }, .{ .bool = false }}},
             .{ .arr = &.{.{ .bool = true }, .{ .bool = true }}},
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

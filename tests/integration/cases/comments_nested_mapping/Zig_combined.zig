@@ -22,7 +22,7 @@ pub fn main() void {
             .{ .key = "a", .val = .{ .map = &.{.{ .key = "x", .val = .{ .int = 1 } }}} },
             .{ .key = "b", .val = .{ .int = 2 } },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

@@ -22,7 +22,7 @@ pub fn main() void {
             .{ .key = "date", .val = .{ .int = 1705276800 } },
             .{ .key = "datetime", .val = .{ .int = 1705321800 } },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

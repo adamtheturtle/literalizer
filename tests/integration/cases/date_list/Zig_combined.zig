@@ -22,7 +22,7 @@ pub fn main() void {
             .{ .int = 1705276800 },
             .{ .int = 1708387200 },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

@@ -20,7 +20,7 @@ pub fn main() void {
         var my_data: ZVal = .{ .arr = &.{
             .{ .map = &.{.{ .key = "key", .val = .{ .str = "hello   world" } }, .{ .key = "value", .val = .{ .int = 1 } }}},
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

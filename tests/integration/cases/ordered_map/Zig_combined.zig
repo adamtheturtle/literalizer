@@ -24,7 +24,7 @@ pub fn main() void {
             .{ .key = "age", .val = .{ .int = 30 } },
             .{ .key = "active", .val = .{ .bool = true } },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

@@ -28,7 +28,7 @@ pub fn main() void {
             // Enable debug mode
             .{ .key = "debug", .val = .{ .bool = true } },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

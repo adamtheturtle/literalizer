@@ -24,7 +24,7 @@ pub fn main() void {
             // line 2
             .{ .str = "a" },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }

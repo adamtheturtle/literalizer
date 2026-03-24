@@ -24,7 +24,7 @@ pub fn main() void {
             .{ .str = "line1\rline2" },
             .{ .str = "\x01" },
         }};
-        _ = my_data;
         my_data = undefined;
+        _ = my_data;
     }
 }
