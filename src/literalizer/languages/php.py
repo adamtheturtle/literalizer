@@ -15,7 +15,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash,
-    format_string_backslash_single,
+    format_string_backslash_single_minimal,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_formatter,
@@ -156,7 +156,7 @@ class Php(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=format_string_backslash)
-        SINGLE = enum.member(value=format_string_backslash_single)
+        SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
