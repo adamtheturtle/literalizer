@@ -14,8 +14,8 @@ struct _CVal {
 };
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
-    _CVal _v = ((_CVal){.m = (_CKV[]){
+    _CVal my_data = ((_CVal){.m = (_CKV[]){
     {"message", ((_CVal){.s = "no comment here"})},
 }});
-    (void)_v;
+    (void)my_data;
 }

@@ -1,3 +1,3 @@
-val my_data: Any? = mapOf<String, String>(
+val my_data = mapOf<String, String>(
     "message" to "no comment here",
 )
