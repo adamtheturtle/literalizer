@@ -408,10 +408,10 @@ class JavaScript(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(_base_decl)
+            line_ending.wrap_formatter(formatter=_base_decl)
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(_format_variable_assignment)
+            line_ending.wrap_formatter(formatter=_format_variable_assignment)
         )
         self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
