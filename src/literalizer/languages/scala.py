@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from types import MappingProxyType
 
 from beartype import beartype
 
@@ -17,6 +18,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_integer_hex,
+    format_integer_underscore,
     format_string_backslash,
     make_type_to_opener,
     passthrough_sequence_entry,
@@ -289,18 +291,34 @@ class Scala(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
+        DECIMAL = MappingProxyType(
+            mapping={
+                "NONE": str,
+                "UNDERSCORE": format_integer_underscore,
+            }
+        )
+        HEX = MappingProxyType(
+            mapping={
+                "NONE": format_integer_hex,
+                "UNDERSCORE": format_integer_hex,
+            }
+        )
 
-        def __call__(self, value: int, /) -> str:
-            """Format an integer."""
-            formatter: Callable[[int], str] = self.value
-            return formatter(value)
+        def get_formatter(
+            self,
+            numeric_separator: enum.Enum,
+        ) -> Callable[[int], str]:
+            """Return the integer formatter for the given separator."""
+            formatter: Callable[[int], str] = self.value[
+                numeric_separator.name
+            ]
+            return formatter
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -311,6 +329,7 @@ class Scala(metaclass=LanguageCls):
         """Trailing comma options."""
 
         YES = "yes"
+        NO = "no"
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -413,14 +432,18 @@ class Scala(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=dict_spec.preamble_lines,
         )
-        self.multiline_trailing_comma = True
+        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = integer_format
+        self.format_integer: Callable[[int], str] = (
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
