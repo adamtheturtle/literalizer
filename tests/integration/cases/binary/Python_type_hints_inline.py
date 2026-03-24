@@ -1,4 +1,3 @@
-from typing import Any
 my_data: tuple[str, ...] = (
     "48656c6c6f",
 )

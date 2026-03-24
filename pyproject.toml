@@ -124,7 +124,18 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow asserts in docs.
     "S101",
 ]
-lint.per-file-ignores."tests/integration/cases/**/*.py" = [ "ALL" ]
+lint.per-file-ignores."tests/integration/cases/**/*.py" = [
+    # These are generated fixture files; suppress everything except
+    # unused-import checks (F401) so we catch stale imports.
+    "B",
+    "D",
+    "DTZ",
+    "E",
+    "I",
+    "INP",
+    "PLR",
+    "Q",
+]
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",

@@ -78,6 +78,25 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
 
 
 @beartype
+def _has_empty_collection(*, data: Value) -> bool:
+    """Return whether *data* contains any empty collection."""
+    if isinstance(data, (ordereddict, dict)):
+        if not data:
+            return True
+        return any(
+            _has_empty_collection(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        )
+    if isinstance(data, (set, frozenset)):
+        return len(data) == 0
+    if isinstance(data, list):
+        if not data:
+            return True
+        return any(_has_empty_collection(data=v) for v in data)
+    return False
+
+
+@beartype
 def _preamble_scalar_type(*, value: Value) -> type | None:
     """Return the preamble-relevant type for a scalar.
 
@@ -152,6 +171,7 @@ def _compute_preamble(
     type_hint = (
         language.type_hint_collection_preamble_lines
         if types & {dict, list, set, ordereddict}
+        and _has_empty_collection(data=data)
         else ()
     )
     body = _deduplicate(
