@@ -81,6 +81,7 @@ _java_opener_config = TypedOpenerConfig(
     mixed_numeric_type="double",
     bytes_type="String",
     date_type="LocalDate",
+    datetime_type=None,
     list_template="{inner}[]",
     seq_opener_template="new {type_name}[]{{",
     dict_opener_template="new {type_name}[]{{",

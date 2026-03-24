@@ -255,14 +255,14 @@ class TypedOpenerConfig:
     def __init__(
         self,
         *,
-        str_type: str | None = None,
-        bool_type: str | None = None,
-        int_type: str | None = None,
-        float_type: str | None = None,
-        bytes_type: str | None = None,
-        mixed_numeric_type: str | None = None,
-        date_type: str | None = None,
-        datetime_type: str | None = None,
+        str_type: str | None,
+        bool_type: str | None,
+        int_type: str | None,
+        float_type: str | None,
+        bytes_type: str | None,
+        mixed_numeric_type: str | None,
+        date_type: str | None,
+        datetime_type: str | None,
         list_template: str,
         seq_opener_template: str,
         dict_opener_template: str,
@@ -346,21 +346,21 @@ class TypedOpenerConfig:
         the template used for ``set`` openers, allowing a single
         ``TypedOpenerConfig`` to serve multiple set formats.
         """
-        eto = self.element_to_type(
+        element_type_resolver = self.element_to_type(
             date_type=date_type,
             datetime_type=datetime_type,
         )
         return TypeOpeners(
             seq=make_type_to_opener(
-                element_to_type=eto,
+                element_to_type=element_type_resolver,
                 opener_template=self._seq_opener_template,
             ),
             dict=make_type_to_opener(
-                element_to_type=eto,
+                element_to_type=element_type_resolver,
                 opener_template=self._dict_opener_template,
             ),
             set=make_type_to_opener(
-                element_to_type=eto,
+                element_to_type=element_type_resolver,
                 opener_template=(
                     set_opener_template or self._set_opener_template
                 ),

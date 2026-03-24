@@ -79,6 +79,7 @@ _kotlin_opener_config = TypedOpenerConfig(
     int_type="Int",
     float_type="Double",
     bytes_type="String",
+    mixed_numeric_type=None,
     date_type="LocalDate",
     datetime_type="LocalDateTime",
     list_template="Array<{inner}>",
