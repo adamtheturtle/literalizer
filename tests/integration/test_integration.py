@@ -615,7 +615,9 @@ class _LanguageConfig:
     combined_wrap: Callable[[str, str], str]
     wrap_variable_name: str | None = None
     declaration_style_wraps: dict[str, Callable[[str], str]] = (
-        dataclasses.field(default_factory=dict)
+        dataclasses.field(
+            default_factory=lambda: dict[str, Callable[[str], str]](),  # noqa: PLW0108
+        )
     )
 
 
