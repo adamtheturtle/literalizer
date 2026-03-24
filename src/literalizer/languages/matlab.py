@@ -125,6 +125,21 @@ def _format_datetime_matlab(value: datetime.datetime) -> str:
 
 
 @beartype
+def _containers_map_open(data: dict[str, Value]) -> str:
+    """Build the ``containers.Map`` opener with all keys collected."""
+    keys = ", ".join(_matlab_char_key(s=k) for k in data)
+    return f"containers.Map({{{keys}}}, {{"
+
+
+@beartype
+def _format_containers_map_entry(_key: str, _val: Value, value: str) -> str:
+    """Format a ``containers.Map`` value entry (key already in opener)."""
+    if value.startswith("{") and value.endswith("}"):
+        value = f"{{{value}}}"
+    return value
+
+
+@beartype
 class Matlab(metaclass=LanguageCls):
     """MATLAB language specification."""
 
@@ -215,7 +230,20 @@ class Matlab(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        STRUCT = "struct"
+        STRUCT = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="struct("),
+            close=")",
+            format_entry=_format_matlab_dict_entry,
+            empty_dict="struct()",
+            preamble_lines=(),
+        )
+        CONTAINERS_MAP = DictFormatConfig(
+            open_fn=_containers_map_open,
+            close="})",
+            format_entry=_format_containers_map_entry,
+            empty_dict="containers.Map()",
+            preamble_lines=(),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -294,13 +322,7 @@ class Matlab(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="struct("),
-            close=")",
-            format_entry=_format_matlab_dict_entry,
-            empty_dict="struct()",
-            preamble_lines=(),
-        )
+        self.dict_format_config: DictFormatConfig = dict_format.value
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
         )
