@@ -689,6 +689,11 @@ def _wrap_haskell_varname(content: str) -> str:
     if split.body_preamble:
         header += split.body_preamble + "\n"
     header += _HASKELL_VAL_TYPE
+    # Tuples are not Val-typed, so skip the type annotation for them.
+    eq_pos = split.expression.find("= ")
+    rhs = split.expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
+    if rhs.startswith("("):
+        return header + split.expression
     return header + f"{_VARIABLE_NAME} :: Val\n" + split.expression
 
 
