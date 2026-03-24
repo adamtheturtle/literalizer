@@ -25,5 +25,6 @@ pub fn main() void {
             .{ .str = "\x01" },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

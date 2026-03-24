@@ -25,5 +25,6 @@ pub fn main() void {
             .{ .int = 3 },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

@@ -27,5 +27,6 @@ pub fn main() void {
             // trailing
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

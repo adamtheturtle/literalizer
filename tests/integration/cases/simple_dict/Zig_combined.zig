@@ -27,5 +27,6 @@ pub fn main() void {
             .{ .key = "score", .val = .nil },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

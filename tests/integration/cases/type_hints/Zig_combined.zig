@@ -33,5 +33,6 @@ pub fn main() void {
             .{ .key = "avatar", .val = .{ .str = "48656c6c6f" } },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

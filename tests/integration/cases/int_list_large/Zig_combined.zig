@@ -27,5 +27,6 @@ pub fn main() void {
             .{ .int = -10 },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

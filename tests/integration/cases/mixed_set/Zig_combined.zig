@@ -25,5 +25,6 @@ pub fn main() void {
             .{ .str = "apple" },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

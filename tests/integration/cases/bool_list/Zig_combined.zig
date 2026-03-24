@@ -25,5 +25,6 @@ pub fn main() void {
             .{ .bool = true },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

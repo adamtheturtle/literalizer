@@ -431,6 +431,7 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
         "    {\n"
         f"{assign_indented}\n"
         f"        _ = {_VARIABLE_NAME};\n"
+        f"        {_VARIABLE_NAME} = undefined;\n"
         "    }\n"
         "}"
     )

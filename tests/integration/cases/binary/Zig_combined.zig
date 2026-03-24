@@ -21,5 +21,6 @@ pub fn main() void {
             .{ .str = "48656c6c6f" },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

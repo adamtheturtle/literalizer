@@ -27,5 +27,6 @@ pub fn main() void {
             .nil,
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

@@ -23,5 +23,6 @@ pub fn main() void {
             .{ .arr = &.{.{ .int = 2 }, .{ .str = "b" }}},
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

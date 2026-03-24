@@ -23,5 +23,6 @@ pub fn main() void {
             .{ .map = &.{}},
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

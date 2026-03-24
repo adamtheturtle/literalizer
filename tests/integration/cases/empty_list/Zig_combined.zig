@@ -17,5 +17,6 @@ pub fn main() void {
     {
         var my_data: ZVal = .{ .arr = &.{}};
         _ = my_data;
+        my_data = undefined;
     }
 }

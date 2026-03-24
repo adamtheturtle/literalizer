@@ -23,5 +23,6 @@ pub fn main() void {
             .{ .arr = &.{.{ .float = 3.5 }, .{ .float = 4.5 }}},
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

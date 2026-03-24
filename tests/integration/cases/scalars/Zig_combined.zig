@@ -29,5 +29,6 @@ pub fn main() void {
             .{ .str = "hello \"world\"" },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

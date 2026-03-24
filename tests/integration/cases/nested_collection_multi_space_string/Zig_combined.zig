@@ -21,5 +21,6 @@ pub fn main() void {
             .{ .map = &.{.{ .key = "key", .val = .{ .str = "hello   world" } }, .{ .key = "value", .val = .{ .int = 1 } }}},
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }

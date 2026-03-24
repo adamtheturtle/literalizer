@@ -25,5 +25,6 @@ pub fn main() void {
             .{ .key = "c", .val = .{ .int = 3 } },
         }};
         _ = my_data;
+        my_data = undefined;
     }
 }
