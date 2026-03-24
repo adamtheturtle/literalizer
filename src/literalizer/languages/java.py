@@ -16,6 +16,9 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_binary,
+    format_integer_hex,
+    format_integer_octal_c_style,
     format_integer_underscore,
     format_string_backslash,
     make_element_to_type,
@@ -245,7 +248,15 @@ class Java(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.member(value=str)
+        HEX = enum.member(value=format_integer_hex)
+        OCTAL = enum.member(value=format_integer_octal_c_style)
+        BINARY = enum.member(value=format_integer_binary)
+
+        def __call__(self, value: int, /) -> str:
+            """Format an integer."""
+            formatter: Callable[[int], str] = self.value
+            return formatter(value)
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -370,7 +381,8 @@ class Java(metaclass=LanguageCls):
         self.format_integer: Callable[[int], str] = (
             format_integer_underscore
             if numeric_separator.name == "UNDERSCORE"
-            else str
+            and integer_format.name == "DECIMAL"
+            else integer_format
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry

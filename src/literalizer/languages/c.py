@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_hex,
     format_string_backslash,
     passthrough_sequence_entry,
 )
@@ -161,7 +162,13 @@ class C(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.member(value=str)
+        HEX = enum.member(value=format_integer_hex)
+
+        def __call__(self, value: int, /) -> str:
+            """Format an integer."""
+            formatter: Callable[[int], str] = self.value
+            return formatter(value)
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -251,7 +258,7 @@ class C(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_c_entry
         )

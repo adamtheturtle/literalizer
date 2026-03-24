@@ -19,7 +19,9 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_binary,
     format_integer_hex,
+    format_integer_octal,
     format_integer_underscore,
     format_string_backslash,
     format_string_backslash_single,
@@ -224,6 +226,18 @@ class JavaScript(metaclass=LanguageCls):
             mapping={
                 "NONE": format_integer_hex,
                 "UNDERSCORE": format_integer_hex,
+            }
+        )
+        OCTAL = MappingProxyType(
+            mapping={
+                "NONE": format_integer_octal,
+                "UNDERSCORE": format_integer_octal,
+            }
+        )
+        BINARY = MappingProxyType(
+            mapping={
+                "NONE": format_integer_binary,
+                "UNDERSCORE": format_integer_binary,
             }
         )
 
