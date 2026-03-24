@@ -616,7 +616,7 @@ class _LanguageConfig:
     combined_wrap: Callable[[str, str], str]
     wrap_variable_name: str | None = None
     declaration_style_wraps: Mapping[str, Callable[[str], str]] = (
-        MappingProxyType({})
+        MappingProxyType(mapping={})
     )
 
 
@@ -1137,7 +1137,7 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
         for fmt in non_defaults:
             wrap = lang_config.declaration_style_wraps.get(
                 fmt.name,
-                lang_config.wrap,
+                default=lang_config.wrap,
             )
             variants.append(
                 _Variant(
