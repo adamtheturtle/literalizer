@@ -611,6 +611,27 @@ def format_string_backslash_dollar(value: str) -> str:
 
 
 @beartype
+def format_string_backslash_dollar_single(value: str) -> str:
+    r"""Format a string using backslash escaping with single quotes,
+    including ``$``.
+
+    Escapes backslashes, single quotes, newlines, tabs, and dollar signs
+    with a backslash prefix, then wraps the result in single quotes.
+
+    Example: ``price $10`` → ``'price \$10'``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace("$", "\\$")
+    )
+    return f"'{escaped}'"
+
+
+@beartype
 def fixed_set_open(*, open_str: str) -> Callable[[list[Value]], str]:
     """Return a ``set_open`` callable that always returns *open_str*.
 

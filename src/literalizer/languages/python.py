@@ -19,6 +19,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_integer_underscore,
     format_string_backslash,
+    format_string_backslash_single,
     passthrough_sequence_entry,
     passthrough_set_entry,
     tuple_dict_entry,
@@ -438,7 +439,12 @@ class Python(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash)
+        SINGLE = enum.member(value=format_string_backslash_single)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -513,7 +519,7 @@ class Python(metaclass=LanguageCls):
             datetime_format
         )
 
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = string_format
         self.format_integer: Callable[[int], str] = (
             format_integer_underscore
             if numeric_separator.name == "UNDERSCORE"
