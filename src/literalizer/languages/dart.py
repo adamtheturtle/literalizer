@@ -8,6 +8,8 @@ from beartype import beartype
 
 from literalizer._formatters import (
     TypedOpenerConfig,
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     fixed_sequence_open,
     fixed_set_open,
@@ -37,18 +39,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from literalizer._types import Value
-
-
-@beartype
-def _format_date_dart(value: datetime.date) -> str:
-    """Format a date as a Dart ``DateTime.parse(...)`` call."""
-    return f'DateTime.parse("{value.isoformat()}")'
-
-
-@beartype
-def _format_datetime_dart(value: datetime.datetime) -> str:
-    """Format a datetime as a Dart ``DateTime.parse(...)`` call."""
-    return f'DateTime.parse("{value.isoformat()}")'
 
 
 _DART_TYPE_NAMES: dict[type, str] = {
@@ -99,7 +89,11 @@ class Dart(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 
-        DART = DateFormatConfig(formatter=_format_date_dart)
+        DART = DateFormatConfig(
+            formatter=date_iso_formatter(
+                template='DateTime.parse("{iso}")',
+            ),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -109,7 +103,11 @@ class Dart(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        DART = DatetimeFormatConfig(formatter=_format_datetime_dart)
+        DART = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(
+                template='DateTime.parse("{iso}")',
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,

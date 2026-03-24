@@ -8,6 +8,8 @@ from beartype import beartype
 
 from literalizer._formatters import (
     TypedOpenerConfig,
+    date_ymd_formatter,
+    datetime_iso_formatter,
     dict_entry_with_template,
     fixed_dict_open,
     fixed_set_open,
@@ -37,18 +39,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from literalizer._types import Value
-
-
-@beartype
-def _format_date_java(value: datetime.date) -> str:
-    """Format a date as a Java ``LocalDate.of(...)`` call."""
-    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_java_instant(value: datetime.datetime) -> str:
-    """Format a datetime as a Java ``Instant.parse(...)`` call."""
-    return f'Instant.parse("{value.isoformat()}")'
 
 
 @beartype
@@ -140,7 +130,9 @@ class Java(metaclass=LanguageCls):
         """Date formatting options for Java."""
 
         JAVA = DateFormatConfig(
-            formatter=_format_date_java,
+            formatter=date_ymd_formatter(
+                template="LocalDate.of({year}, {month}, {day})",
+            ),
             preamble_lines=("import java.time.LocalDate;",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
@@ -153,7 +145,9 @@ class Java(metaclass=LanguageCls):
         """Datetime formatting options for Java."""
 
         INSTANT = DatetimeFormatConfig(
-            formatter=_format_datetime_java_instant,
+            formatter=datetime_iso_formatter(
+                template='Instant.parse("{iso}")',
+            ),
             preamble_lines=("import java.time.Instant;",),
         )
         ZONED = DatetimeFormatConfig(

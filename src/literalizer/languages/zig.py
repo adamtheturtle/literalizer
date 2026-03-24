@@ -105,12 +105,6 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {_to_val(value=value)};"
 
 
-_format_string_zig = functools.partial(
-    format_string_backslash_control,
-    control_char_fmt="\\x{:02x}",
-)
-
-
 @beartype
 class Zig(metaclass=LanguageCls):
     """Zig language specification."""
@@ -290,7 +284,10 @@ class Zig(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _format_string_zig
+        self.format_string: Callable[[str], str] = functools.partial(
+            format_string_backslash_control,
+            control_char_fmt="\\x{:02x}",
+        )
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             _format_zig_sequence_entry

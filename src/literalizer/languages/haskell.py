@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -39,12 +40,6 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_date_haskell(value: datetime.date) -> str:
-    """Format a date as a Haskell ``HDate`` constructor."""
-    return f"HDate (fromGregorian {value.year} {value.month} {value.day})"
-
-
-@beartype
 def _format_datetime_haskell(value: datetime.datetime) -> str:
     """Format a datetime as a Haskell ``HDatetime`` constructor.
 
@@ -64,12 +59,6 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
         f"(fromGregorian {value.year} {value.month} {value.day}) "
         f"({time_part}))"
     )
-
-
-_format_string_haskell = functools.partial(
-    format_string_backslash_control,
-    control_char_fmt="\\x{:02x}",
-)
 
 
 @beartype
@@ -139,7 +128,11 @@ class Haskell(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
 
-        HASKELL = DateFormatConfig(formatter=_format_date_haskell)
+        HASKELL = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="HDate (fromGregorian {year} {month} {day})",
+            ),
+        )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
             preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
@@ -327,7 +320,10 @@ class Haskell(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _format_string_haskell
+        self.format_string: Callable[[str], str] = functools.partial(
+            format_string_backslash_control,
+            control_char_fmt="\\x{:02x}",
+        )
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry

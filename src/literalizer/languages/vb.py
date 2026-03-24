@@ -114,16 +114,6 @@ _vb_element_to_type = make_element_to_type(
     list_template="{inner}()",
 )
 
-_vb_set_type_to_opener = make_type_to_opener(
-    element_to_type=_vb_element_to_type,
-    opener_template="New HashSet(Of {type_name}) From {{",
-)
-
-_vb_type_to_opener = make_type_to_opener(
-    element_to_type=_vb_element_to_type,
-    opener_template="New {type_name}() {{",
-)
-
 
 @beartype
 def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
@@ -194,7 +184,10 @@ class VisualBasic(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_vb_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_vb_element_to_type,
+                    opener_template="New {type_name}() {{",
+                ),
                 fallback="New Object() {",
             ),
             close="}",
@@ -218,7 +211,10 @@ class VisualBasic(metaclass=LanguageCls):
 
         HASH_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_vb_set_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_vb_element_to_type,
+                    opener_template="New HashSet(Of {type_name}) From {{",
+                ),
                 fallback="New HashSet(Of Object) From {",
             ),
             close="}",

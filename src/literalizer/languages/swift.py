@@ -3,7 +3,6 @@
 import datetime
 import enum
 import functools
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -35,6 +34,8 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from literalizer._types import Value
 
 
@@ -64,21 +65,12 @@ def _format_datetime_swift(value: datetime.datetime) -> str:
     return parts + ").date!"
 
 
-_format_string_swift = functools.partial(
-    format_string_backslash_control,
-    control_char_fmt="\\u{{{:x}}}",
-)
-
-
 @beartype
 def _tuple_sequence_entry(entry: str) -> str:
     """Format a tuple sequence entry, casting nil to Any? for Swift."""
     if entry == "nil":
         return "nil as Any?"
     return entry
-
-
-_string_format: Callable[[str], str] = _format_string_swift
 
 
 @beartype
@@ -285,7 +277,10 @@ class Swift(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = functools.partial(
+            format_string_backslash_control,
+            control_char_fmt="\\u{{{:x}}}",
+        )
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = fmt.format_entry
         self.format_set_entry: Callable[[str], str] = passthrough_set_entry

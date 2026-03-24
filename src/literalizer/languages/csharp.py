@@ -9,6 +9,8 @@ from beartype import beartype
 
 from literalizer._formatters import (
     TypedOpenerConfig,
+    date_ymd_formatter,
+    datetime_ymdhms_formatter,
     dict_entry_with_template,
     fixed_sequence_open,
     format_bytes_hex,
@@ -38,21 +40,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from literalizer._types import Value
-
-
-@beartype
-def _format_date_csharp(value: datetime.date) -> str:
-    """Format a date as a C# ``new DateOnly(...)`` call."""
-    return f"new DateOnly({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_csharp(value: datetime.datetime) -> str:
-    """Format a datetime as a C# ``new DateTime(...)`` call."""
-    return (
-        f"new DateTime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
 
 
 _CSHARP_TYPE_NAMES: dict[type, str] = {
@@ -109,7 +96,9 @@ class CSharp(metaclass=LanguageCls):
         """Date format options for C#."""
 
         CSHARP = DateFormatConfig(
-            formatter=_format_date_csharp,
+            formatter=date_ymd_formatter(
+                template="new DateOnly({year}, {month}, {day})",
+            ),
             preamble_lines=("using System;",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
@@ -122,7 +111,10 @@ class CSharp(metaclass=LanguageCls):
         """Datetime format options for C#."""
 
         CSHARP = DatetimeFormatConfig(
-            formatter=_format_datetime_csharp,
+            formatter=datetime_ymdhms_formatter(
+                template="new DateTime({year}, {month}, {day}, "
+                "{hour}, {minute}, {second})",
+            ),
             preamble_lines=("using System;",),
         )
         ISO = DatetimeFormatConfig(

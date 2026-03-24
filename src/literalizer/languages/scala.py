@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     TypedOpenerConfig,
     TypeOpeners,
+    date_ymd_formatter,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
@@ -38,12 +39,6 @@ from literalizer._language import (
     date_scalar_preamble,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_date_scala(value: datetime.date) -> str:
-    """Format a date as a Scala ``LocalDate.of(...)`` call."""
-    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
 
 
 @beartype
@@ -119,9 +114,6 @@ def _list_sequence_open(
     )
 
 
-_string_format: Callable[[str], str] = format_string_backslash
-
-
 @beartype
 def _resolve_sequence_open(
     *,
@@ -157,7 +149,9 @@ class Scala(metaclass=LanguageCls):
         """Date format options for Scala."""
 
         SCALA = DateFormatConfig(
-            formatter=_format_date_scala,
+            formatter=date_ymd_formatter(
+                template="LocalDate.of({year}, {month}, {day})",
+            ),
             preamble_lines=("import java.time.LocalDate",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
@@ -411,7 +405,7 @@ class Scala(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
