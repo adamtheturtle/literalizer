@@ -228,7 +228,7 @@ class D(metaclass=LanguageCls):
             open_fn=fixed_dict_open(open_str="JSONValue(["),
             close="])",
             format_entry=dict_entry_with_separator(
-                ": ",
+                separator=": ",
                 format_value=_format_d_entry,
             ),
             empty_dict='parseJSON("{}")',

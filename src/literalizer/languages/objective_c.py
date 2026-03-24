@@ -292,7 +292,7 @@ class ObjectiveC(metaclass=LanguageCls):
             open_fn=fixed_dict_open(open_str="@{"),
             close="}",
             format_entry=dict_entry_with_separator(
-                ": ",
+                separator=": ",
                 format_value=_format_objc_entry,
             ),
             empty_dict="@{}",
@@ -327,7 +327,10 @@ class ObjectiveC(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_separator(": ", format_value=_format_objc_entry)
+            dict_entry_with_separator(
+                separator=": ",
+                format_value=_format_objc_entry,
+            )
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
