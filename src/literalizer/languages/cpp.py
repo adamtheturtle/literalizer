@@ -419,7 +419,6 @@ class Cpp(metaclass=LanguageCls):
             "    _Any(std::initializer_list<_Any>) noexcept {}",
             "};",
         )
-        self.static_code_preamble: Sequence[str] = ()
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )

@@ -494,18 +494,6 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     when none are needed.
     """
 
-    static_code_preamble: Sequence[str]
-    """Lines that are unconditionally prepended to the generated code
-    (``result.code``), regardless of what types appear in the data.
-
-    Unlike ``static_preamble`` (which goes into the separate preamble
-    tuple), these lines become part of the code string itself.  This is
-    useful for type definitions that must appear inside a module body
-    rather than before a module declaration.
-
-    Use an empty sequence when none are needed.
-    """
-
     scalar_body_preamble: dict[type, tuple[str, ...]]
     """Maps Python scalar types to body-preamble lines that are
     prepended to the generated code.

@@ -395,7 +395,6 @@ class Fortran(metaclass=LanguageCls):
             "end module fval_m",
         )
         self.static_body_preamble: Sequence[str] = ()
-        self.static_code_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

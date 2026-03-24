@@ -362,7 +362,8 @@ class FSharp(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
-        self.static_code_preamble: Sequence[str] = (
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        _type_val: tuple[str, ...] = (
             "type Val =\n"
             "    | FNull\n"
             "    | FBool of bool\n"
@@ -375,6 +376,20 @@ class FSharp(metaclass=LanguageCls):
             "    | FDate of System.DateTime\n"
             "    | FDatetime of System.DateTime",
         )
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        _all_types = (
+            type(None),
+            bool,
+            int,
+            float,
+            str,
+            bytes,
+            datetime.date,
+            datetime.datetime,
+            list,
+            set,
+        )
+        self.scalar_body_preamble: dict[
+            type,
+            tuple[str, ...],
+        ] = dict.fromkeys(_all_types, _type_val)
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
