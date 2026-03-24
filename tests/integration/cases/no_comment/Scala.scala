@@ -1,5 +1,5 @@
 object Check {
-val my_data: Any = Map[String, String](
+val my_data = Map[String, String](
     "message" -> "no comment here",
 )
 }
