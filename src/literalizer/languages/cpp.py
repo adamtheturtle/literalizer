@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     braced_dict_entry,
     fixed_set_open,
     format_bytes_hex,
@@ -67,14 +66,12 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 
 
 _cpp_element_to_type = make_element_to_type(
-    scalar_types={
-        str: "std::string",
-        bool: "bool",
-        int: "int",
-        float: "double",
-        MixedNumeric: "double",
-        bytes: "std::string",
-    },
+    str_type="std::string",
+    bool_type="bool",
+    int_type="int",
+    float_type="double",
+    mixed_numeric_type="double",
+    bytes_type="std::string",
     list_template="std::vector<{inner}>",
 )
 

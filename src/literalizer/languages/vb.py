@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     braced_dict_entry,
     fixed_dict_open,
     format_bytes_hex,
@@ -104,16 +103,14 @@ def _format_string_vb(value: str) -> str:
 
 
 _vb_element_to_type = make_element_to_type(
-    scalar_types={
-        str: "String",
-        bool: "Boolean",
-        int: "Integer",
-        float: "Double",
-        MixedNumeric: "Double",
-        bytes: "String",
-        datetime.date: "String",
-        datetime.datetime: "String",
-    },
+    str_type="String",
+    bool_type="Boolean",
+    int_type="Integer",
+    float_type="Double",
+    mixed_numeric_type="Double",
+    bytes_type="String",
+    date_type="String",
+    datetime_type="String",
     list_template="{inner}()",
 )
 

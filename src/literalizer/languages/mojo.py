@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -121,13 +120,11 @@ class Mojo(metaclass=LanguageCls):
             set_open=typed_set_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=make_element_to_type(
-                        scalar_types={
-                            str: "String",
-                            bool: "Bool",
-                            int: "Int",
-                            float: "Float64",
-                            MixedNumeric: "String",
-                        },
+                        str_type="String",
+                        bool_type="Bool",
+                        int_type="Int",
+                        float_type="Float64",
+                        mixed_numeric_type="String",
                         list_template="List[{inner}]",
                     ),
                     opener_template="Set[{type_name}](",

@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     TypedOpenerConfig,
     date_ymd_formatter,
     datetime_ymdhms_formatter,
@@ -43,19 +42,15 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-_CSHARP_SCALAR_TYPES: dict[type, str] = {
-    str: "string",
-    bool: "bool",
-    int: "int",
-    float: "double",
-    MixedNumeric: "double",
-    bytes: "string",
-    datetime.date: "DateOnly",
-    datetime.datetime: "DateTime",
-}
-
 _csharp_opener_config = TypedOpenerConfig(
-    scalar_types=_CSHARP_SCALAR_TYPES,
+    str_type="string",
+    bool_type="bool",
+    int_type="int",
+    float_type="double",
+    mixed_numeric_type="double",
+    bytes_type="string",
+    date_type="DateOnly",
+    datetime_type="DateTime",
     list_template="{inner}[]",
     seq_opener_template="new {type_name}[] {{",
     dict_opener_template="new Dictionary<string, {type_name}> {{",
@@ -149,10 +144,7 @@ class CSharp(metaclass=LanguageCls):
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_csharp_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).seq,
+                type_to_opener=_csharp_opener_config.build().seq,
                 fallback="new object[] {",
             ),
             close="}",
@@ -176,10 +168,7 @@ class CSharp(metaclass=LanguageCls):
 
         HASH_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_csharp_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).set,
+                type_to_opener=_csharp_opener_config.build().set,
                 fallback="new HashSet<object> {",
             ),
             close="}",
@@ -190,7 +179,6 @@ class CSharp(metaclass=LanguageCls):
         SORTED_SET = SetFormatConfig(
             set_open=typed_set_open(
                 type_to_opener=_csharp_opener_config.build(
-                    scalar_type_overrides={},
                     set_opener_template="new SortedSet<{type_name}> {{",
                 ).set,
                 fallback="new SortedSet<object> {",
@@ -301,12 +289,9 @@ class CSharp(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        _scalar_overrides: dict[type, str] = {
-            datetime.date: _CSHARP_SCALAR_TYPES[date_tp],
-            datetime.datetime: _CSHARP_SCALAR_TYPES[dt_tp],
-        }
         openers = _csharp_opener_config.build(
-            scalar_type_overrides=_scalar_overrides,
+            date_type=_csharp_opener_config.type_name(py_type=date_tp),
+            datetime_type=_csharp_opener_config.type_name(py_type=dt_tp),
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(

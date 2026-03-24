@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     TypedOpenerConfig,
     date_ymd_formatter,
     datetime_iso_formatter,
@@ -74,18 +73,14 @@ _format_java_dict_entry = dict_entry_with_template(
 )
 
 
-_JAVA_SCALAR_TYPES: dict[type, str] = {
-    str: "String",
-    bool: "boolean",
-    int: "int",
-    float: "double",
-    MixedNumeric: "double",
-    bytes: "String",
-    datetime.date: "LocalDate",
-}
-
 _java_opener_config = TypedOpenerConfig(
-    scalar_types=_JAVA_SCALAR_TYPES,
+    str_type="String",
+    bool_type="boolean",
+    int_type="int",
+    float_type="double",
+    mixed_numeric_type="double",
+    bytes_type="String",
+    date_type="LocalDate",
     list_template="{inner}[]",
     seq_opener_template="new {type_name}[]{{",
     dict_opener_template="new {type_name}[]{{",
@@ -180,10 +175,7 @@ class Java(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_java_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).seq,
+                type_to_opener=_java_opener_config.build().seq,
                 fallback="new Object[]{",
             ),
             close="}",
@@ -333,17 +325,11 @@ class Java(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
-        scalar_type_overrides: dict[type, str] = {
-            datetime.date: _JAVA_SCALAR_TYPES[date_tp],
-        }
-        dt_tp = _JAVA_SCALAR_TYPES.get(
-            datetime_format.value.type_produced,
-        )
-        if dt_tp is not None:
-            scalar_type_overrides[datetime.datetime] = dt_tp
         openers = _java_opener_config.build(
-            scalar_type_overrides=scalar_type_overrides,
-            set_opener_template=None,
+            date_type=_java_opener_config.type_name(py_type=date_tp),
+            datetime_type=_java_opener_config.type_name(
+                py_type=datetime_format.value.type_produced,
+            ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

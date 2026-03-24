@@ -3,7 +3,7 @@
 import datetime
 import functools
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from beartype import beartype
@@ -255,50 +255,112 @@ class TypedOpenerConfig:
     def __init__(
         self,
         *,
-        scalar_types: dict[type, str],
+        str_type: str | None = None,
+        bool_type: str | None = None,
+        int_type: str | None = None,
+        float_type: str | None = None,
+        bytes_type: str | None = None,
+        mixed_numeric_type: str | None = None,
+        date_type: str | None = None,
+        datetime_type: str | None = None,
         list_template: str,
         seq_opener_template: str,
         dict_opener_template: str,
         set_opener_template: str,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
-        self._scalar_types = scalar_types
+        self._str_type = str_type
+        self._bool_type = bool_type
+        self._int_type = int_type
+        self._float_type = float_type
+        self._bytes_type = bytes_type
+        self._mixed_numeric_type = mixed_numeric_type
+        self._date_type = date_type
+        self._datetime_type = datetime_type
         self._list_template = list_template
         self._seq_opener_template = seq_opener_template
         self._dict_opener_template = dict_opener_template
         self._set_opener_template = set_opener_template
 
     @beartype
+    def type_name(self, py_type: type) -> str | None:
+        """Look up the language type name for a Python type."""
+        return self._scalar_types().get(py_type)
+
+    def _scalar_types(self) -> dict[type, str]:
+        """Build a dict mapping Python types to language type names."""
+        return {
+            py_type: name
+            for py_type, name in (
+                (str, self._str_type),
+                (bool, self._bool_type),
+                (int, self._int_type),
+                (float, self._float_type),
+                (bytes, self._bytes_type),
+                (MixedNumeric, self._mixed_numeric_type),
+                (datetime.date, self._date_type),
+                (datetime.datetime, self._datetime_type),
+            )
+            if name is not None
+        }
+
+    @beartype
+    def element_to_type(
+        self,
+        *,
+        list_template: str | None = None,
+        date_type: str | None = None,
+        datetime_type: str | None = None,
+    ) -> Callable[[type | ListType], str | None]:
+        """Build an element-to-type resolver.
+
+        If *list_template* is given it overrides the default.
+        If *date_type* or *datetime_type* is given they override the
+        base values.
+        """
+        return make_element_to_type(
+            str_type=self._str_type,
+            bool_type=self._bool_type,
+            int_type=self._int_type,
+            float_type=self._float_type,
+            bytes_type=self._bytes_type,
+            mixed_numeric_type=self._mixed_numeric_type,
+            date_type=date_type or self._date_type,
+            datetime_type=datetime_type or self._datetime_type,
+            list_template=list_template or self._list_template,
+        )
+
+    @beartype
     def build(
         self,
         *,
-        scalar_type_overrides: Mapping[type, str],
-        set_opener_template: str | None,
+        date_type: str | None = None,
+        datetime_type: str | None = None,
+        set_opener_template: str | None = None,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.
 
-        If *set_opener_template* is given it overrides the template
-        used for ``set`` openers, allowing a single
+        If *date_type* or *datetime_type* is given, they override the
+        base values.  If *set_opener_template* is given it overrides
+        the template used for ``set`` openers, allowing a single
         ``TypedOpenerConfig`` to serve multiple set formats.
         """
-        scalar_types = dict(self._scalar_types)
-        scalar_types.update(scalar_type_overrides)
-        element_to_type = make_element_to_type(
-            scalar_types=scalar_types,
-            list_template=self._list_template,
+        eto = self.element_to_type(
+            date_type=date_type,
+            datetime_type=datetime_type,
         )
         return TypeOpeners(
             seq=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=self._seq_opener_template,
             ),
             dict=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=self._dict_opener_template,
             ),
             set=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=(
                     set_opener_template or self._set_opener_template
                 ),
@@ -622,7 +684,14 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
 @beartype
 def make_element_to_type(
     *,
-    scalar_types: dict[type, str],
+    str_type: str | None = None,
+    bool_type: str | None = None,
+    int_type: str | None = None,
+    float_type: str | None = None,
+    bytes_type: str | None = None,
+    mixed_numeric_type: str | None = None,
+    date_type: str | None = None,
+    datetime_type: str | None = None,
     list_template: str,
 ) -> Callable[[type | ListType], str | None]:
     """Create a recursive type resolver from scalar types and a list
@@ -634,10 +703,25 @@ def make_element_to_type(
     Example::
 
         go_element_to_type = make_element_to_type(
-            scalar_types={str: "string", int: "int"},
+            str_type="string",
+            int_type="int",
             list_template="[]{inner}",
         )
     """
+    scalar_types: dict[type, str] = {
+        py_type: name
+        for py_type, name in (
+            (str, str_type),
+            (bool, bool_type),
+            (int, int_type),
+            (float, float_type),
+            (bytes, bytes_type),
+            (MixedNumeric, mixed_numeric_type),
+            (datetime.date, date_type),
+            (datetime.datetime, datetime_type),
+        )
+        if name is not None
+    }
 
     @beartype
     def element_to_type(element_type: type | ListType) -> str | None:
