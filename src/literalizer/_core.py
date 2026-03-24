@@ -847,7 +847,7 @@ def _apply_coercions(
 
 def _format_collection_lines(
     *,
-    data: dict[str, Value] | set[Value] | list[Value],
+    data: dict[str, Value] | set[Scalar] | list[Value],
     spec: Language,
     body_prefix: str,
     trailing_comma: bool,
@@ -987,11 +987,10 @@ def _literalize(
         return f"{line_prefix}{_format_value(value=data, spec=spec)}"
 
     body_prefix = line_prefix + indent if include_delimiters else line_prefix
-    lines: list[str] = []
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
-    lines = _format_collection_lines(
+    lines_or_early = _format_collection_lines(
         data=data,
         spec=spec,
         body_prefix=body_prefix,
@@ -1000,10 +999,10 @@ def _literalize(
         include_delimiters=include_delimiters,
     )
 
-    if isinstance(lines, str):
-        return lines
+    if isinstance(lines_or_early, str):
+        return lines_or_early
 
-    body = "\n".join(lines)
+    body = "\n".join(lines_or_early)
 
     if not include_delimiters or not body:
         return body
