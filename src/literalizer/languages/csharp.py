@@ -161,7 +161,7 @@ class CSharp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             empty_sequence="ValueTuple.Create()",
-            preamble_lines=(),
+            preamble_lines=("using System;",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
         )
@@ -202,7 +202,7 @@ class CSharp(metaclass=LanguageCls):
             ),
             close="}",
             empty_set="new HashSet<object>()",
-            preamble_lines=(),
+            preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
@@ -378,7 +378,7 @@ class CSharp(metaclass=LanguageCls):
             OrderedMapFormatConfig(
                 open_str="new Dictionary<string, object> {",
                 close="}",
-                preamble_lines=(),
+                preamble_lines=("using System.Collections.Generic;",),
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (

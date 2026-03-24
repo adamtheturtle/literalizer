@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 var x = new HashSet<string> {
     // before apple
     "apple",
