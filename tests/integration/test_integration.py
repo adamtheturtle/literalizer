@@ -1174,8 +1174,8 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_type_hints_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(variable_type_hints=fmt),
-                    wrap=lang_config.wrap,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+                    wrap=lang_config.varname_wrap,
+                    wrap_variable_name=_VARIABLE_NAME,
                 )
             )
     return variants
@@ -1582,6 +1582,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_set_variants(), "set", ""),
         (_build_comment_variants(), "comments", ""),
         (_build_type_hint_variants(), "type_hints", ""),
+        (_build_type_hint_variants(), "scalar_date", ""),
+        (_build_type_hint_variants(), "scalar_datetime", ""),
+        (_build_type_hint_variants(), "binary", ""),
         (_build_declaration_style_variants(), "simple_sequence", ""),
         (_build_declaration_style_variants(), "simple_dict", ""),
         (_build_declaration_style_variants(), "empty_list", ""),
