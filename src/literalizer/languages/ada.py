@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
 from literalizer._formatters import (
     fixed_dict_open,
     fixed_sequence_open,
@@ -30,6 +27,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype

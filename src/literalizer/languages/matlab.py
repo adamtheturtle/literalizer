@@ -5,9 +5,6 @@ import enum
 import re
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
 from beartype import beartype
 
 from literalizer._formatters import (
@@ -34,6 +31,8 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from literalizer._types import Value
 
 
