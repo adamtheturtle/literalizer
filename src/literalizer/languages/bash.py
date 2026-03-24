@@ -16,6 +16,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -70,12 +71,6 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
         else ""
     )
     return f"declare{flag} {name}={value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Bash variable assignment."""
-    return f"{name}={value}"
 
 
 _string_format: Callable[[str], str] = format_string_backslash
@@ -291,7 +286,7 @@ class Bash(metaclass=LanguageCls):
             _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name}={value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

@@ -16,6 +16,8 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    tuple_dict_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -29,10 +31,11 @@ from literalizer._language import (
     SetFormatConfig,
     date_scalar_preamble,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -60,40 +63,6 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
             f"{value.hour}, {value.minute}, {value.second}).unwrap()"
         )
     return f"NaiveDateTime::new({date}, {time_call})"
-
-
-@beartype
-def _format_rust_dict_entry(key: str, value: str) -> str:
-    """Format a Rust HashMap entry as a tuple ``(key, value)``."""
-    return f"({key}, {value})"
-
-
-@beartype
-def _format_rust_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Rust ordered-map entry as a tuple ``(key, value)``."""
-    return f"({key}, {value})"
-
-
-@beartype
-def _format_variable_declaration_let(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Rust ``let`` variable declaration."""
-    return f"let {name} = {value};"
-
-
-@beartype
-def _format_variable_declaration_let_mut(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Rust ``let mut`` variable declaration."""
-    return f"let mut {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Rust variable assignment."""
-    return f"{name} = {value};"
 
 
 @beartype
@@ -254,10 +223,10 @@ class Rust(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_let,
+            formatter=variable_formatter(template="let {name} = {value};"),
         )
         LET_MUT = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_let_mut,
+            formatter=variable_formatter(template="let mut {name} = {value};"),
         )
 
     class DictFormats(enum.Enum):
@@ -345,7 +314,7 @@ class Rust(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="HashMap::from(["),
             close="])",
-            format_entry=_format_rust_dict_entry,
+            format_entry=tuple_dict_entry,
             empty_dict="HashMap::<&str, &str>::from([])",
             preamble_lines=("use std::collections::HashMap;",),
         )
@@ -379,7 +348,7 @@ class Rust(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_rust_ordered_map_entry
+            tuple_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -389,7 +358,7 @@ class Rust(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

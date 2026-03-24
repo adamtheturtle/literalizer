@@ -3,10 +3,12 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 from literalizer._formatters import (
+    braced_dict_entry,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -17,6 +19,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -28,25 +31,9 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-from literalizer._types import Value
 
-
-@beartype
-def _format_elixir_ordered_map_entry(key: str, value: str) -> str:
-    """Format an Elixir ordered-map entry as a ``{key, value}`` tuple."""
-    return f"{{{key}, {value}}}"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format an Elixir variable declaration."""
-    return f"{name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format an Elixir variable assignment."""
-    return f"{name} = {value}"
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -313,17 +300,17 @@ class Elixir(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_elixir_ordered_map_entry
+            braced_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="{name} = {value}")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

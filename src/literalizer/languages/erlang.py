@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
+    braced_dict_entry,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -28,12 +29,6 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_erlang_ordered_map_entry(key: str, value: str) -> str:
-    """Format an Erlang ordered-map entry as a ``{key, value}`` tuple."""
-    return f"{{{key}, {value}}}"
 
 
 @beartype
@@ -312,7 +307,7 @@ class Erlang(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_erlang_ordered_map_entry
+            braced_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

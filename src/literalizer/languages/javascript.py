@@ -20,6 +20,7 @@ from literalizer._formatters import (
     format_string_backslash_single,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -54,36 +55,6 @@ def _format_datetime_js(value: datetime.datetime) -> str:
     Example: ``new Date("2024-01-15T12:30:00")``.
     """
     return f'new Date("{value.isoformat()}")'
-
-
-@beartype
-def _format_js_ordered_map_entry(key: str, value: str) -> str:
-    """Format a JavaScript ordered-map entry."""
-    return f"{key}: {value}"
-
-
-@beartype
-def _format_variable_declaration_const(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a JavaScript ``const`` variable declaration with
-    semicolon.
-    """
-    return f"const {name} = {value};"
-
-
-@beartype
-def _format_variable_declaration_let(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a JavaScript ``let`` variable declaration with semicolon."""
-    return f"let {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a JavaScript variable assignment with semicolon."""
-    return f"{name} = {value};"
 
 
 @beartype
@@ -240,10 +211,10 @@ class JavaScript(metaclass=LanguageCls):
         """Declaration style options."""
 
         CONST = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_const,
+            formatter=variable_formatter(template="const {name} = {value};"),
         )
         LET = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_let,
+            formatter=variable_formatter(template="let {name} = {value};"),
         )
 
     class DictFormats(enum.Enum):
@@ -398,7 +369,7 @@ class JavaScript(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_js_ordered_map_entry
+            dict_entry_with_separator(separator=": ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -411,7 +382,9 @@ class JavaScript(metaclass=LanguageCls):
             line_ending.wrap_formatter(formatter=_base_decl)
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(formatter=_format_variable_assignment)
+            line_ending.wrap_formatter(
+                formatter=variable_formatter(template="{name} = {value};"),
+            )
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

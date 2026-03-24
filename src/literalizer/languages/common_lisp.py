@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -16,6 +17,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -27,25 +29,15 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
 def _format_cons_entry(key: str, value: str) -> str:
     """Format a Common Lisp association-list entry as a ``cons`` pair."""
     return f"(cons {key} {value})"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Common Lisp special-variable declaration with earmuffs."""
-    return f"(defparameter *{name}* {value})"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Common Lisp special-variable assignment with earmuffs."""
-    return f"(setf *{name}* {value})"
 
 
 _string_format: Callable[[str], str] = format_string_backslash
@@ -262,10 +254,10 @@ class CommonLisp(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="(defparameter *{name}* {value})")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="(setf *{name}* {value})")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

@@ -20,6 +20,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -32,10 +33,11 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -68,42 +70,6 @@ _dart_opener_config = TypedOpenerConfig(
     dict_opener_template="<String, {type_name}>{{",
     set_opener_template="<{type_name}>{{",
 )
-
-
-@beartype
-def _format_dart_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Dart map entry."""
-    return f"{key}: {value}"
-
-
-@beartype
-def _format_variable_declaration_final(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Dart ``final`` variable declaration."""
-    return f"final {name} = {value};"
-
-
-@beartype
-def _format_variable_declaration_var(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Dart ``var`` variable declaration."""
-    return f"var {name} = {value};"
-
-
-@beartype
-def _format_variable_declaration_const(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Dart ``const`` variable declaration."""
-    return f"const {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Dart variable assignment."""
-    return f"{name} = {value};"
 
 
 @beartype
@@ -225,13 +191,13 @@ class Dart(metaclass=LanguageCls):
         """Declaration style options."""
 
         FINAL = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_final,
+            formatter=variable_formatter(template="final {name} = {value};"),
         )
         VAR = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_var,
+            formatter=variable_formatter(template="var {name} = {value};"),
         )
         CONST = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_const,
+            formatter=variable_formatter(template="const {name} = {value};"),
         )
 
     class DictFormats(enum.Enum):
@@ -374,7 +340,7 @@ class Dart(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_dart_ordered_map_entry
+            dict_entry_with_separator(separator=": ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -384,7 +350,7 @@ class Dart(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -17,6 +18,7 @@ from literalizer._formatters import (
     format_string_backslash_dollar,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -28,20 +30,9 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-from literalizer._types import Value
 
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Groovy variable declaration."""
-    return f"def {name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Groovy variable assignment."""
-    return f"{name} = {value}"
-
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 _string_format: Callable[[str], str] = format_string_backslash_dollar
 
@@ -257,10 +248,10 @@ class Groovy(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="def {name} = {value}")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

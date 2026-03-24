@@ -17,6 +17,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -28,31 +29,11 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a named Norg code block.
-
-    Uses a heading for the variable name followed by a ranged
-    verbatim tag (``@code json`` / ``@end``) for the value.
-    """
-    return f"* {name}\n@code json\n{value}\n@end"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a named Norg code block.
-
-    Norg has no distinction between declaration and re-assignment;
-    this produces the same output as
-    :func:`_format_variable_declaration`.
-    """
-    return f"* {name}\n@code json\n{value}\n@end"
+    from literalizer._types import Value
 
 
 @beartype
@@ -273,10 +254,14 @@ class Norg(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(
+                template="* {name}\n@code json\n{value}\n@end",
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(
+                template="* {name}\n@code json\n{value}\n@end",
+            )
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

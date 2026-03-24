@@ -17,6 +17,7 @@ from literalizer._formatters import (
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -29,10 +30,11 @@ from literalizer._language import (
     SetFormatConfig,
     date_scalar_preamble,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 
 @beartype
@@ -48,24 +50,6 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
         f"Time.new({value.year}, {value.month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second})"
     )
-
-
-@beartype
-def _format_ruby_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Ruby ordered-map entry."""
-    return f"{key} => {value}"
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Ruby variable declaration."""
-    return f"{name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Ruby variable assignment."""
-    return f"{name} = {value}"
 
 
 @beartype
@@ -292,17 +276,17 @@ class Ruby(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_ruby_ordered_map_entry
+            dict_entry_with_separator(separator=" => ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            variable_formatter(template="{name} = {value}")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

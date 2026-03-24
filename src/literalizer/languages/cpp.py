@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     MixedNumeric,
+    braced_dict_entry,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
@@ -19,6 +20,7 @@ from literalizer._formatters import (
     passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -100,12 +102,6 @@ def _cpp_array_open(items: list[Value]) -> str:
     return f"std::array<{type_name}, {len(items)}>{{"
 
 
-@beartype
-def _format_cpp_dict_entry(key: str, value: str) -> str:
-    """Format a C++ dict entry as a brace-enclosed pair."""
-    return f"{{{key}, {value}}}"
-
-
 _ANY_INCLUDE: tuple[str, ...] = ("#include <initializer_list>",)
 
 _ANY_STRUCT: tuple[str, ...] = (
@@ -124,12 +120,6 @@ def _format_variable_declaration(
 ) -> str:
     """Format a C++ variable declaration."""
     return f"_Any {name} = {value};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a C++ variable assignment."""
-    return f"{name} = {value};"
 
 
 @beartype
@@ -351,7 +341,7 @@ class Cpp(metaclass=LanguageCls):
                 fallback="{",
             ),
             close="}",
-            format_entry=_format_cpp_dict_entry,
+            format_entry=braced_dict_entry,
             empty_dict=None,
             preamble_lines=("#include <map>",),
         )
@@ -385,7 +375,7 @@ class Cpp(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_cpp_dict_entry
+            braced_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -397,7 +387,7 @@ class Cpp(metaclass=LanguageCls):
             _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value};")
         )
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(

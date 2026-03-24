@@ -10,6 +10,7 @@ from beartype import beartype
 from literalizer._formatters import (
     MixedNumeric,
     TypedOpenerConfig,
+    braced_dict_entry,
     dict_entry_with_separator,
     format_bytes_hex,
     format_date_iso,
@@ -19,6 +20,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -32,10 +34,11 @@ from literalizer._language import (
     SetFormatConfig,
     date_scalar_preamble,
 )
-from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._types import Value
 
 _GO_MONTHS: dict[int, str] = {
     1: "time.January",
@@ -101,34 +104,6 @@ def _format_go_set_entry(item: str) -> str:
     Example: ``"apple"`` → ``"apple": struct{}{}``.
     """
     return f"{item}: struct{{}}{{}}"
-
-
-@beartype
-def _format_go_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Go ordered-map entry as a ``{key, value}`` pair."""
-    return f"{{{key}, {value}}}"
-
-
-@beartype
-def _format_variable_declaration_short(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Go short variable declaration."""
-    return f"{name} := {value}"
-
-
-@beartype
-def _format_variable_declaration_var(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Go ``var`` variable declaration."""
-    return f"var {name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Go variable assignment."""
-    return f"{name} = {value}"
 
 
 @beartype
@@ -254,10 +229,10 @@ class Go(metaclass=LanguageCls):
         """Declaration style options."""
 
         SHORT = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_short,
+            formatter=variable_formatter(template="{name} := {value}"),
         )
         VAR = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_var,
+            formatter=variable_formatter(template="var {name} = {value}"),
         )
 
     class DictFormats(enum.Enum):
@@ -401,7 +376,7 @@ class Go(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_go_ordered_map_entry
+            braced_dict_entry
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -411,7 +386,7 @@ class Go(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ("package main",)
         self.static_body_preamble: Sequence[str] = ()

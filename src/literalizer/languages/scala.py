@@ -24,6 +24,7 @@ from literalizer._formatters import (
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
+    variable_formatter,
 )
 from literalizer._language import (
     CommentConfig,
@@ -88,34 +89,6 @@ _scala_list_type_to_opener = make_type_to_opener(
     element_to_type=_scala_list_element_to_type,
     opener_template="List[{type_name}](",
 )
-
-
-@beartype
-def _format_scala_ordered_map_entry(key: str, value: str) -> str:
-    """Format a Scala ``ListMap`` entry as a ``key -> value`` pair."""
-    return f"{key} -> {value}"
-
-
-@beartype
-def _format_variable_declaration_val(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Scala ``val`` variable declaration."""
-    return f"val {name} = {value}"
-
-
-@beartype
-def _format_variable_declaration_var(
-    name: str, value: str, _data: Value
-) -> str:
-    """Format a Scala ``var`` variable declaration."""
-    return f"var {name} = {value}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format a Scala variable assignment."""
-    return f"{name} = {value}"
 
 
 @beartype
@@ -312,10 +285,10 @@ class Scala(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAL = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_val,
+            formatter=variable_formatter(template="val {name} = {value}"),
         )
         VAR = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_var,
+            formatter=variable_formatter(template="var {name} = {value}"),
         )
 
     class DictFormats(enum.Enum):
@@ -463,7 +436,7 @@ class Scala(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, str], str] = (
-            _format_scala_ordered_map_entry
+            dict_entry_with_separator(separator=" -> ")
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "
@@ -473,7 +446,7 @@ class Scala(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
