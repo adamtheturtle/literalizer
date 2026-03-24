@@ -413,6 +413,7 @@ class Haskell(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
         _is_string_body = (_IS_STRING_IMPORT, _IS_STRING_INSTANCE)
         self.scalar_preamble: dict[type, tuple[str, ...]] = (

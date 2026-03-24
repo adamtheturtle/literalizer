@@ -106,10 +106,24 @@ def _format_cpp_dict_entry(key: str, value: str) -> str:
     return f"{{{key}, {value}}}"
 
 
+_ANY_INCLUDE: tuple[str, ...] = ("#include <initializer_list>",)
+
+_ANY_STRUCT: tuple[str, ...] = (
+    "struct _Any {",
+    "    template<class T> _Any(T&&) noexcept {}",
+    "    _Any(std::initializer_list<_Any>) noexcept {}",
+    "};",
+)
+
+
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+) -> str:
     """Format a C++ variable declaration."""
-    return f"auto {name} = {value};"
+    return f"_Any {name} = {value};"
 
 
 @beartype
@@ -377,13 +391,14 @@ class Cpp(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        self.static_preamble: Sequence[str] = _ANY_INCLUDE
+        self.static_body_preamble: Sequence[str] = _ANY_STRUCT
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

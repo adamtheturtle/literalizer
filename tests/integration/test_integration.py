@@ -74,19 +74,8 @@ def _wrap_kotlin_varname(content: str) -> str:
 
 @beartype
 def _wrap_cpp(content: str) -> str:
-    """Wrap in a C++ struct and function for type-flexible
-    initialization.
-    """
-    return (
-        "#include <initializer_list>\n"
-        "struct _Any {\n"
-        "    template<class T> _Any(T&&) noexcept {}\n"
-        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-        "};\n"
-        "void _check() {\n"
-        f"    [[maybe_unused]] _Any _v = {content};\n"
-        "}"
-    )
+    """Wrap a C++ expression in a function body."""
+    return f"void _check() {{\n    [[maybe_unused]] _Any _v = {content};\n}}"
 
 
 @beartype
@@ -354,28 +343,8 @@ def _wrap_ts_varname(content: str) -> str:
 
 @beartype
 def _wrap_cpp_varname(content: str) -> str:
-    """Wrap a C++ variable declaration for mixed-type initializer lists.
-
-    ``auto`` cannot deduce a type for mixed-type braced initializers, so
-    the wrapper substitutes the custom ``_Any`` type that accepts any value.
-    """
-    old_prefix = f"auto {_VARIABLE_NAME} = "
-    new_prefix = f"_Any {_VARIABLE_NAME} = "
-    content_adapted = (
-        new_prefix + content[len(old_prefix) :]
-        if content.startswith(old_prefix)
-        else content
-    )
-    return (
-        "#include <initializer_list>\n"
-        "struct _Any {\n"
-        "    template<class T> _Any(T&&) noexcept {}\n"
-        "    _Any(std::initializer_list<_Any>) noexcept {}\n"
-        "};\n"
-        "void _check() {\n"
-        f"{content_adapted}\n"
-        "}"
-    )
+    """Wrap a C++ variable declaration in a function body."""
+    return f"void _check() {{\n{content}\n}}"
 
 
 @beartype

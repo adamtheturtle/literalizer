@@ -381,6 +381,7 @@ class Nim(metaclass=LanguageCls):
         )
         _json = ("import json",)
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             str: _json,
             int: _json,

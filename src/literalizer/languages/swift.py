@@ -350,6 +350,7 @@ class Swift(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

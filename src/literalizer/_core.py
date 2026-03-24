@@ -165,7 +165,10 @@ def _compute_preamble(
         ),
     )
     return _PreambleResult(
-        header=_deduplicate(lines=scalar + collection + type_hint),
+        header=_deduplicate(
+            lines=scalar + collection + type_hint,
+        )
+        + tuple(language.static_body_preamble),
         body=body,
     )
 
