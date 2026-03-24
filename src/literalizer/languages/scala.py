@@ -62,7 +62,7 @@ _scala_opener_config = TypedOpenerConfig(
     date_type="LocalDate",
     datetime_type="ZonedDateTime",
     list_template="Array[{inner}]",
-    seq_opener_template="Array[{type_name}](",
+    sequence_opener_template="Array[{type_name}](",
     dict_opener_template="Map[String, {type_name}](",
     set_opener_template="Set[{type_name}](",
 )
