@@ -44,6 +44,21 @@ def _wrap_identity(content: str) -> str:
     return content
 
 
+def _find_redefinition_style(
+    spec: literalizer.Language,
+) -> enum.Enum | None:
+    """Return a declaration style that supports redefinition, or None."""
+    for style in spec.declaration_styles:
+        style_value = style.value
+        if isinstance(style_value, DeclarationStyleConfig):
+            if style_value.supports_redefinition:
+                return style
+        else:
+            # String-valued enum — dynamic languages always allow redefinition.
+            return style
+    return None
+
+
 def _newline_combined(
     wrap: Callable[[str], str],
 ) -> Callable[[str, str], str]:
@@ -1315,19 +1330,16 @@ def test_golden_file_combined_variable_forms(
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     spec = lang_config.lang_cls()
-    default_style_value = spec.declaration_style.value
-    if (
-        isinstance(default_style_value, DeclarationStyleConfig)
-        and not default_style_value.supports_redefinition
-    ):
+    redef_style = _find_redefinition_style(spec=spec)
+    if redef_style is None:
         pytest.skip(
-            f"{language} default declaration style "
-            f"{spec.declaration_style.name!r} does not support redefinition"
+            f"{language} has no declaration style that supports redefinition"
         )
+    spec = lang_config.lang_cls(declaration_style=redef_style)
     yaml_string = input_path.read_text()
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
+        language=spec,
         line_prefix="",
         indent="    ",
         include_delimiters=True,
@@ -1337,7 +1349,7 @@ def test_golden_file_combined_variable_forms(
     )
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
+        language=spec,
         line_prefix="",
         indent="    ",
         include_delimiters=True,
@@ -1469,11 +1481,7 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
     cases: list[_LineEndingCombinedCase] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_style_value = spec.declaration_style.value
-        if (
-            isinstance(default_style_value, DeclarationStyleConfig)
-            and not default_style_value.supports_redefinition
-        ):
+        if _find_redefinition_style(spec=spec) is None:
             continue
         default_le = spec.line_ending
         for le in spec.line_endings:
@@ -1513,7 +1521,13 @@ def test_line_ending_combined_variable_forms(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    spec = case.lang_config.lang_cls(line_ending=case.line_ending)
+    base_spec = case.lang_config.lang_cls()
+    redef_style = _find_redefinition_style(spec=base_spec)
+    assert redef_style is not None
+    spec = case.lang_config.lang_cls(
+        line_ending=case.line_ending,
+        declaration_style=redef_style,
+    )
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
