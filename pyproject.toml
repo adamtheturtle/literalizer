@@ -395,6 +395,7 @@ ignore_names = [
     "__call__",
     # Enum members accessed by consumers iterating format enums
     "ARRAY",
+    "BINARY",
     "BLOCK",
     "BTREE_SET",
     "HASH_SET",
@@ -408,6 +409,7 @@ ignore_names = [
     "FROZENSET",
     "ERLANG",
     "NO",
+    "OCTAL",
     "SEQ",
     "SINGLE",
     "SORTED_SET",
