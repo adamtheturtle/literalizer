@@ -119,8 +119,7 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
 @beartype
 def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """Format an OCaml variable assignment."""
-    val_type = "val_t array" if value.lstrip().startswith("[|") else "val_t"
-    return f"let {name} : {val_type} = {_to_val(value=value)}"
+    return _format_variable_declaration(name=name, value=value, _data=_data)
 
 
 _string_format: Callable[[str], str] = format_string_backslash
