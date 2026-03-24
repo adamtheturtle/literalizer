@@ -187,9 +187,11 @@ class Zig(metaclass=LanguageCls):
 
         CONST = DeclarationStyleConfig(
             formatter=_format_const_declaration,
+            supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
             formatter=_format_var_declaration,
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):

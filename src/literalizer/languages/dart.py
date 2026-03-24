@@ -183,12 +183,15 @@ class Dart(metaclass=LanguageCls):
 
         FINAL = DeclarationStyleConfig(
             formatter=variable_formatter(template="final {name} = {value};"),
+            supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_formatter(template="var {name} = {value};"),
+            supports_redefinition=True,
         )
         CONST = DeclarationStyleConfig(
             formatter=variable_formatter(template="const {name} = {value};"),
+            supports_redefinition=False,
         )
 
     class DictFormats(enum.Enum):

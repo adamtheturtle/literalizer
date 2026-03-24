@@ -230,9 +230,11 @@ class Rust(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=variable_formatter(template="let {name} = {value};"),
+            supports_redefinition=True,
         )
         LET_MUT = DeclarationStyleConfig(
             formatter=variable_formatter(template="let mut {name} = {value};"),
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):

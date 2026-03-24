@@ -260,9 +260,11 @@ class Scala(metaclass=LanguageCls):
 
         VAL = DeclarationStyleConfig(
             formatter=variable_formatter(template="val {name} = {value}"),
+            supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_formatter(template="var {name} = {value}"),
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):
