@@ -1,1 +1,0 @@
-declare my_data=()
