@@ -239,7 +239,24 @@ class Rust(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        HASH_MAP = "hash_map"
+        HASH_MAP = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="HashMap::from(["),
+            close="])",
+            format_entry=tuple_dict_entry(
+                format_value=passthrough_sequence_entry
+            ),
+            empty_dict="HashMap::<&str, &str>::from([])",
+            preamble_lines=("use std::collections::HashMap;",),
+        )
+        BTREE_MAP = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="BTreeMap::from(["),
+            close="])",
+            format_entry=tuple_dict_entry(
+                format_value=passthrough_sequence_entry
+            ),
+            empty_dict="BTreeMap::<&str, &str>::from([])",
+            preamble_lines=("use std::collections::BTreeMap;",),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -353,15 +370,7 @@ class Rust(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="HashMap::from(["),
-            close="])",
-            format_entry=tuple_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict="HashMap::<&str, &str>::from([])",
-            preamble_lines=("use std::collections::HashMap;",),
-        )
+        self.dict_format_config: DictFormatConfig = dict_format.value
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format

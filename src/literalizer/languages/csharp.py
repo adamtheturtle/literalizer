@@ -22,6 +22,7 @@ from literalizer._formatters import (
     format_integer_hex,
     format_integer_underscore,
     format_string_backslash,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -62,6 +63,14 @@ _csharp_opener_config = TypedOpenerConfig(
     dict_opener_template="new Dictionary<string, {type_name}> {{",
     set_opener_template="new HashSet<{type_name}> {{",
 )
+
+
+@dataclasses.dataclass(frozen=True)
+class _CSharpDictSpec:
+    """Per-format dict config pieces resolved at init time."""
+
+    opener_template: str
+    fallback: str
 
 
 @beartype
@@ -210,7 +219,14 @@ class CSharp(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        DICTIONARY = "dictionary"
+        DICTIONARY = _CSharpDictSpec(
+            opener_template="new Dictionary<string, {type_name}> {{",
+            fallback="new Dictionary<string, object> {",
+        )
+        SORTED_DICTIONARY = _CSharpDictSpec(
+            opener_template="new SortedDictionary<string, {type_name}> {{",
+            fallback="new SortedDictionary<string, object> {",
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -342,10 +358,21 @@ class CSharp(metaclass=LanguageCls):
             if fmt.typed_opener_fallback is not None
             else fmt.sequence_open
         )
+        dict_spec: _CSharpDictSpec = dict_format.value
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=openers.dict,
-                fallback="new Dictionary<string, object> {",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_csharp_opener_config.element_to_type(
+                        date_type=_csharp_opener_config.type_name(
+                            py_type=date_tp
+                        ),
+                        datetime_type=_csharp_opener_config.type_name(
+                            py_type=dt_tp
+                        ),
+                    ),
+                    opener_template=dict_spec.opener_template,
+                ),
+                fallback=dict_spec.fallback,
             ),
             close="}",
             format_entry=csharp_dict_entry,

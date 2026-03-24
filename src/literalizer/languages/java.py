@@ -246,7 +246,29 @@ class Java(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP_OF_ENTRIES = "map_of_entries"
+        MAP_OF_ENTRIES = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="Map.ofEntries("),
+            close=")",
+            format_entry=dict_entry_with_template(
+                template="Map.entry({key}, {value})",
+                format_value=passthrough_sequence_entry,
+            ),
+            empty_dict=None,
+            preamble_lines=("import java.util.Map;",),
+        )
+        HASH_MAP = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="new HashMap<>(Map.ofEntries("),
+            close="))",
+            format_entry=dict_entry_with_template(
+                template="Map.entry({key}, {value})",
+                format_value=passthrough_sequence_entry,
+            ),
+            empty_dict="new HashMap<>()",
+            preamble_lines=(
+                "import java.util.HashMap;",
+                "import java.util.Map;",
+            ),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -393,13 +415,7 @@ class Java(metaclass=LanguageCls):
             if fmt.typed_opener_fallback is not None
             else fmt.sequence_open
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="Map.ofEntries("),
-            close=")",
-            format_entry=java_dict_entry,
-            empty_dict=None,
-            preamble_lines=("import java.util.Map;",),
-        )
+        self.dict_format_config: DictFormatConfig = dict_format.value
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
