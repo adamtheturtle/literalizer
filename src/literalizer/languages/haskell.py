@@ -66,12 +66,6 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
     )
 
 
-_format_string_haskell = functools.partial(
-    format_string_backslash_control,
-    control_char_fmt="\\x{:02x}",
-)
-
-
 @beartype
 class Haskell(metaclass=LanguageCls):
     """Haskell language specification.
@@ -327,7 +321,10 @@ class Haskell(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _format_string_haskell
+        self.format_string: Callable[[str], str] = functools.partial(
+            format_string_backslash_control,
+            control_char_fmt="\\x{:02x}",
+        )
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry

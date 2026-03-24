@@ -103,30 +103,18 @@ def _format_string_vb(value: str) -> str:
     return " & ".join(parts)
 
 
-_VB_SCALAR_TYPES: dict[type, str] = {
-    str: "String",
-    bool: "Boolean",
-    int: "Integer",
-    float: "Double",
-    MixedNumeric: "Double",
-    bytes: "String",
-    datetime.date: "String",
-    datetime.datetime: "String",
-}
-
 _vb_element_to_type = make_element_to_type(
-    scalar_types=_VB_SCALAR_TYPES,
+    scalar_types={
+        str: "String",
+        bool: "Boolean",
+        int: "Integer",
+        float: "Double",
+        MixedNumeric: "Double",
+        bytes: "String",
+        datetime.date: "String",
+        datetime.datetime: "String",
+    },
     list_template="{inner}()",
-)
-
-_vb_set_type_to_opener = make_type_to_opener(
-    element_to_type=_vb_element_to_type,
-    opener_template="New HashSet(Of {type_name}) From {{",
-)
-
-_vb_type_to_opener = make_type_to_opener(
-    element_to_type=_vb_element_to_type,
-    opener_template="New {type_name}() {{",
 )
 
 
@@ -199,7 +187,10 @@ class VisualBasic(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_vb_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_vb_element_to_type,
+                    opener_template="New {type_name}() {{",
+                ),
                 fallback="New Object() {",
             ),
             close="}",
@@ -223,7 +214,10 @@ class VisualBasic(metaclass=LanguageCls):
 
         HASH_SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_vb_set_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_vb_element_to_type,
+                    opener_template="New HashSet(Of {type_name}) From {{",
+                ),
                 fallback="New HashSet(Of Object) From {",
             ),
             close="}",
