@@ -42,8 +42,6 @@ _VB_CHAR_REPLACEMENTS: dict[str, str] = {
     "\t": "vbTab",
 }
 
-_VB_CONTROL_CHAR_THRESHOLD = 32
-
 
 @beartype
 def _flush_vb_current(
@@ -60,6 +58,7 @@ def _flush_vb_current(
 @beartype
 def _vb_string_parts(value: str) -> list[str]:
     """Generate VB.NET string parts for control character handling."""
+    control_char_threshold = 32
     parts: list[str] = []
     current = ""
     i = 0
@@ -76,7 +75,7 @@ def _vb_string_parts(value: str) -> list[str]:
             current = _flush_vb_current(parts=parts, current=current)
             parts.append(_VB_CHAR_REPLACEMENTS[c])
             i += 1
-        elif ord(c) < _VB_CONTROL_CHAR_THRESHOLD:
+        elif ord(c) < control_char_threshold:
             current = _flush_vb_current(parts=parts, current=current)
             parts.append(f"Chr({ord(c)})")
             i += 1

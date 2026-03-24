@@ -3,7 +3,6 @@
 import datetime
 import enum
 import functools
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -34,6 +33,8 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from literalizer._types import Value
 
 
@@ -68,31 +69,6 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
 _format_string_haskell = functools.partial(
     format_string_backslash_control,
     control_char_fmt="\\x{:02x}",
-)
-
-
-_string_format: Callable[[str], str] = _format_string_haskell
-
-_IS_STRING_IMPORT = "import Data.String (IsString(fromString))"
-
-_IS_STRING_INSTANCE = "instance IsString Val where\n    fromString = HStr"
-
-_NUM_INSTANCE = (
-    "instance Num Val where\n"
-    "    fromInteger = HInt\n"
-    '    a + b = error "not implemented"\n'
-    '    a * b = error "not implemented"\n'
-    '    abs a = error "not implemented"\n'
-    '    signum a = error "not implemented"\n'
-    "    negate (HInt n) = HInt (negate n)\n"
-    "    negate (HFloat f) = HFloat (negate f)\n"
-    '    negate _ = error "not implemented"'
-)
-
-_FRACTIONAL_INSTANCE = (
-    "instance Fractional Val where\n"
-    "    fromRational r = HFloat (realToFrac r)\n"
-    '    a / b = error "not implemented"'
 )
 
 
@@ -351,7 +327,7 @@ class Haskell(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = _format_string_haskell
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
@@ -389,7 +365,10 @@ class Haskell(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
-        _is_string_body = (_IS_STRING_IMPORT, _IS_STRING_INSTANCE)
+        _is_string_body = (
+            "import Data.String (IsString(fromString))",
+            "instance IsString Val where\n    fromString = HStr",
+        )
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
@@ -403,8 +382,31 @@ class Haskell(metaclass=LanguageCls):
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
             str: _is_string_body,
             bytes: _is_string_body,
-            int: (_NUM_INSTANCE,),
-            float: (_NUM_INSTANCE, _FRACTIONAL_INSTANCE),
+            int: (
+                "instance Num Val where\n"
+                "    fromInteger = HInt\n"
+                '    a + b = error "not implemented"\n'
+                '    a * b = error "not implemented"\n'
+                '    abs a = error "not implemented"\n'
+                '    signum a = error "not implemented"\n'
+                "    negate (HInt n) = HInt (negate n)\n"
+                "    negate (HFloat f) = HFloat (negate f)\n"
+                '    negate _ = error "not implemented"',
+            ),
+            float: (
+                "instance Num Val where\n"
+                "    fromInteger = HInt\n"
+                '    a + b = error "not implemented"\n'
+                '    a * b = error "not implemented"\n'
+                '    abs a = error "not implemented"\n'
+                '    signum a = error "not implemented"\n'
+                "    negate (HInt n) = HInt (negate n)\n"
+                "    negate (HFloat f) = HFloat (negate f)\n"
+                '    negate _ = error "not implemented"',
+                "instance Fractional Val where\n"
+                "    fromRational r = HFloat (realToFrac r)\n"
+                '    a / b = error "not implemented"',
+            ),
             **{
                 t: _is_string_body
                 for t, p in (

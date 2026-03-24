@@ -80,16 +80,6 @@ _cpp_element_to_type = make_element_to_type(
     list_template="std::vector<{inner}>",
 )
 
-_cpp_type_to_opener = make_type_to_opener(
-    element_to_type=_cpp_element_to_type,
-    opener_template="std::vector<{type_name}>{{",
-)
-
-_cpp_dict_type_to_opener = make_type_to_opener(
-    element_to_type=_cpp_element_to_type,
-    opener_template="std::map<std::string, {type_name}>{{",
-)
-
 
 @beartype
 def _cpp_array_open(items: list[Value]) -> str:
@@ -186,7 +176,10 @@ class Cpp(metaclass=LanguageCls):
 
         INITIALIZER_LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_cpp_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_cpp_element_to_type,
+                    opener_template="std::vector<{type_name}>{{",
+                ),
                 fallback="{",
             ),
             close="}",
@@ -327,7 +320,10 @@ class Cpp(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=_cpp_dict_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_cpp_element_to_type,
+                    opener_template="std::map<std::string, {type_name}>{{",
+                ),
                 fallback="{",
             ),
             close="}",

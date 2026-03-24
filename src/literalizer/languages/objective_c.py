@@ -28,12 +28,6 @@ from literalizer._language import (
 if TYPE_CHECKING:
     from literalizer._types import Value
 
-_OBJC_PREFIXES = (
-    "@",
-    "[NSNull null]",
-    "[NSSet setWithArray:",
-)
-
 
 @beartype
 def _to_objc_val(value: str) -> str:
@@ -44,7 +38,8 @@ def _to_objc_val(value: str) -> str:
     ``@`` or ``[`` and are returned unchanged.  Bare numeric strings are
     wrapped in ``@(...)`` to produce an ``NSNumber`` literal.
     """
-    if any(value.startswith(p) for p in _OBJC_PREFIXES):
+    prefixes = ("@", "[NSNull null]", "[NSSet setWithArray:")
+    if any(value.startswith(p) for p in prefixes):
         return value
     return f"@({value})"
 

@@ -45,9 +45,6 @@ _format_string_toml = functools.partial(
 )
 
 
-_MIN_QUOTED_KEY_LENGTH = 2
-
-
 @beartype
 def _format_toml_dict_entry(key: str, value: str) -> str:
     """Format a TOML dict entry as ``key = value``.
@@ -56,10 +53,11 @@ def _format_toml_dict_entry(key: str, value: str) -> str:
     (alphanumeric, dashes, underscores only), the quotes are stripped for
     cleaner idiomatic output.
     """
+    min_quoted_key_length = 2
     if (
         key.startswith('"')
         and key.endswith('"')
-        and len(key) >= _MIN_QUOTED_KEY_LENGTH
+        and len(key) >= min_quoted_key_length
     ):
         inner = key[1:-1]
         if _BARE_KEY_PATTERN.match(string=inner):

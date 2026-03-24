@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -35,6 +34,8 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from literalizer._types import Value
 
 
@@ -52,17 +53,13 @@ _MOJO_SCALAR_TYPES: dict[type, str] = {
     MixedNumeric: "String",
 }
 
-_mojo_element_to_type = make_element_to_type(
-    scalar_types=_MOJO_SCALAR_TYPES,
-    list_template="List[{inner}]",
-)
-
 _mojo_set_type_to_opener = make_type_to_opener(
-    element_to_type=_mojo_element_to_type,
+    element_to_type=make_element_to_type(
+        scalar_types=_MOJO_SCALAR_TYPES,
+        list_template="List[{inner}]",
+    ),
     opener_template="Set[{type_name}](",
 )
-
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
@@ -256,7 +253,7 @@ class Mojo(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry

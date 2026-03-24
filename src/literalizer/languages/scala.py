@@ -80,13 +80,11 @@ _scala_opener_config = TypedOpenerConfig(
 
 
 # The LIST format needs List[…] for nested type names, not Array[…].
-_scala_list_element_to_type = make_element_to_type(
-    scalar_types=_SCALA_SCALAR_TYPES,
-    list_template="List[{inner}]",
-)
-
 _scala_list_type_to_opener = make_type_to_opener(
-    element_to_type=_scala_list_element_to_type,
+    element_to_type=make_element_to_type(
+        scalar_types=_SCALA_SCALAR_TYPES,
+        list_template="List[{inner}]",
+    ),
     opener_template="List[{type_name}](",
 )
 
