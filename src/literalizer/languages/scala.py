@@ -113,44 +113,13 @@ def _resolve_sequence_open(
     return fmt.sequence_open
 
 
-@beartype
-def _build_scala_dict_config(
-    *,
-    dict_format: enum.Enum,
-    openers: TypeOpeners,
-    date_type_name: str | None,
-    datetime_type_name: str | None,
-) -> DictFormatConfig:
-    """Build the dict format config, switching opener for ListMap."""
-    if dict_format.name == "LIST_MAP":
-        dict_type_to_opener = make_type_to_opener(
-            element_to_type=_scala_opener_config.element_to_type(
-                date_type=date_type_name,
-                datetime_type=datetime_type_name,
-            ),
-            opener_template="ListMap[String, {type_name}](",
-        )
-        fallback = "ListMap("
-        preamble: tuple[str, ...] = (
-            "import scala.collection.immutable.ListMap",
-        )
-    else:
-        dict_type_to_opener = openers.dict
-        fallback = "Map("
-        preamble = ()
-    return DictFormatConfig(
-        open_fn=typed_dict_open(
-            type_to_opener=dict_type_to_opener,
-            fallback=fallback,
-        ),
-        close=")",
-        format_entry=dict_entry_with_separator(
-            separator=" -> ",
-            format_value=passthrough_sequence_entry,
-        ),
-        empty_dict=None,
-        preamble_lines=preamble,
-    )
+@dataclasses.dataclass(frozen=True)
+class _ScalaDictSpec:
+    """Per-format dict config pieces resolved at init time."""
+
+    opener_template: str
+    fallback: str
+    preamble_lines: tuple[str, ...]
 
 
 @beartype
@@ -306,8 +275,16 @@ class Scala(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = "map"
-        LIST_MAP = "list_map"
+        MAP = _ScalaDictSpec(
+            opener_template="Map[String, {type_name}](",
+            fallback="Map(",
+            preamble_lines=(),
+        )
+        LIST_MAP = _ScalaDictSpec(
+            opener_template="ListMap[String, {type_name}](",
+            fallback="ListMap(",
+            preamble_lines=("import scala.collection.immutable.ListMap",),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -416,11 +393,25 @@ class Scala(metaclass=LanguageCls):
                 datetime_type=datetime_type_name,
             )
         )
-        self.dict_format_config: DictFormatConfig = _build_scala_dict_config(
-            dict_format=dict_format,
-            openers=openers,
-            date_type_name=date_type_name,
-            datetime_type_name=datetime_type_name,
+        dict_spec: _ScalaDictSpec = dict_format.value
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=typed_dict_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_scala_opener_config.element_to_type(
+                        date_type=date_type_name,
+                        datetime_type=datetime_type_name,
+                    ),
+                    opener_template=dict_spec.opener_template,
+                ),
+                fallback=dict_spec.fallback,
+            ),
+            close=")",
+            format_entry=dict_entry_with_separator(
+                separator=" -> ",
+                format_value=passthrough_sequence_entry,
+            ),
+            empty_dict=None,
+            preamble_lines=dict_spec.preamble_lines,
         )
         self.multiline_trailing_comma = True
         self.format_bytes: Callable[[bytes], str] = bytes_format
