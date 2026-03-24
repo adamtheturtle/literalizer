@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    dict_entry_with_template,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -49,16 +50,6 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
             return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
         case _:
             return formatted
-
-
-@beartype
-def _format_occam_dict_entry(key: str, val: Value, value: str) -> str:
-    """Format an occam-pi dict or ordered-map entry as a ``MOBILE
-    LIT(lit.pair;
-    ...)`` constructor.
-    """
-    wrapped = _format_occam_entry(original=val, formatted=value)
-    return f"MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {wrapped})"
 
 
 @beartype
@@ -235,7 +226,10 @@ class Occam(metaclass=LanguageCls):
                 open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
             ),
             close="])",
-            format_entry=_format_occam_dict_entry,
+            format_entry=dict_entry_with_template(
+                template="MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {value})",
+                format_value=_format_occam_entry,
+            ),
             empty_dict=None,
             preamble_lines=(),
         )
@@ -270,7 +264,10 @@ class Occam(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _format_occam_dict_entry
+            dict_entry_with_template(
+                template="MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {value})",
+                format_value=_format_occam_entry,
+            )
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

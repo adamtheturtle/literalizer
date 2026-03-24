@@ -244,6 +244,7 @@ class Lua(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         lua_dict_entry = dict_entry_with_template(
             template="[{key}] = {value}",
+            format_value=passthrough_sequence_entry,
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),

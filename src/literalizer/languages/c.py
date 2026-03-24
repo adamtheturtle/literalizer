@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    braced_dict_entry,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -48,12 +49,6 @@ def _format_c_entry(original: Value, formatted: str) -> str:
             return f"((_CVal){{.f = {formatted}}})"
         case _:
             return formatted
-
-
-@beartype
-def _format_c_dict_entry(key: str, val: Value, value: str) -> str:
-    """Format a C dict entry as a ``_CKV`` compound literal."""
-    return f"{{{key}, {_format_c_entry(original=val, formatted=value)}}}"
 
 
 @beartype
@@ -243,7 +238,9 @@ class C(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="((_CVal){.m = (_CKV[]){"),
             close="}})",
-            format_entry=_format_c_dict_entry,
+            format_entry=braced_dict_entry(
+                format_value=_format_c_entry,
+            ),
             empty_dict=None,
             preamble_lines=(),
         )
@@ -276,7 +273,7 @@ class C(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _format_c_dict_entry
+            braced_dict_entry(format_value=_format_c_entry)
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

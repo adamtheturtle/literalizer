@@ -322,7 +322,9 @@ class Cpp(metaclass=LanguageCls):
                 fallback="{",
             ),
             close="}",
-            format_entry=braced_dict_entry,
+            format_entry=braced_dict_entry(
+                format_value=passthrough_sequence_entry
+            ),
             empty_dict=None,
             preamble_lines=("#include <map>",),
         )
@@ -358,7 +360,7 @@ class Cpp(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            braced_dict_entry
+            braced_dict_entry(format_value=passthrough_sequence_entry)
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

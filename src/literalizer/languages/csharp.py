@@ -283,6 +283,7 @@ class CSharp(metaclass=LanguageCls):
         self.set_format = set_format
         csharp_dict_entry = dict_entry_with_template(
             template="[{key}] = {value}",
+            format_value=passthrough_sequence_entry,
         )
 
         date_tp = date_format.value.type_produced
