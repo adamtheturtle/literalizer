@@ -283,7 +283,7 @@ class Dart(metaclass=LanguageCls):
             date_type="DateTime",
             datetime_type="DateTime",
             list_template="List<{inner}>",
-            seq_opener_template="<{type_name}>[",
+            sequence_opener_template="<{type_name}>[",
             dict_opener_template="<String, {type_name}>{{",
             set_opener_template="<{type_name}>{{",
         )

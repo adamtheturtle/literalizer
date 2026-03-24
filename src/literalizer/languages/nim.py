@@ -52,9 +52,9 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
 @beartype
 def _make_variable_declaration(
     *,
-    seq_mode: bool,
+    sequence_mode: bool,
     keyword: str,
-    force_seq: bool,
+    force_sequence: bool,
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable declaration formatter."""
 
@@ -63,13 +63,13 @@ def _make_variable_declaration(
         """Format a declaration, using ``@`` for flat sequences of
         simple scalars.
         """
-        use_seq = (
+        use_sequence = (
             isinstance(_data, list)
             and _data
             and (
-                force_seq
+                force_sequence
                 or (
-                    seq_mode
+                    sequence_mode
                     and all(
                         isinstance(item, (str, int, float, bool, bytes))
                         for item in _data
@@ -77,9 +77,9 @@ def _make_variable_declaration(
                 )
             )
         )
-        if use_seq:
+        if use_sequence:
             return f"{keyword} {name} = @{value}"
-        if force_seq:
+        if force_sequence:
             return f"{keyword} {name} = {value}"
         return f"{keyword} {name} = %* {value}"
 
@@ -89,7 +89,7 @@ def _make_variable_declaration(
 @beartype
 def _make_variable_assignment(
     *,
-    seq_mode: bool,
+    sequence_mode: bool,
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable assignment formatter."""
 
@@ -99,7 +99,7 @@ def _make_variable_assignment(
         simple scalars.
         """
         if (
-            seq_mode
+            sequence_mode
             and isinstance(_data, list)
             and _data
             and all(
@@ -365,17 +365,17 @@ class Nim(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        _seq = sequence_format is self.sequence_formats.SEQ
+        _is_sequence = sequence_format is self.sequence_formats.SEQ
         _is_const = declaration_style is self.declaration_styles.CONST
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _make_variable_declaration(
-                seq_mode=_seq,
+                sequence_mode=_is_sequence,
                 keyword=declaration_style.value,
-                force_seq=_is_const,
+                force_sequence=_is_const,
             )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _make_variable_assignment(seq_mode=_seq)
+            _make_variable_assignment(sequence_mode=_is_sequence)
         )
         _json = ("import json",)
         self.static_preamble: Sequence[str] = ()

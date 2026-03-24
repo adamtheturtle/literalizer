@@ -264,7 +264,7 @@ class TypedOpenerConfig:
         date_type: str | None,
         datetime_type: str | None,
         list_template: str,
-        seq_opener_template: str,
+        sequence_opener_template: str,
         dict_opener_template: str,
         set_opener_template: str,
     ) -> None:
@@ -278,7 +278,7 @@ class TypedOpenerConfig:
         self._date_type = date_type
         self._datetime_type = datetime_type
         self._list_template = list_template
-        self._seq_opener_template = seq_opener_template
+        self._sequence_opener_template = sequence_opener_template
         self._dict_opener_template = dict_opener_template
         self._set_opener_template = set_opener_template
 
@@ -353,7 +353,7 @@ class TypedOpenerConfig:
         return TypeOpeners(
             seq=make_type_to_opener(
                 element_to_type=element_type_resolver,
-                opener_template=self._seq_opener_template,
+                opener_template=self._sequence_opener_template,
             ),
             dict=make_type_to_opener(
                 element_to_type=element_type_resolver,

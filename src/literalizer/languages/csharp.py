@@ -52,7 +52,7 @@ _csharp_opener_config = TypedOpenerConfig(
     date_type="DateOnly",
     datetime_type="DateTime",
     list_template="{inner}[]",
-    seq_opener_template="new {type_name}[] {{",
+    sequence_opener_template="new {type_name}[] {{",
     dict_opener_template="new Dictionary<string, {type_name}> {{",
     set_opener_template="new HashSet<{type_name}> {{",
 )

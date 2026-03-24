@@ -83,7 +83,7 @@ _kotlin_opener_config = TypedOpenerConfig(
     date_type="LocalDate",
     datetime_type="LocalDateTime",
     list_template="Array<{inner}>",
-    seq_opener_template="arrayOf(",
+    sequence_opener_template="arrayOf(",
     dict_opener_template="mapOf<String, {type_name}>(",
     set_opener_template="setOf<{type_name}>(",
 )

@@ -699,10 +699,10 @@ def _format_list_value(
     spec: Language,
 ) -> str:
     """Format a list as a native language literal."""
-    seq_cfg = spec.sequence_format_config
+    sequence_cfg = spec.sequence_format_config
 
-    if not value and seq_cfg.empty_sequence is not None:
-        return seq_cfg.empty_sequence
+    if not value and sequence_cfg.empty_sequence is not None:
+        return sequence_cfg.empty_sequence
     items = [
         spec.format_sequence_entry(_format_value(value=v, spec=spec))
         for v in value
@@ -710,9 +710,9 @@ def _format_list_value(
     joined = spec.element_separator.join(items)
     # Some languages (e.g. Python) require a trailing comma on
     # single-element sequences to avoid syntactic ambiguity.
-    if len(items) == 1 and seq_cfg.single_element_trailing_comma:
+    if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
-    return f"{spec.sequence_open(value)}{joined}{seq_cfg.close}"
+    return f"{spec.sequence_open(value)}{joined}{sequence_cfg.close}"
 
 
 @beartype
