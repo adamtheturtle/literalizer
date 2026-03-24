@@ -201,9 +201,6 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
     ),
     HASKELL: _VariableSyntax(
         declaration=(
-            "import Data.Time (Day, UTCTime(..)"
-            ", fromGregorian"
-            ", secondsToDiffTime, picosecondsToDiffTime)\n"
             "data Val = HNull | HBool Bool | HInt Integer"
             " | HFloat Double | HStr String | HList [Val]"
             " | HMap [(String, Val)] | HSet [Val]"
@@ -220,9 +217,6 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
             "my_var = 42"
         ),
         assignment=(
-            "import Data.Time (Day, UTCTime(..)"
-            ", fromGregorian"
-            ", secondsToDiffTime, picosecondsToDiffTime)\n"
             "data Val = HNull | HBool Bool | HInt Integer"
             " | HFloat Double | HStr String | HList [Val]"
             " | HMap [(String, Val)] | HSet [Val]"

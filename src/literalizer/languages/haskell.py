@@ -373,12 +373,13 @@ class Haskell(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
         )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        self.static_code_preamble: Sequence[str] = (
+        self.static_preamble: Sequence[str] = (
             "import Data.Time (Day, UTCTime(..)"
             ", fromGregorian"
             ", secondsToDiffTime, picosecondsToDiffTime)",
+        )
+        self.static_body_preamble: Sequence[str] = ()
+        self.static_code_preamble: Sequence[str] = (
             "data Val = HNull | HBool Bool | HInt Integer"
             " | HFloat Double | HStr String | HList [Val]"
             " | HMap [(String, Val)] | HSet [Val]"
