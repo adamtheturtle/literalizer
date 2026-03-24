@@ -49,9 +49,6 @@ def _format_datetime_nim(value: datetime.datetime) -> str:
     )
 
 
-_NIM_SEQ_SAFE_TYPES = (str, int, float, bool, bytes)
-
-
 @beartype
 def _make_variable_declaration(
     *,
@@ -74,7 +71,8 @@ def _make_variable_declaration(
                 or (
                     seq_mode
                     and all(
-                        isinstance(item, _NIM_SEQ_SAFE_TYPES) for item in _data
+                        isinstance(item, (str, int, float, bool, bytes))
+                        for item in _data
                     )
                 )
             )
@@ -104,15 +102,15 @@ def _make_variable_assignment(
             seq_mode
             and isinstance(_data, list)
             and _data
-            and all(isinstance(item, _NIM_SEQ_SAFE_TYPES) for item in _data)
+            and all(
+                isinstance(item, (str, int, float, bool, bytes))
+                for item in _data
+            )
         ):
             return f"{name} = @{value}"
         return f"{name} = %* {value}"
 
     return _format
-
-
-_string_format: Callable[[str], str] = format_string_backslash
 
 
 @beartype
@@ -338,7 +336,7 @@ class Nim(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry

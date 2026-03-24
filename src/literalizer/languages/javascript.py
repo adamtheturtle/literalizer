@@ -201,7 +201,7 @@ class JavaScript(metaclass=LanguageCls):
         MAP = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="new Map(["),
             close="])",
-            format_entry=_format_map_entry,
+            format_entry=dict_entry_with_template(template="[{key}, {value}]"),
             empty_dict="new Map()",
             preamble_lines=(),
         )
@@ -218,13 +218,13 @@ class JavaScript(metaclass=LanguageCls):
         DECIMAL = MappingProxyType(
             mapping={
                 "NONE": str,
-                "UNDERSCORE": _format_integer_underscore,
+                "UNDERSCORE": format_integer_underscore,
             }
         )
         HEX = MappingProxyType(
             mapping={
-                "NONE": _format_integer_hex,
-                "UNDERSCORE": _format_integer_hex,
+                "NONE": format_integer_hex,
+                "UNDERSCORE": format_integer_hex,
             }
         )
 
