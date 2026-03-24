@@ -67,12 +67,6 @@ def _wrap_kotlin(content: str) -> str:
 
 
 @beartype
-def _wrap_kotlin_varname(content: str) -> str:
-    """Wrap a Kotlin variable declaration with time imports if needed."""
-    return content
-
-
-@beartype
 def _wrap_cpp(content: str) -> str:
     """Wrap a C++ expression in a function body."""
     return f"void _check() {{\n    [[maybe_unused]] _Any _v = {content};\n}}"
@@ -324,12 +318,6 @@ def _wrap_java_varname(content: str) -> str:
 
 
 @beartype
-def _wrap_csharp_varname(content: str) -> str:
-    """Wrap a C# top-level variable declaration."""
-    return content
-
-
-@beartype
 def _wrap_ts_varname(content: str) -> str:
     """Wrap a TypeScript variable declaration as a module.
 
@@ -531,12 +519,6 @@ def _wrap_nim(content: str) -> str:
 
 
 @beartype
-def _wrap_nim_varname(content: str) -> str:
-    """Pass through Nim content unchanged."""
-    return content
-
-
-@beartype
 def _wrap_nim_combined(declaration: str, assignment: str) -> str:
     """Join Nim declaration and assignment with a newline."""
     return f"{declaration}\n{assignment}"
@@ -696,12 +678,6 @@ def _wrap_haskell_varname(content: str) -> str:
 
 
 @beartype
-def _wrap_php_varname(content: str) -> str:
-    """Wrap a PHP variable assignment."""
-    return content
-
-
-@beartype
 def _wrap_zig(content: str) -> str:
     """Wrap in a Zig main function."""
     zig = literalizer.languages.Zig()
@@ -741,9 +717,6 @@ def _wrap_zig_combined(declaration: str, assignment: str) -> str:
         f"    _ = _{_VARIABLE_NAME}_read;\n"
         "}"
     )
-
-
-_wrap_swift_varname = _wrap_identity
 
 
 @beartype
@@ -930,18 +903,6 @@ def _wrap_combined_newline(declaration: str, assignment: str) -> str:
 
 
 @beartype
-def _wrap_python(content: str) -> str:
-    """Pass through Python content unchanged."""
-    return content
-
-
-@beartype
-def _wrap_ruby(content: str) -> str:
-    """Pass through Ruby content unchanged."""
-    return content
-
-
-@beartype
 def _wrap_crystal(content: str) -> str:
     """Wrap in a Crystal variable assignment to suppress unused-expression
     warnings.
@@ -950,21 +911,9 @@ def _wrap_crystal(content: str) -> str:
 
 
 @beartype
-def _wrap_crystal_varname(content: str) -> str:
-    """Pass through Crystal content unchanged."""
-    return content
-
-
-@beartype
 def _wrap_crystal_combined(declaration: str, assignment: str) -> str:
     """Join Crystal declaration and assignment with a newline."""
     return declaration + "\n" + assignment
-
-
-@beartype
-def _wrap_julia(content: str) -> str:
-    """Pass through Julia content unchanged."""
-    return content
 
 
 @beartype
@@ -1162,8 +1111,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Python.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Python,
-        wrap=_wrap_python,
-        varname_wrap=_wrap_python,
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
@@ -1181,14 +1130,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Kotlin.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Kotlin,
         wrap=_wrap_kotlin,
-        varname_wrap=_wrap_kotlin_varname,
+        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_kotlin_combined,
     ),
     literalizer.languages.Ruby.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ruby,
-        wrap=_wrap_ruby,
-        varname_wrap=_wrap_ruby,
-        combined_wrap=lambda d, a: _wrap_ruby(content=d + "\n" + a),
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
@@ -1205,8 +1154,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.CSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CSharp,
         wrap=_wrap_csharp,
-        varname_wrap=_wrap_csharp_varname,
-        combined_wrap=lambda d, a: _wrap_csharp_varname(content=d + "\n" + a),
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Dart.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
@@ -1217,7 +1166,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Swift.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
         wrap=_wrap_swift,
-        varname_wrap=_wrap_swift_varname,
+        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_swift_combined,
     ),
     literalizer.languages.Cpp.__name__: _LanguageConfig(
@@ -1246,9 +1195,9 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Julia.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Julia,
-        wrap=_wrap_julia,
-        varname_wrap=_wrap_julia,
-        combined_wrap=lambda d, a: _wrap_julia(content=d + "\n" + a),
+        wrap=_wrap_identity,
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Lua.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Lua,
@@ -1265,8 +1214,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Php.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Php,
         wrap=_wrap_php,
-        varname_wrap=_wrap_php_varname,
-        combined_wrap=lambda d, a: _wrap_php_varname(content=d + "\n" + a),
+        varname_wrap=_wrap_identity,
+        combined_wrap=_wrap_combined_newline,
     ),
     literalizer.languages.Elixir.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elixir,
@@ -1325,7 +1274,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
         wrap=_wrap_crystal,
-        varname_wrap=_wrap_crystal_varname,
+        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_crystal_combined,
     ),
     literalizer.languages.Matlab.__name__: _LanguageConfig(
@@ -1343,7 +1292,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Nim.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Nim,
         wrap=_wrap_nim,
-        varname_wrap=_wrap_nim_varname,
+        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_nim_combined,
     ),
     literalizer.languages.Norg.__name__: _LanguageConfig(
