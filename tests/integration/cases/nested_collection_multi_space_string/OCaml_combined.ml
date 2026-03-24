@@ -1,3 +1,5 @@
+module Check = struct
+
 type val_t =
   | ONull
   | OBool of bool
@@ -9,8 +11,6 @@ type val_t =
   | OSet of val_t list
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
-module Check = struct
-
 let my_data : val_t = OList [
     OMap [("key", OStr "hello   world"); ("value", OInt 1)]
 ]

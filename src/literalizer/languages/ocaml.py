@@ -330,7 +330,9 @@ class OCaml(metaclass=LanguageCls):
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_ocaml_entry
         )
-        self.static_preamble: Sequence[str] = (
+        self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
+        self.static_code_preamble: Sequence[str] = (
             "type val_t =\n"
             "  | ONull\n"
             "  | OBool of bool\n"
@@ -343,7 +345,6 @@ class OCaml(metaclass=LanguageCls):
             "  | ODate of (int * int * int)\n"
             "  | ODatetime of ((int * int * int) * (int * int * int))",
         )
-        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

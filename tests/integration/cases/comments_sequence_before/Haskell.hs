@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Data.String (IsString(fromString))
+module Check where
 import Data.Time (Day, UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
+import Data.String (IsString(fromString))
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 instance IsString Val where
     fromString = HStr

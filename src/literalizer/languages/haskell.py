@@ -135,10 +135,7 @@ class Haskell(metaclass=LanguageCls):
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
-            preamble_lines=(
-                "{-# LANGUAGE OverloadedStrings #-}",
-                "import Data.String (IsString(fromString))",
-            ),
+            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
             type_produced=str,
         )
 
@@ -152,10 +149,7 @@ class Haskell(metaclass=LanguageCls):
         HASKELL = DatetimeFormatConfig(formatter=_format_datetime_haskell)
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            preamble_lines=(
-                "{-# LANGUAGE OverloadedStrings #-}",
-                "import Data.String (IsString(fromString))",
-            ),
+            preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
             type_produced=str,
         )
 
@@ -369,7 +363,8 @@ class Haskell(metaclass=LanguageCls):
             variable_formatter(template="{name} = {value}")
         )
         self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = (
+        self.static_body_preamble: Sequence[str] = ()
+        self.static_code_preamble: Sequence[str] = (
             "import Data.Time (Day, UTCTime(..)"
             ", fromGregorian"
             ", secondsToDiffTime, picosecondsToDiffTime)",
@@ -378,11 +373,9 @@ class Haskell(metaclass=LanguageCls):
             " | HMap [(String, Val)] | HSet [Val]"
             " | HDate Day | HDatetime UTCTime",
         )
-        _overloaded_strings = (
-            "{-# LANGUAGE OverloadedStrings #-}",
-            "import Data.String (IsString(fromString))",
-        )
+        _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
         _is_string_body = (
+            "import Data.String (IsString(fromString))",
             "instance IsString Val where\n    fromString = HStr",
         )
         self.scalar_preamble: dict[type, tuple[str, ...]] = (

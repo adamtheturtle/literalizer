@@ -175,7 +175,8 @@ def _compute_preamble(
         else ()
     )
     body = _deduplicate(
-        lines=tuple(
+        lines=tuple(language.static_code_preamble)
+        + tuple(
             line
             for scalar_type, body_preamble in (
                 language.scalar_body_preamble.items()

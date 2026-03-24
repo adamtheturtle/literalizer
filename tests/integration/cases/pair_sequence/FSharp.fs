@@ -1,3 +1,5 @@
+module Check
+
 type Val =
     | FNull
     | FBool of bool
@@ -9,7 +11,6 @@ type Val =
     | FSet of Val list
     | FDate of System.DateTime
     | FDatetime of System.DateTime
-
 let my_data: Val = FList [
     FInt 1L;
     FStr "hello"
