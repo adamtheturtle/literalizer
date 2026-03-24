@@ -7,6 +7,8 @@ from collections.abc import Callable, Sequence
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
+    datetime_ymdhms_formatter,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -28,21 +30,6 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_date_fsharp(value: datetime.date) -> str:
-    """Format a date as an F# ``System.DateOnly(...)`` call."""
-    return f"System.DateOnly({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_fsharp(value: datetime.datetime) -> str:
-    """Format a datetime as an F# ``System.DateTime(...)`` call."""
-    return (
-        f"System.DateTime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
 
 
 @beartype
@@ -151,7 +138,11 @@ class FSharp(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for FSharp."""
 
-        FSHARP = DateFormatConfig(formatter=_format_date_fsharp)
+        FSHARP = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="System.DateOnly({year}, {month}, {day})",
+            ),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -161,7 +152,12 @@ class FSharp(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for FSharp."""
 
-        FSHARP = DatetimeFormatConfig(formatter=_format_datetime_fsharp)
+        FSHARP = DatetimeFormatConfig(
+            formatter=datetime_ymdhms_formatter(
+                template="System.DateTime({year}, {month}, {day}, "
+                "{hour}, {minute}, {second})",
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,

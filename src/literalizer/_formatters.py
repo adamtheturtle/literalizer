@@ -117,6 +117,122 @@ def format_datetime_iso(value: datetime.datetime) -> str:
     return f'"{value.isoformat()}"'
 
 
+@beartype
+def date_ymd_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.date], str]:
+    """Return a date formatter that substitutes year, month, and day
+    into *template*.
+
+    The *template* must contain ``{year}``, ``{month}``, and ``{day}``
+    placeholders.
+
+    Example::
+
+        fmt = date_ymd_formatter(
+            template="LocalDate.of({year}, {month}, {day})",
+        )
+        fmt(datetime.date(2024, 1, 15))  # => "LocalDate.of(2024, 1, 15)"
+    """
+
+    @beartype
+    def _format(value: datetime.date) -> str:
+        """Format a date using the template."""
+        return template.format(
+            year=value.year,
+            month=value.month,
+            day=value.day,
+        )
+
+    return _format
+
+
+@beartype
+def datetime_ymdhms_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.datetime], str]:
+    """Return a datetime formatter that substitutes year, month, day,
+    hour, minute, and second into *template*.
+
+    The *template* must contain ``{year}``, ``{month}``, ``{day}``,
+    ``{hour}``, ``{minute}``, and ``{second}`` placeholders.
+
+    Example::
+
+        fmt = datetime_ymdhms_formatter(
+            template="new DateTime({year}, {month}, {day}, "
+                     "{hour}, {minute}, {second})",
+        )
+    """
+
+    @beartype
+    def _format(value: datetime.datetime) -> str:
+        """Format a datetime using the template."""
+        return template.format(
+            year=value.year,
+            month=value.month,
+            day=value.day,
+            hour=value.hour,
+            minute=value.minute,
+            second=value.second,
+        )
+
+    return _format
+
+
+@beartype
+def date_iso_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.date], str]:
+    """Return a date formatter that substitutes the ISO 8601 string
+    into *template*.
+
+    The *template* must contain an ``{iso}`` placeholder.
+
+    Example::
+
+        fmt = date_iso_formatter(
+            template='DateTime.parse("{iso}")',
+        )
+        fmt(datetime.date(2024, 1, 15))  # => 'DateTime.parse("2024-01-15")'
+    """
+
+    @beartype
+    def _format(value: datetime.date) -> str:
+        """Format a date using the ISO template."""
+        return template.format(iso=value.isoformat())
+
+    return _format
+
+
+@beartype
+def datetime_iso_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.datetime], str]:
+    """Return a datetime formatter that substitutes the ISO 8601 string
+    into *template*.
+
+    The *template* must contain an ``{iso}`` placeholder.
+
+    Example::
+
+        fmt = datetime_iso_formatter(
+            template='new Date("{iso}")',
+        )
+    """
+
+    @beartype
+    def _format(value: datetime.datetime) -> str:
+        """Format a datetime using the ISO template."""
+        return template.format(iso=value.isoformat())
+
+    return _format
+
+
 @dataclass(frozen=True)
 class TypeOpeners:
     """Resolved type-to-opener functions for sequences, dicts, and
@@ -188,6 +304,64 @@ class TypedOpenerConfig:
                 ),
             ),
         )
+
+
+@beartype
+def format_string_concat_control(
+    *,
+    quote_char: str,
+    quote_escape: str,
+    control_char_template: str,
+    concat_operator: str,
+    escape_backslash: bool,
+) -> Callable[[str], str]:
+    """Return a string formatter that splits on control characters and
+    concatenates parts with a language-specific operator.
+
+    Text segments are wrapped in *quote_char* with embedded quotes
+    escaped to *quote_escape*.  Control characters (code points 0-31)
+    are emitted using *control_char_template* (which receives the code
+    point as a positional format argument) and joined with
+    *concat_operator*.
+
+    When *escape_backslash* is ``True``, literal backslashes in text
+    segments are doubled before quote escaping.
+
+    Example::
+
+        format_string = format_string_concat_control(
+            quote_char="'",
+            quote_escape="''",
+            control_char_template="achar({})",
+            concat_operator=" // ",
+        )
+        format_string("hello")  # => "'hello'"
+    """
+    empty = f"{quote_char}{quote_char}"
+
+    @beartype
+    def _format(value: str) -> str:
+        """Format a string with control character concatenation."""
+        control_char_threshold = 32
+        parts: list[str] = []
+        for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+            if not segment:
+                continue
+            if len(segment) == 1 and ord(segment) < control_char_threshold:
+                parts.append(control_char_template.format(ord(segment)))
+            else:
+                escaped = segment
+                if escape_backslash:
+                    escaped = escaped.replace("\\", "\\\\")
+                escaped = escaped.replace(quote_char, quote_escape)
+                parts.append(f"{quote_char}{escaped}{quote_char}")
+        if not parts:
+            return empty
+        if len(parts) == 1:
+            return parts[0]
+        return concat_operator.join(parts)
+
+    return _format
 
 
 @beartype
