@@ -379,7 +379,8 @@ class OCaml(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
-        self.static_code_preamble: Sequence[str] = (
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        _type_val_t: tuple[str, ...] = (
             "type val_t =\n"
             "  | ONull\n"
             "  | OBool of bool\n"
@@ -392,6 +393,20 @@ class OCaml(metaclass=LanguageCls):
             "  | ODate of (int * int * int)\n"
             "  | ODatetime of ((int * int * int) * (int * int * int))",
         )
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        _all_types = (
+            type(None),
+            bool,
+            int,
+            float,
+            str,
+            bytes,
+            datetime.date,
+            datetime.datetime,
+            list,
+            set,
+        )
+        self.scalar_body_preamble: dict[
+            type,
+            tuple[str, ...],
+        ] = dict.fromkeys(_all_types, _type_val_t)
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

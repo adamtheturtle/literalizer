@@ -11,7 +11,6 @@ type val_t =
   | OSet of val_t list
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
-
 let my_data : val_t = OMap [
     ("name", OStr "Alice");
     ("scores", OList [OInt 10; OInt 20; OInt 30])
