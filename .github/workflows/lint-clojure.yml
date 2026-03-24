@@ -31,9 +31,7 @@ jobs:
         run: |-
           if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
             # shellcheck disable=SC2086
-            for f in $LANG_FILES; do
-              [ -f "$f" ] && printf '%s\0' "$f"
-            done
+            printf '%s\0' $LANG_FILES
           else
             find tests/integration/cases -name "*.clj" -print0
           fi > /tmp/files-to-lint
