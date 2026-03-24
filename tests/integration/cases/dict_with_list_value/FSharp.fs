@@ -11,7 +11,6 @@ type Val =
     | FSet of Val list
     | FDate of System.DateTime
     | FDatetime of System.DateTime
-
 let my_data: Val = FMap [
     ("name", FStr "Alice");
     ("scores", FList [FInt 10L; FInt 20L; FInt 30L])
