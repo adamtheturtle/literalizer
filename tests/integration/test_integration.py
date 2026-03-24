@@ -52,72 +52,10 @@ def _newline_combined(
     return lambda d, a: wrap(d + "\n" + a)
 
 
-_FSHARP_VAL_TYPE = (
-    "type Val =\n"
-    "    | FNull\n"
-    "    | FBool of bool\n"
-    "    | FInt of int64\n"
-    "    | FFloat of float\n"
-    "    | FStr of string\n"
-    "    | FList of Val list\n"
-    "    | FMap of (string * Val) list\n"
-    "    | FSet of Val list\n"
-    "    | FDate of System.DateTime\n"
-    "    | FDatetime of System.DateTime\n"
-)
-
-_OCAML_VAL_TYPE = (
-    "type val_t =\n"
-    "  | ONull\n"
-    "  | OBool of bool\n"
-    "  | OInt of int\n"
-    "  | OFloat of float\n"
-    "  | OStr of string\n"
-    "  | OList of val_t list\n"
-    "  | OMap of (string * val_t) list\n"
-    "  | OSet of val_t list\n"
-    "  | ODate of (int * int * int)\n"
-    "  | ODatetime of ((int * int * int) * (int * int * int))\n"
-)
-
-_OCCAM_LIT_TYPE = (
-    "MOBILE DATA TYPE LIT IS\n"
-    "  CASE\n"
-    "    lit.null\n"
-    "    lit.bool ; BOOL\n"
-    "    lit.int ; INT\n"
-    "    lit.float ; REAL32\n"
-    "    lit.str ; MOBILE []BYTE\n"
-    "    lit.list ; MOBILE []MOBILE LIT\n"
-    "    lit.map ; MOBILE []MOBILE LIT\n"
-    "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
-    "    lit.set ; MOBILE []MOBILE LIT\n"
-    ":"
-)
-
-_HASKELL_VAL_TYPE = (
-    "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]"
-    " | HDate Day | HDatetime UTCTime\n"
-)
-
-_HASKELL_MODULE_HEADER = (
-    "module Check where\n"
-    "import Data.Time (Day, UTCTime(..), fromGregorian,"
-    " secondsToDiffTime, picosecondsToDiffTime)\n"
-)
-
-
 @beartype
 def _wrap_ocaml(content: str) -> str:
     """Wrap an OCaml ``let`` declaration in a module."""
-    return (
-        "module Check = struct\n\n"
-        + _OCAML_VAL_TYPE
-        + "\n"
-        + content
-        + "\n\nend"
-    )
+    return "module Check = struct\n\n" + content + "\n\nend"
 
 
 @beartype
@@ -125,21 +63,14 @@ def _wrap_occam(content: str) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC."""
     indented = "  " + content.replace("\n", "\n  ")
     return (
-        _OCCAM_LIT_TYPE
-        + "\n\n"
-        + "PROC check ()\n"
-        + indented
-        + "\n"
-        + "  SEQ\n"
-        + "    SKIP\n"
-        + ":"
+        "\nPROC check ()\n" + indented + "\n" + "  SEQ\n" + "    SKIP\n" + ":"
     )
 
 
 @beartype
 def _wrap_fsharp(content: str) -> str:
-    """Wrap an F# ``let`` declaration in a module."""
-    return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
+    """Wrap an F# ``let`` declaration."""
+    return "\n" + content
 
 
 @dataclasses.dataclass(frozen=True)
@@ -396,18 +327,21 @@ def _wrap_rust(content: str) -> str:
 
 @beartype
 def _wrap_haskell(content: str) -> str:
-    """Wrap a Haskell variable binding in a module."""
+    """Wrap a Haskell variable binding with a type annotation."""
     split = _split_haskell_body_preamble(content=content)
-    header = _HASKELL_MODULE_HEADER
-    if split.body_preamble:
-        header += split.body_preamble + "\n"
-    header += _HASKELL_VAL_TYPE
     # Tuples are not Val-typed, so skip the type annotation for them.
     eq_pos = split.expression.find("= ")
     rhs = split.expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
     if rhs.startswith("("):
-        return header + split.expression
-    return header + f"{_VARIABLE_NAME} :: Val\n" + split.expression
+        return content
+    if split.body_preamble:
+        return (
+            split.body_preamble
+            + "\n"
+            + f"{_VARIABLE_NAME} :: Val\n"
+            + split.expression
+        )
+    return f"{_VARIABLE_NAME} :: Val\n" + split.expression
 
 
 @beartype

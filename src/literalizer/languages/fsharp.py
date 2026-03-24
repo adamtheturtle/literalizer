@@ -346,7 +346,19 @@ class FSharp(metaclass=LanguageCls):
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_fsharp_entry
         )
-        self.static_preamble: Sequence[str] = ()
+        self.static_preamble: Sequence[str] = (
+            "type Val =\n"
+            "    | FNull\n"
+            "    | FBool of bool\n"
+            "    | FInt of int64\n"
+            "    | FFloat of float\n"
+            "    | FStr of string\n"
+            "    | FList of Val list\n"
+            "    | FMap of (string * Val) list\n"
+            "    | FSet of Val list\n"
+            "    | FDate of System.DateTime\n"
+            "    | FDatetime of System.DateTime",
+        )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}

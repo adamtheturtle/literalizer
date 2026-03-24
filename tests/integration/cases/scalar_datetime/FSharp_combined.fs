@@ -1,5 +1,3 @@
-module Check
-
 type Val =
     | FNull
     | FBool of bool
