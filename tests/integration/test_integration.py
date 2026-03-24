@@ -412,22 +412,17 @@ def _wrap_haskell(content: str) -> str:
 
 @beartype
 def _wrap_zig(content: str) -> str:
-    """Wrap a Zig ``const`` declaration in a main function."""
-    indented = "    " + content.replace("\n", "\n    ")
-    return f"pub fn main() void {{\n{indented}\n    _ = {_VARIABLE_NAME};\n}}"
+    """Wrap a Zig declaration in a main function.
 
-
-@beartype
-def _wrap_zig_var(content: str) -> str:
-    """Wrap a Zig ``var`` declaration in a main function.
-
-    Assigns ``.nil`` to the variable so the Zig compiler does not warn
-    about a ``var`` that is never mutated.
+    For ``var`` declarations the wrapper mutates the variable so the Zig
+    compiler does not warn about a ``var`` that is never mutated.
     """
     indented = "    " + content.replace("\n", "\n    ")
-    return (
-        f"pub fn main() void {{\n{indented}\n    {_VARIABLE_NAME} = .nil;\n}}"
-    )
+    if content.startswith("var "):
+        use = f"    {_VARIABLE_NAME} = .nil;"
+    else:
+        use = f"    _ = {_VARIABLE_NAME};"
+    return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
 
 @beartype
@@ -614,11 +609,6 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
     wrap_variable_name: str | None = None
-    declaration_style_wraps: dict[str, Callable[[str], str]] = (
-        dataclasses.field(
-            default_factory=lambda: dict[str, Callable[[str], str]](),  # noqa: PLW0108  # pylint: disable=unnecessary-lambda
-        )
-    )
 
 
 _COBOL_PROGRAM_PREFIX = (
@@ -891,7 +881,6 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_zig,
         combined_wrap=_wrap_zig_combined,
         wrap_variable_name=_VARIABLE_NAME,
-        declaration_style_wraps={"VAR": _wrap_zig_var},
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.PowerShell,
@@ -1135,21 +1124,17 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
         non_defaults = [
             fmt for fmt in spec.declaration_styles if fmt is not default_format
         ]
-        for fmt in non_defaults:
-            wrap = lang_config.declaration_style_wraps.get(
-                fmt.name,
-                lang_config.wrap,
-            )
-            variants.append(
-                _Variant(
-                    name=f"{lang_name}_declaration_style_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(
-                        declaration_style=fmt,
-                    ),
-                    wrap=wrap,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_declaration_style_{fmt.name.lower()}",
+                spec=lang_config.lang_cls(
+                    declaration_style=fmt,
                 ),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
             )
+            for fmt in non_defaults
+        )
     return variants
 
 
