@@ -28,6 +28,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -82,10 +83,17 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
+def _format_const_declaration(name: str, value: str, data: Value) -> str:
     """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"const {name}: ZVal = {wrapped};"
+
+
+@beartype
+def _format_var_declaration(name: str, value: str, data: Value) -> str:
+    """Format a Zig ``var`` declaration with explicit ``ZVal`` type."""
+    wrapped = _format_zig_entry(original=data, formatted=value)
+    return f"var {name}: ZVal = {wrapped};"
 
 
 @beartype
@@ -177,7 +185,12 @@ class Zig(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        CONST = "const"
+        CONST = DeclarationStyleConfig(
+            formatter=_format_const_declaration,
+        )
+        VAR = DeclarationStyleConfig(
+            formatter=_format_var_declaration,
+        )
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -352,7 +365,7 @@ class Zig(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
