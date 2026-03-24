@@ -33,71 +33,48 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _to_ada_val(value: str) -> str:
-    """Wrap a pre-formatted value string in an Ada ``A_Val`` constructor.
-
-    Inspects the string representation to determine the appropriate
-    constructor: ``AStr``, ``AInt``, ``AFloat``, or passes through
-    values that are already ``A_Val`` expressions
-    (``ANull``, ``ABool``, ``AList``, ``AMap``, ``ASet``, ``AEntry``).
-    """
-    _val_prefixes = (
-        "ANull",
-        "ABool",
-        "AInt",
-        "AFloat",
-        "AStr",
-        "AList",
-        "AMap",
-        "ASet",
-        "AEntry",
-    )
-    if any(value.startswith(p) for p in _val_prefixes):
-        return value
-    if value.startswith('"') and value.endswith('"'):
-        return f"AStr ({value})"
-    if "Character'Val(" in value:
-        return f"AStr ({value})"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    int_result = None
-    try:
-        int(rest)
-        int_result = f"AInt ({value})"
-    except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float(rest)
-    return f"AFloat ({value})"
+def _format_ada_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate Ada ``A_Val`` constructor."""
+    if isinstance(original, bool):
+        return formatted
+    if isinstance(original, int):
+        return f"AInt ({formatted})"
+    if isinstance(original, float):
+        return f"AFloat ({formatted})"
+    if isinstance(original, (str, bytes, datetime.date)):
+        return f"AStr ({formatted})"
+    return formatted
 
 
 @beartype
-def _format_ada_dict_entry(key: str, value: str) -> str:
+def _format_ada_dict_entry(key: str, val: Value, value: str) -> str:
     """Format an Ada dict/map entry as an ``AEntry (key, AVal value)``
     call.
     """
-    return f"AEntry ({key}, {_to_ada_val(value=value)})"
+    wrapped = _format_ada_entry(original=val, formatted=value)
+    return f"AEntry ({key}, {wrapped})"
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format an Ada object declaration.
 
     Example: ``"x"`` and ``"AList'(AInt (1))"`` →
     ``"x : A_Val := AList'(AInt (1));"``
     """
-    return f"{name} : A_Val := {_to_ada_val(value=value)};"
+    wrapped = _format_ada_entry(original=data, formatted=value)
+    return f"{name} : A_Val := {wrapped};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format an Ada assignment statement to an existing variable.
 
     Example: ``"x"`` and ``"AList'(AInt (1))"`` →
     ``"x := AList'(AInt (1));"``
     """
-    return f"{name} := {_to_ada_val(value=value)};"
+    wrapped = _format_ada_entry(original=data, formatted=value)
+    return f"{name} := {wrapped};"
 
 
 @beartype
@@ -287,8 +264,10 @@ class Ada(metaclass=LanguageCls):
             )
         )
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = _to_ada_val
-        self.format_set_entry: Callable[[str], str] = _to_ada_val
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_ada_entry
+        )
+        self.format_set_entry: Callable[[Value, str], str] = _format_ada_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -305,7 +284,7 @@ class Ada(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_ada_dict_entry
         )
         self.multiline_close_indent = ""

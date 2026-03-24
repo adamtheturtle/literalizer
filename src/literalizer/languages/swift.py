@@ -32,11 +32,10 @@ from literalizer._language import (
     SetFormatConfig,
     date_scalar_preamble,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-    from literalizer._types import Value
 
 
 @beartype
@@ -66,9 +65,9 @@ def _format_datetime_swift(value: datetime.datetime) -> str:
 
 
 @beartype
-def _tuple_sequence_entry(entry: str) -> str:
+def _tuple_sequence_entry(original: Value, entry: str) -> str:
     """Format a tuple sequence entry, casting nil to Any? for Swift."""
-    if entry == "nil":
+    if original is None:
         return "nil as Any?"
     return entry
 
@@ -282,8 +281,12 @@ class Swift(metaclass=LanguageCls):
             control_char_fmt="\\u{{{:x}}}",
         )
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = fmt.format_entry
-        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            fmt.format_entry
+        )
+        self.format_set_entry: Callable[[Value, str], str] = (
+            passthrough_set_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -300,7 +303,7 @@ class Swift(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_separator(separator=": ")
         )
         self.multiline_close_indent = ""

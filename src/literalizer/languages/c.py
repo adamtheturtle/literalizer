@@ -33,54 +33,39 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _to_val(value: str) -> str:
-    """Convert a value to a C union cast expression."""
-    if value.startswith("((_CVal)"):
-        return value
-    if value.startswith('"') and value.endswith('"'):
-        return f"((_CVal){{.s = {value}}})"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    int_result = None
-    try:
-        int(rest)
-        int_result = f"((_CVal){{.i = {value}}})"
-    except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float(rest)
-    return f"((_CVal){{.f = {value}}})"
+def _format_c_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate ``_CVal`` union
+    literal.
+    """
+    if isinstance(original, (str, bytes, datetime.date)):
+        return f"((_CVal){{.s = {formatted}}})"
+    if isinstance(original, bool):
+        return formatted
+    if isinstance(original, int):
+        return f"((_CVal){{.i = {formatted}}})"
+    if isinstance(original, float):
+        return f"((_CVal){{.f = {formatted}}})"
+    return formatted
 
 
 @beartype
-def _format_c_dict_entry(key: str, value: str) -> str:
+def _format_c_dict_entry(key: str, val: Value, value: str) -> str:
     """Format a C dict entry as a ``_CKV`` compound literal."""
-    return f"{{{key}, {_to_val(value=value)}}}"
+    return f"{{{key}, {_format_c_entry(original=val, formatted=value)}}}"
 
 
 @beartype
-def _format_c_list_entry(item: str) -> str:
-    """Format a C list entry as a ``_CVal`` compound literal."""
-    return _to_val(value=item)
-
-
-@beartype
-def _format_c_set_entry(item: str) -> str:
-    """Format a C set entry as a ``_CVal`` compound literal."""
-    return _to_val(value=item)
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format a C variable declaration."""
-    return f"_CVal {name} = {_to_val(value=value)};"
+    wrapped = _format_c_entry(original=data, formatted=value)
+    return f"_CVal {name} = {wrapped};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format a C variable assignment."""
-    return f"{name} = {_to_val(value=value)};"
+    wrapped = _format_c_entry(original=data, formatted=value)
+    return f"{name} = {wrapped};"
 
 
 @beartype
@@ -268,8 +253,10 @@ class C(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = _format_c_list_entry
-        self.format_set_entry: Callable[[str], str] = _format_c_set_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_c_entry
+        )
+        self.format_set_entry: Callable[[Value, str], str] = _format_c_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -286,7 +273,7 @@ class C(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_c_dict_entry
         )
         self.multiline_close_indent = ""

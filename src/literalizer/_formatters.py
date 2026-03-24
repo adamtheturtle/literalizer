@@ -81,19 +81,19 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
 
 
 @beartype
-def tuple_dict_entry(key: str, value: str) -> str:
+def tuple_dict_entry(key: str, _val: Value, value: str) -> str:
     """Format a dict/map entry as a tuple ``(key, value)``.
 
-    Example: ``tuple_dict_entry("k", "v")`` → ``"(k, v)"``.
+    Example: ``tuple_dict_entry("k", ..., "v")`` → ``"(k, v)"``.
     """
     return f"({key}, {value})"
 
 
 @beartype
-def braced_dict_entry(key: str, value: str) -> str:
+def braced_dict_entry(key: str, _val: Value, value: str) -> str:
     r"""Format a dict/map entry as ``{key, value}``.
 
-    Example: ``braced_dict_entry("k", "v")`` → ``"{k, v}"``.
+    Example: ``braced_dict_entry("k", ..., "v")`` → ``"{k, v}"``.
     """
     return f"{{{key}, {value}}}"
 
@@ -436,7 +436,7 @@ def format_bytes_hex(value: bytes) -> str:
 
 
 @beartype
-def passthrough_sequence_entry(item: str) -> str:
+def passthrough_sequence_entry(_value: Value, item: str) -> str:
     """Return *item* unchanged.
 
     Use this as ``format_sequence_entry`` for languages where sequence entries
@@ -446,7 +446,7 @@ def passthrough_sequence_entry(item: str) -> str:
 
 
 @beartype
-def passthrough_set_entry(item: str) -> str:
+def passthrough_set_entry(_value: Value, item: str) -> str:
     """Return *item* unchanged.
 
     Use this as ``format_set_entry`` for languages where set entries
@@ -456,15 +456,17 @@ def passthrough_set_entry(item: str) -> str:
 
 
 @beartype
-def dict_entry_with_separator(separator: str) -> Callable[[str, str], str]:
+def dict_entry_with_separator(
+    separator: str,
+) -> Callable[[str, Value, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value
     with *separator*.
 
-    Example: ``dict_entry_with_separator(": ")("k", "v")`` → ``"k: v"``.
+    Example: ``dict_entry_with_separator(": ")("k", ..., "v")`` → ``"k: v"``.
     """
 
     @beartype
-    def _format(key: str, value: str) -> str:
+    def _format(key: str, _val: Value, value: str) -> str:
         """Format a dict entry by joining key and value with separator."""
         return f"{key}{separator}{value}"
 
@@ -877,7 +879,7 @@ def typed_dict_open(
 def dict_entry_with_template(
     *,
     template: str,
-) -> Callable[[str, str], str]:
+) -> Callable[[str, Value, str], str]:
     """Return a ``format_dict_entry`` callable from a template string.
 
     The *template* must contain ``{key}`` and ``{value}`` placeholders.
@@ -887,7 +889,7 @@ def dict_entry_with_template(
     """
 
     @beartype
-    def _format(key: str, value: str) -> str:
+    def _format(key: str, _val: Value, value: str) -> str:
         """Format a dict entry using the template."""
         return template.format(key=key, value=value)
 

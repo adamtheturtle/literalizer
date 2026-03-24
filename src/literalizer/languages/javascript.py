@@ -307,10 +307,12 @@ class JavaScript(metaclass=LanguageCls):
         )
 
         self.format_string: Callable[[str], str] = string_format
-        self.format_sequence_entry: Callable[[str], str] = (
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            passthrough_set_entry
+        )
         self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(
                 numeric_separator=numeric_separator,
@@ -332,7 +334,7 @@ class JavaScript(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_separator(separator=": ")
         )
         self.multiline_close_indent = ""

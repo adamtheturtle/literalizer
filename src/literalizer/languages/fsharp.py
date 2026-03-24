@@ -36,89 +36,63 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _to_val(value: str) -> str:
-    """Convert a value to an F# union type expression."""
-    _val_prefixes = (
-        "FNull",
-        "FBool",
-        "FList",
-        "FMap",
-        "FSet",
-        "FStr",
-        "FInt",
-        "FFloat",
-    )
-    if any(value.startswith(p) for p in _val_prefixes):
-        return value
-    if value.lstrip().startswith("[|"):
-        return value
-    if value.startswith("System."):
-        return f"FStr (string ({value}))"
-    if value.startswith('"') and value.endswith('"'):
-        return f"FStr {value}"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    int_result = None
-    try:
-        int(rest)
-        int_result = f"FInt({value}L)" if negative else f"FInt {value}L"
-    except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float(rest)
-    return f"FFloat({value})" if negative else f"FFloat {value}"
-
-
-@beartype
-def _format_fsharp_dict_entry(key: str, value: str) -> str:
-    """Format an F# dict entry as a ``(key, FVal value)`` tuple."""
-    return f"({key}, {_to_val(value=value)})"
-
-
-@beartype
-def _format_fsharp_ordered_map_entry(key: str, value: str) -> str:
-    """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
-    return f"({key}, {_to_val(value=value)})"
-
-
-@beartype
-def _format_fsharp_set_entry(item: str) -> str:
-    """Format an F# set entry with the appropriate ``Val`` constructor."""
-    return _to_val(value=item)
-
-
-@beartype
-def _format_fsharp_sequence_entry(item: str) -> str:
-    """Format an F# sequence entry with the appropriate ``Val``
+def _format_fsharp_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
     """
-    return _to_val(value=item)
+    if isinstance(original, bool):
+        return formatted
+    if isinstance(original, int):
+        negative = formatted.startswith("-")
+        return f"FInt({formatted}L)" if negative else f"FInt {formatted}L"
+    if isinstance(original, float):
+        negative = formatted.startswith("-")
+        return f"FFloat({formatted})" if negative else f"FFloat {formatted}"
+    if isinstance(original, (str, bytes, datetime.date)):
+        if formatted.startswith("System."):
+            return f"FStr (string ({formatted}))"
+        return f"FStr {formatted}"
+    return formatted
+
+
+@beartype
+def _format_fsharp_dict_entry(key: str, val: Value, value: str) -> str:
+    """Format an F# dict entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {_format_fsharp_entry(original=val, formatted=value)})"
+
+
+@beartype
+def _format_fsharp_ordered_map_entry(key: str, val: Value, value: str) -> str:
+    """Format an F# ordered-map entry as a ``(key, FVal value)`` tuple."""
+    return f"({key}, {_format_fsharp_entry(original=val, formatted=value)})"
 
 
 @beartype
 def _format_variable_declaration_let(
-    name: str, value: str, _data: Value
+    name: str, value: str, data: Value
 ) -> str:
     """Format an F# ``let`` variable declaration."""
     val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
-    return f"let {name}: {val_type} = {_to_val(value=value)}"
+    wrapped = _format_fsharp_entry(original=data, formatted=value)
+    return f"let {name}: {val_type} = {wrapped}"
 
 
 @beartype
 def _format_variable_declaration_let_mutable(
-    name: str, value: str, _data: Value
+    name: str, value: str, data: Value
 ) -> str:
     """Format an F# ``let mutable`` variable declaration."""
     val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
-    return f"let mutable {name}: {val_type} = {_to_val(value=value)}"
+    wrapped = _format_fsharp_entry(original=data, formatted=value)
+    return f"let mutable {name}: {val_type} = {wrapped}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format an F# variable assignment."""
     val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
-    return f"let {name}: {val_type} = {_to_val(value=value)}"
+    wrapped = _format_fsharp_entry(original=data, formatted=value)
+    return f"let {name}: {val_type} = {wrapped}"
 
 
 @beartype
@@ -342,7 +316,9 @@ class FSharp(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_set_entry: Callable[[str], str] = _format_fsharp_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            _format_fsharp_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -359,7 +335,7 @@ class FSharp(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_fsharp_ordered_map_entry
         )
         self.multiline_close_indent = ""
@@ -372,8 +348,8 @@ class FSharp(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.element_separator = "; "
-        self.format_sequence_entry: Callable[[str], str] = (
-            _format_fsharp_sequence_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_fsharp_entry
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

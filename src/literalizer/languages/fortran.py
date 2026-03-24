@@ -33,45 +33,19 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _to_fval(value: str) -> str:
-    """Convert a pre-formatted value string to an ``fval_t`` constructor.
-
-    Inspects the string representation to determine the appropriate
-    constructor: ``fstr``, ``fint``, ``freal``, or passes through values
-    that are already ``fval_t`` expressions (``fnull``, ``fbool``,
-    ``flist``, ``fmap``, ``fset``, ``fentry``).
+def _format_fortran_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate ``fval_t``
+    constructor.
     """
-    fval_prefixes = (
-        "fnull()",
-        "fbool(",
-        "fint(",
-        "freal(",
-        "fstr(",
-        "flist(",
-        "fmap(",
-        "fset(",
-        "fentry(",
-    )
-    if any(value.startswith(p) for p in fval_prefixes):
-        return value
-    if (value.startswith("'") and value.endswith("'")) or (
-        value.startswith('"') and value.endswith('"')
-    ):
-        return f"fstr({value})"
-    if "achar(" in value:
-        return f"fstr({value})"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    int_result = None
-    try:
-        int(rest)
-        int_result = f"fint({value})"
-    except ValueError:
-        pass
-    if int_result is not None:
-        return int_result
-    float(rest)
-    return f"freal({value})"
+    if isinstance(original, bool):
+        return formatted
+    if isinstance(original, int):
+        return f"fint({formatted})"
+    if isinstance(original, float):
+        return f"freal({formatted})"
+    if isinstance(original, (str, bytes, datetime.date)):
+        return f"fstr({formatted})"
+    return formatted
 
 
 @beartype
@@ -128,33 +102,34 @@ def _add_continuation(value: str) -> str:
 
 
 @beartype
-def _format_fortran_dict_entry(key: str, value: str) -> str:
+def _format_fortran_dict_entry(key: str, val: Value, value: str) -> str:
     """Format a Fortran dict entry as an ``fentry(key, fval_t value)``
     call.
     """
-    return f"fentry({key}, {_to_fval(value=value)})"
+    wrapped = _format_fortran_entry(original=val, formatted=value)
+    return f"fentry({key}, {wrapped})"
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     r"""Format a Fortran variable declaration and initialisation.
 
     Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
     ``"type(fval_t) :: x\nx = flist([fval_t :: fint(1)])"``
     """
-    fval = _to_fval(value=value)
+    fval = _format_fortran_entry(original=data, formatted=value)
     continued = _add_continuation(value=fval)
     return f"type(fval_t) :: {name}\n{name} = {continued}"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format a Fortran assignment to an existing ``fval_t`` variable.
 
     Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
     ``"x = flist([fval_t :: fint(1)])"``
     """
-    fval = _to_fval(value=value)
+    fval = _format_fortran_entry(original=data, formatted=value)
     continued = _add_continuation(value=fval)
     return f"{name} = {continued}"
 
@@ -346,8 +321,12 @@ class Fortran(metaclass=LanguageCls):
             )
         )
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = _to_fval
-        self.format_set_entry: Callable[[str], str] = _to_fval
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_fortran_entry
+        )
+        self.format_set_entry: Callable[[Value, str], str] = (
+            _format_fortran_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -364,7 +343,7 @@ class Fortran(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_fortran_dict_entry
         )
         self.multiline_close_indent = ""

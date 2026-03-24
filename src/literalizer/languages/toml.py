@@ -30,15 +30,14 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from literalizer._types import Value
-
 
 @beartype
-def _format_toml_dict_entry(key: str, value: str) -> str:
+def _format_toml_dict_entry(key: str, _val: Value, value: str) -> str:
     """Format a TOML dict entry as ``key = value``.
 
     If the key is a double-quoted string that is also a valid bare key
@@ -274,10 +273,12 @@ class Toml(metaclass=LanguageCls):
             control_char_fmt="\\u{:04x}",
         )
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            passthrough_set_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -294,7 +295,7 @@ class Toml(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_toml_dict_entry
         )
         self.multiline_close_indent = ""

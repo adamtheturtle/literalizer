@@ -54,55 +54,43 @@ def _format_datetime_zig(value: datetime.datetime) -> str:
 
 
 @beartype
-def _to_val(value: str) -> str:
-    """Wrap a pre-formatted value string in a Zig ``ZVal`` union literal.
-
-    Inspects the string representation to determine the appropriate union
-    tag: ``.int`` for integers, ``.float`` for floats, ``.str`` for
-    strings.  Values that are already tagged (starting with ``.``) are
-    returned unchanged.
+def _format_zig_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
+    tag.
     """
-    if value.startswith("."):
-        return value
-    if value.startswith('"') and value.endswith('"'):
-        return f".{{ .str = {value} }}"
-    negative = value.startswith("-")
-    rest = value[1:] if negative else value
-    try:
-        int(rest)
-    except ValueError:
-        return f".{{ .float = {value} }}"
-    return f".{{ .int = {value} }}"
+    if isinstance(original, bool):
+        return formatted
+    if isinstance(original, int):
+        return f".{{ .int = {formatted} }}"
+    if isinstance(original, float):
+        return f".{{ .float = {formatted} }}"
+    if isinstance(original, (str, bytes)):
+        return f".{{ .str = {formatted} }}"
+    if isinstance(original, datetime.date):
+        tag = "str" if formatted.startswith('"') else "int"
+        return f".{{ .{tag} = {formatted} }}"
+    return formatted
 
 
 @beartype
-def _format_zig_dict_entry(key: str, value: str) -> str:
+def _format_zig_dict_entry(key: str, val: Value, value: str) -> str:
     """Format a Zig dict entry as a ``ZKV`` anonymous struct literal."""
-    return f".{{ .key = {key}, .val = {_to_val(value=value)} }}"
+    wrapped = _format_zig_entry(original=val, formatted=value)
+    return f".{{ .key = {key}, .val = {wrapped} }}"
 
 
 @beartype
-def _format_zig_sequence_entry(item: str) -> str:
-    """Format a Zig sequence entry as a ``ZVal`` union literal."""
-    return _to_val(value=item)
-
-
-@beartype
-def _format_zig_set_entry(item: str) -> str:
-    """Format a Zig set entry as a ``ZVal`` union literal."""
-    return _to_val(value=item)
-
-
-@beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
-    return f"const {name}: ZVal = {_to_val(value=value)};"
+    wrapped = _format_zig_entry(original=data, formatted=value)
+    return f"const {name}: ZVal = {wrapped};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format a Zig assignment to an existing ``ZVal`` variable."""
-    return f"{name} = {_to_val(value=value)};"
+    wrapped = _format_zig_entry(original=data, formatted=value)
+    return f"{name} = {wrapped};"
 
 
 @beartype
@@ -289,10 +277,10 @@ class Zig(metaclass=LanguageCls):
             control_char_fmt="\\x{:02x}",
         )
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
-            _format_zig_sequence_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            _format_zig_entry
         )
-        self.format_set_entry: Callable[[str], str] = _format_zig_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = _format_zig_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -309,7 +297,7 @@ class Zig(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_zig_dict_entry
         )
         self.multiline_close_indent = ""

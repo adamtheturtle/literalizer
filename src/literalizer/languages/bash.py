@@ -54,13 +54,21 @@ def _to_bash_value(item: str) -> str:
 
 
 @beartype
-def _format_bash_sequence_entry(item: str) -> str:
+def _format_bash_sequence_entry(original: Value, item: str) -> str:
     """Format a Bash indexed-array element, quoting nested collections."""
-    return _to_bash_value(item=item)
+    if isinstance(original, (list, dict, set, frozenset)):
+        escaped = (
+            item.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("$", "\\$")
+            .replace("`", "\\`")
+        )
+        return f'"{escaped}"'
+    return item
 
 
 @beartype
-def _format_bash_dict_entry(key: str, value: str) -> str:
+def _format_bash_dict_entry(key: str, _val: Value, value: str) -> str:
     """Format a Bash associative-array entry as ``[key]=value``."""
     return f"[{key}]={_to_bash_value(item=value)}"
 
@@ -255,10 +263,12 @@ class Bash(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[str], str] = (
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_bash_sequence_entry
         )
-        self.format_set_entry: Callable[[str], str] = passthrough_set_entry
+        self.format_set_entry: Callable[[Value, str], str] = (
+            passthrough_set_entry
+        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
@@ -275,7 +285,7 @@ class Bash(metaclass=LanguageCls):
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_bash_dict_entry
         )
         self.multiline_close_indent = ""
