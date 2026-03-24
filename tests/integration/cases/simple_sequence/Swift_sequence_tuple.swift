@@ -2,5 +2,5 @@ let my_data: Any = (
     1,
     "hello",
     true,
-    nil as Any?
+    nil as Any?,
 )
