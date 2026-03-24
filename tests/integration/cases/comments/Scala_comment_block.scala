@@ -1,5 +1,5 @@
 object Check {
-val my_data: Any = Map(
+val my_data = Map(
     /* Server configuration */
     "host" -> "localhost",  /* default host */
     "port" -> 8080,

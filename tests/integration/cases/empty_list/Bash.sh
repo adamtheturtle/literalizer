@@ -1,1 +1,1 @@
-declare _v=()
+declare my_data=()

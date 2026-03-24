@@ -1,4 +1,4 @@
-val my_data: Any? = setOf<String>(
+val my_data = setOf<String>(
     "apple",
     "banana",
     "cherry",

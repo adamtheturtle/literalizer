@@ -1,5 +1,6 @@
 defmodule Check do
-  def my_data do
-    "hello \"world\" -- not a comment"
+  def x do
+    my_data = "hello \"world\" -- not a comment"
+    _ = my_data
   end
 end

@@ -1,3 +1,3 @@
-declare -A _v=(
+declare -A my_data=(
     ["key"]="value \" # not a comment"  # real
 )

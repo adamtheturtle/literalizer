@@ -1,1 +1,1 @@
-declare _v="hello \"world\" -- not a comment"
+declare my_data="hello \"world\" -- not a comment"

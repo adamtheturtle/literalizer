@@ -1,5 +1,5 @@
 require "set"
-_ = Set{
+my_data = Set{
     "apple",
     "banana",
     "cherry",

@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @{
+    id my_data = @{
     @"users": @[@{@"name": @"Bob", @"tags": @[@"admin", @"user"]}, @{@"name": @"Carol", @"tags": @[@"guest"]}],
 };
-    (void)_v;
+    (void)my_data;
 }

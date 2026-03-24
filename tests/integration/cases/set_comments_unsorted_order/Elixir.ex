@@ -1,10 +1,11 @@
 defmodule Check do
-  def my_data do
-    MapSet.new([
+  def x do
+    my_data = MapSet.new([
     # before apple
     "apple",
     "banana",  # banana inline
     # trailing
 ])
+    _ = my_data
   end
 end

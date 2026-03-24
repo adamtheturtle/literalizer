@@ -1,1 +1,1 @@
-local _ = {}
+local my_data = {}

@@ -1,1 +1,1 @@
-_ = [] of Nil
+my_data = [] of Nil

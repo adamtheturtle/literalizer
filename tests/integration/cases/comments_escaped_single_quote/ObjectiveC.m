@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @{
+    id my_data = @{
     @"key": @"it's here",  // a comment
 };
-    (void)_v;
+    (void)my_data;
 }

@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @{};
-    (void)_v;
+    id my_data = @{};
+    (void)my_data;
 }

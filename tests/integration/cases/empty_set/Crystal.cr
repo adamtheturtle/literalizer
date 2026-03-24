@@ -1,2 +1,2 @@
 require "set"
-_ = Set(Nil).new
+my_data = Set(Nil).new

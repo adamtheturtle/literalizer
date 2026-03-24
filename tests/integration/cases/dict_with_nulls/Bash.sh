@@ -1,4 +1,4 @@
-declare -A _v=(
+declare -A my_data=(
     ["name"]="Alice"
     ["score"]=""
     ["age"]=30

@@ -1,5 +1,5 @@
 defmodule Check do
-  def my_data do
+  def x do
     my_data = %{
     "a" => 1,
     "b" => 2.5,
