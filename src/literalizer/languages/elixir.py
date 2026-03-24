@@ -9,6 +9,7 @@ from beartype import beartype
 
 from literalizer._formatters import (
     braced_dict_entry,
+    date_iso_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -34,12 +35,6 @@ from literalizer._language import (
 
 if TYPE_CHECKING:
     from literalizer._types import Value
-
-
-@beartype
-def _format_date_elixir(value: datetime.date) -> str:
-    """Format a date as an Elixir ``~D[...]`` sigil."""
-    return f"~D[{value.isoformat()}]"
 
 
 @beartype
@@ -99,7 +94,9 @@ class Elixir(metaclass=LanguageCls):
         """Date format options for Elixir."""
 
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
-        ELIXIR = DateFormatConfig(formatter=_format_date_elixir)
+        ELIXIR = DateFormatConfig(
+            formatter=date_iso_formatter(template="~D[{iso}]"),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""

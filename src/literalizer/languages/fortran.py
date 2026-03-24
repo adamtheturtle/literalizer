@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import re
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -14,6 +13,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_string_concat_control,
     passthrough_sequence_entry,
 )
 from literalizer._language import (
@@ -30,34 +30,6 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-
-@beartype
-def _format_string_fortran(value: str) -> str:
-    r"""Format a string using Fortran single-quote string syntax.
-
-    Fortran strings use single quotes, with ``''`` for embedded single
-    quotes.  Control characters (code points 0-31) are emitted as
-    ``achar(N)`` expressions concatenated with ``//``.
-    """
-    _fortran_control_char_threshold = 32
-    parts: list[str] = []
-    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
-        if not segment:
-            continue
-        if (
-            len(segment) == 1
-            and ord(segment) < _fortran_control_char_threshold
-        ):
-            parts.append(f"achar({ord(segment)})")
-        else:
-            escaped = segment.replace("'", "''")
-            parts.append(f"'{escaped}'")
-    if not parts:
-        return "''"
-    if len(parts) == 1:
-        return parts[0]
-    return " // ".join(parts)
 
 
 @beartype
@@ -364,7 +336,15 @@ class Fortran(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _format_string_fortran
+        self.format_string: Callable[[str], str] = (
+            format_string_concat_control(
+                quote_char="'",
+                quote_escape="''",
+                control_char_template="achar({})",
+                concat_operator=" // ",
+                escape_backslash=False,
+            )
+        )
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval

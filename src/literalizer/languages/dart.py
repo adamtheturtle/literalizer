@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     TypedOpenerConfig,
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     fixed_sequence_open,
     fixed_set_open,
@@ -40,31 +41,15 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-@beartype
-def _format_date_dart(value: datetime.date) -> str:
-    """Format a date as a Dart ``DateTime.parse(...)`` call."""
-    return f'DateTime.parse("{value.isoformat()}")'
-
-
-@beartype
-def _format_datetime_dart(value: datetime.datetime) -> str:
-    """Format a datetime as a Dart ``DateTime.parse(...)`` call."""
-    return f'DateTime.parse("{value.isoformat()}")'
-
-
-_DART_SCALAR_TYPES: dict[type, str] = {
-    str: "String",
-    bool: "bool",
-    int: "int",
-    float: "double",
-    MixedNumeric: "double",
-    bytes: "String",
-    datetime.date: "DateTime",
-    datetime.datetime: "DateTime",
-}
-
 _dart_opener_config = TypedOpenerConfig(
-    scalar_types=_DART_SCALAR_TYPES,
+    str_type="String",
+    bool_type="bool",
+    int_type="int",
+    float_type="double",
+    mixed_numeric_type="double",
+    bytes_type="String",
+    date_type="DateTime",
+    datetime_type="DateTime",
     list_template="List<{inner}>",
     seq_opener_template="<{type_name}>[",
     dict_opener_template="<String, {type_name}>{{",
@@ -98,7 +83,11 @@ class Dart(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 
-        DART = DateFormatConfig(formatter=_format_date_dart)
+        DART = DateFormatConfig(
+            formatter=date_iso_formatter(
+                template='DateTime.parse("{iso}")',
+            ),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -108,7 +97,11 @@ class Dart(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Dart."""
 
-        DART = DatetimeFormatConfig(formatter=_format_datetime_dart)
+        DART = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(
+                template='DateTime.parse("{iso}")',
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -132,10 +125,7 @@ class Dart(metaclass=LanguageCls):
 
         LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
-                type_to_opener=_dart_opener_config.build(
-                    scalar_type_overrides={},
-                    set_opener_template=None,
-                ).seq,
+                type_to_opener=_dart_opener_config.build().seq,
                 fallback="[",
             ),
             close="]",
@@ -285,11 +275,8 @@ class Dart(metaclass=LanguageCls):
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         openers = _dart_opener_config.build(
-            scalar_type_overrides={
-                datetime.date: _DART_SCALAR_TYPES[date_tp],
-                datetime.datetime: _DART_SCALAR_TYPES[dt_tp],
-            },
-            set_opener_template=None,
+            date_type=_dart_opener_config.type_name(py_type=date_tp),
+            datetime_type=_dart_opener_config.type_name(py_type=dt_tp),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

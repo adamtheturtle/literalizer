@@ -3,7 +3,7 @@
 import datetime
 import functools
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from beartype import beartype
@@ -117,6 +117,122 @@ def format_datetime_iso(value: datetime.datetime) -> str:
     return f'"{value.isoformat()}"'
 
 
+@beartype
+def date_ymd_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.date], str]:
+    """Return a date formatter that substitutes year, month, and day
+    into *template*.
+
+    The *template* must contain ``{year}``, ``{month}``, and ``{day}``
+    placeholders.
+
+    Example::
+
+        fmt = date_ymd_formatter(
+            template="LocalDate.of({year}, {month}, {day})",
+        )
+        fmt(datetime.date(2024, 1, 15))  # => "LocalDate.of(2024, 1, 15)"
+    """
+
+    @beartype
+    def _format(value: datetime.date) -> str:
+        """Format a date using the template."""
+        return template.format(
+            year=value.year,
+            month=value.month,
+            day=value.day,
+        )
+
+    return _format
+
+
+@beartype
+def datetime_ymdhms_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.datetime], str]:
+    """Return a datetime formatter that substitutes year, month, day,
+    hour, minute, and second into *template*.
+
+    The *template* must contain ``{year}``, ``{month}``, ``{day}``,
+    ``{hour}``, ``{minute}``, and ``{second}`` placeholders.
+
+    Example::
+
+        fmt = datetime_ymdhms_formatter(
+            template="new DateTime({year}, {month}, {day}, "
+                     "{hour}, {minute}, {second})",
+        )
+    """
+
+    @beartype
+    def _format(value: datetime.datetime) -> str:
+        """Format a datetime using the template."""
+        return template.format(
+            year=value.year,
+            month=value.month,
+            day=value.day,
+            hour=value.hour,
+            minute=value.minute,
+            second=value.second,
+        )
+
+    return _format
+
+
+@beartype
+def date_iso_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.date], str]:
+    """Return a date formatter that substitutes the ISO 8601 string
+    into *template*.
+
+    The *template* must contain an ``{iso}`` placeholder.
+
+    Example::
+
+        fmt = date_iso_formatter(
+            template='DateTime.parse("{iso}")',
+        )
+        fmt(datetime.date(2024, 1, 15))  # => 'DateTime.parse("2024-01-15")'
+    """
+
+    @beartype
+    def _format(value: datetime.date) -> str:
+        """Format a date using the ISO template."""
+        return template.format(iso=value.isoformat())
+
+    return _format
+
+
+@beartype
+def datetime_iso_formatter(
+    *,
+    template: str,
+) -> Callable[[datetime.datetime], str]:
+    """Return a datetime formatter that substitutes the ISO 8601 string
+    into *template*.
+
+    The *template* must contain an ``{iso}`` placeholder.
+
+    Example::
+
+        fmt = datetime_iso_formatter(
+            template='new Date("{iso}")',
+        )
+    """
+
+    @beartype
+    def _format(value: datetime.datetime) -> str:
+        """Format a datetime using the ISO template."""
+        return template.format(iso=value.isoformat())
+
+    return _format
+
+
 @dataclass(frozen=True)
 class TypeOpeners:
     """Resolved type-to-opener functions for sequences, dicts, and
@@ -139,55 +255,175 @@ class TypedOpenerConfig:
     def __init__(
         self,
         *,
-        scalar_types: dict[type, str],
+        str_type: str | None = None,
+        bool_type: str | None = None,
+        int_type: str | None = None,
+        float_type: str | None = None,
+        bytes_type: str | None = None,
+        mixed_numeric_type: str | None = None,
+        date_type: str | None = None,
+        datetime_type: str | None = None,
         list_template: str,
         seq_opener_template: str,
         dict_opener_template: str,
         set_opener_template: str,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
-        self._scalar_types = scalar_types
+        self._str_type = str_type
+        self._bool_type = bool_type
+        self._int_type = int_type
+        self._float_type = float_type
+        self._bytes_type = bytes_type
+        self._mixed_numeric_type = mixed_numeric_type
+        self._date_type = date_type
+        self._datetime_type = datetime_type
         self._list_template = list_template
         self._seq_opener_template = seq_opener_template
         self._dict_opener_template = dict_opener_template
         self._set_opener_template = set_opener_template
 
     @beartype
+    def type_name(self, py_type: type) -> str | None:
+        """Look up the language type name for a Python type."""
+        return self._scalar_types().get(py_type)
+
+    def _scalar_types(self) -> dict[type, str]:
+        """Build a dict mapping Python types to language type names."""
+        return {
+            py_type: name
+            for py_type, name in (
+                (str, self._str_type),
+                (bool, self._bool_type),
+                (int, self._int_type),
+                (float, self._float_type),
+                (bytes, self._bytes_type),
+                (MixedNumeric, self._mixed_numeric_type),
+                (datetime.date, self._date_type),
+                (datetime.datetime, self._datetime_type),
+            )
+            if name is not None
+        }
+
+    @beartype
+    def element_to_type(
+        self,
+        *,
+        list_template: str | None = None,
+        date_type: str | None = None,
+        datetime_type: str | None = None,
+    ) -> Callable[[type | ListType], str | None]:
+        """Build an element-to-type resolver.
+
+        If *list_template* is given it overrides the default.
+        If *date_type* or *datetime_type* is given they override the
+        base values.
+        """
+        return make_element_to_type(
+            str_type=self._str_type,
+            bool_type=self._bool_type,
+            int_type=self._int_type,
+            float_type=self._float_type,
+            bytes_type=self._bytes_type,
+            mixed_numeric_type=self._mixed_numeric_type,
+            date_type=date_type or self._date_type,
+            datetime_type=datetime_type or self._datetime_type,
+            list_template=list_template or self._list_template,
+        )
+
+    @beartype
     def build(
         self,
         *,
-        scalar_type_overrides: Mapping[type, str],
-        set_opener_template: str | None,
+        date_type: str | None = None,
+        datetime_type: str | None = None,
+        set_opener_template: str | None = None,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.
 
-        If *set_opener_template* is given it overrides the template
-        used for ``set`` openers, allowing a single
+        If *date_type* or *datetime_type* is given, they override the
+        base values.  If *set_opener_template* is given it overrides
+        the template used for ``set`` openers, allowing a single
         ``TypedOpenerConfig`` to serve multiple set formats.
         """
-        scalar_types = dict(self._scalar_types)
-        scalar_types.update(scalar_type_overrides)
-        element_to_type = make_element_to_type(
-            scalar_types=scalar_types,
-            list_template=self._list_template,
+        eto = self.element_to_type(
+            date_type=date_type,
+            datetime_type=datetime_type,
         )
         return TypeOpeners(
             seq=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=self._seq_opener_template,
             ),
             dict=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=self._dict_opener_template,
             ),
             set=make_type_to_opener(
-                element_to_type=element_to_type,
+                element_to_type=eto,
                 opener_template=(
                     set_opener_template or self._set_opener_template
                 ),
             ),
         )
+
+
+@beartype
+def format_string_concat_control(
+    *,
+    quote_char: str,
+    quote_escape: str,
+    control_char_template: str,
+    concat_operator: str,
+    escape_backslash: bool,
+) -> Callable[[str], str]:
+    """Return a string formatter that splits on control characters and
+    concatenates parts with a language-specific operator.
+
+    Text segments are wrapped in *quote_char* with embedded quotes
+    escaped to *quote_escape*.  Control characters (code points 0-31)
+    are emitted using *control_char_template* (which receives the code
+    point as a positional format argument) and joined with
+    *concat_operator*.
+
+    When *escape_backslash* is ``True``, literal backslashes in text
+    segments are doubled before quote escaping.
+
+    Example::
+
+        format_string = format_string_concat_control(
+            quote_char="'",
+            quote_escape="''",
+            control_char_template="achar({})",
+            concat_operator=" // ",
+        )
+        format_string("hello")  # => "'hello'"
+    """
+    empty = f"{quote_char}{quote_char}"
+
+    @beartype
+    def _format(value: str) -> str:
+        """Format a string with control character concatenation."""
+        control_char_threshold = 32
+        parts: list[str] = []
+        for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+            if not segment:
+                continue
+            if len(segment) == 1 and ord(segment) < control_char_threshold:
+                parts.append(control_char_template.format(ord(segment)))
+            else:
+                escaped = segment
+                if escape_backslash:
+                    escaped = escaped.replace("\\", "\\\\")
+                escaped = escaped.replace(quote_char, quote_escape)
+                parts.append(f"{quote_char}{escaped}{quote_char}")
+        if not parts:
+            return empty
+        if len(parts) == 1:
+            return parts[0]
+        return concat_operator.join(parts)
+
+    return _format
 
 
 @beartype
@@ -448,7 +684,14 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
 @beartype
 def make_element_to_type(
     *,
-    scalar_types: dict[type, str],
+    str_type: str | None = None,
+    bool_type: str | None = None,
+    int_type: str | None = None,
+    float_type: str | None = None,
+    bytes_type: str | None = None,
+    mixed_numeric_type: str | None = None,
+    date_type: str | None = None,
+    datetime_type: str | None = None,
     list_template: str,
 ) -> Callable[[type | ListType], str | None]:
     """Create a recursive type resolver from scalar types and a list
@@ -460,10 +703,25 @@ def make_element_to_type(
     Example::
 
         go_element_to_type = make_element_to_type(
-            scalar_types={str: "string", int: "int"},
+            str_type="string",
+            int_type="int",
             list_template="[]{inner}",
         )
     """
+    scalar_types: dict[type, str] = {
+        py_type: name
+        for py_type, name in (
+            (str, str_type),
+            (bool, bool_type),
+            (int, int_type),
+            (float, float_type),
+            (bytes, bytes_type),
+            (MixedNumeric, mixed_numeric_type),
+            (datetime.date, date_type),
+            (datetime.datetime, datetime_type),
+        )
+        if name is not None
+    }
 
     @beartype
     def element_to_type(element_type: type | ListType) -> str | None:

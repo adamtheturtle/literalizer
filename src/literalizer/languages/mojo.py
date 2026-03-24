@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
-    MixedNumeric,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -43,23 +42,6 @@ if TYPE_CHECKING:
 def _format_mojo_ordered_map_entry(key: str, value: str) -> str:
     """Format one Mojo ordered-map entry as a ``Tuple(key, value)``."""
     return f"Tuple({key}, {value})"
-
-
-_MOJO_SCALAR_TYPES: dict[type, str] = {
-    str: "String",
-    bool: "Bool",
-    int: "Int",
-    float: "Float64",
-    MixedNumeric: "String",
-}
-
-_mojo_set_type_to_opener = make_type_to_opener(
-    element_to_type=make_element_to_type(
-        scalar_types=_MOJO_SCALAR_TYPES,
-        list_template="List[{inner}]",
-    ),
-    opener_template="Set[{type_name}](",
-)
 
 
 @beartype
@@ -136,7 +118,17 @@ class Mojo(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=typed_set_open(
-                type_to_opener=_mojo_set_type_to_opener,
+                type_to_opener=make_type_to_opener(
+                    element_to_type=make_element_to_type(
+                        str_type="String",
+                        bool_type="Bool",
+                        int_type="Int",
+                        float_type="Float64",
+                        mixed_numeric_type="String",
+                        list_template="List[{inner}]",
+                    ),
+                    opener_template="Set[{type_name}](",
+                ),
                 fallback="Set[String](",
             ),
             close=")",
