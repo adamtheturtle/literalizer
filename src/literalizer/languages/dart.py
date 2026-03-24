@@ -17,6 +17,7 @@ from literalizer._formatters import (
     format_date_iso,
     format_datetime_iso,
     format_string_backslash_dollar,
+    format_string_backslash_dollar_single,
     make_element_to_type,
     make_type_to_opener,
     passthrough_sequence_entry,
@@ -207,7 +208,12 @@ class Dart(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash_dollar)
+        SINGLE = enum.member(value=format_string_backslash_dollar_single)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -318,9 +324,7 @@ class Dart(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = (
-            format_string_backslash_dollar
-        )
+        self.format_string: Callable[[str], str] = string_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
