@@ -187,14 +187,20 @@ class JavaScript(metaclass=LanguageCls):
         OBJECT = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
-            format_entry=dict_entry_with_separator(separator=": "),
+            format_entry=dict_entry_with_separator(
+                separator=": ",
+                format_value=passthrough_sequence_entry,
+            ),
             empty_dict=None,
             preamble_lines=(),
         )
         MAP = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="new Map(["),
             close="])",
-            format_entry=dict_entry_with_template(template="[{key}, {value}]"),
+            format_entry=dict_entry_with_template(
+                template="[{key}, {value}]",
+                format_value=passthrough_sequence_entry,
+            ),
             empty_dict="new Map()",
             preamble_lines=(),
         )
@@ -335,7 +341,10 @@ class JavaScript(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_separator(separator=": ")
+            dict_entry_with_separator(
+                separator=": ",
+                format_value=passthrough_sequence_entry,
+            )
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

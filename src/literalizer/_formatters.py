@@ -81,21 +81,49 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
 
 
 @beartype
-def tuple_dict_entry(key: str, _val: Value, value: str) -> str:
-    """Format a dict/map entry as a tuple ``(key, value)``.
+def tuple_dict_entry(
+    *,
+    format_value: Callable[[Value, str], str],
+) -> Callable[[str, Value, str], str]:
+    """Return a ``format_dict_entry`` callable that formats entries as
+    tuples ``(key, value)``.
 
-    Example: ``tuple_dict_entry("k", ..., "v")`` → ``"(k, v)"``.
+    *format_value* is applied to the raw value and formatted string
+    before embedding.
+
+    Example: ``tuple_dict_entry(...)("k", ..., "v")``
+    → ``"(k, v)"``.
     """
-    return f"({key}, {value})"
+
+    @beartype
+    def _format(key: str, val: Value, value: str) -> str:
+        """Format a dict entry as a tuple."""
+        return f"({key}, {format_value(val, value)})"
+
+    return _format
 
 
 @beartype
-def braced_dict_entry(key: str, _val: Value, value: str) -> str:
-    r"""Format a dict/map entry as ``{key, value}``.
+def braced_dict_entry(
+    *,
+    format_value: Callable[[Value, str], str],
+) -> Callable[[str, Value, str], str]:
+    r"""Return a ``format_dict_entry`` callable that formats entries as
+    ``{key, value}``.
 
-    Example: ``braced_dict_entry("k", ..., "v")`` → ``"{k, v}"``.
+    *format_value* is applied to the raw value and formatted string
+    before embedding.
+
+    Example: ``braced_dict_entry(...)("k", ..., "v")``
+    → ``"{k, v}"``.
     """
-    return f"{{{key}, {value}}}"
+
+    @beartype
+    def _format(key: str, val: Value, value: str) -> str:
+        """Format a dict entry with braces."""
+        return f"{{{key}, {format_value(val, value)}}}"
+
+    return _format
 
 
 @beartype
@@ -458,17 +486,23 @@ def passthrough_set_entry(_value: Value, item: str) -> str:
 @beartype
 def dict_entry_with_separator(
     separator: str,
+    *,
+    format_value: Callable[[Value, str], str],
 ) -> Callable[[str, Value, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value
     with *separator*.
 
-    Example: ``dict_entry_with_separator(": ")("k", ..., "v")`` → ``"k: v"``.
+    *format_value* is applied to the raw value and formatted string
+    before embedding.
+
+    Example: ``dict_entry_with_separator(": ", ...)("k", ..., "v")``
+    → ``"k: v"``.
     """
 
     @beartype
-    def _format(key: str, _val: Value, value: str) -> str:
+    def _format(key: str, val: Value, value: str) -> str:
         """Format a dict entry by joining key and value with separator."""
-        return f"{key}{separator}{value}"
+        return f"{key}{separator}{format_value(val, value)}"
 
     return _format
 
@@ -879,19 +913,22 @@ def typed_dict_open(
 def dict_entry_with_template(
     *,
     template: str,
+    format_value: Callable[[Value, str], str],
 ) -> Callable[[str, Value, str], str]:
     """Return a ``format_dict_entry`` callable from a template string.
 
     The *template* must contain ``{key}`` and ``{value}`` placeholders.
+    *format_value* is applied to the raw value and formatted string
+    before embedding.
 
-    Example: ``dict_entry_with_template("Map.entry({key}, {value})")``
+    Example: ``dict_entry_with_template(template=..., ...)``
     returns a callable producing ``"Map.entry(k, v)"``.
     """
 
     @beartype
-    def _format(key: str, _val: Value, value: str) -> str:
+    def _format(key: str, val: Value, value: str) -> str:
         """Format a dict entry using the template."""
-        return template.format(key=key, value=value)
+        return template.format(key=key, value=format_value(val, value))
 
     return _format
 

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    dict_entry_with_template,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -70,13 +71,6 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
         tag = "str" if formatted.startswith('"') else "int"
         return f".{{ .{tag} = {formatted} }}"
     return formatted
-
-
-@beartype
-def _format_zig_dict_entry(key: str, val: Value, value: str) -> str:
-    """Format a Zig dict entry as a ``ZKV`` anonymous struct literal."""
-    wrapped = _format_zig_entry(original=val, formatted=value)
-    return f".{{ .key = {key}, .val = {wrapped} }}"
 
 
 @beartype
@@ -262,7 +256,10 @@ class Zig(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str=".{ .map = &.{"),
             close="}}",
-            format_entry=_format_zig_dict_entry,
+            format_entry=dict_entry_with_template(
+                template=".{{ .key = {key}, .val = {value} }}",
+                format_value=_format_zig_entry,
+            ),
             empty_dict=None,
             preamble_lines=(),
         )
@@ -298,7 +295,10 @@ class Zig(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _format_zig_dict_entry
+            dict_entry_with_template(
+                template=".{{ .key = {key}, .val = {value} }}",
+                format_value=_format_zig_entry,
+            )
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

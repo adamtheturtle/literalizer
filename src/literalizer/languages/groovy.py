@@ -207,7 +207,10 @@ class Groovy(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="["),
             close="]",
-            format_entry=dict_entry_with_separator(separator=": "),
+            format_entry=dict_entry_with_separator(
+                separator=": ",
+                format_value=passthrough_sequence_entry,
+            ),
             empty_dict="[:]",
             preamble_lines=(),
         )
@@ -244,7 +247,10 @@ class Groovy(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_separator(separator=": ")
+            dict_entry_with_separator(
+                separator=": ",
+                format_value=passthrough_sequence_entry,
+            )
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -40,12 +41,6 @@ def _format_objc_entry(_original: Value, formatted: str) -> str:
     if isinstance(_original, (int, float)) and not isinstance(_original, bool):
         return f"@({formatted})"
     return formatted
-
-
-@beartype
-def _format_objc_dict_entry(key: str, val: Value, value: str) -> str:
-    """Format an Objective-C NSDictionary literal entry."""
-    return f"{key}: {_format_objc_entry(_original=val, formatted=value)}"
 
 
 @beartype
@@ -296,7 +291,10 @@ class ObjectiveC(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="@{"),
             close="}",
-            format_entry=_format_objc_dict_entry,
+            format_entry=dict_entry_with_separator(
+                ": ",
+                format_value=_format_objc_entry,
+            ),
             empty_dict="@{}",
             preamble_lines=(),
         )
@@ -329,7 +327,7 @@ class ObjectiveC(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _format_objc_dict_entry
+            dict_entry_with_separator(": ", format_value=_format_objc_entry)
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

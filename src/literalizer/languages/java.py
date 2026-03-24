@@ -318,6 +318,7 @@ class Java(metaclass=LanguageCls):
         self.set_format = set_format
         java_dict_entry = dict_entry_with_template(
             template="Map.entry({key}, {value})",
+            format_value=passthrough_sequence_entry,
         )
         self.set_format_config: SetFormatConfig = set_format.value
 

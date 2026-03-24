@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    dict_entry_with_template,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -44,15 +45,6 @@ def _format_ada_entry(original: Value, formatted: str) -> str:
     if isinstance(original, (str, bytes, datetime.date)):
         return f"AStr ({formatted})"
     return formatted
-
-
-@beartype
-def _format_ada_dict_entry(key: str, val: Value, value: str) -> str:
-    """Format an Ada dict/map entry as an ``AEntry (key, AVal value)``
-    call.
-    """
-    wrapped = _format_ada_entry(original=val, formatted=value)
-    return f"AEntry ({key}, {wrapped})"
 
 
 @beartype
@@ -244,7 +236,10 @@ class Ada(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="AMap'("),
             close=")",
-            format_entry=_format_ada_dict_entry,
+            format_entry=dict_entry_with_template(
+                template="AEntry ({key}, {value})",
+                format_value=_format_ada_entry,
+            ),
             empty_dict="AMap'(1 .. 0 => ANull)",
             preamble_lines=(),
         )
@@ -285,7 +280,10 @@ class Ada(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _format_ada_dict_entry
+            dict_entry_with_template(
+                template="AEntry ({key}, {value})",
+                format_value=_format_ada_entry,
+            )
         )
         self.multiline_close_indent = ""
         self.element_separator = ", "

@@ -15,6 +15,7 @@ from literalizer._formatters import (
     format_datetime_iso,
     format_string_backslash,
     passthrough_sequence_entry,
+    tuple_dict_entry,
 )
 from literalizer._language import (
     CommentConfig,
@@ -65,20 +66,6 @@ def _format_ocaml_entry(original: Value, formatted: str) -> str:
     if isinstance(original, datetime.date) and formatted.startswith('"'):
         return f"OStr {formatted}"
     return formatted
-
-
-@beartype
-def _format_ocaml_dict_entry(key: str, val: Value, value: str) -> str:
-    """Format an OCaml dict entry as a ``(key, OXxx value)`` tuple."""
-    return f"({key}, {_format_ocaml_entry(original=val, formatted=value)})"
-
-
-@beartype
-def _format_ocaml_ordered_map_entry(key: str, val: Value, value: str) -> str:
-    """Format an OCaml ordered-map entry as a ``(key, OXxx value)``
-    tuple.
-    """
-    return f"({key}, {_format_ocaml_entry(original=val, formatted=value)})"
 
 
 @beartype
@@ -290,7 +277,9 @@ class OCaml(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="OMap ["),
             close="]",
-            format_entry=_format_ocaml_dict_entry,
+            format_entry=tuple_dict_entry(
+                format_value=_format_ocaml_entry,
+            ),
             empty_dict=None,
             preamble_lines=(),
         )
@@ -322,7 +311,7 @@ class OCaml(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _format_ocaml_ordered_map_entry
+            tuple_dict_entry(format_value=_format_ocaml_entry)
         )
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False
