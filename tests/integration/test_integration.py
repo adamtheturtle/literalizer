@@ -69,19 +69,19 @@ class Check {{
 @beartype
 def _wrap_kotlin(content: str) -> str:
     """Wrap in a Kotlin variable assignment."""
-    return f"val {_VARIABLE_NAME}: Any? = {content}"
+    return f"val {_VARIABLE_NAME} = {content}"
 
 
 @beartype
 def _wrap_cpp(content: str) -> str:
     """Wrap a C++ expression in a function body."""
-    return f"void _check() {{\n    [[maybe_unused]] _Any _v = {content};\n}}"
+    return f"void _check() {{\n    _Any {_VARIABLE_NAME} = {content};\n}}"
 
 
 @beartype
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
-    return f"let {_VARIABLE_NAME}: Any? = {content}"
+    return f"let {_VARIABLE_NAME}: Any = {content}"
 
 
 @beartype
@@ -303,7 +303,7 @@ def _wrap_haskell(content: str) -> str:
 @beartype
 def _wrap_hcl(content: str) -> str:
     """Wrap in an HCL attribute assignment for syntax validation."""
-    return f"_ = {content}"
+    return f"{_VARIABLE_NAME} = {content}"
 
 
 _VARIABLE_NAME = "my_data"
@@ -348,7 +348,7 @@ def _wrap_cpp_varname(content: str) -> str:
 @beartype
 def _wrap_scala(content: str) -> str:
     """Wrap in a Scala object with a typed variable assignment."""
-    return f"object Check {{\nval {_VARIABLE_NAME}: Any = {content}\n}}"
+    return f"object Check {{\nval {_VARIABLE_NAME} = {content}\n}}"
 
 
 @beartype
@@ -422,8 +422,9 @@ def _wrap_elixir(content: str) -> str:
     """Wrap in an Elixir module function."""
     return (
         f"defmodule Check do\n"
-        f"  def {_VARIABLE_NAME} do\n"
-        f"    {content}\n"
+        f"  def x do\n"
+        f"    {_VARIABLE_NAME} = {content}\n"
+        f"    _ = {_VARIABLE_NAME}\n"
         f"  end\n"
         f"end"
     )
@@ -434,7 +435,7 @@ def _wrap_elixir_varname(content: str) -> str:
     """Wrap an Elixir variable assignment in a module function."""
     return (
         f"defmodule Check do\n"
-        f"  def {_VARIABLE_NAME} do\n"
+        f"  def x do\n"
         f"    {content}\n"
         f"    _ = {_VARIABLE_NAME}\n"
         f"  end\n"
@@ -445,11 +446,13 @@ def _wrap_elixir_varname(content: str) -> str:
 @beartype
 def _wrap_erlang(content: str) -> str:
     """Wrap in an Erlang module function."""
+    erlang_varname = _VARIABLE_NAME[0].upper() + _VARIABLE_NAME[1:]
     return (
         f"-module(check).\n"
-        f"-export([{_VARIABLE_NAME}/0]).\n"
-        f"{_VARIABLE_NAME}() ->\n"
-        f"    {content}."
+        f"-export([x/0]).\n"
+        f"x() ->\n"
+        f"    {erlang_varname} = {content},\n"
+        f"    {erlang_varname}."
     )
 
 
@@ -463,8 +466,8 @@ def _wrap_erlang_varname(content: str) -> str:
     erlang_varname = _VARIABLE_NAME[0].upper() + _VARIABLE_NAME[1:]
     return (
         f"-module(check).\n"
-        f"-export([{_VARIABLE_NAME}/0]).\n"
-        f"{_VARIABLE_NAME}() ->\n"
+        f"-export([x/0]).\n"
+        f"x() ->\n"
         f"    {content},\n"
         f"    {erlang_varname}."
     )
@@ -484,7 +487,7 @@ def _wrap_ada(content: str) -> str:
     indented = typed.replace("\n", "\n   ")
     return (
         "procedure Check is\n"
-        f"   X : A_Val := {indented};\n"
+        f"   {_VARIABLE_NAME} : A_Val := {indented};\n"
         "begin\n"
         "   null;\n"
         "end Check;"
@@ -524,7 +527,7 @@ def _wrap_ada_combined(declaration: str, assignment: str) -> str:
 @beartype
 def _wrap_lua(content: str) -> str:
     """Wrap a Lua table constructor in a local variable assignment."""
-    return f"local _ = {content}"
+    return f"local {_VARIABLE_NAME} = {content}"
 
 
 @beartype
@@ -550,7 +553,7 @@ def _wrap_d(content: str) -> str:
     """Wrap in a D function."""
     d_lang = literalizer.languages.D()
     typed = d_lang.format_sequence_entry(content)
-    return f"void _check() {{\n    auto _v = {typed};\n}}"
+    return f"void _check() {{\n    auto {_VARIABLE_NAME} = {typed};\n}}"
 
 
 @beartype
@@ -576,7 +579,10 @@ def _wrap_c(content: str) -> str:
     """Wrap in a C function."""
     c_lang = literalizer.languages.C()
     typed = c_lang.format_sequence_entry(content)
-    return f"void _check(void) {{\n    _CVal _v = {typed};\n    (void)_v;\n}}"
+    vn = _VARIABLE_NAME
+    return (
+        f"void _check(void) {{\n    _CVal {vn} = {typed};\n    (void){vn};\n}}"
+    )
 
 
 @beartype
@@ -606,7 +612,10 @@ def _wrap_matlab(content: str) -> str:
 @beartype
 def _wrap_objc(content: str) -> str:
     """Wrap in an Objective-C function."""
-    return f"void _check(void) {{\n    id _v = {content};\n    (void)_v;\n}}"
+    vn = _VARIABLE_NAME
+    return (
+        f"void _check(void) {{\n    id {vn} = {content};\n    (void){vn};\n}}"
+    )
 
 
 @beartype
@@ -705,8 +714,8 @@ def _wrap_zig(content: str) -> str:
     indented = typed.replace("\n", "\n    ")
     return (
         "pub fn main() void {\n"
-        f"    const v: ZVal = {indented};\n"
-        "    _ = v;\n"
+        f"    const {_VARIABLE_NAME}: ZVal = {indented};\n"
+        f"    _ = {_VARIABLE_NAME};\n"
         "}"
     )
 
@@ -927,7 +936,7 @@ def _wrap_crystal(content: str) -> str:
     """Wrap in a Crystal variable assignment to suppress unused-expression
     warnings.
     """
-    return f"_ = {content}"
+    return f"{_VARIABLE_NAME} = {content}"
 
 
 @beartype
@@ -939,7 +948,7 @@ def _wrap_vb(content: str) -> str:
     """
     lang = literalizer.languages.VisualBasic()
     declaration = lang.format_variable_declaration(
-        f"{_VARIABLE_NAME} As Object",
+        _VARIABLE_NAME,
         content,
         None,
     )
@@ -1009,7 +1018,7 @@ def _wrap_bash(content: str) -> str:
         if any(line.lstrip().startswith("[") for line in content.splitlines())
         else ""
     )
-    return f"declare{flag} _v={content}"
+    return f"declare{flag} {_VARIABLE_NAME}={content}"
 
 
 @beartype
@@ -1056,7 +1065,7 @@ def _wrap_cobol(content: str) -> str:
         data_body = f"    {entry}"
     return (
         _COBOL_PROGRAM_PREFIX
-        + f"01 LITERAL-VALUE.\n{data_body}\n"
+        + f"01 MY-DATA.\n{data_body}\n"
         + _COBOL_PROGRAM_SUFFIX
     )
 

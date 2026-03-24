@@ -1,8 +1,8 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @[
+    id my_data = @[
     @"a",
     // trailing
 ];
-    (void)_v;
+    (void)my_data;
 }

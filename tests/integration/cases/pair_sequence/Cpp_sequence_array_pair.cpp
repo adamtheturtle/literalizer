@@ -6,7 +6,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-    [[maybe_unused]] _Any _v = std::array<std::string, 2>{
+    _Any my_data = std::array<std::string, 2>{
     "1",
     "hello",
 };

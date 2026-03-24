@@ -1,1 +1,1 @@
-let my_data: Any? = [Any]()
+let my_data: Any = [Any]()

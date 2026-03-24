@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := AList'(
+   my_data : A_Val := AList'(
        AList'(AInt (1), AStr ("a")),
        AList'(AInt (2), AStr ("b"))
    );

@@ -1,9 +1,10 @@
 defmodule Check do
-  def my_data do
-    [
+  def x do
+    my_data = [
     "foo",
     "bar",
     "baz",
 ]
+    _ = my_data
   end
 end

@@ -1,4 +1,4 @@
-val my_data: Any? = booleanArrayOf(
+val my_data = booleanArrayOf(
     true,
     false,
     true,

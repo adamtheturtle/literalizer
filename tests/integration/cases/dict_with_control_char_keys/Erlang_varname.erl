@@ -1,6 +1,6 @@
 -module(check).
--export([my_data/0]).
-my_data() ->
+-export([x/0]).
+x() ->
     My_data = #{
     "key\nwith\nnewlines" => "value1",
     "key\twith\ttabs" => "value2",

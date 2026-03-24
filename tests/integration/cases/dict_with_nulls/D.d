@@ -1,6 +1,6 @@
 import std.json;
 void _check() {
-    auto _v = JSONValue([
+    auto my_data = JSONValue([
     "name": JSONValue("Alice"),
     "score": JSONValue(null),
     "age": JSONValue(30),

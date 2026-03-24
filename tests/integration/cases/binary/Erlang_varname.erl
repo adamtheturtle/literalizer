@@ -1,6 +1,6 @@
 -module(check).
--export([my_data/0]).
-my_data() ->
+-export([x/0]).
+x() ->
     My_data = [
     <<72, 101, 108, 108, 111>>
 ],

@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @[
+    id my_data = @[
     // first
     @"a",
     // second
     @"b",
 ];
-    (void)_v;
+    (void)my_data;
 }

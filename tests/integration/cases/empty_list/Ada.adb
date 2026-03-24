@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := AList'(1 .. 0 => ANull);
+   my_data : A_Val := AList'(1 .. 0 => ANull);
 begin
    null;
 end Check;

@@ -1,4 +1,4 @@
-val my_data: Any? = setOf<Any?>(
+val my_data = setOf<Any?>(
     true,
     42,
     "apple",

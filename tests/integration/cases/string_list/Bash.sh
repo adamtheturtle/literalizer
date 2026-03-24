@@ -1,4 +1,4 @@
-declare _v=(
+declare my_data=(
     "foo"
     "bar"
     "baz"

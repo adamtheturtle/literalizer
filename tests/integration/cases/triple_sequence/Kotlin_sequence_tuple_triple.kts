@@ -1,4 +1,4 @@
-val my_data: Any? = Triple(
+val my_data = Triple(
     1,
     "hello",
     true,

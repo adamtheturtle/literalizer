@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := AList'(
+   my_data : A_Val := AList'(
        AStr ("line1" & Character'Val(13) & Character'Val(10) & "line2"),
        AStr ("line1" & Character'Val(13) & "line2"),
        AStr (Character'Val(1))

@@ -1,5 +1,5 @@
 object Check {
-val my_data: Any = List[String](
+val my_data = List[String](
     "a",
     // trailing
 )

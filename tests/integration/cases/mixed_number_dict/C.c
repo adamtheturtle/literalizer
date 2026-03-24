@@ -14,10 +14,10 @@ struct _CVal {
 };
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
-    _CVal _v = ((_CVal){.m = (_CKV[]){
+    _CVal my_data = ((_CVal){.m = (_CKV[]){
     {"a", ((_CVal){.i = 1})},
     {"b", ((_CVal){.f = 2.5})},
     {"c", ((_CVal){.i = 3})},
 }});
-    (void)_v;
+    (void)my_data;
 }

@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = [NSSet setWithArray:@[
+    id my_data = [NSSet setWithArray:@[
     @YES,
     @(42),
     @"apple",
 ]];
-    (void)_v;
+    (void)my_data;
 }

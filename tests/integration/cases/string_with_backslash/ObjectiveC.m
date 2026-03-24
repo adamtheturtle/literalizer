@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = @[
+    id my_data = @[
     @"C:\\path\\to\\file",
     @"back\\\\slash",
     @"hello \\\"world\\\"",
 ];
-    (void)_v;
+    (void)my_data;
 }

@@ -1,5 +1,5 @@
 procedure Check is
-   X : A_Val := ASet'(
+   my_data : A_Val := ASet'(
        -- before apple
        AStr ("apple"),
        AStr ("banana")  -- banana inline

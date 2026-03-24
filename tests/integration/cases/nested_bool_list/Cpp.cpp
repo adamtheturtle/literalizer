@@ -5,7 +5,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-    [[maybe_unused]] _Any _v = std::vector<std::vector<bool>>{
+    _Any my_data = std::vector<std::vector<bool>>{
     std::vector<bool>{true, false},
     std::vector<bool>{true, true},
 };

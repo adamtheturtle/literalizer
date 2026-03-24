@@ -1,4 +1,4 @@
-val my_data: Any? = arrayOf(
+val my_data = arrayOf(
     // line 1
     // line 2
     "a",

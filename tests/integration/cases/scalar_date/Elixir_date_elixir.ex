@@ -1,5 +1,6 @@
 defmodule Check do
-  def my_data do
-    ~D[2024-01-15]
+  def x do
+    my_data = ~D[2024-01-15]
+    _ = my_data
   end
 end

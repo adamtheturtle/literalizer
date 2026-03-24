@@ -1,3 +1,3 @@
 object Check {
-val my_data: Any = "2024-01-15T18:00:00+05:30"
+val my_data = "2024-01-15T18:00:00+05:30"
 }

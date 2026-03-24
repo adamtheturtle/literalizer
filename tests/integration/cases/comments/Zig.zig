@@ -10,12 +10,12 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    const v: ZVal = .{ .map = &.{
+    const my_data: ZVal = .{ .map = &.{
         // Server configuration
         .{ .key = "host", .val = .{ .str = "localhost" } },  // default host
         .{ .key = "port", .val = .{ .int = 8080 } },
         // Enable debug mode
         .{ .key = "debug", .val = .{ .bool = true } },
     }};
-    _ = v;
+    _ = my_data;
 }

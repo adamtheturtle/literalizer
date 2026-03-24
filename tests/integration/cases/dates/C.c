@@ -14,9 +14,9 @@ struct _CVal {
 };
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
-    _CVal _v = ((_CVal){.m = (_CKV[]){
+    _CVal my_data = ((_CVal){.m = (_CKV[]){
     {"date", ((_CVal){.s = "2024-01-15"})},
     {"datetime", ((_CVal){.s = "2024-01-15T12:30:00+00:00"})},
 }});
-    (void)_v;
+    (void)my_data;
 }

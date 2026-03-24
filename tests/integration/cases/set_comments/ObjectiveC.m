@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
-    id _v = [NSSet setWithArray:@[
+    id my_data = [NSSet setWithArray:@[
     @"apple",  // inline comment
     // before banana
     @"banana",
     // trailing
 ]];
-    (void)_v;
+    (void)my_data;
 }

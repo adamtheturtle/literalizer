@@ -1,3 +1,3 @@
-val my_data: Any? = arrayOf(
+val my_data = arrayOf(
     "48656c6c6f",
 )

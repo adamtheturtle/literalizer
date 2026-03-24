@@ -1,4 +1,4 @@
-let my_data: Any? = Set<AnyHashable>([
+let my_data: Any = Set<AnyHashable>([
     "apple",  // inline comment
     // before banana
     "banana",

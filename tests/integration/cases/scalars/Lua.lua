@@ -1,4 +1,4 @@
-local _ = {
+local my_data = {
     42,
     3.14,
     true,

@@ -1,1 +1,1 @@
-let my_data: Any? = Set<AnyHashable>()
+let my_data: Any = Set<AnyHashable>()

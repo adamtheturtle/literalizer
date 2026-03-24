@@ -1,1 +1,1 @@
-declare _v="2024-01-15"
+declare my_data="2024-01-15"
