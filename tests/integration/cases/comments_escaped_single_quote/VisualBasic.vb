@@ -1,0 +1,7 @@
+Imports System.Collections.Generic
+Module Check
+    ' a comment
+    Dim my_data As Object = New Dictionary(Of String, Object) From {
+        {"key", "it's here"}
+    }
+End Module

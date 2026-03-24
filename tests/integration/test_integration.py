@@ -2158,12 +2158,3 @@ def test_format_enumeration_properties(
     assert len(spec.trailing_commas) >= 1
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
-
-
-def test_fortran_comment_pos_escaped_single_quote() -> None:
-    """Doubled single quotes inside a Fortran string are not treated as
-    the end of the string when locating ``!`` comments.
-    """
-    line = "fstr('it''s here')  ! note"
-    expected = 20
-    assert _fortran_comment_pos(line=line) == expected
