@@ -52,19 +52,23 @@ def _format_ocaml_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
     """
-    if isinstance(original, bool):
-        return formatted
-    if isinstance(original, int):
-        negative = formatted.startswith("-")
-        return f"OInt ({formatted})" if negative else f"OInt {formatted}"
-    if isinstance(original, float):
-        negative = formatted.startswith("-")
-        return f"OFloat ({formatted})" if negative else f"OFloat {formatted}"
-    if isinstance(original, (str, bytes)):
-        return f"OStr {formatted}"
-    if isinstance(original, datetime.date) and formatted.startswith('"'):
-        return f"OStr {formatted}"
-    return formatted
+    match original:
+        case bool():
+            return formatted
+        case int():
+            negative = formatted.startswith("-")
+            return f"OInt ({formatted})" if negative else f"OInt {formatted}"
+        case float():
+            negative = formatted.startswith("-")
+            return (
+                f"OFloat ({formatted})" if negative else f"OFloat {formatted}"
+            )
+        case str() | bytes():
+            return f"OStr {formatted}"
+        case datetime.date() if formatted.startswith('"'):
+            return f"OStr {formatted}"
+        case _:
+            return formatted
 
 
 @beartype

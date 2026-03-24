@@ -56,7 +56,7 @@ def _to_bash_value(item: str) -> str:
 @beartype
 def _format_bash_sequence_entry(original: Value, item: str) -> str:
     """Format a Bash indexed-array element, quoting nested collections."""
-    if isinstance(original, (list, dict, set, frozenset)):
+    if isinstance(original, (list, dict, set)):
         escaped = (
             item.replace("\\", "\\\\")
             .replace('"', '\\"')

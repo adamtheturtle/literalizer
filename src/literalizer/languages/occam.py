@@ -38,15 +38,17 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate occam-pi ``LIT``
     constructor.
     """
-    if isinstance(original, bool):
-        return formatted
-    if isinstance(original, int):
-        return f"MOBILE LIT(lit.int; {formatted})"
-    if isinstance(original, float):
-        return f"MOBILE LIT(lit.float; {formatted}(REAL32))"
-    if isinstance(original, (str, bytes, datetime.date)):
-        return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
-    return formatted
+    match original:
+        case bool():
+            return formatted
+        case int():
+            return f"MOBILE LIT(lit.int; {formatted})"
+        case float():
+            return f"MOBILE LIT(lit.float; {formatted}(REAL32))"
+        case str() | bytes() | datetime.date():
+            return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
+        case _:
+            return formatted
 
 
 @beartype

@@ -35,15 +35,17 @@ if TYPE_CHECKING:
 @beartype
 def _format_ada_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate Ada ``A_Val`` constructor."""
-    if isinstance(original, bool):
-        return formatted
-    if isinstance(original, int):
-        return f"AInt ({formatted})"
-    if isinstance(original, float):
-        return f"AFloat ({formatted})"
-    if isinstance(original, (str, bytes, datetime.date)):
-        return f"AStr ({formatted})"
-    return formatted
+    match original:
+        case bool():
+            return formatted
+        case int():
+            return f"AInt ({formatted})"
+        case float():
+            return f"AFloat ({formatted})"
+        case str() | bytes() | datetime.date():
+            return f"AStr ({formatted})"
+        case _:
+            return formatted
 
 
 @beartype

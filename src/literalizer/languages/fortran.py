@@ -37,15 +37,17 @@ def _format_fortran_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate ``fval_t``
     constructor.
     """
-    if isinstance(original, bool):
-        return formatted
-    if isinstance(original, int):
-        return f"fint({formatted})"
-    if isinstance(original, float):
-        return f"freal({formatted})"
-    if isinstance(original, (str, bytes, datetime.date)):
-        return f"fstr({formatted})"
-    return formatted
+    match original:
+        case bool():
+            return formatted
+        case int():
+            return f"fint({formatted})"
+        case float():
+            return f"freal({formatted})"
+        case str() | bytes() | datetime.date():
+            return f"fstr({formatted})"
+        case _:
+            return formatted
 
 
 @beartype

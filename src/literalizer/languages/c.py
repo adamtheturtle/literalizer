@@ -37,15 +37,17 @@ def _format_c_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate ``_CVal`` union
     literal.
     """
-    if isinstance(original, (str, bytes, datetime.date)):
-        return f"((_CVal){{.s = {formatted}}})"
-    if isinstance(original, bool):
-        return formatted
-    if isinstance(original, int):
-        return f"((_CVal){{.i = {formatted}}})"
-    if isinstance(original, float):
-        return f"((_CVal){{.f = {formatted}}})"
-    return formatted
+    match original:
+        case str() | bytes() | datetime.date():
+            return f"((_CVal){{.s = {formatted}}})"
+        case bool():
+            return formatted
+        case int():
+            return f"((_CVal){{.i = {formatted}}})"
+        case float():
+            return f"((_CVal){{.f = {formatted}}})"
+        case _:
+            return formatted
 
 
 @beartype
