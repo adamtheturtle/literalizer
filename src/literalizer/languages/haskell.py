@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -36,12 +37,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from literalizer._types import Value
-
-
-@beartype
-def _format_date_haskell(value: datetime.date) -> str:
-    """Format a date as a Haskell ``HDate`` constructor."""
-    return f"HDate (fromGregorian {value.year} {value.month} {value.day})"
 
 
 @beartype
@@ -139,7 +134,11 @@ class Haskell(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
 
-        HASKELL = DateFormatConfig(formatter=_format_date_haskell)
+        HASKELL = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="HDate (fromGregorian {year} {month} {day})",
+            ),
+        )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
             preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),

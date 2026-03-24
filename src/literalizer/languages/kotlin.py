@@ -10,6 +10,8 @@ from beartype import beartype
 from literalizer._formatters import (
     ListType,
     TypedOpenerConfig,
+    date_ymd_formatter,
+    datetime_ymdhms_formatter,
     dict_entry_with_separator,
     fixed_sequence_open,
     format_bytes_hex,
@@ -39,21 +41,6 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-
-@beartype
-def _format_date_kotlin(value: datetime.date) -> str:
-    """Format a date as a Kotlin ``LocalDate.of(...)`` call."""
-    return f"LocalDate.of({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_kotlin(value: datetime.datetime) -> str:
-    """Format a datetime as a Kotlin ``LocalDateTime.of(...)`` call."""
-    return (
-        f"LocalDateTime.of({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
 
 
 _KOTLIN_SCALAR_OPENERS: dict[type, str] = {
@@ -144,7 +131,9 @@ class Kotlin(metaclass=LanguageCls):
         """Date format options for Kotlin."""
 
         KOTLIN = DateFormatConfig(
-            formatter=_format_date_kotlin,
+            formatter=date_ymd_formatter(
+                template="LocalDate.of({year}, {month}, {day})",
+            ),
             preamble_lines=("import java.time.LocalDate",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
@@ -157,7 +146,10 @@ class Kotlin(metaclass=LanguageCls):
         """Datetime format options for Kotlin."""
 
         KOTLIN = DatetimeFormatConfig(
-            formatter=_format_datetime_kotlin,
+            formatter=datetime_ymdhms_formatter(
+                template="LocalDateTime.of({year}, {month}, {day}, "
+                "{hour}, {minute}, {second})",
+            ),
             preamble_lines=("import java.time.LocalDateTime",),
         )
         ISO = DatetimeFormatConfig(
