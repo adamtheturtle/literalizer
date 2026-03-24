@@ -20,6 +20,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
 )
 
 __all__ = [
@@ -33,6 +34,7 @@ __all__ = [
     "OrderedMapFormatConfig",
     "SequenceFormatConfig",
     "SetFormatConfig",
+    "TrailingCommaConfig",
     "fixed_dict_open",
     "fixed_sequence_open",
     "fixed_set_open",

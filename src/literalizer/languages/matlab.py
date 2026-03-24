@@ -28,6 +28,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
 )
 from literalizer._types import Value
 
@@ -322,7 +323,9 @@ class Matlab(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format.value
-        self.multiline_trailing_comma = False
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+            multiline_trailing_comma=False,
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

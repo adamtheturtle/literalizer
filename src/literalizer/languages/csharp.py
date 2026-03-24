@@ -40,6 +40,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
     date_scalar_preamble,
 )
 from literalizer._types import Value
@@ -386,7 +387,9 @@ class CSharp(metaclass=LanguageCls):
             datetime_type_name=_csharp_opener_config.type_name(py_type=dt_tp),
             format_entry=csharp_dict_entry,
         )
-        self.multiline_trailing_comma = False
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+            multiline_trailing_comma=False,
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
