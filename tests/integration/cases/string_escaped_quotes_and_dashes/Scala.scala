@@ -1,3 +1,3 @@
 object Check {
-val x: Any = "hello \"world\" -- not a comment"
+val my_data: Any = "hello \"world\" -- not a comment"
 }

@@ -1,4 +1,4 @@
-final x = {
+final my_data = {
     1,
     2,
     3,

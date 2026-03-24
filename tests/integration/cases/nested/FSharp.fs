@@ -12,6 +12,6 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FMap [
+let my_data: Val = FMap [
     ("users", FList [FMap [("name", FStr "Bob"); ("tags", FList [FStr "admin"; FStr "user"])]; FMap [("name", FStr "Carol"); ("tags", FList [FStr "guest"])]])
 ]

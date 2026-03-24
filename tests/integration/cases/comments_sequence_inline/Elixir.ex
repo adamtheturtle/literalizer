@@ -1,5 +1,5 @@
 defmodule Check do
-  def x do
+  def my_data do
     [
     "a",  # note a
     "b",  # note b

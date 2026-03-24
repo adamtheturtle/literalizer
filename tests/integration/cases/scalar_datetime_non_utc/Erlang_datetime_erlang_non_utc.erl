@@ -1,4 +1,4 @@
 -module(check).
--export([x/0]).
-x() ->
+-export([my_data/0]).
+my_data() ->
     {{2024, 1, 15}, {18, 0, 0}}.

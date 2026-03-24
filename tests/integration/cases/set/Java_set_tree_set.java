@@ -1,7 +1,7 @@
 import java.util.Set;
 import java.util.TreeSet;
 class Check {
-    Object x = new TreeSet<>(Set.of(
+    Object my_data = new TreeSet<>(Set.of(
     "apple",
     "banana",
     "cherry"

@@ -17,8 +17,8 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fmap([fval_t :: &
+  type(fval_t) :: my_data
+  my_data = fmap([fval_t :: &
     fentry('date', fstr("2024-01-15")), &
     fentry('datetime', fstr("2024-01-15T12:30:00+00:00")) &
 ])

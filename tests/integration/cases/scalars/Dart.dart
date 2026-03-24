@@ -1,4 +1,4 @@
-final x = [
+final my_data = [
     42,
     3.14,
     true,

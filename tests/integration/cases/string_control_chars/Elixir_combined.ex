@@ -1,5 +1,5 @@
 defmodule Check do
-  def x do
+  def my_data do
     my_data = [
     "line1\r\nline2",
     "line1\rline2",

@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Map(
+val my_data: Any = Map(
     "name" -> "Alice",
     "age" -> 30,
     "active" -> true,

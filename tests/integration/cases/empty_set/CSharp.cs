@@ -1,2 +1,2 @@
 using System.Collections.Generic;
-var x = new HashSet<object>();
+var my_data = new HashSet<object>();

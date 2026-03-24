@@ -17,8 +17,8 @@ end module fval_m
 program check
   use fval_m
   implicit none
-  type(fval_t) :: x
-  x = fset([fval_t :: &
+  type(fval_t) :: my_data
+  my_data = fset([fval_t :: &
     ! before apple
     fstr('apple'), &
     fstr('banana') &  ! banana inline

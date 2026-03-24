@@ -2,7 +2,7 @@ Imports System.Collections.Generic
 Module Check
     ' note a
     ' note b
-    Dim x As Object = New String() {
+    Dim my_data As Object = New String() {
         "a",
         "b"
     }

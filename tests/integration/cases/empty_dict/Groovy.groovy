@@ -1,1 +1,1 @@
-def x = [:]
+def my_data = [:]

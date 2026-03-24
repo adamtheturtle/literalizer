@@ -62,14 +62,14 @@ def _wrap_java(content: str) -> str:
     """Wrap in a Java class with necessary imports."""
     return f"""\
 class Check {{
-    Object x = {content};
+    Object {_VARIABLE_NAME} = {content};
 }}"""
 
 
 @beartype
 def _wrap_kotlin(content: str) -> str:
     """Wrap in a Kotlin variable assignment."""
-    return f"val x: Any? = {content}"
+    return f"val {_VARIABLE_NAME}: Any? = {content}"
 
 
 @beartype
@@ -81,13 +81,13 @@ def _wrap_cpp(content: str) -> str:
 @beartype
 def _wrap_swift(content: str) -> str:
     """Wrap in a Swift variable assignment."""
-    return f"let x: Any? = {content}"
+    return f"let {_VARIABLE_NAME}: Any? = {content}"
 
 
 @beartype
 def _wrap_csharp(content: str) -> str:
     """Wrap in C# variable assignment."""
-    return f"var x = {content};"
+    return f"var {_VARIABLE_NAME} = {content};"
 
 
 @beartype
@@ -167,7 +167,7 @@ def _wrap_fsharp(content: str) -> str:
         "module Check\n\n"
         + _FSHARP_VAL_TYPE
         + "\n"
-        + f"let x: {val_type} = {typed}"
+        + f"let {_VARIABLE_NAME}: {val_type} = {typed}"
     )
 
 
@@ -185,7 +185,7 @@ def _wrap_ocaml(content: str) -> str:
         "module Check = struct\n\n"
         + _OCAML_VAL_TYPE
         + "\n"
-        + f"let x : {val_type} = {typed}\n\n"
+        + f"let {_VARIABLE_NAME} : {val_type} = {typed}\n\n"
         + "end"
     )
 
@@ -211,7 +211,7 @@ def _wrap_occam(content: str) -> str:
         _OCCAM_LIT_TYPE
         + "\n\n"
         + "PROC check ()\n"
-        + f"  VAL MOBILE LIT x IS {typed}:\n"
+        + f"  VAL MOBILE LIT {_VARIABLE_NAME} IS {typed}:\n"
         + "  SEQ\n"
         + "    SKIP\n"
         + ":"
@@ -292,8 +292,12 @@ def _wrap_haskell(content: str) -> str:
         header += split.body_preamble + "\n"
     header += _HASKELL_VAL_TYPE
     if split.expression.lstrip().startswith("("):
-        return header + f"x = {split.expression}"
-    return header + "x :: Val\n" + f"x = {split.expression}"
+        return header + f"{_VARIABLE_NAME} = {split.expression}"
+    return (
+        header
+        + f"{_VARIABLE_NAME} :: Val\n"
+        + f"{_VARIABLE_NAME} = {split.expression}"
+    )
 
 
 @beartype
@@ -344,7 +348,7 @@ def _wrap_cpp_varname(content: str) -> str:
 @beartype
 def _wrap_scala(content: str) -> str:
     """Wrap in a Scala object with a typed variable assignment."""
-    return f"object Check {{\nval x: Any = {content}\n}}"
+    return f"object Check {{\nval {_VARIABLE_NAME}: Any = {content}\n}}"
 
 
 @beartype
@@ -374,7 +378,7 @@ def _wrap_scala_combined(declaration: str, assignment: str) -> str:
 @beartype
 def _wrap_dart(content: str) -> str:
     """Wrap in a Dart final variable assignment."""
-    return f"final x = {content};"
+    return f"final {_VARIABLE_NAME} = {content};"
 
 
 @beartype
@@ -404,19 +408,25 @@ def _wrap_dart_combined(declaration: str, assignment: str) -> str:
 @beartype
 def _wrap_perl(content: str) -> str:
     """Wrap in a Perl variable assignment."""
-    return f"my $x = {content};"
+    return f"my ${_VARIABLE_NAME} = {content};"
 
 
 @beartype
 def _wrap_php(content: str) -> str:
     """Wrap in a PHP variable assignment."""
-    return f"$x = {content};"
+    return f"${_VARIABLE_NAME} = {content};"
 
 
 @beartype
 def _wrap_elixir(content: str) -> str:
     """Wrap in an Elixir module function."""
-    return f"defmodule Check do\n  def x do\n    {content}\n  end\nend"
+    return (
+        f"defmodule Check do\n"
+        f"  def {_VARIABLE_NAME} do\n"
+        f"    {content}\n"
+        f"  end\n"
+        f"end"
+    )
 
 
 @beartype
@@ -424,7 +434,7 @@ def _wrap_elixir_varname(content: str) -> str:
     """Wrap an Elixir variable assignment in a module function."""
     return (
         f"defmodule Check do\n"
-        f"  def x do\n"
+        f"  def {_VARIABLE_NAME} do\n"
         f"    {content}\n"
         f"    _ = {_VARIABLE_NAME}\n"
         f"  end\n"
@@ -435,7 +445,12 @@ def _wrap_elixir_varname(content: str) -> str:
 @beartype
 def _wrap_erlang(content: str) -> str:
     """Wrap in an Erlang module function."""
-    return f"-module(check).\n-export([x/0]).\nx() ->\n    {content}."
+    return (
+        f"-module(check).\n"
+        f"-export([{_VARIABLE_NAME}/0]).\n"
+        f"{_VARIABLE_NAME}() ->\n"
+        f"    {content}."
+    )
 
 
 @beartype
@@ -448,8 +463,8 @@ def _wrap_erlang_varname(content: str) -> str:
     erlang_varname = _VARIABLE_NAME[0].upper() + _VARIABLE_NAME[1:]
     return (
         f"-module(check).\n"
-        f"-export([x/0]).\n"
-        f"x() ->\n"
+        f"-export([{_VARIABLE_NAME}/0]).\n"
+        f"{_VARIABLE_NAME}() ->\n"
         f"    {content},\n"
         f"    {erlang_varname}."
     )
@@ -458,7 +473,7 @@ def _wrap_erlang_varname(content: str) -> str:
 @beartype
 def _wrap_groovy(content: str) -> str:
     """Wrap in a Groovy variable assignment."""
-    return f"def x = {content}"
+    return f"def {_VARIABLE_NAME} = {content}"
 
 
 @beartype
@@ -515,7 +530,7 @@ def _wrap_lua(content: str) -> str:
 @beartype
 def _wrap_r(content: str) -> str:
     """Wrap in an R variable assignment."""
-    return f"x <- {content}"
+    return f"{_VARIABLE_NAME} <- {content}"
 
 
 @beartype
@@ -553,7 +568,7 @@ def _wrap_d_combined(declaration: str, assignment: str) -> str:
 @beartype
 def _wrap_powershell(content: str) -> str:
     """Wrap in a PowerShell variable assignment."""
-    return f"$x = {content}"
+    return f"${_VARIABLE_NAME} = {content}"
 
 
 @beartype
@@ -585,7 +600,7 @@ def _wrap_c_combined(declaration: str, assignment: str) -> str:
 @beartype
 def _wrap_matlab(content: str) -> str:
     """Wrap in a MATLAB/Octave variable assignment."""
-    return f"x = {content};"
+    return f"{_VARIABLE_NAME} = {content};"
 
 
 @beartype
@@ -851,8 +866,8 @@ def _wrap_fortran(content: str) -> str:
         "program check\n"
         "  use fval_m\n"
         "  implicit none\n"
-        "  type(fval_t) :: x\n"
-        f"  x = {continued}\n"
+        f"  type(fval_t) :: {_VARIABLE_NAME}\n"
+        f"  {_VARIABLE_NAME} = {continued}\n"
         "end program check"
     )
 
@@ -919,7 +934,7 @@ def _wrap_vb(content: str) -> str:
     """
     lang = literalizer.languages.VisualBasic()
     declaration = lang.format_variable_declaration(
-        "x As Object",
+        f"{_VARIABLE_NAME} As Object",
         content,
         None,
     )
@@ -1000,7 +1015,7 @@ def _wrap_toml(content: str) -> str:
     multiline output from ``_literalize`` can be used directly as a TOML
     value.
     """
-    return f"x = {content}"
+    return f"{_VARIABLE_NAME} = {content}"
 
 
 _COBOL_PROGRAM_PREFIX = (

@@ -12,7 +12,7 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FList [
+let my_data: Val = FList [
     FInt 1L;
     FFloat 2.5;
     FInt 3L

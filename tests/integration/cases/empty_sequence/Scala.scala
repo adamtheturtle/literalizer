@@ -1,5 +1,5 @@
 object Check {
-val x: Any = List(
+val my_data: Any = List(
     List(),
     Map(),
 )

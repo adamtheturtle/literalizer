@@ -1,5 +1,5 @@
 class Check {
-    Object x = new String[]{
+    Object my_data = new String[]{
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\""

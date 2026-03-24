@@ -1,5 +1,5 @@
 object Check {
-val x: Any = Set(
+val my_data: Any = Set(
     true,
     42,
     "apple",

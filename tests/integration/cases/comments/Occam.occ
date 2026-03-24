@@ -12,7 +12,7 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC check ()
-  VAL MOBILE LIT x IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+  VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
     -- Server configuration
     MOBILE LIT(lit.pair; MOBILE []BYTE "host"; MOBILE LIT(lit.str; MOBILE []BYTE "localhost")),  -- default host
     MOBILE LIT(lit.pair; MOBILE []BYTE "port"; MOBILE LIT(lit.int; 8080)),

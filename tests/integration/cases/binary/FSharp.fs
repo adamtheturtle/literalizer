@@ -12,6 +12,6 @@ type Val =
     | FDate of System.DateTime
     | FDatetime of System.DateTime
 
-let x: Val = FList [
+let my_data: Val = FList [
     FStr "48656c6c6f"
 ]

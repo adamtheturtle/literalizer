@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var x = new SortedSet<string> {
+var my_data = new SortedSet<string> {
     "apple",
     "banana",
     "cherry"

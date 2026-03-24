@@ -1,6 +1,6 @@
 -module(check).
--export([x/0]).
-x() ->
+-export([my_data/0]).
+my_data() ->
     My_data = #{
     % Server configuration
     "host" => "localhost",  % default host

@@ -1,4 +1,4 @@
-final x = {
+final my_data = {
     "name": "Alice",
     "score": null,
     "age": 30,

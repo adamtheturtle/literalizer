@@ -1,1 +1,1 @@
-val x: Any? = mapOf<String, Any?>()
+val my_data: Any? = mapOf<String, Any?>()

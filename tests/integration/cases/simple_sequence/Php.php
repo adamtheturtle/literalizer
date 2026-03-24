@@ -1,5 +1,5 @@
 <?php
-$x = [
+$my_data = [
     1,
     "hello",
     true,

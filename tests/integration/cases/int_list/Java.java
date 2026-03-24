@@ -1,5 +1,5 @@
 class Check {
-    Object x = new int[]{
+    Object my_data = new int[]{
     1,
     2,
     3
