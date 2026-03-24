@@ -542,6 +542,9 @@ class _LanguageConfig:
     wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
     wrap_variable_name: str | None = None
+    trailing_comma_extra_kwargs: dict[str, Any] = dataclasses.field(
+        default_factory=dict,
+    )
 
 
 _COBOL_PROGRAM_PREFIX = (
@@ -660,6 +663,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
+        trailing_comma_extra_kwargs={
+            "sequence_format": (
+                literalizer.languages.CSharp.sequence_formats.ARRAY
+            ),
+        },
     ),
     literalizer.languages.Dart.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
@@ -1218,6 +1226,7 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
                 name=f"{lang_name}_trailing_comma_{fmt.name.lower()}",
                 spec=lang_config.lang_cls(
                     trailing_comma=fmt,
+                    **lang_config.trailing_comma_extra_kwargs,
                 ),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
