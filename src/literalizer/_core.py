@@ -913,6 +913,8 @@ def _format_collection_lines(
                 add_sep = i < last_idx or trailing_comma
                 sep = spec.element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{formatted}{sep}")
+        case _:  # pragma: no cover
+            pass
     return lines
 
 
