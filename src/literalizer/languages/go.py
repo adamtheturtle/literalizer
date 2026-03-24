@@ -39,26 +39,32 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-_GO_MONTHS: dict[int, str] = {
-    1: "time.January",
-    2: "time.February",
-    3: "time.March",
-    4: "time.April",
-    5: "time.May",
-    6: "time.June",
-    7: "time.July",
-    8: "time.August",
-    9: "time.September",
-    10: "time.October",
-    11: "time.November",
-    12: "time.December",
-}
+
+@beartype
+def _go_month_name(month: int) -> str:
+    """Return the Go ``time.Month`` constant for a 1-based month
+    number.
+    """
+    return (
+        "time.January",
+        "time.February",
+        "time.March",
+        "time.April",
+        "time.May",
+        "time.June",
+        "time.July",
+        "time.August",
+        "time.September",
+        "time.October",
+        "time.November",
+        "time.December",
+    )[month - 1]
 
 
 @beartype
 def _format_date_go(value: datetime.date) -> str:
     """Format a date as a Go ``time.Date(...)`` call."""
-    month = _GO_MONTHS[value.month]
+    month = _go_month_name(month=value.month)
     return (
         f"time.Date({value.year}, {month}, {value.day}, 0, 0, 0, 0, time.UTC)"
     )
@@ -67,7 +73,7 @@ def _format_date_go(value: datetime.date) -> str:
 @beartype
 def _format_datetime_go(value: datetime.datetime) -> str:
     """Format a datetime as a Go ``time.Date(...)`` call."""
-    month = _GO_MONTHS[value.month]
+    month = _go_month_name(month=value.month)
     nanos = value.microsecond * 1000
     return (
         f"time.Date({value.year}, {month}, {value.day}, "

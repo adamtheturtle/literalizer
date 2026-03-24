@@ -425,22 +425,6 @@ def _coerce_heterogeneous_scalars(
     return data
 
 
-_TYPE_FAMILY_CHECKS: tuple[tuple[type, str], ...] = (
-    # Check bool before int (bool is a subclass of int), and
-    # datetime before date (datetime is a subclass of date).
-    (bool, "bool"),
-    (int, "int"),
-    (float, "float"),
-    (str, "str"),
-    (bytes, "bytes"),
-    (datetime.datetime, "datetime"),
-    (datetime.date, "date"),
-    (list, "list"),
-    (ordereddict, "dict"),
-    (dict, "dict"),
-)
-
-
 @beartype
 def _value_type_family(*, value: Value) -> str:
     """Return a broad type family label for a value.
@@ -450,7 +434,20 @@ def _value_type_family(*, value: Value) -> str:
     """
     if value is None:
         return "none"
-    for check_type, family in _TYPE_FAMILY_CHECKS:
+    # Check bool before int (bool is a subclass of int), and
+    # datetime before date (datetime is a subclass of date).
+    for check_type, family in (
+        (bool, "bool"),
+        (int, "int"),
+        (float, "float"),
+        (str, "str"),
+        (bytes, "bytes"),
+        (datetime.datetime, "datetime"),
+        (datetime.date, "date"),
+        (list, "list"),
+        (ordereddict, "dict"),
+        (dict, "dict"),
+    ):
         if isinstance(value, check_type):
             return family
     return "set"
