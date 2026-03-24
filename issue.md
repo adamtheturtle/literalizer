@@ -5,7 +5,7 @@
 
 from collections import OrderedDict
 
-OrderedDict([("a", 1), ("b", "c")])
+OrderedDict([("a", 1), ("b", "c")])  # pyrefly: ignore[no-matching-overload]
 ```
 
 This passes mypy but pyrefly 0.57.1 reports:
