@@ -87,9 +87,9 @@ def _format_variable_declaration(name: str, value: str, data: Value) -> str:
 
 @beartype
 def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format a Zig assignment to an existing ``ZVal`` variable."""
+    """Format a Zig ``var`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
-    return f"{name} = {wrapped};"
+    return f"var {name}: ZVal = {wrapped};"
 
 
 @beartype

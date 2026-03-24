@@ -19,13 +19,13 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .set = &.{
-        .{ .str = "apple" },  // inline comment
-        // before banana
-        .{ .str = "banana" },
-        // trailing
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .set = &.{
+            .{ .str = "apple" },  // inline comment
+            // before banana
+            .{ .str = "banana" },
+            // trailing
+        }};
+        _ = my_data;
+    }
 }

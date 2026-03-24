@@ -16,10 +16,10 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .map = &.{
-        .{ .key = "key", .val = .{ .str = "value \" # not a comment" } },  // real
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .map = &.{
+            .{ .key = "key", .val = .{ .str = "value \" # not a comment" } },  // real
+        }};
+        _ = my_data;
+    }
 }

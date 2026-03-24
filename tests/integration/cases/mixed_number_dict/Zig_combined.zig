@@ -18,12 +18,12 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .map = &.{
-        .{ .key = "a", .val = .{ .int = 1 } },
-        .{ .key = "b", .val = .{ .float = 2.5 } },
-        .{ .key = "c", .val = .{ .int = 3 } },
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .map = &.{
+            .{ .key = "a", .val = .{ .int = 1 } },
+            .{ .key = "b", .val = .{ .float = 2.5 } },
+            .{ .key = "c", .val = .{ .int = 3 } },
+        }};
+        _ = my_data;
+    }
 }

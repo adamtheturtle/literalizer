@@ -17,11 +17,11 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .arr = &.{
-        .{ .arr = &.{.{ .int = 1 }, .{ .str = "a" }}},
-        .{ .arr = &.{.{ .int = 2 }, .{ .str = "b" }}},
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .arr = &.{
+            .{ .arr = &.{.{ .int = 1 }, .{ .str = "a" }}},
+            .{ .arr = &.{.{ .int = 2 }, .{ .str = "b" }}},
+        }};
+        _ = my_data;
+    }
 }

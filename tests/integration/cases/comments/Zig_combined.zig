@@ -20,14 +20,14 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .map = &.{
-        // Server configuration
-        .{ .key = "host", .val = .{ .str = "localhost" } },  // default host
-        .{ .key = "port", .val = .{ .int = 8080 } },
-        // Enable debug mode
-        .{ .key = "debug", .val = .{ .bool = true } },
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .map = &.{
+            // Server configuration
+            .{ .key = "host", .val = .{ .str = "localhost" } },  // default host
+            .{ .key = "port", .val = .{ .int = 8080 } },
+            // Enable debug mode
+            .{ .key = "debug", .val = .{ .bool = true } },
+        }};
+        _ = my_data;
+    }
 }

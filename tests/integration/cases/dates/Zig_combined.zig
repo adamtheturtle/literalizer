@@ -17,11 +17,11 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .map = &.{
-        .{ .key = "date", .val = .{ .int = 1705276800 } },
-        .{ .key = "datetime", .val = .{ .int = 1705321800 } },
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .map = &.{
+            .{ .key = "date", .val = .{ .int = 1705276800 } },
+            .{ .key = "datetime", .val = .{ .int = 1705321800 } },
+        }};
+        _ = my_data;
+    }
 }

@@ -18,12 +18,12 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .set = &.{
-        .{ .str = "apple" },
-        .{ .str = "banana" },
-        .{ .str = "cherry" },
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .set = &.{
+            .{ .str = "apple" },
+            .{ .str = "banana" },
+            .{ .str = "cherry" },
+        }};
+        _ = my_data;
+    }
 }

@@ -14,8 +14,8 @@ pub fn main() void {
         const my_data: ZVal = .{ .int = 1705321800 };
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .int = 1705321800 };
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .int = 1705321800 };
+        _ = my_data;
+    }
 }

@@ -19,13 +19,13 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .arr = &.{
-        // first
-        .{ .str = "a" },
-        // second
-        .{ .str = "b" },
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .arr = &.{
+            // first
+            .{ .str = "a" },
+            // second
+            .{ .str = "b" },
+        }};
+        _ = my_data;
+    }
 }

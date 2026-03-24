@@ -419,21 +419,19 @@ def _wrap_zig(content: str) -> str:
 
 @beartype
 def _wrap_zig_combined(declaration: str, assignment: str) -> str:
-    """Zig: ``const`` declaration in an inner block, then ``var`` +
-    assignment in the outer scope.
-    """
+    """Zig: each statement in its own block to avoid name collisions."""
     decl_indented = "        " + declaration.replace("\n", "\n        ")
-    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    assign_indented = "        " + assignment.replace("\n", "\n        ")
     return (
         "pub fn main() void {\n"
         "    {\n"
         f"{decl_indented}\n"
         f"        _ = {_VARIABLE_NAME};\n"
         "    }\n"
-        f"    var {_VARIABLE_NAME}: ZVal = undefined;\n"
+        "    {\n"
         f"{assign_indented}\n"
-        f"    const _{_VARIABLE_NAME}_read = {_VARIABLE_NAME};\n"
-        f"    _ = _{_VARIABLE_NAME}_read;\n"
+        f"        _ = {_VARIABLE_NAME};\n"
+        "    }\n"
         "}"
     )
 

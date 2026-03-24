@@ -14,8 +14,8 @@ pub fn main() void {
         const my_data: ZVal = .{ .str = "hello \"world\" -- not a comment" };
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .str = "hello \"world\" -- not a comment" };
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .str = "hello \"world\" -- not a comment" };
+        _ = my_data;
+    }
 }

@@ -22,16 +22,16 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .map = &.{
-        .{ .key = "name", .val = .{ .str = "Alice" } },
-        .{ .key = "age", .val = .{ .int = 30 } },
-        .{ .key = "active", .val = .{ .bool = true } },
-        .{ .key = "score", .val = .nil },
-        .{ .key = "joined", .val = .{ .int = 1705276800 } },
-        .{ .key = "last_login", .val = .{ .int = 1705321800 } },
-        .{ .key = "avatar", .val = .{ .str = "48656c6c6f" } },
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .map = &.{
+            .{ .key = "name", .val = .{ .str = "Alice" } },
+            .{ .key = "age", .val = .{ .int = 30 } },
+            .{ .key = "active", .val = .{ .bool = true } },
+            .{ .key = "score", .val = .nil },
+            .{ .key = "joined", .val = .{ .int = 1705276800 } },
+            .{ .key = "last_login", .val = .{ .int = 1705321800 } },
+            .{ .key = "avatar", .val = .{ .str = "48656c6c6f" } },
+        }};
+        _ = my_data;
+    }
 }

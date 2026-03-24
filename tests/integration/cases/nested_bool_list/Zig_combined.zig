@@ -17,11 +17,11 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .arr = &.{
-        .{ .arr = &.{.{ .bool = true }, .{ .bool = false }}},
-        .{ .arr = &.{.{ .bool = true }, .{ .bool = true }}},
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .arr = &.{
+            .{ .arr = &.{.{ .bool = true }, .{ .bool = false }}},
+            .{ .arr = &.{.{ .bool = true }, .{ .bool = true }}},
+        }};
+        _ = my_data;
+    }
 }

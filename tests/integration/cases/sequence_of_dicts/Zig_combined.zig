@@ -17,11 +17,11 @@ pub fn main() void {
         }};
         _ = my_data;
     }
-    var my_data: ZVal = undefined;
-    my_data = .{ .arr = &.{
-        .{ .map = &.{.{ .key = "name", .val = .{ .str = "Alice" } }, .{ .key = "age", .val = .{ .int = 30 } }}},
-        .{ .map = &.{.{ .key = "name", .val = .{ .str = "Bob" } }, .{ .key = "age", .val = .{ .int = 25 } }}},
-    }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    {
+        var my_data: ZVal = .{ .arr = &.{
+            .{ .map = &.{.{ .key = "name", .val = .{ .str = "Alice" } }, .{ .key = "age", .val = .{ .int = 30 } }}},
+            .{ .map = &.{.{ .key = "name", .val = .{ .str = "Bob" } }, .{ .key = "age", .val = .{ .int = 25 } }}},
+        }};
+        _ = my_data;
+    }
 }
