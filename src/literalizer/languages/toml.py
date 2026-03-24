@@ -36,14 +36,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-_BARE_KEY_PATTERN: re.Pattern[str] = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
-
-
-_format_string_toml = functools.partial(
-    format_string_backslash_control,
-    control_char_fmt="\\u{:04x}",
-)
-
 
 @beartype
 def _format_toml_dict_entry(key: str, value: str) -> str:
@@ -60,7 +52,8 @@ def _format_toml_dict_entry(key: str, value: str) -> str:
         and len(key) >= min_quoted_key_length
     ):
         inner = key[1:-1]
-        if _BARE_KEY_PATTERN.match(string=inner):
+        bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
+        if bare_key_pattern.match(string=inner):
             return f"{inner} = {value}"
     return f"{key} = {value}"
 
@@ -276,7 +269,10 @@ class Toml(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _format_string_toml
+        self.format_string: Callable[[str], str] = functools.partial(
+            format_string_backslash_control,
+            control_char_fmt="\\u{:04x}",
+        )
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = (
             passthrough_sequence_entry
