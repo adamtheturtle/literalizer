@@ -11,7 +11,6 @@ type val_t =
   | OSet of val_t list
   | ODate of (int * int * int)
   | ODatetime of ((int * int * int) * (int * int * int))
-
 let my_data : val_t = OSet [
     (* before apple *)
     OStr "apple";

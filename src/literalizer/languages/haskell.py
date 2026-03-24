@@ -378,6 +378,15 @@ class Haskell(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
+        self.static_code_preamble: Sequence[str] = (
+            "import Data.Time (Day, UTCTime(..)"
+            ", fromGregorian"
+            ", secondsToDiffTime, picosecondsToDiffTime)",
+            "data Val = HNull | HBool Bool | HInt Integer"
+            " | HFloat Double | HStr String | HList [Val]"
+            " | HMap [(String, Val)] | HSet [Val]"
+            " | HDate Day | HDatetime UTCTime",
+        )
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
         _is_string_body = (
             "import Data.String (IsString(fromString))",

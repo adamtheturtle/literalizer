@@ -52,72 +52,10 @@ def _newline_combined(
     return lambda d, a: wrap(d + "\n" + a)
 
 
-_FSHARP_VAL_TYPE = (
-    "type Val =\n"
-    "    | FNull\n"
-    "    | FBool of bool\n"
-    "    | FInt of int64\n"
-    "    | FFloat of float\n"
-    "    | FStr of string\n"
-    "    | FList of Val list\n"
-    "    | FMap of (string * Val) list\n"
-    "    | FSet of Val list\n"
-    "    | FDate of System.DateTime\n"
-    "    | FDatetime of System.DateTime\n"
-)
-
-_OCAML_VAL_TYPE = (
-    "type val_t =\n"
-    "  | ONull\n"
-    "  | OBool of bool\n"
-    "  | OInt of int\n"
-    "  | OFloat of float\n"
-    "  | OStr of string\n"
-    "  | OList of val_t list\n"
-    "  | OMap of (string * val_t) list\n"
-    "  | OSet of val_t list\n"
-    "  | ODate of (int * int * int)\n"
-    "  | ODatetime of ((int * int * int) * (int * int * int))\n"
-)
-
-_OCCAM_LIT_TYPE = (
-    "MOBILE DATA TYPE LIT IS\n"
-    "  CASE\n"
-    "    lit.null\n"
-    "    lit.bool ; BOOL\n"
-    "    lit.int ; INT\n"
-    "    lit.float ; REAL32\n"
-    "    lit.str ; MOBILE []BYTE\n"
-    "    lit.list ; MOBILE []MOBILE LIT\n"
-    "    lit.map ; MOBILE []MOBILE LIT\n"
-    "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
-    "    lit.set ; MOBILE []MOBILE LIT\n"
-    ":"
-)
-
-_HASKELL_VAL_TYPE = (
-    "data Val = HNull | HBool Bool | HInt Integer | HFloat Double"
-    " | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]"
-    " | HDate Day | HDatetime UTCTime\n"
-)
-
-_HASKELL_MODULE_HEADER = (
-    "module Check where\n"
-    "import Data.Time (Day, UTCTime(..), fromGregorian,"
-    " secondsToDiffTime, picosecondsToDiffTime)\n"
-)
-
-
 @beartype
 def _wrap_ocaml(content: str) -> str:
     """Wrap an OCaml ``let`` declaration in a module."""
-    return (
-        "module Check = struct\n\n"
-        + _OCAML_VAL_TYPE
-        + "\n"
-        + content
-        + "\n\nend"
-    )
+    return "module Check = struct\n\n" + content + "\n\nend"
 
 
 @beartype
@@ -125,21 +63,14 @@ def _wrap_occam(content: str) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC."""
     indented = "  " + content.replace("\n", "\n  ")
     return (
-        _OCCAM_LIT_TYPE
-        + "\n\n"
-        + "PROC check ()\n"
-        + indented
-        + "\n"
-        + "  SEQ\n"
-        + "    SKIP\n"
-        + ":"
+        "\nPROC check ()\n" + indented + "\n" + "  SEQ\n" + "    SKIP\n" + ":"
     )
 
 
 @beartype
 def _wrap_fsharp(content: str) -> str:
     """Wrap an F# ``let`` declaration in a module."""
-    return "module Check\n\n" + _FSHARP_VAL_TYPE + "\n" + content
+    return "module Check\n\n" + content
 
 
 @dataclasses.dataclass(frozen=True)
@@ -156,31 +87,43 @@ class _HaskellBodySplit:
 def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
     """Split body-preamble lines from the expression in *content*.
 
-    Body-preamble lines (imports, typeclass instances) are now included
-    at the start of ``code`` by the library.  This helper separates them
-    from the trailing expression so the test wrapper can place them in
-    the correct structural position within the Haskell module.
+    Body-preamble lines (imports, data types, typeclass instances) are
+    now included at the start of ``code`` by the library.  This helper
+    separates them from the trailing expression so the test wrapper can
+    place them in the correct structural position within the Haskell
+    module, with imports sorted before data types and instances.
     """
     lines = content.split(sep="\n")
 
-    # Body-preamble lines start with "import " or "instance ", plus
-    # indented continuation lines of instance blocks.
-    def _is_body_line(pair: tuple[int, str]) -> bool:
-        """Return whether *pair* is a body-preamble line."""
-        idx, line = pair
-        return line.startswith(("import ", "instance ")) or (
-            line.startswith("    ") and idx > 0
-        )
+    preamble_prefixes = ("import ", "instance ", "data ")
 
-    body_lines: list[tuple[int, str]] = list(
-        itertools.takewhile(
-            _is_body_line,
-            enumerate(iterable=lines),
-        ),
+    # Find the first line that is NOT body-preamble.  A line counts as
+    # preamble when it starts with a known prefix or is an indented
+    # continuation of a preceding block.
+    def _is_preamble(idx_line: tuple[int, str]) -> bool:
+        """Check whether a line is part of the body preamble."""
+        idx, line = idx_line
+        is_prefix = any(line.startswith(p) for p in preamble_prefixes)
+        is_continuation = line.startswith("    ") and idx > 0
+        return is_prefix or is_continuation
+
+    expr_start = len(
+        list(
+            itertools.takewhile(
+                _is_preamble,
+                enumerate(iterable=lines),
+            )
+        )
     )
-    expr_start = len(body_lines)
+    preamble_lines = lines[:expr_start]
+    # Reorder: imports first, then everything else (data types,
+    # instances), so the output is valid Haskell.
+    imports = [ln for ln in preamble_lines if ln.startswith("import ")]
+    rest = [ln for ln in preamble_lines if not ln.startswith("import ")]
+    ordered = imports + rest
+
     return _HaskellBodySplit(
-        body_preamble="\n".join(lines[:expr_start]),
+        body_preamble="\n".join(ordered),
         expression="\n".join(lines[expr_start:]),
     )
 
@@ -398,10 +341,8 @@ def _wrap_rust(content: str) -> str:
 def _wrap_haskell(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
     split = _split_haskell_body_preamble(content=content)
-    header = _HASKELL_MODULE_HEADER
-    if split.body_preamble:
-        header += split.body_preamble + "\n"
-    header += _HASKELL_VAL_TYPE
+    header = "module Check where\n"
+    header += split.body_preamble + "\n"
     # Tuples are not Val-typed, so skip the type annotation for them.
     eq_pos = split.expression.find("= ")
     rhs = split.expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""

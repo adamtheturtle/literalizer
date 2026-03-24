@@ -11,7 +11,6 @@ type Val =
     | FSet of Val list
     | FDate of System.DateTime
     | FDatetime of System.DateTime
-
 let my_data: Val = FList [
     FStr "C:\\path\\to\\file";
     FStr "back\\\\slash";

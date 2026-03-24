@@ -11,7 +11,6 @@ type Val =
     | FSet of Val list
     | FDate of System.DateTime
     | FDatetime of System.DateTime
-
 let my_data: Val = FList [
     FFloat 1.1;
     FFloat 2.2;

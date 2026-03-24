@@ -2,6 +2,7 @@
 module Check where
 import Data.Time (Day, UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
 import Data.String (IsString(fromString))
+data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 instance IsString Val where
     fromString = HStr
 instance Num Val where
@@ -13,7 +14,6 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
     negate (HFloat f) = HFloat (negate f)
     negate _ = error "not implemented"
-data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val] | HDate Day | HDatetime UTCTime
 my_data :: Val
 my_data = HMap [
     ("a", HMap [("x", 1)]),

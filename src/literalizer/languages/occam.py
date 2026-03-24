@@ -284,8 +284,22 @@ class Occam(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} := {value}")
         )
-        self.static_preamble: Sequence[str] = ()
+        self.static_preamble: Sequence[str] = (
+            "MOBILE DATA TYPE LIT IS\n"
+            "  CASE\n"
+            "    lit.null\n"
+            "    lit.bool ; BOOL\n"
+            "    lit.int ; INT\n"
+            "    lit.float ; REAL32\n"
+            "    lit.str ; MOBILE []BYTE\n"
+            "    lit.list ; MOBILE []MOBILE LIT\n"
+            "    lit.map ; MOBILE []MOBILE LIT\n"
+            "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
+            "    lit.set ; MOBILE []MOBILE LIT\n"
+            ":",
+        )
         self.static_body_preamble: Sequence[str] = ()
+        self.static_code_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

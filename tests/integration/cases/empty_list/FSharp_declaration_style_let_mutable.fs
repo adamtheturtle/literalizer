@@ -11,5 +11,4 @@ type Val =
     | FSet of Val list
     | FDate of System.DateTime
     | FDatetime of System.DateTime
-
 let mutable my_data: Val = FList []
