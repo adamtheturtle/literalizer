@@ -3,7 +3,7 @@
 import datetime
 import enum
 import re
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -27,6 +27,9 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -57,19 +60,6 @@ def _format_string_fortran(value: str) -> str:
     return " // ".join(parts)
 
 
-_FVAL_PREFIXES = (
-    "fnull()",
-    "fbool(",
-    "fint(",
-    "freal(",
-    "fstr(",
-    "flist(",
-    "fmap(",
-    "fset(",
-    "fentry(",
-)
-
-
 @beartype
 def _to_fval(value: str) -> str:
     """Convert a pre-formatted value string to an ``fval_t`` constructor.
@@ -79,7 +69,18 @@ def _to_fval(value: str) -> str:
     that are already ``fval_t`` expressions (``fnull``, ``fbool``,
     ``flist``, ``fmap``, ``fset``, ``fentry``).
     """
-    if any(value.startswith(p) for p in _FVAL_PREFIXES):
+    fval_prefixes = (
+        "fnull()",
+        "fbool(",
+        "fint(",
+        "freal(",
+        "fstr(",
+        "flist(",
+        "fmap(",
+        "fset(",
+        "fentry(",
+    )
+    if any(value.startswith(p) for p in fval_prefixes):
         return value
     if (value.startswith("'") and value.endswith("'")) or (
         value.startswith('"') and value.endswith('"')
@@ -184,46 +185,6 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     fval = _to_fval(value=value)
     continued = _add_continuation(value=fval)
     return f"{name} = {continued}"
-
-
-_string_format: Callable[[str], str] = _format_string_fortran
-
-
-_FORTRAN_PREAMBLE: tuple[str, ...] = (
-    "module fval_m",
-    "  implicit none",
-    "  type :: fval_t",
-    "    integer :: t = 0",
-    "  end type fval_t",
-    "contains",
-    "  function fnull() result(v); type(fval_t) :: v; end function",
-    "  function fbool(b) result(v)"
-    "; logical, intent(in) :: b"
-    "; type(fval_t) :: v; end function",
-    "  function fint(n) result(v)"
-    "; integer, intent(in) :: n"
-    "; type(fval_t) :: v; end function",
-    "  function freal(x) result(v)"
-    "; real, intent(in) :: x"
-    "; type(fval_t) :: v; end function",
-    "  function fstr(s) result(v)"
-    "; character(len=*), intent(in) :: s"
-    "; type(fval_t) :: v; end function",
-    "  function flist(a) result(v)"
-    "; type(fval_t), intent(in) :: a(:)"
-    "; type(fval_t) :: v; end function",
-    "  function fmap(a) result(v)"
-    "; type(fval_t), intent(in) :: a(:)"
-    "; type(fval_t) :: v; end function",
-    "  function fset(a) result(v)"
-    "; type(fval_t), intent(in) :: a(:)"
-    "; type(fval_t) :: v; end function",
-    "  function fentry(k, u) result(v)"
-    "; character(len=*), intent(in) :: k"
-    "; type(fval_t), intent(in) :: u"
-    "; type(fval_t) :: v; end function",
-    "end module fval_m",
-)
 
 
 @beartype
@@ -403,7 +364,7 @@ class Fortran(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = _string_format
+        self.format_string: Callable[[str], str] = _format_string_fortran
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[str], str] = _to_fval
         self.format_set_entry: Callable[[str], str] = _to_fval
@@ -436,7 +397,41 @@ class Fortran(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = _FORTRAN_PREAMBLE
+        self.static_preamble: Sequence[str] = (
+            "module fval_m",
+            "  implicit none",
+            "  type :: fval_t",
+            "    integer :: t = 0",
+            "  end type fval_t",
+            "contains",
+            "  function fnull() result(v); type(fval_t) :: v; end function",
+            "  function fbool(b) result(v)"
+            "; logical, intent(in) :: b"
+            "; type(fval_t) :: v; end function",
+            "  function fint(n) result(v)"
+            "; integer, intent(in) :: n"
+            "; type(fval_t) :: v; end function",
+            "  function freal(x) result(v)"
+            "; real, intent(in) :: x"
+            "; type(fval_t) :: v; end function",
+            "  function fstr(s) result(v)"
+            "; character(len=*), intent(in) :: s"
+            "; type(fval_t) :: v; end function",
+            "  function flist(a) result(v)"
+            "; type(fval_t), intent(in) :: a(:)"
+            "; type(fval_t) :: v; end function",
+            "  function fmap(a) result(v)"
+            "; type(fval_t), intent(in) :: a(:)"
+            "; type(fval_t) :: v; end function",
+            "  function fset(a) result(v)"
+            "; type(fval_t), intent(in) :: a(:)"
+            "; type(fval_t) :: v; end function",
+            "  function fentry(k, u) result(v)"
+            "; character(len=*), intent(in) :: k"
+            "; type(fval_t), intent(in) :: u"
+            "; type(fval_t) :: v; end function",
+            "end module fval_m",
+        )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
