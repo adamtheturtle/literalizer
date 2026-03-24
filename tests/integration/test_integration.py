@@ -601,7 +601,6 @@ class _LanguageConfig:
 
     lang_cls: literalizer.LanguageCls
     wrap: Callable[[str], str]
-    varname_wrap: Callable[[str], str]
     combined_wrap: Callable[[str, str], str]
     wrap_variable_name: str | None = None
 
@@ -640,316 +639,270 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Ada.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ada,
         wrap=_wrap_ada,
-        varname_wrap=_wrap_ada,
         combined_wrap=_wrap_ada_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Bash.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Bash,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.C.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.C,
         wrap=_wrap_c,
-        varname_wrap=_wrap_c,
         combined_wrap=_newline_combined(wrap=_wrap_c),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Cobol.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Cobol,
         wrap=_wrap_cobol,
-        varname_wrap=_wrap_cobol,
         combined_wrap=_wrap_cobol_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.D.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.D,
         wrap=_wrap_d,
-        varname_wrap=_wrap_d,
         combined_wrap=_newline_combined(wrap=_wrap_d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.CommonLisp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CommonLisp,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Clojure.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Clojure,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Python.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Python,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_js_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
         wrap=_wrap_ts,
-        varname_wrap=_wrap_ts,
         combined_wrap=_wrap_ts_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Kotlin.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Kotlin,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_kotlin_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Ruby.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ruby,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
         wrap=_wrap_go,
-        varname_wrap=_wrap_go,
         combined_wrap=_newline_combined(wrap=_wrap_go),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Java.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Java,
         wrap=_wrap_java,
-        varname_wrap=_wrap_java,
         combined_wrap=_newline_combined(wrap=_wrap_java),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.CSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CSharp,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Dart.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_dart_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Swift.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_wrap_swift_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Cpp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Cpp,
         wrap=_wrap_cpp,
-        varname_wrap=_wrap_cpp,
         combined_wrap=_newline_combined(wrap=_wrap_cpp),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Rust.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Rust,
         wrap=_wrap_rust,
-        varname_wrap=_wrap_rust,
         combined_wrap=_wrap_rust_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Haskell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Haskell,
         wrap=_wrap_haskell,
-        varname_wrap=_wrap_haskell,
         combined_wrap=lambda d, _a: _wrap_haskell(content=d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Hcl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Julia.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Julia,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Lua.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Lua,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Perl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Perl,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Php.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Php,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Elixir.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elixir,
         wrap=_wrap_elixir,
-        varname_wrap=_wrap_elixir,
         combined_wrap=lambda d, _a: _wrap_elixir(content=d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Erlang.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Erlang,
         wrap=_wrap_erlang,
-        varname_wrap=_wrap_erlang,
         combined_wrap=lambda d, _a: _wrap_erlang(content=d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.FSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.FSharp,
         wrap=_wrap_fsharp,
-        varname_wrap=_wrap_fsharp,
         combined_wrap=lambda d, _a: _wrap_fsharp(content=d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.OCaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.OCaml,
         wrap=_wrap_ocaml,
-        varname_wrap=_wrap_ocaml,
         combined_wrap=lambda d, _a: _wrap_ocaml(content=d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Occam.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Occam,
         wrap=_wrap_occam,
-        varname_wrap=_wrap_occam,
         combined_wrap=lambda d, _a: _wrap_occam(content=d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Groovy.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Groovy,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Scala.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Scala,
         wrap=_wrap_scala,
-        varname_wrap=_wrap_scala,
         combined_wrap=_wrap_scala_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.R.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.R,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Racket.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Racket,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Matlab.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Matlab,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Mojo.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Mojo,
         wrap=_wrap_mojo,
-        varname_wrap=_wrap_mojo,
         combined_wrap=_wrap_mojo_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Nim.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Nim,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.VisualBasic.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.VisualBasic,
         wrap=_wrap_vb,
-        varname_wrap=_wrap_vb,
         combined_wrap=_wrap_vb_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Zig.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Zig,
         wrap=_wrap_zig,
-        varname_wrap=_wrap_zig,
         combined_wrap=_wrap_zig_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.PowerShell,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Toml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Toml,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.ObjectiveC.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.ObjectiveC,
         wrap=_wrap_objc,
-        varname_wrap=_wrap_objc,
         combined_wrap=_newline_combined(wrap=_wrap_objc),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Fortran.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Fortran,
         wrap=_wrap_fortran,
-        varname_wrap=_wrap_fortran,
         combined_wrap=_wrap_fortran_combined,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Yaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Yaml,
         wrap=_wrap_identity,
-        varname_wrap=_wrap_identity,
         combined_wrap=lambda d, _a: d,
     ),
 }
@@ -1055,9 +1008,8 @@ def _build_sequence_variants() -> Iterable[_Variant]:
 def _build_sequence_varname_variants() -> Iterable[_Variant]:
     """Build sequence-format variants with variable declarations.
 
-    Like :func:`_build_sequence_variants` but uses ``varname_wrap`` so
-    that the test exercises ``_format_variable_declaration`` for each
-    non-default sequence format.
+    Like :func:`_build_sequence_variants` but exercises
+    ``_format_variable_declaration`` for each non-default sequence format.
     """
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
@@ -1070,7 +1022,7 @@ def _build_sequence_varname_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(sequence_format=fmt),
-                    wrap=lang_config.varname_wrap,
+                    wrap=lang_config.wrap,
                     wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
@@ -1147,7 +1099,7 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_type_hints_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(variable_type_hints=fmt),
-                    wrap=lang_config.varname_wrap,
+                    wrap=lang_config.wrap,
                     wrap_variable_name=_VARIABLE_NAME,
                 )
             )
@@ -1172,7 +1124,7 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     declaration_style=fmt,
                 ),
-                wrap=lang_config.varname_wrap,
+                wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1354,7 +1306,7 @@ def _build_line_ending_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     line_ending=fmt,
                 ),
-                wrap=lang_config.varname_wrap,
+                wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1391,7 +1343,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
                     line_ending=le,
                     declaration_style=ds,
                 ),
-                wrap=lang_config.varname_wrap,
+                wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for le in non_default_le
@@ -1446,44 +1398,6 @@ def test_golden_file(
         extension=lang_config.lang_cls.extension,
         fullpath=input_path.parent
         / (language + lang_config.lang_cls.extension),
-    )
-
-
-@pytest.mark.parametrize(
-    argnames=("_case_name", "language"),
-    argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
-)
-def test_golden_file_with_variable_name(
-    _case_name: str,
-    language: str,
-    cases_dir: Path,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Test that literalize_yaml with variable_name matches golden
-    file.
-    """
-    input_path = cases_dir / _case_name / "input.yaml"
-    lang_config = _LANGUAGES[language]
-    yaml_string = input_path.read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
-        line_prefix="",
-        indent="    ",
-        include_delimiters=True,
-        variable_name=_VARIABLE_NAME,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    wrapped = lang_config.varname_wrap(result.code)
-
-    wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
-    file_regression.check(
-        contents=wrapped + "\n",
-        extension=lang_config.lang_cls.extension,
-        fullpath=input_path.parent
-        / (language + "_varname" + lang_config.lang_cls.extension),
     )
 
 

@@ -1,6 +1,0 @@
-* my_data
-@code json
-{
-    "key": "it's here"  % a comment%
-}
-@end

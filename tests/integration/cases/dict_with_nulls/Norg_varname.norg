@@ -1,8 +1,0 @@
-* my_data
-@code json
-{
-    "name": "Alice",
-    "score": null,
-    "age": 30
-}
-@end

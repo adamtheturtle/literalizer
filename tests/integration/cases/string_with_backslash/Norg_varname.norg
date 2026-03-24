@@ -1,8 +1,0 @@
-* my_data
-@code json
-[
-    "C:\\path\\to\\file",
-    "back\\\\slash",
-    "hello \\\"world\\\""
-]
-@end
