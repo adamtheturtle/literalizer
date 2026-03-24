@@ -425,6 +425,8 @@ def _wrap_haskell(content: str) -> str:
     if split.body_preamble:
         header += split.body_preamble + "\n"
     header += _HASKELL_VAL_TYPE
+    if split.expression.lstrip().startswith(f"{_VARIABLE_NAME} = ("):
+        return header + split.expression
     return header + f"{_VARIABLE_NAME} :: Val\n" + split.expression
 
 
