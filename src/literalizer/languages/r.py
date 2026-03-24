@@ -14,6 +14,7 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_hex,
     format_string_backslash,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -208,7 +209,13 @@ class R(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.member(value=str)
+        HEX = enum.member(value=format_integer_hex)
+
+        def __call__(self, value: int, /) -> str:
+            """Format an integer."""
+            formatter: Callable[[int], str] = self.value
+            return formatter(value)
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -223,6 +230,7 @@ class R(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
+        YES = "yes"
         NO = "no"
 
     date_formats = DateFormats
@@ -290,14 +298,14 @@ class R(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
         )
-        self.multiline_trailing_comma = False
+        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

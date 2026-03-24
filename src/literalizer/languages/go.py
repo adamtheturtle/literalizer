@@ -3,6 +3,8 @@
 import dataclasses
 import datetime
 import enum
+from collections.abc import Callable
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -13,6 +15,10 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_binary,
+    format_integer_hex,
+    format_integer_octal,
+    format_integer_underscore,
     format_string_backslash,
     make_element_to_type,
     make_type_to_opener,
@@ -37,7 +43,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
 
 @beartype
@@ -241,12 +247,46 @@ class Go(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = MappingProxyType(
+            mapping={
+                "NONE": str,
+                "UNDERSCORE": format_integer_underscore,
+            }
+        )
+        HEX = MappingProxyType(
+            mapping={
+                "NONE": format_integer_hex,
+                "UNDERSCORE": format_integer_hex,
+            }
+        )
+        OCTAL = MappingProxyType(
+            mapping={
+                "NONE": format_integer_octal,
+                "UNDERSCORE": format_integer_octal,
+            }
+        )
+        BINARY = MappingProxyType(
+            mapping={
+                "NONE": format_integer_binary,
+                "UNDERSCORE": format_integer_binary,
+            }
+        )
+
+        def get_formatter(
+            self,
+            numeric_separator: enum.Enum,
+        ) -> Callable[[int], str]:
+            """Return the integer formatter for the given separator."""
+            formatter: Callable[[int], str] = self.value[
+                numeric_separator.name
+            ]
+            return formatter
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -375,7 +415,11 @@ class Go(metaclass=LanguageCls):
         )
 
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

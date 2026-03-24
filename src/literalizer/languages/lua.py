@@ -14,7 +14,9 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_hex,
     format_string_backslash,
+    format_string_backslash_single,
     passthrough_sequence_entry,
     variable_formatter,
 )
@@ -168,7 +170,13 @@ class Lua(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.member(value=str)
+        HEX = enum.member(value=format_integer_hex)
+
+        def __call__(self, value: int, /) -> str:
+            """Format an integer."""
+            formatter: Callable[[int], str] = self.value
+            return formatter(value)
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -178,12 +186,18 @@ class Lua(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash)
+        SINGLE = enum.member(value=format_string_backslash_single)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
         YES = "yes"
+        NO = "no"
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -253,14 +267,14 @@ class Lua(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
         )
-        self.multiline_trailing_comma = True
+        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_string: Callable[[str], str] = string_format
+        self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

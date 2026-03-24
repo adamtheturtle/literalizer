@@ -2,6 +2,8 @@
 
 import datetime
 import enum
+from collections.abc import Callable
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -15,6 +17,9 @@ from literalizer._formatters import (
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
+    format_integer_binary,
+    format_integer_hex,
+    format_integer_underscore,
     format_string_backslash,
     passthrough_sequence_entry,
 )
@@ -31,7 +36,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
 
 @beartype
@@ -150,12 +155,40 @@ class D(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = MappingProxyType(
+            mapping={
+                "NONE": str,
+                "UNDERSCORE": format_integer_underscore,
+            }
+        )
+        HEX = MappingProxyType(
+            mapping={
+                "NONE": format_integer_hex,
+                "UNDERSCORE": format_integer_hex,
+            }
+        )
+        BINARY = MappingProxyType(
+            mapping={
+                "NONE": format_integer_binary,
+                "UNDERSCORE": format_integer_binary,
+            }
+        )
+
+        def get_formatter(
+            self,
+            numeric_separator: enum.Enum,
+        ) -> Callable[[int], str]:
+            """Return the integer formatter for the given separator."""
+            formatter: Callable[[int], str] = self.value[
+                numeric_separator.name
+            ]
+            return formatter
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
         NONE = "none"
+        UNDERSCORE = "underscore"
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -166,6 +199,7 @@ class D(metaclass=LanguageCls):
         """Trailing comma options."""
 
         YES = "yes"
+        NO = "no"
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -234,14 +268,18 @@ class D(metaclass=LanguageCls):
             empty_dict='parseJSON("{}")',
             preamble_lines=(),
         )
-        self.multiline_trailing_comma = True
+        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
         self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_d_entry
         )
