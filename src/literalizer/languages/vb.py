@@ -35,12 +35,6 @@ from literalizer._types import Value
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-_VB_CHAR_REPLACEMENTS: dict[str, str] = {
-    "\n": "Chr(10)",
-    "\r": "Chr(13)",
-    "\t": "vbTab",
-}
-
 
 @beartype
 def _flush_vb_current(
@@ -61,6 +55,7 @@ def _vb_string_parts(value: str) -> list[str]:
     parts: list[str] = []
     current = ""
     i = 0
+    char_replacements = {"\n": "Chr(10)", "\r": "Chr(13)", "\t": "vbTab"}
     while i < len(value):
         c = value[i]
         if c == '"':
@@ -70,9 +65,9 @@ def _vb_string_parts(value: str) -> list[str]:
             current = _flush_vb_current(parts=parts, current=current)
             parts.append("vbCrLf")
             i += 2
-        elif c in _VB_CHAR_REPLACEMENTS:
+        elif c in char_replacements:
             current = _flush_vb_current(parts=parts, current=current)
-            parts.append(_VB_CHAR_REPLACEMENTS[c])
+            parts.append(char_replacements[c])
             i += 1
         elif ord(c) < control_char_threshold:
             current = _flush_vb_current(parts=parts, current=current)
@@ -100,19 +95,6 @@ def _format_string_vb(value: str) -> str:
     if len(parts) == 1:
         return parts[0]
     return " & ".join(parts)
-
-
-_vb_element_to_type = make_element_to_type(
-    str_type="String",
-    bool_type="Boolean",
-    int_type="Integer",
-    float_type="Double",
-    mixed_numeric_type="Double",
-    bytes_type="String",
-    date_type="String",
-    datetime_type="String",
-    list_template="{inner}()",
-)
 
 
 @beartype
@@ -182,46 +164,19 @@ class VisualBasic(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Visual Basic."""
 
-        ARRAY = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_vb_element_to_type,
-                    opener_template="New {type_name}() {{",
-                ),
-                fallback="New Object() {",
-            ),
-            close="}",
-            supports_heterogeneity=True,
-            single_element_trailing_comma=False,
-            empty_sequence="New Object() {}",
-            preamble_lines=("Imports System.Collections.Generic",),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
-        )
+        ARRAY = "array"
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.value.supports_heterogeneity
+            return True
 
     class SetFormats(enum.Enum):
         """Set type options for Visual Basic."""
 
-        HASH_SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_vb_element_to_type,
-                    opener_template="New HashSet(Of {type_name}) From {{",
-                ),
-                fallback="New HashSet(Of Object) From {",
-            ),
-            close="}",
-            empty_set="New HashSet(Of Object)()",
-            preamble_lines=(),
-            set_opener_template="",
-        )
+        HASH_SET = "hash_set"
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -313,10 +268,49 @@ class VisualBasic(metaclass=LanguageCls):
         self.null_literal = "Nothing"
         self.true_literal = "True"
         self.false_literal = "False"
-        fmt = sequence_format.value
+        element_to_type = make_element_to_type(
+            str_type="String",
+            bool_type="Boolean",
+            int_type="Integer",
+            float_type="Double",
+            mixed_numeric_type="Double",
+            bytes_type="String",
+            date_type="String",
+            datetime_type="String",
+            list_template="{inner}()",
+        )
+        vb_type_to_opener = make_type_to_opener(
+            element_to_type=element_to_type,
+            opener_template="New {type_name}() {{",
+        )
+        fmt = SequenceFormatConfig(
+            sequence_open=typed_sequence_open(
+                type_to_opener=vb_type_to_opener,
+                fallback="New Object() {",
+            ),
+            close="}",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            empty_sequence="New Object() {}",
+            preamble_lines=("Imports System.Collections.Generic",),
+            format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
+        )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=element_to_type,
+                    opener_template="New HashSet(Of {type_name}) From {{",
+                ),
+                fallback="New HashSet(Of Object) From {",
+            ),
+            close="}",
+            empty_set="New HashSet(Of Object)()",
+            preamble_lines=(),
+            set_opener_template="",
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(

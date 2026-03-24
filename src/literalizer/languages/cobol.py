@@ -31,14 +31,6 @@ from literalizer._types import Value
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-_COBOL_CONTROL_CHAR_REPLACEMENTS: dict[str, str] = {
-    "\n": " ",
-    "\r": " ",
-    "\t": " ",
-}
-
-_MAX_COBOL_LEVEL: int = 49
-
 
 @beartype
 def _format_string_cobol(value: str) -> str:
@@ -52,7 +44,7 @@ def _format_string_cobol(value: str) -> str:
     Example: ``say "hi" loud`` becomes ``"say ""hi"" loud"``.
     """
     cleaned = value
-    for char, replacement in _COBOL_CONTROL_CHAR_REPLACEMENTS.items():
+    for char, replacement in {"\n": " ", "\r": " ", "\t": " "}.items():
         cleaned = cleaned.replace(char, replacement)
     escaped = cleaned.replace('"', '""')
     return f'"{escaped}"'
@@ -112,7 +104,7 @@ def _bump_levels(content: str) -> str:
         if not m:
             msg = f"Expected COBOL level-number line, got: {line!r}"
             raise ValueError(msg)
-        new_level = min(int(m.group(2)) + 5, _MAX_COBOL_LEVEL)
+        new_level = min(int(m.group(2)) + 5, 49)
         result.append(
             f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
         )
