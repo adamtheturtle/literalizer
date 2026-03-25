@@ -115,6 +115,7 @@ class C(metaclass=LanguageCls):
             close="}})",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -233,6 +234,7 @@ class C(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize C language specification."""
         self.variable_type_hints = variable_type_hints
@@ -285,6 +287,7 @@ class C(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry(format_value=_format_c_entry)
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

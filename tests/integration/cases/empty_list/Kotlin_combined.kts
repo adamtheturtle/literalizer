@@ -1,7 +1,2 @@
-fun _declaration() {
-    val my_data = listOf<Any?>()
-}
-fun _assignment() {
-    var my_data: Any? = null
-    my_data = listOf<Any?>()
-}
+var my_data = listOf<Any?>()
+my_data = listOf<Any?>()

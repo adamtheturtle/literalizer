@@ -10,18 +10,13 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    {
-        const my_data: ZVal = .{ .arr = &.{
-            .{ .arr = &.{.{ .float = 1.5 }, .{ .float = 2.5 }}},
-            .{ .arr = &.{.{ .float = 3.5 }, .{ .float = 4.5 }}},
-        }};
-        _ = my_data;
-    }
-    var my_data: ZVal = undefined;
+    var my_data: ZVal = .{ .arr = &.{
+        .{ .arr = &.{.{ .float = 1.5 }, .{ .float = 2.5 }}},
+        .{ .arr = &.{.{ .float = 3.5 }, .{ .float = 4.5 }}},
+    }};
     my_data = .{ .arr = &.{
         .{ .arr = &.{.{ .float = 1.5 }, .{ .float = 2.5 }}},
         .{ .arr = &.{.{ .float = 3.5 }, .{ .float = 4.5 }}},
     }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    my_data = .nil;
 }

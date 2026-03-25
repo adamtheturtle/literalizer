@@ -1,10 +1,7 @@
-do {
-    let my_data: Any = [
-        "a",
-        // trailing
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    "a",
+    // trailing
+]
 my_data = [
     "a",
     // trailing

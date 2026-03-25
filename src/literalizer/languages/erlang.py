@@ -146,6 +146,7 @@ class Erlang(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -156,6 +157,7 @@ class Erlang(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -270,6 +272,7 @@ class Erlang(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize Erlang language specification."""
         self.variable_type_hints = variable_type_hints
@@ -327,6 +330,7 @@ class Erlang(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry(format_value=passthrough_sequence_entry)
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

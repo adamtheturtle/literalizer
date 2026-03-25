@@ -108,6 +108,7 @@ class D(metaclass=LanguageCls):
             close="])",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence='parseJSON("[]")',
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -248,6 +249,7 @@ class D(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize D language specification."""
         self.variable_type_hints = variable_type_hints
@@ -308,6 +310,7 @@ class D(metaclass=LanguageCls):
                 format_value=_format_d_entry,
             )
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

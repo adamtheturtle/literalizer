@@ -91,7 +91,7 @@ def _format_string_vb(value: str) -> str:
     tabs are expressed via ``vbCrLf``, ``vbTab``, or ``Chr(N)`` string
     concatenation.
     """
-    parts = _vb_string_parts(value)  # type: ignore[misc]
+    parts = _vb_string_parts(value=value)
     if not parts:
         return '""'
     if len(parts) == 1:
@@ -250,6 +250,7 @@ class VisualBasic(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize VisualBasic language specification."""
         self.variable_type_hints = variable_type_hints
@@ -280,6 +281,7 @@ class VisualBasic(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence="New Object() {}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
@@ -347,6 +349,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry(format_value=passthrough_sequence_entry)
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

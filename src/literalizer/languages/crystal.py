@@ -96,6 +96,7 @@ class Crystal(metaclass=LanguageCls):
             empty_sequence="[] of Nil",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -105,6 +106,7 @@ class Crystal(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -152,7 +154,7 @@ class Crystal(metaclass=LanguageCls):
 
         DECIMAL = MappingProxyType(
             mapping={
-                "NONE": str,
+                "NONE": lambda value: str(object=value),
                 "UNDERSCORE": format_integer_underscore,
             }
         )
@@ -162,10 +164,7 @@ class Crystal(metaclass=LanguageCls):
             numeric_separator: enum.Enum,
         ) -> Callable[[int], str]:
             """Return the integer formatter for the given separator."""
-            formatter: Callable[[int], str] = self.value[  # type: ignore[assignment]
-                numeric_separator.name
-            ]
-            return formatter
+            return self.value[numeric_separator.name]
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -229,6 +228,7 @@ class Crystal(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize Crystal language specification."""
         self.variable_type_hints = variable_type_hints
@@ -291,6 +291,7 @@ class Crystal(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             )
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

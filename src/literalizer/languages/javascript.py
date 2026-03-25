@@ -119,6 +119,7 @@ class JavaScript(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -180,9 +181,11 @@ class JavaScript(metaclass=LanguageCls):
 
         CONST = DeclarationStyleConfig(
             formatter=variable_formatter(template="const {name} = {value};"),
+            supports_redefinition=False,
         )
         LET = DeclarationStyleConfig(
             formatter=variable_formatter(template="let {name} = {value};"),
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):
@@ -308,6 +311,7 @@ class JavaScript(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize JavaScript language specification."""
         self.variable_type_hints = variable_type_hints
@@ -362,6 +366,7 @@ class JavaScript(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             )
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

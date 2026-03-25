@@ -1,9 +1,6 @@
-do {
-    let my_data: Any = [
-        "message": "no comment here",
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    "message": "no comment here",
+]
 my_data = [
     "message": "no comment here",
 ]

@@ -10,22 +10,17 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    {
-        const my_data: ZVal = .{ .map = &.{
-            // Configuration
-            .{ .key = "name", .val = .{ .str = "app" } },
-            // Port setting
-            .{ .key = "port", .val = .{ .int = 3000 } },
-        }};
-        _ = my_data;
-    }
-    var my_data: ZVal = undefined;
+    var my_data: ZVal = .{ .map = &.{
+        // Configuration
+        .{ .key = "name", .val = .{ .str = "app" } },
+        // Port setting
+        .{ .key = "port", .val = .{ .int = 3000 } },
+    }};
     my_data = .{ .map = &.{
         // Configuration
         .{ .key = "name", .val = .{ .str = "app" } },
         // Port setting
         .{ .key = "port", .val = .{ .int = 3000 } },
     }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    my_data = .nil;
 }

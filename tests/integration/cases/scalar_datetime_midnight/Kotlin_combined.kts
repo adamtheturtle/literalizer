@@ -1,8 +1,3 @@
 import java.time.LocalDateTime
-fun _declaration() {
-    val my_data = LocalDateTime.of(2024, 1, 15, 0, 0, 0)
-}
-fun _assignment() {
-    var my_data: Any? = null
-    my_data = LocalDateTime.of(2024, 1, 15, 0, 0, 0)
-}
+var my_data = LocalDateTime.of(2024, 1, 15, 0, 0, 0)
+my_data = LocalDateTime.of(2024, 1, 15, 0, 0, 0)

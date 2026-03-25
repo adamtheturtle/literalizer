@@ -1,19 +1,16 @@
-object Declaration {
-  val my_data = List(
-      42,
-      3.14,
-      true,
-      false,
-      "hello \"world\"",
-  )
-}
-object Assignment {
-  var my_data: Any = null
-  my_data = List(
-      42,
-      3.14,
-      true,
-      false,
-      "hello \"world\"",
-  )
+object Check {
+var my_data = List(
+    42,
+    3.14,
+    true,
+    false,
+    "hello \"world\"",
+)
+my_data = List(
+    42,
+    3.14,
+    true,
+    false,
+    "hello \"world\"",
+)
 }

@@ -10,18 +10,13 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    {
-        const my_data: ZVal = .{ .set = &.{
-            .{ .int = 1705276800 },
-            .{ .int = 1717200000 },
-        }};
-        _ = my_data;
-    }
-    var my_data: ZVal = undefined;
+    var my_data: ZVal = .{ .set = &.{
+        .{ .int = 1705276800 },
+        .{ .int = 1717200000 },
+    }};
     my_data = .{ .set = &.{
         .{ .int = 1705276800 },
         .{ .int = 1717200000 },
     }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    my_data = .nil;
 }

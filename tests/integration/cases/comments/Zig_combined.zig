@@ -10,17 +10,13 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    {
-        const my_data: ZVal = .{ .map = &.{
-            // Server configuration
-            .{ .key = "host", .val = .{ .str = "localhost" } },  // default host
-            .{ .key = "port", .val = .{ .int = 8080 } },
-            // Enable debug mode
-            .{ .key = "debug", .val = .{ .bool = true } },
-        }};
-        _ = my_data;
-    }
-    var my_data: ZVal = undefined;
+    var my_data: ZVal = .{ .map = &.{
+        // Server configuration
+        .{ .key = "host", .val = .{ .str = "localhost" } },  // default host
+        .{ .key = "port", .val = .{ .int = 8080 } },
+        // Enable debug mode
+        .{ .key = "debug", .val = .{ .bool = true } },
+    }};
     my_data = .{ .map = &.{
         // Server configuration
         .{ .key = "host", .val = .{ .str = "localhost" } },  // default host
@@ -28,6 +24,5 @@ pub fn main() void {
         // Enable debug mode
         .{ .key = "debug", .val = .{ .bool = true } },
     }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    my_data = .nil;
 }

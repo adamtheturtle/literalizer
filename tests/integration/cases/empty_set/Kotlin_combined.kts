@@ -1,7 +1,2 @@
-fun _declaration() {
-    val my_data = setOf<Any?>()
-}
-fun _assignment() {
-    var my_data: Any? = null
-    my_data = setOf<Any?>()
-}
+var my_data = setOf<Any?>()
+my_data = setOf<Any?>()

@@ -1,10 +1,7 @@
-do {
-    let my_data: Any = [
-        // # section
-        "a",
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    // # section
+    "a",
+]
 my_data = [
     // # section
     "a",

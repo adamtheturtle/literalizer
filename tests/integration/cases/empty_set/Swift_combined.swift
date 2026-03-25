@@ -1,5 +1,2 @@
-do {
-    let my_data: Any = Set<AnyHashable>()
-}
-var my_data: Any
+var my_data: Any = Set<AnyHashable>()
 my_data = Set<AnyHashable>()

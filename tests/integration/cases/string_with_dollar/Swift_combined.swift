@@ -1,10 +1,7 @@
-do {
-    let my_data: Any = [
-        "price $10",
-        "$HOME",
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    "price $10",
+    "$HOME",
+]
 my_data = [
     "price $10",
     "$HOME",

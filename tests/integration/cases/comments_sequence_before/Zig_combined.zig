@@ -10,22 +10,17 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    {
-        const my_data: ZVal = .{ .arr = &.{
-            // first
-            .{ .str = "a" },
-            // second
-            .{ .str = "b" },
-        }};
-        _ = my_data;
-    }
-    var my_data: ZVal = undefined;
+    var my_data: ZVal = .{ .arr = &.{
+        // first
+        .{ .str = "a" },
+        // second
+        .{ .str = "b" },
+    }};
     my_data = .{ .arr = &.{
         // first
         .{ .str = "a" },
         // second
         .{ .str = "b" },
     }};
-    const _my_data_read = my_data;
-    _ = _my_data_read;
+    my_data = .nil;
 }

@@ -152,6 +152,7 @@ class CSharp(metaclass=LanguageCls):
             preamble_lines=("using System;",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            supports_trailing_comma=False,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -161,6 +162,7 @@ class CSharp(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence="Array.Empty<object>()",
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
@@ -275,7 +277,8 @@ class CSharp(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        NO = "no"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -322,6 +325,7 @@ class CSharp(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize CSharp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -380,9 +384,7 @@ class CSharp(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
         )
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
-            multiline_trailing_comma=False,
-        )
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -420,6 +422,7 @@ class CSharp(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             csharp_dict_entry
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

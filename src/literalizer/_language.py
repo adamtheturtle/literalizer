@@ -19,6 +19,7 @@ class SequenceFormatConfig:
     close: str
     supports_heterogeneity: bool
     single_element_trailing_comma: bool
+    supports_trailing_comma: bool
     empty_sequence: str | None
     preamble_lines: tuple[str, ...]
     format_entry: Callable[[Value, str], str]
@@ -118,7 +119,14 @@ class OrderedMapFormatConfig:
 
 @dataclasses.dataclass(frozen=True)
 class TrailingCommaConfig:
-    """Configuration for trailing-comma behavior."""
+    """Configuration for trailing-comma behavior.
+
+    When ``multiline_trailing_comma`` is ``True``, trailing commas are added
+    to multiline collections where the chosen format supports them.
+    Some sequence formats (e.g. Java's ``List.of()``) do not support trailing
+    commas; in those cases the trailing comma is omitted regardless of this
+    setting.
+    """
 
     multiline_trailing_comma: bool
 
@@ -128,6 +136,7 @@ class DeclarationStyleConfig:
     """Configuration for a single declaration style."""
 
     formatter: Callable[[str, str, Value], str]
+    supports_redefinition: bool
 
 
 class SequenceFormat(Protocol):
@@ -319,7 +328,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Configuration for dict formatting."""
 
     trailing_comma_config: TrailingCommaConfig
-    """Configuration for trailing-comma behavior."""
+    """Configuration for trailing-comma behavior.
+
+    Trailing commas are only added to collection formats that support them.
+    See :class:`TrailingCommaConfig` for details.
+    """
 
     @property
     def format_bytes(self) -> Callable[[bytes], str]:
@@ -365,6 +378,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         ...  # pylint: disable=unnecessary-ellipsis
+
+    indent: str
+    """The indentation step for elements inside delimiters in multi-line
+    structures (e.g. ``"    "`` for 4-space indent).
+    """
 
     multiline_close_indent: str
     """The prefix to prepend to the closing delimiter of multi-line

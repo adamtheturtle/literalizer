@@ -129,6 +129,7 @@ class Ruby(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -276,6 +277,7 @@ class Ruby(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize Ruby language specification."""
         self.variable_type_hints = variable_type_hints
@@ -339,6 +341,7 @@ class Ruby(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             )
         )
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
