@@ -14,7 +14,6 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import itertools
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -59,13 +58,56 @@ def _find_redefinition_style(
     return None
 
 
+def _wrap_code(
+    fn: Callable[[str], str],
+) -> Callable[[literalizer.LiteralizeResult], str]:
+    """Adapt a code-only wrapper to accept a ``LiteralizeResult``."""
+
+    def wrapper(result: literalizer.LiteralizeResult) -> str:
+        """Wrap a ``LiteralizeResult`` using the code-only function."""
+        return fn(result.code)
+
+    return wrapper
+
+
+def _combined_code(
+    fn: Callable[[str, str], str],
+) -> Callable[
+    [literalizer.LiteralizeResult, literalizer.LiteralizeResult], str
+]:
+    """Adapt a combined code-only wrapper to accept
+    ``LiteralizeResult`` pairs.
+    """
+
+    def wrapper(
+        decl: literalizer.LiteralizeResult,
+        assign: literalizer.LiteralizeResult,
+    ) -> str:
+        """Wrap a pair of ``LiteralizeResult``s using the code-only
+        function.
+        """
+        return fn(decl.code, assign.code)
+
+    return wrapper
+
+
 def _newline_combined(
     wrap: Callable[[str], str],
-) -> Callable[[str, str], str]:
+) -> Callable[
+    [literalizer.LiteralizeResult, literalizer.LiteralizeResult], str
+]:
     """Build a combined_wrap that joins declaration and assignment with a
     newline and passes through *wrap*.
     """
-    return lambda d, a: wrap(d + "\n" + a)
+
+    def combined(
+        decl: literalizer.LiteralizeResult,
+        assign: literalizer.LiteralizeResult,
+    ) -> str:
+        """Join declaration and assignment code with a newline."""
+        return wrap(decl.code + "\n" + assign.code)
+
+    return combined
 
 
 @beartype
@@ -87,61 +129,6 @@ def _wrap_occam(content: str) -> str:
 def _wrap_fsharp(content: str) -> str:
     """Wrap an F# ``let`` declaration in a module."""
     return "module Check\n\n" + content
-
-
-@dataclasses.dataclass(frozen=True)
-class _HaskellBodySplit:
-    """Result of splitting body-preamble lines from a Haskell code
-    string.
-    """
-
-    body_preamble: str
-    expression: str
-
-
-@beartype
-def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
-    """Split body-preamble lines from the expression in *content*.
-
-    Body-preamble lines (imports, data types, typeclass instances) are
-    now included at the start of ``code`` by the library.  This helper
-    separates them from the trailing expression so the test wrapper can
-    place them in the correct structural position within the Haskell
-    module, with imports sorted before data types and instances.
-    """
-    lines = content.split(sep="\n")
-
-    preamble_prefixes = ("import ", "instance ", "data ")
-
-    # Find the first line that is NOT body-preamble.  A line counts as
-    # preamble when it starts with a known prefix or is an indented
-    # continuation of a preceding block.
-    def _is_preamble(idx_line: tuple[int, str]) -> bool:
-        """Check whether a line is part of the body preamble."""
-        idx, line = idx_line
-        is_prefix = any(line.startswith(p) for p in preamble_prefixes)
-        is_continuation = line.startswith("    ") and idx > 0
-        return is_prefix or is_continuation
-
-    expr_start = len(
-        list(
-            itertools.takewhile(
-                _is_preamble,
-                enumerate(iterable=lines),
-            )
-        )
-    )
-    preamble_lines = lines[:expr_start]
-    # Reorder: imports first, then everything else (data types,
-    # instances), so the output is valid Haskell.
-    imports = [ln for ln in preamble_lines if ln.startswith("import ")]
-    rest = [ln for ln in preamble_lines if not ln.startswith("import ")]
-    ordered = imports + rest
-
-    return _HaskellBodySplit(
-        body_preamble="\n".join(ordered),
-        expression="\n".join(lines[expr_start:]),
-    )
 
 
 _VARIABLE_NAME = "my_data"
@@ -314,17 +301,21 @@ def _wrap_rust(content: str) -> str:
 
 
 @beartype
-def _wrap_haskell(content: str) -> str:
+def _wrap_haskell(result: literalizer.LiteralizeResult) -> str:
     """Wrap a Haskell variable binding in a module."""
-    split = _split_haskell_body_preamble(content=content)
+    body_preamble = "\n".join(result.body_preamble)
+    bp_prefix = body_preamble + "\n" if result.body_preamble else ""
+    expression = result.code.removeprefix(bp_prefix)
+
     header = "module Check where\n"
-    header += split.body_preamble + "\n"
+    if body_preamble:
+        header += body_preamble + "\n"
     # Tuples are not Val-typed, so skip the type annotation for them.
-    eq_pos = split.expression.find("= ")
-    rhs = split.expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
+    eq_pos = expression.find("= ")
+    rhs = expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
     if rhs.startswith("("):
-        return header + split.expression
-    return header + f"{_VARIABLE_NAME} :: Val\n" + split.expression
+        return header + expression
+    return header + f"{_VARIABLE_NAME} :: Val\n" + expression
 
 
 @beartype
@@ -443,7 +434,7 @@ class _Variant:
 
     name: str
     spec: literalizer.Language
-    wrap: Callable[[str], str]
+    wrap: Callable[[literalizer.LiteralizeResult], str]
     wrap_variable_name: str | None = None
 
 
@@ -452,8 +443,10 @@ class _LanguageConfig:
     """Language configuration with class, file extension, and wrapper."""
 
     lang_cls: literalizer.LanguageCls
-    wrap: Callable[[str], str]
-    combined_wrap: Callable[[str, str], str]
+    wrap: Callable[[literalizer.LiteralizeResult], str]
+    combined_wrap: Callable[
+        [literalizer.LiteralizeResult, literalizer.LiteralizeResult], str
+    ]
     wrap_variable_name: str | None = None
 
 
@@ -490,272 +483,272 @@ def _wrap_cobol_combined(declaration: str, assignment: str) -> str:
 _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Ada.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ada,
-        wrap=_wrap_ada,
-        combined_wrap=_wrap_ada_combined,
+        wrap=_wrap_code(_wrap_ada),
+        combined_wrap=_combined_code(_wrap_ada_combined),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Bash.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Bash,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.C.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.C,
-        wrap=_wrap_c,
+        wrap=_wrap_code(_wrap_c),
         combined_wrap=_newline_combined(wrap=_wrap_c),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Cobol.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Cobol,
-        wrap=_wrap_cobol,
-        combined_wrap=_wrap_cobol_combined,
+        wrap=_wrap_code(_wrap_cobol),
+        combined_wrap=_combined_code(_wrap_cobol_combined),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.D.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.D,
-        wrap=_wrap_d,
+        wrap=_wrap_code(_wrap_d),
         combined_wrap=_newline_combined(wrap=_wrap_d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.CommonLisp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CommonLisp,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Clojure.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Clojure,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Python.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Python,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
-        wrap=_wrap_ts,
+        wrap=_wrap_code(_wrap_ts),
         combined_wrap=_newline_combined(wrap=_wrap_ts),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Kotlin.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Kotlin,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Ruby.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ruby,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
-        wrap=_wrap_go,
+        wrap=_wrap_code(_wrap_go),
         combined_wrap=_newline_combined(wrap=_wrap_go),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Java.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Java,
-        wrap=_wrap_java,
+        wrap=_wrap_code(_wrap_java),
         combined_wrap=_newline_combined(wrap=_wrap_java),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.CSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CSharp,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Dart.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Swift.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Cpp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Cpp,
-        wrap=_wrap_cpp,
+        wrap=_wrap_code(_wrap_cpp),
         combined_wrap=_newline_combined(wrap=_wrap_cpp),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Rust.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Rust,
-        wrap=_wrap_rust,
-        combined_wrap=_wrap_rust_combined,
+        wrap=_wrap_code(_wrap_rust),
+        combined_wrap=_combined_code(_wrap_rust_combined),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Haskell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Haskell,
         wrap=_wrap_haskell,
-        combined_wrap=lambda d, _a: _wrap_haskell(content=d),
+        combined_wrap=lambda d, _a: _wrap_haskell(result=d),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Hcl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
-        wrap=_wrap_identity,
-        combined_wrap=lambda d, _a: d,
+        wrap=_wrap_code(_wrap_identity),
+        combined_wrap=lambda d, _a: d.code,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Julia.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Julia,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Lua.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Lua,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Perl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Perl,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Php.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Php,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Elixir.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elixir,
-        wrap=_wrap_elixir,
-        combined_wrap=lambda d, _a: _wrap_elixir(content=d),
+        wrap=_wrap_code(_wrap_elixir),
+        combined_wrap=lambda d, _a: _wrap_elixir(content=d.code),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Erlang.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Erlang,
-        wrap=_wrap_erlang,
-        combined_wrap=lambda d, _a: _wrap_erlang(content=d),
+        wrap=_wrap_code(_wrap_erlang),
+        combined_wrap=lambda d, _a: _wrap_erlang(content=d.code),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.FSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.FSharp,
-        wrap=_wrap_fsharp,
-        combined_wrap=lambda d, _a: _wrap_fsharp(content=d),
+        wrap=_wrap_code(_wrap_fsharp),
+        combined_wrap=lambda d, _a: _wrap_fsharp(content=d.code),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.OCaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.OCaml,
-        wrap=_wrap_ocaml,
-        combined_wrap=lambda d, _a: _wrap_ocaml(content=d),
+        wrap=_wrap_code(_wrap_ocaml),
+        combined_wrap=lambda d, _a: _wrap_ocaml(content=d.code),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Occam.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Occam,
-        wrap=_wrap_occam,
-        combined_wrap=lambda d, _a: _wrap_occam(content=d),
+        wrap=_wrap_code(_wrap_occam),
+        combined_wrap=lambda d, _a: _wrap_occam(content=d.code),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Groovy.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Groovy,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Scala.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Scala,
-        wrap=_wrap_scala,
+        wrap=_wrap_code(_wrap_scala),
         combined_wrap=_newline_combined(wrap=_wrap_scala),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.R.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.R,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Racket.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Racket,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Matlab.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Matlab,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Mojo.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Mojo,
-        wrap=_wrap_mojo,
-        combined_wrap=_wrap_mojo_combined,
+        wrap=_wrap_code(_wrap_mojo),
+        combined_wrap=_combined_code(_wrap_mojo_combined),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Nim.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Nim,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
-        wrap=_wrap_identity,
-        combined_wrap=lambda d, _a: d,
+        wrap=_wrap_code(_wrap_identity),
+        combined_wrap=lambda d, _a: d.code,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.VisualBasic.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.VisualBasic,
-        wrap=_wrap_vb,
-        combined_wrap=_wrap_vb_combined,
+        wrap=_wrap_code(_wrap_vb),
+        combined_wrap=_combined_code(_wrap_vb_combined),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Zig.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Zig,
-        wrap=_wrap_zig,
+        wrap=_wrap_code(_wrap_zig),
         combined_wrap=_newline_combined(wrap=_wrap_zig),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.PowerShell,
-        wrap=_wrap_identity,
+        wrap=_wrap_code(_wrap_identity),
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Toml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Toml,
-        wrap=_wrap_identity,
-        combined_wrap=lambda d, _a: d,
+        wrap=_wrap_code(_wrap_identity),
+        combined_wrap=lambda d, _a: d.code,
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.ObjectiveC.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.ObjectiveC,
-        wrap=_wrap_objc,
+        wrap=_wrap_code(_wrap_objc),
         combined_wrap=_newline_combined(wrap=_wrap_objc),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Fortran.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Fortran,
-        wrap=_wrap_fortran,
-        combined_wrap=_wrap_fortran_combined,
+        wrap=_wrap_code(_wrap_fortran),
+        combined_wrap=_combined_code(_wrap_fortran_combined),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Yaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Yaml,
-        wrap=_wrap_identity,
-        combined_wrap=lambda d, _a: d,
+        wrap=_wrap_code(_wrap_identity),
+        combined_wrap=lambda d, _a: d.code,
     ),
 }
 
@@ -1241,8 +1234,7 @@ def test_golden_file(
         new_variable=True,
         error_on_coercion=False,
     )
-    wrapped = lang_config.wrap(result.code)
-
+    wrapped = lang_config.wrap(result)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
         contents=wrapped + "\n",
@@ -1295,7 +1287,7 @@ def test_golden_file_combined_variable_forms(
         new_variable=False,
         error_on_coercion=False,
     )
-    combined = lang_config.combined_wrap(declaration.code, assignment.code)
+    combined = lang_config.combined_wrap(declaration, assignment)
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
     )
@@ -1389,7 +1381,7 @@ def test_format_variant_golden_file(
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
-    wrapped = variant.wrap(result.code)
+    wrapped = variant.wrap(result)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
         contents=wrapped + "\n",
@@ -1484,9 +1476,7 @@ def test_line_ending_combined_variable_forms(
         new_variable=False,
         error_on_coercion=False,
     )
-    combined = case.lang_config.combined_wrap(
-        declaration.code, assignment.code
-    )
+    combined = case.lang_config.combined_wrap(declaration, assignment)
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
     )

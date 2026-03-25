@@ -47,6 +47,13 @@ class LiteralizeResult:
     the generated code.  Empty when none are needed.
     """
 
+    body_preamble: tuple[str, ...] = ()
+    """Lines (data types, typeclass instances, etc.) that appear between
+    the header preamble and the expression.  These are already included
+    in :attr:`code`; this field exposes them separately for callers that
+    need structured access.  Empty when none are needed.
+    """
+
 
 @beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
@@ -1121,6 +1128,7 @@ def literalize_json(
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )
 
 
@@ -1408,4 +1416,5 @@ def literalize_yaml(
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )

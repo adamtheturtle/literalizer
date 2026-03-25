@@ -141,6 +141,18 @@ def _datetime_import_items(
     return items
 
 
+def _numeric_instances(*, types: frozenset[type]) -> list[str]:
+    """Return ``Num`` and ``Fractional`` instance lines for *types*."""
+    has_float = float in types
+    has_int = int in types
+    result: list[str] = []
+    if has_float or has_int:
+        result.append(_num_instance(has_int=has_int, has_float=has_float))
+    if has_float:
+        result.append(_FRACTIONAL_INSTANCE)
+    return result
+
+
 @beartype
 def _build_scalar_body_preamble(
     *,
@@ -166,7 +178,11 @@ def _build_scalar_body_preamble(
     )
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
-        """Return body-preamble lines for the given *types*."""
+        """Return body-preamble lines for the given *types*.
+
+        The returned lines are ordered: imports first, then ``data Val``,
+        then typeclass instances.
+        """
         data_val_parts = [
             constructor
             for type_set, constructor in _VAL_CONSTRUCTORS
@@ -193,24 +209,29 @@ def _build_scalar_body_preamble(
         if needs_is_string and "HStr String" not in data_val_parts:
             data_val_parts.append("HStr String")
 
-        lines: list[str] = []
+        imports: list[str] = []
+        instances: list[str] = []
+
         if import_items:
-            lines.append("import Data.Time (" + ", ".join(import_items) + ")")
-        lines.append("data Val = " + " | ".join(data_val_parts))
+            imports.append(
+                "import Data.Time (" + ", ".join(import_items) + ")"
+            )
 
         if needs_is_string:
-            lines.extend(is_string_body)
+            for line in is_string_body:
+                (imports if line.startswith("import ") else instances).append(
+                    line
+                )
 
-        has_float = float in types
-        has_int = int in types
-        if has_float or has_int:
-            lines.append(
-                _num_instance(has_int=has_int, has_float=has_float),
-            )
-        if has_float:
-            lines.append(_FRACTIONAL_INSTANCE)
+        instances.extend(
+            _numeric_instances(types=types),
+        )
 
-        return tuple(lines)
+        return (
+            *imports,
+            "data Val = " + " | ".join(data_val_parts),
+            *instances,
+        )
 
     return _compute
 
