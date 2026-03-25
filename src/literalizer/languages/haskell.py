@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
     date_ymd_formatter,
@@ -37,11 +38,10 @@ from literalizer._language import (
     TrailingCommaConfig,
     date_scalar_preamble,
 )
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from literalizer._types import Value
 
 
 @beartype
@@ -85,18 +85,34 @@ _FRACTIONAL_INSTANCE = (
 )
 
 
+def _has_microsecond_datetime(*, data: Value) -> bool:
+    """Return whether *data* contains any datetime with microseconds."""
+    if isinstance(data, datetime.datetime):
+        return bool(data.microsecond)
+    if isinstance(data, datetime.date):
+        return False
+    if isinstance(data, (ordereddict, dict)):
+        return any(
+            _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        )
+    if isinstance(data, (list, set)):
+        return any(_has_microsecond_datetime(data=v) for v in data)
+    return False
+
+
 @beartype
 def _build_scalar_body_preamble(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
     is_string_body: tuple[str, ...],
-) -> Callable[[frozenset[type]], tuple[str, ...]]:
+) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
-    The callable receives the set of types present in the data and
-    returns only the imports, ``data Val`` constructors, and typeclass
-    instances that are actually needed.
+    The callable receives the set of types present in the data and the
+    original data value, and returns only the imports, ``data Val``
+    constructors, and typeclass instances that are actually needed.
     """
     include_hdate = date_format.value.type_produced is datetime.date
     include_hdatetime = (
@@ -109,7 +125,7 @@ def _build_scalar_body_preamble(
         getattr(datetime_format.value, "preamble_lines", ())
     )
 
-    def _compute(types: frozenset[type]) -> tuple[str, ...]:
+    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         data_val_parts: list[str] = [
             "HNull",
@@ -127,14 +143,13 @@ def _build_scalar_body_preamble(
             import_items.extend(["Day", "fromGregorian"])
         if include_hdatetime and datetime.datetime in types:
             data_val_parts.append("HDatetime UTCTime")
-            import_items.extend(
-                [
-                    "UTCTime(..)",
-                    "fromGregorian",
-                    "secondsToDiffTime",
-                    "picosecondsToDiffTime",
-                ]
-            )
+            datetime_items = ["UTCTime(..)"]
+            if "fromGregorian" not in import_items:
+                datetime_items.append("fromGregorian")
+            datetime_items.append("secondsToDiffTime")
+            if _has_microsecond_datetime(data=data):
+                datetime_items.append("picosecondsToDiffTime")
+            import_items.extend(datetime_items)
 
         lines: list[str] = []
         if import_items:
@@ -494,7 +509,7 @@ class Haskell(metaclass=LanguageCls):
 
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
-            [frozenset[type]], tuple[str, ...]
+            [frozenset[type], Value], tuple[str, ...]
         ] = _build_scalar_body_preamble(
             date_format=date_format,
             datetime_format=datetime_format,

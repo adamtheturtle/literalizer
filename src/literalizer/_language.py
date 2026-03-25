@@ -520,11 +520,16 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     instance definitions.
     """
 
-    compute_body_preamble: Callable[[frozenset[type]], tuple[str, ...]]
+    compute_body_preamble: Callable[[frozenset[type], Value], tuple[str, ...]]
     """Computes body-preamble lines based on which types are present in
     the data.  Most languages build this from
     :attr:`scalar_body_preamble`; Haskell overrides it to compose the
     ``data Val`` declaration and imports dynamically.
+
+    The second argument is the original data value, allowing
+    implementations to inspect actual values when needed (e.g. to
+    determine whether datetime microsecond-precision imports are
+    required).
     """
 
     type_hint_collection_preamble_lines: tuple[str, ...]
@@ -538,13 +543,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
 def body_preamble_from_scalars(
     *,
     scalar_body_preamble: dict[type, tuple[str, ...]],
-) -> Callable[[frozenset[type]], tuple[str, ...]]:
+) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a ``compute_body_preamble`` from a scalar-body-preamble
     dict.
     """
 
-    def _compute(types: frozenset[type]) -> tuple[str, ...]:
+    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return de-duplicated body-preamble lines for *types*."""
+        del data  # unused by the generic implementation
         seen: set[str] = set()
         result: list[str] = []
         for scalar_type, lines in scalar_body_preamble.items():

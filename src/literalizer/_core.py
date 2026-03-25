@@ -178,7 +178,7 @@ def _compute_preamble(
         and _has_empty_collection(data=data)
         else ()
     )
-    body = language.compute_body_preamble(types)
+    body = language.compute_body_preamble(types, data)
     return _PreambleResult(
         header=_deduplicate(
             lines=scalar + collection + type_hint,
