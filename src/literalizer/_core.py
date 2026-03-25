@@ -5,7 +5,7 @@ import datetime
 import json
 from collections.abc import Sequence
 from io import StringIO
-from typing import Any, cast
+from typing import Any, assert_never, cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
@@ -908,6 +908,8 @@ def _format_collection_lines(
                 add_sep = i < last_idx or seq_trailing
                 sep = spec.element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{formatted}{sep}")
+        case _ as unreachable:
+            assert_never(unreachable)
     return lines
 
 
