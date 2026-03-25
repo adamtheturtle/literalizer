@@ -300,6 +300,7 @@ class FSharp(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize FSharp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -353,7 +354,7 @@ class FSharp(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             tuple_dict_entry(format_value=_format_fsharp_entry)
         )
-        self.indent = "    "
+        self.indent = indent
         self.multiline_close_indent = ""
         self.skip_null_dict_values = False
         self.supports_collection_comments = True

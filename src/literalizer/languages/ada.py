@@ -226,6 +226,7 @@ class Ada(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize Ada language specification."""
         self.variable_type_hints = variable_type_hints
@@ -292,7 +293,7 @@ class Ada(metaclass=LanguageCls):
                 format_value=_format_ada_entry,
             )
         )
-        self.indent = "    "
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

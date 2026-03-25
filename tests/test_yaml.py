@@ -103,6 +103,30 @@ def test_literalize_yaml_mapping() -> None:
     assert result.code == expected
 
 
+def test_literalize_yaml_indent_override() -> None:
+    """User-provided indent overrides the language default for YAML."""
+    language = Python(
+        date_format=Python.date_formats.PYTHON,
+        datetime_format=Python.datetime_formats.PYTHON,
+        bytes_format=Python.bytes_formats.HEX,
+        sequence_format=Python.sequence_formats.TUPLE,
+        set_format=Python.set_formats.SET,
+        indent="\t",
+    )
+    yaml_string = "a: 1\nb: true\n"
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=language,
+        line_prefix="",
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = '{\n\t"a": 1,\n\t"b": True,\n}'
+    assert result.code == expected
+
+
 def test_literalize_yaml_invalid() -> None:
     """``literalize_yaml`` raises on invalid YAML."""
     with pytest.raises(expected_exception=YAMLParseError):

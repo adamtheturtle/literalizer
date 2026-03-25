@@ -222,6 +222,7 @@ class Mojo(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        indent: str = "    ",
     ) -> None:
         """Initialize Mojo language specification."""
         self.variable_type_hints = variable_type_hints
@@ -279,7 +280,7 @@ class Mojo(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_mojo_ordered_map_entry
         )
-        self.indent = "    "
+        self.indent = indent
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
