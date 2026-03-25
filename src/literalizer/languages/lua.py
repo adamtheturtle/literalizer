@@ -305,7 +305,6 @@ class Lua(metaclass=LanguageCls):
             lua_dict_entry
         )
         self.indent = indent
-        self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = True
         self.supports_collection_comments = True

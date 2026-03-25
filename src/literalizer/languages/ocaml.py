@@ -370,7 +370,6 @@ class OCaml(metaclass=LanguageCls):
             tuple_dict_entry(format_value=_format_ocaml_entry)
         )
         self.indent = indent
-        self.multiline_close_indent = ""
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (

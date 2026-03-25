@@ -350,7 +350,6 @@ class VisualBasic(metaclass=LanguageCls):
             braced_dict_entry(format_value=passthrough_sequence_entry)
         )
         self.indent = indent
-        self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = False

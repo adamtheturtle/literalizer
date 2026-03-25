@@ -746,8 +746,7 @@ def _wrap_body(
     line_prefix: str,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
-    ci = spec.multiline_close_indent
-    close_prefix = f"{line_prefix}{ci}"
+    close_prefix = line_prefix
     if is_ordered_map:
         ordered_map_cfg = spec.ordered_map_format_config
 

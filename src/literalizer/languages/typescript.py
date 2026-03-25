@@ -398,7 +398,6 @@ class TypeScript(metaclass=LanguageCls):
             )
         )
         self.indent = indent
-        self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
