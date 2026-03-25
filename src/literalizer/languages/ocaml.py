@@ -411,7 +411,7 @@ class OCaml(metaclass=LanguageCls):
             set: (_h, "  | OSet of val_t list"),
         }
         self.compute_body_preamble: Callable[
-            [frozenset[type]], tuple[str, ...]
+            [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
         )
