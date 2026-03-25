@@ -211,6 +211,8 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 return f"{sequence_hint}[{elem_union}, ...]"
             return f"{sequence_hint}[{elem_union}]"
 
+    raise AssertionError  # pragma: no cover
+
 
 @beartype
 class Python(metaclass=LanguageCls):
