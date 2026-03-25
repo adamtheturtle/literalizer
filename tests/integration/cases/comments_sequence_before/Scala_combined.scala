@@ -1,17 +1,14 @@
-object Declaration {
-  val my_data = List[String](
-      // first
-      "a",
-      // second
-      "b",
-  )
-}
-object Assignment {
-  var my_data: Any = null
-  my_data = List[String](
-      // first
-      "a",
-      // second
-      "b",
-  )
+object Check {
+var my_data = List[String](
+    // first
+    "a",
+    // second
+    "b",
+)
+my_data = List[String](
+    // first
+    "a",
+    // second
+    "b",
+)
 }

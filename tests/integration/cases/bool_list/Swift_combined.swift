@@ -1,11 +1,8 @@
-do {
-    let my_data: Any = [
-        true,
-        false,
-        true,
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    true,
+    false,
+    true,
+]
 my_data = [
     true,
     false,

@@ -1,12 +1,9 @@
-do {
-    let my_data: Any = [
-        1,
-        "hello",
-        true,
-        nil,
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    1,
+    "hello",
+    true,
+    nil,
+]
 my_data = [
     1,
     "hello",

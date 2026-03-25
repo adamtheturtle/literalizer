@@ -208,12 +208,15 @@ class TypeScript(metaclass=LanguageCls):
 
         CONST = DeclarationStyleConfig(
             formatter=variable_formatter(template="const {name} = {value};"),
+            supports_redefinition=False,
         )
         LET = DeclarationStyleConfig(
             formatter=variable_formatter(template="let {name} = {value};"),
+            supports_redefinition=True,
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_formatter(template="var {name} = {value};"),
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):

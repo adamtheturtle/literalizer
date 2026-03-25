@@ -25,6 +25,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
+from literalizer._language import DeclarationStyleConfig
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -41,6 +42,21 @@ def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
 def _wrap_identity(content: str) -> str:
     """Return content unchanged."""
     return content
+
+
+def _find_redefinition_style(
+    spec: literalizer.Language,
+) -> enum.Enum | None:
+    """Return a declaration style that supports redefinition, or None."""
+    for style in spec.declaration_styles:
+        style_value = style.value
+        if isinstance(style_value, DeclarationStyleConfig):
+            if style_value.supports_redefinition:
+                return style
+        else:
+            # String-valued enum — dynamic languages always allow redefinition.
+            return style
+    return None
 
 
 def _newline_combined(
@@ -171,46 +187,6 @@ def _wrap_cpp(content: str) -> str:
 def _wrap_scala(content: str) -> str:
     """Wrap a Scala variable declaration in an object."""
     return f"object Check {{\n{content}\n}}"
-
-
-@beartype
-def _wrap_scala_combined(declaration: str, assignment: str) -> str:
-    """Scala: val declaration in one object, var + assignment in
-    another.
-    """
-    decl_indented = "  " + declaration.replace("\n", "\n  ")
-    assign_indented = "  " + assignment.replace("\n", "\n  ")
-    return (
-        f"object Declaration {{\n"
-        f"{decl_indented}\n"
-        f"}}\n"
-        f"object Assignment {{\n"
-        f"  var {_VARIABLE_NAME}: Any = null\n"
-        f"{assign_indented}\n"
-        f"}}"
-    )
-
-
-@beartype
-def _wrap_dart_combined(declaration: str, assignment: str) -> str:
-    """Dart: final declaration and dynamic + assignment in block scopes
-    within one function, avoiding unused-element warnings.
-    """
-    decl_indented = "    " + declaration.replace("\n", "\n    ")
-    assign_indented = "    " + assignment.replace("\n", "\n    ")
-    return (
-        f"void main() {{\n"
-        f"  {{\n"
-        f"{decl_indented}\n"
-        f"    {_VARIABLE_NAME}.hashCode;\n"
-        f"  }}\n"
-        f"  {{\n"
-        f"    dynamic {_VARIABLE_NAME};\n"
-        f"{assign_indented}\n"
-        f"    {_VARIABLE_NAME}.hashCode;\n"
-        f"  }}\n"
-        f"}}"
-    )
 
 
 @beartype
@@ -353,80 +329,17 @@ def _wrap_haskell(content: str) -> str:
 
 @beartype
 def _wrap_zig(content: str) -> str:
-    """Wrap a Zig ``const`` declaration in a main function."""
+    """Wrap a Zig declaration in a main function.
+
+    For ``var`` declarations the wrapper mutates the variable so the Zig
+    compiler does not warn about a ``var`` that is never mutated.
+    """
     indented = "    " + content.replace("\n", "\n    ")
-    return f"pub fn main() void {{\n{indented}\n    _ = {_VARIABLE_NAME};\n}}"
-
-
-@beartype
-def _wrap_zig_combined(declaration: str, assignment: str) -> str:
-    """Zig: ``const`` declaration in an inner block, then ``var`` +
-    assignment in the outer scope.
-    """
-    decl_indented = "        " + declaration.replace("\n", "\n        ")
-    assign_indented = "    " + assignment.replace("\n", "\n    ")
-    return (
-        "pub fn main() void {\n"
-        "    {\n"
-        f"{decl_indented}\n"
-        f"        _ = {_VARIABLE_NAME};\n"
-        "    }\n"
-        f"    var {_VARIABLE_NAME}: ZVal = undefined;\n"
-        f"{assign_indented}\n"
-        f"    const _{_VARIABLE_NAME}_read = {_VARIABLE_NAME};\n"
-        f"    _ = _{_VARIABLE_NAME}_read;\n"
-        "}"
-    )
-
-
-@beartype
-def _wrap_js_combined(declaration: str, assignment: str) -> str:
-    """Wrap a JavaScript declaration in an IIFE to scope the variable,
-    then assign to an outer var.
-    """
-    return (
-        f"void (function() {{\n{declaration}\n}})();\n"
-        f"var {_VARIABLE_NAME};\n"
-        f"{assignment}"
-    )
-
-
-@beartype
-def _wrap_ts_combined(declaration: str, assignment: str) -> str:
-    """TypeScript combined: same as JavaScript but as a module with export."""
-    return (
-        f"void (function() {{\n{declaration}\n}})();\n"
-        f"var {_VARIABLE_NAME};\n"
-        f"{assignment}\n"
-        f"export {{}};"
-    )
-
-
-@beartype
-def _wrap_kotlin_combined(declaration: str, assignment: str) -> str:
-    """Kotlin: val declaration in one fun, var + assignment in another."""
-    decl_indented = "    " + declaration.replace("\n", "\n    ")
-    assign_indented = "    " + assignment.replace("\n", "\n    ")
-    return (
-        f"fun _declaration() {{\n"
-        f"{decl_indented}\n"
-        f"}}\n"
-        f"fun _assignment() {{\n"
-        f"    var {_VARIABLE_NAME}: Any? = null\n"
-        f"{assign_indented}\n"
-        f"}}"
-    )
-
-
-@beartype
-def _wrap_swift_combined(declaration: str, assignment: str) -> str:
-    """Swift: let declaration in a do block,
-    then var + assignment in the outer scope.
-    """
-    decl_indented = "    " + declaration.replace("\n", "\n    ")
-    return (
-        f"do {{\n{decl_indented}\n}}\nvar {_VARIABLE_NAME}: Any\n{assignment}"
-    )
+    if content.startswith("var "):
+        use = f"    {_VARIABLE_NAME} = .nil;"
+    else:
+        use = f"    _ = {_VARIABLE_NAME};"
+    return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
 
 @beartype
@@ -623,19 +536,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
         wrap=_wrap_identity,
-        combined_wrap=_wrap_js_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
         wrap=_wrap_ts,
-        combined_wrap=_wrap_ts_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_ts),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Kotlin.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Kotlin,
         wrap=_wrap_identity,
-        combined_wrap=_wrap_kotlin_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Ruby.__name__: _LanguageConfig(
@@ -664,13 +577,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Dart.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
         wrap=_wrap_identity,
-        combined_wrap=_wrap_dart_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Swift.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
         wrap=_wrap_identity,
-        combined_wrap=_wrap_swift_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.Cpp.__name__: _LanguageConfig(
@@ -759,7 +672,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Scala.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Scala,
         wrap=_wrap_scala,
-        combined_wrap=_wrap_scala_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_scala),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.R.__name__: _LanguageConfig(
@@ -812,7 +725,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Zig.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Zig,
         wrap=_wrap_zig,
-        combined_wrap=_wrap_zig_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_zig),
         wrap_variable_name=_VARIABLE_NAME,
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
@@ -1357,10 +1270,17 @@ def test_golden_file_combined_variable_forms(
     """
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
+    spec = lang_config.lang_cls()
+    redef_style = _find_redefinition_style(spec=spec)
+    if redef_style is None:
+        pytest.skip(
+            f"{language} has no declaration style that supports redefinition"
+        )
+    spec = lang_config.lang_cls(declaration_style=redef_style)
     yaml_string = input_path.read_text()
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
+        language=spec,
         line_prefix="",
         indent="    ",
         include_delimiters=True,
@@ -1370,7 +1290,7 @@ def test_golden_file_combined_variable_forms(
     )
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
-        language=lang_config.lang_cls(),
+        language=spec,
         line_prefix="",
         indent="    ",
         include_delimiters=True,
@@ -1503,6 +1423,8 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
     cases: list[_LineEndingCombinedCase] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
+        if _find_redefinition_style(spec=spec) is None:
+            continue
         default_le = spec.line_ending
         for le in spec.line_endings:
             if le is default_le:
@@ -1541,7 +1463,13 @@ def test_line_ending_combined_variable_forms(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    spec = case.lang_config.lang_cls(line_ending=case.line_ending)
+    base_spec = case.lang_config.lang_cls()
+    redef_style = _find_redefinition_style(spec=base_spec)
+    assert redef_style is not None
+    spec = case.lang_config.lang_cls(
+        line_ending=case.line_ending,
+        declaration_style=redef_style,
+    )
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,

@@ -1,9 +1,6 @@
-do {
-    let my_data: Any = [
-        "key": "value \" # not a comment",  // real
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    "key": "value \" # not a comment",  // real
+]
 my_data = [
     "key": "value \" # not a comment",  // real
 ]

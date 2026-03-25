@@ -129,6 +129,7 @@ class DeclarationStyleConfig:
     """Configuration for a single declaration style."""
 
     formatter: Callable[[str, str, Value], str]
+    supports_redefinition: bool
 
 
 class SequenceFormat(Protocol):

@@ -1,11 +1,8 @@
-void (function() {
-const my_data = [
+let my_data = [
     true,
     false,
     true,
 ];
-})();
-var my_data;
 my_data = [
     true,
     false,

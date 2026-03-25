@@ -1,15 +1,10 @@
-fun _declaration() {
-    val my_data = arrayOf(
-        "a",
-        //
-        "b",
-    )
-}
-fun _assignment() {
-    var my_data: Any? = null
-    my_data = arrayOf(
-        "a",
-        //
-        "b",
-    )
-}
+var my_data = arrayOf(
+    "a",
+    //
+    "b",
+)
+my_data = arrayOf(
+    "a",
+    //
+    "b",
+)

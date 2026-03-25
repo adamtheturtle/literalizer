@@ -1,13 +1,10 @@
-object Declaration {
-  val my_data = List[String](
-      "price $10",
-      "$HOME",
-  )
-}
-object Assignment {
-  var my_data: Any = null
-  my_data = List[String](
-      "price $10",
-      "$HOME",
-  )
+object Check {
+var my_data = List[String](
+    "price $10",
+    "$HOME",
+)
+my_data = List[String](
+    "price $10",
+    "$HOME",
+)
 }

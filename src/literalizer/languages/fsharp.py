@@ -215,9 +215,11 @@ class FSharp(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=_format_variable_declaration_let,
+            supports_redefinition=True,
         )
         LET_MUTABLE = DeclarationStyleConfig(
             formatter=_format_variable_declaration_let_mutable,
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):

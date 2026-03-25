@@ -237,9 +237,11 @@ class Go(metaclass=LanguageCls):
 
         SHORT = DeclarationStyleConfig(
             formatter=variable_formatter(template="{name} := {value}"),
+            supports_redefinition=True,
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_formatter(template="var {name} = {value}"),
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):

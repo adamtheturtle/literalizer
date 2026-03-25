@@ -1,5 +1,2 @@
-void (function() {
-const my_data = new Set();
-})();
-var my_data;
+let my_data = new Set();
 my_data = new Set();

@@ -1,17 +1,14 @@
-object Declaration {
-  val my_data = List(
-      1,
-      "hello",
-      true,
-      null,
-  )
-}
-object Assignment {
-  var my_data: Any = null
-  my_data = List(
-      1,
-      "hello",
-      true,
-      null,
-  )
+object Check {
+var my_data = List(
+    1,
+    "hello",
+    true,
+    null,
+)
+my_data = List(
+    1,
+    "hello",
+    true,
+    null,
+)
 }

@@ -1,10 +1,7 @@
-do {
-    let my_data: Any = [
-        "name": "Alice",
-        "scores": [10, 20, 30],
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    "name": "Alice",
+    "scores": [10, 20, 30],
+]
 my_data = [
     "name": "Alice",
     "scores": [10, 20, 30],

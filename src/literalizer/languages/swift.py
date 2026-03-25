@@ -186,9 +186,11 @@ class Swift(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=variable_formatter(template="let {name}: Any = {value}"),
+            supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_formatter(template="var {name}: Any = {value}"),
+            supports_redefinition=True,
         )
 
     class DictFormats(enum.Enum):

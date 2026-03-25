@@ -1,11 +1,8 @@
-do {
-    let my_data: Any = [
-        // line 1
-        // line 2
-        "a",
-    ]
-}
-var my_data: Any
+var my_data: Any = [
+    // line 1
+    // line 2
+    "a",
+]
 my_data = [
     // line 1
     // line 2

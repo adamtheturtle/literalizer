@@ -1,5 +1,2 @@
-void (function() {
-const my_data = "hello \"world\" -- not a comment";
-})();
-var my_data;
+let my_data = "hello \"world\" -- not a comment";
 my_data = "hello \"world\" -- not a comment";
