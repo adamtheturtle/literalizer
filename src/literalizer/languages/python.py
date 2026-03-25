@@ -6,7 +6,6 @@ import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -145,7 +144,7 @@ def _collection_element_union(
 
 
 @beartype
-def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911
     data: Value,
     *,
     bytes_hint: str,
@@ -211,8 +210,6 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
             return f"{sequence_hint}[{elem_union}]"
-        case _:  # pragma: no cover
-            assert_never(data)
 
 
 @beartype
