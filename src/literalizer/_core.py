@@ -174,16 +174,7 @@ def _compute_preamble(
         and _has_empty_collection(data=data)
         else ()
     )
-    body = _deduplicate(
-        lines=tuple(
-            line
-            for scalar_type, body_preamble in (
-                language.scalar_body_preamble.items()
-            )
-            if scalar_type in types
-            for line in body_preamble
-        ),
-    )
+    body = language.compute_body_preamble(types)
     return _PreambleResult(
         header=_deduplicate(
             lines=scalar + collection + type_hint,

@@ -34,6 +34,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
+    body_preamble_from_scalars,
 )
 from literalizer._types import Value
 
@@ -409,4 +410,9 @@ class OCaml(metaclass=LanguageCls):
             ordereddict: (_h, "  | OMap of (string * val_t) list"),
             set: (_h, "  | OSet of val_t list"),
         }
+        self.compute_body_preamble: Callable[
+            [frozenset[type]], tuple[str, ...]
+        ] = body_preamble_from_scalars(
+            scalar_body_preamble=self.scalar_body_preamble,
+        )
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

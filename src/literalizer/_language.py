@@ -502,9 +502,39 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     instance definitions.
     """
 
+    compute_body_preamble: Callable[[frozenset[type]], tuple[str, ...]]
+    """Computes body-preamble lines based on which types are present in
+    the data.  Most languages build this from
+    :attr:`scalar_body_preamble`; Haskell overrides it to compose the
+    ``data Val`` declaration and imports dynamically.
+    """
+
     type_hint_collection_preamble_lines: tuple[str, ...]
     """Preamble lines required when the language produces type-hinted
     variable declarations *and* the data contains collections.
     Empty for most languages; Python sets this to
     ``("from typing import Any",)`` when inline hints are enabled.
     """
+
+
+def body_preamble_from_scalars(
+    *,
+    scalar_body_preamble: dict[type, tuple[str, ...]],
+) -> Callable[[frozenset[type]], tuple[str, ...]]:
+    """Build a ``compute_body_preamble`` from a scalar-body-preamble
+    dict.
+    """
+
+    def _compute(types: frozenset[type]) -> tuple[str, ...]:
+        """Return de-duplicated body-preamble lines for *types*."""
+        seen: set[str] = set()
+        result: list[str] = []
+        for scalar_type, lines in scalar_body_preamble.items():
+            if scalar_type in types:
+                for line in lines:
+                    if line not in seen:
+                        seen.add(line)
+                        result.append(line)
+        return tuple(result)
+
+    return _compute

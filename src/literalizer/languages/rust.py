@@ -36,6 +36,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
+    body_preamble_from_scalars,
     date_scalar_preamble,
 )
 
@@ -428,4 +429,10 @@ class Rust(metaclass=LanguageCls):
             )
         )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        self.compute_body_preamble: Callable[
+            [frozenset[type]], tuple[str, ...]
+        ] = body_preamble_from_scalars(
+            scalar_body_preamble=self.scalar_body_preamble,
+        )
+
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

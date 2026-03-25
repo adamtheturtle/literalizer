@@ -3,6 +3,7 @@
 import datetime
 import enum
 import functools
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -38,7 +39,7 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from literalizer._types import Value
 
@@ -90,75 +91,72 @@ def _build_scalar_body_preamble(
     date_format: enum.Enum,
     datetime_format: enum.Enum,
     is_string_body: tuple[str, ...],
-) -> dict[type, tuple[str, ...]]:
-    """Build the ``scalar_body_preamble`` dict for Haskell.
+) -> Callable[[frozenset[type]], tuple[str, ...]]:
+    """Build a callable that computes body-preamble lines for Haskell.
 
-    The ``data Val`` declaration and optional ``import Data.Time`` are
-    assembled based on which date/datetime format is selected.  Both
-    are included for every type so that they are emitted regardless of
-    which scalar types appear in the data.
+    The callable receives the set of types present in the data and
+    returns only the imports, ``data Val`` constructors, and typeclass
+    instances that are actually needed.
     """
-    data_val_parts: tuple[str, ...] = (
-        "HNull",
-        "HBool Bool",
-        "HInt Integer",
-        "HFloat Double",
-        "HStr String",
-        "HList [Val]",
-        "HMap [(String, Val)]",
-        "HSet [Val]",
+    include_hdate = date_format.value.type_produced is datetime.date
+    include_hdatetime = (
+        datetime_format.value.type_produced is datetime.datetime
     )
-    import_items: list[str] = []
-    if date_format.value.type_produced is datetime.date:
-        data_val_parts += ("HDate Day",)
-        import_items.extend(["Day", "fromGregorian"])
-    if datetime_format.value.type_produced is datetime.datetime:
-        data_val_parts += ("HDatetime UTCTime",)
-        import_items.extend(
-            ["UTCTime(..)", "secondsToDiffTime", "picosecondsToDiffTime"]
-        )
-    data_val_line = "data Val = " + " | ".join(data_val_parts)
-    always_body: tuple[str, ...]
-    if import_items:
-        always_body = (
-            "import Data.Time (" + ", ".join(import_items) + ")",
-            data_val_line,
-        )
-    else:
-        always_body = (data_val_line,)
+    date_needs_is_string = bool(
+        getattr(date_format.value, "preamble_lines", ())
+    )
+    datetime_needs_is_string = bool(
+        getattr(datetime_format.value, "preamble_lines", ())
+    )
 
-    type_specific: dict[type, tuple[str, ...]] = {
-        str: is_string_body,
-        bytes: is_string_body,
-        int: (_NUM_INSTANCE,),
-        float: (_NUM_INSTANCE, _FRACTIONAL_INSTANCE),
-        **{
-            t: is_string_body
-            for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (
-                    datetime.datetime,
-                    datetime_format.value.preamble_lines,
-                ),
+    def _compute(types: frozenset[type]) -> tuple[str, ...]:
+        """Return body-preamble lines for the given *types*."""
+        data_val_parts: list[str] = [
+            "HNull",
+            "HBool Bool",
+            "HInt Integer",
+            "HFloat Double",
+            "HStr String",
+            "HList [Val]",
+            "HMap [(String, Val)]",
+            "HSet [Val]",
+        ]
+        import_items: list[str] = []
+        if include_hdate and datetime.date in types:
+            data_val_parts.append("HDate Day")
+            import_items.extend(["Day", "fromGregorian"])
+        if include_hdatetime and datetime.datetime in types:
+            data_val_parts.append("HDatetime UTCTime")
+            import_items.extend(
+                [
+                    "UTCTime(..)",
+                    "fromGregorian",
+                    "secondsToDiffTime",
+                    "picosecondsToDiffTime",
+                ]
             )
-            if p
-        },
-    }
-    return {
-        t: always_body + type_specific.get(t, ())
-        for t in (
-            type(None),
-            bool,
-            int,
-            float,
-            str,
-            bytes,
-            datetime.date,
-            datetime.datetime,
-            list,
-            set,
+
+        lines: list[str] = []
+        if import_items:
+            lines.append("import Data.Time (" + ", ".join(import_items) + ")")
+        lines.append("data Val = " + " | ".join(data_val_parts))
+
+        needs_is_string = (
+            bool(types & {str, bytes})
+            or (date_needs_is_string and datetime.date in types)
+            or (datetime_needs_is_string and datetime.datetime in types)
         )
-    }
+        if needs_is_string:
+            lines.extend(is_string_body)
+
+        if float in types:
+            lines.extend((_NUM_INSTANCE, _FRACTIONAL_INSTANCE))
+        elif int in types:
+            lines.append(_NUM_INSTANCE)
+
+        return tuple(lines)
+
+    return _compute
 
 
 @beartype
@@ -490,11 +488,12 @@ class Haskell(metaclass=LanguageCls):
             )
         )
 
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = (
-            _build_scalar_body_preamble(
-                date_format=date_format,
-                datetime_format=datetime_format,
-                is_string_body=_is_string_body,
-            )
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        self.compute_body_preamble: Callable[
+            [frozenset[type]], tuple[str, ...]
+        ] = _build_scalar_body_preamble(
+            date_format=date_format,
+            datetime_format=datetime_format,
+            is_string_body=_is_string_body,
         )
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
