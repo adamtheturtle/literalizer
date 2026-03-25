@@ -201,9 +201,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
     ),
     HASKELL: _VariableSyntax(
         declaration=(
-            "data Val = HNull | HBool Bool | HInt Integer"
-            " | HFloat Double | HStr String | HList [Val]"
-            " | HMap [(String, Val)] | HSet [Val]\n"
+            "data Val = HInt Integer\n"
             "instance Num Val where\n"
             "    fromInteger = HInt\n"
             '    a + b = error "not implemented"\n'
@@ -211,14 +209,11 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
             '    abs a = error "not implemented"\n'
             '    signum a = error "not implemented"\n'
             "    negate (HInt n) = HInt (negate n)\n"
-            "    negate (HFloat f) = HFloat (negate f)\n"
             '    negate _ = error "not implemented"\n'
             "my_var = 42"
         ),
         assignment=(
-            "data Val = HNull | HBool Bool | HInt Integer"
-            " | HFloat Double | HStr String | HList [Val]"
-            " | HMap [(String, Val)] | HSet [Val]\n"
+            "data Val = HInt Integer\n"
             "instance Num Val where\n"
             "    fromInteger = HInt\n"
             '    a + b = error "not implemented"\n'
@@ -226,7 +221,6 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
             '    abs a = error "not implemented"\n'
             '    signum a = error "not implemented"\n'
             "    negate (HInt n) = HInt (negate n)\n"
-            "    negate (HFloat f) = HFloat (negate f)\n"
             '    negate _ = error "not implemented"\n'
             "my_var = 42"
         ),

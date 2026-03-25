@@ -1,5 +1,5 @@
 module Check where
-data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]
+data Val = HInt Integer | HFloat Double | HList [Val]
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
