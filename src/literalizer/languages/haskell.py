@@ -130,6 +130,7 @@ def _build_scalar_body_preamble(
             import_items.extend(
                 [
                     "UTCTime(..)",
+                    "fromGregorian",
                     "secondsToDiffTime",
                     "picosecondsToDiffTime",
                 ]

@@ -526,7 +526,7 @@ def body_preamble_from_scalars(
     """
 
     def _compute(types: frozenset[type]) -> tuple[str, ...]:
-        """Return deduplicated body-preamble lines for *types*."""
+        """Return de-duplicated body-preamble lines for *types*."""
         seen: set[str] = set()
         result: list[str] = []
         for scalar_type, lines in scalar_body_preamble.items():
