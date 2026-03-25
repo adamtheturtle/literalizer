@@ -1,5 +1,5 @@
 module Check where
-data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)] | HSet [Val]
+data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -7,7 +7,6 @@ instance Num Val where
     abs a = error "not implemented"
     signum a = error "not implemented"
     negate (HInt n) = HInt (negate n)
-    negate (HFloat f) = HFloat (negate f)
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HList [

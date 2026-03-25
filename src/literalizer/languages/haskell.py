@@ -66,23 +66,36 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
     )
 
 
-_NUM_INSTANCE = (
-    "instance Num Val where\n"
-    "    fromInteger = HInt\n"
-    '    a + b = error "not implemented"\n'
-    '    a * b = error "not implemented"\n'
-    '    abs a = error "not implemented"\n'
-    '    signum a = error "not implemented"\n'
-    "    negate (HInt n) = HInt (negate n)\n"
-    "    negate (HFloat f) = HFloat (negate f)\n"
-    '    negate _ = error "not implemented"'
-)
-
 _FRACTIONAL_INSTANCE = (
     "instance Fractional Val where\n"
     "    fromRational r = HFloat (realToFrac r)\n"
     '    a / b = error "not implemented"'
 )
+
+
+def _num_instance(*, has_int: bool, has_float: bool) -> str:
+    """Build the ``Num Val`` instance with only relevant constructors."""
+    if has_int:
+        from_integer = "    fromInteger = HInt"
+    else:
+        from_integer = "    fromInteger n = HFloat (fromIntegral n)"
+    negate_parts: list[str] = []
+    if has_int:
+        negate_parts.append("    negate (HInt n) = HInt (negate n)")
+    if has_float:
+        negate_parts.append("    negate (HFloat f) = HFloat (negate f)")
+    negate_parts.append('    negate _ = error "not implemented"')
+    return "\n".join(
+        [
+            "instance Num Val where",
+            from_integer,
+            '    a + b = error "not implemented"',
+            '    a * b = error "not implemented"',
+            '    abs a = error "not implemented"',
+            '    signum a = error "not implemented"',
+            *negate_parts,
+        ]
+    )
 
 
 def _has_microsecond_datetime(*, data: Value) -> bool:
@@ -99,6 +112,18 @@ def _has_microsecond_datetime(*, data: Value) -> bool:
     if isinstance(data, (list, set)):
         return any(_has_microsecond_datetime(data=v) for v in data)
     return False
+
+
+_VAL_CONSTRUCTORS: tuple[tuple[frozenset[type], str], ...] = (
+    (frozenset({type(None)}), "HNull"),
+    (frozenset({bool}), "HBool Bool"),
+    (frozenset({int}), "HInt Integer"),
+    (frozenset({float}), "HFloat Double"),
+    (frozenset({str, bytes}), "HStr String"),
+    (frozenset({list}), "HList [Val]"),
+    (frozenset({dict, ordereddict}), "HMap [(String, Val)]"),
+    (frozenset({set}), "HSet [Val]"),
+)
 
 
 @beartype
@@ -127,15 +152,10 @@ def _build_scalar_body_preamble(
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
-        data_val_parts: list[str] = [
-            "HNull",
-            "HBool Bool",
-            "HInt Integer",
-            "HFloat Double",
-            "HStr String",
-            "HList [Val]",
-            "HMap [(String, Val)]",
-            "HSet [Val]",
+        data_val_parts = [
+            constructor
+            for type_set, constructor in _VAL_CONSTRUCTORS
+            if types & type_set
         ]
         import_items: list[str] = []
         if include_hdate and datetime.date in types:
@@ -164,10 +184,14 @@ def _build_scalar_body_preamble(
         if needs_is_string:
             lines.extend(is_string_body)
 
-        if float in types:
-            lines.extend((_NUM_INSTANCE, _FRACTIONAL_INSTANCE))
-        elif int in types:
-            lines.append(_NUM_INSTANCE)
+        has_float = float in types
+        has_int = int in types
+        if has_float or has_int:
+            lines.append(
+                _num_instance(has_int=has_int, has_float=has_float),
+            )
+        if has_float:
+            lines.append(_FRACTIONAL_INSTANCE)
 
         return tuple(lines)
 
