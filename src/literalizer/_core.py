@@ -908,7 +908,10 @@ def _format_collection_lines(
                 add_sep = i < last_idx or seq_trailing
                 sep = spec.element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{formatted}{sep}")
-        case _ as unreachable:
+        # coverage.py sees a branch from the last case to the end of
+        # the match statement, even though beartype guarantees only
+        # dict, set, and list reach here.
+        case _ as unreachable:  # pragma: no cover
             assert_never(unreachable)
     return lines
 
