@@ -23,6 +23,7 @@ from literalizer._formatters import (
     format_integer_hex,
     format_integer_underscore,
     format_string_backslash_dollar,
+    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -40,6 +41,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
     date_scalar_preamble,
 )
 from literalizer._types import Value
@@ -92,6 +94,14 @@ _kotlin_opener_config = TypedOpenerConfig(
     dict_opener_template="mapOf<String, {type_name}>(",
     set_opener_template="setOf<{type_name}>(",
 )
+
+
+@dataclasses.dataclass(frozen=True)
+class _KotlinDictSpec:
+    """Per-format dict config pieces resolved at init time."""
+
+    opener_template: str
+    fallback: str
 
 
 @beartype
@@ -267,7 +277,14 @@ class Kotlin(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = "map"
+        MAP = _KotlinDictSpec(
+            opener_template="mapOf<String, {type_name}>(",
+            fallback="mapOf<String, Any?>(",
+        )
+        HASH_MAP = _KotlinDictSpec(
+            opener_template="hashMapOf<String, {type_name}>(",
+            fallback="hashMapOf<String, Any?>(",
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -315,8 +332,8 @@ class Kotlin(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        YES = "yes"
-        NO = "no"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -389,10 +406,21 @@ class Kotlin(metaclass=LanguageCls):
                 fallback=set_format.value.set_open([]),
             ),
         )
+        dict_spec: _KotlinDictSpec = dict_format.value
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=openers.dict,
-                fallback="mapOf<String, Any?>(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_kotlin_opener_config.element_to_type(
+                        date_type=_kotlin_opener_config.type_name(
+                            py_type=date_tp
+                        ),
+                        datetime_type=_kotlin_opener_config.type_name(
+                            py_type=dt_tp
+                        ),
+                    ),
+                    opener_template=dict_spec.opener_template,
+                ),
+                fallback=dict_spec.fallback,
             ),
             close=")",
             format_entry=dict_entry_with_separator(
@@ -402,7 +430,7 @@ class Kotlin(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
         )
-        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

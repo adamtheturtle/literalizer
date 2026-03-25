@@ -38,6 +38,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
     date_scalar_preamble,
 )
 from literalizer._types import Value
@@ -113,6 +114,15 @@ def _resolve_sequence_open(
             fallback=fmt.typed_opener_fallback,
         )
     return fmt.sequence_open
+
+
+@dataclasses.dataclass(frozen=True)
+class _ScalaDictSpec:
+    """Per-format dict config pieces resolved at init time."""
+
+    opener_template: str
+    fallback: str
+    preamble_lines: tuple[str, ...]
 
 
 @beartype
@@ -270,7 +280,16 @@ class Scala(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = "map"
+        MAP = _ScalaDictSpec(
+            opener_template="Map[String, {type_name}](",
+            fallback="Map(",
+            preamble_lines=(),
+        )
+        LIST_MAP = _ScalaDictSpec(
+            opener_template="ListMap[String, {type_name}](",
+            fallback="ListMap(",
+            preamble_lines=("import scala.collection.immutable.ListMap",),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -312,8 +331,8 @@ class Scala(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        YES = "yes"
-        NO = "no"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -396,10 +415,17 @@ class Scala(metaclass=LanguageCls):
                 datetime_type=datetime_type_name,
             )
         )
+        dict_spec: _ScalaDictSpec = dict_format.value
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
-                type_to_opener=openers.dict,
-                fallback="Map(",
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_scala_opener_config.element_to_type(
+                        date_type=date_type_name,
+                        datetime_type=datetime_type_name,
+                    ),
+                    opener_template=dict_spec.opener_template,
+                ),
+                fallback=dict_spec.fallback,
             ),
             close=")",
             format_entry=dict_entry_with_separator(
@@ -407,9 +433,9 @@ class Scala(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             ),
             empty_dict=None,
-            preamble_lines=(),
+            preamble_lines=dict_spec.preamble_lines,
         )
-        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

@@ -36,6 +36,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
     date_scalar_preamble,
 )
 from literalizer._types import Value
@@ -240,7 +241,38 @@ class Cpp(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = "map"
+        MAP = DictFormatConfig(
+            open_fn=typed_dict_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_cpp_element_to_type,
+                    opener_template="std::map<std::string, {type_name}>{{",
+                ),
+                fallback="{",
+            ),
+            close="}",
+            format_entry=braced_dict_entry(
+                format_value=passthrough_sequence_entry
+            ),
+            empty_dict=None,
+            preamble_lines=("#include <map>",),
+        )
+        UNORDERED_MAP = DictFormatConfig(
+            open_fn=typed_dict_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_cpp_element_to_type,
+                    opener_template=(
+                        "std::unordered_map<std::string, {type_name}>{{"
+                    ),
+                ),
+                fallback="{",
+            ),
+            close="}",
+            format_entry=braced_dict_entry(
+                format_value=passthrough_sequence_entry
+            ),
+            empty_dict=None,
+            preamble_lines=("#include <unordered_map>",),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -294,8 +326,8 @@ class Cpp(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        YES = "yes"
-        NO = "no"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -354,22 +386,8 @@ class Cpp(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_cpp_element_to_type,
-                    opener_template="std::map<std::string, {type_name}>{{",
-                ),
-                fallback="{",
-            ),
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict=None,
-            preamble_lines=("#include <map>",),
-        )
-        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
+        self.dict_format_config: DictFormatConfig = dict_format.value
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

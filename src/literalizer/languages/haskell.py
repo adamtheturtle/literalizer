@@ -33,6 +33,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
     date_scalar_preamble,
 )
 
@@ -62,6 +63,102 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
         f"(fromGregorian {value.year} {value.month} {value.day}) "
         f"({time_part}))"
     )
+
+
+_NUM_INSTANCE = (
+    "instance Num Val where\n"
+    "    fromInteger = HInt\n"
+    '    a + b = error "not implemented"\n'
+    '    a * b = error "not implemented"\n'
+    '    abs a = error "not implemented"\n'
+    '    signum a = error "not implemented"\n'
+    "    negate (HInt n) = HInt (negate n)\n"
+    "    negate (HFloat f) = HFloat (negate f)\n"
+    '    negate _ = error "not implemented"'
+)
+
+_FRACTIONAL_INSTANCE = (
+    "instance Fractional Val where\n"
+    "    fromRational r = HFloat (realToFrac r)\n"
+    '    a / b = error "not implemented"'
+)
+
+
+@beartype
+def _build_scalar_body_preamble(
+    *,
+    date_format: enum.Enum,
+    datetime_format: enum.Enum,
+    is_string_body: tuple[str, ...],
+) -> dict[type, tuple[str, ...]]:
+    """Build the ``scalar_body_preamble`` dict for Haskell.
+
+    The ``data Val`` declaration and optional ``import Data.Time`` are
+    assembled based on which date/datetime format is selected.  Both
+    are included for every type so that they are emitted regardless of
+    which scalar types appear in the data.
+    """
+    data_val_parts: tuple[str, ...] = (
+        "HNull",
+        "HBool Bool",
+        "HInt Integer",
+        "HFloat Double",
+        "HStr String",
+        "HList [Val]",
+        "HMap [(String, Val)]",
+        "HSet [Val]",
+    )
+    import_items: list[str] = []
+    if date_format.value.type_produced is datetime.date:
+        data_val_parts += ("HDate Day",)
+        import_items.extend(["Day", "fromGregorian"])
+    if datetime_format.value.type_produced is datetime.datetime:
+        data_val_parts += ("HDatetime UTCTime",)
+        import_items.extend(
+            ["UTCTime(..)", "secondsToDiffTime", "picosecondsToDiffTime"]
+        )
+    data_val_line = "data Val = " + " | ".join(data_val_parts)
+    always_body: tuple[str, ...]
+    if import_items:
+        always_body = (
+            "import Data.Time (" + ", ".join(import_items) + ")",
+            data_val_line,
+        )
+    else:
+        always_body = (data_val_line,)
+
+    type_specific: dict[type, tuple[str, ...]] = {
+        str: is_string_body,
+        bytes: is_string_body,
+        int: (_NUM_INSTANCE,),
+        float: (_NUM_INSTANCE, _FRACTIONAL_INSTANCE),
+        **{
+            t: is_string_body
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (
+                    datetime.datetime,
+                    datetime_format.value.preamble_lines,
+                ),
+            )
+            if p
+        },
+    }
+    return {
+        t: always_body + type_specific.get(t, ())
+        for t in (
+            type(None),
+            bool,
+            int,
+            float,
+            str,
+            bytes,
+            datetime.date,
+            datetime.datetime,
+            list,
+            set,
+        )
+    }
 
 
 @beartype
@@ -327,7 +424,9 @@ class Haskell(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
         )
-        self.multiline_trailing_comma = False
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+            multiline_trailing_comma=False,
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -390,44 +489,12 @@ class Haskell(metaclass=LanguageCls):
                 },
             )
         )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {
-            str: _is_string_body,
-            bytes: _is_string_body,
-            int: (
-                "instance Num Val where\n"
-                "    fromInteger = HInt\n"
-                '    a + b = error "not implemented"\n'
-                '    a * b = error "not implemented"\n'
-                '    abs a = error "not implemented"\n'
-                '    signum a = error "not implemented"\n'
-                "    negate (HInt n) = HInt (negate n)\n"
-                "    negate (HFloat f) = HFloat (negate f)\n"
-                '    negate _ = error "not implemented"',
-            ),
-            float: (
-                "instance Num Val where\n"
-                "    fromInteger = HInt\n"
-                '    a + b = error "not implemented"\n'
-                '    a * b = error "not implemented"\n'
-                '    abs a = error "not implemented"\n'
-                '    signum a = error "not implemented"\n'
-                "    negate (HInt n) = HInt (negate n)\n"
-                "    negate (HFloat f) = HFloat (negate f)\n"
-                '    negate _ = error "not implemented"',
-                "instance Fractional Val where\n"
-                "    fromRational r = HFloat (realToFrac r)\n"
-                '    a / b = error "not implemented"',
-            ),
-            **{
-                t: _is_string_body
-                for t, p in (
-                    (datetime.date, date_format.value.preamble_lines),
-                    (
-                        datetime.datetime,
-                        datetime_format.value.preamble_lines,
-                    ),
-                )
-                if p
-            },
-        }
+
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = (
+            _build_scalar_body_preamble(
+                date_format=date_format,
+                datetime_format=datetime_format,
+                is_string_body=_is_string_body,
+            )
+        )
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

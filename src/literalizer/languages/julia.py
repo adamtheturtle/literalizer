@@ -34,6 +34,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
     date_scalar_preamble,
 )
 
@@ -188,7 +189,26 @@ class Julia(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        DICT = "dict"
+        DICT = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="Dict("),
+            close=")",
+            format_entry=dict_entry_with_separator(
+                separator=" => ",
+                format_value=passthrough_sequence_entry,
+            ),
+            empty_dict="Dict()",
+            preamble_lines=(),
+        )
+        ORDERED = DictFormatConfig(
+            open_fn=fixed_dict_open(open_str="OrderedDict("),
+            close=")",
+            format_entry=dict_entry_with_separator(
+                separator=" => ",
+                format_value=passthrough_sequence_entry,
+            ),
+            empty_dict="OrderedDict()",
+            preamble_lines=("using DataStructures",),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -242,8 +262,8 @@ class Julia(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        YES = "yes"
-        NO = "no"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -302,17 +322,8 @@ class Julia(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="Dict("),
-            close=")",
-            format_entry=dict_entry_with_separator(
-                separator=" => ",
-                format_value=passthrough_sequence_entry,
-            ),
-            empty_dict="Dict()",
-            preamble_lines=(),
-        )
-        self.multiline_trailing_comma: bool = trailing_comma.name == "YES"
+        self.dict_format_config: DictFormatConfig = dict_format.value
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

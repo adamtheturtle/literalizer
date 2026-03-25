@@ -27,6 +27,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    TrailingCommaConfig,
 )
 from literalizer._types import Value
 
@@ -233,7 +234,9 @@ class Occam(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
         )
-        self.multiline_trailing_comma = False
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+            multiline_trailing_comma=False,
+        )
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
@@ -281,7 +284,20 @@ class Occam(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} := {value}")
         )
-        self.static_preamble: Sequence[str] = ()
+        self.static_preamble: Sequence[str] = (
+            "MOBILE DATA TYPE LIT IS\n"
+            "  CASE\n"
+            "    lit.null\n"
+            "    lit.bool ; BOOL\n"
+            "    lit.int ; INT\n"
+            "    lit.float ; REAL32\n"
+            "    lit.str ; MOBILE []BYTE\n"
+            "    lit.list ; MOBILE []MOBILE LIT\n"
+            "    lit.map ; MOBILE []MOBILE LIT\n"
+            "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
+            "    lit.set ; MOBILE []MOBILE LIT\n"
+            ":",
+        )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
