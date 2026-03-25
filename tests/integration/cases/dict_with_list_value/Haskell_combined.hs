@@ -17,4 +17,4 @@ my_data :: Val
 my_data = HMap [
     ("name", "Alice"),
     ("scores", HList [10, 20, 30])
-]
+    ]

@@ -3,4 +3,4 @@ data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HLi
 my_data :: Val
 my_data = HList [
     HList [HList [], HList []]
-]
+    ]

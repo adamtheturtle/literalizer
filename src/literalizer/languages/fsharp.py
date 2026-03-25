@@ -355,6 +355,7 @@ class FSharp(metaclass=LanguageCls):
             tuple_dict_entry(format_value=_format_fsharp_entry)
         )
         self.indent = indent
+        self.indent_closing_delimiter = False
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (

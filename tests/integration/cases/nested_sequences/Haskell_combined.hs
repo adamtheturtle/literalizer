@@ -13,4 +13,4 @@ my_data :: Val
 my_data = HList [
     HList [HList [1, 2], HList [3, 4]],
     HList [HList [5]]
-]
+    ]

@@ -9,4 +9,4 @@ my_data = HList [
     -- line 1
     -- line 2
     "a"
-]
+    ]

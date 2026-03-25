@@ -9,4 +9,4 @@ my_data = HList [
     "foo",
     "bar",
     "baz"
-]
+    ]

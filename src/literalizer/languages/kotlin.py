@@ -479,6 +479,7 @@ class Kotlin(metaclass=LanguageCls):
             )
         )
         self.indent = indent
+        self.indent_closing_delimiter = False
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True

@@ -10,4 +10,4 @@ my_data = HSet [
     "apple",
     "banana"  -- banana inline
     -- trailing
-]
+    ]

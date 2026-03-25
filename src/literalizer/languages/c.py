@@ -288,6 +288,7 @@ class C(metaclass=LanguageCls):
             braced_dict_entry(format_value=_format_c_entry)
         )
         self.indent = indent
+        self.indent_closing_delimiter = False
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True

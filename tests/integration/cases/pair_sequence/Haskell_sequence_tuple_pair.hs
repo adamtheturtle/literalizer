@@ -16,4 +16,4 @@ instance Num Val where
 my_data = (
     1,
     "hello"
-)
+    )

@@ -458,6 +458,7 @@ class Java(metaclass=LanguageCls):
             java_dict_entry
         )
         self.indent = indent
+        self.indent_closing_delimiter = False
         self.element_separator = ", "
         self.skip_null_dict_values = True
         self.supports_collection_comments = True

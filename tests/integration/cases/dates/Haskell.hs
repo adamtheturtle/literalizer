@@ -9,4 +9,4 @@ my_data :: Val
 my_data = HMap [
     ("date", HDate (fromGregorian 2024 1 15)),
     ("datetime", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000)))
-]
+    ]

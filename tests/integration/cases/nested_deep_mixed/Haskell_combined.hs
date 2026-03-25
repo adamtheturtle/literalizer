@@ -16,4 +16,4 @@ instance Num Val where
 my_data :: Val
 my_data = HList [
     HList [HList [1, 2], HList ["a", "b"]]
-]
+    ]

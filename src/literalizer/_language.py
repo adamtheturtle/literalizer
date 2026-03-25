@@ -384,6 +384,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     structures (e.g. ``"    "`` for 4-space indent).
     """
 
+    indent_closing_delimiter: bool
+    """Whether to indent the closing delimiter of multi-line structures
+    by one ``indent`` step.
+    """
+
     element_separator: str
     """The separator placed between elements in inline sequences."""
 

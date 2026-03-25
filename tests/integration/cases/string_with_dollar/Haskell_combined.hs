@@ -8,4 +8,4 @@ my_data :: Val
 my_data = HList [
     "price $10",
     "$HOME"
-]
+    ]

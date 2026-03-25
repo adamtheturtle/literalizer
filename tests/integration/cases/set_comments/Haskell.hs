@@ -10,4 +10,4 @@ my_data = HSet [
     -- before banana
     "banana"
     -- trailing
-]
+    ]
