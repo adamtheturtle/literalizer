@@ -421,6 +421,7 @@ class CSharp(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             csharp_dict_entry
         )
+        self.indent = "    "
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

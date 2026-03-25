@@ -345,6 +345,7 @@ class ObjectiveC(metaclass=LanguageCls):
                 format_value=_format_objc_entry,
             )
         )
+        self.indent = "    "
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

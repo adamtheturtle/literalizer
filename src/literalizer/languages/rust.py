@@ -415,6 +415,7 @@ class Rust(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             tuple_dict_entry(format_value=passthrough_sequence_entry)
         )
+        self.indent = "    "
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False

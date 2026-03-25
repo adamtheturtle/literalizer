@@ -251,6 +251,7 @@ class Clojure(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             )
         )
+        self.indent = "    "
         self.multiline_close_indent = ""
         self.element_separator = " "
         self.skip_null_dict_values = False

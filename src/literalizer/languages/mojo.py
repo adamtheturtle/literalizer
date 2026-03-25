@@ -279,6 +279,7 @@ class Mojo(metaclass=LanguageCls):
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             _format_mojo_ordered_map_entry
         )
+        self.indent = "    "
         self.multiline_close_indent = ""
         self.element_separator = ", "
         self.skip_null_dict_values = False
