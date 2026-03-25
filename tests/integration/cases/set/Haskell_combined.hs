@@ -9,4 +9,4 @@ my_data = HSet [
     "apple",
     "banana",
     "cherry"
-    ]
+]

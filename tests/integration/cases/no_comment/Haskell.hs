@@ -7,4 +7,4 @@ instance IsString Val where
 my_data :: Val
 my_data = HMap [
     ("message", "no comment here")
-    ]
+]

@@ -5,4 +5,4 @@ my_data = HList [
     HBool True,
     HBool False,
     HBool True
-    ]
+]

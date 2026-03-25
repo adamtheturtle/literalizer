@@ -16,4 +16,4 @@ instance Num Val where
 my_data :: Val
 my_data = HList [
     HMap [("key", "hello   world"), ("value", 1)]
-    ]
+]

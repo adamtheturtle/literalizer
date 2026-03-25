@@ -19,4 +19,4 @@ my_data = HList [
     "hello",
     HBool True,
     HNull
-    ]
+]

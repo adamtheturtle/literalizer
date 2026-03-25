@@ -20,4 +20,4 @@ my_data = HMap [
     ("port", 8080),
     {- Enable debug mode -}
     ("debug", HBool True)
-    ]
+]

@@ -5,4 +5,4 @@ my_data :: Val
 my_data = HList [
     HDate (fromGregorian 2024 1 15),
     HDate (fromGregorian 2024 2 20)
-    ]
+]

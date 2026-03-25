@@ -17,4 +17,4 @@ my_data :: Val
 my_data = HList [
     HMap [("name", "Alice"), ("age", 30)],
     HMap [("name", "Bob"), ("age", 25)]
-    ]
+]

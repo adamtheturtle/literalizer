@@ -10,4 +10,4 @@ my_data = HList [
     "a",
     -- second
     "b"
-    ]
+]

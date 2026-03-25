@@ -23,4 +23,4 @@ my_data = HList [
     HBool True,
     HBool False,
     "hello \"world\""
-    ]
+]

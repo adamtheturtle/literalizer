@@ -17,4 +17,4 @@ my_data :: Val
 my_data = HList [
     1,
     "hello"
-    ]
+]

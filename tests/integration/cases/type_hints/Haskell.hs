@@ -23,4 +23,4 @@ my_data = HMap [
     ("joined", HDate (fromGregorian 2024 1 15)),
     ("last_login", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000))),
     ("avatar", "48656c6c6f")
-    ]
+]
