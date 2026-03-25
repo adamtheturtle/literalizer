@@ -19,6 +19,7 @@ class SequenceFormatConfig:
     close: str
     supports_heterogeneity: bool
     single_element_trailing_comma: bool
+    supports_trailing_comma: bool
     empty_sequence: str | None
     preamble_lines: tuple[str, ...]
     format_entry: Callable[[Value, str], str]

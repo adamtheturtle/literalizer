@@ -257,6 +257,7 @@ class Cobol(metaclass=LanguageCls):
             close="",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence="05 FILLER PIC X(1) VALUE SPACES.",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,

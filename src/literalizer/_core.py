@@ -896,12 +896,16 @@ def _format_collection_lines(
                 sep = spec.element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{entry}{sep}")
         case list() as list_data:
+            seq_trailing = (
+                trailing_comma
+                and spec.sequence_format_config.supports_trailing_comma
+            )
             last_idx = len(list_data) - 1
             for i, element in enumerate(iterable=list_data):
                 formatted = spec.format_sequence_entry(
                     element, _format_value(value=element, spec=spec)
                 )
-                add_sep = i < last_idx or trailing_comma
+                add_sep = i < last_idx or seq_trailing
                 sep = spec.element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{formatted}{sep}")
         case _:  # pragma: no cover

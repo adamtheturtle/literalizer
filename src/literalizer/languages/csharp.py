@@ -152,6 +152,7 @@ class CSharp(metaclass=LanguageCls):
             preamble_lines=("using System;",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            supports_trailing_comma=False,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
@@ -161,6 +162,7 @@ class CSharp(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            supports_trailing_comma=True,
             empty_sequence="Array.Empty<object>()",
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
@@ -275,7 +277,8 @@ class CSharp(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        NO = "no"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -380,9 +383,7 @@ class CSharp(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
         )
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
-            multiline_trailing_comma=False,
-        )
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
