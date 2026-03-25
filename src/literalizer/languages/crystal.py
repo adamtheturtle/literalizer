@@ -154,7 +154,7 @@ class Crystal(metaclass=LanguageCls):
 
         DECIMAL = MappingProxyType(
             mapping={
-                "NONE": str,
+                "NONE": lambda value: str(object=value),
                 "UNDERSCORE": format_integer_underscore,
             }
         )
@@ -164,10 +164,7 @@ class Crystal(metaclass=LanguageCls):
             numeric_separator: enum.Enum,
         ) -> Callable[[int], str]:
             """Return the integer formatter for the given separator."""
-            formatter: Callable[[int], str] = self.value[  # type: ignore[assignment]
-                numeric_separator.name
-            ]
-            return formatter
+            return self.value[numeric_separator.name]
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
