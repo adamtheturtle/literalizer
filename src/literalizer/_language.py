@@ -119,7 +119,14 @@ class OrderedMapFormatConfig:
 
 @dataclasses.dataclass(frozen=True)
 class TrailingCommaConfig:
-    """Configuration for trailing-comma behavior."""
+    """Configuration for trailing-comma behavior.
+
+    When ``multiline_trailing_comma`` is ``True``, trailing commas are added
+    to multiline collections where the chosen format supports them.
+    Some sequence formats (e.g. Java's ``List.of()``) do not support trailing
+    commas; in those cases the trailing comma is omitted regardless of this
+    setting.
+    """
 
     multiline_trailing_comma: bool
 
@@ -321,7 +328,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """Configuration for dict formatting."""
 
     trailing_comma_config: TrailingCommaConfig
-    """Configuration for trailing-comma behavior."""
+    """Configuration for trailing-comma behavior.
+
+    Trailing commas are only added to collection formats that support them.
+    See :class:`TrailingCommaConfig` for details.
+    """
 
     @property
     def format_bytes(self) -> Callable[[bytes], str]:
