@@ -46,7 +46,6 @@ Usage
            sequence_format=Go.sequence_formats.SLICE,
        ),
        line_prefix="",
-       indent="    ",
        include_delimiters=True,
        variable_name=None,
        new_variable=True,

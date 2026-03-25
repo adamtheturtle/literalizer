@@ -367,6 +367,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """Callable that formats one ordered-map entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    indent: str
+    """The indentation step for elements inside delimiters in multi-line
+    structures (e.g. ``"    "`` for 4-space indent).
+    """
+
     multiline_close_indent: str
     """The prefix to prepend to the closing delimiter of multi-line
     structures.

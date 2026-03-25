@@ -919,14 +919,14 @@ def _literalize(
     data: Value,
     language: Language,
     line_prefix: str,
-    indent: str,
     include_delimiters: bool,
     error_on_coercion: bool,
 ) -> str:
     r"""Convert data to native language literal text.
 
     Each element (or key-value pair) is formatted as a native literal
-    for the given language with a trailing comma and the specified indent.
+    for the given language with a trailing comma and the language's
+    indent.
 
     Args:
         data: A scalar, sequence, or mapping.  Scalars (strings,
@@ -943,10 +943,6 @@ def _literalize(
             (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
             for 2-tab margin).  Positions the generated block at
             the right column in surrounding source code.
-        indent: Indentation step for elements inside delimiters when
-            *include_delimiters* is ``True``
-            (e.g. ``"    "`` for 4-space indent).
-            Ignored when *include_delimiters* is ``False``.
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
@@ -983,7 +979,9 @@ def _literalize(
     if not data and include_delimiters:
         return f"{line_prefix}{_format_value(value=data, spec=spec)}"
 
-    body_prefix = line_prefix + indent if include_delimiters else line_prefix
+    body_prefix = (
+        line_prefix + language.indent if include_delimiters else line_prefix
+    )
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
@@ -1041,7 +1039,6 @@ def literalize_json(
     json_string: str,
     language: Language,
     line_prefix: str,
-    indent: str,
     include_delimiters: bool,
     variable_name: str | None,
     new_variable: bool,
@@ -1061,10 +1058,6 @@ def literalize_json(
             (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
             for 2-tab margin).  Positions the generated block at
             the right column in surrounding source code.
-        indent: Indentation step for elements inside delimiters when
-            *include_delimiters* is ``True``
-            (e.g. ``"    "`` for 4-space indent).
-            Ignored when *include_delimiters* is ``False``.
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
@@ -1100,7 +1093,6 @@ def literalize_json(
         data=data,
         language=language,
         line_prefix=line_prefix,
-        indent=indent,
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
@@ -1299,7 +1291,6 @@ def literalize_yaml(
     yaml_string: str,
     language: Language,
     line_prefix: str,
-    indent: str,
     include_delimiters: bool,
     variable_name: str | None,
     new_variable: bool,
@@ -1322,10 +1313,6 @@ def literalize_yaml(
             (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
             for 2-tab margin).  Positions the generated block at
             the right column in surrounding source code.
-        indent: Indentation step for elements inside delimiters when
-            *include_delimiters* is ``True``
-            (e.g. ``"    "`` for 4-space indent).
-            Ignored when *include_delimiters* is ``False``.
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
@@ -1362,7 +1349,6 @@ def literalize_yaml(
         data=coerced_data,
         language=language,
         line_prefix=line_prefix,
-        indent=indent,
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
@@ -1371,7 +1357,7 @@ def literalize_yaml(
     cp = comment_cfg.prefix
     cs = comment_cfg.suffix
     comment_line_prefix = (
-        line_prefix + indent if include_delimiters else line_prefix
+        line_prefix + language.indent if include_delimiters else line_prefix
     )
 
     resolved = _resolve_yaml_comments(
