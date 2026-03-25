@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
     date_ymd_formatter,
@@ -90,8 +91,11 @@ def _has_microsecond_datetime(*, data: Value) -> bool:
         return bool(data.microsecond)
     if isinstance(data, datetime.date):
         return False
-    if isinstance(data, dict):
-        return any(_has_microsecond_datetime(data=v) for v in data.values())
+    if isinstance(data, (ordereddict, dict)):
+        return any(
+            _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        )
     if isinstance(data, (list, set)):
         return any(_has_microsecond_datetime(data=v) for v in data)
     return False
