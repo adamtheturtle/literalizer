@@ -1,8 +1,0 @@
-var my_data = {
-    "a": <String, int>{"x": 1},
-    "b": 2,
-};
-my_data = {
-    "a": <String, int>{"x": 1},
-    "b": 2,
-};

@@ -187,7 +187,7 @@ class Dart(metaclass=LanguageCls):
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_formatter(template="var {name} = {value};"),
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
         CONST = DeclarationStyleConfig(
             formatter=variable_formatter(template="const {name} = {value};"),
