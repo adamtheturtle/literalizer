@@ -91,7 +91,7 @@ def _format_string_vb(value: str) -> str:
     tabs are expressed via ``vbCrLf``, ``vbTab``, or ``Chr(N)`` string
     concatenation.
     """
-    parts = _vb_string_parts(value)  # type: ignore[misc]
+    parts = _vb_string_parts(value=value)
     if not parts:
         return '""'
     if len(parts) == 1:
