@@ -33,9 +33,6 @@ dependencies = [
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.11.24",
-    # build 1.4.1 breaks in pip-less venvs (uv).
-    # Remove when https://github.com/pypa/build/pull/1003 is released.
-    "build==1.4.0",
     "check-manifest==0.51",
     "deptry==0.25.1",
     "doc8==2.0.0",
