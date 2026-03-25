@@ -126,6 +126,21 @@ _VAL_CONSTRUCTORS: tuple[tuple[frozenset[type], str], ...] = (
 )
 
 
+def _datetime_import_items(
+    *,
+    has_from_gregorian: bool,
+    has_microsecond: bool,
+) -> list[str]:
+    """Return ``Data.Time`` import names needed for datetime values."""
+    items = ["UTCTime(..)"]
+    if not has_from_gregorian:
+        items.append("fromGregorian")
+    items.append("secondsToDiffTime")
+    if has_microsecond:
+        items.append("picosecondsToDiffTime")
+    return items
+
+
 @beartype
 def _build_scalar_body_preamble(
     *,
@@ -163,24 +178,26 @@ def _build_scalar_body_preamble(
             import_items.extend(["Day", "fromGregorian"])
         if include_hdatetime and datetime.datetime in types:
             data_val_parts.append("HDatetime UTCTime")
-            datetime_items = ["UTCTime(..)"]
-            if "fromGregorian" not in import_items:
-                datetime_items.append("fromGregorian")
-            datetime_items.append("secondsToDiffTime")
-            if _has_microsecond_datetime(data=data):
-                datetime_items.append("picosecondsToDiffTime")
-            import_items.extend(datetime_items)
-
-        lines: list[str] = []
-        if import_items:
-            lines.append("import Data.Time (" + ", ".join(import_items) + ")")
-        lines.append("data Val = " + " | ".join(data_val_parts))
+            import_items.extend(
+                _datetime_import_items(
+                    has_from_gregorian="fromGregorian" in import_items,
+                    has_microsecond=_has_microsecond_datetime(data=data),
+                ),
+            )
 
         needs_is_string = (
             bool(types & {str, bytes})
             or (date_needs_is_string and datetime.date in types)
             or (datetime_needs_is_string and datetime.datetime in types)
         )
+        if needs_is_string and "HStr String" not in data_val_parts:
+            data_val_parts.append("HStr String")
+
+        lines: list[str] = []
+        if import_items:
+            lines.append("import Data.Time (" + ", ".join(import_items) + ")")
+        lines.append("data Val = " + " | ".join(data_val_parts))
+
         if needs_is_string:
             lines.extend(is_string_body)
 
