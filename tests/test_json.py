@@ -298,6 +298,29 @@ def test_include_delimiters_with_line_prefix() -> None:
     assert result.code == expected
 
 
+def test_indent_override() -> None:
+    """User-provided indent overrides the language default."""
+    language = Python(
+        date_format=Python.date_formats.PYTHON,
+        datetime_format=Python.datetime_formats.PYTHON,
+        bytes_format=Python.bytes_formats.HEX,
+        sequence_format=Python.sequence_formats.TUPLE,
+        set_format=Python.set_formats.SET,
+        indent="\t",
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj=[True, False]),
+        language=language,
+        line_prefix="",
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = "(\n\tTrue,\n\tFalse,\n)"
+    assert result.code == expected
+
+
 @pytest.mark.parametrize(
     argnames="include_delimiters",
     argvalues=[False, True],
