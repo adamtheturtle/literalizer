@@ -12,6 +12,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
+    date_ymd_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -43,17 +44,6 @@ from literalizer._language import (
     date_scalar_preamble,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_date_python(value: datetime.date) -> str:
-    """Format a date as a Python ``datetime.date(...)`` constructor
-    call.
-    """
-    return (
-        f"datetime.date("
-        f"year={value.year}, month={value.month}, day={value.day})"
-    )
 
 
 @beartype
@@ -179,16 +169,56 @@ def _collection_element_union(
     elements: list[Value],
     recurse: Callable[..., str],
     sort: bool,
+    merge_dicts: bool,
 ) -> str:
     """Return the element union for a collection, or ``"Any"`` if
     empty.
+
+    When *merge_dicts* is ``True``, all dict elements are merged so
+    that their values produce a single ``dict[str, …]`` hint.  This
+    avoids ``dict[str, X] | dict[str, Y]`` unions that mypy rejects
+    because ``dict`` is invariant in its type parameters.
     """
     if not elements:
         return "Any"
+    if merge_dicts:
+        elements = _merge_dict_elements(elements=elements)
     types = [recurse(data=e) for e in elements]
     if sort:
         types.sort()
     return _element_union(types=types)
+
+
+@beartype
+def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
+    """Pool values from like-typed dicts into single representatives."""
+    plain_vals: list[Value] = []
+    ordered_vals: list[Value] = []
+    non_dict: list[Value] = []
+    has_plain = False
+    has_ordered = False
+    for elem in elements:
+        match elem:
+            case ordereddict() | OrderedDict():
+                has_ordered = True
+                ordered_vals.extend(elem.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            case dict():
+                has_plain = True
+                plain_vals.extend(elem.values())
+            case _:
+                non_dict.append(elem)
+    merged: list[Value] = list(non_dict)
+    if has_plain:
+        merged.append(
+            {str(object=i): v for i, v in enumerate(iterable=plain_vals)}
+        )
+    if has_ordered:
+        merged.append(
+            OrderedDict(
+                {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
+            )
+        )
+    return merged
 
 
 @beartype
@@ -242,6 +272,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                 recurse=recurse,
                 sort=False,
+                merge_dicts=False,
             )
             return f"{outer}[str, {val_union}]"
         case set():
@@ -249,6 +280,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 elements=list(data),
                 recurse=recurse,
                 sort=True,
+                merge_dicts=False,
             )
             return f"{set_hint}[{elem_union}]"
         case list():
@@ -256,6 +288,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 elements=data,
                 recurse=recurse,
                 sort=False,
+                merge_dicts=True,
             )
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
@@ -325,7 +358,10 @@ class Python(metaclass=LanguageCls):
         """Date formatting options for Python."""
 
         PYTHON = DateFormatConfig(
-            formatter=_format_date_python,
+            formatter=date_ymd_formatter(
+                template="datetime.date("
+                "year={year}, month={month}, day={day})",
+            ),
             preamble_lines=("import datetime",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)

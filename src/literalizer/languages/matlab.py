@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -107,12 +108,6 @@ def _format_matlab_dict_entry(key: str, _val: Value, value: str) -> str:
 
 
 @beartype
-def _format_date_matlab(value: datetime.date) -> str:
-    """Format a date as a MATLAB ``datetime`` expression."""
-    return f"datetime({value.year}, {value.month}, {value.day})"
-
-
-@beartype
 def _format_datetime_matlab(value: datetime.datetime) -> str:
     """Format a datetime as a MATLAB ``datetime`` expression."""
     parts = (
@@ -150,7 +145,11 @@ class Matlab(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Matlab."""
 
-        MATLAB = DateFormatConfig(formatter=_format_date_matlab)
+        MATLAB = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="datetime({year}, {month}, {day})",
+            ),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
