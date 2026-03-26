@@ -164,7 +164,7 @@ class Dart(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="{"),
             close="}",
-            empty_set="<dynamic>{}",
+            empty_set="<{type}>{{}}",
             preamble_lines=(),
             set_opener_template="",
         )
@@ -293,7 +293,11 @@ class Dart(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=fixed_set_open(open_str="{"),
             close="}",
-            empty_set=f"<{empty_set_type}>{{}}",
+            empty_set=(
+                set_format.value.empty_set.format(type=empty_set_type)
+                if set_format.value.empty_set is not None
+                else None
+            ),
             preamble_lines=(),
             set_opener_template="",
         )

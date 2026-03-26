@@ -165,7 +165,7 @@ class Rust(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="Vec::<String>::new()",
+            empty_sequence="Vec::<{type}>::new()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -376,7 +376,7 @@ class Rust(metaclass=LanguageCls):
         self.false_literal = "false"
         fmt = sequence_format.value
         empty_seq = (
-            f"Vec::<{empty_vec_type}>::new()"
+            fmt.empty_sequence.format(type=empty_vec_type)
             if fmt.empty_sequence is not None
             else None
         )

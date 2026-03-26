@@ -80,6 +80,10 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
+_SET_OPEN_TEMPLATE = "Set<{type}>(["
+_EMPTY_DICT_TEMPLATE = "[String: {type}]()"
+
+
 @beartype
 class Swift(metaclass=LanguageCls):
     """Swift language specification."""
@@ -134,7 +138,7 @@ class Swift(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="[Any]()",
+            empty_sequence="[{type}]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -164,7 +168,7 @@ class Swift(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="Set<AnyHashable>(["),
             close="])",
-            empty_set="Set<AnyHashable>()",
+            empty_set="Set<{type}>()",
             preamble_lines=(),
             set_opener_template="",
         )
@@ -310,7 +314,7 @@ class Swift(metaclass=LanguageCls):
         self.false_literal = "false"
         fmt = sequence_format.value
         empty_seq = (
-            f"[{empty_array_type}]()"
+            fmt.empty_sequence.format(type=empty_array_type)
             if fmt.empty_sequence is not None
             else None
         )
@@ -333,10 +337,14 @@ class Swift(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=fixed_set_open(
-                open_str=f"Set<{empty_set_type}>([",
+                open_str=_SET_OPEN_TEMPLATE.format(type=empty_set_type),
             ),
             close="])",
-            empty_set=f"Set<{empty_set_type}>()",
+            empty_set=(
+                set_format.value.empty_set.format(type=empty_set_type)
+                if set_format.value.empty_set is not None
+                else None
+            ),
             preamble_lines=(),
             set_opener_template="",
         )
@@ -348,7 +356,9 @@ class Swift(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict=f"[String: {empty_dict_value_type}]()",
+            empty_dict=_EMPTY_DICT_TEMPLATE.format(
+                type=empty_dict_value_type,
+            ),
             preamble_lines=(),
             narrowed_open=None,
         )

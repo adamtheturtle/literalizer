@@ -41,6 +41,9 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+_EMPTY_DICT_TEMPLATE = "{{}} of {type} => {type}"
+
+
 @beartype
 class Crystal(metaclass=LanguageCls):
     """Crystal language specification.
@@ -93,7 +96,7 @@ class Crystal(metaclass=LanguageCls):
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
             close="]",
-            empty_sequence="[] of Nil",
+            empty_sequence="[] of {type}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
@@ -126,7 +129,7 @@ class Crystal(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="Set{"),
             close="}",
-            empty_set="Set(Nil).new",
+            empty_set="Set({type}).new",
             preamble_lines=('require "set"',),
             set_opener_template="",
         )
@@ -238,7 +241,7 @@ class Crystal(metaclass=LanguageCls):
         self.false_literal = "false"
         fmt = sequence_format.value
         empty_seq = (
-            f"[] of {empty_collection_type}"
+            fmt.empty_sequence.format(type=empty_collection_type)
             if fmt.empty_sequence is not None
             else None
         )
@@ -262,7 +265,13 @@ class Crystal(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=fixed_set_open(open_str="Set{"),
             close="}",
-            empty_set=f"Set({empty_collection_type}).new",
+            empty_set=(
+                set_format.value.empty_set.format(
+                    type=empty_collection_type,
+                )
+                if set_format.value.empty_set is not None
+                else None
+            ),
             preamble_lines=('require "set"',),
             set_opener_template="",
         )
@@ -275,7 +284,7 @@ class Crystal(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             ),
             empty_dict=(
-                f"{{}} of {empty_collection_type} => {empty_collection_type}"
+                _EMPTY_DICT_TEMPLATE.format(type=empty_collection_type)
             ),
             preamble_lines=(),
             narrowed_open=None,

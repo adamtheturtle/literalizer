@@ -45,6 +45,10 @@ def _format_mojo_ordered_map_entry(key: str, _val: Value, value: str) -> str:
     return f"Tuple({key}, {value})"
 
 
+_SET_OPEN_TEMPLATE = "Set[{type}]("
+_EMPTY_DICT_TEMPLATE = "Dict[{key_type}, {value_type}]()"
+
+
 @beartype
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
@@ -102,7 +106,7 @@ class Mojo(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="List[String]()",
+            empty_sequence="List[{type}]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -139,7 +143,7 @@ class Mojo(metaclass=LanguageCls):
                 fallback="Set[String](",
             ),
             close=")",
-            empty_set="Set[String]()",
+            empty_set="Set[{type}]()",
             preamble_lines=("from std.collections import Set",),
             set_opener_template="",
         )
@@ -248,7 +252,13 @@ class Mojo(metaclass=LanguageCls):
                     fmt.single_element_trailing_comma
                 ),
                 supports_trailing_comma=fmt.supports_trailing_comma,
-                empty_sequence=f"List[{empty_sequence_type}]()",
+                empty_sequence=(
+                    fmt.empty_sequence.format(
+                        type=empty_sequence_type,
+                    )
+                    if fmt.empty_sequence is not None
+                    else None
+                ),
                 preamble_lines=fmt.preamble_lines,
                 format_entry=fmt.format_entry,
                 typed_opener_fallback=fmt.typed_opener_fallback,
@@ -273,10 +283,14 @@ class Mojo(metaclass=LanguageCls):
                     ),
                     opener_template="Set[{type_name}](",
                 ),
-                fallback=f"Set[{empty_set_type}](",
+                fallback=_SET_OPEN_TEMPLATE.format(type=empty_set_type),
             ),
             close=")",
-            empty_set=f"Set[{empty_set_type}]()",
+            empty_set=(
+                set_format.value.empty_set.format(type=empty_set_type)
+                if set_format.value.empty_set is not None
+                else None
+            ),
             preamble_lines=("from std.collections import Set",),
             set_opener_template="",
         )
@@ -291,7 +305,10 @@ class Mojo(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             ),
             empty_dict=(
-                f"Dict[{empty_dict_key_type}, {empty_dict_value_type}]()"
+                _EMPTY_DICT_TEMPLATE.format(
+                    key_type=empty_dict_key_type,
+                    value_type=empty_dict_value_type,
+                )
             ),
             preamble_lines=(),
             narrowed_open=None,

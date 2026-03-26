@@ -57,6 +57,9 @@ class _CSharpDictSpec:
     opener_template: str
 
 
+_ORDERED_MAP_TEMPLATE = "new Dictionary<string, {type_name}> {{"
+
+
 @dataclasses.dataclass(frozen=True)
 class _CSharpSetSpec:
     """Per-format set config pieces resolved at init time."""
@@ -74,14 +77,19 @@ def _csharp_array_config(
     empty_array_type: str,
 ) -> SequenceFormatConfig:
     """Build the ARRAY sequence config with the given element type."""
-    array_open = f"new {empty_array_type}[] {{"
+    fallback_tpl = base.typed_opener_fallback
+    empty_tpl = base.empty_sequence
+    if fallback_tpl is None or empty_tpl is None:
+        msg = "ARRAY format requires typed_opener_fallback and empty_sequence"
+        raise TypeError(msg)
+    array_open = fallback_tpl.format(type=empty_array_type)
     return SequenceFormatConfig(
         sequence_open=fixed_sequence_open(open_str=array_open),
         close=base.close,
         supports_heterogeneity=base.supports_heterogeneity,
         single_element_trailing_comma=base.single_element_trailing_comma,
         supports_trailing_comma=base.supports_trailing_comma,
-        empty_sequence=f"Array.Empty<{empty_array_type}>()",
+        empty_sequence=empty_tpl.format(type=empty_array_type),
         preamble_lines=base.preamble_lines,
         format_entry=base.format_entry,
         typed_opener_fallback=array_open,
@@ -191,10 +199,10 @@ class CSharp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="Array.Empty<object>()",
+            empty_sequence="Array.Empty<{type}>()",
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
-            typed_opener_fallback="new object[] {",
+            typed_opener_fallback="new {type}[] {{",
         )
 
         @property
@@ -449,7 +457,9 @@ class CSharp(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str=f"new Dictionary<string, {empty_dict_value_type}> {{",
+                open_str=_ORDERED_MAP_TEMPLATE.format(
+                    type_name=empty_dict_value_type,
+                ),
                 close="}",
                 preamble_lines=("using System.Collections.Generic;",),
             )

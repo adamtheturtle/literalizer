@@ -102,8 +102,8 @@ class Groovy(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="["),
-            close="] as Set<Object>",
-            empty_set="[] as Set<Object>",
+            close="] as Set<{type}>",
+            empty_set="[] as Set<{type}>",
             preamble_lines=(),
             set_opener_template="",
         )
@@ -209,8 +209,12 @@ class Groovy(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=fixed_set_open(open_str="["),
-            close=f"] as Set<{empty_set_type}>",
-            empty_set=f"[] as Set<{empty_set_type}>",
+            close=set_format.value.close.format(type=empty_set_type),
+            empty_set=(
+                set_format.value.empty_set.format(type=empty_set_type)
+                if set_format.value.empty_set is not None
+                else None
+            ),
             preamble_lines=(),
             set_opener_template="",
         )
