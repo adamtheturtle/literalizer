@@ -9,7 +9,7 @@ from literalizer.languages import ALL_LANGUAGES
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=sorted(ALL_LANGUAGES, key=lambda c: c.__name__),
-    ids=lambda c: c.__name__,
+    ids=[c.__name__ for c in sorted(ALL_LANGUAGES, key=lambda c: c.__name__)],
 )
 def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     """Every language exposes at least one member in each format Enum."""

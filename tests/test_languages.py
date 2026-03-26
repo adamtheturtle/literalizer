@@ -683,7 +683,13 @@ def test_java_list_rejects_null_elements() -> None:
         literalizer.languages.ALL_LANGUAGES,
         key=lambda c: c.__name__,
     ),
-    ids=lambda c: c.__name__,
+    ids=[
+        c.__name__
+        for c in sorted(
+            literalizer.languages.ALL_LANGUAGES,
+            key=lambda c: c.__name__,
+        )
+    ],
 )
 def test_pygments_name_is_valid(
     *,
