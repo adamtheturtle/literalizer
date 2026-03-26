@@ -284,9 +284,15 @@ def _wrap_mojo(content: str) -> str:
 
 @beartype
 def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
-    """Wrap Mojo declaration and assignment in a main function."""
-    # Consume the variable after each assignment so ``--Werror`` does
-    # not flag the "assignment was never used" warning.
+    """Wrap Mojo declaration and assignment in a main function.
+
+    This cannot use ``_newline_combined(wrap=_wrap_mojo)`` because the
+    Mojo ``--Werror`` flag treats an assignment that is immediately
+    overwritten without being read as an error
+    (``assignment to 'x' was never used``).  A bare ``_ = variable``
+    must appear *between* the declaration and the reassignment, not
+    only at the end.
+    """
     use = f"_ = {_VARIABLE_NAME}"
     return _in_mojo_main(
         content=declaration + f"\n{use}\n" + assignment + f"\n{use}",
@@ -1228,7 +1234,7 @@ def test_golden_file(
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=lang_config.lang_cls(),
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=lang_config.wrap_variable_name,
         new_variable=True,
@@ -1272,7 +1278,7 @@ def test_golden_file_combined_variable_forms(
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
@@ -1281,7 +1287,7 @@ def test_golden_file_combined_variable_forms(
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,
@@ -1373,7 +1379,7 @@ def test_format_variant_golden_file(
         result = literalizer.literalize_yaml(
             yaml_string=yaml_string,
             language=variant.spec,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=variant_case.variable_name,
             new_variable=True,
@@ -1461,7 +1467,7 @@ def test_line_ending_combined_variable_forms(
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
@@ -1470,7 +1476,7 @@ def test_line_ending_combined_variable_forms(
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,

@@ -136,7 +136,7 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -150,7 +150,7 @@ def test_ruby_dict() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[{"key": None}]),
         language=RUBY,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -164,13 +164,13 @@ def test_dict_ruby() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"user_1": "team_alpha"}),
         language=RUBY,
-        line_prefix="  ",
+        pre_indent_level=1,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.code == '  "user_1" => "team_alpha",'
+    assert result.code == '    "user_1" => "team_alpha",'
 
 
 def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
@@ -180,7 +180,7 @@ def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"name": "Alice", "age": 30}),
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -202,7 +202,7 @@ def test_java_dict_skips_null_values() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -223,7 +223,7 @@ def test_java_dict_skips_null_values_no_include_delimiters() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"a": None, "b": 1}),
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -240,7 +240,7 @@ def test_java_dict_all_null_values_include_delimiters() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"a": None, "b": None}),
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -255,7 +255,7 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -285,7 +285,7 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -315,7 +315,7 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -339,7 +339,7 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -363,7 +363,7 @@ def test_java_yaml_ordered_map_skips_null_values() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -382,7 +382,7 @@ def test_java_sequence_include_delimiters_uses_braces() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[1, "hello", True]),
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -424,7 +424,7 @@ def test_java_typed_array_opener(
     result = literalize_json(
         json_string=json.dumps(obj=json_input),
         language=JAVA,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -459,7 +459,7 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
             bytes_format=Matlab.bytes_formats.HEX,
             sequence_format=Matlab.sequence_formats.CELL_ARRAY,
         ),
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -483,7 +483,7 @@ def test_matlab_dict_key_with_quote() -> None:
             bytes_format=Matlab.bytes_formats.HEX,
             sequence_format=Matlab.sequence_formats.CELL_ARRAY,
         ),
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -502,7 +502,7 @@ def test_toml_integer_dict_key() -> None:
     result = literalize_yaml(
         yaml_string="1: value\n",
         language=TOML,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -534,7 +534,7 @@ def test_cobol_string_control_characters() -> None:
     result = literalize_yaml(
         yaml_string='"line1\\nline2"\n',
         language=COBOL,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -548,7 +548,7 @@ def test_cobol_string_tab_characters() -> None:
     result = literalize_yaml(
         yaml_string='"col1\\tcol2"\n',
         language=COBOL,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -576,7 +576,7 @@ def test_cobol_level_number_cap() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=COBOL,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -606,7 +606,7 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=COBOL,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -625,9 +625,9 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=FORTRAN,
+        pre_indent_level=0,
         variable_name="cfg",
         include_delimiters=True,
-        line_prefix="",
         new_variable=True,
         error_on_coercion=False,
     )
@@ -643,7 +643,7 @@ def test_java_list_format() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[1, "hello", True]),
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -669,7 +669,7 @@ def test_java_list_rejects_null_elements() -> None:
         literalize_json(
             json_string=json.dumps(obj=[1, None, "hello"]),
             language=spec,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    ListType,
     braced_dict_entry,
     fixed_set_open,
     format_bytes_hex,
@@ -73,23 +74,27 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
     return " + ".join(parts)
 
 
-_cpp_element_to_type = make_element_to_type(
-    str_type="std::string",
-    bool_type="bool",
-    int_type="int",
-    float_type="double",
-    mixed_numeric_type="double",
-    bytes_type="std::string",
-    list_template="std::vector<{inner}>",
-)
+@beartype
+def _make_cpp_element_to_type() -> Callable[[type | ListType], str | None]:
+    """Build the C++ element-to-type resolver."""
+    return make_element_to_type(
+        str_type="std::string",
+        bool_type="bool",
+        int_type="int",
+        float_type="double",
+        mixed_numeric_type="double",
+        bytes_type="std::string",
+        list_template="std::vector<{inner}>",
+    )
 
 
 @beartype
 def _cpp_array_open(items: list[Value]) -> str:
     """Infer element type and return a ``std::array<T, N>`` opener."""
-    type_name = _cpp_element_to_type(type(items[0])) if items else None
+    element_to_type = _make_cpp_element_to_type()
+    type_name = element_to_type(type(items[0])) if items else None
     if type_name is None or not all(
-        _cpp_element_to_type(type(i)) == type_name for i in items
+        element_to_type(type(i)) == type_name for i in items
     ):
         return "{"
     return f"std::array<{type_name}, {len(items)}>{{"
@@ -180,7 +185,7 @@ class Cpp(metaclass=LanguageCls):
         INITIALIZER_LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_cpp_element_to_type,
+                    element_to_type=_make_cpp_element_to_type(),
                     opener_template="std::vector<{type_name}>{{",
                 ),
                 fallback="{",
@@ -247,7 +252,7 @@ class Cpp(metaclass=LanguageCls):
         MAP = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_cpp_element_to_type,
+                    element_to_type=_make_cpp_element_to_type(),
                     opener_template="std::map<std::string, {type_name}>{{",
                 ),
                 fallback="{",
@@ -262,7 +267,7 @@ class Cpp(metaclass=LanguageCls):
         UNORDERED_MAP = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_cpp_element_to_type,
+                    element_to_type=_make_cpp_element_to_type(),
                     opener_template=(
                         "std::unordered_map<std::string, {type_name}>{{"
                     ),

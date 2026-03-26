@@ -66,13 +66,6 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
     )
 
 
-_FRACTIONAL_INSTANCE = (
-    "instance Fractional Val where\n"
-    "    fromRational r = HFloat (realToFrac r)\n"
-    '    a / b = error "not implemented"'
-)
-
-
 def _num_instance(*, has_int: bool, has_float: bool) -> str:
     """Build the ``Num Val`` instance with only relevant constructors."""
     if has_int:
@@ -114,18 +107,6 @@ def _has_microsecond_datetime(*, data: Value) -> bool:
     return False
 
 
-_VAL_CONSTRUCTORS: tuple[tuple[frozenset[type], str], ...] = (
-    (frozenset({type(None)}), "HNull"),
-    (frozenset({bool}), "HBool Bool"),
-    (frozenset({int}), "HInt Integer"),
-    (frozenset({float}), "HFloat Double"),
-    (frozenset({str, bytes}), "HStr String"),
-    (frozenset({list}), "HList [Val]"),
-    (frozenset({dict, ordereddict}), "HMap [(String, Val)]"),
-    (frozenset({set}), "HSet [Val]"),
-)
-
-
 def _datetime_import_items(
     *,
     has_from_gregorian: bool,
@@ -149,7 +130,11 @@ def _numeric_instances(*, types: frozenset[type]) -> list[str]:
     if has_float or has_int:
         result.append(_num_instance(has_int=has_int, has_float=has_float))
     if has_float:
-        result.append(_FRACTIONAL_INSTANCE)
+        result.append(
+            "instance Fractional Val where\n"
+            "    fromRational r = HFloat (realToFrac r)\n"
+            '    a / b = error "not implemented"'
+        )
     return result
 
 
@@ -185,7 +170,16 @@ def _build_scalar_body_preamble(
         """
         data_val_parts = [
             constructor
-            for type_set, constructor in _VAL_CONSTRUCTORS
+            for type_set, constructor in (
+                (frozenset({type(None)}), "HNull"),
+                (frozenset({bool}), "HBool Bool"),
+                (frozenset({int}), "HInt Integer"),
+                (frozenset({float}), "HFloat Double"),
+                (frozenset({str, bytes}), "HStr String"),
+                (frozenset({list}), "HList [Val]"),
+                (frozenset({dict, ordereddict}), "HMap [(String, Val)]"),
+                (frozenset({set}), "HSet [Val]"),
+            )
             if types & type_set
         ]
         import_items: list[str] = []

@@ -12,6 +12,8 @@ from beartype import beartype
 from literalizer._formatters import (
     braced_dict_entry,
     dict_entry_with_separator,
+    fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -90,19 +92,6 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     )
 
 
-_go_element_to_type = make_element_to_type(
-    str_type="string",
-    bool_type="bool",
-    int_type="int",
-    float_type="float64",
-    mixed_numeric_type="float64",
-    bytes_type="string",
-    date_type="time.Time",
-    datetime_type="time.Time",
-    list_template="[]{inner}",
-)
-
-
 @beartype
 def _format_go_set_entry(_original: Value, item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
@@ -179,13 +168,7 @@ class Go(metaclass=LanguageCls):
         """Sequence type options for Go."""
 
         SLICE = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_go_element_to_type,
-                    opener_template="[]{type_name}{{",
-                ),
-                fallback="[]any{",
-            ),
+            sequence_open=fixed_sequence_open(open_str="[]any{"),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -207,13 +190,7 @@ class Go(metaclass=LanguageCls):
         """Set type options for Go."""
 
         SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_go_element_to_type,
-                    opener_template="map[{type_name}]struct{{}}{{",
-                ),
-                fallback="map[any]struct{}{",
-            ),
+            set_open=fixed_set_open(open_str="map[any]struct{}{"),
             close="}",
             empty_set=None,
             preamble_lines=(),

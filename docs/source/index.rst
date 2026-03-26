@@ -45,7 +45,7 @@ Usage
            bytes_format=Go.bytes_formats.HEX,
            sequence_format=Go.sequence_formats.SLICE,
        ),
-       line_prefix="",
+       pre_indent_level=0,
        include_delimiters=True,
        variable_name=None,
        new_variable=True,
