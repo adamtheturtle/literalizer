@@ -3,7 +3,6 @@
 import datetime
 import enum
 import functools
-import re
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
@@ -118,43 +117,10 @@ def _format_inline_type_hint_declaration(
     return f"{name}: {hint} = {value}"
 
 
-_DICT_HINT_RE = re.compile(pattern=r"^(dict|OrderedDict)\[str, (.+)\]$")
-
-
-@beartype
-def _merge_dict_hints(*, types: list[str]) -> list[str]:
-    """Merge dict hints that share the same outer type.
-
-    Multiple ``dict[str, X]`` entries are collapsed into a single
-    ``dict[str, X | Y]`` so that the resulting union is compatible with
-    mypy's invariant type checking for ``dict``.
-    """
-    by_outer: dict[str, list[str]] = {}
-    non_dict: list[str] = []
-    for hint in types:
-        m = _DICT_HINT_RE.match(string=hint)
-        if m:
-            by_outer.setdefault(m.group(1), []).append(m.group(2))
-        else:
-            non_dict.append(hint)
-    merged: list[str] = non_dict
-    for outer, val_hints in by_outer.items():
-        # Split each value hint on " | " and deduplicate across all dicts.
-        parts: list[str] = []
-        for vh in val_hints:
-            parts.extend(vh.split(sep=" | "))
-        unique_parts = list(dict.fromkeys(parts))
-        val_union = " | ".join(unique_parts)
-        merged.append(f"{outer}[str, {val_union}]")
-    return merged
-
-
 @beartype
 def _element_union(*, types: list[str]) -> str:
     """Remove duplicate *types* and join them into a union."""
     unique: list[str] = list(dict.fromkeys(types))
-    unique = _merge_dict_hints(types=unique)
-    unique = list(dict.fromkeys(unique))
     if len(unique) == 1:
         return unique[0]
     return " | ".join(unique)
@@ -166,16 +132,47 @@ def _collection_element_union(
     elements: list[Value],
     recurse: Callable[..., str],
     sort: bool = False,
+    merge_dicts: bool = False,
 ) -> str:
     """Return the element union for a collection, or ``"Any"`` if
     empty.
+
+    When *merge_dicts* is ``True``, all dict elements are merged so
+    that their values produce a single ``dict[str, …]`` hint.  This
+    avoids ``dict[str, X] | dict[str, Y]`` unions that mypy rejects
+    because ``dict`` is invariant in its type parameters.
     """
     if not elements:
         return "Any"
+    if merge_dicts:
+        elements = _merge_dict_elements(elements=elements)
     types = [recurse(data=e) for e in elements]
     if sort:
         types.sort()
     return _element_union(types=types)
+
+
+@beartype
+def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
+    """Pool values from like-typed dicts into single representatives."""
+    plain_vals: list[Value] = []
+    ordered_vals: list[Value] = []
+    non_dict: list[Value] = []
+    for elem in elements:
+        if isinstance(elem, (ordereddict, OrderedDict)):
+            ordered_vals.extend(elem.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        elif isinstance(elem, dict):
+            plain_vals.extend(elem.values())
+        else:
+            non_dict.append(elem)
+    merged: list[Value] = list(non_dict)
+    if plain_vals:
+        merged.append({f"_k{i}": v for i, v in enumerate(plain_vals)})
+    if ordered_vals:
+        merged.append(
+            OrderedDict({f"_k{i}": v for i, v in enumerate(ordered_vals)})
+        )
+    return merged
 
 
 @beartype
@@ -241,6 +238,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             elem_union = _collection_element_union(
                 elements=data,
                 recurse=recurse,
+                merge_dicts=True,
             )
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
