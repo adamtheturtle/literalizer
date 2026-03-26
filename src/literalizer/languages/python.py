@@ -307,8 +307,12 @@ class Python(metaclass=LanguageCls):
             variable declarations.
 
             * ``VariableTypeHints.NONE`` — bare assignment,
-              e.g. ``my_var = {...}``.
-            * ``VariableTypeHints.INLINE`` — with type annotation,
+              e.g. ``my_var = {...}``.  Empty collections still
+              receive a type annotation so that type-checkers can
+              infer the element types,
+              e.g. ``my_var: dict[str, Any] = {}``.
+            * ``VariableTypeHints.INLINE`` — every declaration has
+              a type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
