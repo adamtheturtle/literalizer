@@ -300,6 +300,11 @@ class Cobol(metaclass=LanguageCls):
 
         DEFAULT = "default"
 
+    class EmptyDictKey(enum.Enum):
+        """Empty dict key options."""
+
+        ALLOW = "allow"
+
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 

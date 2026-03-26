@@ -393,6 +393,7 @@ ignore_names = [
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
     # Enum members accessed by consumers iterating format enums
+    "ALLOW",
     "ARRAY",
     "BINARY",
     "BLOCK",
