@@ -1,0 +1,8 @@
+var my_data = listOf<Any?>(
+    mapOf<String, String>("first" to "Alice", "last" to "Smith"),
+    mapOf<String, String>("first" to "Bob", "last" to "Jones"),
+)
+my_data = listOf<Any?>(
+    mapOf<String, String>("first" to "Alice", "last" to "Smith"),
+    mapOf<String, String>("first" to "Bob", "last" to "Jones"),
+)
