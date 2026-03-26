@@ -362,7 +362,6 @@ class Scala(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         declaration_style: DeclarationStyles = DeclarationStyles.VAL,
         dict_format: DictFormats = DictFormats.MAP,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
@@ -413,6 +412,7 @@ class Scala(metaclass=LanguageCls):
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=self._opener_config.element_to_type(
+                        list_template=None,
                         date_type=date_type_name,
                         datetime_type=datetime_type_name,
                     ),

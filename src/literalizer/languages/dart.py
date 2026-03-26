@@ -272,7 +272,6 @@ class Dart(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         declaration_style: DeclarationStyles = DeclarationStyles.FINAL,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
@@ -299,6 +298,7 @@ class Dart(metaclass=LanguageCls):
         openers = cfg.build(
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(py_type=dt_tp),
+            set_opener_template=None,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

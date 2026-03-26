@@ -336,9 +336,9 @@ class TypedOpenerConfig:
     def element_to_type(
         self,
         *,
-        list_template: str | None = None,
-        date_type: str | None = None,
-        datetime_type: str | None = None,
+        list_template: str | None,
+        date_type: str | None,
+        datetime_type: str | None,
     ) -> Callable[[type | ListType], str | None]:
         """Build an element-to-type resolver.
 
@@ -362,9 +362,9 @@ class TypedOpenerConfig:
     def build(
         self,
         *,
-        date_type: str | None = None,
-        datetime_type: str | None = None,
-        set_opener_template: str | None = None,
+        date_type: str | None,
+        datetime_type: str | None,
+        set_opener_template: str | None,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.
@@ -375,6 +375,7 @@ class TypedOpenerConfig:
         ``TypedOpenerConfig`` to serve multiple set formats.
         """
         element_type_resolver = self.element_to_type(
+            list_template=None,
             date_type=date_type,
             datetime_type=datetime_type,
         )
@@ -755,14 +756,14 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
 @beartype
 def make_element_to_type(
     *,
-    str_type: str | None = None,
-    bool_type: str | None = None,
-    int_type: str | None = None,
-    float_type: str | None = None,
-    bytes_type: str | None = None,
-    mixed_numeric_type: str | None = None,
-    date_type: str | None = None,
-    datetime_type: str | None = None,
+    str_type: str | None,
+    bool_type: str | None,
+    int_type: str | None,
+    float_type: str | None,
+    bytes_type: str | None,
+    mixed_numeric_type: str | None,
+    date_type: str | None,
+    datetime_type: str | None,
     list_template: str,
 ) -> Callable[[type | ListType], str | None]:
     """Create a recursive type resolver from scalar types and a list

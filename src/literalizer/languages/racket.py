@@ -190,7 +190,6 @@ class Racket(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.SEMICOLON,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         declaration_style: DeclarationStyles = DeclarationStyles.DEFINE,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

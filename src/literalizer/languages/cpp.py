@@ -84,6 +84,8 @@ def _make_cpp_element_to_type() -> Callable[[type | ListType], str | None]:
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="std::string",
+        date_type=None,
+        datetime_type=None,
         list_template="std::vector<{inner}>",
     )
 
@@ -377,7 +379,6 @@ class Cpp(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         declaration_style: DeclarationStyles = DeclarationStyles.AUTO,
         dict_format: DictFormats = DictFormats.MAP,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
