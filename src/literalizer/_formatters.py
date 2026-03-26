@@ -859,14 +859,12 @@ def make_element_to_type(
         if isinstance(element_type, DictType):
             if dict_type_template is None:
                 return None
-            if element_type.value_type is None:
-                inner = fallback_value_type
-            else:
-                inner = element_to_type(element_type=element_type.value_type)
-                if inner is None:
-                    inner = fallback_value_type
-            if inner is None:  # pragma: no cover
-                return None
+            resolved: str | None = None
+            if element_type.value_type is not None:
+                resolved = element_to_type(
+                    element_type=element_type.value_type,
+                )
+            inner = resolved if resolved is not None else fallback_value_type
             return dict_type_template.format(inner=inner)
         if isinstance(element_type, ListType):
             inner = element_to_type(element_type=element_type.inner)

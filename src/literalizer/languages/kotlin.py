@@ -90,10 +90,7 @@ def _kotlin_list_sequence_open(
     ) -> str | None:
         """Resolve element type, preferring specialized Kotlin openers."""
         if isinstance(element_type, DictType):
-            type_name = dict_resolver(element_type)
-            if type_name is not None:
-                return f"listOf<{type_name}>("
-            return None  # pragma: no cover
+            return f"listOf<{dict_resolver(element_type)}>("
         return _kotlin_type_to_opener(element_type=element_type)
 
     return typed_sequence_open(
@@ -108,11 +105,12 @@ def _kotlin_type_to_opener(
 ) -> str | None:
     """Map a Python element type to a Kotlin collection opener.
 
-    Used by the ARRAY sequence format.  ``DictType`` is not handled
-    here — for the LIST format, :func:`_kotlin_list_sequence_open`
-    provides full ``DictType`` support via the config resolver.
+    Used as the scalar/list fallback for the LIST format (via
+    :func:`_kotlin_list_sequence_open`).  Returns ``None`` for
+    ``DictType`` — the LIST format handles dicts via the config
+    resolver before calling this function.
     """
-    if isinstance(element_type, DictType):  # pragma: no cover
+    if isinstance(element_type, DictType):
         return None
     if isinstance(element_type, ListType):
         inner = _kotlin_type_to_opener(element_type=element_type.inner)
