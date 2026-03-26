@@ -159,6 +159,7 @@ def _compute_preamble(
     *,
     data: Value,
     language: Language,
+    has_variable_declaration: bool,
 ) -> _PreambleResult:
     """Compute preamble lines from the data types present and the
     language configuration.
@@ -174,7 +175,8 @@ def _compute_preamble(
     collection = _collection_preamble(types=types, language=language)
     type_hint = (
         language.type_hint_collection_preamble_lines
-        if types & {dict, list, set, ordereddict}
+        if has_variable_declaration
+        and types & {dict, list, set, ordereddict}
         and _has_empty_collection(data=data)
         else ()
     )
@@ -1229,7 +1231,11 @@ def literalize_json(
             else language.format_variable_assignment
         )
         result = formatter(variable_name, result, data)
-    computed = _compute_preamble(data=data, language=language)
+    computed = _compute_preamble(
+        data=data,
+        language=language,
+        has_variable_declaration=variable_name is not None and new_variable,
+    )
     preamble = tuple(language.static_preamble) + computed.header
     if computed.body:
         result = "\n".join(computed.body) + "\n" + result
@@ -1516,7 +1522,11 @@ def literalize_yaml(
             line_prefix=line_prefix,
         )
 
-    computed = _compute_preamble(data=coerced_data, language=language)
+    computed = _compute_preamble(
+        data=coerced_data,
+        language=language,
+        has_variable_declaration=variable_name is not None and new_variable,
+    )
     preamble = tuple(language.static_preamble) + computed.header
     if computed.body:
         result = "\n".join(computed.body) + "\n" + result
