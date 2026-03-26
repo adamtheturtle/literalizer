@@ -259,7 +259,7 @@ def test_indent_tabs() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.code == "        true,\n        false,"
+    assert result.code == "\t\ttrue,\n\t\tfalse,"
 
 
 def test_include_delimiters() -> None:
@@ -493,8 +493,8 @@ def test_part2_sample_go() -> None:
         error_on_coercion=False,
     )
     lines = result.code.split(sep="\n")
-    assert lines[0] == '        []any{"user_1", 49, 1000.0},'
-    assert lines[1] == '        []any{"user_9", 10, 1003.0},'
+    assert lines[0] == '\t\t[]any{"user_1", 49, 1000.0},'
+    assert lines[1] == '\t\t[]any{"user_9", 10, 1003.0},'
 
 
 def test_literalize_json_invalid_is_parse_error() -> None:

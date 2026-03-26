@@ -2,12 +2,12 @@ package main
 
 func main() {
 my_data := []string{
-    "a",
-    // trailing
+	"a",
+	// trailing
 }
 my_data = []string{
-    "a",
-    // trailing
+	"a",
+	// trailing
 }
 _ = my_data
 }

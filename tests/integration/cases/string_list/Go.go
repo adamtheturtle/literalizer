@@ -2,9 +2,9 @@ package main
 
 func main() {
 my_data := []string{
-    "foo",
-    "bar",
-    "baz",
+	"foo",
+	"bar",
+	"baz",
 }
 _ = my_data
 }
