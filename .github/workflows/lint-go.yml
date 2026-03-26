@@ -41,3 +41,6 @@ jobs:
       - name: Check Go syntax
         if: steps.files.outputs.found == 'true'
         run: xargs -0 gofmt -e < /tmp/files-to-lint
+      - name: Check Go compilation
+        if: steps.files.outputs.found == 'true'
+        run: xargs -0 -n1 go vet < /tmp/files-to-lint

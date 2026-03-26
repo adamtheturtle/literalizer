@@ -9,6 +9,6 @@ struct _Any {
 void _check() {
 _Any my_data = {
     {{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}},
-    std::map<std::string, std::string>{{"type", "create"}, {"pr_id", "pr_2"}},
+    {{"type", "create"}, {"pr_id", "pr_2"}},
 };
 }

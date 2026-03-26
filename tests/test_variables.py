@@ -272,7 +272,7 @@ def test_variable_declaration_json(
     result = literalize_json(
         json_string="42",
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name="my_var",
         new_variable=True,
@@ -291,7 +291,7 @@ def test_variable_declaration_yaml(
     result = literalize_yaml(
         yaml_string="42\n",
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name="my_var",
         new_variable=True,
@@ -312,7 +312,7 @@ def test_existing_variable_assignment_json(
     result = literalize_json(
         json_string="42",
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name="my_var",
         new_variable=False,
@@ -333,7 +333,7 @@ def test_existing_variable_assignment_yaml(
     result = literalize_yaml(
         yaml_string="42\n",
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name="my_var",
         new_variable=False,
@@ -362,7 +362,7 @@ def test_python_inline_type_hints_scalars(
     result = literalize_json(
         json_string=json_input,
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name="my_var",
         new_variable=True,
@@ -376,7 +376,7 @@ def test_python_inline_type_hints_dict() -> None:
     result = literalize_json(
         json_string='{"a": 1}',
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -396,7 +396,7 @@ def test_python_inline_type_hints_tuple() -> None:
     result = literalize_json(
         json_string="[1, 2]",
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -427,7 +427,7 @@ def test_python_inline_type_hints_list() -> None:
     result = literalize_json(
         json_string="[1, 2]",
         language=lang,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -448,7 +448,7 @@ def test_python_inline_type_hints_assignment_no_hint() -> None:
     result = literalize_json(
         json_string="42",
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name="my_var",
         new_variable=False,
@@ -463,7 +463,7 @@ def test_python_inline_type_hints_set_with_colon_in_string() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -484,7 +484,7 @@ def test_python_inline_type_hints_set_of_integers() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -506,7 +506,7 @@ def test_python_inline_type_hints_nested_list_in_list() -> None:
     result = literalize_json(
         json_string='[true, "hi", [1, 2], null]',
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -529,7 +529,7 @@ def test_python_inline_type_hints_dict_with_list_values() -> None:
     result = literalize_json(
         json_string='{"key": [1, 2, 3]}',
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -549,7 +549,7 @@ def test_python_inline_type_hints_empty_list() -> None:
     result = literalize_json(
         json_string="[]",
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,
@@ -572,7 +572,7 @@ def test_python_inline_type_hints_ordered_dicts_in_sequence() -> None:
     result = literalize_yaml(
         yaml_string=yaml_input,
         language=PYTHON_INLINE_HINTS,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
         new_variable=True,

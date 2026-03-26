@@ -56,7 +56,7 @@ def test_literalize_yaml_empty_sequence() -> None:
     result = literalize_yaml(
         yaml_string="[]\n",
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -71,7 +71,7 @@ def test_literalize_yaml_sequence() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -87,7 +87,7 @@ def test_literalize_yaml_mapping() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -117,7 +117,7 @@ def test_literalize_yaml_indent_override() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -133,7 +133,7 @@ def test_literalize_yaml_invalid() -> None:
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=False,
             variable_name=None,
             new_variable=True,
@@ -147,7 +147,7 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
         literalize_yaml(
             yaml_string=":\n  :\n    - ][",
             language=PYTHON,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=False,
             variable_name=None,
             new_variable=True,
@@ -178,7 +178,7 @@ def test_literalize_yaml_scalar(
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -195,7 +195,7 @@ def test_literalize_yaml_date() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -212,7 +212,7 @@ def test_literalize_yaml_datetime() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -235,7 +235,7 @@ def test_cpp_array_binary_typed() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=cpp_array,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -254,7 +254,7 @@ def test_cpp_array_null_list_fallback() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=cpp_array,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -270,7 +270,7 @@ def test_literalize_yaml_binary() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -286,7 +286,7 @@ def test_yaml_set_inline_in_sequence() -> None:
     result = literalize_yaml(
         yaml_string="- !!set\n  ? a\n  ? b\n",
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -300,7 +300,7 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
     result = literalize_yaml(
         yaml_string="- !!set\n  ? a\n",
         language=GO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -314,7 +314,7 @@ def test_yaml_empty_set_inline() -> None:
     result = literalize_yaml(
         yaml_string="- !!set {}\n",
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -339,7 +339,7 @@ def test_ordered_map_nested_in_sequence() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -366,7 +366,7 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -394,7 +394,7 @@ def test_coerce_heterogeneous_set() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -421,7 +421,7 @@ def test_coerce_heterogeneous_date_in_collection() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -450,7 +450,7 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -479,7 +479,7 @@ def test_homogeneous_date_list_mojo() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -508,7 +508,7 @@ def test_homogeneous_datetime_list_mojo() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -536,7 +536,7 @@ def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -564,7 +564,7 @@ def test_coerce_mixed_dict_values_none_with_list() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -592,7 +592,7 @@ def test_coerce_mixed_dict_values_set_with_string() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -622,7 +622,7 @@ def test_coerce_mixed_dict_values_with_list() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -652,7 +652,7 @@ def test_coerce_mixed_ordered_map_values() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -682,7 +682,7 @@ def test_r_empty_dict_key_positional() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -710,7 +710,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -739,7 +739,7 @@ def test_r_empty_dict_key_error() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=spec,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -760,7 +760,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -782,7 +782,7 @@ def test_error_on_coercion_raises_for_heterogeneous_list() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -804,7 +804,7 @@ def test_error_on_coercion_raises_for_heterogeneous_dict() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -818,7 +818,7 @@ def test_error_on_coercion_no_raise_for_homogeneous() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -841,7 +841,7 @@ def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -872,7 +872,7 @@ def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -893,7 +893,7 @@ def test_error_on_coercion_raises_for_heterogeneous_ordered_map() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -914,7 +914,7 @@ def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -933,7 +933,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -961,7 +961,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -989,7 +989,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -1019,7 +1019,7 @@ def test_error_on_coercion_raises_for_mixed_dict_values() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -1040,7 +1040,7 @@ def test_error_on_coercion_raises_for_mixed_list_values() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -1061,7 +1061,7 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
         literalize_yaml(
             yaml_string=yaml_string,
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,

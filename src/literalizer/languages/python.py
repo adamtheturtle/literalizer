@@ -88,8 +88,55 @@ def _format_bytes_python(value: bytes) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
-    """Format a Python variable declaration."""
+def _needs_type_annotation(data: Value) -> bool:
+    """Whether *data* needs a type annotation for type-checkers.
+
+    This is true when *data* is or contains an empty collection,
+    because type-checkers cannot infer the element types.
+    """
+    match data:
+        case dict():
+            return len(data) == 0 or any(
+                _needs_type_annotation(data=v) for v in data.values()
+            )
+        case set():
+            return len(data) == 0
+        case list():
+            return len(data) == 0 or any(
+                _needs_type_annotation(data=e) for e in data
+            )
+        case _:
+            return False
+
+
+@beartype
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    bytes_hint: str,
+    date_hint: str,
+    datetime_hint: str,
+    sequence_hint: str,
+    set_hint: str,
+) -> str:
+    """Format a Python variable declaration.
+
+    For empty collections a type annotation is added so that
+    type-checkers can infer the type.
+    """
+    if _needs_type_annotation(data=data):
+        return _format_inline_type_hint_declaration(
+            name=name,
+            value=value,
+            data=data,
+            bytes_hint=bytes_hint,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            sequence_hint=sequence_hint,
+            set_hint=set_hint,
+        )
     return f"{name} = {value}"
 
 
@@ -131,7 +178,7 @@ def _collection_element_union(
     *,
     elements: list[Value],
     recurse: Callable[..., str],
-    sort: bool = False,
+    sort: bool,
     merge_dicts: bool = False,
 ) -> str:
     """Return the element union for a collection, or ``"Any"`` if
@@ -229,6 +276,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             val_union = _collection_element_union(
                 elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                 recurse=recurse,
+                sort=False,
             )
             return f"{outer}[str, {val_union}]"
         case set():
@@ -242,6 +290,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             elem_union = _collection_element_union(
                 elements=data,
                 recurse=recurse,
+                sort=False,
                 merge_dicts=True,
             )
             if sequence_hint == "tuple":
@@ -296,8 +345,12 @@ class Python(metaclass=LanguageCls):
             variable declarations.
 
             * ``VariableTypeHints.NONE`` — bare assignment,
-              e.g. ``my_var = {...}``.
-            * ``VariableTypeHints.INLINE`` — with type annotation,
+              e.g. ``my_var = {...}``.  Empty collections still
+              receive a type annotation so that type-checkers can
+              infer the element types,
+              e.g. ``my_var: dict[str, Any] = {}``.
+            * ``VariableTypeHints.INLINE`` — every declaration has
+              a type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
     """
 
@@ -449,7 +502,14 @@ class Python(metaclass=LanguageCls):
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
                 )
-            return _format_variable_declaration
+            return functools.partial(
+                _format_variable_declaration,
+                bytes_hint=bytes_hint,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                sequence_hint=sequence_hint,
+                set_hint=set_hint,
+            )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -668,7 +728,5 @@ class Python(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines: tuple[str, ...] = (
-            ("from typing import Any",)
-            if variable_type_hints.name == "INLINE"
-            else ()
+            "from typing import Any",
         )

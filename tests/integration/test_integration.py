@@ -1241,7 +1241,7 @@ def test_golden_file(
     result = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=lang_config.lang_cls(),
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=lang_config.wrap_variable_name,
         new_variable=True,
@@ -1286,7 +1286,7 @@ def test_golden_file_combined_variable_forms(
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
@@ -1295,7 +1295,7 @@ def test_golden_file_combined_variable_forms(
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,
@@ -1388,7 +1388,7 @@ def test_format_variant_golden_file(
         result = literalizer.literalize_yaml(
             yaml_string=yaml_string,
             language=variant.spec,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=variant_case.variable_name,
             new_variable=True,
@@ -1476,7 +1476,7 @@ def test_line_ending_combined_variable_forms(
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=True,
@@ -1485,7 +1485,7 @@ def test_line_ending_combined_variable_forms(
     assignment = literalizer.literalize_yaml(
         yaml_string=yaml_string,
         language=spec,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=_VARIABLE_NAME,
         new_variable=False,
