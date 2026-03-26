@@ -1335,6 +1335,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_type_hint_variants(), "scalar_datetime", ""),
         (_build_type_hint_variants(), "binary", ""),
         (_build_type_hint_variants(), "mixed_type_dicts_in_sequence", ""),
+        (_build_type_hint_variants(), "empty_dicts_in_sequence", ""),
         (_build_declaration_style_variants(), "simple_sequence", ""),
         (_build_declaration_style_variants(), "simple_dict", ""),
         (_build_declaration_style_variants(), "empty_list", ""),

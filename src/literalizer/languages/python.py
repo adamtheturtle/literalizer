@@ -205,19 +205,23 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
     plain_vals: list[Value] = []
     ordered_vals: list[Value] = []
     non_dict: list[Value] = []
+    has_plain = False
+    has_ordered = False
     for elem in elements:
         if isinstance(elem, (ordereddict, OrderedDict)):
+            has_ordered = True
             ordered_vals.extend(elem.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
         elif isinstance(elem, dict):
+            has_plain = True
             plain_vals.extend(elem.values())
         else:
             non_dict.append(elem)
     merged: list[Value] = list(non_dict)
-    if plain_vals:
+    if has_plain:
         merged.append(
             {str(object=i): v for i, v in enumerate(iterable=plain_vals)}
         )
-    if ordered_vals:
+    if has_ordered:
         merged.append(
             OrderedDict(
                 {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
