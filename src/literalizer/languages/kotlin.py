@@ -409,6 +409,7 @@ class Kotlin(metaclass=LanguageCls):
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
+                        list_template=None,
                         date_type=cfg.type_name(py_type=date_tp),
                         datetime_type=cfg.type_name(py_type=dt_tp),
                     ),
