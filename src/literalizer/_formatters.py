@@ -7,6 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict as _ordereddict
 
 from literalizer._types import Value
 
@@ -63,7 +64,7 @@ def infer_element_type(
             if inner is None:
                 return None
             element_types.add(ListType(inner=inner))
-        elif type(item) is dict:
+        elif isinstance(item, dict) and not isinstance(item, _ordereddict):
             all_dict_values.extend(item.values())
             element_types.add(dict)
         else:
@@ -409,7 +410,7 @@ class TypedOpenerConfig:
 
         When *narrow_dict_values* is ``False``, the dict and set
         openers use a resolver that cannot resolve ``DictType``.
-        Set this to ``False`` when the config's ``list_template``
+        Set this to ``False`` when the ``list_template``
         does not match the actual sequence format (e.g.
         ``Array<…>`` vs ``List<…>``), which would cause type
         mismatches in the generated code.
