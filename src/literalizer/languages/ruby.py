@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
+    datetime_ymdhms_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -47,21 +49,6 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_date_ruby(value: datetime.date) -> str:
-    """Format a date as a Ruby ``Date.new(...)`` call."""
-    return f"Date.new({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_ruby(value: datetime.datetime) -> str:
-    """Format a datetime as a Ruby ``Time.new(...)`` call."""
-    return (
-        f"Time.new({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
-
-
-@beartype
 class Ruby(metaclass=LanguageCls):
     """Ruby language specification.
 
@@ -88,7 +75,9 @@ class Ruby(metaclass=LanguageCls):
         """Date format options for Ruby."""
 
         RUBY = DateFormatConfig(
-            formatter=_format_date_ruby,
+            formatter=date_ymd_formatter(
+                template="Date.new({year}, {month}, {day})",
+            ),
             preamble_lines=("require 'date'",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
@@ -101,7 +90,10 @@ class Ruby(metaclass=LanguageCls):
         """Datetime format options for Ruby."""
 
         RUBY = DatetimeFormatConfig(
-            formatter=_format_datetime_ruby,
+            formatter=datetime_ymdhms_formatter(
+                template="Time.new({year}, {month}, {day}, "
+                "{hour}, {minute}, {second})",
+            ),
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -242,7 +234,7 @@ class Ruby(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -267,9 +259,8 @@ class Ruby(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

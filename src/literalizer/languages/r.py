@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -37,18 +39,6 @@ from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-
-@beartype
-def _format_date_r(value: datetime.date) -> str:
-    """Format a date as an R ``as.Date(...)`` call."""
-    return f'as.Date("{value.isoformat()}")'
-
-
-@beartype
-def _format_datetime_r(value: datetime.datetime) -> str:
-    """Format a datetime as an R ``as.POSIXct(...)`` call."""
-    return f'as.POSIXct("{value.isoformat()}")'
 
 
 @beartype
@@ -115,7 +105,9 @@ class R(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for R."""
 
-        R = DateFormatConfig(formatter=_format_date_r)
+        R = DateFormatConfig(
+            formatter=date_iso_formatter(template='as.Date("{iso}")'),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -125,7 +117,11 @@ class R(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for R."""
 
-        R = DatetimeFormatConfig(formatter=_format_datetime_r)
+        R = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(
+                template='as.POSIXct("{iso}")',
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -246,7 +242,7 @@ class R(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -272,9 +268,8 @@ class R(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

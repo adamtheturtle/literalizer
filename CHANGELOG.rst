@@ -4,6 +4,8 @@ Changelog
 Next
 ----
 
+- Renamed ``VariableTypeHints.NONE`` to ``AUTO`` and ``VariableTypeHints.INLINE`` to ``ALWAYS``.
+
 2026.03.26
 ----------
 

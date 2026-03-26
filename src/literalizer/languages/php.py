@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -46,18 +48,6 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_date(value: datetime.date) -> str:
-    """Format a date as a PHP DateTime object."""
-    return f'new DateTime("{value.isoformat()}")'
-
-
-@beartype
-def _format_datetime(value: datetime.datetime) -> str:
-    """Format a datetime as a PHP DateTime object."""
-    return f'new DateTime("{value.isoformat()}")'
-
-
-@beartype
 class Php(metaclass=LanguageCls):
     """PHP language specification."""
 
@@ -67,7 +57,9 @@ class Php(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Php."""
 
-        PHP = DateFormatConfig(formatter=_format_date)
+        PHP = DateFormatConfig(
+            formatter=date_iso_formatter(template='new DateTime("{iso}")'),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -77,7 +69,11 @@ class Php(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Php."""
 
-        PHP = DatetimeFormatConfig(formatter=_format_datetime)
+        PHP = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(
+                template='new DateTime("{iso}")',
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -221,7 +217,7 @@ class Php(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -246,9 +242,8 @@ class Php(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

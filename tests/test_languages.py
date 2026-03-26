@@ -90,7 +90,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.NONE,
+    variable_type_hints=Python.variable_type_hints_formats.AUTO,
 )
 RUBY = Ruby(
     date_format=Ruby.date_formats.RUBY,
@@ -803,7 +803,7 @@ def test_uniform_map_value_type_enabled(
 def test_python_narrow_map_value_type_default() -> None:
     """Python inline type hints narrow dict value types by default."""
     lang = Python(
-        variable_type_hints=Python.variable_type_hints_formats.INLINE,
+        variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
         narrow_map_value_type=True,
     )
     result = literalize_json(
@@ -822,7 +822,7 @@ def test_python_narrow_map_value_type_default() -> None:
 def test_python_narrow_map_value_type_disabled() -> None:
     """Python inline type hints use broad type when narrowing disabled."""
     lang = Python(
-        variable_type_hints=Python.variable_type_hints_formats.INLINE,
+        variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
         narrow_map_value_type=False,
     )
     result = literalize_json(

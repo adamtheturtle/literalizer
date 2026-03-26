@@ -127,6 +127,9 @@ class Mojo(metaclass=LanguageCls):
                         int_type="Int",
                         float_type="Float64",
                         mixed_numeric_type="String",
+                        bytes_type=None,
+                        date_type=None,
+                        datetime_type=None,
                         list_template="List[{inner}]",
                     ),
                     opener_template="Set[{type_name}](",
@@ -187,7 +190,7 @@ class Mojo(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -212,9 +215,8 @@ class Mojo(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

@@ -8,6 +8,8 @@ from types import MappingProxyType
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
+    datetime_ymdhms_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -36,24 +38,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_date_nim(value: datetime.date) -> str:
-    """Format a date as a Nim table literal."""
-    return (
-        f'{{"year": {value.year}, "month": {value.month}, "day": {value.day}}}'
-    )
-
-
-@beartype
-def _format_datetime_nim(value: datetime.datetime) -> str:
-    """Format a datetime as a Nim table literal."""
-    return (
-        f'{{"year": {value.year}, "month": {value.month}, '
-        f'"day": {value.day}, "hour": {value.hour}, '
-        f'"minute": {value.minute}, "second": {value.second}}}'
-    )
 
 
 @beartype
@@ -148,7 +132,9 @@ class Nim(metaclass=LanguageCls):
         """Date format options for Nim."""
 
         NIM = DateFormatConfig(
-            formatter=_format_date_nim,
+            formatter=date_ymd_formatter(
+                template='{{"year": {year}, "month": {month}, "day": {day}}}',
+            ),
             preamble_lines=("import json",),
         )
         ISO = DateFormatConfig(
@@ -165,7 +151,11 @@ class Nim(metaclass=LanguageCls):
         """Datetime format options for Nim."""
 
         NIM = DatetimeFormatConfig(
-            formatter=_format_datetime_nim,
+            formatter=datetime_ymdhms_formatter(
+                template='{{"year": {year}, "month": {month}, '
+                '"day": {day}, "hour": {hour}, '
+                '"minute": {minute}, "second": {second}}}',
+            ),
             preamble_lines=("import json",),
         )
         ISO = DatetimeFormatConfig(
@@ -320,7 +310,7 @@ class Nim(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -345,9 +335,8 @@ class Nim(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.SEQ,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.VAR,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

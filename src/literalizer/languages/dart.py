@@ -246,7 +246,7 @@ class Dart(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -271,9 +271,8 @@ class Dart(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.FINAL,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
@@ -301,6 +300,7 @@ class Dart(metaclass=LanguageCls):
         openers = cfg.build(
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(py_type=dt_tp),
+            set_opener_template=None,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

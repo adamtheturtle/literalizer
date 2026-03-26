@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_iso_formatter,
+    datetime_iso_formatter,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -60,26 +62,6 @@ def _format_toml_dict_entry(key: str, _val: Value, value: str) -> str:
 
 
 @beartype
-def _format_toml_date(value: datetime.date) -> str:
-    """Format a date as a TOML local date literal (unquoted).
-
-    Example: ``datetime.date(2024, 1, 15)`` → ``2024-01-15``.
-    """
-    return value.isoformat()
-
-
-@beartype
-def _format_toml_datetime(value: datetime.datetime) -> str:
-    """Format a datetime as a TOML offset or local datetime literal
-    (unquoted).
-
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30, tzinfo=UTC)`` →
-    ``2024-01-15T12:30:00+00:00``.
-    """
-    return value.isoformat()
-
-
-@beartype
 class Toml(metaclass=LanguageCls):
     """TOML language specification.
 
@@ -101,7 +83,9 @@ class Toml(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Toml."""
 
-        TOML = DateFormatConfig(formatter=_format_toml_date)
+        TOML = DateFormatConfig(
+            formatter=date_iso_formatter(template="{iso}"),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -111,7 +95,9 @@ class Toml(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Toml."""
 
-        TOML = DatetimeFormatConfig(formatter=_format_toml_datetime)
+        TOML = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(template="{iso}"),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -211,7 +197,7 @@ class Toml(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -236,9 +222,8 @@ class Toml(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

@@ -85,6 +85,8 @@ def _make_cpp_element_to_type() -> Callable[[type | ListType], str | None]:
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="std::string",
+        date_type=None,
+        datetime_type=None,
         list_template="std::vector<{inner}>",
     )
 
@@ -339,7 +341,7 @@ class Cpp(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -364,9 +366,8 @@ class Cpp(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.INITIALIZER_LIST,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.AUTO,
         dict_format: DictFormats = DictFormats.MAP,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

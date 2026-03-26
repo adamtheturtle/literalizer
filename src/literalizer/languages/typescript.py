@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     dict_entry_with_template,
     fixed_dict_open,
@@ -47,24 +49,6 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_date_ts(value: datetime.date) -> str:
-    """Format a date as a TypeScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15")``.
-    """
-    return f'new Date("{value.isoformat()}")'
-
-
-@beartype
-def _format_datetime_ts(value: datetime.datetime) -> str:
-    """Format a datetime as a TypeScript ``new Date(...)`` call.
-
-    Example: ``new Date("2024-01-15T12:30:00")``.
-    """
-    return f'new Date("{value.isoformat()}")'
-
-
-@beartype
 class TypeScript(metaclass=LanguageCls):
     """TypeScript language specification.
 
@@ -98,7 +82,9 @@ class TypeScript(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date formatting options for TypeScript."""
 
-        JS = DateFormatConfig(formatter=_format_date_ts)
+        JS = DateFormatConfig(
+            formatter=date_iso_formatter(template='new Date("{iso}")'),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -108,7 +94,11 @@ class TypeScript(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for TypeScript."""
 
-        JS = DatetimeFormatConfig(formatter=_format_datetime_ts)
+        JS = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(
+                template='new Date("{iso}")',
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -313,7 +303,7 @@ class TypeScript(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -332,9 +322,8 @@ class TypeScript(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.CONST,
         dict_format: DictFormats = DictFormats.OBJECT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

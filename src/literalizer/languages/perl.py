@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -44,15 +45,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from literalizer._types import Value
-
-
-@beartype
-def _format_date_perl(value: datetime.date) -> str:
-    """Format a date as a Perl ``DateTime`` constructor."""
-    return (
-        f"DateTime->new(year => {value.year}, "
-        f"month => {value.month}, day => {value.day})"
-    )
 
 
 @beartype
@@ -100,7 +92,10 @@ class Perl(metaclass=LanguageCls):
         """Date format options for Perl."""
 
         PERL = DateFormatConfig(
-            formatter=_format_date_perl,
+            formatter=date_ymd_formatter(
+                template="DateTime->new("
+                "year => {year}, month => {month}, day => {day})",
+            ),
             preamble_lines=("use DateTime;",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
@@ -255,7 +250,7 @@ class Perl(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -280,9 +275,8 @@ class Perl(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.MY,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

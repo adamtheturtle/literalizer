@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_ymd_formatter,
+    datetime_ymdhms_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -46,21 +48,6 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_date_julia(value: datetime.date) -> str:
-    """Format a date as a Julia ``Date(...)`` constructor call."""
-    return f"Date({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_julia(value: datetime.datetime) -> str:
-    """Format a datetime as a Julia ``DateTime(...)`` constructor call."""
-    return (
-        f"DateTime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second})"
-    )
-
-
-@beartype
 class Julia(metaclass=LanguageCls):
     """Julia language specification.
 
@@ -94,7 +81,9 @@ class Julia(metaclass=LanguageCls):
         """Date formatting options for Julia."""
 
         JULIA = DateFormatConfig(
-            formatter=_format_date_julia,
+            formatter=date_ymd_formatter(
+                template="Date({year}, {month}, {day})",
+            ),
             preamble_lines=("using Dates",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
@@ -107,7 +96,10 @@ class Julia(metaclass=LanguageCls):
         """Datetime formatting options for Julia."""
 
         JULIA = DatetimeFormatConfig(
-            formatter=_format_datetime_julia,
+            formatter=datetime_ymdhms_formatter(
+                template="DateTime({year}, {month}, {day}, "
+                "{hour}, {minute}, {second})",
+            ),
             preamble_lines=("using Dates",),
         )
         ISO = DatetimeFormatConfig(
@@ -278,7 +270,7 @@ class Julia(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -303,9 +295,8 @@ class Julia(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_format: DictFormats = DictFormats.DICT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
