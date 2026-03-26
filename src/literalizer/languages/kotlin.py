@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    DictType,
     ListType,
     TypedOpenerConfig,
     date_ymd_formatter,
@@ -63,10 +64,30 @@ def _kotlin_tuple_open(items: list[Value]) -> str:
 
 
 @beartype
+def _kotlin_dict_type_name(element_type: DictType) -> str:
+    """Resolve a Kotlin dict type name from a DictType."""
+    value_types: dict[type, str] = {
+        str: "String",
+        bool: "Boolean",
+        int: "Int",
+        float: "Double",
+        bytes: "String",
+        datetime.date: "LocalDate",
+        datetime.datetime: "LocalDateTime",
+    }
+    vt = element_type.value_type
+    inner = value_types.get(vt, "Any?") if isinstance(vt, type) else "Any?"
+    return f"Map<String, {inner}>"
+
+
+@beartype
 def _kotlin_type_to_opener(
-    element_type: type | ListType,
+    element_type: type | ListType | DictType,
 ) -> str | None:
     """Map a Python element type to a Kotlin collection opener."""
+    if isinstance(element_type, DictType):
+        type_name = _kotlin_dict_type_name(element_type=element_type)
+        return f"listOf<{type_name}>("
     if isinstance(element_type, ListType):
         inner = _kotlin_type_to_opener(element_type=element_type.inner)
         return "arrayOf(" if inner is not None else None
@@ -136,6 +157,8 @@ class Kotlin(metaclass=LanguageCls):
         sequence_opener_template="arrayOf(",
         dict_opener_template="mapOf<String, {type_name}>(",
         set_opener_template="setOf<{type_name}>(",
+        dict_type_template="Map<String, {inner}>",
+        fallback_value_type="Any?",
     )
 
     class DateFormats(enum.Enum):

@@ -7,10 +7,10 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-_Any my_data = {
-    {"users", {{{"name", "Bob"}, {"tags", std::vector<std::string>{"admin", "user"}}}, {{"name", "Carol"}, {"tags", std::vector<std::string>{"guest"}}}}},
+_Any my_data = std::map<std::string, std::vector<std::map<std::string, _Any>>>{
+    {"users", std::vector<std::map<std::string, _Any>>{{{"name", "Bob"}, {"tags", std::vector<std::string>{"admin", "user"}}}, {{"name", "Carol"}, {"tags", std::vector<std::string>{"guest"}}}}},
 };
-my_data = {
-    {"users", {{{"name", "Bob"}, {"tags", std::vector<std::string>{"admin", "user"}}}, {{"name", "Carol"}, {"tags", std::vector<std::string>{"guest"}}}}},
+my_data = std::map<std::string, std::vector<std::map<std::string, _Any>>>{
+    {"users", std::vector<std::map<std::string, _Any>>{{{"name", "Bob"}, {"tags", std::vector<std::string>{"admin", "user"}}}, {{"name", "Carol"}, {"tags", std::vector<std::string>{"guest"}}}}},
 };
 }

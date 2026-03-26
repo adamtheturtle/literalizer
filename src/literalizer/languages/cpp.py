@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    DictType,
     ListType,
     braced_dict_entry,
     fixed_set_open,
@@ -75,7 +76,9 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 
 
 @beartype
-def _make_cpp_element_to_type() -> Callable[[type | ListType], str | None]:
+def _make_cpp_element_to_type() -> Callable[
+    [type | ListType | DictType], str | None
+]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
         str_type="std::string",
@@ -87,6 +90,8 @@ def _make_cpp_element_to_type() -> Callable[[type | ListType], str | None]:
         date_type=None,
         datetime_type=None,
         list_template="std::vector<{inner}>",
+        dict_type_template="std::map<std::string, {inner}>",
+        fallback_value_type="_Any",
     )
 
 

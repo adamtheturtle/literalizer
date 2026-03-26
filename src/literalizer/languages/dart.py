@@ -81,6 +81,8 @@ class Dart(metaclass=LanguageCls):
         sequence_opener_template="<{type_name}>[",
         dict_opener_template="<String, {type_name}>{{",
         set_opener_template="<{type_name}>{{",
+        dict_type_template="Map<String, {inner}>",
+        fallback_value_type="dynamic",
     )
 
     class DateFormats(enum.Enum):

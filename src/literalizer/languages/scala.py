@@ -134,6 +134,8 @@ class Scala(metaclass=LanguageCls):
         sequence_opener_template="Array[{type_name}](",
         dict_opener_template="Map[String, {type_name}](",
         set_opener_template="Set[{type_name}](",
+        dict_type_template="Map[String, {inner}]",
+        fallback_value_type="Any",
     )
 
     class DateFormats(enum.Enum):

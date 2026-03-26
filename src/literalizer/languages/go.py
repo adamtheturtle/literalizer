@@ -355,6 +355,8 @@ class Go(metaclass=LanguageCls):
             date_type=date_type,
             datetime_type=datetime_type,
             list_template="[]{inner}",
+            dict_type_template="map[string]{inner}",
+            fallback_value_type="any",
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
@@ -388,6 +390,7 @@ class Go(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=(),
+            narrowed_open="{",
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=True,

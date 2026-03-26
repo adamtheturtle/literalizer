@@ -95,6 +95,8 @@ class CSharp(metaclass=LanguageCls):
         sequence_opener_template="new {type_name}[] {{",
         dict_opener_template="new Dictionary<string, {type_name}> {{",
         set_opener_template="new HashSet<{type_name}> {{",
+        dict_type_template="Dictionary<string, {inner}>",
+        fallback_value_type="object",
     )
 
     class DateFormats(enum.Enum):
