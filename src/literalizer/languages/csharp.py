@@ -15,6 +15,7 @@ from literalizer._formatters import (
     datetime_ymdhms_formatter,
     dict_entry_with_template,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -50,22 +51,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-_csharp_opener_config = TypedOpenerConfig(
-    str_type="string",
-    bool_type="bool",
-    int_type="int",
-    float_type="double",
-    mixed_numeric_type="double",
-    bytes_type="string",
-    date_type="DateOnly",
-    datetime_type="DateTime",
-    list_template="{inner}[]",
-    sequence_opener_template="new {type_name}[] {{",
-    dict_opener_template="new Dictionary<string, {type_name}> {{",
-    set_opener_template="new HashSet<{type_name}> {{",
-)
-
-
 @dataclasses.dataclass(frozen=True)
 class _CSharpDictSpec:
     """Per-format dict config pieces resolved at init time."""
@@ -96,6 +81,21 @@ class CSharp(metaclass=LanguageCls):
 
     extension = ".cs"
     pygments_name = "csharp"
+
+    _opener_config = TypedOpenerConfig(
+        str_type="string",
+        bool_type="bool",
+        int_type="int",
+        float_type="double",
+        mixed_numeric_type="double",
+        bytes_type="string",
+        date_type="DateOnly",
+        datetime_type="DateTime",
+        list_template="{inner}[]",
+        sequence_opener_template="new {type_name}[] {{",
+        dict_opener_template="new Dictionary<string, {type_name}> {{",
+        set_opener_template="new HashSet<{type_name}> {{",
+    )
 
     class DateFormats(enum.Enum):
         """Date format options for C#."""
@@ -155,10 +155,7 @@ class CSharp(metaclass=LanguageCls):
             supports_trailing_comma=False,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=_csharp_opener_config.build().seq,
-                fallback="new object[] {",
-            ),
+            sequence_open=fixed_sequence_open(open_str="new object[] {"),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -180,22 +177,14 @@ class CSharp(metaclass=LanguageCls):
         """Set type options for C#."""
 
         HASH_SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=_csharp_opener_config.build().set,
-                fallback="new HashSet<object> {",
-            ),
+            set_open=fixed_set_open(open_str="new HashSet<object> {"),
             close="}",
             empty_set="new HashSet<object>()",
             preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=_csharp_opener_config.build(
-                    set_opener_template="new SortedSet<{type_name}> {{",
-                ).set,
-                fallback="new SortedSet<object> {",
-            ),
+            set_open=fixed_set_open(open_str="new SortedSet<object> {"),
             close="}",
             empty_set="new SortedSet<object>()",
             preamble_lines=("using System.Collections.Generic;",),
@@ -343,9 +332,10 @@ class CSharp(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        openers = _csharp_opener_config.build(
-            date_type=_csharp_opener_config.type_name(py_type=date_tp),
-            datetime_type=_csharp_opener_config.type_name(py_type=dt_tp),
+        cfg = self._opener_config
+        openers = cfg.build(
+            date_type=cfg.type_name(py_type=date_tp),
+            datetime_type=cfg.type_name(py_type=dt_tp),
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
@@ -367,13 +357,9 @@ class CSharp(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_csharp_opener_config.element_to_type(
-                        date_type=_csharp_opener_config.type_name(
-                            py_type=date_tp
-                        ),
-                        datetime_type=_csharp_opener_config.type_name(
-                            py_type=dt_tp
-                        ),
+                    element_to_type=cfg.element_to_type(
+                        date_type=cfg.type_name(py_type=date_tp),
+                        datetime_type=cfg.type_name(py_type=dt_tp),
                     ),
                     opener_template=dict_spec.opener_template,
                 ),

@@ -47,7 +47,7 @@ optional-dependencies.dev = [
     "pygments==2.19.2",
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.0",
-    "pyproject-fmt==2.18.1",
+    "pyproject-fmt==2.20.0",
     "pyrefly==0.58.0",
     "pyright==1.1.408",
     "pyroma==5.0.1",
@@ -284,18 +284,6 @@ indent = 4
 keep_full_version = true
 max_supported_python = "3.14"
 
-[tool.pytest]
-ini_options.xfail_strict = true
-ini_options.log_cli = true
-
-[tool.coverage]
-run.branch = true
-report.exclude_also = [
-    "case _ as unreachable:\n\\s*assert_never\\(",
-    "if TYPE_CHECKING:",
-]
-report.show_missing = true
-
 [tool.mypy]
 strict = true
 files = [ "." ]
@@ -327,6 +315,18 @@ terminal.error-on-warning = true
 src.exclude = [
     "tests/integration/cases",
 ]
+
+[tool.pytest]
+ini_options.xfail_strict = true
+ini_options.log_cli = true
+
+[tool.coverage]
+run.branch = true
+report.exclude_also = [
+    "case _ as unreachable:\n\\s*assert_never\\(",
+    "if TYPE_CHECKING:",
+]
+report.show_missing = true
 
 [tool.doc8]
 max_line_length = 2000
