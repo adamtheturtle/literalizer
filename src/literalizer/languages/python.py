@@ -167,10 +167,14 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
             non_dict.append(elem)
     merged: list[Value] = list(non_dict)
     if plain_vals:
-        merged.append({f"_k{i}": v for i, v in enumerate(plain_vals)})
+        merged.append(
+            {str(object=i): v for i, v in enumerate(iterable=plain_vals)}
+        )
     if ordered_vals:
         merged.append(
-            OrderedDict({f"_k{i}": v for i, v in enumerate(ordered_vals)})
+            OrderedDict(
+                {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
+            )
         )
     return merged
 
