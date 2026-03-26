@@ -3,6 +3,7 @@
 import datetime
 import enum
 import functools
+import re
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
@@ -117,10 +118,43 @@ def _format_inline_type_hint_declaration(
     return f"{name}: {hint} = {value}"
 
 
+_DICT_HINT_RE = re.compile(r"^(dict|OrderedDict)\[str, (.+)\]$")
+
+
+@beartype
+def _merge_dict_hints(*, types: list[str]) -> list[str]:
+    """Merge dict hints that share the same outer type.
+
+    Multiple ``dict[str, X]`` entries are collapsed into a single
+    ``dict[str, X | Y]`` so that the resulting union is compatible with
+    mypy's invariant type checking for ``dict``.
+    """
+    by_outer: dict[str, list[str]] = {}
+    non_dict: list[str] = []
+    for hint in types:
+        m = _DICT_HINT_RE.match(hint)
+        if m:
+            by_outer.setdefault(m.group(1), []).append(m.group(2))
+        else:
+            non_dict.append(hint)
+    merged: list[str] = non_dict
+    for outer, val_hints in by_outer.items():
+        # Split each value hint on " | " and deduplicate across all dicts.
+        parts: list[str] = []
+        for vh in val_hints:
+            parts.extend(vh.split(" | "))
+        unique_parts = list(dict.fromkeys(parts))
+        val_union = " | ".join(unique_parts)
+        merged.append(f"{outer}[str, {val_union}]")
+    return merged
+
+
 @beartype
 def _element_union(*, types: list[str]) -> str:
     """Remove duplicate *types* and join them into a union."""
     unique: list[str] = list(dict.fromkeys(types))
+    unique = _merge_dict_hints(types=unique)
+    unique = list(dict.fromkeys(unique))
     if len(unique) == 1:
         return unique[0]
     return " | ".join(unique)
@@ -204,18 +238,12 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             )
             return f"{set_hint}[{elem_union}]"
         case list():
-            if sequence_hint == "tuple":
-                if not data:
-                    return "tuple[()]"
-                elem_types = [recurse(data=e) for e in data]
-                unique = list(dict.fromkeys(elem_types))
-                if len(unique) == 1:
-                    return f"tuple[{unique[0]}, ...]"
-                return f"tuple[{', '.join(elem_types)}]"
             elem_union = _collection_element_union(
                 elements=data,
                 recurse=recurse,
             )
+            if sequence_hint == "tuple":
+                return f"{sequence_hint}[{elem_union}, ...]"
             return f"{sequence_hint}[{elem_union}]"
         case _ as unreachable:
             assert_never(unreachable)
