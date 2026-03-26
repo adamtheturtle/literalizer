@@ -1072,7 +1072,7 @@ def format_integer_underscore(value: int) -> str:
 
     Example: ``1000000`` → ``"1_000_000"``.
     """
-    return _format_integer_grouped(value, separator="_")
+    return _format_integer_grouped(value=value, separator="_")
 
 
 @beartype
@@ -1083,4 +1083,4 @@ def format_integer_tick(value: int) -> str:
 
     Example: ``1000000`` → ``"1'000'000"``.
     """
-    return _format_integer_grouped(value, separator="'")
+    return _format_integer_grouped(value=value, separator="'")
