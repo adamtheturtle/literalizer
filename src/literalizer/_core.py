@@ -881,18 +881,21 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     key coercion so that ordered-map detection in :func:`_literalize` is
     preserved.
     """
-    if isinstance(data, ordereddict):
-        return cast("Value", data)
-    if isinstance(data, dict):
-        return {
-            f"{k}": _coerce_yaml_keys(data=v)
-            for k, v in cast("dict[object, object]", data).items()
-        }
-    if isinstance(data, list):
-        return [
-            _coerce_yaml_keys(data=item) for item in cast("list[object]", data)
-        ]
-    return cast("Value", data)
+    match data:
+        case ordereddict():
+            return cast("Value", data)
+        case dict():
+            return {
+                f"{k}": _coerce_yaml_keys(data=v)
+                for k, v in cast("dict[object, object]", data).items()
+            }
+        case list():
+            return [
+                _coerce_yaml_keys(data=item)
+                for item in cast("list[object]", data)
+            ]
+        case _:
+            return cast("Value", data)
 
 
 @beartype
