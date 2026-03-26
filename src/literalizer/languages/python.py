@@ -341,12 +341,12 @@ class Python(metaclass=LanguageCls):
         variable_type_hints: Whether to add inline type hints to
             variable declarations.
 
-            * ``VariableTypeHints.NONE`` — bare assignment,
+            * ``VariableTypeHints.AUTO`` — bare assignment,
               e.g. ``my_var = {...}``.  Empty collections still
               receive a type annotation so that type-checkers can
               infer the element types,
               e.g. ``my_var: dict[str, Any] = {}``.
-            * ``VariableTypeHints.INLINE`` — every declaration has
+            * ``VariableTypeHints.ALWAYS`` — every declaration has
               a type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
     """
@@ -478,8 +478,8 @@ class Python(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""
 
-        NONE = "none"
-        INLINE = "inline"
+        AUTO = "auto"
+        ALWAYS = "always"
 
         def formatter(
             self,
@@ -493,7 +493,7 @@ class Python(metaclass=LanguageCls):
             """Return the variable declaration formatter for this hint
             style.
             """
-            if self is type(self).INLINE:
+            if self is type(self).ALWAYS:
                 return functools.partial(
                     _format_inline_type_hint_declaration,
                     bytes_hint=bytes_hint,
@@ -618,7 +618,7 @@ class Python(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.TUPLE,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_format: DictFormats = DictFormats.DEFAULT,
