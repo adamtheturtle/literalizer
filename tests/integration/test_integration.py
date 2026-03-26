@@ -299,11 +299,12 @@ def _wrap_mojo(content: str) -> str:
 def _wrap_mojo_combined(declaration: str, assignment: str) -> str:
     """Wrap Mojo declaration and assignment in a main function.
 
-    This cannot use ``_newline_combined(wrap=_wrap_mojo)`` because Mojo's
-    ``--Werror`` flags an assignment that is immediately overwritten without
-    being read (``assignment to 'x' was never used``).  A bare
-    ``_ = variable`` must appear *between* the declaration and the
-    reassignment, not only at the end.
+    This cannot use ``_newline_combined(wrap=_wrap_mojo)`` because the
+    Mojo ``--Werror`` flag treats an assignment that is immediately
+    overwritten without being read as an error
+    (``assignment to 'x' was never used``).  A bare ``_ = variable``
+    must appear *between* the declaration and the reassignment, not
+    only at the end.
     """
     use = f"_ = {_VARIABLE_NAME}"
     return _in_mojo_main(
