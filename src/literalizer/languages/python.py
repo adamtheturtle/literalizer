@@ -118,7 +118,7 @@ def _format_inline_type_hint_declaration(
     return f"{name}: {hint} = {value}"
 
 
-_DICT_HINT_RE = re.compile(r"^(dict|OrderedDict)\[str, (.+)\]$")
+_DICT_HINT_RE = re.compile(pattern=r"^(dict|OrderedDict)\[str, (.+)\]$")
 
 
 @beartype
@@ -132,7 +132,7 @@ def _merge_dict_hints(*, types: list[str]) -> list[str]:
     by_outer: dict[str, list[str]] = {}
     non_dict: list[str] = []
     for hint in types:
-        m = _DICT_HINT_RE.match(hint)
+        m = _DICT_HINT_RE.match(string=hint)
         if m:
             by_outer.setdefault(m.group(1), []).append(m.group(2))
         else:
@@ -142,7 +142,7 @@ def _merge_dict_hints(*, types: list[str]) -> list[str]:
         # Split each value hint on " | " and deduplicate across all dicts.
         parts: list[str] = []
         for vh in val_hints:
-            parts.extend(vh.split(" | "))
+            parts.extend(vh.split(sep=" | "))
         unique_parts = list(dict.fromkeys(parts))
         val_union = " | ".join(unique_parts)
         merged.append(f"{outer}[str, {val_union}]")
