@@ -1545,3 +1545,21 @@ def test_format_enumeration_properties(
     assert len(spec.trailing_commas) >= 1
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
+
+
+def _discover_python_case_files() -> list[Path]:
+    """Return all Python golden files in the cases directory."""
+    cases_dir = Path(__file__).parent / "cases"
+    return sorted(cases_dir.rglob("Python*.py"))
+
+
+@pytest.mark.parametrize(
+    argnames="case_file",
+    argvalues=_discover_python_case_files(),
+    ids=[f"{p.parent.name}/{p.name}" for p in _discover_python_case_files()],
+)
+def test_python_case_file_executes(case_file: Path) -> None:
+    """Each Python golden file is valid, executable Python."""
+    source = case_file.read_text()
+    code = compile(source=source, filename=str(case_file), mode="exec")
+    exec(code)  # noqa: S102
