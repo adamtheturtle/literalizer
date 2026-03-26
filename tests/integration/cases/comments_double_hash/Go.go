@@ -2,8 +2,8 @@ package main
 
 func main() {
 my_data := []string{
-    // # section
-    "a",
+	// # section
+	"a",
 }
 _ = my_data
 }

@@ -324,7 +324,7 @@ class Go(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
-        indent: str = "    ",
+        indent: str = "\t",
     ) -> None:
         """Initialize Go language specification."""
         self.variable_type_hints = variable_type_hints
