@@ -16,6 +16,7 @@ from literalizer._formatters import (
     datetime_ymdhms_formatter,
     dict_entry_with_separator,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -81,22 +82,6 @@ def _kotlin_type_to_opener(
     return scalar_openers.get(element_type)
 
 
-_kotlin_opener_config = TypedOpenerConfig(
-    str_type="String",
-    bool_type="Boolean",
-    int_type="Int",
-    float_type="Double",
-    bytes_type="String",
-    mixed_numeric_type=None,
-    date_type="LocalDate",
-    datetime_type="LocalDateTime",
-    list_template="Array<{inner}>",
-    sequence_opener_template="arrayOf(",
-    dict_opener_template="mapOf<String, {type_name}>(",
-    set_opener_template="setOf<{type_name}>(",
-)
-
-
 @dataclasses.dataclass(frozen=True)
 class _KotlinDictSpec:
     """Per-format dict config pieces resolved at init time."""
@@ -142,6 +127,21 @@ class Kotlin(metaclass=LanguageCls):
 
     extension = ".kts"
     pygments_name = "kotlin"
+
+    _opener_config = TypedOpenerConfig(
+        str_type="String",
+        bool_type="Boolean",
+        int_type="Int",
+        float_type="Double",
+        bytes_type="String",
+        mixed_numeric_type=None,
+        date_type="LocalDate",
+        datetime_type="LocalDateTime",
+        list_template="Array<{inner}>",
+        sequence_opener_template="arrayOf(",
+        dict_opener_template="mapOf<String, {type_name}>(",
+        set_opener_template="setOf<{type_name}>(",
+    )
 
     class DateFormats(enum.Enum):
         """Date format options for Kotlin."""
@@ -237,22 +237,14 @@ class Kotlin(metaclass=LanguageCls):
         """Set type options for Kotlin."""
 
         SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.build().set,
-                fallback="setOf<Any?>(",
-            ),
+            set_open=fixed_set_open(open_str="setOf<Any?>("),
             close=")",
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=_kotlin_opener_config.build(
-                    set_opener_template="sortedSetOf<{type_name}>(",
-                ).set,
-                fallback="sortedSetOf<Any?>(",
-            ),
+            set_open=fixed_set_open(open_str="sortedSetOf<Any?>("),
             close=")",
             empty_set=None,
             preamble_lines=(),
@@ -405,9 +397,10 @@ class Kotlin(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        openers = _kotlin_opener_config.build(
-            date_type=_kotlin_opener_config.type_name(py_type=date_tp),
-            datetime_type=_kotlin_opener_config.type_name(py_type=dt_tp),
+        cfg = self._opener_config
+        openers = cfg.build(
+            date_type=cfg.type_name(py_type=date_tp),
+            datetime_type=cfg.type_name(py_type=dt_tp),
             set_opener_template=set_format.value.set_opener_template or None,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
@@ -421,13 +414,9 @@ class Kotlin(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_kotlin_opener_config.element_to_type(
-                        date_type=_kotlin_opener_config.type_name(
-                            py_type=date_tp
-                        ),
-                        datetime_type=_kotlin_opener_config.type_name(
-                            py_type=dt_tp
-                        ),
+                    element_to_type=cfg.element_to_type(
+                        date_type=cfg.type_name(py_type=date_tp),
+                        datetime_type=cfg.type_name(py_type=dt_tp),
                     ),
                     opener_template=dict_spec.opener_template,
                 ),

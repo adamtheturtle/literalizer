@@ -4,6 +4,9 @@ Changelog
 Next
 ----
 
+2026.03.26
+----------
+
 - Added ``narrow_map_value_type`` option to ``Go``, ``Cpp``, ``CSharp``, ``Dart``, ``Kotlin``, ``Scala``, and ``Python``. Defaults to ``True`` (existing behavior). Set to ``False`` to always use the broad value type (e.g. ``map[string]any`` instead of ``map[string]string`` in Go, ``dict[str, Any]`` instead of ``dict[str, str]`` in Python inline type hints).
 
 2026.03.25

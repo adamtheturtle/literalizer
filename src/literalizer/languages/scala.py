@@ -14,6 +14,7 @@ from literalizer._formatters import (
     date_ymd_formatter,
     dict_entry_with_separator,
     fixed_sequence_open,
+    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -57,32 +58,17 @@ def _format_datetime_scala(value: datetime.datetime) -> str:
     )
 
 
-_scala_opener_config = TypedOpenerConfig(
-    str_type="String",
-    bool_type="Boolean",
-    int_type="Int",
-    float_type="Double",
-    mixed_numeric_type="Double",
-    bytes_type="String",
-    date_type="LocalDate",
-    datetime_type="ZonedDateTime",
-    list_template="Array[{inner}]",
-    sequence_opener_template="Array[{type_name}](",
-    dict_opener_template="Map[String, {type_name}](",
-    set_opener_template="Set[{type_name}](",
-)
-
-
 @beartype
 def _list_sequence_open(
     *,
+    cfg: TypedOpenerConfig,
     date_type: str | None,
     datetime_type: str | None,
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the List format."""
     return typed_sequence_open(
         type_to_opener=make_type_to_opener(
-            element_to_type=_scala_opener_config.element_to_type(
+            element_to_type=cfg.element_to_type(
                 list_template="List[{inner}]",
                 date_type=date_type,
                 datetime_type=datetime_type,
@@ -96,6 +82,7 @@ def _list_sequence_open(
 @beartype
 def _resolve_sequence_open(
     *,
+    cfg: TypedOpenerConfig,
     sequence_format: enum.Enum,
     list_member: enum.Enum,
     fmt: SequenceFormatConfig,
@@ -106,6 +93,7 @@ def _resolve_sequence_open(
     """Resolve the sequence opener for a Scala sequence format."""
     if sequence_format is list_member:
         return _list_sequence_open(
+            cfg=cfg,
             date_type=date_type,
             datetime_type=datetime_type,
         )
@@ -139,6 +127,21 @@ class Scala(metaclass=LanguageCls):
 
     extension = ".scala"
     pygments_name = "scala"
+
+    _opener_config = TypedOpenerConfig(
+        str_type="String",
+        bool_type="Boolean",
+        int_type="Int",
+        float_type="Double",
+        mixed_numeric_type="Double",
+        bytes_type="String",
+        date_type="LocalDate",
+        datetime_type="ZonedDateTime",
+        list_template="Array[{inner}]",
+        sequence_opener_template="Array[{type_name}](",
+        dict_opener_template="Map[String, {type_name}](",
+        set_opener_template="Set[{type_name}](",
+    )
 
     class DateFormats(enum.Enum):
         """Date format options for Scala."""
@@ -187,15 +190,7 @@ class Scala(metaclass=LanguageCls):
         """Sequence type options for Scala."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_scala_opener_config.element_to_type(
-                        list_template="List[{inner}]",
-                    ),
-                    opener_template="List[{type_name}](",
-                ),
-                fallback="List(",
-            ),
+            sequence_open=fixed_sequence_open(open_str="List("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -217,10 +212,7 @@ class Scala(metaclass=LanguageCls):
             typed_opener_fallback=None,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=_scala_opener_config.build().seq,
-                fallback="Array(",
-            ),
+            sequence_open=fixed_sequence_open(open_str="Array("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -242,22 +234,14 @@ class Scala(metaclass=LanguageCls):
         """Set type options for Scala."""
 
         SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=_scala_opener_config.build().set,
-                fallback="Set(",
-            ),
+            set_open=fixed_set_open(open_str="Set("),
             close=")",
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
         )
         TREE_SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=_scala_opener_config.build(
-                    set_opener_template="TreeSet[{type_name}](",
-                ).set,
-                fallback="TreeSet(",
-            ),
+            set_open=fixed_set_open(open_str="TreeSet("),
             close=")",
             empty_set=None,
             preamble_lines=("import scala.collection.immutable.TreeSet",),
@@ -404,9 +388,9 @@ class Scala(metaclass=LanguageCls):
         self.set_format = set_format
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        date_type_name = _scala_opener_config.type_name(py_type=date_tp)
-        datetime_type_name = _scala_opener_config.type_name(py_type=dt_tp)
-        openers = _scala_opener_config.build(
+        date_type_name = self._opener_config.type_name(py_type=date_tp)
+        datetime_type_name = self._opener_config.type_name(py_type=dt_tp)
+        openers = self._opener_config.build(
             date_type=date_type_name,
             datetime_type=datetime_type_name,
             set_opener_template=set_format.value.set_opener_template or None,
@@ -420,6 +404,7 @@ class Scala(metaclass=LanguageCls):
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             _resolve_sequence_open(
+                cfg=self._opener_config,
                 sequence_format=sequence_format,
                 list_member=self.sequence_formats.LIST,
                 fmt=fmt,
@@ -432,7 +417,7 @@ class Scala(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_scala_opener_config.element_to_type(
+                    element_to_type=self._opener_config.element_to_type(
                         date_type=date_type_name,
                         datetime_type=datetime_type_name,
                     ),

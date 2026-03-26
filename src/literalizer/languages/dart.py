@@ -19,8 +19,6 @@ from literalizer._formatters import (
     format_integer_hex,
     format_string_backslash_dollar,
     format_string_backslash_dollar_single,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_dict_open,
@@ -74,6 +72,21 @@ class Dart(metaclass=LanguageCls):
     extension = ".dart"
     pygments_name = "dart"
 
+    _opener_config = TypedOpenerConfig(
+        str_type="String",
+        bool_type="bool",
+        int_type="int",
+        float_type="double",
+        mixed_numeric_type="double",
+        bytes_type="String",
+        date_type="DateTime",
+        datetime_type="DateTime",
+        list_template="List<{inner}>",
+        sequence_opener_template="<{type_name}>[",
+        dict_opener_template="<String, {type_name}>{{",
+        set_opener_template="<{type_name}>{{",
+    )
+
     class DateFormats(enum.Enum):
         """Date formatting options for Dart."""
 
@@ -118,23 +131,7 @@ class Dart(metaclass=LanguageCls):
         """Sequence type options for Dart."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=make_element_to_type(
-                        str_type="String",
-                        bool_type="bool",
-                        int_type="int",
-                        float_type="double",
-                        mixed_numeric_type="double",
-                        bytes_type="String",
-                        date_type="DateTime",
-                        datetime_type="DateTime",
-                        list_template="List<{inner}>",
-                    ),
-                    opener_template="<{type_name}>[",
-                ),
-                fallback="[",
-            ),
+            sequence_open=fixed_sequence_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -300,23 +297,10 @@ class Dart(metaclass=LanguageCls):
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
-        opener_config = TypedOpenerConfig(
-            str_type="String",
-            bool_type="bool",
-            int_type="int",
-            float_type="double",
-            mixed_numeric_type="double",
-            bytes_type="String",
-            date_type="DateTime",
-            datetime_type="DateTime",
-            list_template="List<{inner}>",
-            sequence_opener_template="<{type_name}>[",
-            dict_opener_template="<String, {type_name}>{{",
-            set_opener_template="<{type_name}>{{",
-        )
-        openers = opener_config.build(
-            date_type=opener_config.type_name(py_type=date_tp),
-            datetime_type=opener_config.type_name(py_type=dt_tp),
+        cfg = self._opener_config
+        openers = cfg.build(
+            date_type=cfg.type_name(py_type=date_tp),
+            datetime_type=cfg.type_name(py_type=dt_tp),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

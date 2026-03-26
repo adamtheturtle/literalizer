@@ -65,12 +65,12 @@ RUBY = Ruby(
 
 
 def test_dict_python() -> None:
-    """Python dict renders key-value pairs with a prefix."""
+    """Python dict renders key-value pairs with a pre-indent level."""
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -85,7 +85,7 @@ def test_dict_include_delimiters() -> None:
     result = literalize_json(
         json_string=json.dumps(obj={"a": 1, "b": 2}),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -112,7 +112,7 @@ def test_dict_empty(*, include_delimiters: bool) -> None:
     result = literalize_json(
         json_string=json.dumps(obj={}),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=include_delimiters,
         variable_name=None,
         new_variable=True,
@@ -127,7 +127,7 @@ def test_integers() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[42, 0, -7]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -147,7 +147,7 @@ def test_floats() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[1000.0, 3.14]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -166,7 +166,7 @@ def test_string_escaping() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=['say "hi"', "a\\b", "line1\nline2"]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -183,7 +183,7 @@ def test_nested_arrays() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[[[1, 2], [3, 4]]]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -197,7 +197,7 @@ def test_dicts() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[{"name": "alice", "age": 30}]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -211,7 +211,7 @@ def test_nested_dict_in_sequence() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[["a", {"x": 1}]]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -225,7 +225,7 @@ def test_nested_sequence_in_dict() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[{"items": [1, 2]}]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -239,7 +239,7 @@ def test_indent_spaces() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
-        line_prefix="        ",
+        pre_indent_level=2,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -249,17 +249,17 @@ def test_indent_spaces() -> None:
 
 
 def test_indent_tabs() -> None:
-    """Tab-based prefix is prepended to each line."""
+    """Pre-indent level is applied using the Go language indent."""
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=GO,
-        line_prefix="\t\t",
+        pre_indent_level=2,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.code == "\t\ttrue,\n\t\tfalse,"
+    assert result.code == "        true,\n        false,"
 
 
 def test_include_delimiters() -> None:
@@ -267,7 +267,7 @@ def test_include_delimiters() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -283,12 +283,12 @@ def test_include_delimiters() -> None:
     assert result.code == expected
 
 
-def test_include_delimiters_with_line_prefix() -> None:
-    """Wrapping respects the given line_prefix."""
+def test_include_delimiters_with_pre_indent_level() -> None:
+    """Wrapping respects the given pre_indent_level."""
     result = literalize_json(
         json_string=json.dumps(obj=[["a", 1.0]]),
         language=PYTHON,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -311,7 +311,7 @@ def test_indent_override() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[True, False]),
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -332,7 +332,7 @@ def test_empty_data(*, include_delimiters: bool) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=[]),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=include_delimiters,
         variable_name=None,
         new_variable=True,
@@ -365,7 +365,7 @@ def test_scalar(
     result = literalize_json(
         json_string=json_string,
         language=language,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -375,11 +375,11 @@ def test_scalar(
 
 
 def test_scalar_with_indent() -> None:
-    """Scalar values respect the prefix parameter."""
+    """Scalar values respect the pre_indent_level parameter."""
     result = literalize_json(
         json_string="42",
         language=PYTHON,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -393,7 +393,7 @@ def test_scalar_include_delimiters_ignored() -> None:
     result = literalize_json(
         json_string="42",
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -408,7 +408,7 @@ def test_literalize_json_array() -> None:
     result = literalize_json(
         json_string=json_string,
         language=PYTHON,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -424,7 +424,7 @@ def test_literalize_json_object() -> None:
     result = literalize_json(
         json_string=json_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -446,7 +446,7 @@ def test_literalize_json_invalid() -> None:
         literalize_json(
             json_string="not json",
             language=PYTHON,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=False,
             variable_name=None,
             new_variable=True,
@@ -465,7 +465,7 @@ def test_part1_sample_python() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        line_prefix="        ",
+        pre_indent_level=2,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -486,7 +486,7 @@ def test_part2_sample_go() -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=GO,
-        line_prefix="        ",
+        pre_indent_level=2,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -503,7 +503,7 @@ def test_literalize_json_invalid_is_parse_error() -> None:
         literalize_json(
             json_string="not json",
             language=PYTHON,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=False,
             variable_name=None,
             new_variable=True,
@@ -525,7 +525,7 @@ def test_error_on_coercion_json_raises() -> None:
         literalize_json(
             json_string="[1, 2.5, 3]",
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -538,7 +538,7 @@ def test_error_on_coercion_json_no_raise_homogeneous() -> None:
     result = literalize_json(
         json_string="[1, 2, 3]",
         language=MOJO,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -561,7 +561,7 @@ def test_error_on_coercion_json_raises_sibling_lists() -> None:
         literalize_json(
             json_string='[[1, 2], ["a", "b"]]',
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
@@ -577,7 +577,7 @@ def test_error_on_coercion_json_raises_nested_sibling_lists() -> None:
         literalize_json(
             json_string='[[[1, 2], ["a", "b"]]]',
             language=MOJO,
-            line_prefix="",
+            pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
             new_variable=True,
