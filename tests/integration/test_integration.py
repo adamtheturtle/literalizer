@@ -14,7 +14,6 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import itertools
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -87,61 +86,6 @@ def _wrap_occam(content: str) -> str:
 def _wrap_fsharp(content: str) -> str:
     """Wrap an F# ``let`` declaration in a module."""
     return "module Check\n\n" + content
-
-
-@dataclasses.dataclass(frozen=True)
-class _HaskellBodySplit:
-    """Result of splitting body-preamble lines from a Haskell code
-    string.
-    """
-
-    body_preamble: str
-    expression: str
-
-
-@beartype
-def _split_haskell_body_preamble(*, content: str) -> _HaskellBodySplit:
-    """Split body-preamble lines from the expression in *content*.
-
-    Body-preamble lines (imports, data types, typeclass instances) are
-    now included at the start of ``code`` by the library.  This helper
-    separates them from the trailing expression so the test wrapper can
-    place them in the correct structural position within the Haskell
-    module, with imports sorted before data types and instances.
-    """
-    lines = content.split(sep="\n")
-
-    preamble_prefixes = ("import ", "instance ", "data ")
-
-    # Find the first line that is NOT body-preamble.  A line counts as
-    # preamble when it starts with a known prefix or is an indented
-    # continuation of a preceding block.
-    def _is_preamble(idx_line: tuple[int, str]) -> bool:
-        """Check whether a line is part of the body preamble."""
-        idx, line = idx_line
-        is_prefix = any(line.startswith(p) for p in preamble_prefixes)
-        is_continuation = line.startswith("    ") and idx > 0
-        return is_prefix or is_continuation
-
-    expr_start = len(
-        list(
-            itertools.takewhile(
-                _is_preamble,
-                enumerate(iterable=lines),
-            )
-        )
-    )
-    preamble_lines = lines[:expr_start]
-    # Reorder: imports first, then everything else (data types,
-    # instances), so the output is valid Haskell.
-    imports = [ln for ln in preamble_lines if ln.startswith("import ")]
-    rest = [ln for ln in preamble_lines if not ln.startswith("import ")]
-    ordered = imports + rest
-
-    return _HaskellBodySplit(
-        body_preamble="\n".join(ordered),
-        expression="\n".join(lines[expr_start:]),
-    )
 
 
 _VARIABLE_NAME = "my_data"
@@ -322,15 +266,33 @@ def _wrap_rust(content: str) -> str:
 @beartype
 def _wrap_haskell(content: str) -> str:
     """Wrap a Haskell variable binding in a module."""
-    split = _split_haskell_body_preamble(content=content)
-    header = "module Check where\n"
-    header += split.body_preamble + "\n"
+    lines = content.split(sep="\n")
+    preamble_prefixes = ("import ", "instance ", "data ")
+    # Find the first line that is NOT body-preamble.  A line counts as
+    # preamble when it starts with a known prefix or is an indented
+    # continuation of a preceding block.
+    expr_start = next(
+        (
+            idx
+            for idx, line in enumerate(iterable=lines)
+            if not (
+                any(line.startswith(p) for p in preamble_prefixes)
+                or (line.startswith("    ") and idx > 0)
+            )
+        ),
+        len(lines),
+    )
+
+    preamble = "\n".join(lines[:expr_start])
+    expression = "\n".join(lines[expr_start:])
+
+    header = "module Check where\n" + preamble + "\n"
     # Tuples are not Val-typed, so skip the type annotation for them.
-    eq_pos = split.expression.find("= ")
-    rhs = split.expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
+    eq_pos = expression.find("= ")
+    rhs = expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
     if rhs.startswith("("):
-        return header + split.expression
-    return header + f"{_VARIABLE_NAME} :: Val\n" + split.expression
+        return header + expression
+    return header + f"{_VARIABLE_NAME} :: Val\n" + expression
 
 
 @beartype
