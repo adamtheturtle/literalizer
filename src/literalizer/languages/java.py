@@ -396,6 +396,7 @@ class Java(metaclass=LanguageCls):
             datetime_type=cfg.type_name(
                 py_type=datetime_format.value.type_produced,
             ),
+            set_opener_template=None,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

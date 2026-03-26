@@ -410,6 +410,7 @@ class Scala(metaclass=LanguageCls):
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=self._opener_config.element_to_type(
+                        list_template=None,
                         date_type=date_type_name,
                         datetime_type=datetime_type_name,
                     ),

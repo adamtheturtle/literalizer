@@ -296,6 +296,7 @@ class Dart(metaclass=LanguageCls):
         openers = cfg.build(
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(py_type=dt_tp),
+            set_opener_template=None,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

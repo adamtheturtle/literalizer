@@ -84,6 +84,8 @@ def _make_cpp_element_to_type() -> Callable[[type | ListType], str | None]:
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="std::string",
+        date_type=None,
+        datetime_type=None,
         list_template="std::vector<{inner}>",
     )
 
