@@ -1,6 +1,6 @@
-var my_data = listOf<String>(
+var my_data = arrayOf(
     "48656c6c6f",
 )
-my_data = listOf<String>(
+my_data = arrayOf(
     "48656c6c6f",
 )

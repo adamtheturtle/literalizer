@@ -1,9 +1,9 @@
-var my_data = listOf<String>(
+var my_data = arrayOf(
     // line 1
     // line 2
     "a",
 )
-my_data = listOf<String>(
+my_data = arrayOf(
     // line 1
     // line 2
     "a",

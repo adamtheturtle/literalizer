@@ -1,4 +1,4 @@
-val my_data = listOf<Boolean>(
+val my_data = booleanArrayOf(
     true,
     false,
     true,

@@ -1,8 +1,8 @@
-var my_data = listOf<String>(
+var my_data = arrayOf(
     "a",
     // trailing
 )
-my_data = listOf<String>(
+my_data = arrayOf(
     "a",
     // trailing
 )

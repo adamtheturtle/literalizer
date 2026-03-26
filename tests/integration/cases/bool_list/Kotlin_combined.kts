@@ -1,9 +1,9 @@
-var my_data = listOf<Boolean>(
+var my_data = booleanArrayOf(
     true,
     false,
     true,
 )
-my_data = listOf<Boolean>(
+my_data = booleanArrayOf(
     true,
     false,
     true,

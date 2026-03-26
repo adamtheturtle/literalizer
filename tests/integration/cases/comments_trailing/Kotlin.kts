@@ -1,4 +1,4 @@
-val my_data = listOf<String>(
+val my_data = arrayOf(
     "a",
     // trailing
 )

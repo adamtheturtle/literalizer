@@ -1,4 +1,4 @@
-val my_data = listOf<String>(
+val my_data = arrayOf(
     // line 1
     // line 2
     "a",

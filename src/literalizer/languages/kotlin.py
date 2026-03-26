@@ -72,21 +72,32 @@ def _kotlin_list_sequence_open(
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the Kotlin List format.
 
-    Uses the config's element-to-type resolver so that ``DictType``
-    and nested types are handled correctly and stay in sync with the
-    configured date/datetime formats.
+    Delegates to ``_kotlin_type_to_opener`` for scalars and lists
+    (preserving specialized openers like ``intArrayOf``), and falls
+    through to the config resolver for ``DictType`` so that nested
+    types and date/datetime formats are handled correctly.
     """
-    resolver = cfg.element_to_type(
+    dict_resolver = cfg.element_to_type(
         list_template="List<{inner}>",
         date_type=date_type,
         datetime_type=datetime_type,
         enable_dict_type=True,
     )
+
+    @beartype
+    def _combined_opener(
+        element_type: type | ListType | DictType,
+    ) -> str | None:
+        """Resolve element type, preferring specialized Kotlin openers."""
+        if isinstance(element_type, DictType):
+            type_name = dict_resolver(element_type)
+            if type_name is not None:
+                return f"listOf<{type_name}>("
+            return None
+        return _kotlin_type_to_opener(element_type=element_type)
+
     return typed_sequence_open(
-        type_to_opener=make_type_to_opener(
-            element_to_type=resolver,
-            opener_template="listOf<{type_name}>(",
-        ),
+        type_to_opener=_combined_opener,
         fallback="listOf<Any?>(",
     )
 
@@ -99,7 +110,7 @@ def _kotlin_type_to_opener(
 
     Used by the ARRAY sequence format.  ``DictType`` is not handled
     here — for the LIST format, :func:`_kotlin_list_sequence_open`
-    provides full ``DictType`` support via the config's resolver.
+    provides full ``DictType`` support via the config resolver.
     """
     if isinstance(element_type, DictType):
         return None

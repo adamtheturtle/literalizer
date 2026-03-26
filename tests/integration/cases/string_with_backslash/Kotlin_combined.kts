@@ -1,9 +1,9 @@
-var my_data = listOf<String>(
+var my_data = arrayOf(
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",
 )
-my_data = listOf<String>(
+my_data = arrayOf(
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",

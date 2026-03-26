@@ -1,8 +1,8 @@
-var my_data = listOf<String>(
+var my_data = arrayOf(
     "a",  // note a
     "b",  // note b
 )
-my_data = listOf<String>(
+my_data = arrayOf(
     "a",  // note a
     "b",  // note b
 )
