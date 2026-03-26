@@ -90,19 +90,6 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     )
 
 
-_go_element_to_type = make_element_to_type(
-    str_type="string",
-    bool_type="bool",
-    int_type="int",
-    float_type="float64",
-    mixed_numeric_type="float64",
-    bytes_type="string",
-    date_type="time.Time",
-    datetime_type="time.Time",
-    list_template="[]{inner}",
-)
-
-
 @beartype
 def _format_go_set_entry(_original: Value, item: str) -> str:
     """Format a Go set entry as a map entry with empty struct value.
@@ -181,7 +168,17 @@ class Go(metaclass=LanguageCls):
         SLICE = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_go_element_to_type,
+                    element_to_type=make_element_to_type(
+                        str_type="string",
+                        bool_type="bool",
+                        int_type="int",
+                        float_type="float64",
+                        mixed_numeric_type="float64",
+                        bytes_type="string",
+                        date_type="time.Time",
+                        datetime_type="time.Time",
+                        list_template="[]{inner}",
+                    ),
                     opener_template="[]{type_name}{{",
                 ),
                 fallback="[]any{",
@@ -209,7 +206,17 @@ class Go(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=typed_set_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_go_element_to_type,
+                    element_to_type=make_element_to_type(
+                        str_type="string",
+                        bool_type="bool",
+                        int_type="int",
+                        float_type="float64",
+                        mixed_numeric_type="float64",
+                        bytes_type="string",
+                        date_type="time.Time",
+                        datetime_type="time.Time",
+                        list_template="[]{inner}",
+                    ),
                     opener_template="map[{type_name}]struct{{}}{{",
                 ),
                 fallback="map[any]struct{}{",
