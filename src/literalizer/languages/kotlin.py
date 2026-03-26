@@ -343,9 +343,6 @@ class Kotlin(metaclass=LanguageCls):
 
         AUTO = "auto"
 
-        # Deprecated alias — will be removed in a future release.
-        NONE = "auto"  # noqa: PIE796
-
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats

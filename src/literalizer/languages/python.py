@@ -445,10 +445,6 @@ class Python(metaclass=LanguageCls):
         AUTO = "auto"
         ALWAYS = "always"
 
-        # Deprecated aliases — will be removed in a future release.
-        NONE = "auto"  # noqa: PIE796
-        INLINE = "always"  # noqa: PIE796
-
         def formatter(
             self,
             *,

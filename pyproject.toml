@@ -412,9 +412,6 @@ ignore_names = [
     "MAP_SET",
     "EPOCH",
     "FROZENSET",
-    # Deprecated enum aliases for VariableTypeHints
-    "INLINE",
-    "NONE",
     "ERLANG",
     "NO",
     "OBJECT",
