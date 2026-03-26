@@ -303,10 +303,12 @@ project_excludes = [
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
-    "tests/integration/cases",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
+executionEnvironments = [
+    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
+]
 
 [tool.ty]
 analysis.respect-type-ignore-comments = false
