@@ -311,9 +311,6 @@ typeCheckingMode = "strict"
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
-src.exclude = [
-    "tests/integration/cases",
-]
 
 [tool.pytest]
 ini_options.xfail_strict = true
