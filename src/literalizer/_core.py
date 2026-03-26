@@ -662,9 +662,17 @@ def _format_ordered_map_value(
     ]
     pairs = [
         spec.format_ordered_map_entry(
-            _format_value(value=k, spec=spec),
+            _format_value(
+                value=k,
+                spec=spec,
+                dict_open_override=None,
+            ),
             v,
-            _format_value(value=v, spec=spec),
+            _format_value(
+                value=v,
+                spec=spec,
+                dict_open_override=None,
+            ),
         )
         for k, v in ordered_map_items
     ]
@@ -677,7 +685,7 @@ def _format_dict_value(
     *,
     value: dict[str, Value],
     spec: Language,
-    open_override: str | None = None,
+    open_override: str | None,
 ) -> str:
     """Format a dict as a native language literal."""
     dict_cfg = spec.dict_format_config
@@ -691,9 +699,17 @@ def _format_dict_value(
         return dict_cfg.empty_dict
     pairs = [
         _build_dict_entry(
-            key_str=_format_value(value=k, spec=spec),
+            key_str=_format_value(
+                value=k,
+                spec=spec,
+                dict_open_override=None,
+            ),
             val=v,
-            val_str=_format_value(value=v, spec=spec),
+            val_str=_format_value(
+                value=v,
+                spec=spec,
+                dict_open_override=None,
+            ),
             spec=spec,
         )
         for k, v in dict_items.items()
@@ -788,7 +804,7 @@ def _format_value(
     *,
     value: Value,
     spec: Language,
-    dict_open_override: str | None = None,
+    dict_open_override: str | None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -943,11 +959,23 @@ def _format_collection_lines(
                 empty_value: ordereddict | dict[str, Value] = (
                     ordereddict() if is_ordered_map else {}
                 )
-                return _format_value(value=empty_value, spec=spec)
+                return _format_value(
+                    value=empty_value,
+                    spec=spec,
+                    dict_open_override=None,
+                )
             last_idx = len(entries) - 1
             for i, (k, v) in enumerate(iterable=entries):
-                formatted_key = _format_value(value=k, spec=spec)
-                formatted_val = _format_value(value=v, spec=spec)
+                formatted_key = _format_value(
+                    value=k,
+                    spec=spec,
+                    dict_open_override=None,
+                )
+                formatted_val = _format_value(
+                    value=v,
+                    spec=spec,
+                    dict_open_override=None,
+                )
                 entry = (
                     spec.format_ordered_map_entry(
                         formatted_key, v, formatted_val
@@ -970,7 +998,11 @@ def _format_collection_lines(
             )
             last_idx = len(sorted_items) - 1
             for i, item in enumerate(iterable=sorted_items):
-                formatted = _format_value(value=item, spec=spec)
+                formatted = _format_value(
+                    value=item,
+                    spec=spec,
+                    dict_open_override=None,
+                )
                 entry = spec.format_set_entry(item, formatted)
                 add_sep = i < last_idx or trailing_comma
                 sep = spec.element_separator.strip() if add_sep else ""
@@ -1066,7 +1098,12 @@ def _literalize(
     # delegate to _format_value which already returns the correct
     # compact representation (e.g. ``{}``, ``[]``).
     if not data and include_delimiters:
-        return f"{line_prefix}{_format_value(value=data, spec=spec)}"
+        formatted = _format_value(
+            value=data,
+            spec=spec,
+            dict_open_override=None,
+        )
+        return f"{line_prefix}{formatted}"
 
     body_prefix = (
         line_prefix + language.indent if include_delimiters else line_prefix
