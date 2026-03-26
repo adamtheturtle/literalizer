@@ -250,6 +250,7 @@ class Toml(metaclass=LanguageCls):
             format_entry=_format_toml_dict_entry,
             empty_dict=None,
             preamble_lines=(),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,

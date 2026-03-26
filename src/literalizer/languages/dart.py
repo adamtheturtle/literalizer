@@ -298,6 +298,7 @@ class Dart(metaclass=LanguageCls):
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(py_type=dt_tp),
             set_opener_template=None,
+            narrow_dict_values=True,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(
@@ -319,6 +320,7 @@ class Dart(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=(),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

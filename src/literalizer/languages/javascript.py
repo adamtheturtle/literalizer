@@ -200,6 +200,7 @@ class JavaScript(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=(),
+            narrowed_open=None,
         )
         MAP = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="new Map(["),
@@ -210,6 +211,7 @@ class JavaScript(metaclass=LanguageCls):
             ),
             empty_dict="new Map()",
             preamble_lines=(),
+            narrowed_open=None,
         )
 
     class NumericSeparators(enum.Enum):

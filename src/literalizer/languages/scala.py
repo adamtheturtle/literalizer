@@ -72,6 +72,7 @@ def _list_sequence_open(
                 list_template="List[{inner}]",
                 date_type=date_type,
                 datetime_type=datetime_type,
+                enable_dict_type=True,
             ),
             opener_template="List[{type_name}](",
         ),
@@ -421,6 +422,7 @@ class Scala(metaclass=LanguageCls):
                 ),
                 fallback=dict_spec.fallback,
             ),
+            narrowed_open=None,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" -> ",

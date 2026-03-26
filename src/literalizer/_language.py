@@ -106,7 +106,7 @@ class DictFormatConfig:
     format_entry: Callable[[str, Value, str], str]
     empty_dict: str | None
     preamble_lines: tuple[str, ...]
-    narrowed_open: str | None = None
+    narrowed_open: str | None
 
 
 @dataclasses.dataclass(frozen=True)

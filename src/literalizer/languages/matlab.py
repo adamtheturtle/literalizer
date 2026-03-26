@@ -237,9 +237,11 @@ class Matlab(metaclass=LanguageCls):
             format_entry=_format_matlab_dict_entry,
             empty_dict="struct()",
             preamble_lines=(),
+            narrowed_open=None,
         )
         CONTAINERS_MAP = DictFormatConfig(
             open_fn=_containers_map_open,
+            narrowed_open=None,
             close="})",
             format_entry=_format_containers_map_entry,
             empty_dict="containers.Map()",

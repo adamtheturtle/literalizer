@@ -441,6 +441,7 @@ class Kotlin(metaclass=LanguageCls):
                 ),
                 fallback=dict_spec.fallback,
             ),
+            narrowed_open=None,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" to ",

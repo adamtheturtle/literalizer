@@ -373,6 +373,7 @@ class CSharp(metaclass=LanguageCls):
             format_entry=csharp_dict_entry,
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

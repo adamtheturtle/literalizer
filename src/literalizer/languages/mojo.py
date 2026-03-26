@@ -131,6 +131,8 @@ class Mojo(metaclass=LanguageCls):
                         date_type=None,
                         datetime_type=None,
                         list_template="List[{inner}]",
+                        dict_type_template=None,
+                        fallback_value_type=None,
                     ),
                     opener_template="Set[{type_name}](",
                 ),
@@ -246,6 +248,7 @@ class Mojo(metaclass=LanguageCls):
             ),
             empty_dict="Dict[String, String]()",
             preamble_lines=(),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=True,

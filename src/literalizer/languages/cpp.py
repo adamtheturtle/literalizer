@@ -270,6 +270,7 @@ class Cpp(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=("#include <map>",),
+            narrowed_open=None,
         )
         UNORDERED_MAP = DictFormatConfig(
             open_fn=typed_dict_open(
@@ -287,6 +288,7 @@ class Cpp(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=("#include <unordered_map>",),
+            narrowed_open=None,
         )
 
     class IntegerFormats(enum.Enum):

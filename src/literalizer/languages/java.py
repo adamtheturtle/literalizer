@@ -123,6 +123,8 @@ class Java(metaclass=LanguageCls):
         sequence_opener_template="new {type_name}[]{{",
         dict_opener_template="new {type_name}[]{{",
         set_opener_template="Set.of(",
+        dict_type_template=None,
+        fallback_value_type=None,
     )
 
     class DateFormats(enum.Enum):
@@ -257,6 +259,7 @@ class Java(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=("import java.util.Map;",),
+            narrowed_open=None,
         )
         HASH_MAP = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="new HashMap<>(Map.ofEntries("),
@@ -270,6 +273,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.HashMap;",
                 "import java.util.Map;",
             ),
+            narrowed_open=None,
         )
 
     class IntegerFormats(enum.Enum):
@@ -396,6 +400,7 @@ class Java(metaclass=LanguageCls):
                 py_type=datetime_format.value.type_produced,
             ),
             set_opener_template=None,
+            narrow_dict_values=False,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

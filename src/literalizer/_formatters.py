@@ -316,8 +316,8 @@ class TypedOpenerConfig:
         sequence_opener_template: str,
         dict_opener_template: str,
         set_opener_template: str,
-        dict_type_template: str | None = None,
-        fallback_value_type: str | None = None,
+        dict_type_template: str | None,
+        fallback_value_type: str | None,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
         self._str_type = str_type
@@ -364,7 +364,7 @@ class TypedOpenerConfig:
         list_template: str | None,
         date_type: str | None,
         datetime_type: str | None,
-        enable_dict_type: bool = True,
+        enable_dict_type: bool,
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Build an element-to-type resolver.
 
@@ -398,7 +398,7 @@ class TypedOpenerConfig:
         date_type: str | None,
         datetime_type: str | None,
         set_opener_template: str | None,
-        narrow_dict_values: bool = True,
+        narrow_dict_values: bool,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.
@@ -419,6 +419,7 @@ class TypedOpenerConfig:
             list_template=None,
             date_type=date_type,
             datetime_type=datetime_type,
+            enable_dict_type=True,
         )
         dict_set_resolver = self.element_to_type(
             list_template=None,
@@ -812,8 +813,8 @@ def make_element_to_type(
     date_type: str | None,
     datetime_type: str | None,
     list_template: str,
-    dict_type_template: str | None = None,
-    fallback_value_type: str | None = None,
+    dict_type_template: str | None,
+    fallback_value_type: str | None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Create a recursive type resolver from scalar types and a list
     template.

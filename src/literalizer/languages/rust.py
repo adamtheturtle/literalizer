@@ -253,6 +253,7 @@ class Rust(metaclass=LanguageCls):
             ),
             empty_dict="HashMap::<&str, &str>::from([])",
             preamble_lines=("use std::collections::HashMap;",),
+            narrowed_open=None,
         )
         BTREE_MAP = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="BTreeMap::from(["),
@@ -262,6 +263,7 @@ class Rust(metaclass=LanguageCls):
             ),
             empty_dict="BTreeMap::<&str, &str>::from([])",
             preamble_lines=("use std::collections::BTreeMap;",),
+            narrowed_open=None,
         )
 
     class IntegerFormats(enum.Enum):

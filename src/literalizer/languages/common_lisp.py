@@ -217,6 +217,7 @@ class CommonLisp(metaclass=LanguageCls):
             format_entry=_format_cons_entry,
             empty_dict="nil",
             preamble_lines=(),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
