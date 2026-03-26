@@ -5,16 +5,11 @@ import pytest
 from literalizer import LanguageCls
 from literalizer.languages import ALL_LANGUAGES
 
-_SORTED_LANGUAGES: list[LanguageCls] = sorted(
-    ALL_LANGUAGES,
-    key=lambda c: c.__name__,
-)
-
 
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    argvalues=sorted(ALL_LANGUAGES, key=lambda c: c.__name__),
+    ids=lambda c: c.__name__,
 )
 def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     """Every language exposes at least one member in each format Enum."""

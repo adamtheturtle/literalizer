@@ -3,8 +3,6 @@
 import sys
 from pathlib import Path
 
-_MIN_TOP_LEVEL_TERMINATORS = 2
-
 
 def _strip_comment(line: str) -> str:
     """Strip an occam-pi inline comment (``--`` to end of line)."""
@@ -106,10 +104,11 @@ def _check_file(path: Path) -> str | None:
         i for i, line in enumerate(iterable=lines) if line == ":"
     ]
 
-    if len(top_level_term_indices) < _MIN_TOP_LEVEL_TERMINATORS:
+    min_top_level_terminators = 2
+    if len(top_level_term_indices) < min_top_level_terminators:
         count = len(top_level_term_indices)
         return (
-            f"Expected at least {_MIN_TOP_LEVEL_TERMINATORS} top-level ':' "
+            f"Expected at least {min_top_level_terminators} top-level ':' "
             f"terminators (type definition + PROC), found {count}"
         )
 
