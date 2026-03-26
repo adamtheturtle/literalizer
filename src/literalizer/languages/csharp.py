@@ -316,6 +316,9 @@ class CSharp(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_array_type: str = "object",
+        empty_set_type: str = "object",
+        empty_dict_value_type: str = "object",
     ) -> None:
         """Initialize CSharp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -324,27 +327,45 @@ class CSharp(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        if fmt.typed_opener_fallback is not None:
+            # ARRAY format: parameterize the empty type
+            fmt = dataclasses.replace(
+                fmt,
+                empty_sequence=f"Array.Empty<{empty_array_type}>()",
+                typed_opener_fallback=f"new {empty_array_type}[] {{",
+                sequence_open=fixed_sequence_open(
+                    open_str=f"new {empty_array_type}[] {{",
+                ),
+            )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        csharp_dict_entry = dict_entry_with_template(
-            template="[{key}] = {value}",
-            format_value=passthrough_sequence_entry,
-        )
-
-        date_tp = date_format.value.type_produced
-        dt_tp = datetime_format.value.type_produced
         cfg = self._opener_config
+        date_type = cfg.type_name(
+            py_type=date_format.value.type_produced,
+        )
+        datetime_type = cfg.type_name(
+            py_type=datetime_format.value.type_produced,
+        )
         openers = cfg.build(
-            date_type=cfg.type_name(py_type=date_tp),
-            datetime_type=cfg.type_name(py_type=dt_tp),
+            date_type=date_type,
+            datetime_type=datetime_type,
             set_opener_template=set_format.value.set_opener_template or None,
             narrow_dict_values=False,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
+            empty_set=(
+                set_format.value.empty_set.replace(
+                    "<object>", f"<{empty_set_type}>"
+                )
+                if set_format.value.empty_set is not None
+                else None
+            ),
             set_open=typed_set_open(
                 type_to_opener=openers.set,
-                fallback=set_format.value.set_open([]),
+                fallback=set_format.value.set_open([]).replace(
+                    "<object>", f"<{empty_set_type}>"
+                ),
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
@@ -355,22 +376,27 @@ class CSharp(metaclass=LanguageCls):
             if fmt.typed_opener_fallback is not None
             else fmt.sequence_open
         )
-        dict_spec: _CSharpDictSpec = dict_format.value
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
                         list_template=None,
-                        date_type=cfg.type_name(py_type=date_tp),
-                        datetime_type=cfg.type_name(py_type=dt_tp),
+                        date_type=date_type,
+                        datetime_type=datetime_type,
                         enable_dict_type=False,
                     ),
-                    opener_template=dict_spec.opener_template,
+                    opener_template=dict_format.value.opener_template,
                 ),
-                fallback=dict_spec.fallback,
+                fallback=dict_format.value.fallback.replace(
+                    "object>",
+                    f"{empty_dict_value_type}>",
+                ),
             ),
             close="}",
-            format_entry=csharp_dict_entry,
+            format_entry=dict_entry_with_template(
+                template="[{key}] = {value}",
+                format_value=passthrough_sequence_entry,
+            ),
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
             narrowed_open=None,
@@ -405,13 +431,16 @@ class CSharp(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="new Dictionary<string, object> {",
+                open_str=f"new Dictionary<string, {empty_dict_value_type}> {{",
                 close="}",
                 preamble_lines=("using System.Collections.Generic;",),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            csharp_dict_entry
+            dict_entry_with_template(
+                template="[{key}] = {value}",
+                format_value=passthrough_sequence_entry,
+            )
         )
         self.indent = indent
         self.indent_closing_delimiter = False

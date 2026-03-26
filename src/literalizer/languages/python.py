@@ -110,6 +110,7 @@ def _format_variable_declaration(
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    empty_type_hint: str = "Any",
 ) -> str:
     """Format a Python variable declaration.
 
@@ -126,6 +127,7 @@ def _format_variable_declaration(
             datetime_hint=datetime_hint,
             sequence_hint=sequence_hint,
             set_hint=set_hint,
+            empty_type_hint=empty_type_hint,
         )
     return f"{name} = {value}"
 
@@ -141,6 +143,7 @@ def _format_inline_type_hint_declaration(
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    empty_type_hint: str = "Any",
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
@@ -150,6 +153,7 @@ def _format_inline_type_hint_declaration(
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        empty_type_hint=empty_type_hint,
     )
     return f"{name}: {hint} = {value}"
 
@@ -170,9 +174,10 @@ def _collection_element_union(
     recurse: Callable[..., str],
     sort: bool,
     merge_dicts: bool,
+    empty_type_hint: str = "Any",
 ) -> str:
-    """Return the element union for a collection, or ``"Any"`` if
-    empty.
+    """Return the element union for a collection, or *empty_type_hint*
+    if empty.
 
     When *merge_dicts* is ``True``, all dict elements are merged so
     that their values produce a single ``dict[str, …]`` hint.  This
@@ -180,7 +185,7 @@ def _collection_element_union(
     because ``dict`` is invariant in its type parameters.
     """
     if not elements:
-        return "Any"
+        return empty_type_hint
     if merge_dicts:
         elements = _merge_dict_elements(elements=elements)
     types = [recurse(data=e) for e in elements]
@@ -230,6 +235,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    empty_type_hint: str = "Any",
 ) -> str:
     """Derive a Python type hint from the original data and format
     config.
@@ -241,6 +247,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        empty_type_hint=empty_type_hint,
     )
 
     # Order matters: datetime before date (datetime is a date subclass),
@@ -273,6 +280,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 recurse=recurse,
                 sort=False,
                 merge_dicts=False,
+                empty_type_hint=empty_type_hint,
             )
             return f"{outer}[str, {val_union}]"
         case set():
@@ -281,6 +289,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 recurse=recurse,
                 sort=True,
                 merge_dicts=False,
+                empty_type_hint=empty_type_hint,
             )
             return f"{set_hint}[{elem_union}]"
         case list():
@@ -289,6 +298,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 recurse=recurse,
                 sort=False,
                 merge_dicts=True,
+                empty_type_hint=empty_type_hint,
             )
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
@@ -489,6 +499,7 @@ class Python(metaclass=LanguageCls):
             datetime_hint: str,
             sequence_hint: str,
             set_hint: str,
+            empty_type_hint: str = "Any",
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -501,6 +512,7 @@ class Python(metaclass=LanguageCls):
                     datetime_hint=datetime_hint,
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
+                    empty_type_hint=empty_type_hint,
                 )
             return functools.partial(
                 _format_variable_declaration,
@@ -509,6 +521,7 @@ class Python(metaclass=LanguageCls):
                 datetime_hint=datetime_hint,
                 sequence_hint=sequence_hint,
                 set_hint=set_hint,
+                empty_type_hint=empty_type_hint,
             )
 
     class CommentFormats(enum.Enum):
@@ -628,6 +641,7 @@ class Python(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_type_hint: str = "Any",
     ) -> None:
         """Initialize Python language specification."""
         self.variable_type_hints = variable_type_hints
@@ -707,6 +721,7 @@ class Python(metaclass=LanguageCls):
                 datetime_hint=datetime_hint,
                 sequence_hint=sequence_hint,
                 set_hint=set_hint,
+                empty_type_hint=empty_type_hint,
             )
         )
         self.format_variable_declaration = decl_fmt

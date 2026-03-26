@@ -250,6 +250,9 @@ class VisualBasic(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_array_type: str = "Object",
+        empty_set_type: str = "Object",
+        empty_dict_value_type: str = "Object",
     ) -> None:
         """Initialize VisualBasic language specification."""
         self.variable_type_hints = variable_type_hints
@@ -277,13 +280,13 @@ class VisualBasic(metaclass=LanguageCls):
         fmt = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=vb_type_to_opener,
-                fallback="New Object() {",
+                fallback=f"New {empty_array_type}() {{",
             ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="New Object() {}",
+            empty_sequence=f"New {empty_array_type}() {{}}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -296,18 +299,19 @@ class VisualBasic(metaclass=LanguageCls):
                     element_to_type=element_to_type,
                     opener_template="New HashSet(Of {type_name}) From {{",
                 ),
-                fallback="New HashSet(Of Object) From {",
+                fallback=f"New HashSet(Of {empty_set_type}) From {{",
             ),
             close="}",
-            empty_set="New HashSet(Of Object)()",
+            empty_set=f"New HashSet(Of {empty_set_type})()",
             preamble_lines=(),
             set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        vb_dict_open = (
+            f"New Dictionary(Of String, {empty_dict_value_type}) From {{"
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(
-                open_str="New Dictionary(Of String, Object) From {",
-            ),
+            open_fn=fixed_dict_open(open_str=vb_dict_open),
             close="}",
             format_entry=braced_dict_entry(
                 format_value=passthrough_sequence_entry
@@ -343,7 +347,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="New Dictionary(Of String, Object) From {",
+                open_str=vb_dict_open,
                 close="}",
                 preamble_lines=(),
             )

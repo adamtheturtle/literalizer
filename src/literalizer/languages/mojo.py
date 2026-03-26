@@ -1,5 +1,6 @@
 """Mojo language specification."""
 
+import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -227,6 +228,10 @@ class Mojo(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_sequence_type: str = "String",
+        empty_set_type: str = "String",
+        empty_dict_key_type: str = "String",
+        empty_dict_value_type: str = "String",
     ) -> None:
         """Initialize Mojo language specification."""
         self.variable_type_hints = variable_type_hints
@@ -235,9 +240,35 @@ class Mojo(metaclass=LanguageCls):
         self.true_literal = "True"
         self.false_literal = "False"
         fmt = sequence_format.value
+        fmt = dataclasses.replace(
+            fmt,
+            empty_sequence=f"List[{empty_sequence_type}]()",
+        )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            empty_set=f"Set[{empty_set_type}]()",
+            set_open=typed_set_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=make_element_to_type(
+                        str_type="String",
+                        bool_type="Bool",
+                        int_type="Int",
+                        float_type="Float64",
+                        mixed_numeric_type="String",
+                        bytes_type=None,
+                        date_type=None,
+                        datetime_type=None,
+                        list_template="List[{inner}]",
+                        dict_type_template=None,
+                        fallback_value_type=None,
+                    ),
+                    opener_template="Set[{type_name}](",
+                ),
+                fallback=f"Set[{empty_set_type}](",
+            ),
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
@@ -246,7 +277,9 @@ class Mojo(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict="Dict[String, String]()",
+            empty_dict=(
+                f"Dict[{empty_dict_key_type}, {empty_dict_value_type}]()"
+            ),
             preamble_lines=(),
             narrowed_open=None,
         )

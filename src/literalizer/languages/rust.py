@@ -1,5 +1,6 @@
 """Rust language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -366,6 +367,7 @@ class Rust(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_vec_type: str = "String",
     ) -> None:
         """Initialize Rust language specification."""
         self.variable_type_hints = variable_type_hints
@@ -374,6 +376,11 @@ class Rust(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        if fmt.empty_sequence is not None:
+            fmt = dataclasses.replace(
+                fmt,
+                empty_sequence=f"Vec::<{empty_vec_type}>::new()",
+            )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value

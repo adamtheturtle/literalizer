@@ -1,5 +1,6 @@
 """Swift language specification."""
 
+import dataclasses
 import datetime
 import enum
 import functools
@@ -298,6 +299,9 @@ class Swift(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_array_type: str = "Any",
+        empty_set_type: str = "AnyHashable",
+        empty_dict_value_type: str = "Any",
     ) -> None:
         """Initialize Swift language specification."""
         self.variable_type_hints = variable_type_hints
@@ -306,9 +310,20 @@ class Swift(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        if fmt.empty_sequence is not None:
+            fmt = dataclasses.replace(
+                fmt,
+                empty_sequence=f"[{empty_array_type}]()",
+            )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            empty_set=f"Set<{empty_set_type}>()",
+            set_open=fixed_set_open(
+                open_str=f"Set<{empty_set_type}>([",
+            ),
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="["),
@@ -317,7 +332,7 @@ class Swift(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict="[String: Any]()",
+            empty_dict=f"[String: {empty_dict_value_type}]()",
             preamble_lines=(),
             narrowed_open=None,
         )

@@ -1,5 +1,6 @@
 """Dart language specification."""
 
+import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -279,6 +280,7 @@ class Dart(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_set_type: str = "dynamic",
     ) -> None:
         """Initialize Dart language specification."""
         self.variable_type_hints = variable_type_hints
@@ -289,7 +291,10 @@ class Dart(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            empty_set=f"<{empty_set_type}>{{}}",
+        )
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced

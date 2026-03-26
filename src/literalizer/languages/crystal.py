@@ -1,5 +1,6 @@
 """Crystal language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -228,6 +229,7 @@ class Crystal(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        empty_collection_type: str = "Nil",
     ) -> None:
         """Initialize Crystal language specification."""
         self.variable_type_hints = variable_type_hints
@@ -236,9 +238,17 @@ class Crystal(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
+        if fmt.empty_sequence is not None:
+            fmt = dataclasses.replace(
+                fmt,
+                empty_sequence=f"[] of {empty_collection_type}",
+            )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            empty_set=f"Set({empty_collection_type}).new",
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
@@ -247,7 +257,9 @@ class Crystal(metaclass=LanguageCls):
                 separator=" => ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict="{} of Nil => Nil",
+            empty_dict=(
+                f"{{}} of {empty_collection_type} => {empty_collection_type}"
+            ),
             preamble_lines=(),
             narrowed_open=None,
         )
