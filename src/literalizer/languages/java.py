@@ -364,7 +364,6 @@ class Java(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.VAR,
         dict_format: DictFormats = DictFormats.MAP_OF_ENTRIES,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

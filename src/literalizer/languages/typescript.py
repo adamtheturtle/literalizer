@@ -334,7 +334,6 @@ class TypeScript(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.CONST,
         dict_format: DictFormats = DictFormats.OBJECT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
