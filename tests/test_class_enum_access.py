@@ -1,19 +1,20 @@
 """Test class-level format Enum access via the LanguageCls meta-class."""
 
-from operator import attrgetter
-
 import pytest
 
 from literalizer import LanguageCls
 from literalizer.languages import ALL_LANGUAGES
 
+_SORTED_LANGUAGES: list[LanguageCls] = sorted(
+    ALL_LANGUAGES,
+    key=lambda c: c.__name__,
+)
+
 
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=sorted(ALL_LANGUAGES, key=attrgetter("__name__")),
-    ids=[
-        c.__name__ for c in sorted(ALL_LANGUAGES, key=attrgetter("__name__"))
-    ],
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
 def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     """Every language exposes at least one member in each format Enum."""
