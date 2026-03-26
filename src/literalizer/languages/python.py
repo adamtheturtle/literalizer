@@ -204,12 +204,18 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             )
             return f"{set_hint}[{elem_union}]"
         case list():
+            if sequence_hint == "tuple":
+                if not data:
+                    return "tuple[()]"
+                elem_types = [recurse(data=e) for e in data]
+                unique = list(dict.fromkeys(elem_types))
+                if len(unique) == 1:
+                    return f"tuple[{unique[0]}, ...]"
+                return f"tuple[{', '.join(elem_types)}]"
             elem_union = _collection_element_union(
                 elements=data,
                 recurse=recurse,
             )
-            if sequence_hint == "tuple":
-                return f"{sequence_hint}[{elem_union}, ...]"
             return f"{sequence_hint}[{elem_union}]"
         case _ as unreachable:
             assert_never(unreachable)
