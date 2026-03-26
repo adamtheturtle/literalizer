@@ -345,6 +345,7 @@ class Scala(metaclass=LanguageCls):
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats
+    empty_dict_keys = EmptyDictKey
     integer_formats = IntegerFormats
     numeric_separators = NumericSeparators
     string_formats = StringFormats

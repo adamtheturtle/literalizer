@@ -294,6 +294,7 @@ class JavaScript(metaclass=LanguageCls):
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats
+    empty_dict_keys = EmptyDictKey
     numeric_separators = NumericSeparators
     integer_formats = IntegerFormats
     string_formats = StringFormats

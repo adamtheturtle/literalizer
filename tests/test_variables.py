@@ -248,7 +248,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
     R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,
-        empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        empty_dict_key=R.empty_dict_keys.POSITIONAL,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     ): _VariableSyntax(declaration="my_var <- 42", assignment="my_var <- 42"),

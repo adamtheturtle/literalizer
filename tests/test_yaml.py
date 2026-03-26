@@ -674,7 +674,7 @@ def test_r_empty_dict_key_positional() -> None:
     spec = R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,
-        empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        empty_dict_key=R.empty_dict_keys.POSITIONAL,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     )
@@ -702,7 +702,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
     spec = R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,
-        empty_dict_key=R.EmptyDictKey.POSITIONAL,
+        empty_dict_key=R.empty_dict_keys.POSITIONAL,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     )
@@ -730,7 +730,7 @@ def test_r_empty_dict_key_error() -> None:
     spec = R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,
-        empty_dict_key=R.EmptyDictKey.ERROR,
+        empty_dict_key=R.empty_dict_keys.ERROR,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     )
@@ -752,7 +752,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     spec = R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,
-        empty_dict_key=R.EmptyDictKey.ERROR,
+        empty_dict_key=R.empty_dict_keys.ERROR,
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     )
