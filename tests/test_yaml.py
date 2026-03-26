@@ -1076,7 +1076,7 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
         )
 
 
-# -- Empty-collection-type customisation tests --
+# -- Empty-collection-type customization tests --
 
 
 _EMPTY_LIST_CASES: list[tuple[str, Language, str]] = [
