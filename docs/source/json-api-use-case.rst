@@ -40,7 +40,6 @@ returns this response:
        error_on_coercion=False,
        language=Python(
            date_format=Python.date_formats.PYTHON,
-           pre_indent_level=0,
            datetime_format=Python.datetime_formats.PYTHON,
            bytes_format=Python.bytes_formats.HEX,
            sequence_format=Python.sequence_formats.TUPLE,
@@ -64,7 +63,6 @@ returns this response:
        error_on_coercion=False,
        language=Python(
            date_format=Python.date_formats.PYTHON,
-           pre_indent_level=0,
            datetime_format=Python.datetime_formats.PYTHON,
            bytes_format=Python.bytes_formats.HEX,
            sequence_format=Python.sequence_formats.TUPLE,
