@@ -418,6 +418,7 @@ class Kotlin(metaclass=LanguageCls):
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(py_type=dt_tp),
             set_opener_template=set_format.value.set_opener_template or None,
+            narrow_dict_values=False,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
@@ -434,6 +435,7 @@ class Kotlin(metaclass=LanguageCls):
                         list_template=None,
                         date_type=cfg.type_name(py_type=date_tp),
                         datetime_type=cfg.type_name(py_type=dt_tp),
+                        enable_dict_type=False,
                     ),
                     opener_template=dict_spec.opener_template,
                 ),

@@ -387,6 +387,7 @@ class Scala(metaclass=LanguageCls):
             date_type=date_type_name,
             datetime_type=datetime_type_name,
             set_opener_template=set_format.value.set_opener_template or None,
+            narrow_dict_values=False,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
@@ -414,6 +415,7 @@ class Scala(metaclass=LanguageCls):
                         list_template=None,
                         date_type=date_type_name,
                         datetime_type=datetime_type_name,
+                        enable_dict_type=False,
                     ),
                     opener_template=dict_spec.opener_template,
                 ),

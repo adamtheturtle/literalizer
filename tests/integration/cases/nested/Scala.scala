@@ -1,5 +1,5 @@
 object Check {
-val my_data = Map[String, Array[Map[String, Any]]](
+val my_data = Map(
     "users" -> List[Map[String, Any]](Map("name" -> "Bob", "tags" -> List[String]("admin", "user")), Map("name" -> "Carol", "tags" -> List[String]("guest"))),
 )
 }

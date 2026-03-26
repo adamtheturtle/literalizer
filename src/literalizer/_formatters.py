@@ -363,12 +363,14 @@ class TypedOpenerConfig:
         list_template: str | None,
         date_type: str | None,
         datetime_type: str | None,
+        enable_dict_type: bool = True,
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Build an element-to-type resolver.
 
         If *list_template* is given it overrides the default.
         If *date_type* or *datetime_type* is given they override the
-        base values.
+        base values.  When *enable_dict_type* is ``False`` the
+        resolver will not handle ``DictType``.
         """
         return make_element_to_type(
             str_type=self._str_type,
@@ -380,8 +382,12 @@ class TypedOpenerConfig:
             date_type=date_type or self._date_type,
             datetime_type=datetime_type or self._datetime_type,
             list_template=list_template or self._list_template,
-            dict_type_template=self._dict_type_template,
-            fallback_value_type=self._fallback_value_type,
+            dict_type_template=(
+                self._dict_type_template if enable_dict_type else None
+            ),
+            fallback_value_type=(
+                self._fallback_value_type if enable_dict_type else None
+            ),
         )
 
     @beartype
@@ -391,6 +397,7 @@ class TypedOpenerConfig:
         date_type: str | None,
         datetime_type: str | None,
         set_opener_template: str | None,
+        narrow_dict_values: bool = True,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.
@@ -399,23 +406,36 @@ class TypedOpenerConfig:
         base values.  If *set_opener_template* is given it overrides
         the template used for ``set`` openers, allowing a single
         ``TypedOpenerConfig`` to serve multiple set formats.
+
+        When *narrow_dict_values* is ``False``, the dict and set
+        openers use a resolver that cannot resolve ``DictType``.
+        Set this to ``False`` when the config's ``list_template``
+        does not match the actual sequence format (e.g.
+        ``Array<…>`` vs ``List<…>``), which would cause type
+        mismatches in the generated code.
         """
-        element_type_resolver = self.element_to_type(
+        seq_resolver = self.element_to_type(
             list_template=None,
             date_type=date_type,
             datetime_type=datetime_type,
         )
+        dict_set_resolver = self.element_to_type(
+            list_template=None,
+            date_type=date_type,
+            datetime_type=datetime_type,
+            enable_dict_type=narrow_dict_values,
+        )
         return TypeOpeners(
             seq=make_type_to_opener(
-                element_to_type=element_type_resolver,
+                element_to_type=seq_resolver,
                 opener_template=self._sequence_opener_template,
             ),
             dict=make_type_to_opener(
-                element_to_type=element_type_resolver,
+                element_to_type=dict_set_resolver,
                 opener_template=self._dict_opener_template,
             ),
             set=make_type_to_opener(
-                element_to_type=element_type_resolver,
+                element_to_type=dict_set_resolver,
                 opener_template=(
                     set_opener_template or self._set_opener_template
                 ),
