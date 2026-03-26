@@ -1,3 +1,3 @@
-val my_data = arrayOf(
+val my_data = listOf<String>(
     "48656c6c6f",
 )

@@ -1,8 +1,8 @@
 var my_data = listOf<Any?>(
-    intArrayOf(1, 2),
-    arrayOf("a", "b"),
+    listOf<Int>(1, 2),
+    listOf<String>("a", "b"),
 )
 my_data = listOf<Any?>(
-    intArrayOf(1, 2),
-    arrayOf("a", "b"),
+    listOf<Int>(1, 2),
+    listOf<String>("a", "b"),
 )

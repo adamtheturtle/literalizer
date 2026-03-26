@@ -1,3 +1,3 @@
 val my_data = listOf<Any?>(
-    listOf<Any?>(intArrayOf(1, 2), arrayOf("a", "b")),
+    listOf<Any?>(listOf<Int>(1, 2), listOf<String>("a", "b")),
 )

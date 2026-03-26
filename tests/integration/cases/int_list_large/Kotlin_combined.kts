@@ -1,10 +1,10 @@
-var my_data = intArrayOf(
+var my_data = listOf<Int>(
     1000000,
     -1234,
     255,
     -10,
 )
-my_data = intArrayOf(
+my_data = listOf<Int>(
     1000000,
     -1234,
     255,

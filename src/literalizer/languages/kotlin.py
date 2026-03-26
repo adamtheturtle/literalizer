@@ -64,30 +64,64 @@ def _kotlin_tuple_open(items: list[Value]) -> str:
 
 
 @beartype
-def _kotlin_dict_type_name(element_type: DictType) -> str:
-    """Resolve a Kotlin dict type name from a DictType."""
-    value_types: dict[type, str] = {
-        str: "String",
-        bool: "Boolean",
-        int: "Int",
-        float: "Double",
-        bytes: "String",
-        datetime.date: "LocalDate",
-        datetime.datetime: "LocalDateTime",
-    }
-    vt = element_type.value_type
-    inner = value_types.get(vt, "Any?") if isinstance(vt, type) else "Any?"
-    return f"Map<String, {inner}>"
+def _resolve_kotlin_sequence_open(
+    *,
+    sequence_format_name: str,
+    cfg: TypedOpenerConfig,
+    fmt: SequenceFormatConfig,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> Callable[[list[Value]], str]:
+    """Resolve the sequence opener for a Kotlin sequence format."""
+    if sequence_format_name == "LIST":
+        return _kotlin_list_sequence_open(
+            cfg=cfg,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+    return fmt.sequence_open
+
+
+@beartype
+def _kotlin_list_sequence_open(
+    *,
+    cfg: TypedOpenerConfig,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> Callable[[list[Value]], str]:
+    """Build a typed sequence opener for the Kotlin List format.
+
+    Uses the config's element-to-type resolver so that ``DictType``
+    and nested types are handled correctly and stay in sync with the
+    configured date/datetime formats.
+    """
+    resolver = cfg.element_to_type(
+        list_template="List<{inner}>",
+        date_type=date_type,
+        datetime_type=datetime_type,
+        enable_dict_type=True,
+    )
+    return typed_sequence_open(
+        type_to_opener=make_type_to_opener(
+            element_to_type=resolver,
+            opener_template="listOf<{type_name}>(",
+        ),
+        fallback="listOf<Any?>(",
+    )
 
 
 @beartype
 def _kotlin_type_to_opener(
     element_type: type | ListType | DictType,
 ) -> str | None:
-    """Map a Python element type to a Kotlin collection opener."""
+    """Map a Python element type to a Kotlin collection opener.
+
+    Used by the ARRAY sequence format.  ``DictType`` is not handled
+    here — for the LIST format, :func:`_kotlin_list_sequence_open`
+    provides full ``DictType`` support via the config's resolver.
+    """
     if isinstance(element_type, DictType):
-        type_name = _kotlin_dict_type_name(element_type=element_type)
-        return f"listOf<{type_name}>("
+        return None
     if isinstance(element_type, ListType):
         inner = _kotlin_type_to_opener(element_type=element_type.inner)
         return "arrayOf(" if inner is not None else None
@@ -409,14 +443,28 @@ class Kotlin(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
 
-        date_tp = date_format.value.type_produced
-        dt_tp = datetime_format.value.type_produced
         cfg = self._opener_config
+        date_type_name = cfg.type_name(
+            py_type=date_format.value.type_produced,
+        )
+        dt_type_name = cfg.type_name(
+            py_type=datetime_format.value.type_produced,
+        )
+
+        self.sequence_open: Callable[[list[Value]], str] = (
+            _resolve_kotlin_sequence_open(
+                sequence_format_name=sequence_format.name,
+                cfg=cfg,
+                fmt=fmt,
+                date_type=date_type_name,
+                datetime_type=dt_type_name,
+            )
+        )
+
         openers = cfg.build(
-            date_type=cfg.type_name(py_type=date_tp),
-            datetime_type=cfg.type_name(py_type=dt_tp),
+            date_type=date_type_name,
+            datetime_type=dt_type_name,
             set_opener_template=set_format.value.set_opener_template or None,
             narrow_dict_values=False,
         )
@@ -433,8 +481,8 @@ class Kotlin(metaclass=LanguageCls):
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
                         list_template=None,
-                        date_type=cfg.type_name(py_type=date_tp),
-                        datetime_type=cfg.type_name(py_type=dt_tp),
+                        date_type=date_type_name,
+                        datetime_type=dt_type_name,
                         enable_dict_type=False,
                     ),
                     opener_template=dict_spec.opener_template,

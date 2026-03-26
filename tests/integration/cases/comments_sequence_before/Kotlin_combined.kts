@@ -1,10 +1,10 @@
-var my_data = arrayOf(
+var my_data = listOf<String>(
     // first
     "a",
     // second
     "b",
 )
-my_data = arrayOf(
+my_data = listOf<String>(
     // first
     "a",
     // second

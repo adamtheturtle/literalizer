@@ -1,8 +1,8 @@
-var my_data = arrayOf(
+var my_data = listOf<String>(
     // # section
     "a",
 )
-my_data = arrayOf(
+my_data = listOf<String>(
     // # section
     "a",
 )

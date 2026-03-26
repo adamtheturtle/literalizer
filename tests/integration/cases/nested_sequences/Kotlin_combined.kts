@@ -1,8 +1,8 @@
-var my_data = arrayOf(
-    arrayOf(intArrayOf(1, 2), intArrayOf(3, 4)),
-    arrayOf(intArrayOf(5)),
+var my_data = listOf<List<List<Int>>>(
+    listOf<List<Int>>(listOf<Int>(1, 2), listOf<Int>(3, 4)),
+    listOf<List<Int>>(listOf<Int>(5)),
 )
-my_data = arrayOf(
-    arrayOf(intArrayOf(1, 2), intArrayOf(3, 4)),
-    arrayOf(intArrayOf(5)),
+my_data = listOf<List<List<Int>>>(
+    listOf<List<Int>>(listOf<Int>(1, 2), listOf<Int>(3, 4)),
+    listOf<List<Int>>(listOf<Int>(5)),
 )

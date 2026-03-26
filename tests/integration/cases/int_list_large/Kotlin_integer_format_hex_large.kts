@@ -1,4 +1,4 @@
-val my_data = intArrayOf(
+val my_data = listOf<Int>(
     0xf4240,
     -0x4d2,
     0xff,

@@ -1,9 +1,9 @@
 import java.time.LocalDateTime
-var my_data = arrayOf(
+var my_data = listOf<LocalDateTime>(
     LocalDateTime.of(2024, 1, 15, 12, 30, 0),
     LocalDateTime.of(2024, 6, 1, 8, 0, 0),
 )
-my_data = arrayOf(
+my_data = listOf<LocalDateTime>(
     LocalDateTime.of(2024, 1, 15, 12, 30, 0),
     LocalDateTime.of(2024, 6, 1, 8, 0, 0),
 )
