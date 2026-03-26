@@ -1066,22 +1066,21 @@ def _format_integer_grouped(value: int, *, separator: str) -> str:
     return formatted
 
 
-format_integer_underscore: Callable[[int], str] = functools.partial(
-    _format_integer_grouped,
-    separator="_",
-)
-"""Format an integer with underscore separators every 3 digits.
+@beartype
+def format_integer_underscore(value: int) -> str:
+    """Format an integer with underscore separators every 3 digits.
 
-Example: ``1000000`` → ``"1_000_000"``.
-"""
+    Example: ``1000000`` → ``"1_000_000"``.
+    """
+    return _format_integer_grouped(value, separator="_")
 
-format_integer_tick: Callable[[int], str] = functools.partial(
-    _format_integer_grouped,
-    separator="'",
-)
-"""Format an integer with tick (apostrophe) separators every 3 digits.
 
-Used by C++ digit separators.
+@beartype
+def format_integer_tick(value: int) -> str:
+    """Format an integer with tick (apostrophe) separators every 3 digits.
 
-Example: ``1000000`` → ``"1'000'000"``.
-"""
+    Used by C++ digit separators.
+
+    Example: ``1000000`` → ``"1'000'000"``.
+    """
+    return _format_integer_grouped(value, separator="'")
