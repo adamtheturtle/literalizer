@@ -14,6 +14,7 @@ from literalizer._formatters import (
     datetime_iso_formatter,
     dict_entry_with_template,
     fixed_dict_open,
+    fixed_sequence_open,
     fixed_set_open,
     format_bytes_hex,
     format_date_iso,
@@ -23,8 +24,6 @@ from literalizer._formatters import (
     format_integer_octal_c_style,
     format_integer_underscore,
     format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -111,6 +110,21 @@ class Java(metaclass=LanguageCls):
     extension = ".java"
     pygments_name = "java"
 
+    _opener_config = TypedOpenerConfig(
+        str_type="String",
+        bool_type="boolean",
+        int_type="int",
+        float_type="double",
+        mixed_numeric_type="double",
+        bytes_type="String",
+        date_type="LocalDate",
+        datetime_type=None,
+        list_template="{inner}[]",
+        sequence_opener_template="new {type_name}[]{{",
+        dict_opener_template="new {type_name}[]{{",
+        set_opener_template="Set.of(",
+    )
+
     class DateFormats(enum.Enum):
         """Date formatting options for Java."""
 
@@ -164,22 +178,7 @@ class Java(metaclass=LanguageCls):
         """Sequence type options for Java."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=make_element_to_type(
-                        str_type="String",
-                        bool_type="boolean",
-                        int_type="int",
-                        float_type="double",
-                        mixed_numeric_type="double",
-                        bytes_type="String",
-                        date_type="LocalDate",
-                        list_template="{inner}[]",
-                    ),
-                    opener_template="new {type_name}[]{{",
-                ),
-                fallback="new Object[]{",
-            ),
+            sequence_open=fixed_sequence_open(open_str="new Object[]{"),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -391,23 +390,10 @@ class Java(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
-        opener_config = TypedOpenerConfig(
-            str_type="String",
-            bool_type="boolean",
-            int_type="int",
-            float_type="double",
-            mixed_numeric_type="double",
-            bytes_type="String",
-            date_type="LocalDate",
-            datetime_type=None,
-            list_template="{inner}[]",
-            sequence_opener_template="new {type_name}[]{{",
-            dict_opener_template="new {type_name}[]{{",
-            set_opener_template="Set.of(",
-        )
-        openers = opener_config.build(
-            date_type=opener_config.type_name(py_type=date_tp),
-            datetime_type=opener_config.type_name(
+        cfg = self._opener_config
+        openers = cfg.build(
+            date_type=cfg.type_name(py_type=date_tp),
+            datetime_type=cfg.type_name(
                 py_type=datetime_format.value.type_produced,
             ),
         )
