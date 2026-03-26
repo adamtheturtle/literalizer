@@ -72,6 +72,7 @@ def _list_sequence_open(
                 list_template="List[{inner}]",
                 date_type=date_type,
                 datetime_type=datetime_type,
+                enable_dict_type=True,
             ),
             opener_template="List[{type_name}](",
         ),
@@ -134,6 +135,8 @@ class Scala(metaclass=LanguageCls):
         sequence_opener_template="Array[{type_name}](",
         dict_opener_template="Map[String, {type_name}](",
         set_opener_template="Set[{type_name}](",
+        dict_type_template="Map[String, {inner}]",
+        fallback_value_type="Any",
     )
 
     class DateFormats(enum.Enum):
@@ -385,6 +388,7 @@ class Scala(metaclass=LanguageCls):
             date_type=date_type_name,
             datetime_type=datetime_type_name,
             set_opener_template=set_format.value.set_opener_template or None,
+            narrow_dict_values=False,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
@@ -412,11 +416,13 @@ class Scala(metaclass=LanguageCls):
                         list_template=None,
                         date_type=date_type_name,
                         datetime_type=datetime_type_name,
+                        enable_dict_type=False,
                     ),
                     opener_template=dict_spec.opener_template,
                 ),
                 fallback=dict_spec.fallback,
             ),
+            narrowed_open=None,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" -> ",

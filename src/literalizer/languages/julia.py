@@ -193,6 +193,7 @@ class Julia(metaclass=LanguageCls):
             ),
             empty_dict="Dict()",
             preamble_lines=(),
+            narrowed_open=None,
         )
         ORDERED = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="OrderedDict("),
@@ -203,6 +204,7 @@ class Julia(metaclass=LanguageCls):
             ),
             empty_dict="OrderedDict()",
             preamble_lines=("using DataStructures",),
+            narrowed_open=None,
         )
 
     class IntegerFormats(enum.Enum):

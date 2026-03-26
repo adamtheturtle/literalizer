@@ -7,11 +7,11 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-_Any my_data = {
+_Any my_data = std::vector<std::map<std::string, _Any>>{
     {{"name", "Alice"}, {"age", 30}},
     {{"name", "Bob"}, {"age", 25}},
 };
-my_data = {
+my_data = std::vector<std::map<std::string, _Any>>{
     {{"name", "Alice"}, {"age", 30}},
     {{"name", "Bob"}, {"age", 25}},
 };

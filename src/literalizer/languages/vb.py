@@ -267,6 +267,8 @@ class VisualBasic(metaclass=LanguageCls):
             date_type="String",
             datetime_type="String",
             list_template="{inner}()",
+            dict_type_template=None,
+            fallback_value_type=None,
         )
         vb_type_to_opener = make_type_to_opener(
             element_to_type=element_to_type,
@@ -312,6 +314,7 @@ class VisualBasic(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=("Imports System.Collections.Generic",),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,

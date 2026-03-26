@@ -270,6 +270,7 @@ class D(metaclass=LanguageCls):
             ),
             empty_dict='parseJSON("{}")',
             preamble_lines=(),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

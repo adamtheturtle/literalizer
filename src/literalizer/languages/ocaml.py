@@ -327,6 +327,7 @@ class OCaml(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=(),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,

@@ -95,6 +95,8 @@ class CSharp(metaclass=LanguageCls):
         sequence_opener_template="new {type_name}[] {{",
         dict_opener_template="new Dictionary<string, {type_name}> {{",
         set_opener_template="new HashSet<{type_name}> {{",
+        dict_type_template="Dictionary<string, {inner}>",
+        fallback_value_type="object",
     )
 
     class DateFormats(enum.Enum):
@@ -336,6 +338,7 @@ class CSharp(metaclass=LanguageCls):
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(py_type=dt_tp),
             set_opener_template=set_format.value.set_opener_template or None,
+            narrow_dict_values=False,
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
@@ -360,6 +363,7 @@ class CSharp(metaclass=LanguageCls):
                         list_template=None,
                         date_type=cfg.type_name(py_type=date_tp),
                         datetime_type=cfg.type_name(py_type=dt_tp),
+                        enable_dict_type=False,
                     ),
                     opener_template=dict_spec.opener_template,
                 ),
@@ -369,6 +373,7 @@ class CSharp(metaclass=LanguageCls):
             format_entry=csharp_dict_entry,
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
+            narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

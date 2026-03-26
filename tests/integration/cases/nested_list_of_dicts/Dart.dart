@@ -1,4 +1,4 @@
-final my_data = [
-    [<String, String>{"name": "Alice"}, <String, String>{"name": "Bob"}],
-    [<String, String>{"name": "Charlie"}, <String, String>{"name": "Dave"}],
+final my_data = <List<Map<String, String>>>[
+    <Map<String, String>>[<String, String>{"name": "Alice"}, <String, String>{"name": "Bob"}],
+    <Map<String, String>>[<String, String>{"name": "Charlie"}, <String, String>{"name": "Dave"}],
 ];

@@ -1,8 +1,8 @@
 object Check {
-var my_data = List(
+var my_data = List[Map[String, Any]](
     Map("key" -> "hello   world", "value" -> 1),
 )
-my_data = List(
+my_data = List[Map[String, Any]](
     Map("key" -> "hello   world", "value" -> 1),
 )
 }

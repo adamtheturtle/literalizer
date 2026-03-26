@@ -21,6 +21,7 @@ from literalizer._comments import (
     literalize_yaml_scalar,
     prepend_collection_comments,
 )
+from literalizer._formatters import DictType, infer_element_type
 from literalizer._language import Language
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
@@ -768,6 +769,28 @@ def _compute_dict_open_override(
 
 
 @beartype
+def _compute_sequence_dict_override(
+    *,
+    items: list[Value],
+    spec: Language,
+) -> str | None:
+    """Determine the dict opener override for dicts in a sequence.
+
+    When all items are uniform dicts and the language defines a
+    ``narrowed_open``, returns that anonymous opener so the
+    sequence type carries the map type instead of each dict.
+    Otherwise falls back to the widening logic of
+    :func:`_compute_dict_open_override`.
+    """
+    narrowed_open = spec.dict_format_config.narrowed_open
+    if narrowed_open is not None:
+        element_type = infer_element_type(items=items)
+        if isinstance(element_type, DictType):
+            return narrowed_open
+    return _compute_dict_open_override(items=items, spec=spec)
+
+
+@beartype
 def _format_list_value(
     *,
     value: list[Value],
@@ -778,7 +801,7 @@ def _format_list_value(
 
     if not value and sequence_cfg.empty_sequence is not None:
         return sequence_cfg.empty_sequence
-    dict_open_override = _compute_dict_open_override(
+    dict_open_override = _compute_sequence_dict_override(
         items=value,
         spec=spec,
     )
@@ -1017,7 +1040,7 @@ def _format_collection_lines(
                 trailing_comma
                 and spec.sequence_format_config.supports_trailing_comma
             )
-            dict_open_override = _compute_dict_open_override(
+            dict_open_override = _compute_sequence_dict_override(
                 items=list_data,
                 spec=spec,
             )

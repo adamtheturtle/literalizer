@@ -1,4 +1,4 @@
-final my_data = [
+final my_data = <Map<String, dynamic>>[
     {},
     {},
 ];

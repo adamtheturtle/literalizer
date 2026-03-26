@@ -1,9 +1,9 @@
 object Check {
-var my_data = List(
+var my_data = List[Map[String, Any]](
     Map(),
     Map(),
 )
-my_data = List(
+my_data = List[Map[String, Any]](
     Map(),
     Map(),
 )
