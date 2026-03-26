@@ -246,8 +246,8 @@ def test_cpp_array_binary_typed() -> None:
 
 
 def test_cpp_array_null_list_fallback() -> None:
-    """C++ ARRAY format falls back when schema type is not mappable
-    (e.g. all-null list).
+    """C++ ARRAY format falls back when schema type is not directly
+    convertible (e.g. all-null list).
     """
     cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
     yaml_string = "- null\n- null\n"

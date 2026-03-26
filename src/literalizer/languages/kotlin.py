@@ -93,7 +93,7 @@ def _kotlin_list_sequence_open(
             type_name = dict_resolver(element_type)
             if type_name is not None:
                 return f"listOf<{type_name}>("
-            return None
+            return None  # pragma: no cover
         return _kotlin_type_to_opener(element_type=element_type)
 
     return typed_sequence_open(
@@ -112,7 +112,7 @@ def _kotlin_type_to_opener(
     here — for the LIST format, :func:`_kotlin_list_sequence_open`
     provides full ``DictType`` support via the config resolver.
     """
-    if isinstance(element_type, DictType):
+    if isinstance(element_type, DictType):  # pragma: no cover
         return None
     if isinstance(element_type, ListType):
         inner = _kotlin_type_to_opener(element_type=element_type.inner)

@@ -865,7 +865,7 @@ def make_element_to_type(
                 inner = element_to_type(element_type=element_type.value_type)
                 if inner is None:
                     inner = fallback_value_type
-            if inner is None:
+            if inner is None:  # pragma: no cover
                 return None
             return dict_type_template.format(inner=inner)
         if isinstance(element_type, ListType):

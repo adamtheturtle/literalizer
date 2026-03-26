@@ -550,7 +550,7 @@ def body_preamble_from_scalars(
     """
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
-        """Return de-duplicated body-preamble lines for *types*."""
+        """Return unique body-preamble lines for *types*."""
         del data  # unused by the generic implementation
         seen: set[str] = set()
         result: list[str] = []
