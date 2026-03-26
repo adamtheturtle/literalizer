@@ -127,13 +127,17 @@ def _build_scalar_body_preamble(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
-    is_string_body: tuple[str, ...],
+    is_string_import: str,
+    is_string_instance: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
     The callable receives the set of types present in the data and the
     original data value, and returns only the imports, ``data Val``
     constructors, and typeclass instances that are actually needed.
+
+    The returned lines are ordered: imports first, then ``data Val``,
+    then typeclass instances.
     """
     include_hdate = date_format.value.type_produced is datetime.date
     include_hdatetime = (
@@ -183,27 +187,35 @@ def _build_scalar_body_preamble(
         if needs_is_string and "HStr String" not in data_val_parts:
             data_val_parts.append("HStr String")
 
-        lines: list[str] = []
+        # Emit imports first, then data declaration, then instances.
+        imports: list[str] = []
         if import_items:
-            lines.append("import Data.Time (" + ", ".join(import_items) + ")")
-        lines.append("data Val = " + " | ".join(data_val_parts))
-
+            imports.append(
+                "import Data.Time (" + ", ".join(import_items) + ")"
+            )
         if needs_is_string:
-            lines.extend(is_string_body)
+            imports.append(is_string_import)
+
+        instances: list[str] = []
+        if needs_is_string:
+            instances.append(is_string_instance)
 
         has_float = float in types
         has_int = int in types
         if has_float or has_int:
-            lines.append(
+            instances.append(
                 _num_instance(has_int=has_int, has_float=has_float),
             )
         if has_float:
-            lines.append(
+            instances.append(
                 "instance Fractional Val where\n"
                 "    fromRational r = HFloat (realToFrac r)\n"
                 '    a / b = error "not implemented"'
             )
 
+        lines: list[str] = imports
+        lines.append("data Val = " + " | ".join(data_val_parts))
+        lines.extend(instances)
         return tuple(lines)
 
     return _compute
@@ -527,10 +539,6 @@ class Haskell(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
-        _is_string_body = (
-            "import Data.String (IsString(fromString))",
-            "instance IsString Val where\n    fromString = HStr",
-        )
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
@@ -548,6 +556,9 @@ class Haskell(metaclass=LanguageCls):
         ] = _build_scalar_body_preamble(
             date_format=date_format,
             datetime_format=datetime_format,
-            is_string_body=_is_string_body,
+            is_string_import="import Data.String (IsString(fromString))",
+            is_string_instance=(
+                "instance IsString Val where\n    fromString = HStr"
+            ),
         )
         self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
