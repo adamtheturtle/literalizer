@@ -306,7 +306,6 @@ class CSharp(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.HASH_SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
         declaration_style: DeclarationStyles = DeclarationStyles.VAR,
         dict_format: DictFormats = DictFormats.DICTIONARY,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
