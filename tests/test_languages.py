@@ -2,6 +2,7 @@
 
 import json
 import textwrap
+from operator import attrgetter
 
 import pytest
 from pygments.lexers import find_lexer_class_by_name
@@ -681,13 +682,13 @@ def test_java_list_rejects_null_elements() -> None:
     argnames="language_cls",
     argvalues=sorted(
         literalizer.languages.ALL_LANGUAGES,
-        key=lambda c: c.__name__,
+        key=attrgetter("__name__"),
     ),
     ids=[
         c.__name__
         for c in sorted(
             literalizer.languages.ALL_LANGUAGES,
-            key=lambda c: c.__name__,
+            key=attrgetter("__name__"),
         )
     ],
 )
