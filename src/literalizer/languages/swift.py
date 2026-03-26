@@ -314,16 +314,20 @@ class Swift(metaclass=LanguageCls):
             if fmt.empty_sequence is not None
             else None
         )
-        self.sequence_format_config = SequenceFormatConfig(
-            sequence_open=fmt.sequence_open,
-            close=fmt.close,
-            supports_heterogeneity=fmt.supports_heterogeneity,
-            single_element_trailing_comma=fmt.single_element_trailing_comma,
-            supports_trailing_comma=fmt.supports_trailing_comma,
-            empty_sequence=empty_seq,
-            preamble_lines=fmt.preamble_lines,
-            format_entry=fmt.format_entry,
-            typed_opener_fallback=fmt.typed_opener_fallback,
+        self.sequence_format_config: SequenceFormatConfig = (
+            SequenceFormatConfig(
+                sequence_open=fmt.sequence_open,
+                close=fmt.close,
+                supports_heterogeneity=fmt.supports_heterogeneity,
+                single_element_trailing_comma=(
+                    fmt.single_element_trailing_comma
+                ),
+                supports_trailing_comma=fmt.supports_trailing_comma,
+                empty_sequence=empty_seq,
+                preamble_lines=fmt.preamble_lines,
+                format_entry=fmt.format_entry,
+                typed_opener_fallback=fmt.typed_opener_fallback,
+            )
         )
         fmt = self.sequence_format_config
         self.set_format = set_format

@@ -1083,7 +1083,9 @@ _EMPTY_LIST_CASES: list[tuple[str, Language, str]] = [
     (
         "CSharp_ARRAY",
         CSharp(
-            sequence_format=CSharp.SequenceFormats.ARRAY,
+            sequence_format=next(
+                f for f in CSharp.sequence_formats if f.name == "ARRAY"
+            ),
             empty_array_type="int",
         ),
         "Array.Empty<int>()",
@@ -1248,8 +1250,11 @@ def test_empty_dict_custom_type(
 
 def test_python_empty_type_hint_custom() -> None:
     """Python with a custom empty_type_hint uses it in annotations."""
+    always = next(
+        f for f in Python.variable_type_hints_formats if f.name == "ALWAYS"
+    )
     spec = Python(
-        variable_type_hints=Python.VariableTypeHints.ALWAYS,
+        variable_type_hints=always,
         empty_type_hint="object",
     )
     result = literalize_yaml(

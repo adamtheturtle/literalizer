@@ -352,8 +352,8 @@ class CSharp(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
-        self.sequence_format_config = (
-            _csharp_array_config(fmt, empty_array_type=empty_array_type)
+        self.sequence_format_config: SequenceFormatConfig = (
+            _csharp_array_config(base=fmt, empty_array_type=empty_array_type)
             if fmt.typed_opener_fallback is not None
             else fmt
         )
@@ -395,7 +395,7 @@ class CSharp(metaclass=LanguageCls):
             else self.sequence_format_config.sequence_open
         )
         dict_spec = dict_format.value
-        self.dict_format_config = DictFormatConfig(
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
