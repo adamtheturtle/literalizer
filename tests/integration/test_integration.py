@@ -1550,7 +1550,7 @@ def test_format_enumeration_properties(
 def _discover_python_case_files() -> list[Path]:
     """Return all Python golden files in the cases directory."""
     cases_dir = Path(__file__).parent / "cases"
-    return sorted(cases_dir.rglob("Python*.py"))
+    return sorted(cases_dir.rglob(pattern="Python*.py"))
 
 
 @pytest.mark.parametrize(
@@ -1561,5 +1561,6 @@ def _discover_python_case_files() -> list[Path]:
 def test_python_case_file_executes(case_file: Path) -> None:
     """Each Python golden file is valid, executable Python."""
     source = case_file.read_text()
-    code = compile(source=source, filename=str(case_file), mode="exec")
+    filename = str(object=case_file)
+    code = compile(source=source, filename=filename, mode="exec")
     exec(code)  # noqa: S102
