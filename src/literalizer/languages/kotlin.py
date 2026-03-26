@@ -64,25 +64,6 @@ def _kotlin_tuple_open(items: list[Value]) -> str:
 
 
 @beartype
-def _resolve_kotlin_sequence_open(
-    *,
-    sequence_format_name: str,
-    cfg: TypedOpenerConfig,
-    fmt: SequenceFormatConfig,
-    date_type: str | None,
-    datetime_type: str | None,
-) -> Callable[[list[Value]], str]:
-    """Resolve the sequence opener for a Kotlin sequence format."""
-    if sequence_format_name == "LIST":
-        return _kotlin_list_sequence_open(
-            cfg=cfg,
-            date_type=date_type,
-            datetime_type=datetime_type,
-        )
-    return fmt.sequence_open
-
-
-@beartype
 def _kotlin_list_sequence_open(
     *,
     cfg: TypedOpenerConfig,
@@ -253,7 +234,7 @@ class Kotlin(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
+            typed_opener_fallback="listOf<Any?>(",
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="arrayOf<Any?>("),
@@ -453,13 +434,13 @@ class Kotlin(metaclass=LanguageCls):
         )
 
         self.sequence_open: Callable[[list[Value]], str] = (
-            _resolve_kotlin_sequence_open(
-                sequence_format_name=sequence_format.name,
+            _kotlin_list_sequence_open(
                 cfg=cfg,
-                fmt=fmt,
                 date_type=date_type_name,
                 datetime_type=dt_type_name,
             )
+            if fmt.typed_opener_fallback is not None
+            else fmt.sequence_open
         )
 
         openers = cfg.build(
