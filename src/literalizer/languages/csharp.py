@@ -383,9 +383,7 @@ class CSharp(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=typed_set_open(
                 type_to_opener=openers.set,
-                fallback=set_spec.open_template.format(
-                    type=empty_set_type,
-                ),
+                fallback=set_spec.open_template.format(type="object"),
             ),
             close="}",
             empty_set=set_spec.empty_template.format(

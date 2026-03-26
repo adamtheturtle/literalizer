@@ -45,7 +45,6 @@ def _format_mojo_ordered_map_entry(key: str, _val: Value, value: str) -> str:
     return f"Tuple({key}, {value})"
 
 
-_SET_OPEN_TEMPLATE = "Set[{type}]("
 _EMPTY_DICT_TEMPLATE = "Dict[{key_type}, {value_type}]()"
 
 
@@ -283,7 +282,7 @@ class Mojo(metaclass=LanguageCls):
                     ),
                     opener_template="Set[{type_name}](",
                 ),
-                fallback=_SET_OPEN_TEMPLATE.format(type=empty_set_type),
+                fallback="Set[String](",
             ),
             close=")",
             empty_set=(

@@ -209,7 +209,7 @@ class Groovy(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=fixed_set_open(open_str="["),
-            close=set_format.value.close.format(type=empty_set_type),
+            close=set_format.value.close.format(type="Object"),
             empty_set=(
                 set_format.value.empty_set.format(type=empty_set_type)
                 if set_format.value.empty_set is not None

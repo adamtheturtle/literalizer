@@ -80,7 +80,6 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
-_SET_OPEN_TEMPLATE = "Set<{type}>(["
 _EMPTY_DICT_TEMPLATE = "[String: {type}]()"
 
 
@@ -336,17 +335,15 @@ class Swift(metaclass=LanguageCls):
         fmt = self.sequence_format_config
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = SetFormatConfig(
-            set_open=fixed_set_open(
-                open_str=_SET_OPEN_TEMPLATE.format(type=empty_set_type),
-            ),
-            close="])",
+            set_open=set_format.value.set_open,
+            close=set_format.value.close,
             empty_set=(
                 set_format.value.empty_set.format(type=empty_set_type)
                 if set_format.value.empty_set is not None
                 else None
             ),
-            preamble_lines=(),
-            set_opener_template="",
+            preamble_lines=set_format.value.preamble_lines,
+            set_opener_template=set_format.value.set_opener_template,
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
