@@ -918,12 +918,18 @@ def typed_dict_open(
     *,
     type_to_opener: Callable[[type | ListType], str | None],
     fallback: str,
+    narrow: bool = True,
 ) -> Callable[[dict[str, Value]], str]:
     """Return a ``dict_open`` callable that infers a common value type
     and delegates to *type_to_opener*.
 
     When inference is not possible or *type_to_opener* returns
     ``None``, *fallback* is used instead.
+
+    When *narrow* is ``False``, type inference is skipped entirely
+    and every dict uses *fallback*.  This avoids type-variance
+    problems when dicts with different inferred value types appear
+    in the same collection.
 
     Example::
 
@@ -937,6 +943,8 @@ def typed_dict_open(
             fallback="map[string]any{",
         )
     """
+    if not narrow:
+        return fixed_dict_open(open_str=fallback)
     return functools.partial(
         _typed_dict_open,
         type_to_opener=type_to_opener,

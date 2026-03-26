@@ -65,6 +65,10 @@ class Dart(metaclass=LanguageCls):
               e.g. ``DateTime.parse("2024-01-15T12:30:00")``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        narrow_map_value_type: When ``True`` (the default), maps with
+            homogeneous values use a narrowed type.  Set to ``False``
+            to always use the broad type.
     """
 
     extension = ".dart"
@@ -281,6 +285,7 @@ class Dart(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        narrow_map_value_type: bool = True,
     ) -> None:
         """Initialize Dart language specification."""
         self.variable_type_hints = variable_type_hints
@@ -325,6 +330,7 @@ class Dart(metaclass=LanguageCls):
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
                 fallback="{",
+                narrow=narrow_map_value_type,
             ),
             close="}",
             format_entry=dict_entry_with_separator(

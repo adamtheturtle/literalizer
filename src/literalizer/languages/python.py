@@ -104,6 +104,7 @@ def _format_inline_type_hint_declaration(
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    narrow_map_value_type: bool,
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
@@ -113,6 +114,7 @@ def _format_inline_type_hint_declaration(
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        narrow_map_value_type=narrow_map_value_type,
     )
     return f"{name}: {hint} = {value}"
 
@@ -153,6 +155,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    narrow_map_value_type: bool,
 ) -> str:
     """Derive a Python type hint from the original data and format
     config.
@@ -164,6 +167,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        narrow_map_value_type=narrow_map_value_type,
     )
 
     # Order matters: datetime before date (datetime is a date subclass),
@@ -191,10 +195,13 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 if isinstance(data, (ordereddict, OrderedDict))
                 else "dict"
             )
-            val_union = _collection_element_union(
-                elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                recurse=recurse,
-            )
+            if narrow_map_value_type:
+                val_union = _collection_element_union(
+                    elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                    recurse=recurse,
+                )
+            else:
+                val_union = "Any"
             return f"{outer}[str, {val_union}]"
         case set():
             elem_union = _collection_element_union(
@@ -263,6 +270,12 @@ class Python(metaclass=LanguageCls):
               e.g. ``my_var = {...}``.
             * ``VariableTypeHints.INLINE`` — with type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
+
+        narrow_map_value_type: When ``True`` (the default), inline
+            type hints for dicts with homogeneous values use a
+            narrowed type (e.g. ``dict[str, str]``).  Set to
+            ``False`` to always use ``dict[str, Any]``.  Only
+            applies when ``variable_type_hints`` is ``INLINE``.
     """
 
     extension = ".py"
@@ -400,6 +413,7 @@ class Python(metaclass=LanguageCls):
             datetime_hint: str,
             sequence_hint: str,
             set_hint: str,
+            narrow_map_value_type: bool,
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -412,6 +426,7 @@ class Python(metaclass=LanguageCls):
                     datetime_hint=datetime_hint,
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
+                    narrow_map_value_type=narrow_map_value_type,
                 )
             return _format_variable_declaration
 
@@ -532,6 +547,7 @@ class Python(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        narrow_map_value_type: bool = True,
     ) -> None:
         """Initialize Python language specification."""
         self.variable_type_hints = variable_type_hints
@@ -610,6 +626,7 @@ class Python(metaclass=LanguageCls):
                 datetime_hint=datetime_hint,
                 sequence_hint=sequence_hint,
                 set_hint=set_hint,
+                narrow_map_value_type=narrow_map_value_type,
             )
         )
         self.format_variable_declaration = decl_fmt

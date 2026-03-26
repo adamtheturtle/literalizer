@@ -132,6 +132,11 @@ class Go(metaclass=LanguageCls):
               time.UTC)``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        narrow_map_value_type: When ``True`` (the default), maps with
+            homogeneous values use a narrowed type
+            (e.g. ``map[string]string``).  Set to ``False`` to always
+            use the broad type (e.g. ``map[string]any``).
     """
 
     extension = ".go"
@@ -349,6 +354,7 @@ class Go(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        narrow_map_value_type: bool = True,
     ) -> None:
         """Initialize Go language specification."""
         self.variable_type_hints = variable_type_hints
@@ -404,6 +410,7 @@ class Go(metaclass=LanguageCls):
                     opener_template="map[string]{type_name}{{",
                 ),
                 fallback="map[string]any{",
+                narrow=narrow_map_value_type,
             ),
             close="}",
             format_entry=dict_entry_with_separator(

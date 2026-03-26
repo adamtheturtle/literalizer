@@ -18,6 +18,7 @@ from literalizer.languages import (
     Cobol,
     Cpp,
     CSharp,
+    Dart,
     Fortran,
     Go,
     Java,
@@ -27,6 +28,7 @@ from literalizer.languages import (
     Python,
     Ruby,
     Rust,
+    Scala,
     Toml,
     TypeScript,
 )
@@ -701,3 +703,136 @@ def test_cobol_bump_levels_rejects_non_level_line() -> None:
     """_bump_levels raises ValueError for lines without a level number."""
     with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):
         _bump_levels(content="not a level line")
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "narrowed_opener", "broad_opener_or_none"),
+    argvalues=[
+        (
+            Go(narrow_map_value_type=True),
+            "map[string]string{",
+            "map[string]any{",
+        ),
+        (
+            Cpp(narrow_map_value_type=True),
+            "std::map<std::string, std::string>{",
+            None,
+        ),
+        (
+            CSharp(narrow_map_value_type=True),
+            "new Dictionary<string, string> {",
+            "new Dictionary<string, object> {",
+        ),
+        (
+            Dart(narrow_map_value_type=True),
+            "<String, String>{",
+            None,
+        ),
+        (
+            Kotlin(narrow_map_value_type=True),
+            "mapOf<String, String>(",
+            "mapOf<String, Any?>(",
+        ),
+        (
+            Scala(narrow_map_value_type=True),
+            "Map[String, String](",
+            "Map(",
+        ),
+    ],
+    ids=["Go", "Cpp", "CSharp", "Dart", "Kotlin", "Scala"],
+)
+def test_uniform_map_value_type_default(
+    *,
+    language: Language,
+    narrowed_opener: str,
+    broad_opener_or_none: str | None,
+) -> None:
+    """Without uniform_map_value_type, string-only dicts use narrowed type."""
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": "hello", "b": "world"}),
+        language=language,
+        line_prefix="",
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert narrowed_opener in result.code
+    if broad_opener_or_none is not None:
+        assert broad_opener_or_none not in result.code
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "narrowed_opener"),
+    argvalues=[
+        (Go(narrow_map_value_type=False), "map[string]string{"),
+        (
+            Cpp(narrow_map_value_type=False),
+            "std::map<std::string, std::string>{",
+        ),
+        (
+            CSharp(narrow_map_value_type=False),
+            "new Dictionary<string, string> {",
+        ),
+        (Dart(narrow_map_value_type=False), "<String, String>{"),
+        (Kotlin(narrow_map_value_type=False), "mapOf<String, String>("),
+        (Scala(narrow_map_value_type=False), "Map[String, String]("),
+    ],
+    ids=["Go", "Cpp", "CSharp", "Dart", "Kotlin", "Scala"],
+)
+def test_uniform_map_value_type_enabled(
+    *,
+    language: Language,
+    narrowed_opener: str,
+) -> None:
+    """With narrow_map_value_type=False, string-only dicts use broad
+    type.
+    """
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": "hello", "b": "world"}),
+        language=language,
+        line_prefix="",
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert narrowed_opener not in result.code
+
+
+def test_python_narrow_map_value_type_default() -> None:
+    """Python inline type hints narrow dict value types by default."""
+    lang = Python(
+        variable_type_hints=Python.variable_type_hints_formats.INLINE,
+        narrow_map_value_type=True,
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": "hello", "b": "world"}),
+        language=lang,
+        line_prefix="",
+        include_delimiters=True,
+        variable_name="x",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "dict[str, str]" in result.code
+    assert "dict[str, Any]" not in result.code
+
+
+def test_python_narrow_map_value_type_disabled() -> None:
+    """Python inline type hints use broad type when narrowing disabled."""
+    lang = Python(
+        variable_type_hints=Python.variable_type_hints_formats.INLINE,
+        narrow_map_value_type=False,
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": "hello", "b": "world"}),
+        language=lang,
+        line_prefix="",
+        include_delimiters=True,
+        variable_name="x",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "dict[str, Any]" in result.code
+    assert "dict[str, str]" not in result.code

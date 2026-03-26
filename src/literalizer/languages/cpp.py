@@ -3,6 +3,7 @@
 import datetime
 import enum
 from collections.abc import Callable
+from dataclasses import dataclass
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -105,6 +106,15 @@ def _format_variable_declaration(
     return f"_Any {name} = {value};"
 
 
+@dataclass(frozen=True)
+class _CppDictSpec:
+    """Per-format dict config pieces resolved at init time."""
+
+    opener_template: str
+    fallback: str
+    preamble_lines: tuple[str, ...]
+
+
 @beartype
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
@@ -126,6 +136,10 @@ class Cpp(metaclass=LanguageCls):
               + std::chrono::minutes{30}``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        narrow_map_value_type: When ``True`` (the default), maps with
+            homogeneous values use a narrowed type.  Set to ``False``
+            to always use the broad type.
     """
 
     extension = ".cpp"
@@ -244,36 +258,14 @@ class Cpp(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = DictFormatConfig(
-            open_fn=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_cpp_element_to_type,
-                    opener_template="std::map<std::string, {type_name}>{{",
-                ),
-                fallback="{",
-            ),
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict=None,
+        MAP = _CppDictSpec(
+            opener_template="std::map<std::string, {type_name}>{{",
+            fallback="{",
             preamble_lines=("#include <map>",),
         )
-        UNORDERED_MAP = DictFormatConfig(
-            open_fn=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_cpp_element_to_type,
-                    opener_template=(
-                        "std::unordered_map<std::string, {type_name}>{{"
-                    ),
-                ),
-                fallback="{",
-            ),
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict=None,
+        UNORDERED_MAP = _CppDictSpec(
+            opener_template=("std::unordered_map<std::string, {type_name}>{{"),
+            fallback="{",
             preamble_lines=("#include <unordered_map>",),
         )
 
@@ -378,6 +370,7 @@ class Cpp(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        narrow_map_value_type: bool = True,
     ) -> None:
         """Initialize Cpp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -390,7 +383,23 @@ class Cpp(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = dict_format.value
+        dict_spec: _CppDictSpec = dict_format.value
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            open_fn=typed_dict_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=_cpp_element_to_type,
+                    opener_template=dict_spec.opener_template,
+                ),
+                fallback=dict_spec.fallback,
+                narrow=narrow_map_value_type,
+            ),
+            close="}",
+            format_entry=braced_dict_entry(
+                format_value=passthrough_sequence_entry
+            ),
+            empty_dict=None,
+            preamble_lines=dict_spec.preamble_lines,
+        )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format

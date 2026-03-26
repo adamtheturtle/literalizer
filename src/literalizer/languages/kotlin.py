@@ -133,6 +133,11 @@ class Kotlin(metaclass=LanguageCls):
               sequences, ``Triple(…)`` for three-element sequences,
               e.g. ``Pair("a", 1)``.  Other sizes fall back to
               ``listOf<Any?>(…)``.
+
+        narrow_map_value_type: When ``True`` (the default), maps with
+            homogeneous values use a narrowed type
+            (e.g. ``mapOf<String, String>``).  Set to ``False`` to
+            always use the broad type (e.g. ``mapOf<String, Any?>``).
     """
 
     extension = ".kts"
@@ -385,6 +390,7 @@ class Kotlin(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        narrow_map_value_type: bool = True,
     ) -> None:
         """Initialize Kotlin language specification."""
         self.variable_type_hints = variable_type_hints
@@ -426,6 +432,7 @@ class Kotlin(metaclass=LanguageCls):
                     opener_template=dict_spec.opener_template,
                 ),
                 fallback=dict_spec.fallback,
+                narrow=narrow_map_value_type,
             ),
             close=")",
             format_entry=dict_entry_with_separator(

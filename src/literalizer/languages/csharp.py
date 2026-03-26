@@ -92,6 +92,12 @@ class CSharp(metaclass=LanguageCls):
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        narrow_map_value_type: When ``True`` (the default), dicts with
+            homogeneous values use a narrowed type
+            (e.g. ``Dictionary<string, string>``).  Set to ``False``
+            to always use the broad type
+            (e.g. ``Dictionary<string, object>``).
     """
 
     extension = ".cs"
@@ -326,6 +332,7 @@ class CSharp(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        narrow_map_value_type: bool = True,
     ) -> None:
         """Initialize CSharp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -378,6 +385,7 @@ class CSharp(metaclass=LanguageCls):
                     opener_template=dict_spec.opener_template,
                 ),
                 fallback=dict_spec.fallback,
+                narrow=narrow_map_value_type,
             ),
             close="}",
             format_entry=csharp_dict_entry,
