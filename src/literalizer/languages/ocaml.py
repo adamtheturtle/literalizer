@@ -10,6 +10,8 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
+    date_ymd_formatter,
+    datetime_ymdhms_formatter,
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
@@ -40,21 +42,6 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-
-@beartype
-def _format_date_ocaml(value: datetime.date) -> str:
-    """Format a date as an OCaml ``ODate`` constructor."""
-    return f"ODate ({value.year}, {value.month}, {value.day})"
-
-
-@beartype
-def _format_datetime_ocaml(value: datetime.datetime) -> str:
-    """Format a datetime as an OCaml ``ODatetime`` constructor."""
-    return (
-        f"ODatetime (({value.year}, {value.month}, {value.day}), "
-        f"({value.hour}, {value.minute}, {value.second}))"
-    )
 
 
 @beartype
@@ -121,7 +108,11 @@ class OCaml(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for OCaml."""
 
-        OCAML = DateFormatConfig(formatter=_format_date_ocaml)
+        OCAML = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="ODate ({year}, {month}, {day})",
+            ),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -131,7 +122,12 @@ class OCaml(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for OCaml."""
 
-        OCAML = DatetimeFormatConfig(formatter=_format_datetime_ocaml)
+        OCAML = DatetimeFormatConfig(
+            formatter=datetime_ymdhms_formatter(
+                template="ODatetime (({year}, {month}, {day}), "
+                "({hour}, {minute}, {second}))",
+            ),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
