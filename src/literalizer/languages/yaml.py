@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -40,25 +42,6 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_yaml_date(value: datetime.date) -> str:
-    """Format a date as a YAML native date literal (unquoted).
-
-    Example: ``datetime.date(2024, 1, 15)`` → ``2024-01-15``.
-    """
-    return value.isoformat()
-
-
-@beartype
-def _format_yaml_datetime(value: datetime.datetime) -> str:
-    """Format a datetime as a YAML native datetime literal (unquoted).
-
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30, tzinfo=UTC)`` →
-    ``2024-01-15T12:30:00+00:00``.
-    """
-    return value.isoformat()
-
-
-@beartype
 class Yaml(metaclass=LanguageCls):
     """YAML language specification.
 
@@ -76,7 +59,9 @@ class Yaml(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Yaml."""
 
-        YAML = DateFormatConfig(formatter=_format_yaml_date)
+        YAML = DateFormatConfig(
+            formatter=date_iso_formatter(template="{iso}"),
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -86,7 +71,9 @@ class Yaml(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Yaml."""
 
-        YAML = DatetimeFormatConfig(formatter=_format_yaml_datetime)
+        YAML = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(template="{iso}"),
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,

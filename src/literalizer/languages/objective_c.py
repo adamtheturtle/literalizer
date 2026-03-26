@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters import (
+    date_iso_formatter,
+    datetime_iso_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -75,51 +77,6 @@ def _format_objc_bytes(value: bytes) -> str:
 
 
 @beartype
-def _format_objc_date(value: datetime.date) -> str:
-    """Format a date as an Objective-C ``NSString`` ISO 8601 literal.
-
-    Example: ``datetime.date(2024, 1, 15)`` → ``@"2024-01-15"``.
-    """
-    return f'@"{value.isoformat()}"'
-
-
-@beartype
-def _format_objc_date_iso(value: datetime.date) -> str:
-    """Format a date as an Objective-C ``NSString`` ISO 8601 literal.
-
-    This is the ISO format variant, producing the same ``@"..."``
-    ``NSString`` output as the native format.
-
-    Example: ``datetime.date(2024, 1, 15)`` → ``@"2024-01-15"``.
-    """
-    return f'@"{value.isoformat()}"'
-
-
-@beartype
-def _format_objc_datetime(value: datetime.datetime) -> str:
-    """Format a datetime as an Objective-C ``NSString`` ISO 8601
-    literal.
-
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
-    ``@"2024-01-15T12:30:00"``.
-    """
-    return f'@"{value.isoformat()}"'
-
-
-@beartype
-def _format_objc_datetime_iso(value: datetime.datetime) -> str:
-    """Format a datetime as an Objective-C ``NSString`` ISO 8601 literal.
-
-    This is the ISO format variant, producing the same ``@"..."``
-    ``NSString`` output as the native format.
-
-    Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` →
-    ``@"2024-01-15T12:30:00"``.
-    """
-    return f'@"{value.isoformat()}"'
-
-
-@beartype
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
@@ -129,9 +86,11 @@ class ObjectiveC(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for ObjectiveC."""
 
-        OBJC = DateFormatConfig(formatter=_format_objc_date)
+        OBJC = DateFormatConfig(
+            formatter=date_iso_formatter(template='@"{iso}"'),
+        )
         ISO = DateFormatConfig(
-            formatter=_format_objc_date_iso,
+            formatter=date_iso_formatter(template='@"{iso}"'),
             type_produced=str,
         )
 
@@ -142,9 +101,11 @@ class ObjectiveC(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for ObjectiveC."""
 
-        OBJC = DatetimeFormatConfig(formatter=_format_objc_datetime)
+        OBJC = DatetimeFormatConfig(
+            formatter=datetime_iso_formatter(template='@"{iso}"'),
+        )
         ISO = DatetimeFormatConfig(
-            formatter=_format_objc_datetime_iso,
+            formatter=datetime_iso_formatter(template='@"{iso}"'),
             type_produced=str,
         )
 

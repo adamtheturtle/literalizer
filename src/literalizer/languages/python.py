@@ -12,6 +12,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters import (
+    date_ymd_formatter,
     dict_entry_with_separator,
     fixed_dict_open,
     fixed_sequence_open,
@@ -43,17 +44,6 @@ from literalizer._language import (
     date_scalar_preamble,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_date_python(value: datetime.date) -> str:
-    """Format a date as a Python ``datetime.date(...)`` constructor
-    call.
-    """
-    return (
-        f"datetime.date("
-        f"year={value.year}, month={value.month}, day={value.day})"
-    )
 
 
 @beartype
@@ -368,7 +358,10 @@ class Python(metaclass=LanguageCls):
         """Date formatting options for Python."""
 
         PYTHON = DateFormatConfig(
-            formatter=_format_date_python,
+            formatter=date_ymd_formatter(
+                template="datetime.date("
+                "year={year}, month={month}, day={day})",
+            ),
             preamble_lines=("import datetime",),
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
