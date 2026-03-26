@@ -162,6 +162,11 @@ class C(metaclass=LanguageCls):
 
         DEFAULT = "default"
 
+    class EmptyDictKey(enum.Enum):
+        """Empty dict key options."""
+
+        ALLOW = "allow"
+
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
@@ -204,6 +209,7 @@ class C(metaclass=LanguageCls):
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats
+    empty_dict_keys = EmptyDictKey
     integer_formats = IntegerFormats
     numeric_separators = NumericSeparators
     string_formats = StringFormats

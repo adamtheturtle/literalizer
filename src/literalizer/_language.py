@@ -167,6 +167,7 @@ class LanguageCls(type):
     VariableTypeHints: type[enum.Enum]
     DeclarationStyles: type[enum.Enum]
     DictFormats: type[enum.Enum]
+    EmptyDictKey: type[enum.Enum]
     IntegerFormats: type[enum.Enum]
     NumericSeparators: type[enum.Enum]
     StringFormats: type[enum.Enum]

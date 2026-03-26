@@ -214,6 +214,11 @@ class JavaScript(metaclass=LanguageCls):
             narrowed_open=None,
         )
 
+    class EmptyDictKey(enum.Enum):
+        """Empty dict key options."""
+
+        ALLOW = "allow"
+
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
@@ -289,6 +294,7 @@ class JavaScript(metaclass=LanguageCls):
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats
+    empty_dict_keys = EmptyDictKey
     numeric_separators = NumericSeparators
     integer_formats = IntegerFormats
     string_formats = StringFormats
