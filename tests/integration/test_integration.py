@@ -271,15 +271,17 @@ def _wrap_haskell(content: str) -> str:
     # Find the first line that is NOT body-preamble.  A line counts as
     # preamble when it starts with a known prefix or is an indented
     # continuation of a preceding block.
-    expr_start = 0
-    for idx, line in enumerate(iterable=lines):
-        is_prefix = any(line.startswith(p) for p in preamble_prefixes)
-        is_continuation = line.startswith("    ") and idx > 0
-        if not (is_prefix or is_continuation):
-            expr_start = idx
-            break
-    else:
-        expr_start = len(lines)
+    expr_start = next(
+        (
+            idx
+            for idx, line in enumerate(iterable=lines)
+            if not (
+                any(line.startswith(p) for p in preamble_prefixes)
+                or (line.startswith("    ") and idx > 0)
+            )
+        ),
+        len(lines),
+    )
 
     preamble = "\n".join(lines[:expr_start])
     expression = "\n".join(lines[expr_start:])
