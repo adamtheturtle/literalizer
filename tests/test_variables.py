@@ -556,3 +556,26 @@ def test_python_inline_type_hints_empty_list() -> None:
         error_on_coercion=False,
     )
     assert "tuple[Any, ...]" in result.code
+
+
+def test_python_inline_type_hints_ordered_dicts_in_sequence() -> None:
+    """Ordered dicts in a sequence merge value types into one hint."""
+    yaml_input = textwrap.dedent(
+        text="""\
+        ---
+        - !!omap
+          - name: Alice
+          - draft: true
+        - !!omap
+          - name: Bob"""
+    )
+    result = literalize_yaml(
+        yaml_string=yaml_input,
+        language=PYTHON_INLINE_HINTS,
+        line_prefix="",
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "tuple[OrderedDict[str, str | bool], ...]" in result.code
