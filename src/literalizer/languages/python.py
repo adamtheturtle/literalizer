@@ -178,7 +178,7 @@ def _collection_element_union(
     *,
     elements: list[Value],
     recurse: Callable[..., str],
-    sort: bool = False,
+    sort: bool,
 ) -> str:
     """Return the element union for a collection, or ``"Any"`` if
     empty.
@@ -241,6 +241,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             val_union = _collection_element_union(
                 elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                 recurse=recurse,
+                sort=False,
             )
             return f"{outer}[str, {val_union}]"
         case set():
@@ -254,6 +255,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             elem_union = _collection_element_union(
                 elements=data,
                 recurse=recurse,
+                sort=False,
             )
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
