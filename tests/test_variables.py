@@ -558,7 +558,7 @@ def test_python_always_type_hints_empty_list() -> None:
     assert "tuple[Any, ...]" in result.code
 
 
-def test_python_inline_type_hints_ordered_dicts_in_sequence() -> None:
+def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
     """Ordered dicts in a sequence merge value types into one hint."""
     yaml_input = textwrap.dedent(
         text="""\
@@ -571,7 +571,7 @@ def test_python_inline_type_hints_ordered_dicts_in_sequence() -> None:
     )
     result = literalize_yaml(
         yaml_string=yaml_input,
-        language=PYTHON_INLINE_HINTS,
+        language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
         variable_name="my_var",
