@@ -1,6 +1,5 @@
 """Swift language specification."""
 
-import dataclasses
 import datetime
 import enum
 import functools
@@ -310,19 +309,32 @@ class Swift(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
-        if fmt.empty_sequence is not None:
-            fmt = dataclasses.replace(
-                fmt,
-                empty_sequence=f"[{empty_array_type}]()",
-            )
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        empty_seq = (
+            f"[{empty_array_type}]()"
+            if fmt.empty_sequence is not None
+            else None
+        )
+        self.sequence_format_config = SequenceFormatConfig(
+            sequence_open=fmt.sequence_open,
+            close=fmt.close,
+            supports_heterogeneity=fmt.supports_heterogeneity,
+            single_element_trailing_comma=fmt.single_element_trailing_comma,
+            supports_trailing_comma=fmt.supports_trailing_comma,
+            empty_sequence=empty_seq,
+            preamble_lines=fmt.preamble_lines,
+            format_entry=fmt.format_entry,
+            typed_opener_fallback=fmt.typed_opener_fallback,
+        )
+        fmt = self.sequence_format_config
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            empty_set=f"Set<{empty_set_type}>()",
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=fixed_set_open(
                 open_str=f"Set<{empty_set_type}>([",
             ),
+            close="])",
+            empty_set=f"Set<{empty_set_type}>()",
+            preamble_lines=(),
+            set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(

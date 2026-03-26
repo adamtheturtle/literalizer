@@ -1,6 +1,5 @@
 """Mojo language specification."""
 
-import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -240,15 +239,19 @@ class Mojo(metaclass=LanguageCls):
         self.true_literal = "True"
         self.false_literal = "False"
         fmt = sequence_format.value
-        fmt = dataclasses.replace(
-            fmt,
+        self.sequence_format_config = SequenceFormatConfig(
+            sequence_open=fmt.sequence_open,
+            close=fmt.close,
+            supports_heterogeneity=fmt.supports_heterogeneity,
+            single_element_trailing_comma=fmt.single_element_trailing_comma,
+            supports_trailing_comma=fmt.supports_trailing_comma,
             empty_sequence=f"List[{empty_sequence_type}]()",
+            preamble_lines=fmt.preamble_lines,
+            format_entry=fmt.format_entry,
+            typed_opener_fallback=fmt.typed_opener_fallback,
         )
-        self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            empty_set=f"Set[{empty_set_type}]()",
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=typed_set_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=make_element_to_type(
@@ -268,8 +271,14 @@ class Mojo(metaclass=LanguageCls):
                 ),
                 fallback=f"Set[{empty_set_type}](",
             ),
+            close=")",
+            empty_set=f"Set[{empty_set_type}]()",
+            preamble_lines=("from std.collections import Set",),
+            set_opener_template="",
         )
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.sequence_open: Callable[[list[Value]], str] = (
+            self.sequence_format_config.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
             close="}",

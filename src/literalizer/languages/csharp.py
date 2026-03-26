@@ -15,7 +15,6 @@ from literalizer._formatters import (
     datetime_ymdhms_formatter,
     dict_entry_with_template,
     fixed_sequence_open,
-    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -56,7 +55,37 @@ class _CSharpDictSpec:
     """Per-format dict config pieces resolved at init time."""
 
     opener_template: str
-    fallback: str
+
+
+@dataclasses.dataclass(frozen=True)
+class _CSharpSetSpec:
+    """Per-format set config pieces resolved at init time."""
+
+    open_template: str
+    empty_template: str
+    preamble_lines: tuple[str, ...]
+    set_opener_template: str
+
+
+@beartype
+def _csharp_array_config(
+    base: SequenceFormatConfig,
+    *,
+    empty_array_type: str,
+) -> SequenceFormatConfig:
+    """Build the ARRAY sequence config with the given element type."""
+    array_open = f"new {empty_array_type}[] {{"
+    return SequenceFormatConfig(
+        sequence_open=fixed_sequence_open(open_str=array_open),
+        close=base.close,
+        supports_heterogeneity=base.supports_heterogeneity,
+        single_element_trailing_comma=base.single_element_trailing_comma,
+        supports_trailing_comma=base.supports_trailing_comma,
+        empty_sequence=f"Array.Empty<{empty_array_type}>()",
+        preamble_lines=base.preamble_lines,
+        format_entry=base.format_entry,
+        typed_opener_fallback=array_open,
+    )
 
 
 @beartype
@@ -178,17 +207,15 @@ class CSharp(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for C#."""
 
-        HASH_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new HashSet<object> {"),
-            close="}",
-            empty_set="new HashSet<object>()",
+        HASH_SET = _CSharpSetSpec(
+            open_template="new HashSet<{type}> {{",
+            empty_template="new HashSet<{type}>()",
             preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="",
         )
-        SORTED_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new SortedSet<object> {"),
-            close="}",
-            empty_set="new SortedSet<object>()",
+        SORTED_SET = _CSharpSetSpec(
+            open_template="new SortedSet<{type}> {{",
+            empty_template="new SortedSet<{type}>()",
             preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="new SortedSet<{type_name}> {{",
         )
@@ -215,11 +242,9 @@ class CSharp(metaclass=LanguageCls):
 
         DICTIONARY = _CSharpDictSpec(
             opener_template="new Dictionary<string, {type_name}> {{",
-            fallback="new Dictionary<string, object> {",
         )
         SORTED_DICTIONARY = _CSharpDictSpec(
             opener_template="new SortedDictionary<string, {type_name}> {{",
-            fallback="new SortedDictionary<string, object> {",
         )
 
     class IntegerFormats(enum.Enum):
@@ -327,18 +352,13 @@ class CSharp(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
-        if fmt.typed_opener_fallback is not None:
-            # ARRAY format: parameterize the empty type
-            fmt = dataclasses.replace(
-                fmt,
-                empty_sequence=f"Array.Empty<{empty_array_type}>()",
-                typed_opener_fallback=f"new {empty_array_type}[] {{",
-                sequence_open=fixed_sequence_open(
-                    open_str=f"new {empty_array_type}[] {{",
-                ),
-            )
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.sequence_format_config = (
+            _csharp_array_config(fmt, empty_array_type=empty_array_type)
+            if fmt.typed_opener_fallback is not None
+            else fmt
+        )
         self.set_format = set_format
+        set_spec: _CSharpSetSpec = set_format.value
         cfg = self._opener_config
         date_type = cfg.type_name(
             py_type=date_format.value.type_produced,
@@ -349,34 +369,33 @@ class CSharp(metaclass=LanguageCls):
         openers = cfg.build(
             date_type=date_type,
             datetime_type=datetime_type,
-            set_opener_template=set_format.value.set_opener_template or None,
+            set_opener_template=set_spec.set_opener_template or None,
             narrow_dict_values=False,
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            empty_set=(
-                set_format.value.empty_set.replace(
-                    "<object>", f"<{empty_set_type}>"
-                )
-                if set_format.value.empty_set is not None
-                else None
-            ),
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=typed_set_open(
                 type_to_opener=openers.set,
-                fallback=set_format.value.set_open([]).replace(
-                    "<object>", f"<{empty_set_type}>"
+                fallback=set_spec.open_template.format(
+                    type=empty_set_type,
                 ),
             ),
+            close="}",
+            empty_set=set_spec.empty_template.format(
+                type=empty_set_type,
+            ),
+            preamble_lines=set_spec.preamble_lines,
+            set_opener_template=set_spec.set_opener_template,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(
                 type_to_opener=openers.seq,
-                fallback=fmt.typed_opener_fallback,
+                fallback=self.sequence_format_config.typed_opener_fallback,
             )
-            if fmt.typed_opener_fallback is not None
-            else fmt.sequence_open
+            if self.sequence_format_config.typed_opener_fallback is not None
+            else self.sequence_format_config.sequence_open
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+        dict_spec = dict_format.value
+        self.dict_format_config = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
@@ -385,11 +404,10 @@ class CSharp(metaclass=LanguageCls):
                         datetime_type=datetime_type,
                         enable_dict_type=False,
                     ),
-                    opener_template=dict_format.value.opener_template,
+                    opener_template=dict_spec.opener_template,
                 ),
-                fallback=dict_format.value.fallback.replace(
-                    "object>",
-                    f"{empty_dict_value_type}>",
+                fallback=dict_spec.opener_template.format(
+                    type_name=empty_dict_value_type,
                 ),
             ),
             close="}",

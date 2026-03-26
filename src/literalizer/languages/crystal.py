@@ -1,6 +1,5 @@
 """Crystal language specification."""
 
-import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -238,16 +237,30 @@ class Crystal(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
-        if fmt.empty_sequence is not None:
-            fmt = dataclasses.replace(
-                fmt,
-                empty_sequence=f"[] of {empty_collection_type}",
-            )
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        empty_seq = (
+            f"[] of {empty_collection_type}"
+            if fmt.empty_sequence is not None
+            else None
+        )
+        self.sequence_format_config = SequenceFormatConfig(
+            sequence_open=fmt.sequence_open,
+            close=fmt.close,
+            supports_heterogeneity=fmt.supports_heterogeneity,
+            single_element_trailing_comma=fmt.single_element_trailing_comma,
+            supports_trailing_comma=fmt.supports_trailing_comma,
+            empty_sequence=empty_seq,
+            preamble_lines=fmt.preamble_lines,
+            format_entry=fmt.format_entry,
+            typed_opener_fallback=fmt.typed_opener_fallback,
+        )
+        fmt = self.sequence_format_config
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
+            set_open=fixed_set_open(open_str="Set{"),
+            close="}",
             empty_set=f"Set({empty_collection_type}).new",
+            preamble_lines=('require "set"',),
+            set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(

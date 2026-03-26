@@ -16,11 +16,18 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Cpp,
+    Crystal,
+    CSharp,
+    Dart,
     Go,
+    Groovy,
     JavaScript,
     Mojo,
     Python,
     R,
+    Rust,
+    Swift,
+    VisualBasic,
 )
 
 GO = Go(
@@ -1067,3 +1074,191 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
             new_variable=True,
             error_on_coercion=True,
         )
+
+
+# -- Empty-collection-type customisation tests --
+
+
+_EMPTY_LIST_CASES: list[tuple[str, Language, str]] = [
+    (
+        "CSharp_ARRAY",
+        CSharp(
+            sequence_format=CSharp.SequenceFormats.ARRAY,
+            empty_array_type="int",
+        ),
+        "Array.Empty<int>()",
+    ),
+    (
+        "Crystal",
+        Crystal(empty_collection_type="Int32"),
+        "[] of Int32",
+    ),
+    (
+        "Mojo",
+        Mojo(empty_sequence_type="Int"),
+        "List[Int]()",
+    ),
+    (
+        "Rust",
+        Rust(empty_vec_type="i32"),
+        "Vec::<i32>::new()",
+    ),
+    (
+        "Swift",
+        Swift(empty_array_type="Int"),
+        "[Int]()",
+    ),
+    (
+        "VB",
+        VisualBasic(empty_array_type="Integer"),
+        "New Integer() {}",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    argnames=("_name", "language", "expected"),
+    argvalues=_EMPTY_LIST_CASES,
+    ids=[c[0] for c in _EMPTY_LIST_CASES],
+)
+def test_empty_list_custom_type(
+    _name: str,
+    language: Language,
+    expected: str,
+) -> None:
+    """Empty list with a custom type produces the right literal."""
+    result = literalize_yaml(
+        yaml_string="[]\n",
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code == expected
+
+
+_EMPTY_SET_CASES: list[tuple[str, Language, str]] = [
+    (
+        "CSharp",
+        CSharp(empty_set_type="int"),
+        "new HashSet<int>()",
+    ),
+    (
+        "Crystal",
+        Crystal(empty_collection_type="Int32"),
+        "Set(Int32).new",
+    ),
+    (
+        "Dart",
+        Dart(empty_set_type="int"),
+        "<int>{}",
+    ),
+    (
+        "Groovy",
+        Groovy(empty_set_type="Integer"),
+        "[] as Set<Integer>",
+    ),
+    (
+        "Mojo",
+        Mojo(empty_set_type="Bool"),
+        "Set[Bool]()",
+    ),
+    (
+        "Swift",
+        Swift(empty_set_type="Int"),
+        "Set<Int>()",
+    ),
+    (
+        "VB",
+        VisualBasic(empty_set_type="Integer"),
+        "New HashSet(Of Integer)()",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    argnames=("_name", "language", "expected"),
+    argvalues=_EMPTY_SET_CASES,
+    ids=[c[0] for c in _EMPTY_SET_CASES],
+)
+def test_empty_set_custom_type(
+    _name: str,
+    language: Language,
+    expected: str,
+) -> None:
+    """Empty set with a custom type produces the right literal."""
+    result = literalize_yaml(
+        yaml_string="!!set {}\n",
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code == expected
+
+
+_EMPTY_DICT_CASES: list[tuple[str, Language, str]] = [
+    (
+        "Crystal",
+        Crystal(empty_collection_type="Int32"),
+        "{} of Int32 => Int32",
+    ),
+    (
+        "Mojo",
+        Mojo(
+            empty_dict_key_type="Int",
+            empty_dict_value_type="Bool",
+        ),
+        "Dict[Int, Bool]()",
+    ),
+    (
+        "Swift",
+        Swift(empty_dict_value_type="Int"),
+        "[String: Int]()",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    argnames=("_name", "language", "expected"),
+    argvalues=_EMPTY_DICT_CASES,
+    ids=[c[0] for c in _EMPTY_DICT_CASES],
+)
+def test_empty_dict_custom_type(
+    _name: str,
+    language: Language,
+    expected: str,
+) -> None:
+    """Empty dict with a custom type produces the right literal."""
+    result = literalize_yaml(
+        yaml_string="{}\n",
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code == expected
+
+
+def test_python_empty_type_hint_custom() -> None:
+    """Python with a custom empty_type_hint uses it in annotations."""
+    spec = Python(
+        variable_type_hints=Python.VariableTypeHints.ALWAYS,
+        empty_type_hint="object",
+    )
+    result = literalize_yaml(
+        yaml_string="[]\n",
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="x",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code == "x: tuple[object, ...] = ()"

@@ -1,6 +1,5 @@
 """Groovy language specification."""
 
-import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -208,10 +207,12 @@ class Groovy(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            empty_set=f"[] as Set<{empty_set_type}>",
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
+            set_open=fixed_set_open(open_str="["),
             close=f"] as Set<{empty_set_type}>",
+            empty_set=f"[] as Set<{empty_set_type}>",
+            preamble_lines=(),
+            set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(

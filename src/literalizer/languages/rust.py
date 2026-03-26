@@ -1,6 +1,5 @@
 """Rust language specification."""
 
-import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -376,12 +375,22 @@ class Rust(metaclass=LanguageCls):
         self.true_literal = "true"
         self.false_literal = "false"
         fmt = sequence_format.value
-        if fmt.empty_sequence is not None:
-            fmt = dataclasses.replace(
-                fmt,
-                empty_sequence=f"Vec::<{empty_vec_type}>::new()",
-            )
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        empty_seq = (
+            f"Vec::<{empty_vec_type}>::new()"
+            if fmt.empty_sequence is not None
+            else None
+        )
+        self.sequence_format_config = SequenceFormatConfig(
+            sequence_open=fmt.sequence_open,
+            close=fmt.close,
+            supports_heterogeneity=fmt.supports_heterogeneity,
+            single_element_trailing_comma=fmt.single_element_trailing_comma,
+            supports_trailing_comma=fmt.supports_trailing_comma,
+            empty_sequence=empty_seq,
+            preamble_lines=fmt.preamble_lines,
+            format_entry=fmt.format_entry,
+            typed_opener_fallback=fmt.typed_opener_fallback,
+        )
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
