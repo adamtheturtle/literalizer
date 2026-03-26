@@ -347,7 +347,10 @@ class Cpp(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        NONE = "none"
+        AUTO = "auto"
+
+        # Deprecated alias — will be removed in a future release.
+        NONE = "auto"  # noqa: PIE796
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -372,9 +375,9 @@ class Cpp(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.INITIALIZER_LIST,
         set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        _variable_type_hints: VariableTypeHints = VariableTypeHints.NONE,
+        _variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         declaration_style: DeclarationStyles = DeclarationStyles.AUTO,
         dict_format: DictFormats = DictFormats.MAP,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,

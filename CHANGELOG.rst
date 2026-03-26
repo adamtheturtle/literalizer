@@ -4,6 +4,9 @@ Changelog
 Next
 ----
 
+- Renamed ``VariableTypeHints.NONE`` to ``AUTO`` and ``VariableTypeHints.INLINE`` to ``ALWAYS``.
+  The old names still work as aliases but are deprecated and will be removed in a future release.
+
 2026.03.26
 ----------
 

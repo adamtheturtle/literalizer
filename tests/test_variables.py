@@ -112,7 +112,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.NONE,
+    variable_type_hints=Python.variable_type_hints_formats.AUTO,
 )
 PYTHON_INLINE_HINTS = Python(
     date_format=Python.date_formats.PYTHON,
@@ -120,7 +120,7 @@ PYTHON_INLINE_HINTS = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.INLINE,
+    variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
 )
 RUBY = Ruby(
     date_format=Ruby.date_formats.RUBY,
@@ -422,7 +422,7 @@ def test_python_inline_type_hints_list() -> None:
         bytes_format=Python.bytes_formats.HEX,
         sequence_format=Python.sequence_formats.LIST,
         set_format=Python.set_formats.SET,
-        variable_type_hints=Python.variable_type_hints_formats.INLINE,
+        variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
     )
     result = literalize_json(
         json_string="[1, 2]",
