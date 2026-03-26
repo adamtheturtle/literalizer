@@ -662,9 +662,17 @@ def _format_ordered_map_value(
     ]
     pairs = [
         spec.format_ordered_map_entry(
-            _format_value(value=k, spec=spec),
+            _format_value(
+                value=k,
+                spec=spec,
+                dict_open_override=None,
+            ),
             v,
-            _format_value(value=v, spec=spec),
+            _format_value(
+                value=v,
+                spec=spec,
+                dict_open_override=None,
+            ),
         )
         for k, v in ordered_map_items
     ]
@@ -677,6 +685,7 @@ def _format_dict_value(
     *,
     value: dict[str, Value],
     spec: Language,
+    open_override: str | None,
 ) -> str:
     """Format a dict as a native language literal."""
     dict_cfg = spec.dict_format_config
@@ -690,15 +699,70 @@ def _format_dict_value(
         return dict_cfg.empty_dict
     pairs = [
         _build_dict_entry(
-            key_str=_format_value(value=k, spec=spec),
+            key_str=_format_value(
+                value=k,
+                spec=spec,
+                dict_open_override=None,
+            ),
             val=v,
-            val_str=_format_value(value=v, spec=spec),
+            val_str=_format_value(
+                value=v,
+                spec=spec,
+                dict_open_override=None,
+            ),
             spec=spec,
         )
         for k, v in dict_items.items()
     ]
     joined = spec.element_separator.join(pairs)
-    return dict_cfg.open_fn(dict_items) + joined + dict_cfg.close
+    opener = (
+        open_override
+        if open_override is not None
+        else dict_cfg.open_fn(dict_items)
+    )
+    return opener + joined + dict_cfg.close
+
+
+@beartype
+def _compute_dict_open_override(
+    *,
+    items: list[Value],
+    spec: Language,
+) -> str | None:
+    """Return a widened dict opener when dicts in a list infer
+    different value types, or ``None`` when no widening is needed.
+    """
+    open_fn = spec.dict_format_config.open_fn
+    dicts: list[dict[str, Value]] = [
+        item
+        for item in items
+        if isinstance(item, dict) and not isinstance(item, ordereddict)
+    ]
+    min_dicts_for_widening = 2
+    if len(dicts) < min_dicts_for_widening:
+        return None
+
+    filtered_dicts = [
+        {
+            k: v
+            for k, v in d.items()
+            if not (spec.skip_null_dict_values and v is None)
+        }
+        for d in dicts
+    ]
+
+    openers = {open_fn(d) for d in filtered_dicts}
+    if len(openers) <= 1:
+        return None
+
+    # Types differ: combine all values to infer the widened type.
+    combined: dict[str, Value] = {}
+    idx = 0
+    for d in filtered_dicts:
+        for v in d.values():
+            combined[f"_k{idx}"] = v
+            idx += 1
+    return open_fn(combined)
 
 
 @beartype
@@ -712,8 +776,19 @@ def _format_list_value(
 
     if not value and sequence_cfg.empty_sequence is not None:
         return sequence_cfg.empty_sequence
+    dict_open_override = _compute_dict_open_override(
+        items=value,
+        spec=spec,
+    )
     items = [
-        spec.format_sequence_entry(v, _format_value(value=v, spec=spec))
+        spec.format_sequence_entry(
+            v,
+            _format_value(
+                value=v,
+                spec=spec,
+                dict_open_override=dict_open_override,
+            ),
+        )
         for v in value
     ]
     joined = spec.element_separator.join(items)
@@ -729,16 +804,26 @@ def _format_value(
     *,
     value: Value,
     spec: Language,
+    dict_open_override: str | None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
     Handles scalars, lists (recursively), dicts, and sets.
+
+    When *dict_open_override* is set, dict values use it as the opening
+    delimiter instead of inferring the type from their own values.
+    This is used to widen map value types when dicts with differing
+    inferred types appear in the same sequence.
     """
     match value:
         case ordereddict():
             return _format_ordered_map_value(value=value, spec=spec)
         case dict():
-            return _format_dict_value(value=value, spec=spec)
+            return _format_dict_value(
+                value=value,
+                spec=spec,
+                open_override=dict_open_override,
+            )
         case set():
             return _format_set_value(value=value, spec=spec)
         case list():
@@ -874,11 +959,23 @@ def _format_collection_lines(
                 empty_value: ordereddict | dict[str, Value] = (
                     ordereddict() if is_ordered_map else {}
                 )
-                return _format_value(value=empty_value, spec=spec)
+                return _format_value(
+                    value=empty_value,
+                    spec=spec,
+                    dict_open_override=None,
+                )
             last_idx = len(entries) - 1
             for i, (k, v) in enumerate(iterable=entries):
-                formatted_key = _format_value(value=k, spec=spec)
-                formatted_val = _format_value(value=v, spec=spec)
+                formatted_key = _format_value(
+                    value=k,
+                    spec=spec,
+                    dict_open_override=None,
+                )
+                formatted_val = _format_value(
+                    value=v,
+                    spec=spec,
+                    dict_open_override=None,
+                )
                 entry = (
                     spec.format_ordered_map_entry(
                         formatted_key, v, formatted_val
@@ -901,7 +998,11 @@ def _format_collection_lines(
             )
             last_idx = len(sorted_items) - 1
             for i, item in enumerate(iterable=sorted_items):
-                formatted = _format_value(value=item, spec=spec)
+                formatted = _format_value(
+                    value=item,
+                    spec=spec,
+                    dict_open_override=None,
+                )
                 entry = spec.format_set_entry(item, formatted)
                 add_sep = i < last_idx or trailing_comma
                 sep = spec.element_separator.strip() if add_sep else ""
@@ -911,10 +1012,19 @@ def _format_collection_lines(
                 trailing_comma
                 and spec.sequence_format_config.supports_trailing_comma
             )
+            dict_open_override = _compute_dict_open_override(
+                items=list_data,
+                spec=spec,
+            )
             last_idx = len(list_data) - 1
             for i, element in enumerate(iterable=list_data):
                 formatted = spec.format_sequence_entry(
-                    element, _format_value(value=element, spec=spec)
+                    element,
+                    _format_value(
+                        value=element,
+                        spec=spec,
+                        dict_open_override=dict_open_override,
+                    ),
                 )
                 add_sep = i < last_idx or seq_trailing
                 sep = spec.element_separator.strip() if add_sep else ""
@@ -988,7 +1098,12 @@ def _literalize(
     # delegate to _format_value which already returns the correct
     # compact representation (e.g. ``{}``, ``[]``).
     if not data and include_delimiters:
-        return f"{line_prefix}{_format_value(value=data, spec=spec)}"
+        formatted = _format_value(
+            value=data,
+            spec=spec,
+            dict_open_override=None,
+        )
+        return f"{line_prefix}{formatted}"
 
     body_prefix = (
         line_prefix + language.indent if include_delimiters else line_prefix
