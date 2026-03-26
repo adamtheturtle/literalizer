@@ -49,11 +49,12 @@ Usage
        error_on_coercion=False,
        language=Go(
            date_format=Go.date_formats.GO,
+           pre_indent_level=0,
            datetime_format=Go.datetime_formats.GO,
            bytes_format=Go.bytes_formats.HEX,
            sequence_format=Go.sequence_formats.SLICE,
        ),
-       line_prefix="",
+       pre_indent_level=0,
        include_delimiters=True,
        variable_name=None,
        new_variable=True,

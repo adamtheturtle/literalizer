@@ -47,7 +47,7 @@ def test_yaml_comment_no_include_delimiters() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="    ",
+        pre_indent_level=1,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -63,7 +63,7 @@ def test_yaml_comment_scalar() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -79,7 +79,7 @@ def test_yaml_comment_scalar_inline() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -95,7 +95,7 @@ def test_yaml_comment_scalar_quoted_with_hash() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -111,7 +111,7 @@ def test_yaml_comment_scalar_with_document_markers() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -127,7 +127,7 @@ def test_yaml_comment_scalar_only_comments() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -143,7 +143,7 @@ def test_yaml_comment_block_scalar_not_extracted() -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,

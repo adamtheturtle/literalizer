@@ -82,7 +82,7 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -98,7 +98,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,
@@ -119,7 +119,7 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     result = literalize_json(
         json_string=json.dumps(obj=data),
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=True,
         variable_name=None,
         new_variable=True,
@@ -153,7 +153,7 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
     result = literalize_yaml(
         yaml_string=yaml_string,
         language=PYTHON,
-        line_prefix="",
+        pre_indent_level=0,
         include_delimiters=False,
         variable_name=None,
         new_variable=True,

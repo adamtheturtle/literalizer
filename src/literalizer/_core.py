@@ -1049,7 +1049,7 @@ def literalize_json(
     *,
     json_string: str,
     language: Language,
-    line_prefix: str,
+    pre_indent_level: int,
     include_delimiters: bool,
     variable_name: str | None,
     new_variable: bool,
@@ -1065,10 +1065,9 @@ def literalize_json(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        line_prefix: String to prepend to every output line
-            (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
-            for 2-tab margin).  Positions the generated block at
-            the right column in surrounding source code.
+        pre_indent_level: Number of ``indent`` steps to prepend to
+            every output line.  For example, ``2`` with a 4-space
+            indent produces an 8-space margin.  Defaults to ``0``.
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
@@ -1093,6 +1092,7 @@ def literalize_json(
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
+    line_prefix = language.indent * pre_indent_level
     try:
         data = json.loads(s=json_string)
     except json.JSONDecodeError as exc:
@@ -1301,7 +1301,7 @@ def literalize_yaml(
     *,
     yaml_string: str,
     language: Language,
-    line_prefix: str,
+    pre_indent_level: int,
     include_delimiters: bool,
     variable_name: str | None,
     new_variable: bool,
@@ -1320,10 +1320,9 @@ def literalize_yaml(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        line_prefix: String to prepend to every output line
-            (e.g. ``"        "`` for 8-space margin, or ``"\t\t"``
-            for 2-tab margin).  Positions the generated block at
-            the right column in surrounding source code.
+        pre_indent_level: Number of ``indent`` steps to prepend to
+            every output line.  For example, ``2`` with a 4-space
+            indent produces an 8-space margin.  Defaults to ``0``.
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
         variable_name: If given, wrap the output in a variable
@@ -1348,6 +1347,7 @@ def literalize_yaml(
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
+    line_prefix = language.indent * pre_indent_level
     ruamel_yaml = YAML(typ="safe")
     try:
         # https://sourceforge.net/p/ruamel-yaml/tickets/564/
