@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import inspect
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -916,6 +917,29 @@ def _build_set_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_default_set_type_variants() -> Iterable[_Variant]:
+    """Build default-set-type variants for languages that support it.
+
+    For each language whose constructor accepts ``default_set_type``,
+    create a variant with a non-default value.
+    """
+    variants: list[_Variant] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        signature = inspect.signature(lang_config.lang_cls)
+        if "default_set_type" not in signature.parameters:
+            continue
+        variants.append(
+            _Variant(
+                name=f"{lang_name}_default_set_type_string",
+                spec=lang_config.lang_cls(default_set_type="String"),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+        )
+    return variants
+
+
+@beartype
 def _build_comment_variants() -> Iterable[_Variant]:
     """Build comment-format variants for all languages with multiple
     formats.
@@ -1338,6 +1362,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_sequence_variants(), "triple_sequence", "_triple"),
         (_build_sequence_varname_variants(), "simple_sequence", "_varname"),
         (_build_set_variants(), "set", ""),
+        (_build_default_set_type_variants(), "empty_set", ""),
+        (_build_default_set_type_variants(), "set", ""),
         (_build_comment_variants(), "comments", ""),
         (_build_type_hint_variants(), "type_hints", ""),
         (_build_type_hint_variants(), "scalar_date", ""),
