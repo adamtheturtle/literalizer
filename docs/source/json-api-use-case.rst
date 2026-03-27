@@ -20,7 +20,7 @@ returns this response:
    // Response
    {"id": 42, "name": "Alice", "email": "alice@example.com", "created": true}
 
-|project| converts these into native literals for each language:
+|project| converts these into native literals for each language using :func:`literalizer.literalize_json`:
 
 .. code-block:: python
 
