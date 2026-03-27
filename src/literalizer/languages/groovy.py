@@ -50,7 +50,7 @@ class Groovy(metaclass=LanguageCls):
 
     extension = ".groovy"
     pygments_name = "groovy"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Groovy."""
@@ -107,13 +107,7 @@ class Groovy(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Groovy."""
 
-        SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="["),
-            close="] as Set<Object>",
-            empty_set="[] as Set<Object>",
-            preamble_lines=(),
-            set_opener_template="",
-        )
+        SET = "set"
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -199,6 +193,7 @@ class Groovy(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        default_set_type: str = "Object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.DEF,
@@ -219,7 +214,14 @@ class Groovy(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
+            set_open=fixed_set_open(open_str="["),
+            close=f"] as Set<{default_set_type}>",
+            empty_set=f"[] as Set<{default_set_type}>",
+            preamble_lines=(),
+            set_opener_template="",
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="["),

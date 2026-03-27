@@ -12,7 +12,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_sequence_open,
-    fixed_set_open,
     make_type_to_opener,
     typed_dict_open,
     typed_sequence_open,
@@ -31,7 +30,10 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
-from literalizer._formatters.format_factories import ordered_map_format_factory
+from literalizer._formatters.format_factories import (
+    ordered_map_format_factory,
+    set_format_factory,
+)
 from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
@@ -88,7 +90,7 @@ class CSharp(metaclass=LanguageCls):
 
     extension = ".cs"
     pygments_name = "csharp"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="string",
@@ -188,24 +190,28 @@ class CSharp(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for C#."""
 
-        HASH_SET = SetFormatConfig(
-            set_open=fixed_set_open(
-                open_str="new HashSet<object> {",
-            ),
-            close="}",
-            empty_set="new HashSet<object>()",
-            preamble_lines=("using System.Collections.Generic;",),
-            set_opener_template="",
+        HASH_SET = enum.member(
+            value=set_format_factory(
+                open_template="new HashSet<{type}> {{",
+                close="}",
+                empty_template="new HashSet<{type}>()",
+                preamble_lines=("using System.Collections.Generic;",),
+                set_opener_template="",
+            )
         )
-        SORTED_SET = SetFormatConfig(
-            set_open=fixed_set_open(
-                open_str="new SortedSet<object> {",
-            ),
-            close="}",
-            empty_set="new SortedSet<object>()",
-            preamble_lines=("using System.Collections.Generic;",),
-            set_opener_template="new SortedSet<{type_name}> {{",
+        SORTED_SET = enum.member(
+            value=set_format_factory(
+                open_template="new SortedSet<{type}> {{",
+                close="}",
+                empty_template="new SortedSet<{type}>()",
+                preamble_lines=("using System.Collections.Generic;",),
+                set_opener_template="new SortedSet<{type_name}> {{",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -326,6 +332,7 @@ class CSharp(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.TUPLE,
         set_format: SetFormats = SetFormats.HASH_SET,
+        default_set_type: str = "object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAR,
@@ -346,25 +353,25 @@ class CSharp(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        csharp_dict_entry = dict_entry_with_template(
-            template="[{key}] = {value}",
-            format_value=passthrough_sequence_entry,
-        )
 
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
+        )
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced
         cfg = self._opener_config
         openers = cfg.build(
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(py_type=dt_tp),
-            set_opener_template=set_format.value.set_opener_template or None,
+            set_opener_template=self.set_format_config.set_opener_template
+            or None,
             narrow_dict_values=False,
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
+        self.set_format_config = dataclasses.replace(
+            self.set_format_config,
             set_open=typed_set_open(
                 type_to_opener=openers.set,
-                fallback=set_format.value.set_open([]),
+                fallback=self.set_format_config.set_open([]),
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
@@ -390,7 +397,10 @@ class CSharp(metaclass=LanguageCls):
                 fallback=dict_spec.fallback,
             ),
             close="}",
-            format_entry=csharp_dict_entry,
+            format_entry=dict_entry_with_template(
+                template="[{key}] = {value}",
+                format_value=passthrough_sequence_entry,
+            ),
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
             narrowed_open=None,
@@ -431,7 +441,10 @@ class CSharp(metaclass=LanguageCls):
             )("object")
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            csharp_dict_entry
+            dict_entry_with_template(
+                template="[{key}] = {value}",
+                format_value=passthrough_sequence_entry,
+            )
         )
         self.indent = indent
         self.indent_closing_delimiter = False

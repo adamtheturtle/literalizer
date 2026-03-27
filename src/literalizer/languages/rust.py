@@ -11,7 +11,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
-    fixed_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -24,6 +23,7 @@ from literalizer._formatters.format_entries import (
     tuple_dict_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_factories import set_format_factory
 from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
@@ -119,7 +119,7 @@ class Rust(metaclass=LanguageCls):
 
     extension = ".rs"
     pygments_name = "rust"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
@@ -210,20 +210,28 @@ class Rust(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Rust."""
 
-        HASH_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="HashSet::from(["),
-            close="])",
-            empty_set="HashSet::<String>::new()",
-            preamble_lines=("use std::collections::HashSet;",),
-            set_opener_template="",
+        HASH_SET = enum.member(
+            value=set_format_factory(
+                open_template="HashSet::from([",
+                close="])",
+                empty_template="HashSet::<{type}>::new()",
+                preamble_lines=("use std::collections::HashSet;",),
+                set_opener_template="",
+            )
         )
-        BTREE_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="BTreeSet::from(["),
-            close="])",
-            empty_set="BTreeSet::<String>::new()",
-            preamble_lines=("use std::collections::BTreeSet;",),
-            set_opener_template="",
+        BTREE_SET = enum.member(
+            value=set_format_factory(
+                open_template="BTreeSet::from([",
+                close="])",
+                empty_template="BTreeSet::<{type}>::new()",
+                preamble_lines=("use std::collections::BTreeSet;",),
+                set_opener_template="",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -369,6 +377,7 @@ class Rust(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.VEC,
         set_format: SetFormats = SetFormats.HASH_SET,
+        default_set_type: str = "String",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.LET,
@@ -389,7 +398,10 @@ class Rust(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format.value
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value

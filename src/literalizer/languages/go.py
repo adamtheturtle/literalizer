@@ -131,7 +131,7 @@ class Go(metaclass=LanguageCls):
 
     extension = ".go"
     pygments_name = "go"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""
@@ -328,6 +328,7 @@ class Go(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.SLICE,
         set_format: SetFormats = SetFormats.SET,
+        default_set_type: str = "any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.SHORT,
@@ -378,7 +379,7 @@ class Go(metaclass=LanguageCls):
                     element_to_type=init_element_to_type,
                     opener_template="map[{type_name}]struct{{}}{{",
                 ),
-                fallback="map[any]struct{}{",
+                fallback=f"map[{default_set_type}]struct{{}}{{",
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(

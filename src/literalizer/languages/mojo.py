@@ -66,7 +66,7 @@ class Mojo(metaclass=LanguageCls):
 
     extension = ".mojo"
     pygments_name = "mojo"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
@@ -123,31 +123,7 @@ class Mojo(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Mojo."""
 
-        SET = SetFormatConfig(
-            set_open=typed_set_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=make_element_to_type(
-                        str_type="String",
-                        bool_type="Bool",
-                        int_type="Int",
-                        float_type="Float64",
-                        mixed_numeric_type="String",
-                        bytes_type=None,
-                        date_type=None,
-                        datetime_type=None,
-                        list_template="List[{inner}]",
-                        dict_type_template=None,
-                        fallback_value_type=None,
-                    ),
-                    opener_template="Set[{type_name}](",
-                ),
-                fallback="Set[String](",
-            ),
-            close=")",
-            empty_set="Set[String]()",
-            preamble_lines=("from std.collections import Set",),
-            set_opener_template="",
-        )
+        SET = "set"
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -244,6 +220,7 @@ class Mojo(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        default_set_type: str = "String",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
@@ -265,7 +242,32 @@ class Mojo(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
+            set_open=typed_set_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=make_element_to_type(
+                        str_type="String",
+                        bool_type="Bool",
+                        int_type="Int",
+                        float_type="Float64",
+                        mixed_numeric_type="String",
+                        bytes_type=None,
+                        date_type=None,
+                        datetime_type=None,
+                        list_template="List[{inner}]",
+                        dict_type_template=None,
+                        fallback_value_type=None,
+                    ),
+                    opener_template="Set[{type_name}](",
+                ),
+                fallback=f"Set[{default_set_type}](",
+            ),
+            close=")",
+            empty_set=f"Set[{default_set_type}]()",
+            preamble_lines=("from std.collections import Set",),
+            set_opener_template="",
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
             default_type=default_value_type,
