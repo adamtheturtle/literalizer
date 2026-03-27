@@ -8,12 +8,13 @@ from beartype import beartype
 
 from literalizer._formatters import (
     braced_dict_entry,
-    fixed_dict_open,
+    dict_format_factory,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
     make_element_to_type,
     make_type_to_opener,
+    ordered_map_format_factory,
     passthrough_sequence_entry,
     passthrough_set_entry,
     typed_sequence_open,
@@ -36,8 +37,6 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-_DEFAULT_VALUE_TYPE = "Object"
 
 
 @beartype
@@ -185,7 +184,22 @@ class VisualBasic(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        DEFAULT = "default"
+        DEFAULT = enum.member(
+            value=dict_format_factory(
+                open_template=("New Dictionary(Of String, {type}) From {{"),
+                close="}",
+                format_entry=braced_dict_entry(
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_template=None,
+                preamble_lines=("Imports System.Collections.Generic",),
+                narrowed_open=None,
+            )
+        )
+
+        def __call__(self, default_type: str) -> DictFormatConfig:
+            """Create a dict format config for the given type."""
+            return self.value(default_type)
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -260,6 +274,7 @@ class VisualBasic(metaclass=LanguageCls):
         indent: str = "    ",
     ) -> None:
         """Initialize VisualBasic language specification."""
+        default_value_type = "Object"
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "Nothing"
@@ -285,13 +300,13 @@ class VisualBasic(metaclass=LanguageCls):
         fmt = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=vb_type_to_opener,
-                fallback=f"New {_DEFAULT_VALUE_TYPE}() {{",
+                fallback=f"New {default_value_type}() {{",
             ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=f"New {_DEFAULT_VALUE_TYPE}() {{}}",
+            empty_sequence=f"New {default_value_type}() {{}}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -304,27 +319,16 @@ class VisualBasic(metaclass=LanguageCls):
                     element_to_type=element_to_type,
                     opener_template="New HashSet(Of {type_name}) From {{",
                 ),
-                fallback=f"New HashSet(Of {_DEFAULT_VALUE_TYPE}) From {{",
+                fallback=f"New HashSet(Of {default_value_type}) From {{",
             ),
             close="}",
-            empty_set=f"New HashSet(Of {_DEFAULT_VALUE_TYPE})()",
+            empty_set=f"New HashSet(Of {default_value_type})()",
             preamble_lines=(),
             set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(
-                open_str=(
-                    f"New Dictionary(Of String, {_DEFAULT_VALUE_TYPE}) From {{"
-                ),
-            ),
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict=None,
-            preamble_lines=("Imports System.Collections.Generic",),
-            narrowed_open=None,
+        self.dict_format_config: DictFormatConfig = dict_format(
+            default_type=default_value_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
@@ -352,13 +356,11 @@ class VisualBasic(metaclass=LanguageCls):
         self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                open_str=(
-                    f"New Dictionary(Of String, {_DEFAULT_VALUE_TYPE}) From {{"
-                ),
+            ordered_map_format_factory(
+                open_template=("New Dictionary(Of String, {type}) From {{"),
                 close="}",
                 preamble_lines=(),
-            )
+            )(default_value_type)
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry(format_value=passthrough_sequence_entry)

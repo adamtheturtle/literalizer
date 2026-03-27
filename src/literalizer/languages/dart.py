@@ -44,8 +44,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-_DEFAULT_VALUE_TYPE = "dynamic"
-
 
 @beartype
 class Dart(metaclass=LanguageCls):
@@ -84,7 +82,7 @@ class Dart(metaclass=LanguageCls):
         dict_opener_template="<String, {type_name}>{{",
         set_opener_template="<{type_name}>{{",
         dict_type_template="Map<String, {inner}>",
-        fallback_value_type=_DEFAULT_VALUE_TYPE,
+        fallback_value_type="dynamic",
     )
 
     class DateFormats(enum.Enum):
@@ -166,7 +164,7 @@ class Dart(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="{"),
             close="}",
-            empty_set=f"<{_DEFAULT_VALUE_TYPE}>{{}}",
+            empty_set="<dynamic>{}",
             preamble_lines=(),
             set_opener_template="",
         )
