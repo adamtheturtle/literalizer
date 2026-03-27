@@ -5,7 +5,7 @@ from literalizer._core import (
     literalize_json,
     literalize_yaml,
 )
-from literalizer._formatters import (
+from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,

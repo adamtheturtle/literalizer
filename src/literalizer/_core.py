@@ -21,7 +21,10 @@ from literalizer._comments import (
     literalize_yaml_scalar,
     prepend_collection_comments,
 )
-from literalizer._formatters import DictType, infer_element_type
+from literalizer._formatters.type_inference import (
+    DictType,
+    infer_element_type,
+)
 from literalizer._language import Language
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (

@@ -8,23 +8,29 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters import (
+from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
-    format_bytes_hex,
+)
+from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
-    format_integer_binary,
-    format_integer_hex,
-    format_integer_octal,
-    format_integer_underscore,
-    format_string_backslash,
+)
+from literalizer._formatters.format_entries import (
+    format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
     tuple_dict_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_integers import (
+    format_integer_binary,
+    format_integer_hex,
+    format_integer_octal,
+    format_integer_underscore,
+)
+from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
