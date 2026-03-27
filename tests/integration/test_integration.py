@@ -919,25 +919,17 @@ def _build_set_variants() -> Iterable[_Variant]:
 def _build_default_set_type_variants() -> Iterable[_Variant]:
     """Build default-set-type variants for languages that support it.
 
-    For each language whose constructor accepts ``default_set_type``,
+    For each language that advertises ``supports_default_set_type``,
     create a variant with a non-default value.
     """
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
-        try:
-            spec = lang_config.lang_cls(default_set_type="String")
-        except TypeError as exc:
-            message = exc.args[0] if exc.args else ""
-            if (
-                not isinstance(message, str)
-                or "default_set_type" not in message
-            ):
-                raise
+        if not lang_config.lang_cls.supports_default_set_type:
             continue
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_set_type_string",
-                spec=spec,
+                spec=lang_config.lang_cls(default_set_type="String"),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )

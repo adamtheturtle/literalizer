@@ -86,6 +86,7 @@ class Swift(metaclass=LanguageCls):
 
     extension = ".swift"
     pygments_name = "swift"
+    supports_default_set_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
