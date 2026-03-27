@@ -25,6 +25,33 @@ class SequenceFormatConfig:
     format_entry: Callable[[Value, str], str]
     typed_opener_fallback: str | None
 
+    def with_formatted_empty(self, **kwargs: str) -> "SequenceFormatConfig":
+        """Return a copy with the ``empty_sequence`` template formatted.
+
+        All other fields are preserved unchanged.
+
+        Example::
+
+            ARRAY = SequenceFormatConfig(..., empty_sequence="[] of {type}")
+            cfg = ARRAY.with_formatted_empty(type="Int32")
+            # cfg.empty_sequence == "[] of Int32"
+        """
+        return SequenceFormatConfig(
+            sequence_open=self.sequence_open,
+            close=self.close,
+            supports_heterogeneity=self.supports_heterogeneity,
+            single_element_trailing_comma=self.single_element_trailing_comma,
+            supports_trailing_comma=self.supports_trailing_comma,
+            empty_sequence=(
+                self.empty_sequence.format(**kwargs)
+                if self.empty_sequence is not None
+                else None
+            ),
+            preamble_lines=self.preamble_lines,
+            format_entry=self.format_entry,
+            typed_opener_fallback=self.typed_opener_fallback,
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class DateFormatConfig:
@@ -87,6 +114,23 @@ class SetFormatConfig:
     empty_set: str | None
     preamble_lines: tuple[str, ...]
     set_opener_template: str
+
+    def with_formatted_empty(self, **kwargs: str) -> "SetFormatConfig":
+        """Return a copy with the ``empty_set`` template formatted.
+
+        All other fields are preserved unchanged.
+        """
+        return SetFormatConfig(
+            set_open=self.set_open,
+            close=self.close,
+            empty_set=(
+                self.empty_set.format(**kwargs)
+                if self.empty_set is not None
+                else None
+            ),
+            preamble_lines=self.preamble_lines,
+            set_opener_template=self.set_opener_template,
+        )
 
 
 @dataclasses.dataclass(frozen=True)

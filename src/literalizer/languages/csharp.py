@@ -75,13 +75,10 @@ def _csharp_array_config(
     base: SequenceFormatConfig,
     *,
     empty_array_type: str,
+    fallback_tpl: str,
+    empty_tpl: str,
 ) -> SequenceFormatConfig:
     """Build the ARRAY sequence config with the given element type."""
-    fallback_tpl = base.typed_opener_fallback
-    empty_tpl = base.empty_sequence
-    if fallback_tpl is None or empty_tpl is None:  # pragma: no cover
-        msg = "ARRAY format requires typed_opener_fallback and empty_sequence"
-        raise TypeError(msg)
     array_open = fallback_tpl.format(type=empty_array_type)
     return SequenceFormatConfig(
         sequence_open=fixed_sequence_open(open_str=array_open),
@@ -361,8 +358,14 @@ class CSharp(metaclass=LanguageCls):
         self.false_literal = "false"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = (
-            _csharp_array_config(base=fmt, empty_array_type=empty_array_type)
+            _csharp_array_config(
+                base=fmt,
+                empty_array_type=empty_array_type,
+                fallback_tpl=fmt.typed_opener_fallback,
+                empty_tpl=fmt.empty_sequence,
+            )
             if fmt.typed_opener_fallback is not None
+            and fmt.empty_sequence is not None
             else fmt
         )
         self.set_format = set_format
@@ -461,7 +464,7 @@ class CSharp(metaclass=LanguageCls):
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str=_ORDERED_MAP_TEMPLATE.format(
-                    type_name=empty_dict_value_type,
+                    type_name="object",
                 ),
                 close="}",
                 preamble_lines=("using System.Collections.Generic;",),

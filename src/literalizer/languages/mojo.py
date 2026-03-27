@@ -243,25 +243,7 @@ class Mojo(metaclass=LanguageCls):
         self.false_literal = "False"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = (
-            SequenceFormatConfig(
-                sequence_open=fmt.sequence_open,
-                close=fmt.close,
-                supports_heterogeneity=fmt.supports_heterogeneity,
-                single_element_trailing_comma=(
-                    fmt.single_element_trailing_comma
-                ),
-                supports_trailing_comma=fmt.supports_trailing_comma,
-                empty_sequence=(
-                    fmt.empty_sequence.format(
-                        type=empty_sequence_type,
-                    )
-                    if fmt.empty_sequence is not None
-                    else None
-                ),
-                preamble_lines=fmt.preamble_lines,
-                format_entry=fmt.format_entry,
-                typed_opener_fallback=fmt.typed_opener_fallback,
-            )
+            fmt.with_formatted_empty(type=empty_sequence_type)
         )
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = SetFormatConfig(

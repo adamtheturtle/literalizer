@@ -239,28 +239,10 @@ class Crystal(metaclass=LanguageCls):
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format.value
-        empty_seq = (
-            fmt.empty_sequence.format(type=empty_collection_type)
-            if fmt.empty_sequence is not None
-            else None
+        fmt = sequence_format.value.with_formatted_empty(
+            type=empty_collection_type,
         )
-        self.sequence_format_config: SequenceFormatConfig = (
-            SequenceFormatConfig(
-                sequence_open=fmt.sequence_open,
-                close=fmt.close,
-                supports_heterogeneity=fmt.supports_heterogeneity,
-                single_element_trailing_comma=(
-                    fmt.single_element_trailing_comma
-                ),
-                supports_trailing_comma=fmt.supports_trailing_comma,
-                empty_sequence=empty_seq,
-                preamble_lines=fmt.preamble_lines,
-                format_entry=fmt.format_entry,
-                typed_opener_fallback=fmt.typed_opener_fallback,
-            )
-        )
-        fmt = self.sequence_format_config
+        self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = SetFormatConfig(
             set_open=fixed_set_open(open_str="Set{"),
