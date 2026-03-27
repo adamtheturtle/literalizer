@@ -54,11 +54,11 @@ returns this response:
        new_variable=True,
    )
    assert request_literal.code == textwrap.dedent(
-       """\
+       text="""\
        request_body = {
            "name": "Alice",
            "email": "alice@example.com",
-       }"""
+       }""",
    )
 
    response_literal = literalize_json(
@@ -78,13 +78,13 @@ returns this response:
        new_variable=True,
    )
    assert response_literal.code == textwrap.dedent(
-       """\
+       text="""\
        response = {
            "id": 42,
            "name": "Alice",
            "email": "alice@example.com",
            "created": True,
-       }"""
+       }""",
    )
 
 Pass a different language to get the same data as JavaScript, Go, Ruby, etc.
