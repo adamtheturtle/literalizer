@@ -293,15 +293,15 @@ class Fortran(metaclass=LanguageCls):
         """Initialize Fortran language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "fnull()"
-        self.true_literal = "fbool(.true.)"
-        self.false_literal = "fbool(.false.)"
+        self._null_literal = "fnull()"
+        self._true_literal = "fbool(.true.)"
+        self._false_literal = "fbool(.false.)"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        self._sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+        self._set_format_config: SetFormatConfig = set_format.value
+        self._sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self._dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="fmap([fval_t :: "),
             close="])",
             format_entry=dict_entry_with_template(
@@ -312,15 +312,15 @@ class Fortran(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+        self._trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
         )
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
+        self._format_bytes: Callable[[bytes], str] = bytes_format
+        self._format_date: Callable[[datetime.date], str] = date_format
+        self._format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = (
+        self._format_string: Callable[[str], str] = (
             format_string_concat_control(
                 quote_char="'",
                 quote_escape="''",
@@ -329,11 +329,11 @@ class Fortran(metaclass=LanguageCls):
                 escape_backslash=False,
             )
         )
-        self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[Value, str], str] = (
+        self._format_integer: Callable[[int], str] = str
+        self._format_sequence_entry: Callable[[Value, str], str] = (
             _format_fortran_entry
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
+        self._format_set_entry: Callable[[Value, str], str] = (
             _format_fortran_entry
         )
         self.comment_format = comment_format
@@ -344,32 +344,32 @@ class Fortran(metaclass=LanguageCls):
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
+        self._comment_config: CommentConfig = comment_format.value
+        self._ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str="fmap([fval_t :: ",
                 close="])",
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
+        self._format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_template(
                 template="fentry({key}, {value})",
                 format_value=_format_fortran_entry,
             )
         )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+        self._indent = indent
+        self._indent_closing_delimiter = False
+        self._element_separator = ", "
+        self._skip_null_dict_values = False
+        self._supports_collection_comments = True
+        self._format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+        self._format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = (
+        self._static_preamble: Sequence[str] = (
             "module fval_m",
             "  implicit none",
             "  type :: fval_t",
@@ -404,13 +404,13 @@ class Fortran(metaclass=LanguageCls):
             "; type(fval_t) :: v; end function",
             "end module fval_m",
         )
-        self.static_body_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
+        self._static_body_preamble: Sequence[str] = ()
+        self._scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self._scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        self._compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
-            scalar_body_preamble=self.scalar_body_preamble,
+            scalar_body_preamble=self._scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self._type_hint_collection_preamble_lines: tuple[str, ...] = ()

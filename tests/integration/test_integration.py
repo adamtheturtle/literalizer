@@ -794,7 +794,7 @@ def _build_date_variants() -> Iterable[_Variant]:
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_format = spec.format_date
+        default_format = spec._format_date
         for fmt in list(spec.date_formats):
             if fmt is default_format:
                 continue
@@ -823,7 +823,7 @@ def _build_datetime_variants() -> Iterable[_Variant]:
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_format = spec.format_datetime
+        default_format = spec._format_datetime
         for fmt in list(spec.datetime_formats):
             if fmt is default_format:
                 continue
@@ -1105,7 +1105,7 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_format = spec.format_bytes
+        default_format = spec._format_bytes
         non_defaults = [
             fmt for fmt in spec.bytes_formats if fmt is not default_format
         ]

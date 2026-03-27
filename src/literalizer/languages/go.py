@@ -335,11 +335,11 @@ class Go(metaclass=LanguageCls):
         """Initialize Go language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "nil"
-        self.true_literal = "true"
-        self.false_literal = "false"
+        self._null_literal = "nil"
+        self._true_literal = "true"
+        self._false_literal = "false"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        self._sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
 
         _type_names: dict[type, str] = {
@@ -364,7 +364,7 @@ class Go(metaclass=LanguageCls):
             dict_type_template="map[string]{inner}",
             fallback_value_type="any",
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
+        self._set_format_config: SetFormatConfig = dataclasses.replace(
             set_format.value,
             set_open=typed_set_open(
                 type_to_opener=make_type_to_opener(
@@ -374,14 +374,16 @@ class Go(metaclass=LanguageCls):
                 fallback="map[any]struct{}{",
             ),
         )
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=init_element_to_type,
-                opener_template="[]{type_name}{{",
-            ),
-            fallback="[]any{",
+        self._sequence_open: Callable[[list[Value]], str] = (
+            typed_sequence_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=init_element_to_type,
+                    opener_template="[]{type_name}{{",
+                ),
+                fallback="[]any{",
+            )
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+        self._dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=init_element_to_type,
@@ -398,25 +400,25 @@ class Go(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open="{",
         )
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+        self._trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=True,
         )
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
+        self._format_bytes: Callable[[bytes], str] = bytes_format
+        self._format_date: Callable[[datetime.date], str] = date_format
+        self._format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
 
-        self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_integer: Callable[[int], str] = (
+        self._format_string: Callable[[str], str] = format_string_backslash
+        self._format_integer: Callable[[int], str] = (
             integer_format.get_formatter(
                 numeric_separator=numeric_separator,
             )
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = (
+        self._format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
+        self._format_set_entry: Callable[[Value, str], str] = (
             _format_go_set_entry
         )
         self.comment_format = comment_format
@@ -427,41 +429,41 @@ class Go(metaclass=LanguageCls):
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
+        self._comment_config: CommentConfig = comment_format.value
+        self._ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str="[][2]any{",
                 close="}",
                 preamble_lines=(),
             )
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
+        self._format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry(format_value=passthrough_sequence_entry)
         )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+        self._indent = indent
+        self._indent_closing_delimiter = False
+        self._element_separator = ", "
+        self._skip_null_dict_values = False
+        self._supports_collection_comments = True
+        self._format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+        self._format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
         )
-        self.static_preamble: Sequence[str] = ("package main",)
-        self.static_body_preamble: Sequence[str] = ()
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+        self._static_preamble: Sequence[str] = ("package main",)
+        self._static_body_preamble: Sequence[str] = ()
+        self._scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
                 datetime_format=datetime_format,
             )
         )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
+        self._scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        self._compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
-            scalar_body_preamble=self.scalar_body_preamble,
+            scalar_body_preamble=self._scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self._type_hint_collection_preamble_lines: tuple[str, ...] = ()

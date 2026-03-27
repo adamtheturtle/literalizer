@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 """Tests for YAML comment handling that cannot be integration cases."""
 
 import pytest
@@ -166,7 +167,7 @@ def test_yaml_comment_block_scalar_not_extracted() -> None:
 )
 def test_comment_prefix(language: Language, expected: str) -> None:
     """Each language has the expected comment prefix."""
-    assert language.comment_config.prefix == expected
+    assert language._comment_config.prefix == expected
 
 
 @pytest.mark.parametrize(
@@ -180,4 +181,4 @@ def test_comment_prefix(language: Language, expected: str) -> None:
 )
 def test_comment_suffix(language: Language) -> None:
     """Each language has an empty comment suffix."""
-    assert language.comment_config.suffix == ""
+    assert language._comment_config.suffix == ""
