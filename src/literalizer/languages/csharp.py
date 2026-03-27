@@ -79,7 +79,7 @@ def _csharp_array_config(
     """Build the ARRAY sequence config with the given element type."""
     fallback_tpl = base.typed_opener_fallback
     empty_tpl = base.empty_sequence
-    if fallback_tpl is None or empty_tpl is None:
+    if fallback_tpl is None or empty_tpl is None:  # pragma: no cover
         msg = "ARRAY format requires typed_opener_fallback and empty_sequence"
         raise TypeError(msg)
     array_open = fallback_tpl.format(type=empty_array_type)
