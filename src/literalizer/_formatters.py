@@ -1183,7 +1183,7 @@ def set_format_factory(
             preamble_lines=(),
             set_opener_template="",
         )
-        config = factory("AnyHashable")
+        config = factory("Any")
     """
 
     @beartype
