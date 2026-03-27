@@ -11,9 +11,8 @@ from beartype import beartype
 
 from literalizer._formatters import (
     dict_entry_with_separator,
-    fixed_dict_open,
+    dict_format_factory,
     fixed_sequence_open,
-    fixed_set_open,
     format_bytes_hex,
     format_date_iso,
     format_datetime_iso,
@@ -24,6 +23,7 @@ from literalizer._formatters import (
     format_string_backslash_control,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    set_format_factory,
     variable_formatter,
 )
 from literalizer._language import (
@@ -80,10 +80,6 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
-_DEFAULT_VALUE_TYPE = "Any"
-_DEFAULT_HASHABLE_TYPE = "AnyHashable"
-
-
 @beartype
 class Swift(metaclass=LanguageCls):
     """Swift language specification."""
@@ -138,7 +134,7 @@ class Swift(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=f"[{_DEFAULT_VALUE_TYPE}]()",
+            empty_sequence="[Any]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -165,15 +161,19 @@ class Swift(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Swift."""
 
-        SET = SetFormatConfig(
-            set_open=fixed_set_open(
-                open_str=f"Set<{_DEFAULT_HASHABLE_TYPE}>(["
-            ),
-            close="])",
-            empty_set=f"Set<{_DEFAULT_HASHABLE_TYPE}>()",
-            preamble_lines=(),
-            set_opener_template="",
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="Set<{type}>([",
+                close="])",
+                empty_template="Set<{type}>()",
+                preamble_lines=(),
+                set_opener_template="",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -202,7 +202,23 @@ class Swift(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        DEFAULT = "default"
+        DEFAULT = enum.member(
+            value=dict_format_factory(
+                open_template="[",
+                close="]",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_template="[String: {type}]()",
+                preamble_lines=(),
+                narrowed_open=None,
+            )
+        )
+
+        def __call__(self, default_type: str) -> DictFormatConfig:
+            """Create a dict format config for the given type."""
+            return self.value(default_type)
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -312,6 +328,8 @@ class Swift(metaclass=LanguageCls):
         indent: str = "    ",
     ) -> None:
         """Initialize Swift language specification."""
+        default_value_type = "Any"
+        default_hashable_type = "AnyHashable"
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "nil"
@@ -320,18 +338,12 @@ class Swift(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_hashable_type,
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="["),
-            close="]",
-            format_entry=dict_entry_with_separator(
-                separator=": ",
-                format_value=passthrough_sequence_entry,
-            ),
-            empty_dict=f"[String: {_DEFAULT_VALUE_TYPE}]()",
-            preamble_lines=(),
-            narrowed_open=None,
+        self.dict_format_config: DictFormatConfig = dict_format(
+            default_type=default_value_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

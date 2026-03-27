@@ -38,9 +38,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-_DEFAULT_VALUE_TYPE = "Object"
-
-
 @beartype
 class Groovy(metaclass=LanguageCls):
     """Groovy language specification."""
@@ -105,8 +102,8 @@ class Groovy(metaclass=LanguageCls):
 
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="["),
-            close=f"] as Set<{_DEFAULT_VALUE_TYPE}>",
-            empty_set=f"[] as Set<{_DEFAULT_VALUE_TYPE}>",
+            close="] as Set<Object>",
+            empty_set="[] as Set<Object>",
             preamble_lines=(),
             set_opener_template="",
         )

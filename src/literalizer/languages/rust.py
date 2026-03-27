@@ -45,9 +45,6 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
-_DEFAULT_VALUE_TYPE = "String"
-_DEFAULT_DICT_ENTRY_TYPE = "&str"
-
 
 @beartype
 def _format_date_rust(value: datetime.date) -> str:
@@ -168,7 +165,7 @@ class Rust(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=f"Vec::<{_DEFAULT_VALUE_TYPE}>::new()",
+            empty_sequence="Vec::<String>::new()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -209,14 +206,14 @@ class Rust(metaclass=LanguageCls):
         HASH_SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="HashSet::from(["),
             close="])",
-            empty_set=f"HashSet::<{_DEFAULT_VALUE_TYPE}>::new()",
+            empty_set="HashSet::<String>::new()",
             preamble_lines=("use std::collections::HashSet;",),
             set_opener_template="",
         )
         BTREE_SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="BTreeSet::from(["),
             close="])",
-            empty_set=f"BTreeSet::<{_DEFAULT_VALUE_TYPE}>::new()",
+            empty_set="BTreeSet::<String>::new()",
             preamble_lines=("use std::collections::BTreeSet;",),
             set_opener_template="",
         )
@@ -254,10 +251,7 @@ class Rust(metaclass=LanguageCls):
             format_entry=tuple_dict_entry(
                 format_value=passthrough_sequence_entry
             ),
-            empty_dict=(
-                f"HashMap::<{_DEFAULT_DICT_ENTRY_TYPE},"
-                f" {_DEFAULT_DICT_ENTRY_TYPE}>::from([])"
-            ),
+            empty_dict="HashMap::<&str, &str>::from([])",
             preamble_lines=("use std::collections::HashMap;",),
             narrowed_open=None,
         )
@@ -267,10 +261,7 @@ class Rust(metaclass=LanguageCls):
             format_entry=tuple_dict_entry(
                 format_value=passthrough_sequence_entry
             ),
-            empty_dict=(
-                f"BTreeMap::<{_DEFAULT_DICT_ENTRY_TYPE},"
-                f" {_DEFAULT_DICT_ENTRY_TYPE}>::from([])"
-            ),
+            empty_dict="BTreeMap::<&str, &str>::from([])",
             preamble_lines=("use std::collections::BTreeMap;",),
             narrowed_open=None,
         )
