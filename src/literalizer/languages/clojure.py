@@ -48,6 +48,7 @@ class Clojure(metaclass=LanguageCls):
 
     extension = ".clj"
     pygments_name = "clojure"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Clojure."""

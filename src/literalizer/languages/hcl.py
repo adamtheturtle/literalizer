@@ -48,6 +48,7 @@ class Hcl(metaclass=LanguageCls):
 
     extension = ".hcl"
     pygments_name = "hcl"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Hcl."""

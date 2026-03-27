@@ -177,6 +177,7 @@ class Kotlin(metaclass=LanguageCls):
 
     extension = ".kts"
     pygments_name = "kotlin"
+    supports_default_set_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",

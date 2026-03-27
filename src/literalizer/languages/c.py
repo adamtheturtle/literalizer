@@ -78,6 +78,7 @@ class C(metaclass=LanguageCls):
 
     extension = ".c"
     pygments_name = "c"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for C."""

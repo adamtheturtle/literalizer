@@ -88,6 +88,7 @@ class CSharp(metaclass=LanguageCls):
 
     extension = ".cs"
     pygments_name = "csharp"
+    supports_default_set_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="string",
