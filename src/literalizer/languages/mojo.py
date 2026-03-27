@@ -66,6 +66,7 @@ class Mojo(metaclass=LanguageCls):
 
     extension = ".mojo"
     pygments_name = "mojo"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""

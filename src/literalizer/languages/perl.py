@@ -95,6 +95,7 @@ class Perl(metaclass=LanguageCls):
 
     extension = ".pl"
     pygments_name = "perl"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Perl."""

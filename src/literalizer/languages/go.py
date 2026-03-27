@@ -131,6 +131,7 @@ class Go(metaclass=LanguageCls):
 
     extension = ".go"
     pygments_name = "go"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""

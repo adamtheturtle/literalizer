@@ -65,6 +65,7 @@ class Occam(metaclass=LanguageCls):
     extension = ".occ"
     # Pygments has no occam lexer.
     pygments_name = "text"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Occam."""

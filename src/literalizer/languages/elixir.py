@@ -101,6 +101,7 @@ class Elixir(metaclass=LanguageCls):
 
     extension = ".ex"
     pygments_name = "elixir"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Elixir."""

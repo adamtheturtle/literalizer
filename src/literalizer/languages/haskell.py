@@ -288,6 +288,7 @@ class Haskell(metaclass=LanguageCls):
 
     extension = ".hs"
     pygments_name = "haskell"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""

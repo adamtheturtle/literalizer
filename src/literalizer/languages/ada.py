@@ -83,6 +83,7 @@ class Ada(metaclass=LanguageCls):
 
     extension = ".adb"
     pygments_name = "ada"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Ada."""

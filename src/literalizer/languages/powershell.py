@@ -73,6 +73,7 @@ class PowerShell(metaclass=LanguageCls):
 
     extension = ".ps1"
     pygments_name = "powershell"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for PowerShell."""

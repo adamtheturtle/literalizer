@@ -85,6 +85,7 @@ class Toml(metaclass=LanguageCls):
 
     extension = ".toml"
     pygments_name = "toml"
+    supports_default_set_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Toml."""
