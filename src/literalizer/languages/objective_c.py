@@ -89,6 +89,7 @@ class ObjectiveC(metaclass=LanguageCls):
     extension = ".m"
     pygments_name = "objective-c"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for ObjectiveC."""

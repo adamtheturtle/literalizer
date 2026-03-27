@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_sequence_open,
     make_element_to_type,
     make_type_to_opener,
     typed_set_open,
@@ -26,6 +25,7 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_factories import (
     dict_format_factory,
+    sequence_format_factory,
     set_format_factory,
 )
 from literalizer._formatters.format_strings import format_string_backslash
@@ -71,6 +71,7 @@ class Mojo(metaclass=LanguageCls):
     extension = ".mojo"
     pygments_name = "mojo"
     supports_default_set_type = True
+    supports_default_sequence_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
@@ -105,24 +106,30 @@ class Mojo(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Mojo."""
 
-        LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
-            close="]",
-            supports_heterogeneity=False,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence="List[String]()",
-            preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
+        LIST = enum.member(
+            value=sequence_format_factory(
+                open_template="[",
+                close="]",
+                supports_heterogeneity=False,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_template="List[{type}]()",
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback_template=None,
+            )
         )
+
+        def __call__(self, default_type: str) -> SequenceFormatConfig:
+            """Create a sequence format config for the given type."""
+            return self.value(default_type)
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.value.supports_heterogeneity
+            return self(default_type="String").supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Mojo."""
@@ -237,6 +244,7 @@ class Mojo(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         default_set_type: str = "String",
+        default_sequence_type: str = "String",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
@@ -255,7 +263,7 @@ class Mojo(metaclass=LanguageCls):
         self.null_literal = "None"
         self.true_literal = "True"
         self.false_literal = "False"
-        fmt = sequence_format.value
+        fmt = sequence_format(default_type=default_sequence_type)
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
 

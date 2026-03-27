@@ -6,14 +6,68 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
+    fixed_sequence_open,
     fixed_set_open,
 )
 from literalizer._language import (
     DictFormatConfig,
     OrderedMapFormatConfig,
+    SequenceFormatConfig,
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@beartype
+def sequence_format_factory(
+    *,
+    open_template: str,
+    close: str,
+    supports_heterogeneity: bool,
+    single_element_trailing_comma: bool,
+    supports_trailing_comma: bool,
+    empty_template: str | None,
+    preamble_lines: tuple[str, ...],
+    format_entry: Callable[[Value, str], str],
+    typed_opener_fallback_template: str | None,
+) -> Callable[[str], SequenceFormatConfig]:
+    """Return a callable that builds a ``SequenceFormatConfig`` for a
+    given type.
+
+    Templates use ``{type}`` as the placeholder for the default type
+    name.  The ``open_template`` is wrapped in ``fixed_sequence_open``.
+    """
+
+    @beartype
+    def _build(default_type: str) -> SequenceFormatConfig:
+        """Build a ``SequenceFormatConfig`` with the given default
+        type.
+        """
+        return SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(
+                open_str=open_template.format(type=default_type),
+            ),
+            close=close,
+            supports_heterogeneity=supports_heterogeneity,
+            single_element_trailing_comma=single_element_trailing_comma,
+            supports_trailing_comma=supports_trailing_comma,
+            empty_sequence=(
+                empty_template.format(type=default_type)
+                if empty_template is not None
+                else None
+            ),
+            preamble_lines=preamble_lines,
+            format_entry=format_entry,
+            typed_opener_fallback=(
+                typed_opener_fallback_template.format(
+                    type=default_type,
+                )
+                if typed_opener_fallback_template is not None
+                else None
+            ),
+        )
+
+    return _build
 
 
 @beartype

@@ -11,7 +11,6 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
-    fixed_sequence_open,
     make_type_to_opener,
     typed_dict_open,
     typed_sequence_open,
@@ -32,6 +31,7 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_factories import (
     ordered_map_format_factory,
+    sequence_format_factory,
     set_format_factory,
 )
 from literalizer._formatters.format_integers import (
@@ -91,6 +91,7 @@ class CSharp(metaclass=LanguageCls):
     extension = ".cs"
     pygments_name = "csharp"
     supports_default_set_type = True
+    supports_default_sequence_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="string",
@@ -155,37 +156,43 @@ class CSharp(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C#."""
 
-        TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="("),
-            close=")",
-            supports_heterogeneity=True,
-            single_element_trailing_comma=False,
-            empty_sequence="ValueTuple.Create()",
-            preamble_lines=("using System;",),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
-            supports_trailing_comma=False,
+        TUPLE = enum.member(
+            value=sequence_format_factory(
+                open_template="(",
+                close=")",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=False,
+                empty_template="ValueTuple.Create()",
+                preamble_lines=("using System;",),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback_template=None,
+            )
         )
-        ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(
-                open_str="new object[] {",
-            ),
-            close="}",
-            supports_heterogeneity=True,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence="Array.Empty<object>()",
-            preamble_lines=("using System.Collections.Generic;",),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback="new object[] {",
+        ARRAY = enum.member(
+            value=sequence_format_factory(
+                open_template="new {type}[] {{",
+                close="}",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_template="Array.Empty<{type}>()",
+                preamble_lines=("using System.Collections.Generic;",),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback_template=("new {type}[] {{"),
+            )
         )
+
+        def __call__(self, default_type: str) -> SequenceFormatConfig:
+            """Create a sequence format config for the given type."""
+            return self.value(default_type)
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.value.supports_heterogeneity
+            return self(default_type="object").supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C#."""
@@ -333,6 +340,7 @@ class CSharp(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.TUPLE,
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_type: str = "object",
+        default_sequence_type: str = "object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAR,
@@ -350,7 +358,7 @@ class CSharp(metaclass=LanguageCls):
         self.null_literal = "(object?)null"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format.value
+        fmt = sequence_format(default_type=default_sequence_type)
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
 

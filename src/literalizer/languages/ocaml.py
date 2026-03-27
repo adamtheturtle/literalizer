@@ -111,6 +111,7 @@ class OCaml(metaclass=LanguageCls):
     extension = ".ml"
     pygments_name = "ocaml"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for OCaml."""

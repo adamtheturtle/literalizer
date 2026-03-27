@@ -79,6 +79,7 @@ class Ruby(metaclass=LanguageCls):
     extension = ".rb"
     pygments_name = "ruby"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Ruby."""

@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import fixed_sequence_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -23,6 +22,7 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_factories import (
     dict_format_factory,
+    sequence_format_factory,
     set_format_factory,
 )
 from literalizer._formatters.format_integers import (
@@ -95,6 +95,7 @@ class Swift(metaclass=LanguageCls):
     extension = ".swift"
     pygments_name = "swift"
     supports_default_set_type = True
+    supports_default_sequence_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
@@ -137,35 +138,43 @@ class Swift(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Swift."""
 
-        ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
-            close="]",
-            supports_heterogeneity=True,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence="[Any]()",
-            preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
+        ARRAY = enum.member(
+            value=sequence_format_factory(
+                open_template="[",
+                close="]",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_template="[{type}]()",
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback_template=None,
+            )
         )
-        TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="("),
-            close=")",
-            supports_heterogeneity=True,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence=None,
-            preamble_lines=(),
-            format_entry=_tuple_sequence_entry,
-            typed_opener_fallback=None,
+        TUPLE = enum.member(
+            value=sequence_format_factory(
+                open_template="(",
+                close=")",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_template=None,
+                preamble_lines=(),
+                format_entry=_tuple_sequence_entry,
+                typed_opener_fallback_template=None,
+            )
         )
+
+        def __call__(self, default_type: str) -> SequenceFormatConfig:
+            """Create a sequence format config for the given type."""
+            return self.value(default_type)
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.value.supports_heterogeneity
+            return self(default_type="Any").supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Swift."""
@@ -326,6 +335,7 @@ class Swift(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         default_set_type: str = "AnyHashable",
+        default_sequence_type: str = "Any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.LET,
@@ -344,7 +354,7 @@ class Swift(metaclass=LanguageCls):
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format.value
+        fmt = sequence_format(default_type=default_sequence_type)
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.default_set_type = default_set_type

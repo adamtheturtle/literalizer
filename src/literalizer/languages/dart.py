@@ -74,6 +74,7 @@ class Dart(metaclass=LanguageCls):
     extension = ".dart"
     pygments_name = "dart"
     supports_default_set_type = True
+    supports_default_sequence_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",

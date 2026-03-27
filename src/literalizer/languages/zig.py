@@ -120,6 +120,7 @@ class Zig(metaclass=LanguageCls):
     extension = ".zig"
     pygments_name = "zig"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Zig."""

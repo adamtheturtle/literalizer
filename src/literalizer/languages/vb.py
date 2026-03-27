@@ -129,6 +129,7 @@ class VisualBasic(metaclass=LanguageCls):
     extension = ".vb"
     pygments_name = "vb.net"
     supports_default_set_type = True
+    supports_default_sequence_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
@@ -284,6 +285,7 @@ class VisualBasic(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_type: str = "Object",
+        default_sequence_type: str = "Object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
         declaration_style: DeclarationStyles = DeclarationStyles.DIM,
@@ -322,13 +324,13 @@ class VisualBasic(metaclass=LanguageCls):
         fmt = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=vb_type_to_opener,
-                fallback=f"New {default_value_type}() {{",
+                fallback=f"New {default_sequence_type}() {{",
             ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=f"New {default_value_type}() {{}}",
+            empty_sequence=f"New {default_sequence_type}() {{}}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
