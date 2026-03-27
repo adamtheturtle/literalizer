@@ -8,27 +8,33 @@ from types import MappingProxyType
 
 from beartype import beartype
 
-from literalizer._formatters import (
+from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
-    date_ymd_formatter,
-    dict_entry_with_separator,
     fixed_sequence_open,
     fixed_set_open,
-    format_bytes_hex,
-    format_date_iso,
-    format_datetime_iso,
-    format_integer_hex,
-    format_integer_underscore,
-    format_string_backslash,
     make_type_to_opener,
-    passthrough_sequence_entry,
-    passthrough_set_entry,
     typed_dict_open,
     typed_sequence_open,
     typed_set_open,
+)
+from literalizer._formatters.format_dates import (
+    date_ymd_formatter,
+    format_date_iso,
+    format_datetime_iso,
+)
+from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
+    format_bytes_hex,
+    passthrough_sequence_entry,
+    passthrough_set_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    format_integer_underscore,
+)
+from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,

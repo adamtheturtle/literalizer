@@ -6,14 +6,18 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters import (
-    dict_entry_with_separator,
+from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
-    format_bytes_hex,
+)
+from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
+)
+from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
+    format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_formatter,

@@ -6,17 +6,23 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters import (
-    date_iso_formatter,
-    datetime_iso_formatter,
-    dict_entry_with_separator,
+from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
-    format_integer_hex,
-    format_integer_octal_c_style,
+)
+from literalizer._formatters.format_dates import (
+    date_iso_formatter,
+    datetime_iso_formatter,
+)
+from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
     passthrough_sequence_entry,
     variable_formatter,
+)
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    format_integer_octal_c_style,
 )
 from literalizer._language import (
     CommentConfig,

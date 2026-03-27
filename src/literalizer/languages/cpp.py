@@ -8,26 +8,34 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters import (
-    DictType,
-    ListType,
-    braced_dict_entry,
+from literalizer._formatters.collection_openers import (
     fixed_set_open,
-    format_bytes_hex,
+    make_element_to_type,
+    make_type_to_opener,
+    typed_dict_open,
+    typed_sequence_open,
+)
+from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
+)
+from literalizer._formatters.format_entries import (
+    braced_dict_entry,
+    format_bytes_hex,
+    passthrough_sequence_entry,
+    passthrough_set_entry,
+    variable_formatter,
+)
+from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_tick,
-    format_string_backslash,
-    make_element_to_type,
-    make_type_to_opener,
-    passthrough_sequence_entry,
-    passthrough_set_entry,
-    typed_dict_open,
-    typed_sequence_open,
-    variable_formatter,
+)
+from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
 )
 from literalizer._language import (
     CommentConfig,
