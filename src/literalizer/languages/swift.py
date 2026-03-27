@@ -80,6 +80,10 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
+_DEFAULT_VALUE_TYPE = "Any"
+_DEFAULT_HASHABLE_TYPE = "AnyHashable"
+
+
 @beartype
 class Swift(metaclass=LanguageCls):
     """Swift language specification."""
@@ -134,7 +138,7 @@ class Swift(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="[Any]()",
+            empty_sequence=f"[{_DEFAULT_VALUE_TYPE}]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -162,9 +166,11 @@ class Swift(metaclass=LanguageCls):
         """Set type options for Swift."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set<AnyHashable>(["),
+            set_open=fixed_set_open(
+                open_str=f"Set<{_DEFAULT_HASHABLE_TYPE}>(["
+            ),
             close="])",
-            empty_set="Set<AnyHashable>()",
+            empty_set=f"Set<{_DEFAULT_HASHABLE_TYPE}>()",
             preamble_lines=(),
             set_opener_template="",
         )
@@ -323,7 +329,7 @@ class Swift(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict="[String: Any]()",
+            empty_dict=f"[String: {_DEFAULT_VALUE_TYPE}]()",
             preamble_lines=(),
             narrowed_open=None,
         )

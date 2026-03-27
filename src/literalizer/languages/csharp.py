@@ -59,6 +59,9 @@ class _CSharpDictSpec:
     fallback: str
 
 
+_DEFAULT_VALUE_TYPE = "object"
+
+
 @beartype
 class CSharp(metaclass=LanguageCls):
     """C# language specification.
@@ -96,7 +99,7 @@ class CSharp(metaclass=LanguageCls):
         dict_opener_template="new Dictionary<string, {type_name}> {{",
         set_opener_template="new HashSet<{type_name}> {{",
         dict_type_template="Dictionary<string, {inner}>",
-        fallback_value_type="object",
+        fallback_value_type=_DEFAULT_VALUE_TYPE,
     )
 
     class DateFormats(enum.Enum):
@@ -157,15 +160,17 @@ class CSharp(metaclass=LanguageCls):
             supports_trailing_comma=False,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="new object[] {"),
+            sequence_open=fixed_sequence_open(
+                open_str=f"new {_DEFAULT_VALUE_TYPE}[] {{",
+            ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="Array.Empty<object>()",
+            empty_sequence=f"Array.Empty<{_DEFAULT_VALUE_TYPE}>()",
             preamble_lines=("using System.Collections.Generic;",),
             format_entry=passthrough_sequence_entry,
-            typed_opener_fallback="new object[] {",
+            typed_opener_fallback=f"new {_DEFAULT_VALUE_TYPE}[] {{",
         )
 
         @property
@@ -179,16 +184,20 @@ class CSharp(metaclass=LanguageCls):
         """Set type options for C#."""
 
         HASH_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new HashSet<object> {"),
+            set_open=fixed_set_open(
+                open_str=f"new HashSet<{_DEFAULT_VALUE_TYPE}> {{",
+            ),
             close="}",
-            empty_set="new HashSet<object>()",
+            empty_set=f"new HashSet<{_DEFAULT_VALUE_TYPE}>()",
             preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="",
         )
         SORTED_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new SortedSet<object> {"),
+            set_open=fixed_set_open(
+                open_str=f"new SortedSet<{_DEFAULT_VALUE_TYPE}> {{",
+            ),
             close="}",
-            empty_set="new SortedSet<object>()",
+            empty_set=f"new SortedSet<{_DEFAULT_VALUE_TYPE}>()",
             preamble_lines=("using System.Collections.Generic;",),
             set_opener_template="new SortedSet<{type_name}> {{",
         )
@@ -215,11 +224,11 @@ class CSharp(metaclass=LanguageCls):
 
         DICTIONARY = _CSharpDictSpec(
             opener_template="new Dictionary<string, {type_name}> {{",
-            fallback="new Dictionary<string, object> {",
+            fallback=f"new Dictionary<string, {_DEFAULT_VALUE_TYPE}> {{",
         )
         SORTED_DICTIONARY = _CSharpDictSpec(
             opener_template="new SortedDictionary<string, {type_name}> {{",
-            fallback="new SortedDictionary<string, object> {",
+            fallback=f"new SortedDictionary<string, {_DEFAULT_VALUE_TYPE}> {{",
         )
 
     class EmptyDictKey(enum.Enum):
@@ -411,7 +420,7 @@ class CSharp(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="new Dictionary<string, object> {",
+                open_str=f"new Dictionary<string, {_DEFAULT_VALUE_TYPE}> {{",
                 close="}",
                 preamble_lines=("using System.Collections.Generic;",),
             )
