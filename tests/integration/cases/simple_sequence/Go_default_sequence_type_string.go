@@ -1,7 +1,7 @@
 package main
 
 func main() {
-my_data := []string{
+my_data := []interface{}{
 	1,
 	"hello",
 	true,
