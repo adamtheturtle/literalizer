@@ -3,7 +3,7 @@
 literalizer
 ===========
 
-``literalizer`` converts JSON data structures to native language literal syntax.
+``literalizer`` converts JSON and YAML data structures to native language literal syntax.
 
 .. contents::
    :local:
@@ -70,9 +70,9 @@ Usage
 Use cases
 ---------
 
-* Generate test fixtures from JSON samples.
-* Generate multi-language request/response examples for JSON API docs (see `guide <https://adamtheturtle.github.io/literalizer/json-api-use-case.html>`__).
-* Create type-safe literal data from JSON config files.
+* Generate test fixtures from JSON or YAML samples.
+* Generate multi-language request/response examples for JSON or YAML API docs (see `guide <https://adamtheturtle.github.io/literalizer/json-api-use-case.html>`__).
+* Create type-safe literal data from JSON or YAML config files.
 
 CLI
 ---
