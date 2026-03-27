@@ -1,4 +1,4 @@
-"""Factory functions for building format configs."""
+"""Factory functions for building format configurations."""
 
 from collections.abc import Callable
 
