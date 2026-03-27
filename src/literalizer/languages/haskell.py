@@ -143,12 +143,8 @@ def _build_scalar_body_preamble(
     include_hdatetime = (
         datetime_format.value.type_produced is datetime.datetime
     )
-    date_needs_is_string = bool(
-        getattr(date_format.value, "preamble_lines", ())
-    )
-    datetime_needs_is_string = bool(
-        getattr(datetime_format.value, "preamble_lines", ())
-    )
+    date_needs_is_string = bool(date_format.value.preamble_lines)
+    datetime_needs_is_string = bool(datetime_format.value.preamble_lines)
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
