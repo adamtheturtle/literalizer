@@ -21,6 +21,8 @@ Requires Python |minimum-python-version|\+.
 Usage
 -----
 
+Use :func:`literalizer.literalize_yaml` (or :func:`literalizer.literalize_json` for JSON input) to convert data to native language literals:
+
 .. code-block:: python
 
    """Example of using literalizer."""
