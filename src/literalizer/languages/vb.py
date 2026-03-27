@@ -280,7 +280,7 @@ class VisualBasic(metaclass=LanguageCls):
         fmt = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=vb_type_to_opener,
-                fallback=f"New {empty_array_type}() {{",
+                fallback="New Object() {",
             ),
             close="}",
             supports_heterogeneity=True,
@@ -299,7 +299,7 @@ class VisualBasic(metaclass=LanguageCls):
                     element_to_type=element_to_type,
                     opener_template="New HashSet(Of {type_name}) From {{",
                 ),
-                fallback=f"New HashSet(Of {empty_set_type}) From {{",
+                fallback="New HashSet(Of Object) From {",
             ),
             close="}",
             empty_set=f"New HashSet(Of {empty_set_type})()",
@@ -307,16 +307,17 @@ class VisualBasic(metaclass=LanguageCls):
             set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        vb_dict_open = (
-            f"New Dictionary(Of String, {empty_dict_value_type}) From {{"
-        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str=vb_dict_open),
+            open_fn=fixed_dict_open(
+                open_str="New Dictionary(Of String, Object) From {",
+            ),
             close="}",
             format_entry=braced_dict_entry(
                 format_value=passthrough_sequence_entry
             ),
-            empty_dict=None,
+            empty_dict=(
+                f"New Dictionary(Of String, {empty_dict_value_type}) From {{}}"
+            ),
             preamble_lines=("Imports System.Collections.Generic",),
             narrowed_open=None,
         )
@@ -347,7 +348,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str=vb_dict_open,
+                open_str="New Dictionary(Of String, Object) From {",
                 close="}",
                 preamble_lines=(),
             )

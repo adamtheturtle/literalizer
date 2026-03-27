@@ -92,7 +92,7 @@ def _csharp_array_config(
         empty_sequence=empty_tpl.format(type=empty_array_type),
         preamble_lines=base.preamble_lines,
         format_entry=base.format_entry,
-        typed_opener_fallback=array_open,
+        typed_opener_fallback=fallback_tpl.format(type="object"),
     )
 
 
@@ -413,7 +413,7 @@ class CSharp(metaclass=LanguageCls):
                     opener_template=dict_spec.opener_template,
                 ),
                 fallback=dict_spec.opener_template.format(
-                    type_name=empty_dict_value_type,
+                    type_name="object",
                 ),
             ),
             close="}",
@@ -421,7 +421,12 @@ class CSharp(metaclass=LanguageCls):
                 template="[{key}] = {value}",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict=None,
+            empty_dict=(
+                dict_spec.opener_template.format(
+                    type_name=empty_dict_value_type,
+                )
+                + "}"
+            ),
             preamble_lines=("using System.Collections.Generic;",),
             narrowed_open=None,
         )

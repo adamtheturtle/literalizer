@@ -1205,6 +1205,21 @@ def test_empty_set_custom_type(
 
 _EMPTY_DICT_CASES: list[tuple[str, Language, str]] = [
     (
+        "CSharp_DICTIONARY",
+        CSharp(empty_dict_value_type="int"),
+        "new Dictionary<string, int> {}",
+    ),
+    (
+        "CSharp_SORTED_DICTIONARY",
+        CSharp(
+            dict_format=next(
+                f for f in CSharp.dict_formats if f.name == "SORTED_DICTIONARY"
+            ),
+            empty_dict_value_type="int",
+        ),
+        "new SortedDictionary<string, int> {}",
+    ),
+    (
         "Crystal",
         Crystal(empty_collection_type="Int32"),
         "{} of Int32 => Int32",
@@ -1221,6 +1236,11 @@ _EMPTY_DICT_CASES: list[tuple[str, Language, str]] = [
         "Swift",
         Swift(empty_dict_value_type="Int"),
         "[String: Int]()",
+    ),
+    (
+        "VB",
+        VisualBasic(empty_dict_value_type="Integer"),
+        "New Dictionary(Of String, Integer) From {}",
     ),
 ]
 
@@ -1267,3 +1287,71 @@ def test_python_empty_type_hint_custom() -> None:
         error_on_coercion=False,
     )
     assert result.code == "x: tuple[object, ...] = ()"
+
+
+# -- Non-empty collections must NOT use the custom empty type --
+
+
+_NONEMPTY_CASES: list[tuple[str, Language, str, str]] = [
+    (
+        "CSharp_array",
+        CSharp(
+            sequence_format=next(
+                f for f in CSharp.sequence_formats if f.name == "ARRAY"
+            ),
+            empty_array_type="int",
+        ),
+        "- 1\n- hello\n",
+        "new object[]",
+    ),
+    (
+        "CSharp_dict",
+        CSharp(empty_dict_value_type="int"),
+        "a: 1\nb: hello\n",
+        "new Dictionary<string, object>",
+    ),
+    (
+        "VB_array",
+        VisualBasic(empty_array_type="Integer"),
+        "- 1\n- hello\n",
+        "New Object()",
+    ),
+    (
+        "VB_set",
+        VisualBasic(empty_set_type="Integer"),
+        "!!set\n  a:\n  b:\n",
+        "New HashSet(Of String)",
+    ),
+    (
+        "VB_dict",
+        VisualBasic(empty_dict_value_type="Integer"),
+        "a: 1\nb: hello\n",
+        "New Dictionary(Of String, Object)",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    argnames=("_name", "language", "yaml_input", "expected_prefix"),
+    argvalues=_NONEMPTY_CASES,
+    ids=[c[0] for c in _NONEMPTY_CASES],
+)
+def test_nonempty_ignores_custom_empty_type(
+    _name: str,
+    language: Language,
+    yaml_input: str,
+    expected_prefix: str,
+) -> None:
+    """Non-empty collections use the default type, not the custom empty
+    type parameter.
+    """
+    result = literalize_yaml(
+        yaml_string=yaml_input,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code.startswith(expected_prefix)
