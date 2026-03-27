@@ -1,4 +1,3 @@
-# pyright: reportPrivateUsage=false
 """Language-specific tests for literalizer converter."""
 
 import json
@@ -32,7 +31,7 @@ from literalizer.languages import (
     TypeScript,
 )
 from literalizer.languages.cobol import (
-    _bump_levels,
+    _bump_levels,  # pyright: ignore[reportPrivateUsage]
 )
 
 COBOL = Cobol(
@@ -524,7 +523,7 @@ def test_toml_non_quoted_dict_key() -> None:
     When the key does not start with a double-quote character the
     bare-key optimization is skipped and the key is used verbatim.
     """
-    result = TOML._dict_format_config.format_entry(
+    result = TOML.dict_format_config.format_entry(
         "plain_key", "value", '"value"'
     )
     assert result == 'plain_key = "value"'
