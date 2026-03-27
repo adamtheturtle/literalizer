@@ -222,15 +222,15 @@ class Occam(metaclass=LanguageCls):
         """Initialize Occam language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self._null_literal = "MOBILE LIT(lit.null)"
-        self._true_literal = "MOBILE LIT(lit.bool; TRUE)"
-        self._false_literal = "MOBILE LIT(lit.bool; FALSE)"
+        self.null_literal = "MOBILE LIT(lit.null)"
+        self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
+        self.false_literal = "MOBILE LIT(lit.bool; FALSE)"
         fmt = sequence_format.value
-        self._sequence_format_config: SequenceFormatConfig = fmt
+        self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self._set_format_config: SetFormatConfig = set_format.value
-        self._sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self._dict_format_config: DictFormatConfig = DictFormatConfig(
+        self.set_format_config: SetFormatConfig = set_format.value
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(
                 open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
             ),
@@ -243,20 +243,20 @@ class Occam(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
         )
-        self._trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
         )
-        self._format_bytes: Callable[[bytes], str] = bytes_format
-        self._format_date: Callable[[datetime.date], str] = date_format
-        self._format_datetime: Callable[[datetime.datetime], str] = (
+        self.format_bytes: Callable[[bytes], str] = bytes_format
+        self.format_date: Callable[[datetime.date], str] = date_format
+        self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self._format_string: Callable[[str], str] = format_string_backslash
-        self._format_integer: Callable[[int], str] = str
-        self._format_sequence_entry: Callable[[Value, str], str] = (
+        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_integer: Callable[[int], str] = str
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_occam_entry
         )
-        self._format_set_entry: Callable[[Value, str], str] = (
+        self.format_set_entry: Callable[[Value, str], str] = (
             _format_occam_entry
         )
         self.comment_format = comment_format
@@ -267,34 +267,34 @@ class Occam(metaclass=LanguageCls):
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
-        self._comment_config: CommentConfig = comment_format.value
-        self._ordered_map_format_config: OrderedMapFormatConfig = (
+        self.comment_config: CommentConfig = comment_format.value
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
                 close="])",
                 preamble_lines=(),
             )
         )
-        self._format_ordered_map_entry: Callable[[str, Value, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_template(
                 template="MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {value})",
                 format_value=_format_occam_entry,
             )
         )
-        self._indent = indent
-        self._indent_closing_delimiter = False
-        self._element_separator = ", "
-        self._skip_null_dict_values = False
-        self._supports_collection_comments = True
-        self._format_variable_declaration: Callable[[str, str, Value], str] = (
+        self.indent = indent
+        self.indent_closing_delimiter = False
+        self.element_separator = ", "
+        self.skip_null_dict_values = False
+        self.supports_collection_comments = True
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             variable_formatter(
                 template="VAL MOBILE LIT {name} IS {value}:",
             )
         )
-        self._format_variable_assignment: Callable[[str, str, Value], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} := {value}")
         )
-        self._static_preamble: Sequence[str] = (
+        self.static_preamble: Sequence[str] = (
             "MOBILE DATA TYPE LIT IS\n"
             "  CASE\n"
             "    lit.null\n"
@@ -308,13 +308,13 @@ class Occam(metaclass=LanguageCls):
             "    lit.set ; MOBILE []MOBILE LIT\n"
             ":",
         )
-        self._static_body_preamble: Sequence[str] = ()
-        self._scalar_preamble: dict[type, tuple[str, ...]] = {}
-        self._scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self._compute_body_preamble: Callable[
+        self.static_body_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
+        self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
-            scalar_body_preamble=self._scalar_body_preamble,
+            scalar_body_preamble=self.scalar_body_preamble,
         )
 
-        self._type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

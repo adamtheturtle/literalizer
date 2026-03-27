@@ -317,15 +317,15 @@ class OCaml(metaclass=LanguageCls):
         """Initialize OCaml language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self._null_literal = "ONull"
-        self._true_literal = "OBool true"
-        self._false_literal = "OBool false"
+        self.null_literal = "ONull"
+        self.true_literal = "OBool true"
+        self.false_literal = "OBool false"
         fmt = sequence_format.value
-        self._sequence_format_config: SequenceFormatConfig = fmt
+        self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self._set_format_config: SetFormatConfig = set_format.value
-        self._sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self._dict_format_config: DictFormatConfig = DictFormatConfig(
+        self.set_format_config: SetFormatConfig = set_format.value
+        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="OMap ["),
             close="]",
             format_entry=tuple_dict_entry(
@@ -335,21 +335,21 @@ class OCaml(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
         )
-        self._trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
+        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
         )
-        self._format_bytes: Callable[[bytes], str] = bytes_format
-        self._format_date: Callable[[datetime.date], str] = date_format
-        self._format_datetime: Callable[[datetime.datetime], str] = (
+        self.format_bytes: Callable[[bytes], str] = bytes_format
+        self.format_date: Callable[[datetime.date], str] = date_format
+        self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self._format_string: Callable[[str], str] = format_string_backslash
-        self._format_integer: Callable[[int], str] = (
+        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(
                 numeric_separator=numeric_separator,
             )
         )
-        self._format_set_entry: Callable[[Value, str], str] = (
+        self.format_set_entry: Callable[[Value, str], str] = (
             _format_ocaml_entry
         )
         self.comment_format = comment_format
@@ -360,34 +360,34 @@ class OCaml(metaclass=LanguageCls):
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
-        self._comment_config: CommentConfig = comment_format.value
-        self._ordered_map_format_config: OrderedMapFormatConfig = (
+        self.comment_config: CommentConfig = comment_format.value
+        self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str="OMap [",
                 close="]",
                 preamble_lines=(),
             )
         )
-        self._format_ordered_map_entry: Callable[[str, Value, str], str] = (
+        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             tuple_dict_entry(format_value=_format_ocaml_entry)
         )
-        self._indent = indent
-        self._indent_closing_delimiter = False
-        self._skip_null_dict_values = False
-        self._supports_collection_comments = True
-        self._format_variable_declaration: Callable[[str, str, Value], str] = (
+        self.indent = indent
+        self.indent_closing_delimiter = False
+        self.skip_null_dict_values = False
+        self.supports_collection_comments = True
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _format_variable_declaration
         )
-        self._format_variable_assignment: Callable[[str, str, Value], str] = (
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self._element_separator = "; "
-        self._format_sequence_entry: Callable[[Value, str], str] = (
+        self.element_separator = "; "
+        self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_ocaml_entry
         )
-        self._static_preamble: Sequence[str] = ()
-        self._static_body_preamble: Sequence[str] = ()
-        self._scalar_preamble: dict[type, tuple[str, ...]] = {}
+        self.static_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = ()
+        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         _h = "type val_t ="
         _date_constructor = (
             "  | OStr of string"
@@ -399,7 +399,7 @@ class OCaml(metaclass=LanguageCls):
             if datetime_format.value.type_produced is str
             else "  | ODatetime of ((int * int * int) * (int * int * int))"
         )
-        self._scalar_body_preamble: dict[
+        self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
         ] = {
@@ -416,9 +416,9 @@ class OCaml(metaclass=LanguageCls):
             ordereddict: (_h, "  | OMap of (string * val_t) list"),
             set: (_h, "  | OSet of val_t list"),
         }
-        self._compute_body_preamble: Callable[
+        self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
-            scalar_body_preamble=self._scalar_body_preamble,
+            scalar_body_preamble=self.scalar_body_preamble,
         )
-        self._type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()

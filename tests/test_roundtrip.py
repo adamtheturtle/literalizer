@@ -1,4 +1,3 @@
-# pyright: reportPrivateUsage=false
 """Hypothesis roundtrip tests for literalizer converter."""
 
 import ast
@@ -133,14 +132,14 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
 @given(data=st.binary())
 def test_roundtrip_bytes_python(data: bytes) -> None:
     """Format_bytes_python -> ast.literal_eval round-trips."""
-    result = PYTHON_BYTES._format_bytes(data)
+    result = PYTHON_BYTES.format_bytes(data)
     assert ast.literal_eval(node_or_string=result) == data
 
 
 @given(data=st.binary())
 def test_roundtrip_bytes_hex(data: bytes) -> None:
     """Format_bytes_hex -> bytes.fromhex round-trips."""
-    result = PYTHON._format_bytes(data)
+    result = PYTHON.format_bytes(data)
     assert bytes.fromhex(result.strip('"')) == data
 
 
