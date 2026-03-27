@@ -38,6 +38,8 @@ from literalizer._types import Value
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+_DEFAULT_VALUE_TYPE = "String"
+
 
 @beartype
 def _format_mojo_ordered_map_entry(key: str, _val: Value, value: str) -> str:
@@ -102,7 +104,7 @@ class Mojo(metaclass=LanguageCls):
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="List[String]()",
+            empty_sequence=f"List[{_DEFAULT_VALUE_TYPE}]()",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -136,10 +138,10 @@ class Mojo(metaclass=LanguageCls):
                     ),
                     opener_template="Set[{type_name}](",
                 ),
-                fallback="Set[String](",
+                fallback=f"Set[{_DEFAULT_VALUE_TYPE}](",
             ),
             close=")",
-            empty_set="Set[String]()",
+            empty_set=f"Set[{_DEFAULT_VALUE_TYPE}]()",
             preamble_lines=("from std.collections import Set",),
             set_opener_template="",
         )
@@ -252,7 +254,7 @@ class Mojo(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict="Dict[String, String]()",
+            empty_dict=f"Dict[{_DEFAULT_VALUE_TYPE}, {_DEFAULT_VALUE_TYPE}]()",
             preamble_lines=(),
             narrowed_open=None,
         )

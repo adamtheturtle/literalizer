@@ -40,6 +40,8 @@ if TYPE_CHECKING:
 
     from literalizer._types import Value
 
+_DEFAULT_VALUE_TYPE = "Nil"
+
 
 @beartype
 class Crystal(metaclass=LanguageCls):
@@ -93,7 +95,7 @@ class Crystal(metaclass=LanguageCls):
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
             close="]",
-            empty_sequence="[] of Nil",
+            empty_sequence=f"[] of {_DEFAULT_VALUE_TYPE}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
@@ -126,7 +128,7 @@ class Crystal(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="Set{"),
             close="}",
-            empty_set="Set(Nil).new",
+            empty_set=f"Set({_DEFAULT_VALUE_TYPE}).new",
             preamble_lines=('require "set"',),
             set_opener_template="",
         )
@@ -253,7 +255,9 @@ class Crystal(metaclass=LanguageCls):
                 separator=" => ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict="{} of Nil => Nil",
+            empty_dict=(
+                f"{{}} of {_DEFAULT_VALUE_TYPE} => {_DEFAULT_VALUE_TYPE}"
+            ),
             preamble_lines=(),
             narrowed_open=None,
         )

@@ -37,6 +37,8 @@ from literalizer._types import Value
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+_DEFAULT_VALUE_TYPE = "Object"
+
 
 @beartype
 def _flush_vb_current(
@@ -283,13 +285,13 @@ class VisualBasic(metaclass=LanguageCls):
         fmt = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=vb_type_to_opener,
-                fallback="New Object() {",
+                fallback=f"New {_DEFAULT_VALUE_TYPE}() {{",
             ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="New Object() {}",
+            empty_sequence=f"New {_DEFAULT_VALUE_TYPE}() {{}}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -302,17 +304,19 @@ class VisualBasic(metaclass=LanguageCls):
                     element_to_type=element_to_type,
                     opener_template="New HashSet(Of {type_name}) From {{",
                 ),
-                fallback="New HashSet(Of Object) From {",
+                fallback=f"New HashSet(Of {_DEFAULT_VALUE_TYPE}) From {{",
             ),
             close="}",
-            empty_set="New HashSet(Of Object)()",
+            empty_set=f"New HashSet(Of {_DEFAULT_VALUE_TYPE})()",
             preamble_lines=(),
             set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(
-                open_str="New Dictionary(Of String, Object) From {",
+                open_str=(
+                    f"New Dictionary(Of String, {_DEFAULT_VALUE_TYPE}) From {{"
+                ),
             ),
             close="}",
             format_entry=braced_dict_entry(
@@ -349,7 +353,9 @@ class VisualBasic(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="New Dictionary(Of String, Object) From {",
+                open_str=(
+                    f"New Dictionary(Of String, {_DEFAULT_VALUE_TYPE}) From {{"
+                ),
                 close="}",
                 preamble_lines=(),
             )
