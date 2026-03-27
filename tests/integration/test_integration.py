@@ -14,7 +14,6 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import inspect
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -925,13 +924,20 @@ def _build_default_set_type_variants() -> Iterable[_Variant]:
     """
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
-        signature = inspect.signature(lang_config.lang_cls)
-        if "default_set_type" not in signature.parameters:
+        try:
+            spec = lang_config.lang_cls(default_set_type="String")
+        except TypeError as exc:
+            message = exc.args[0] if exc.args else ""
+            if (
+                not isinstance(message, str)
+                or "default_set_type" not in message
+            ):
+                raise
             continue
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_set_type_string",
-                spec=lang_config.lang_cls(default_set_type="String"),
+                spec=spec,
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
