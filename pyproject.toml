@@ -124,6 +124,11 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow asserts in docs.
     "S101",
 ]
+lint.per-file-ignores."src/literalizer/_core.py" = [
+    # _core.py is the internal engine that consumes the Language protocol's
+    # private attributes (e.g. _indent, _format_string).
+    "SLF001",
+]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except
     # unused-import checks (F401) so we catch stale imports.
@@ -139,12 +144,16 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
+    # Tests may access private Language attributes for verification.
+    "SLF001",
     # FileRegressionFixture must be imported at runtime for beartype.
     "TC002",
 ]
 lint.per-file-ignores."tests/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
+    # Tests may access private Language attributes for verification.
+    "SLF001",
 ]
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
@@ -239,6 +248,9 @@ MESSAGES-CONTROL.per-file-ignores = [
     "docs/source/conf.py:invalid-name",
     "docs/source/doccmd_*.py:invalid-name",
     "doccmd_README_rst_*.py:invalid-name",
+    "src/literalizer/_core.py:protected-access",
+    "tests/test_*.py:protected-access",
+    "tests/integration/test_*.py:protected-access",
 ]
 # Spelling dictionary name. Available dictionaries: none. To make it working
 # install python-enchant package.

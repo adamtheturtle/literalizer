@@ -304,17 +304,17 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     pygments_name: str
     """The Pygments lexer short name for syntax highlighting."""
 
-    null_literal: str
+    _null_literal: str
     """The literal representing null/None."""
 
-    true_literal: str
+    _true_literal: str
     """The literal representing true/True."""
 
-    false_literal: str
+    _false_literal: str
     """The literal representing false/False."""
 
     @property
-    def sequence_open(self) -> Callable[[list[Value]], str]:
+    def _sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
         Receives the list of items about to be formatted, so the delimiter
@@ -323,13 +323,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    sequence_format_config: SequenceFormatConfig
+    _sequence_format_config: SequenceFormatConfig
     """Configuration for the chosen sequence format."""
 
-    dict_format_config: DictFormatConfig
+    _dict_format_config: DictFormatConfig
     """Configuration for dict formatting."""
 
-    trailing_comma_config: TrailingCommaConfig
+    _trailing_comma_config: TrailingCommaConfig
     """Configuration for trailing-comma behavior.
 
     Trailing commas are only added to collection formats that support them.
@@ -337,67 +337,67 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """
 
     @property
-    def format_bytes(self) -> Callable[[bytes], str]:
+    def _format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a :class:`bytes` value as a string
         literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def _format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a :class:`datetime.date` as a string
         literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def _format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a string
         literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    set_format_config: SetFormatConfig
+    _set_format_config: SetFormatConfig
     """Configuration for the chosen set format."""
 
     @property
-    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+    def _format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_set_entry(self) -> Callable[[Value, str], str]:
+    def _format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a set entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    comment_config: CommentConfig
+    _comment_config: CommentConfig
     """Configuration for the language's comment syntax."""
 
-    ordered_map_format_config: OrderedMapFormatConfig
+    _ordered_map_format_config: OrderedMapFormatConfig
     """Configuration for ordered-map formatting."""
 
     @property
-    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+    def _format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    indent: str
+    _indent: str
     """The indentation step for elements inside delimiters in multi-line
     structures (e.g. ``"    "`` for 4-space indent).
     """
 
-    indent_closing_delimiter: bool
+    _indent_closing_delimiter: bool
     """Whether to indent the closing delimiter of multi-line structures
     by one ``indent`` step.
     """
 
-    element_separator: str
+    _element_separator: str
     """The separator placed between elements in inline sequences."""
 
-    skip_null_dict_values: bool
+    _skip_null_dict_values: bool
     """Whether to omit dict entries whose value is ``None``."""
 
-    supports_collection_comments: bool
+    _supports_collection_comments: bool
     """Whether the language supports comments inside collection
     initializers.
 
@@ -408,7 +408,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """
 
     @property
-    def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
+    def _format_variable_declaration(self) -> Callable[[str, str, Value], str]:
         """Callable that formats a new variable declaration.
 
         Called as ``format_variable_declaration(name, value, data)`` where
@@ -418,7 +418,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
+    def _format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable.
 
         Called as ``format_variable_assignment(name, value, data)`` where
@@ -428,12 +428,12 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_string(self) -> Callable[[str], str]:
+    def _format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_integer(self) -> Callable[[int], str]:
+    def _format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -494,27 +494,27 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """The line ending option chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    static_preamble: Sequence[str]
+    _static_preamble: Sequence[str]
     """Lines (imports, package declarations, etc.) that are always
     emitted before the generated code, regardless of what types appear
     in the data.  Use an empty sequence when none are needed.
     """
 
-    scalar_preamble: dict[type, tuple[str, ...]]
+    _scalar_preamble: dict[type, tuple[str, ...]]
     """Maps Python scalar types to the preamble lines required when
     that type appears in the data.  For example, a language that needs
     ``import datetime`` when dates are present would include
     ``{datetime.date: ("import datetime",)}``.
     """
 
-    static_body_preamble: Sequence[str]
+    _static_body_preamble: Sequence[str]
     """Lines that are always prepended to the generated code,
     regardless of what types appear in the data.  Appears after the
     header preamble but before the code body.  Use an empty sequence
     when none are needed.
     """
 
-    scalar_body_preamble: dict[type, tuple[str, ...]]
+    _scalar_body_preamble: dict[type, tuple[str, ...]]
     """Maps Python scalar types to body-preamble lines that are
     prepended to the generated code.
 
@@ -522,7 +522,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     instance definitions.
     """
 
-    compute_body_preamble: Callable[[frozenset[type], Value], tuple[str, ...]]
+    _compute_body_preamble: Callable[[frozenset[type], Value], tuple[str, ...]]
     """Computes body-preamble lines based on which types are present in
     the data.  Most languages build this from
     :attr:`scalar_body_preamble`; Haskell overrides it to compose the
@@ -534,7 +534,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     required).
     """
 
-    type_hint_collection_preamble_lines: tuple[str, ...]
+    _type_hint_collection_preamble_lines: tuple[str, ...]
     """Preamble lines required when the language produces type-hinted
     variable declarations *and* the data contains collections.
     Empty for most languages; Python sets this to

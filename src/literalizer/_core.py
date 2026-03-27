@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 """Core conversion logic: formatting values and parsing JSON/YAML."""
 
 import dataclasses
@@ -125,13 +126,13 @@ def _collection_preamble(
     """Return collection-config preamble lines for present types."""
     lines: list[str] = []
     if dict in types:
-        lines.extend(language.dict_format_config.preamble_lines)
+        lines.extend(language._dict_format_config.preamble_lines)
     if set in types:
-        lines.extend(language.set_format_config.preamble_lines)
+        lines.extend(language._set_format_config.preamble_lines)
     if list in types:
-        lines.extend(language.sequence_format_config.preamble_lines)
+        lines.extend(language._sequence_format_config.preamble_lines)
     if ordereddict in types:
-        lines.extend(language.ordered_map_format_config.preamble_lines)
+        lines.extend(language._ordered_map_format_config.preamble_lines)
     return tuple(lines)
 
 
@@ -169,24 +170,24 @@ def _compute_preamble(
 
     scalar = tuple(
         line
-        for scalar_type, preamble in language.scalar_preamble.items()
+        for scalar_type, preamble in language._scalar_preamble.items()
         if scalar_type in types
         for line in preamble
     )
     collection = _collection_preamble(types=types, language=language)
     type_hint = (
-        language.type_hint_collection_preamble_lines
+        language._type_hint_collection_preamble_lines
         if has_variable_declaration
         and types & {dict, list, set, ordereddict}
         and _has_empty_collection(data=data)
         else ()
     )
-    body = language.compute_body_preamble(types, data)
+    body = language._compute_body_preamble(types, data)
     return _PreambleResult(
         header=_deduplicate(
             lines=scalar + collection + type_hint,
         )
-        + tuple(language.static_body_preamble),
+        + tuple(language._static_body_preamble),
         body=body,
     )
 
@@ -605,21 +606,21 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     match value:
         case None:
-            result = spec.null_literal
+            result = spec._null_literal
         case bool():
-            result = spec.true_literal if value else spec.false_literal
+            result = spec._true_literal if value else spec._false_literal
         case int():
-            result = spec.format_integer(value)
+            result = spec._format_integer(value)
         case float():
             result = repr(value)
         case str():
-            result = spec.format_string(value)
+            result = spec._format_string(value)
         case bytes():
-            result = spec.format_bytes(value)
+            result = spec._format_bytes(value)
         case datetime.datetime():
-            result = spec.format_datetime(value)
+            result = spec._format_datetime(value)
         case _:
-            result = spec.format_date(value)
+            result = spec._format_date(value)
     return result
 
 
@@ -628,13 +629,13 @@ def _build_dict_entry(
     *, key_str: str, val: Value, val_str: str, spec: Language
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
-    return spec.dict_format_config.format_entry(key_str, val, val_str)
+    return spec._dict_format_config.format_entry(key_str, val, val_str)
 
 
 @beartype
 def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     """Format a set value as a native language literal."""
-    set_cfg = spec.set_format_config
+    set_cfg = spec._set_format_config
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
@@ -642,10 +643,10 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [
-        spec.format_set_entry(v, item)
+        spec._format_set_entry(v, item)
         for v, item in zip(sorted_items, formatted, strict=True)
     ]
-    joined = spec.element_separator.join(entries)
+    joined = spec._element_separator.join(entries)
     return set_cfg.set_open(items_as_values) + joined + set_cfg.close
 
 
@@ -656,15 +657,15 @@ def _format_ordered_map_value(
     spec: Language,
 ) -> str:
     """Format an ordered map as a native language literal."""
-    ordered_map_cfg = spec.ordered_map_format_config
+    ordered_map_cfg = spec._ordered_map_format_config
 
     ordered_map_items: list[tuple[str, Value]] = [
         (k, v)
         for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        if not (spec.skip_null_dict_values and v is None)
+        if not (spec._skip_null_dict_values and v is None)
     ]
     pairs = [
-        spec.format_ordered_map_entry(
+        spec._format_ordered_map_entry(
             _format_value(
                 value=k,
                 spec=spec,
@@ -679,7 +680,7 @@ def _format_ordered_map_value(
         )
         for k, v in ordered_map_items
     ]
-    joined = spec.element_separator.join(pairs)
+    joined = spec._element_separator.join(pairs)
     return ordered_map_cfg.open_str + joined + ordered_map_cfg.close
 
 
@@ -691,12 +692,12 @@ def _format_dict_value(
     open_override: str | None,
 ) -> str:
     """Format a dict as a native language literal."""
-    dict_cfg = spec.dict_format_config
+    dict_cfg = spec._dict_format_config
 
     dict_items: dict[str, Value] = {
         k: v
         for k, v in value.items()
-        if not (spec.skip_null_dict_values and v is None)
+        if not (spec._skip_null_dict_values and v is None)
     }
     if not dict_items and dict_cfg.empty_dict is not None:
         return dict_cfg.empty_dict
@@ -717,7 +718,7 @@ def _format_dict_value(
         )
         for k, v in dict_items.items()
     ]
-    joined = spec.element_separator.join(pairs)
+    joined = spec._element_separator.join(pairs)
     opener = (
         open_override
         if open_override is not None
@@ -735,7 +736,7 @@ def _compute_dict_open_override(
     """Return a widened dict opener when dicts in a list infer
     different value types, or ``None`` when no widening is needed.
     """
-    open_fn = spec.dict_format_config.open_fn
+    open_fn = spec._dict_format_config.open_fn
     dicts: list[dict[str, Value]] = [
         item
         for item in items
@@ -749,7 +750,7 @@ def _compute_dict_open_override(
         {
             k: v
             for k, v in d.items()
-            if not (spec.skip_null_dict_values and v is None)
+            if not (spec._skip_null_dict_values and v is None)
         }
         for d in dicts
     ]
@@ -782,7 +783,7 @@ def _compute_sequence_dict_override(
     Otherwise falls back to the widening logic of
     :func:`_compute_dict_open_override`.
     """
-    narrowed_open = spec.dict_format_config.narrowed_open
+    narrowed_open = spec._dict_format_config.narrowed_open
     if narrowed_open is not None:
         element_type = infer_element_type(items=items)
         if isinstance(element_type, DictType):
@@ -797,7 +798,7 @@ def _format_list_value(
     spec: Language,
 ) -> str:
     """Format a list as a native language literal."""
-    sequence_cfg = spec.sequence_format_config
+    sequence_cfg = spec._sequence_format_config
 
     if not value and sequence_cfg.empty_sequence is not None:
         return sequence_cfg.empty_sequence
@@ -806,7 +807,7 @@ def _format_list_value(
         spec=spec,
     )
     items = [
-        spec.format_sequence_entry(
+        spec._format_sequence_entry(
             v,
             _format_value(
                 value=v,
@@ -816,12 +817,12 @@ def _format_list_value(
         )
         for v in value
     ]
-    joined = spec.element_separator.join(items)
+    joined = spec._element_separator.join(items)
     # Some languages (e.g. Python) require a trailing comma on
     # single-element sequences to avoid syntactic ambiguity.
     if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
-        joined += spec.element_separator.strip()
-    return f"{spec.sequence_open(value)}{joined}{sequence_cfg.close}"
+        joined += spec._element_separator.strip()
+    return f"{spec._sequence_open(value)}{joined}{sequence_cfg.close}"
 
 
 @beartype
@@ -867,15 +868,15 @@ def _wrap_body(
     line_prefix: str,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
-    ci = spec.indent if spec.indent_closing_delimiter else ""
+    ci = spec._indent if spec._indent_closing_delimiter else ""
     close_prefix = f"{line_prefix}{ci}"
     if is_ordered_map:
-        ordered_map_cfg = spec.ordered_map_format_config
+        ordered_map_cfg = spec._ordered_map_format_config
 
         opening = f"{line_prefix}{ordered_map_cfg.open_str}"
         closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
-        dict_cfg = spec.dict_format_config
+        dict_cfg = spec._dict_format_config
 
         opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
@@ -884,11 +885,12 @@ def _wrap_body(
             data,
             key=lambda v: (type(v).__name__, repr(v)),
         )
-        opening = f"{line_prefix}{spec.set_format_config.set_open(sorted_set)}"
-        closing = f"{close_prefix}{spec.set_format_config.close}"
+        set_open = spec._set_format_config.set_open(sorted_set)
+        opening = f"{line_prefix}{set_open}"
+        closing = f"{close_prefix}{spec._set_format_config.close}"
     else:
-        opening = f"{line_prefix}{spec.sequence_open(data)}"
-        closing = f"{close_prefix}{spec.sequence_format_config.close}"
+        opening = f"{line_prefix}{spec._sequence_open(data)}"
+        closing = f"{close_prefix}{spec._sequence_format_config.close}"
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
@@ -981,7 +983,7 @@ def _format_collection_lines(
             entries = [
                 (k, v)
                 for k, v in dict_data.items()
-                if not (spec.skip_null_dict_values and v is None)
+                if not (spec._skip_null_dict_values and v is None)
             ]
             if not entries and include_delimiters and dict_data:
                 empty_value: ordereddict | dict[str, Value] = (
@@ -1005,7 +1007,7 @@ def _format_collection_lines(
                     dict_open_override=None,
                 )
                 entry = (
-                    spec.format_ordered_map_entry(
+                    spec._format_ordered_map_entry(
                         formatted_key, v, formatted_val
                     )
                     if is_ordered_map
@@ -1017,7 +1019,7 @@ def _format_collection_lines(
                     )
                 )
                 add_sep = i < last_idx or trailing_comma
-                sep = spec.element_separator.strip() if add_sep else ""
+                sep = spec._element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{entry}{sep}")
         case set() as set_data:
             sorted_items = sorted(
@@ -1031,14 +1033,14 @@ def _format_collection_lines(
                     spec=spec,
                     dict_open_override=None,
                 )
-                entry = spec.format_set_entry(item, formatted)
+                entry = spec._format_set_entry(item, formatted)
                 add_sep = i < last_idx or trailing_comma
-                sep = spec.element_separator.strip() if add_sep else ""
+                sep = spec._element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{entry}{sep}")
         case list() as list_data:
             seq_trailing = (
                 trailing_comma
-                and spec.sequence_format_config.supports_trailing_comma
+                and spec._sequence_format_config.supports_trailing_comma
             )
             dict_open_override = _compute_sequence_dict_override(
                 items=list_data,
@@ -1046,7 +1048,7 @@ def _format_collection_lines(
             )
             last_idx = len(list_data) - 1
             for i, element in enumerate(iterable=list_data):
-                formatted = spec.format_sequence_entry(
+                formatted = spec._format_sequence_entry(
                     element,
                     _format_value(
                         value=element,
@@ -1055,7 +1057,7 @@ def _format_collection_lines(
                     ),
                 )
                 add_sep = i < last_idx or seq_trailing
-                sep = spec.element_separator.strip() if add_sep else ""
+                sep = spec._element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{formatted}{sep}")
         case _ as unreachable:
             assert_never(unreachable)
@@ -1134,11 +1136,11 @@ def _literalize(
         return f"{line_prefix}{formatted}"
 
     body_prefix = (
-        line_prefix + language.indent if include_delimiters else line_prefix
+        line_prefix + language._indent if include_delimiters else line_prefix
     )
 
     is_ordered_map = isinstance(data, ordereddict)
-    trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
+    trailing_comma = spec._trailing_comma_config.multiline_trailing_comma
     lines_or_early = _format_collection_lines(
         data=data,
         spec=spec,
@@ -1180,9 +1182,9 @@ def _apply_variable_wrapper(
     if variable_name is None:
         return result
     formatter = (
-        language.format_variable_declaration
+        language._format_variable_declaration
         if new_variable
-        else language.format_variable_assignment
+        else language._format_variable_assignment
     )
     return formatter(variable_name, result, data)
 
@@ -1235,7 +1237,7 @@ def literalize_json(
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
-    line_prefix = language.indent * pre_indent_level
+    line_prefix = language._indent * pre_indent_level
     try:
         data = json.loads(s=json_string)
     except json.JSONDecodeError as exc:
@@ -1252,9 +1254,9 @@ def literalize_json(
     )
     if variable_name is not None:
         formatter = (
-            language.format_variable_declaration
+            language._format_variable_declaration
             if new_variable
-            else language.format_variable_assignment
+            else language._format_variable_assignment
         )
         result = formatter(variable_name, result, data)
     computed = _compute_preamble(
@@ -1262,7 +1264,7 @@ def literalize_json(
         language=language,
         has_variable_declaration=variable_name is not None and new_variable,
     )
-    preamble = tuple(language.static_preamble) + computed.header
+    preamble = tuple(language._static_preamble) + computed.header
     if computed.body:
         result = "\n".join(computed.body) + "\n" + result
     return LiteralizeResult(
@@ -1328,7 +1330,7 @@ def _resolve_yaml_set_comments(
 ) -> _ResolvedComments:
     """Resolve comments for a YAML set."""
     set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
-    if not language.supports_collection_comments:
+    if not language._supports_collection_comments:
         return _ResolvedComments(result=base, pending=set_comments)
     result = apply_collection_comments(
         collection_comments=set_comments,
@@ -1359,7 +1361,7 @@ def _resolve_yaml_collection_comments(
     )
 
     if (
-        language.skip_null_dict_values
+        language._skip_null_dict_values
         and isinstance(ruamel_data, CommentedMap)
         and isinstance(data, dict)
     ):
@@ -1369,7 +1371,7 @@ def _resolve_yaml_collection_comments(
             collection_comments=collection_comments,
         )
 
-    if not language.supports_collection_comments:
+    if not language._supports_collection_comments:
         return _ResolvedComments(
             result=base,
             pending=collection_comments,
@@ -1494,7 +1496,7 @@ def literalize_yaml(
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
-    line_prefix = language.indent * pre_indent_level
+    line_prefix = language._indent * pre_indent_level
     ruamel_yaml = YAML(typ="safe")
     try:
         # https://sourceforge.net/p/ruamel-yaml/tickets/564/
@@ -1511,11 +1513,11 @@ def literalize_yaml(
         error_on_coercion=error_on_coercion,
     )
 
-    comment_cfg = language.comment_config
+    comment_cfg = language._comment_config
     cp = comment_cfg.prefix
     cs = comment_cfg.suffix
     comment_line_prefix = (
-        line_prefix + language.indent if include_delimiters else line_prefix
+        line_prefix + language._indent if include_delimiters else line_prefix
     )
 
     resolved = _resolve_yaml_comments(
@@ -1553,7 +1555,7 @@ def literalize_yaml(
         language=language,
         has_variable_declaration=variable_name is not None and new_variable,
     )
-    preamble = tuple(language.static_preamble) + computed.header
+    preamble = tuple(language._static_preamble) + computed.header
     if computed.body:
         result = "\n".join(computed.body) + "\n" + result
     return LiteralizeResult(
