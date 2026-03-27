@@ -9,7 +9,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
-    fixed_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -22,6 +21,7 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_factories import set_format_factory
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
 )
@@ -107,7 +107,19 @@ class Groovy(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Groovy."""
 
-        SET = "set"
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="[",
+                close="] as Set<{type}>",
+                empty_template="[] as Set<{type}>",
+                preamble_lines=(),
+                set_opener_template="",
+            )
+        )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -215,12 +227,8 @@ class Groovy(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
 
-        self.set_format_config: SetFormatConfig = SetFormatConfig(
-            set_open=fixed_set_open(open_str="["),
-            close=f"] as Set<{default_set_type}>",
-            empty_set=f"[] as Set<{default_set_type}>",
-            preamble_lines=(),
-            set_opener_template="",
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(

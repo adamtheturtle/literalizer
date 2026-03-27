@@ -1,5 +1,6 @@
 """Mojo language specification."""
 
+import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -23,7 +24,10 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
-from literalizer._formatters.format_factories import dict_format_factory
+from literalizer._formatters.format_factories import (
+    dict_format_factory,
+    set_format_factory,
+)
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     CommentConfig,
@@ -123,7 +127,19 @@ class Mojo(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Mojo."""
 
-        SET = "set"
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="Set[{type}](",
+                close=")",
+                empty_template="Set[{type}]()",
+                preamble_lines=("from std.collections import Set",),
+                set_opener_template="Set[{type_name}](",
+            )
+        )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -243,7 +259,11 @@ class Mojo(metaclass=LanguageCls):
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
 
-        self.set_format_config: SetFormatConfig = SetFormatConfig(
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
+        )
+        self.set_format_config = dataclasses.replace(
+            self.set_format_config,
             set_open=typed_set_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=make_element_to_type(
@@ -261,12 +281,8 @@ class Mojo(metaclass=LanguageCls):
                     ),
                     opener_template="Set[{type_name}](",
                 ),
-                fallback=f"Set[{default_set_type}](",
+                fallback=self.set_format_config.set_open([]),
             ),
-            close=")",
-            empty_set=f"Set[{default_set_type}]()",
-            preamble_lines=("from std.collections import Set",),
-            set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
