@@ -26,6 +26,8 @@ returns this response:
 
    """Generate per-language API examples."""
 
+   import textwrap
+
    from literalizer import literalize_json
    from literalizer.languages import Python
 
@@ -51,11 +53,12 @@ returns this response:
        include_delimiters=True,
        new_variable=True,
    )
-   assert request_literal.code == (
-       "request_body = {\n"
-       '    "name": "Alice",\n'
-       '    "email": "alice@example.com",\n'
-       "}"
+   assert request_literal.code == textwrap.dedent(
+       text="""\
+       request_body = {
+           "name": "Alice",
+           "email": "alice@example.com",
+       }""",
    )
 
    response_literal = literalize_json(
@@ -74,13 +77,14 @@ returns this response:
        include_delimiters=True,
        new_variable=True,
    )
-   assert response_literal.code == (
-       "response = {\n"
-       '    "id": 42,\n'
-       '    "name": "Alice",\n'
-       '    "email": "alice@example.com",\n'
-       '    "created": True,\n'
-       "}"
+   assert response_literal.code == textwrap.dedent(
+       text="""\
+       response = {
+           "id": 42,
+           "name": "Alice",
+           "email": "alice@example.com",
+           "created": True,
+       }""",
    )
 
 Pass a different language to get the same data as JavaScript, Go, Ruby, etc.
@@ -91,7 +95,9 @@ Output
 Python
 ~~~~~~
 
-.. code-block:: text
+.. skip doccmd[all]: next
+
+.. code-block:: python
 
    request_body = {
        "name": "Alice",
@@ -108,7 +114,7 @@ Python
 JavaScript
 ~~~~~~~~~~
 
-.. code-block:: text
+.. code-block:: javascript
 
    const request_body = {
        "name": "Alice",
@@ -125,7 +131,7 @@ JavaScript
 Go
 ~~
 
-.. code-block:: text
+.. code-block:: go
 
    request_body := map[string]any{
        "name": "Alice",
@@ -142,7 +148,7 @@ Go
 Ruby
 ~~~~
 
-.. code-block:: text
+.. code-block:: ruby
 
    request_body = {
        "name" => "Alice",
