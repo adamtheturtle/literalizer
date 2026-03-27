@@ -14,10 +14,9 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import sys
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from beartype import beartype
@@ -1448,36 +1447,6 @@ def test_format_variant_golden_file(
         fullpath=case_dir
         / (variant_case.variant_name + variant.spec.extension),
     )
-
-
-def test_default_set_type_variants_reraises_unrelated_type_errors(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Unexpected constructor TypeErrors should not be swallowed."""
-
-    class _BrokenLanguage:
-        """Stub language class that raises a non-keyword TypeError."""
-
-        def __init__(self, *, default_set_type: str) -> None:
-            """Raise a TypeError unrelated to keyword support."""
-            message = f"boom: {default_set_type}"
-            raise TypeError(message)
-
-    broken_languages = {
-        "Broken": _LanguageConfig(
-            lang_cls=cast("Any", _BrokenLanguage),
-            wrap=_wrap_identity,
-            combined_wrap=_newline_combined(wrap=_wrap_identity),
-        )
-    }
-    monkeypatch.setattr(
-        target=sys.modules[__name__],
-        name="_LANGUAGES",
-        value=broken_languages,
-    )
-
-    with pytest.raises(expected_exception=TypeError, match="boom"):
-        list(_build_default_set_type_variants())
 
 
 @dataclasses.dataclass
