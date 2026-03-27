@@ -12,7 +12,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_sequence_open,
-    fixed_set_open,
     make_type_to_opener,
     typed_dict_open,
     typed_sequence_open,
@@ -31,6 +30,7 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_factories import set_format_factory
 from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
@@ -177,7 +177,7 @@ class Kotlin(metaclass=LanguageCls):
 
     extension = ".kts"
     pygments_name = "kotlin"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -289,20 +289,28 @@ class Kotlin(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Kotlin."""
 
-        SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="setOf<Any?>("),
-            close=")",
-            empty_set=None,
-            preamble_lines=(),
-            set_opener_template="",
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="setOf<{type}>(",
+                close=")",
+                empty_template=None,
+                preamble_lines=(),
+                set_opener_template="",
+            )
         )
-        SORTED_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="sortedSetOf<Any?>("),
-            close=")",
-            empty_set=None,
-            preamble_lines=(),
-            set_opener_template="sortedSetOf<{type_name}>(",
+        SORTED_SET = enum.member(
+            value=set_format_factory(
+                open_template="sortedSetOf<{type}>(",
+                close=")",
+                empty_template=None,
+                preamble_lines=(),
+                set_opener_template="sortedSetOf<{type_name}>(",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -430,6 +438,7 @@ class Kotlin(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        default_set_type: str = "Any?",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAL,
@@ -469,17 +478,21 @@ class Kotlin(metaclass=LanguageCls):
             else fmt.sequence_open
         )
 
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
+        )
         openers = cfg.build(
             date_type=date_type_name,
             datetime_type=dt_type_name,
-            set_opener_template=set_format.value.set_opener_template or None,
+            set_opener_template=self.set_format_config.set_opener_template
+            or None,
             narrow_dict_values=False,
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
+        self.set_format_config = dataclasses.replace(
+            self.set_format_config,
             set_open=typed_set_open(
                 type_to_opener=openers.set,
-                fallback=set_format.value.set_open([]),
+                fallback=self.set_format_config.set_open([]),
             ),
         )
         dict_spec: _KotlinDictSpec = dict_format.value

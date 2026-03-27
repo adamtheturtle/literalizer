@@ -1,5 +1,6 @@
 """Visual Basic (.NET) language specification."""
 
+import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -26,6 +27,7 @@ from literalizer._formatters.format_entries import (
 from literalizer._formatters.format_factories import (
     dict_format_factory,
     ordered_map_format_factory,
+    set_format_factory,
 )
 from literalizer._language import (
     CommentConfig,
@@ -126,7 +128,7 @@ class VisualBasic(metaclass=LanguageCls):
 
     extension = ".vb"
     pygments_name = "vb.net"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
@@ -173,7 +175,19 @@ class VisualBasic(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Visual Basic."""
 
-        HASH_SET = "hash_set"
+        HASH_SET = enum.member(
+            value=set_format_factory(
+                open_template="New HashSet(Of {type}) From {{",
+                close="}}",
+                empty_template="New HashSet(Of {type})()",
+                preamble_lines=(),
+                set_opener_template=("New HashSet(Of {type_name}) From {{"),
+            )
+        )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -269,6 +283,7 @@ class VisualBasic(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.HASH_SET,
+        default_set_type: str = "Object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
         declaration_style: DeclarationStyles = DeclarationStyles.DIM,
@@ -320,18 +335,19 @@ class VisualBasic(metaclass=LanguageCls):
         )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = SetFormatConfig(
+
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
+        )
+        self.set_format_config = dataclasses.replace(
+            self.set_format_config,
             set_open=typed_set_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=element_to_type,
                     opener_template="New HashSet(Of {type_name}) From {{",
                 ),
-                fallback=f"New HashSet(Of {default_value_type}) From {{",
+                fallback=self.set_format_config.set_open([]),
             ),
-            close="}",
-            empty_set=f"New HashSet(Of {default_value_type})()",
-            preamble_lines=(),
-            set_opener_template="",
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(

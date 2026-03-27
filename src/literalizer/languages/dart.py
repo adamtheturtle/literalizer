@@ -9,7 +9,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_sequence_open,
-    fixed_set_open,
     typed_dict_open,
     typed_sequence_open,
 )
@@ -26,6 +25,7 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_factories import set_format_factory
 from literalizer._formatters.format_integers import format_integer_hex
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
@@ -73,7 +73,7 @@ class Dart(metaclass=LanguageCls):
 
     extension = ".dart"
     pygments_name = "dart"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -168,13 +168,19 @@ class Dart(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Dart."""
 
-        SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="{"),
-            close="}",
-            empty_set="<dynamic>{}",
-            preamble_lines=(),
-            set_opener_template="",
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="{{",
+                close="}}",
+                empty_template="<{type}>{{}}",
+                preamble_lines=(),
+                set_opener_template="",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -282,6 +288,7 @@ class Dart(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
+        default_set_type: str = "dynamic",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.FINAL,
@@ -302,7 +309,10 @@ class Dart(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
+        )
 
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced

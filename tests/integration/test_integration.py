@@ -922,14 +922,23 @@ def _build_default_set_type_variants() -> Iterable[_Variant]:
     For each language that advertises ``supports_default_set_type``,
     create a variant with a non-default value.
     """
+    # The test value must differ from the language's own default *and* be
+    # a valid type name for that language's linter / compiler.
+    type_overrides: dict[str, str] = {
+        "Go": "string",
+        "CSharp": "string",
+        "Mojo": "Int",
+        "Rust": "i32",
+    }
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         if not lang_config.lang_cls.supports_default_set_type:
             continue
+        string_type = type_overrides.get(lang_name, "String")
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_set_type_string",
-                spec=lang_config.lang_cls(default_set_type="String"),
+                spec=lang_config.lang_cls(default_set_type=string_type),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )

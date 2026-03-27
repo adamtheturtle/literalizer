@@ -48,7 +48,7 @@ def set_format_factory(
         open_str = open_template.format(type=default_type)
         return SetFormatConfig(
             set_open=fixed_set_open(open_str=open_str),
-            close=close,
+            close=close.format(type=default_type),
             empty_set=(
                 empty_template.format(type=default_type)
                 if empty_template is not None

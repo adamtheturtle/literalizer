@@ -8,10 +8,7 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import (
-    fixed_sequence_open,
-    fixed_set_open,
-)
+from literalizer._formatters.collection_openers import fixed_sequence_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -23,7 +20,10 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
-from literalizer._formatters.format_factories import dict_format_factory
+from literalizer._formatters.format_factories import (
+    dict_format_factory,
+    set_format_factory,
+)
 from literalizer._formatters.format_integers import format_integer_underscore
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -60,7 +60,7 @@ class Crystal(metaclass=LanguageCls):
 
     extension = ".cr"
     pygments_name = "crystal"
-    supports_default_set_type = False
+    supports_default_set_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Crystal."""
@@ -128,13 +128,19 @@ class Crystal(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Crystal."""
 
-        SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set{"),
-            close="}",
-            empty_set="Set(Nil).new",
-            preamble_lines=('require "set"',),
-            set_opener_template="",
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="Set{{",
+                close="}}",
+                empty_template="Set({type}).new",
+                preamble_lines=('require "set"',),
+                set_opener_template="",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -245,6 +251,7 @@ class Crystal(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        default_set_type: str = "Nil",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
@@ -266,7 +273,10 @@ class Crystal(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_type,
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
             default_type=default_value_type,
