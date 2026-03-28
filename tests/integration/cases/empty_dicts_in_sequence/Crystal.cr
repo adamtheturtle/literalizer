@@ -1,4 +1,4 @@
 my_data = [
-    {} of Nil => Nil,
-    {} of Nil => Nil,
+    {} of String => Nil,
+    {} of String => Nil,
 ]
