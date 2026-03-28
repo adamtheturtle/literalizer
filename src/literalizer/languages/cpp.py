@@ -151,6 +151,7 @@ class Cpp(metaclass=LanguageCls):
     extension = ".cpp"
     pygments_name = "cpp"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for C++."""

@@ -76,6 +76,7 @@ class D(metaclass=LanguageCls):
     extension = ".d"
     pygments_name = "d"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for D."""

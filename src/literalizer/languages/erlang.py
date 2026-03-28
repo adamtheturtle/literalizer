@@ -112,6 +112,7 @@ class Erlang(metaclass=LanguageCls):
     extension = ".erl"
     pygments_name = "erlang"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""

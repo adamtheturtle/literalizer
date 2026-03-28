@@ -87,6 +87,7 @@ class TypeScript(metaclass=LanguageCls):
     extension = ".ts"
     pygments_name = "typescript"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date formatting options for TypeScript."""

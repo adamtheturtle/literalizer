@@ -362,6 +362,7 @@ class Python(metaclass=LanguageCls):
     extension = ".py"
     pygments_name = "python"
     supports_default_set_type = False
+    supports_default_sequence_type = False
 
     class DateFormats(enum.Enum):
         """Date formatting options for Python."""
