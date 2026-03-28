@@ -129,7 +129,7 @@ class VisualBasic(metaclass=LanguageCls):
     extension = ".vb"
     pygments_name = "vb.net"
     supports_default_set_type = True
-    supports_default_sequence_type = False
+    supports_default_sequence_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
