@@ -1,4 +1,4 @@
-final my_data = {
+final my_data = <String, dynamic>{
     // Server configuration
     "host": "localhost",  // default host
     "port": 8080,

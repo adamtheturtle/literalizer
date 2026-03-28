@@ -1,5 +1,6 @@
 """Rust language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -121,6 +122,7 @@ class Rust(metaclass=LanguageCls):
     pygments_name = "rust"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
+    supports_default_dict_value_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
@@ -379,6 +381,7 @@ class Rust(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.VEC,
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_element_type: str = "String",
+        default_dict_value_type: str = "&str",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.LET,
@@ -404,7 +407,18 @@ class Rust(metaclass=LanguageCls):
             default_type=default_set_element_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = dict_format.value
+        base_dict_config: DictFormatConfig = dict_format.value
+        base_empty_dict = base_dict_config.empty_dict
+        self.dict_format_config: DictFormatConfig = dataclasses.replace(
+            base_dict_config,
+            empty_dict=(
+                base_empty_dict.replace(
+                    ", &str>", f", {default_dict_value_type}>"
+                )
+                if base_empty_dict is not None
+                else None
+            ),
+        )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format

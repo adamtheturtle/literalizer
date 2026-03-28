@@ -1,4 +1,4 @@
-final my_data = {
+final my_data = <String, dynamic>{
     "name": "Alice",
     "score": null,
     "age": 30,

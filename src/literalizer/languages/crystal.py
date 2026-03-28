@@ -62,6 +62,7 @@ class Crystal(metaclass=LanguageCls):
     pygments_name = "crystal"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
+    supports_default_dict_value_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Crystal."""
@@ -253,6 +254,7 @@ class Crystal(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "Nil",
+        default_dict_value_type: str = "Nil",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
@@ -265,7 +267,6 @@ class Crystal(metaclass=LanguageCls):
         indent: str = "    ",
     ) -> None:
         """Initialize Crystal language specification."""
-        default_value_type = "Nil"
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "nil"
@@ -280,7 +281,7 @@ class Crystal(metaclass=LanguageCls):
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
-            default_type=default_value_type,
+            default_type=default_dict_value_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

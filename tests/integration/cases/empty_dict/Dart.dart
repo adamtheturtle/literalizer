@@ -1,1 +1,1 @@
-final my_data = {};
+final my_data = <String, dynamic>{};
