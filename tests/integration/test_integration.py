@@ -990,7 +990,7 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
         "Go": "interface{}",
         "CSharp": "object?",
         "Dart": "Object?",
-        "Kotlin": "Any?",
+        "Kotlin": "Comparable<*>?",
         "Mojo": "Int",
         "Rust": "i32",
     }
