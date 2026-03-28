@@ -133,8 +133,8 @@ class Nim(metaclass=LanguageCls):
 
     extension = ".nim"
     pygments_name = "nim"
-    supports_default_set_type = False
-    supports_default_sequence_type = False
+    supports_default_set_element_type = False
+    supports_default_sequence_element_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Nim."""

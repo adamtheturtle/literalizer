@@ -131,8 +131,8 @@ class Go(metaclass=LanguageCls):
 
     extension = ".go"
     pygments_name = "go"
-    supports_default_set_type = True
-    supports_default_sequence_type = True
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""
@@ -329,8 +329,8 @@ class Go(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.SLICE,
         set_format: SetFormats = SetFormats.SET,
-        default_set_type: str = "any",
-        default_sequence_type: str = "any",
+        default_set_element_type: str = "any",
+        default_sequence_element_type: str = "any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.SHORT,
@@ -381,7 +381,7 @@ class Go(metaclass=LanguageCls):
                     element_to_type=init_element_to_type,
                     opener_template="map[{type_name}]struct{{}}{{",
                 ),
-                fallback=f"map[{default_set_type}]struct{{}}{{",
+                fallback=f"map[{default_set_element_type}]struct{{}}{{",
             ),
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
@@ -389,7 +389,7 @@ class Go(metaclass=LanguageCls):
                 element_to_type=init_element_to_type,
                 opener_template="[]{type_name}{{",
             ),
-            fallback=f"[]{default_sequence_type}{{",
+            fallback=f"[]{default_sequence_element_type}{{",
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(

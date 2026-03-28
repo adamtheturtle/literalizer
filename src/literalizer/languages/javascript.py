@@ -78,8 +78,8 @@ class JavaScript(metaclass=LanguageCls):
 
     extension = ".js"
     pygments_name = "javascript"
-    supports_default_set_type = False
-    supports_default_sequence_type = False
+    supports_default_set_element_type = False
+    supports_default_sequence_element_type = False
 
     class DateFormats(enum.Enum):
         """Date formatting options for JavaScript."""

@@ -119,8 +119,8 @@ class Rust(metaclass=LanguageCls):
 
     extension = ".rs"
     pygments_name = "rust"
-    supports_default_set_type = True
-    supports_default_sequence_type = False
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
@@ -378,7 +378,7 @@ class Rust(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.VEC,
         set_format: SetFormats = SetFormats.HASH_SET,
-        default_set_type: str = "String",
+        default_set_element_type: str = "String",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.LET,
@@ -401,7 +401,7 @@ class Rust(metaclass=LanguageCls):
         self.set_format = set_format
 
         self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_type,
+            default_type=default_set_element_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format.value

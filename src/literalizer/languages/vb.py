@@ -128,8 +128,8 @@ class VisualBasic(metaclass=LanguageCls):
 
     extension = ".vb"
     pygments_name = "vb.net"
-    supports_default_set_type = True
-    supports_default_sequence_type = False
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
@@ -284,8 +284,8 @@ class VisualBasic(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.HASH_SET,
-        default_set_type: str = "Object",
-        default_sequence_type: str = "Object",
+        default_set_element_type: str = "Object",
+        default_sequence_element_type: str = "Object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
         declaration_style: DeclarationStyles = DeclarationStyles.DIM,
@@ -324,13 +324,13 @@ class VisualBasic(metaclass=LanguageCls):
         fmt = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=vb_type_to_opener,
-                fallback=f"New {default_sequence_type}() {{",
+                fallback=f"New {default_sequence_element_type}() {{",
             ),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=f"New {default_sequence_type}() {{}}",
+            empty_sequence=f"New {default_sequence_element_type}() {{}}",
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -339,7 +339,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.set_format = set_format
 
         self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_type,
+            default_type=default_set_element_type,
         )
         self.set_format_config = dataclasses.replace(
             self.set_format_config,

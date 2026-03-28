@@ -94,8 +94,8 @@ class Swift(metaclass=LanguageCls):
 
     extension = ".swift"
     pygments_name = "swift"
-    supports_default_set_type = True
-    supports_default_sequence_type = True
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
@@ -334,8 +334,8 @@ class Swift(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        default_set_type: str = "AnyHashable",
-        default_sequence_type: str = "Any",
+        default_set_element_type: str = "AnyHashable",
+        default_sequence_element_type: str = "Any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.LET,
@@ -354,12 +354,12 @@ class Swift(metaclass=LanguageCls):
         self.null_literal = "nil"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format(default_type=default_sequence_type)
+        fmt = sequence_format(default_type=default_sequence_element_type)
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.default_set_type = default_set_type
+        self.default_set_element_type = default_set_element_type
         self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_type,
+            default_type=default_set_element_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(

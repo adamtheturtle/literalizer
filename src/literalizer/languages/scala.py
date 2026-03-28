@@ -127,8 +127,8 @@ class Scala(metaclass=LanguageCls):
 
     extension = ".scala"
     pygments_name = "scala"
-    supports_default_set_type = False
-    supports_default_sequence_type = False
+    supports_default_set_element_type = False
+    supports_default_sequence_element_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
