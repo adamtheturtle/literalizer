@@ -90,8 +90,8 @@ class CSharp(metaclass=LanguageCls):
 
     extension = ".cs"
     pygments_name = "csharp"
-    supports_default_set_type = True
-    supports_default_sequence_type = True
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="string",
@@ -339,8 +339,8 @@ class CSharp(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.TUPLE,
         set_format: SetFormats = SetFormats.HASH_SET,
-        default_set_type: str = "object",
-        default_sequence_type: str = "object",
+        default_set_element_type: str = "object",
+        default_sequence_element_type: str = "object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAR,
@@ -358,12 +358,12 @@ class CSharp(metaclass=LanguageCls):
         self.null_literal = "(object?)null"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format(default_type=default_sequence_type)
+        fmt = sequence_format(default_type=default_sequence_element_type)
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
 
         self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_type,
+            default_type=default_set_element_type,
         )
         date_tp = date_format.value.type_produced
         dt_tp = datetime_format.value.type_produced

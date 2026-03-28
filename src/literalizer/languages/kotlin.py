@@ -177,8 +177,8 @@ class Kotlin(metaclass=LanguageCls):
 
     extension = ".kts"
     pygments_name = "kotlin"
-    supports_default_set_type = True
-    supports_default_sequence_type = False
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -439,7 +439,7 @@ class Kotlin(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
-        default_set_type: str = "Any?",
+        default_set_element_type: str = "Any?",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAL,
@@ -480,7 +480,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
         self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_type,
+            default_type=default_set_element_type,
         )
         openers = cfg.build(
             date_type=date_type_name,

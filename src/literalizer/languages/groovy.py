@@ -50,8 +50,8 @@ class Groovy(metaclass=LanguageCls):
 
     extension = ".groovy"
     pygments_name = "groovy"
-    supports_default_set_type = True
-    supports_default_sequence_type = False
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Groovy."""
@@ -206,7 +206,7 @@ class Groovy(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
-        default_set_type: str = "Object",
+        default_set_element_type: str = "Object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.DEF,
@@ -229,7 +229,7 @@ class Groovy(metaclass=LanguageCls):
         self.set_format = set_format
 
         self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_type,
+            default_type=default_set_element_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(

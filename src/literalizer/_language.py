@@ -175,8 +175,8 @@ class LanguageCls(type):
     LineEndings: type[enum.Enum]
     extension: str
     pygments_name: str
-    supports_default_set_type: bool
-    supports_default_sequence_type: bool
+    supports_default_set_element_type: bool
+    supports_default_sequence_element_type: bool
 
 
 @runtime_checkable
