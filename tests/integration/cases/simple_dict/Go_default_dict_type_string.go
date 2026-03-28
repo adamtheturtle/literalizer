@@ -1,7 +1,7 @@
 package main
 
 func main() {
-my_data := map[string]string{
+my_data := map[string]interface{}{
 	"name": "Alice",
 	"age": 30,
 	"active": true,

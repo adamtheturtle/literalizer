@@ -987,8 +987,9 @@ def _build_default_dict_type_variants() -> Iterable[_Variant]:
     create a variant with a non-default value.
     """
     type_overrides: dict[str, str] = {
-        "Go": "string",
-        "CSharp": "string",
+        "Go": "interface{}",
+        "CSharp": "object?",
+        "Dart": "Object?",
         "Mojo": "Int",
         "Rust": "i32",
     }

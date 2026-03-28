@@ -1,1 +1,1 @@
-final my_data = <String, String>{};
+final my_data = <String, Object?>{};
