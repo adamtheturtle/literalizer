@@ -72,6 +72,7 @@ class Mojo(metaclass=LanguageCls):
     pygments_name = "mojo"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
+    supports_default_dict_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
@@ -245,6 +246,7 @@ class Mojo(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "String",
         default_sequence_element_type: str = "String",
+        default_dict_type: str = "String",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
@@ -257,7 +259,6 @@ class Mojo(metaclass=LanguageCls):
         indent: str = "    ",
     ) -> None:
         """Initialize Mojo language specification."""
-        default_value_type = "String"
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "None"
@@ -294,7 +295,7 @@ class Mojo(metaclass=LanguageCls):
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
-            default_type=default_value_type,
+            default_type=default_dict_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=True,

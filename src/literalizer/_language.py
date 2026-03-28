@@ -177,6 +177,7 @@ class LanguageCls(type):
     pygments_name: str
     supports_default_set_element_type: bool
     supports_default_sequence_element_type: bool
+    supports_default_dict_type: bool
 
 
 @runtime_checkable

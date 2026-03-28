@@ -179,6 +179,7 @@ class Kotlin(metaclass=LanguageCls):
     pygments_name = "kotlin"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
+    supports_default_dict_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -440,6 +441,7 @@ class Kotlin(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "Any?",
+        default_dict_type: str = "Any?",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAL,
@@ -508,7 +510,9 @@ class Kotlin(metaclass=LanguageCls):
                     ),
                     opener_template=dict_spec.opener_template,
                 ),
-                fallback=dict_spec.fallback,
+                fallback=dict_spec.opener_template.format(
+                    type_name=default_dict_type,
+                ),
             ),
             narrowed_open=None,
             close=")",

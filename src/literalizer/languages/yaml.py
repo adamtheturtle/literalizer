@@ -63,6 +63,7 @@ class Yaml(metaclass=LanguageCls):
     pygments_name = "yaml"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
+    supports_default_dict_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Yaml."""

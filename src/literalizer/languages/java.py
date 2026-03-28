@@ -117,6 +117,7 @@ class Java(metaclass=LanguageCls):
     pygments_name = "java"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
+    supports_default_dict_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
