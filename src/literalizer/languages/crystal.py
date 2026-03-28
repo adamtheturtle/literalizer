@@ -168,7 +168,7 @@ class Crystal(metaclass=LanguageCls):
                     separator=" => ",
                     format_value=passthrough_sequence_entry,
                 ),
-                empty_template="{{}} of {type} => {type}",
+                empty_template="{{}} of String => {type}",
                 preamble_lines=(),
                 narrowed_open=None,
             )

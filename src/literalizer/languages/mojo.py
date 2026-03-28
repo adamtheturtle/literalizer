@@ -173,7 +173,7 @@ class Mojo(metaclass=LanguageCls):
                     separator=": ",
                     format_value=passthrough_sequence_entry,
                 ),
-                empty_template="Dict[{type}, {type}]()",
+                empty_template="Dict[String, {type}]()",
                 preamble_lines=(),
                 narrowed_open=None,
             )

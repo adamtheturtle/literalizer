@@ -178,7 +178,7 @@ class Kotlin(metaclass=LanguageCls):
     pygments_name = "kotlin"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
+    supports_default_dict_value_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -552,7 +552,7 @@ class Kotlin(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="linkedMapOf<String, Any?>(",
+                open_str=f"linkedMapOf<String, {default_dict_value_type}>(",
                 close=")",
                 preamble_lines=(),
             )
