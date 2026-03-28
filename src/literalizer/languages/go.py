@@ -133,7 +133,7 @@ class Go(metaclass=LanguageCls):
     pygments_name = "go"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
-    supports_default_dict_type = True
+    supports_default_dict_value_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""
@@ -332,7 +332,7 @@ class Go(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "any",
         default_sequence_element_type: str = "any",
-        default_dict_type: str = "any",
+        default_dict_value_type: str = "any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.SHORT,
@@ -399,7 +399,7 @@ class Go(metaclass=LanguageCls):
                     element_to_type=init_element_to_type,
                     opener_template="map[string]{type_name}{{",
                 ),
-                fallback=f"map[string]{default_dict_type}{{",
+                fallback=f"map[string]{default_dict_value_type}{{",
             ),
             close="}",
             format_entry=dict_entry_with_separator(

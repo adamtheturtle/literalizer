@@ -130,7 +130,7 @@ class VisualBasic(metaclass=LanguageCls):
     pygments_name = "vb.net"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
-    supports_default_dict_type = True
+    supports_default_dict_value_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
@@ -287,7 +287,7 @@ class VisualBasic(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_element_type: str = "Object",
         default_sequence_element_type: str = "Object",
-        default_dict_type: str = "Object",
+        default_dict_value_type: str = "Object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
         declaration_style: DeclarationStyles = DeclarationStyles.DIM,
@@ -354,7 +354,7 @@ class VisualBasic(metaclass=LanguageCls):
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
-            default_type=default_dict_type,
+            default_type=default_dict_value_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
@@ -386,7 +386,7 @@ class VisualBasic(metaclass=LanguageCls):
                 open_template=("New Dictionary(Of String, {type}) From {{"),
                 close="}",
                 preamble_lines=(),
-            )(default_dict_type)
+            )(default_dict_value_type)
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry(format_value=passthrough_sequence_entry)

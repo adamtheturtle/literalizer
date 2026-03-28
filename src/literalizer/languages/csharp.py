@@ -65,7 +65,6 @@ class _CSharpDictSpec:
     """Per-format dict config pieces resolved at init time."""
 
     opener_template: str
-    fallback: str
 
 
 @beartype
@@ -92,7 +91,7 @@ class CSharp(metaclass=LanguageCls):
     pygments_name = "csharp"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
-    supports_default_dict_type = True
+    supports_default_dict_value_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="string",
@@ -243,11 +242,9 @@ class CSharp(metaclass=LanguageCls):
 
         DICTIONARY = _CSharpDictSpec(
             opener_template="new Dictionary<string, {type_name}> {{",
-            fallback="new Dictionary<string, object> {",
         )
         SORTED_DICTIONARY = _CSharpDictSpec(
             opener_template="new SortedDictionary<string, {type_name}> {{",
-            fallback="new SortedDictionary<string, object> {",
         )
 
     class EmptyDictKey(enum.Enum):
@@ -342,7 +339,7 @@ class CSharp(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_element_type: str = "object",
         default_sequence_element_type: str = "object",
-        default_dict_type: str = "object",
+        default_dict_value_type: str = "object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAR,
@@ -405,7 +402,7 @@ class CSharp(metaclass=LanguageCls):
                     opener_template=dict_spec.opener_template,
                 ),
                 fallback=dict_spec.opener_template.format(
-                    type_name=default_dict_type,
+                    type_name=default_dict_value_type,
                 ),
             ),
             close="}",
@@ -450,7 +447,7 @@ class CSharp(metaclass=LanguageCls):
                 open_template="new Dictionary<string, {type}> {{",
                 close="}",
                 preamble_lines=("using System.Collections.Generic;",),
-            )(default_dict_type)
+            )(default_dict_value_type)
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_template(

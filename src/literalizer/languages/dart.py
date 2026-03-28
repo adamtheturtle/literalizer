@@ -75,7 +75,7 @@ class Dart(metaclass=LanguageCls):
     pygments_name = "dart"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
-    supports_default_dict_type = True
+    supports_default_dict_value_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -291,7 +291,7 @@ class Dart(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "dynamic",
-        default_dict_type: str = "dynamic",
+        default_dict_value_type: str = "dynamic",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.FINAL,
@@ -337,7 +337,7 @@ class Dart(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
-                fallback=f"<String, {default_dict_type}>{{",
+                fallback=f"<String, {default_dict_value_type}>{{",
             ),
             close="}",
             format_entry=dict_entry_with_separator(
