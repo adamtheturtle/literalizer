@@ -958,9 +958,15 @@ def _build_default_sequence_type_variants() -> Iterable[_Variant]:
         "CSharp": "string",
         "Mojo": "Int",
     }
+    # VB supports default_sequence_type but its typed arrays reject
+    # heterogeneous elements (BC30311), so the standard test cases
+    # (which mix ints, strings, bools, etc.) cannot compile.
+    skip_languages: frozenset[str] = frozenset({"VisualBasic"})
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         if not lang_config.lang_cls.supports_default_sequence_type:
+            continue
+        if lang_name in skip_languages:
             continue
         string_type = type_overrides.get(lang_name, "String")
         variants.append(
