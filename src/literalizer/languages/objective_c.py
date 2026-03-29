@@ -1,5 +1,6 @@
 """Objective-C language specification."""
 
+import base64
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -19,6 +20,11 @@ from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
     passthrough_sequence_entry,
     variable_formatter,
+)
+from literalizer._formatters.format_floats import (
+    format_float_fixed,
+    format_float_repr,
+    format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
     format_integer_hex,
@@ -84,6 +90,16 @@ def _format_objc_bytes(value: bytes) -> str:
 
 
 @beartype
+def _format_objc_bytes_base64(value: bytes) -> str:
+    """Format bytes as an Objective-C ``NSString`` base64 literal.
+
+    Example: ``b"Hello"`` → ``@"SGVsbG8="``.
+    """
+    encoded = base64.b64encode(s=value)
+    return f'@"{encoded.decode(encoding="ascii")}"'
+
+
+@beartype
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
@@ -129,6 +145,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Bytes formatting options."""
 
         HEX = enum.member(value=_format_objc_bytes)
+        BASE64 = enum.member(value=_format_objc_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -199,6 +216,17 @@ class ObjectiveC(metaclass=LanguageCls):
 
         ALLOW = "allow"
 
+    class FloatFormats(enum.Enum):
+        """Float format options."""
+
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
+
+        def __call__(self, value: float, /) -> str:
+            """Format a float."""
+            return self.value(value=value)
+
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
@@ -244,6 +272,7 @@ class ObjectiveC(metaclass=LanguageCls):
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
+    float_formats = FloatFormats
     integer_formats = IntegerFormats
     numeric_separators = NumericSeparators
     string_formats = StringFormats
@@ -269,6 +298,7 @@ class ObjectiveC(metaclass=LanguageCls):
         declaration_style: DeclarationStyles = DeclarationStyles.TYPED,
         dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
         dict_format: DictFormats = DictFormats.DEFAULT,
+        float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
@@ -305,6 +335,7 @@ class ObjectiveC(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _format_objc_string
+        self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_objc_entry
@@ -314,6 +345,7 @@ class ObjectiveC(metaclass=LanguageCls):
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format
+        self.float_format = float_format
         self.integer_format = integer_format
         self.numeric_separator = numeric_separator
         self.string_format = string_format

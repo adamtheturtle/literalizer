@@ -1263,6 +1263,32 @@ def _build_numeric_separator_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_float_format_variants() -> Iterable[_Variant]:
+    """Build float-format variants for all languages with multiple
+    formats.
+    """
+    variants: list[_Variant] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_format = spec.float_format
+        non_defaults = [
+            fmt for fmt in spec.float_formats if fmt is not default_format
+        ]
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_float_format_{fmt.name.lower()}",
+                spec=lang_config.lang_cls(
+                    float_format=fmt,
+                ),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+            for fmt in non_defaults
+        )
+    return variants
+
+
+@beartype
 def _build_string_format_variants() -> Iterable[_Variant]:
     """Build string-format variants for all languages with multiple
     formats.
@@ -1568,6 +1594,8 @@ def _build_variant_cases() -> list[_VariantCase]:
             "dict_with_list_value",
             "_list_val",
         ),
+        (_build_float_format_variants(), "float_list", ""),
+        (_build_float_format_variants(), "nested_float_list", "_n"),
         (_build_integer_format_variants(), "int_list", ""),
         (_build_integer_format_variants(), "int_list_large", "_large"),
         (_build_numeric_separator_variants(), "int_list", ""),
@@ -1767,6 +1795,8 @@ def test_format_enumeration_properties(
     assert len(spec.declaration_styles) >= 1
     assert issubclass(spec.dict_formats, enum.Enum)
     assert len(spec.dict_formats) >= 1
+    assert issubclass(spec.float_formats, enum.Enum)
+    assert len(spec.float_formats) >= 1
     assert issubclass(spec.integer_formats, enum.Enum)
     assert len(spec.integer_formats) >= 1
     assert issubclass(spec.numeric_separators, enum.Enum)

@@ -1,5 +1,6 @@
 """Dict entry, sequence entry, and variable formatting functions."""
 
+import base64
 from collections.abc import Callable
 
 from beartype import beartype
@@ -81,6 +82,16 @@ def format_bytes_hex(value: bytes) -> str:
     Example: ``b"Hello"`` -> ``"48656c6c6f"``.
     """
     return f'"{value.hex()}"'
+
+
+@beartype
+def format_bytes_base64(value: bytes) -> str:
+    """Format bytes as a base64 string literal.
+
+    Example: ``b"Hello"`` -> ``"SGVsbG8="``.
+    """
+    encoded = base64.b64encode(s=value)
+    return f'"{encoded.decode(encoding="ascii")}"'
 
 
 @beartype

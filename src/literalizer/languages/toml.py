@@ -20,10 +20,16 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_formatter,
+)
+from literalizer._formatters.format_floats import (
+    format_float_fixed,
+    format_float_repr,
+    format_float_scientific,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
@@ -123,6 +129,7 @@ class Toml(metaclass=LanguageCls):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
+        BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -189,6 +196,17 @@ class Toml(metaclass=LanguageCls):
 
         ALLOW = "allow"
 
+    class FloatFormats(enum.Enum):
+        """Float format options."""
+
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
+
+        def __call__(self, value: float, /) -> str:
+            """Format a float."""
+            return self.value(value=value)
+
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
@@ -226,6 +244,7 @@ class Toml(metaclass=LanguageCls):
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
+    float_formats = FloatFormats
     integer_formats = IntegerFormats
     numeric_separators = NumericSeparators
     string_formats = StringFormats
@@ -251,6 +270,7 @@ class Toml(metaclass=LanguageCls):
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
         dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
         dict_format: DictFormats = DictFormats.DEFAULT,
+        float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
@@ -289,6 +309,7 @@ class Toml(metaclass=LanguageCls):
             format_string_backslash_control,
             control_char_fmt="\\u{:04x}",
         )
+        self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
@@ -300,6 +321,7 @@ class Toml(metaclass=LanguageCls):
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format
+        self.float_format = float_format
         self.integer_format = integer_format
         self.numeric_separator = numeric_separator
         self.string_format = string_format

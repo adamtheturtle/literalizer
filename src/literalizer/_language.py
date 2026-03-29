@@ -169,6 +169,7 @@ class LanguageCls(type):
     DictEntryStyles: type[enum.Enum]
     DictFormats: type[enum.Enum]
     EmptyDictKey: type[enum.Enum]
+    FloatFormats: type[enum.Enum]
     IntegerFormats: type[enum.Enum]
     NumericSeparators: type[enum.Enum]
     StringFormats: type[enum.Enum]
@@ -272,6 +273,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def dict_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the dict/map format options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def float_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the float format options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -446,6 +454,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -478,6 +491,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def dict_format(self) -> enum.Enum:
         """The dict/map format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def float_format(self) -> enum.Enum:
+        """The float format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
