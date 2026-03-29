@@ -66,8 +66,8 @@ def _format_objc_entry(_original: Value, formatted: str) -> str:
 def _format_objc_string(value: str) -> str:
     r"""Format a string as an Objective-C ``NSString`` literal.
 
-    Escapes backslashes, double quotes, newlines, and tabs, then wraps
-    the result in ``@"..."``.
+    Escapes backslashes, double quotes, newlines, carriage returns, and
+    tabs, then wraps the result in ``@"..."``.
 
     Example: ``hello "world"`` → ``@"hello \"world\""``.
     """
@@ -75,6 +75,7 @@ def _format_objc_string(value: str) -> str:
         value.replace("\\", "\\\\")
         .replace('"', '\\"')
         .replace("\n", "\\n")
+        .replace("\r", "\\r")
         .replace("\t", "\\t")
     )
     return f'@"{escaped}"'
