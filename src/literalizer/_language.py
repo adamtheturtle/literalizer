@@ -489,6 +489,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def dict_entry_style(self) -> enum.Enum:
+        """The dict entry style chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def dict_format(self) -> enum.Enum:
         """The dict/map format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis

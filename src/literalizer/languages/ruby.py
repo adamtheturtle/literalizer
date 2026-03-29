@@ -398,7 +398,10 @@ class Ruby(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            format_entry
+            dict_entry_with_separator(
+                separator=" => ",
+                format_value=passthrough_sequence_entry,
+            )
         )
         self.indent = indent
         self.indent_closing_delimiter = False
