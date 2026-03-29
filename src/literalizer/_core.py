@@ -109,6 +109,8 @@ def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
                 else:
                     for v in val:
                         _walk(val=v)
+            case _:
+                pass
 
     _walk(val=data)
     return frozenset(result)
@@ -187,7 +189,7 @@ def _compute_preamble(
         for line in preamble
     )
     collection = _collection_preamble(types=types, language=language)
-    empty_collection_types = (
+    empty_collection_types: frozenset[type] = (
         _collect_empty_collection_types(data=data)
         if has_variable_declaration and types & {dict, list, set, ordereddict}
         else frozenset()
