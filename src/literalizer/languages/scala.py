@@ -132,7 +132,6 @@ class Scala(metaclass=LanguageCls):
     supports_default_dict_value_type = False
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
-    supports_default_ordered_map_key_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
