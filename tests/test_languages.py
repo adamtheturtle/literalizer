@@ -249,6 +249,20 @@ def test_java_dict_all_null_values_include_delimiters() -> None:
     assert result.code == "Map.ofEntries()"
 
 
+def test_java_dict_all_null_values_with_pre_indent_level() -> None:
+    """Java all-null dict with pre_indent_level includes line_prefix."""
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": None, "b": None}),
+        language=JAVA,
+        pre_indent_level=1,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code == "    Map.ofEntries()"
+
+
 def test_java_yaml_dict_null_values_with_comments() -> None:
     """Java YAML dict with null values and comments does not crash."""
     yaml_string = "# comment\nname: Alice\nscore: null\n"
