@@ -1,1 +1,1 @@
-my_data = {} of String => Nil
+my_data = {} of Int32 => String
