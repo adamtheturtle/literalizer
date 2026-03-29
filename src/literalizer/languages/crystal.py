@@ -26,7 +26,7 @@ from literalizer._formatters.format_factories import (
     set_format_factory,
 )
 from literalizer._formatters.format_integers import format_integer_underscore
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import format_string_backslash_hash
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -304,7 +304,7 @@ class Crystal(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = format_string_backslash_hash
         self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(
                 numeric_separator=numeric_separator,
