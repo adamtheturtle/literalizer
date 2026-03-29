@@ -23,7 +23,7 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
-    format_string_backslash_single_minimal,
+    format_string_bash_single,
 )
 from literalizer._language import (
     CommentConfig,
@@ -206,7 +206,7 @@ class Bash(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=format_string_backslash)
-        SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        SINGLE = enum.member(value=format_string_bash_single)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
