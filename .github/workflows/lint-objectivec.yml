@@ -19,6 +19,8 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
+            # Match by filename prefix, not just .m extension,
+            # because MATLAB and Objective-C share the .m extension.
             lang:
               - 'tests/integration/cases/**/objective_c*.m'
       - name: Find files to lint
