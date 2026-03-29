@@ -99,7 +99,7 @@ def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
                     result.add(dict)
                 else:
                     for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        _walk(v)  # pyright: ignore[reportUnknownArgumentType]
+                        _walk(val=v)  # pyright: ignore[reportUnknownArgumentType]
             case set():
                 if len(val) == 0:
                     result.add(set)
@@ -108,9 +108,9 @@ def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
                     result.add(list)
                 else:
                     for v in val:
-                        _walk(v)
+                        _walk(val=v)
 
-    _walk(data)
+    _walk(val=data)
     return frozenset(result)
 
 
