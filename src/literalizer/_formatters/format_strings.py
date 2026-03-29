@@ -224,14 +224,16 @@ def format_string_backslash_hash(value: str) -> str:
 def format_string_raw_python(value: str) -> str:
     r"""Format a string as a Python raw string literal.
 
-    Backslashes are kept verbatim.  Double quotes inside the value are
-    escaped with a backslash (the backslash *does* appear in the raw
-    string, but Python still requires it syntactically).
+    Backslashes are kept verbatim.  When the value contains no double
+    quotes, ``r"…"`` is used.  When it contains double quotes,
+    ``r'''…'''`` (triple-single-quoted) is used so that the quotes
+    need no escaping.
 
     Example: ``C:\path\to\file`` -> ``r"C:\path\to\file"``.
     """
-    escaped = value.replace('"', '\\"')
-    return f'r"{escaped}"'
+    if '"' not in value:
+        return f'r"{value}"'
+    return f"r'''{value}'''"
 
 
 @beartype
