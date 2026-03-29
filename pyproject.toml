@@ -124,6 +124,10 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow asserts in docs.
     "S101",
 ]
+lint.per-file-ignores."src/literalizer/languages/*.py" = [
+    # Language __init__ methods set many instance attributes by design.
+    "PLR0915",
+]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except
     # unused-import checks (F401) so we catch stale imports.
@@ -412,6 +416,7 @@ ignore_names = [
     "MAP_OF_ENTRIES",
     "MAP_SET",
     "EPOCH",
+    "FIXED",
     "FROZENSET",
     "ERLANG",
     "NO",
@@ -419,6 +424,7 @@ ignore_names = [
     "OCTAL",
     "ORDERED",
     "SEQ",
+    "SCIENTIFIC",
     "SINGLE",
     "SORTED_DICTIONARY",
     "SORTED_SET",

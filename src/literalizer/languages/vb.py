@@ -29,6 +29,11 @@ from literalizer._formatters.format_factories import (
     ordered_map_format_factory,
     set_format_factory,
 )
+from literalizer._formatters.format_floats import (
+    format_float_fixed,
+    format_float_repr,
+    format_float_scientific,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -242,6 +247,17 @@ class VisualBasic(metaclass=LanguageCls):
 
         ALLOW = "allow"
 
+    class FloatFormats(enum.Enum):
+        """Float format options."""
+
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
+
+        def __call__(self, value: float, /) -> str:
+            """Format a float."""
+            return self.value(value=value)
+
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
@@ -278,6 +294,7 @@ class VisualBasic(metaclass=LanguageCls):
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
+    float_formats = FloatFormats
     integer_formats = IntegerFormats
     numeric_separators = NumericSeparators
     string_formats = StringFormats
@@ -306,6 +323,7 @@ class VisualBasic(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
         declaration_style: DeclarationStyles = DeclarationStyles.DIM,
         dict_format: DictFormats = DictFormats.DEFAULT,
+        float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
@@ -380,6 +398,7 @@ class VisualBasic(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = _format_string_vb
+        self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
@@ -390,6 +409,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
+        self.float_format = float_format
         self.integer_format = integer_format
         self.numeric_separator = numeric_separator
         self.string_format = string_format

@@ -27,6 +27,11 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_floats import (
+    format_float_fixed,
+    format_float_repr,
+    format_float_scientific,
+)
 from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
@@ -254,6 +259,17 @@ class TypeScript(metaclass=LanguageCls):
 
         ALLOW = "allow"
 
+    class FloatFormats(enum.Enum):
+        """Float format options."""
+
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
+
+        def __call__(self, value: float, /) -> str:
+            """Format a float."""
+            return self.value(value=value)
+
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
@@ -330,6 +346,7 @@ class TypeScript(metaclass=LanguageCls):
     declaration_styles = DeclarationStyles
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
+    float_formats = FloatFormats
     integer_formats = IntegerFormats
     numeric_separators = NumericSeparators
     string_formats = StringFormats
@@ -348,6 +365,7 @@ class TypeScript(metaclass=LanguageCls):
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.CONST,
         dict_format: DictFormats = DictFormats.OBJECT,
+        float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
@@ -375,6 +393,7 @@ class TypeScript(metaclass=LanguageCls):
         )
 
         self.format_string: Callable[[str], str] = string_format
+        self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(
                 numeric_separator=numeric_separator,
@@ -389,6 +408,7 @@ class TypeScript(metaclass=LanguageCls):
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_format = dict_format
+        self.float_format = float_format
         self.integer_format = integer_format
         self.numeric_separator = numeric_separator
         self.string_format = string_format
