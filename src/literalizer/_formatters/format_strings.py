@@ -200,6 +200,27 @@ def format_string_backslash_dollar(value: str) -> str:
 
 
 @beartype
+def format_string_backslash_hash(value: str) -> str:
+    r"""Format a string using backslash escaping, including ``#{``.
+
+    Escapes backslashes, double quotes, newlines, tabs, and the
+    interpolation sequence ``#{`` with a backslash prefix, then wraps the
+    result in double quotes.
+
+    Example: ``Issue #{42}`` -> ``"Issue \#{42}"``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace("#{", "\\#{")
+    )
+    return f'"{escaped}"'
+
+
+@beartype
 def format_string_backslash_dollar_single(value: str) -> str:
     r"""Format a string using backslash escaping with single quotes,
     including ``$``.

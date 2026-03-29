@@ -1,0 +1,5 @@
+let my_data: Any = [
+    0x0,
+    0x1,
+    -0x1,
+]
