@@ -90,7 +90,8 @@ def format_bytes_base64(value: bytes) -> str:
 
     Example: ``b"Hello"`` -> ``"SGVsbG8="``.
     """
-    return f'"{base64.b64encode(value).decode("ascii")}"'
+    encoded = base64.b64encode(s=value)
+    return f'"{encoded.decode(encoding="ascii")}"'
 
 
 @beartype
