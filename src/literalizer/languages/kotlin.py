@@ -440,7 +440,7 @@ class Kotlin(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-statements
         self,
         *,
         date_format: DateFormats = DateFormats.KOTLIN,
