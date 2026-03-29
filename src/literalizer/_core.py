@@ -84,7 +84,6 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
 
 
 @beartype
-@beartype
 def _walk_empty_collections(*, val: Value, result: set[type]) -> None:
     """Walk *val* and add empty collection types to *result*."""
     match val:
