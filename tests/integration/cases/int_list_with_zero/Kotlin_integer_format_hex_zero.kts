@@ -1,0 +1,5 @@
+val my_data = intArrayOf(
+    0x0,
+    0x1,
+    -0x1,
+)
