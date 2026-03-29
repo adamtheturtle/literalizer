@@ -37,6 +37,8 @@ def format_integer_octal_c_style(value: int) -> str:
 
     Example: ``255`` -> ``"0377"``, ``-10`` -> ``"-012"``.
     """
+    if value == 0:
+        return "0"
     if value < 0:
         return f"-0{abs(value):o}"
     return f"0{value:o}"
