@@ -918,7 +918,7 @@ def _coerce_yaml_keys(*, data: object) -> Value:
 
     ``ordereddict`` (used for YAML ``!!omap`` nodes) preserves its keys
     (so ordered-map detection in :func:`_literalize` still works) but
-    recurses into its values.
+    still walks into its values.
     """
     match data:
         case ordereddict():
