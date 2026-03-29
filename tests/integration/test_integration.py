@@ -523,6 +523,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Python,
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap_variable_name="my_data",
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
