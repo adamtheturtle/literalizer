@@ -697,6 +697,29 @@ def test_pygments_name_is_valid(
     find_lexer_class_by_name(_alias=language_cls.pygments_name)
 
 
+def test_python_no_any_import_when_all_defaults_overridden() -> None:
+    """When all Python default collection types are non-Any, the
+    ``from typing import Any`` import is not emitted.
+    """
+    spec = Python(
+        default_set_element_type="str",
+        default_sequence_element_type="str",
+        default_dict_value_type="str",
+        default_dict_key_type="str",
+    )
+    result = literalize_yaml(
+        yaml_string="{}\n",
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_data",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code == "my_data: dict[str, str] = {}"
+    assert "Any" not in "".join(result.preamble)
+
+
 def test_cobol_bump_levels_rejects_non_level_line() -> None:
     """_bump_levels raises ValueError for lines without a level number."""
     with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):

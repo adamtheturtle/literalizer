@@ -539,12 +539,33 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     required).
     """
 
-    type_hint_collection_preamble_lines: tuple[str, ...]
-    """Preamble lines required when the language produces type-hinted
-    variable declarations *and* the data contains collections.
-    Empty for most languages; Python sets this to
-    ``("from typing import Any",)`` when inline hints are enabled.
+    type_hint_collection_preamble_lines: Callable[
+        [frozenset[type]], tuple[str, ...]
+    ]
+    """Callable that receives the set of collection types that have
+    empty instances in the data and returns preamble lines needed for
+    type-hint annotations.
+
+    Most languages return ``()`` unconditionally; Python uses this to
+    emit ``from typing import Any`` only when the specific empty
+    collection types present actually require it.
     """
+
+
+def _no_type_hint_preamble(
+    _empty_collection_types: frozenset[type],
+    /,
+) -> tuple[str, ...]:
+    """Return no preamble lines — used by languages that do not emit
+    type hints for empty collections.
+    """
+    return ()
+
+
+no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
+    _no_type_hint_preamble
+)
+"""Shared callable for languages that need no type-hint preamble."""
 
 
 def body_preamble_from_scalars(

@@ -33,6 +33,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_type_hint_preamble,
 )
 from literalizer._types import Value
 
@@ -326,4 +327,4 @@ class Occam(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines = no_type_hint_preamble

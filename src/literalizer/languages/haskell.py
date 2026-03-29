@@ -45,6 +45,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     date_scalar_preamble,
+    no_type_hint_preamble,
 )
 from literalizer._types import Value
 
@@ -576,4 +577,4 @@ class Haskell(metaclass=LanguageCls):
                 "instance IsString Val where\n    fromString = HStr"
             ),
         )
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines = no_type_hint_preamble

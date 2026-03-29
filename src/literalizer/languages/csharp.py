@@ -52,6 +52,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_type_hint_preamble,
 )
 
 if TYPE_CHECKING:
@@ -492,4 +493,4 @@ class CSharp(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines = no_type_hint_preamble
