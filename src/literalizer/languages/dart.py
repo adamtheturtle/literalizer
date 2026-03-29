@@ -78,6 +78,7 @@ class Dart(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
     supports_default_dict_key_type = True
+    supports_default_ordered_map_value_type = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",

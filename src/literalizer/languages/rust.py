@@ -9,10 +9,7 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-)
+from literalizer._formatters.collection_openers import fixed_dict_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -24,7 +21,10 @@ from literalizer._formatters.format_entries import (
     tuple_dict_entry,
     variable_formatter,
 )
-from literalizer._formatters.format_factories import set_format_factory
+from literalizer._formatters.format_factories import (
+    sequence_format_factory,
+    set_format_factory,
+)
 from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
@@ -117,14 +117,19 @@ class Rust(metaclass=LanguageCls):
               coerced to strings.
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
+
+        default_sequence_element_type: Type name used for empty
+            ``Vec`` literals, e.g. ``Vec::<String>::new()``.
+            Defaults to ``"String"``.
     """
 
     extension = ".rs"
     pygments_name = "rust"
     supports_default_set_element_type = True
-    supports_default_sequence_element_type = False
+    supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
     supports_default_dict_key_type = True
+    supports_default_ordered_map_value_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
@@ -171,46 +176,56 @@ class Rust(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Rust."""
 
-        VEC = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="vec!["),
-            close="]",
-            supports_heterogeneity=False,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence="Vec::<String>::new()",
-            preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
+        VEC = enum.member(
+            value=sequence_format_factory(
+                open_template="vec![",
+                close="]",
+                supports_heterogeneity=False,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_template="Vec::<{type}>::new()",
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback_template=None,
+            )
         )
-        ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
-            close="]",
-            supports_heterogeneity=False,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence=None,
-            preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
+        ARRAY = enum.member(
+            value=sequence_format_factory(
+                open_template="[",
+                close="]",
+                supports_heterogeneity=False,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_template=None,
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback_template=None,
+            )
         )
-        TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="("),
-            close=")",
-            supports_heterogeneity=True,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence=None,
-            preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
+        TUPLE = enum.member(
+            value=sequence_format_factory(
+                open_template="(",
+                close=")",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_template=None,
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback_template=None,
+            )
         )
+
+        def __call__(self, default_type: str) -> SequenceFormatConfig:
+            """Create a sequence format config for the given type."""
+            return self.value(default_type)
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.value.supports_heterogeneity
+            return self(default_type="String").supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for Rust."""
@@ -382,6 +397,7 @@ class Rust(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.VEC,
         set_format: SetFormats = SetFormats.HASH_SET,
+        default_sequence_element_type: str = "String",
         default_set_element_type: str = "String",
         default_dict_key_type: str = "String",
         default_dict_value_type: str = "String",
@@ -402,7 +418,7 @@ class Rust(metaclass=LanguageCls):
         self.null_literal = "None::<()>"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format.value
+        fmt = sequence_format(default_type=default_sequence_element_type)
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
 
