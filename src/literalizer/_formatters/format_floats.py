@@ -25,7 +25,7 @@ def format_float_scientific(value: float) -> str:
     # Use Python's %e which always produces one digit before the
     # decimal point, then clean up.
     raw = f"{value:e}"
-    mantissa, exp_part = raw.split("e")
+    mantissa, exp_part = raw.split(sep="e")
     # Strip trailing zeros from the mantissa.
     mantissa = mantissa.rstrip("0").rstrip(".")
     exp_val = int(exp_part)
