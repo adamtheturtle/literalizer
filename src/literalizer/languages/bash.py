@@ -22,7 +22,10 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
     variable_formatter,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+    format_string_bash_single,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -204,7 +207,12 @@ class Bash(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash)
+        SINGLE = enum.member(value=format_string_bash_single)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -285,7 +293,7 @@ class Bash(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = string_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_bash_sequence_entry
