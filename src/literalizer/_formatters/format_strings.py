@@ -166,7 +166,7 @@ def format_string_bash_single(value: str) -> str:
     r"""Format a string for Bash single-quoted context.
 
     Bash single-quoted strings are completely literal — no escape
-    sequences are recognised.  The only way to embed a single quote is
+    sequences are recognized.  The only way to embed a single quote is
     to end the quoted region, insert an escaped single quote, and open
     a new quoted region: ``'\''``.
 
