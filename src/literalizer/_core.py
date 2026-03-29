@@ -916,13 +916,17 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     requires ``dict[str, Value]``, so we normalise before passing
     loaded YAML data to :func:`_literalize`.
 
-    ``ordereddict`` (used for YAML ``!!omap`` nodes) is excluded from
-    key coercion so that ordered-map detection in :func:`_literalize` is
-    preserved.
+    ``ordereddict`` (used for YAML ``!!omap`` nodes) preserves its keys
+    (so ordered-map detection in :func:`_literalize` still works) but
+    recurses into its values.
     """
     match data:
         case ordereddict():
-            return cast("Value", data)
+            omap = cast("dict[object, object]", data)
+            coerced = ordereddict(
+                [(k, _coerce_yaml_keys(data=v)) for k, v in omap.items()]
+            )
+            return cast("Value", coerced)
         case dict():
             return {
                 f"{k}": _coerce_yaml_keys(data=v)
