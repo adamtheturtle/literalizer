@@ -444,9 +444,19 @@ class TypedOpenerConfig:
             float_type=self._float_type,
             bytes_type=self._bytes_type,
             mixed_numeric_type=self._mixed_numeric_type,
-            date_type=date_type or self._date_type,
-            datetime_type=datetime_type or self._datetime_type,
-            list_template=list_template or self._list_template,
+            date_type=(
+                date_type if date_type is not None else self._date_type
+            ),
+            datetime_type=(
+                datetime_type
+                if datetime_type is not None
+                else self._datetime_type
+            ),
+            list_template=(
+                list_template
+                if list_template is not None
+                else self._list_template
+            ),
             dict_type_template=resolved_template,
             fallback_value_type=(
                 self._fallback_value_type if enable_dict_type else None
@@ -516,7 +526,9 @@ class TypedOpenerConfig:
             set=make_type_to_opener(
                 element_to_type=dict_set_resolver,
                 opener_template=(
-                    set_opener_template or self._set_opener_template
+                    set_opener_template
+                    if set_opener_template is not None
+                    else self._set_opener_template
                 ),
             ),
         )

@@ -109,6 +109,7 @@ misclassifies
 multiline
 mypy
 namespaces
+nan
 natively
 norc
 normalise
@@ -135,6 +136,7 @@ reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
+repr
 roundtrip
 ruamel
 scala

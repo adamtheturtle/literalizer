@@ -19,8 +19,10 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
+            # Match by filename prefix, not just .m extension,
+            # because MATLAB and Objective-C share the .m extension.
             lang:
-              - 'tests/integration/cases/**/matlab*.m'
+              - 'tests/integration/cases/**/Matlab*.m'
       - name: Find files to lint
         id: files
         if: github.event_name != 'pull_request' || steps.changes.outputs.config_any_changed
@@ -33,7 +35,7 @@ jobs:
             # shellcheck disable=SC2086
             for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
           else
-            find tests/integration/cases -name "matlab*.m" -print0
+            find tests/integration/cases -name "Matlab*.m" -print0
           fi > /tmp/files-to-lint
           if [ -s /tmp/files-to-lint ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
@@ -41,14 +43,21 @@ jobs:
       - name: Install Octave
         if: steps.files.outputs.found == 'true'
         run: sudo apt-get update && sudo apt-get install -y octave
-      # Octave is a practical CI substitute, but it accepts some
-      # double-quoted backslash escapes (e.g. \") that MATLAB rejects.
+      # Octave is a practical CI substitute, but it does not support
+      # every MATLAB builtin.  Skip files that use features Octave lacks:
+      #  - datetime(): not yet implemented in Octave
+      #  - ""-escaped quotes: Octave accepts some backslash escapes
+      #    (e.g. \") that MATLAB rejects, so the check would be misleading
       - name: Check MATLAB syntax (Octave-compatible files)
         if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             if grep -q '""' "$f"; then
               echo "Skipping Octave parse check for MATLAB-escaped quotes in $f"
+              continue
+            fi
+            if grep -qw 'datetime' "$f"; then
+              echo "Skipping $f — uses datetime(), which Octave does not implement"
               continue
             fi
             octave --norc --no-gui "$f" || exit 1
