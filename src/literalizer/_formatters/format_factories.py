@@ -124,11 +124,12 @@ def dict_format_factory(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     narrowed_open: str | None,
-) -> Callable[[str], DictFormatConfig]:
+) -> Callable[..., DictFormatConfig]:
     """Return a callable that builds a ``DictFormatConfig`` for a given
     type.
 
-    Templates use ``{type}`` as the placeholder for the default type name.
+    Templates use ``{type}`` and optionally ``{key_type}`` as
+    placeholders for the default value type and key type names.
     The ``open_template`` is wrapped in ``fixed_dict_open``.
     """
 
@@ -164,10 +165,11 @@ def ordered_map_format_factory(
     open_template: str,
     close: str,
     preamble_lines: tuple[str, ...],
-) -> Callable[[str], OrderedMapFormatConfig]:
+) -> Callable[..., OrderedMapFormatConfig]:
     """Return a callable that builds an ``OrderedMapFormatConfig``.
 
-    Templates use ``{type}`` as the placeholder for the default type name.
+    Templates use ``{type}`` and optionally ``{key_type}`` as
+    placeholders for the default value type and key type names.
     """
 
     @beartype
