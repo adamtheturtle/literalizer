@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_symbol_style,
     dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
@@ -81,6 +82,13 @@ class Ruby(metaclass=LanguageCls):
               e.g. ``Time.new(2024, 1, 15, 12, 30, 0)``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        dict_entry_style: How to format dict/hash entries.
+
+            * ``dict_entry_styles.ROCKET`` — rocket notation,
+              e.g. ``"name" => "Alice"``.
+            * ``dict_entry_styles.SYMBOL`` — symbol notation,
+              e.g. ``name: "Alice"``.
     """
 
     extension = ".rb"
@@ -180,6 +188,25 @@ class Ruby(metaclass=LanguageCls):
 
         ASSIGN = "assign"
 
+    class DictEntryStyles(enum.Enum):
+        """Dict entry style options for Ruby.
+
+        * ``ROCKET`` — rocket notation, e.g. ``"key" => "value"``.
+        * ``SYMBOL`` — symbol notation, e.g. ``key: "value"``.
+        """
+
+        ROCKET = (
+            dict_entry_with_separator(
+                separator=" => ",
+                format_value=passthrough_sequence_entry,
+            ),
+        )
+        SYMBOL = (
+            dict_entry_symbol_style(
+                format_value=passthrough_sequence_entry,
+            ),
+        )
+
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
@@ -275,6 +302,7 @@ class Ruby(metaclass=LanguageCls):
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
+    dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
     float_formats = FloatFormats
@@ -301,6 +329,7 @@ class Ruby(metaclass=LanguageCls):
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
+        dict_entry_style: DictEntryStyles = DictEntryStyles.ROCKET,
         dict_format: DictFormats = DictFormats.DEFAULT,
         float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
@@ -321,13 +350,11 @@ class Ruby(metaclass=LanguageCls):
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        (format_entry,) = dict_entry_style.value
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
-            format_entry=dict_entry_with_separator(
-                separator=" => ",
-                format_value=passthrough_sequence_entry,
-            ),
+            format_entry=format_entry,
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
@@ -354,6 +381,7 @@ class Ruby(metaclass=LanguageCls):
         )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
+        self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format
         self.float_format = float_format
         self.integer_format = integer_format

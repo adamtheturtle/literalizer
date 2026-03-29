@@ -1185,6 +1185,32 @@ def _build_dict_format_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_dict_entry_style_variants() -> Iterable[_Variant]:
+    """Build dict-entry-style variants for all languages with multiple
+    styles.
+    """
+    variants: list[_Variant] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_style = spec.dict_entry_style
+        non_defaults = [
+            fmt for fmt in spec.dict_entry_styles if fmt is not default_style
+        ]
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_dict_entry_style_{fmt.name.lower()}",
+                spec=lang_config.lang_cls(
+                    dict_entry_style=fmt,
+                ),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+            for fmt in non_defaults
+        )
+    return variants
+
+
+@beartype
 def _build_integer_format_variants() -> Iterable[_Variant]:
     """Build integer-format variants for all languages with multiple
     formats.
@@ -1562,6 +1588,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_declaration_style_variants(), "empty_list", ""),
         (_build_dict_format_variants(), "simple_dict", ""),
         (_build_dict_format_variants(), "dict_with_list_value", "_list_val"),
+        (_build_dict_entry_style_variants(), "simple_dict", ""),
+        (
+            _build_dict_entry_style_variants(),
+            "dict_with_list_value",
+            "_list_val",
+        ),
         (_build_float_format_variants(), "float_list", ""),
         (_build_float_format_variants(), "nested_float_list", "_n"),
         (_build_integer_format_variants(), "int_list", ""),

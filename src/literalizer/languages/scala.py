@@ -287,6 +287,11 @@ class Scala(metaclass=LanguageCls):
             supports_redefinition=True,
         )
 
+    class DictEntryStyles(enum.Enum):
+        """Dict entry style options."""
+
+        DEFAULT = "default"
+
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
@@ -374,6 +379,7 @@ class Scala(metaclass=LanguageCls):
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
+    dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
     float_formats = FloatFormats
@@ -400,6 +406,7 @@ class Scala(metaclass=LanguageCls):
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.VAL,
+        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
         dict_format: DictFormats = DictFormats.MAP,
         float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
@@ -490,6 +497,7 @@ class Scala(metaclass=LanguageCls):
         )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
+        self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format
         self.float_format = float_format
         self.integer_format = integer_format

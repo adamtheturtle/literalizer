@@ -166,6 +166,7 @@ class LanguageCls(type):
     CommentFormats: type[enum.Enum]
     VariableTypeHints: type[enum.Enum]
     DeclarationStyles: type[enum.Enum]
+    DictEntryStyles: type[enum.Enum]
     DictFormats: type[enum.Enum]
     EmptyDictKey: type[enum.Enum]
     FloatFormats: type[enum.Enum]
@@ -258,6 +259,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def declaration_styles(self) -> type[enum.Enum]:
         """Enum class whose members list the declaration style options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def dict_entry_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the dict entry style options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -478,6 +486,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def declaration_style(self) -> enum.Enum:
         """The declaration style chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def dict_entry_style(self) -> enum.Enum:
+        """The dict entry style chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
