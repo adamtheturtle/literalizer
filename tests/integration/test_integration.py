@@ -1046,6 +1046,66 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
+    """Build default-ordered-map-value-type variants for languages that
+    support it.
+
+    For each language that advertises
+    ``supports_default_ordered_map_value_type``, create a variant with a
+    non-default value type.
+    """
+    type_overrides: dict[str, str] = {
+        "Go": "interface{}",
+    }
+    variants: list[_Variant] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        if not lang_config.lang_cls.supports_default_ordered_map_value_type:
+            continue
+        value_type = type_overrides.get(lang_name, "String")
+        variants.append(
+            _Variant(
+                name=f"{lang_name}_default_ordered_map_value_type",
+                spec=lang_config.lang_cls(
+                    default_ordered_map_value_type=value_type,
+                ),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+        )
+    return variants
+
+
+@beartype
+def _build_default_ordered_map_key_type_variants() -> Iterable[_Variant]:
+    """Build default-ordered-map-key-type variants for languages that
+    support it.
+
+    For each language that advertises
+    ``supports_default_ordered_map_key_type``, create a variant with a
+    non-default key type.
+    """
+    type_overrides: dict[str, str] = {
+        "Go": "string",
+    }
+    variants: list[_Variant] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        if not lang_config.lang_cls.supports_default_ordered_map_key_type:
+            continue
+        key_type = type_overrides.get(lang_name, "String")
+        variants.append(
+            _Variant(
+                name=f"{lang_name}_default_ordered_map_key_type",
+                spec=lang_config.lang_cls(
+                    default_ordered_map_key_type=key_type,
+                ),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+        )
+    return variants
+
+
+@beartype
 def _build_comment_variants() -> Iterable[_Variant]:
     """Build comment-format variants for all languages with multiple
     formats.
@@ -1484,6 +1544,16 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_default_dict_value_type_variants(), "simple_dict", ""),
         (_build_default_dict_key_type_variants(), "empty_dict", ""),
         (_build_default_dict_key_type_variants(), "simple_dict", ""),
+        (
+            _build_default_ordered_map_value_type_variants(),
+            "ordered_map",
+            "",
+        ),
+        (
+            _build_default_ordered_map_key_type_variants(),
+            "ordered_map",
+            "",
+        ),
         (_build_comment_variants(), "comments", ""),
         (_build_type_hint_variants(), "type_hints", ""),
         (_build_type_hint_variants(), "scalar_date", ""),
