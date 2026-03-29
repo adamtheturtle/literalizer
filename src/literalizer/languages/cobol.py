@@ -17,6 +17,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
 )
@@ -254,6 +255,7 @@ class Cobol(metaclass=LanguageCls):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
+        BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
