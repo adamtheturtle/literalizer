@@ -1,5 +1,7 @@
 """Float formatting functions."""
 
+import math
+
 from beartype import beartype
 
 
@@ -19,15 +21,20 @@ def format_float_scientific(value: float) -> str:
 
     Example: ``1500.0`` -> ``"1.5e3"``, ``0.001`` -> ``"1e-3"``.
 
-    Trailing zeros in the coefficient and a redundant ``.0`` are
-    stripped so the output is compact.
+    Special values (inf, -inf, nan) are returned via ``repr``.
+    Trailing zeros in the coefficient are stripped so the output is
+    compact, but a trailing ``.0`` is preserved to keep the value
+    recognisable as a float.
     """
-    # Use Python's %e which always produces one digit before the
-    # decimal point, then clean up.
+    # inf, -inf, nan do not have an "e" component.
+    if math.isinf(value) or math.isnan(value):
+        return repr(value)
     raw = f"{value:e}"
     mantissa, exp_part = raw.split(sep="e")
-    # Strip trailing zeros from the mantissa.
-    mantissa = mantissa.rstrip("0").rstrip(".")
+    # Strip trailing zeros but keep at least one decimal digit.
+    mantissa = mantissa.rstrip("0")
+    if mantissa.endswith("."):
+        mantissa += "0"
     exp_val = int(exp_part)
     if exp_val == 0:
         return mantissa
