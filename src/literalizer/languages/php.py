@@ -35,7 +35,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
-    format_integer_octal,
+    format_integer_octal_c_style,
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
@@ -206,8 +206,8 @@ class Php(metaclass=LanguageCls):
         )
         OCTAL = MappingProxyType(
             mapping={
-                "NONE": format_integer_octal,
-                "UNDERSCORE": format_integer_octal,
+                "NONE": format_integer_octal_c_style,
+                "UNDERSCORE": format_integer_octal_c_style,
             }
         )
         BINARY = MappingProxyType(
