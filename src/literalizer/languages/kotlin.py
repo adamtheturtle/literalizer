@@ -79,6 +79,7 @@ def _kotlin_list_sequence_open(
     cfg: TypedOpenerConfig,
     date_type: str | None,
     datetime_type: str | None,
+    dict_key_type: str = "",
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the Kotlin List format.
 
@@ -92,6 +93,7 @@ def _kotlin_list_sequence_open(
         date_type=date_type,
         datetime_type=datetime_type,
         enable_dict_type=True,
+        dict_key_type=dict_key_type,
     )
 
     @beartype
@@ -179,6 +181,7 @@ class Kotlin(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -191,9 +194,9 @@ class Kotlin(metaclass=LanguageCls):
         datetime_type="LocalDateTime",
         list_template="Array<{inner}>",
         sequence_opener_template="arrayOf(",
-        dict_opener_template="mapOf<String, {type_name}>(",
+        dict_opener_template="mapOf<{key_type}, {type_name}>(",
         set_opener_template="setOf<{type_name}>(",
-        dict_type_template="Map<String, {inner}>",
+        dict_type_template="Map<{key_type}, {inner}>",
         fallback_value_type="Any?",
     )
 
@@ -341,10 +344,10 @@ class Kotlin(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP = _KotlinDictSpec(
-            opener_template="mapOf<String, {type_name}>(",
+            opener_template="mapOf<{key_type}, {type_name}>(",
         )
         HASH_MAP = _KotlinDictSpec(
-            opener_template="hashMapOf<String, {type_name}>(",
+            opener_template="hashMapOf<{key_type}, {type_name}>(",
         )
 
     class EmptyDictKey(enum.Enum):
@@ -438,6 +441,7 @@ class Kotlin(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "Any?",
+        default_dict_key_type: str = "String",
         default_dict_value_type: str = "Any?",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
@@ -473,6 +477,7 @@ class Kotlin(metaclass=LanguageCls):
                 cfg=cfg,
                 date_type=date_type_name,
                 datetime_type=dt_type_name,
+                dict_key_type=default_dict_key_type,
             )
             if fmt.typed_opener_fallback is not None
             else fmt.sequence_open
@@ -487,6 +492,7 @@ class Kotlin(metaclass=LanguageCls):
             set_opener_template=self.set_format_config.set_opener_template
             or None,
             narrow_dict_values=False,
+            dict_key_type=default_dict_key_type,
         )
         self.set_format_config = dataclasses.replace(
             self.set_format_config,
@@ -495,7 +501,10 @@ class Kotlin(metaclass=LanguageCls):
                 fallback=self.set_format_config.set_open([]),
             ),
         )
-        dict_spec: _KotlinDictSpec = dict_format.value
+        resolved_dict_opener = dict_format.value.opener_template.replace(
+            "{key_type}",
+            default_dict_key_type,
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
@@ -504,10 +513,11 @@ class Kotlin(metaclass=LanguageCls):
                         date_type=date_type_name,
                         datetime_type=dt_type_name,
                         enable_dict_type=False,
+                        dict_key_type=default_dict_key_type,
                     ),
-                    opener_template=dict_spec.opener_template,
+                    opener_template=resolved_dict_opener,
                 ),
-                fallback=dict_spec.opener_template.format(
+                fallback=resolved_dict_opener.format(
                     type_name=default_dict_value_type,
                 ),
             ),
@@ -552,7 +562,10 @@ class Kotlin(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str=f"linkedMapOf<String, {default_dict_value_type}>(",
+                open_str=(
+                    f"linkedMapOf<{default_dict_key_type}"
+                    f", {default_dict_value_type}>("
+                ),
                 close=")",
                 preamble_lines=(),
             )

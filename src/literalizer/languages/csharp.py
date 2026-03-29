@@ -92,6 +92,7 @@ class CSharp(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="string",
@@ -104,9 +105,9 @@ class CSharp(metaclass=LanguageCls):
         datetime_type="DateTime",
         list_template="{inner}[]",
         sequence_opener_template="new {type_name}[] {{",
-        dict_opener_template="new Dictionary<string, {type_name}> {{",
+        dict_opener_template="new Dictionary<{key_type}, {type_name}> {{",
         set_opener_template="new HashSet<{type_name}> {{",
-        dict_type_template="Dictionary<string, {inner}>",
+        dict_type_template="Dictionary<{key_type}, {inner}>",
         fallback_value_type="object",
     )
 
@@ -241,10 +242,10 @@ class CSharp(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DICTIONARY = _CSharpDictSpec(
-            opener_template="new Dictionary<string, {type_name}> {{",
+            opener_template="new Dictionary<{key_type}, {type_name}> {{",
         )
         SORTED_DICTIONARY = _CSharpDictSpec(
-            opener_template="new SortedDictionary<string, {type_name}> {{",
+            opener_template="new SortedDictionary<{key_type}, {type_name}> {{",
         )
 
     class EmptyDictKey(enum.Enum):
@@ -339,6 +340,7 @@ class CSharp(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_element_type: str = "object",
         default_sequence_element_type: str = "object",
+        default_dict_key_type: str = "string",
         default_dict_value_type: str = "object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
@@ -373,6 +375,7 @@ class CSharp(metaclass=LanguageCls):
             set_opener_template=self.set_format_config.set_opener_template
             or None,
             narrow_dict_values=False,
+            dict_key_type=default_dict_key_type,
         )
         self.set_format_config = dataclasses.replace(
             self.set_format_config,
@@ -389,7 +392,10 @@ class CSharp(metaclass=LanguageCls):
             if fmt.typed_opener_fallback is not None
             else fmt.sequence_open
         )
-        dict_spec: _CSharpDictSpec = dict_format.value
+        resolved_dict_opener = dict_format.value.opener_template.replace(
+            "{key_type}",
+            default_dict_key_type,
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
@@ -398,10 +404,11 @@ class CSharp(metaclass=LanguageCls):
                         date_type=cfg.type_name(py_type=date_tp),
                         datetime_type=cfg.type_name(py_type=dt_tp),
                         enable_dict_type=False,
+                        dict_key_type=default_dict_key_type,
                     ),
-                    opener_template=dict_spec.opener_template,
+                    opener_template=resolved_dict_opener,
                 ),
-                fallback=dict_spec.opener_template.format(
+                fallback=resolved_dict_opener.format(
                     type_name=default_dict_value_type,
                 ),
             ),
@@ -444,10 +451,13 @@ class CSharp(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             ordered_map_format_factory(
-                open_template="new Dictionary<string, {type}> {{",
+                open_template="new Dictionary<{key_type}, {type}> {{",
                 close="}",
                 preamble_lines=("using System.Collections.Generic;",),
-            )(default_dict_value_type)
+            )(
+                default_dict_value_type,
+                default_key_type=default_dict_key_type,
+            )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_template(

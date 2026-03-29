@@ -131,6 +131,7 @@ class VisualBasic(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for VisualBasic."""
@@ -209,7 +210,9 @@ class VisualBasic(metaclass=LanguageCls):
 
         DEFAULT = enum.member(
             value=dict_format_factory(
-                open_template=("New Dictionary(Of String, {type}) From {{"),
+                open_template=(
+                    "New Dictionary(Of {key_type}, {type}) From {{"
+                ),
                 close="}",
                 format_entry=braced_dict_entry(
                     format_value=passthrough_sequence_entry,
@@ -220,9 +223,17 @@ class VisualBasic(metaclass=LanguageCls):
             )
         )
 
-        def __call__(self, default_type: str) -> DictFormatConfig:
+        def __call__(
+            self,
+            default_type: str,
+            *,
+            default_key_type: str = "String",
+        ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(default_type)
+            return self.value(
+                default_type,
+                default_key_type=default_key_type,
+            )
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -287,6 +298,7 @@ class VisualBasic(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_element_type: str = "Object",
         default_sequence_element_type: str = "Object",
+        default_dict_key_type: str = "String",
         default_dict_value_type: str = "Object",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.APOSTROPHE,
@@ -355,6 +367,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
             default_type=default_dict_value_type,
+            default_key_type=default_dict_key_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=False,
@@ -383,10 +396,15 @@ class VisualBasic(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             ordered_map_format_factory(
-                open_template=("New Dictionary(Of String, {type}) From {{"),
+                open_template=(
+                    "New Dictionary(Of {key_type}, {type}) From {{"
+                ),
                 close="}",
                 preamble_lines=(),
-            )(default_dict_value_type)
+            )(
+                default_dict_value_type,
+                default_key_type=default_dict_key_type,
+            )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             braced_dict_entry(format_value=passthrough_sequence_entry)

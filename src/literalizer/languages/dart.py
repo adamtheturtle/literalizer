@@ -76,6 +76,7 @@ class Dart(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -88,9 +89,9 @@ class Dart(metaclass=LanguageCls):
         datetime_type="DateTime",
         list_template="List<{inner}>",
         sequence_opener_template="<{type_name}>[",
-        dict_opener_template="<String, {type_name}>{{",
+        dict_opener_template="<{key_type}, {type_name}>{{",
         set_opener_template="<{type_name}>{{",
-        dict_type_template="Map<String, {inner}>",
+        dict_type_template="Map<{key_type}, {inner}>",
         fallback_value_type="dynamic",
     )
 
@@ -291,6 +292,7 @@ class Dart(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.LIST,
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "dynamic",
+        default_dict_key_type: str = "String",
         default_dict_value_type: str = "dynamic",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
@@ -325,6 +327,7 @@ class Dart(metaclass=LanguageCls):
             datetime_type=cfg.type_name(py_type=dt_tp),
             set_opener_template=None,
             narrow_dict_values=True,
+            dict_key_type=default_dict_key_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(
@@ -337,7 +340,9 @@ class Dart(metaclass=LanguageCls):
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=openers.dict,
-                fallback=f"<String, {default_dict_value_type}>{{",
+                fallback=(
+                    f"<{default_dict_key_type}, {default_dict_value_type}>{{"
+                ),
             ),
             close="}",
             format_entry=dict_entry_with_separator(

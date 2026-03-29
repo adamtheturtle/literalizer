@@ -133,16 +133,21 @@ def dict_format_factory(
     """
 
     @beartype
-    def _build(default_type: str) -> DictFormatConfig:
+    def _build(
+        default_type: str,
+        *,
+        default_key_type: str = "",
+    ) -> DictFormatConfig:
         """Build a ``DictFormatConfig`` with the given default type."""
+        fmt_kwargs = {"type": default_type, "key_type": default_key_type}
         return DictFormatConfig(
             open_fn=fixed_dict_open(
-                open_str=open_template.format(type=default_type),
+                open_str=open_template.format(**fmt_kwargs),
             ),
             close=close,
             format_entry=format_entry,
             empty_dict=(
-                empty_template.format(type=default_type)
+                empty_template.format(**fmt_kwargs)
                 if empty_template is not None
                 else None
             ),
@@ -166,10 +171,15 @@ def ordered_map_format_factory(
     """
 
     @beartype
-    def _build(default_type: str) -> OrderedMapFormatConfig:
+    def _build(
+        default_type: str,
+        *,
+        default_key_type: str = "",
+    ) -> OrderedMapFormatConfig:
         """Build an ``OrderedMapFormatConfig`` with the given default type."""
+        fmt_kwargs = {"type": default_type, "key_type": default_key_type}
         return OrderedMapFormatConfig(
-            open_str=open_template.format(type=default_type),
+            open_str=open_template.format(**fmt_kwargs),
             close=close,
             preamble_lines=preamble_lines,
         )

@@ -134,6 +134,7 @@ class Go(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""
@@ -332,6 +333,7 @@ class Go(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "any",
         default_sequence_element_type: str = "any",
+        default_dict_key_type: str = "string",
         default_dict_value_type: str = "any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
@@ -373,7 +375,7 @@ class Go(metaclass=LanguageCls):
             date_type=date_type,
             datetime_type=datetime_type,
             list_template="[]{inner}",
-            dict_type_template="map[string]{inner}",
+            dict_type_template=f"map[{default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
         )
         self.set_format_config: SetFormatConfig = dataclasses.replace(
@@ -397,9 +399,9 @@ class Go(metaclass=LanguageCls):
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=init_element_to_type,
-                    opener_template="map[string]{type_name}{{",
+                    opener_template=f"map[{default_dict_key_type}]{{type_name}}{{{{",
                 ),
-                fallback=f"map[string]{default_dict_value_type}{{",
+                fallback=f"map[{default_dict_key_type}]{default_dict_value_type}{{",
             ),
             close="}",
             format_entry=dict_entry_with_separator(

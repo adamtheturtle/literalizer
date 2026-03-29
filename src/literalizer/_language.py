@@ -178,6 +178,7 @@ class LanguageCls(type):
     supports_default_set_element_type: bool
     supports_default_sequence_element_type: bool
     supports_default_dict_value_type: bool
+    supports_default_dict_key_type: bool
 
 
 @runtime_checkable
