@@ -929,6 +929,7 @@ def _build_default_set_element_type_variants() -> Iterable[_Variant]:
         "Go": "string",
         "CSharp": "string",
         "Mojo": "Int",
+        "Python": "int",
         "Rust": "i32",
     }
     variants: list[_Variant] = []
@@ -961,6 +962,7 @@ def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
         "Go": "interface{}",
         "CSharp": "string",
         "Mojo": "Int",
+        "Python": "int",
     }
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
@@ -994,6 +996,7 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
         "Dart": "Object?",
         "Kotlin": "Comparable<*>?",
         "Mojo": "Int",
+        "Python": "int",
         "Rust": "i32",
     }
     variants: list[_Variant] = []
@@ -1025,6 +1028,7 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
         "CSharp": "object",
         "Dart": "Object",
         "Kotlin": "Any",
+        "Python": "int",
         "Rust": "&str",
         "Swift": "AnyHashable",
         "VisualBasic": "Object",

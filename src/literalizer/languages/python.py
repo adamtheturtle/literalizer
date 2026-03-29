@@ -118,6 +118,10 @@ def _format_variable_declaration(
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    default_set_element_type: str,
+    default_sequence_element_type: str,
+    default_dict_value_type: str,
+    default_dict_key_type: str,
 ) -> str:
     """Format a Python variable declaration.
 
@@ -134,6 +138,10 @@ def _format_variable_declaration(
             datetime_hint=datetime_hint,
             sequence_hint=sequence_hint,
             set_hint=set_hint,
+            default_set_element_type=default_set_element_type,
+            default_sequence_element_type=default_sequence_element_type,
+            default_dict_value_type=default_dict_value_type,
+            default_dict_key_type=default_dict_key_type,
         )
     return f"{name} = {value}"
 
@@ -149,6 +157,10 @@ def _format_inline_type_hint_declaration(
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    default_set_element_type: str,
+    default_sequence_element_type: str,
+    default_dict_value_type: str,
+    default_dict_key_type: str,
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
@@ -158,6 +170,10 @@ def _format_inline_type_hint_declaration(
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        default_set_element_type=default_set_element_type,
+        default_sequence_element_type=default_sequence_element_type,
+        default_dict_value_type=default_dict_value_type,
+        default_dict_key_type=default_dict_key_type,
     )
     return f"{name}: {hint} = {value}"
 
@@ -178,8 +194,9 @@ def _collection_element_union(
     recurse: Callable[..., str],
     sort: bool,
     merge_dicts: bool,
+    default_type: str,
 ) -> str:
-    """Return the element union for a collection, or ``"Any"`` if
+    """Return the element union for a collection, or *default_type* if
     empty.
 
     When *merge_dicts* is ``True``, all dict elements are merged so
@@ -188,7 +205,7 @@ def _collection_element_union(
     because ``dict`` is invariant in its type parameters.
     """
     if not elements:
-        return "Any"
+        return default_type
     if merge_dicts:
         elements = _merge_dict_elements(elements=elements)
     types = [recurse(data=e) for e in elements]
@@ -238,6 +255,10 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    default_set_element_type: str,
+    default_sequence_element_type: str,
+    default_dict_value_type: str,
+    default_dict_key_type: str,
 ) -> str:
     """Derive a Python type hint from the original data and format
     config.
@@ -249,6 +270,10 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        default_set_element_type=default_set_element_type,
+        default_sequence_element_type=default_sequence_element_type,
+        default_dict_value_type=default_dict_value_type,
+        default_dict_key_type=default_dict_key_type,
     )
 
     # Order matters: datetime before date (datetime is a date subclass),
@@ -276,19 +301,22 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 if isinstance(data, (ordereddict, OrderedDict))
                 else "dict"
             )
+            key_hint = default_dict_key_type if not data else "str"
             val_union = _collection_element_union(
                 elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                 recurse=recurse,
                 sort=False,
                 merge_dicts=False,
+                default_type=default_dict_value_type,
             )
-            return f"{outer}[str, {val_union}]"
+            return f"{outer}[{key_hint}, {val_union}]"
         case set():
             elem_union = _collection_element_union(
                 elements=list(data),
                 recurse=recurse,
                 sort=True,
                 merge_dicts=False,
+                default_type=default_set_element_type,
             )
             return f"{set_hint}[{elem_union}]"
         case list():
@@ -297,6 +325,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 recurse=recurse,
                 sort=False,
                 merge_dicts=True,
+                default_type=default_sequence_element_type,
             )
             if sequence_hint == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
@@ -346,6 +375,18 @@ class Python(metaclass=LanguageCls):
             * ``set_formats.FROZENSET`` — immutable frozenset,
               e.g. ``frozenset({1, 2, 3})``.
 
+        default_set_element_type: Type name used for empty set type
+            hints.  Defaults to ``"Any"``.
+
+        default_sequence_element_type: Type name used for empty
+            list/tuple type hints.  Defaults to ``"Any"``.
+
+        default_dict_key_type: Type name used for empty dict key
+            type hints.  Defaults to ``"str"``.
+
+        default_dict_value_type: Type name used for empty dict value
+            type hints.  Defaults to ``"Any"``.
+
         variable_type_hints: Whether to add inline type hints to
             variable declarations.
 
@@ -361,10 +402,10 @@ class Python(metaclass=LanguageCls):
 
     extension = ".py"
     pygments_name = "python"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
+    supports_default_set_element_type = True
+    supports_default_sequence_element_type = True
+    supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     class DateFormats(enum.Enum):
         """Date formatting options for Python."""
@@ -501,6 +542,10 @@ class Python(metaclass=LanguageCls):
             datetime_hint: str,
             sequence_hint: str,
             set_hint: str,
+            default_set_element_type: str,
+            default_sequence_element_type: str,
+            default_dict_value_type: str,
+            default_dict_key_type: str,
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -513,6 +558,10 @@ class Python(metaclass=LanguageCls):
                     datetime_hint=datetime_hint,
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
+                    default_set_element_type=default_set_element_type,
+                    default_sequence_element_type=default_sequence_element_type,
+                    default_dict_value_type=default_dict_value_type,
+                    default_dict_key_type=default_dict_key_type,
                 )
             return functools.partial(
                 _format_variable_declaration,
@@ -521,6 +570,10 @@ class Python(metaclass=LanguageCls):
                 datetime_hint=datetime_hint,
                 sequence_hint=sequence_hint,
                 set_hint=set_hint,
+                default_set_element_type=default_set_element_type,
+                default_sequence_element_type=default_sequence_element_type,
+                default_dict_value_type=default_dict_value_type,
+                default_dict_key_type=default_dict_key_type,
             )
 
     class CommentFormats(enum.Enum):
@@ -636,6 +689,10 @@ class Python(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.TUPLE,
         set_format: SetFormats = SetFormats.SET,
+        default_set_element_type: str = "Any",
+        default_sequence_element_type: str = "Any",
+        default_dict_key_type: str = "str",
+        default_dict_value_type: str = "Any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
@@ -725,6 +782,10 @@ class Python(metaclass=LanguageCls):
                 datetime_hint=datetime_hint,
                 sequence_hint=sequence_hint,
                 set_hint=set_hint,
+                default_set_element_type=default_set_element_type,
+                default_sequence_element_type=default_sequence_element_type,
+                default_dict_value_type=default_dict_value_type,
+                default_dict_key_type=default_dict_key_type,
             )
         )
         self.format_variable_declaration = decl_fmt
@@ -747,5 +808,13 @@ class Python(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines: tuple[str, ...] = (
-            "from typing import Any",
+            ("from typing import Any",)
+            if "Any"
+            in {
+                default_set_element_type,
+                default_sequence_element_type,
+                default_dict_value_type,
+                default_dict_key_type,
+            }
+            else ()
         )
