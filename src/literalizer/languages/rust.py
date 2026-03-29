@@ -123,6 +123,7 @@ class Rust(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
@@ -381,6 +382,7 @@ class Rust(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.VEC,
         set_format: SetFormats = SetFormats.HASH_SET,
         default_set_element_type: str = "String",
+        default_dict_key_type: str = "&str",
         default_dict_value_type: str = "&str",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
@@ -413,7 +415,8 @@ class Rust(metaclass=LanguageCls):
             base_dict_config,
             empty_dict=(
                 base_empty_dict.replace(
-                    ", &str>", f", {default_dict_value_type}>"
+                    "<&str, &str>",
+                    f"<{default_dict_key_type}, {default_dict_value_type}>",
                 )
                 if base_empty_dict is not None
                 else None

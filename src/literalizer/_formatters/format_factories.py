@@ -124,25 +124,31 @@ def dict_format_factory(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     narrowed_open: str | None,
-) -> Callable[[str], DictFormatConfig]:
+) -> Callable[..., DictFormatConfig]:
     """Return a callable that builds a ``DictFormatConfig`` for a given
     type.
 
-    Templates use ``{type}`` as the placeholder for the default type name.
+    Templates use ``{type}`` and optionally ``{key_type}`` as
+    placeholders for the default value type and key type names.
     The ``open_template`` is wrapped in ``fixed_dict_open``.
     """
 
     @beartype
-    def _build(default_type: str) -> DictFormatConfig:
+    def _build(
+        default_type: str,
+        *,
+        default_key_type: str = "",
+    ) -> DictFormatConfig:
         """Build a ``DictFormatConfig`` with the given default type."""
+        fmt_kwargs = {"type": default_type, "key_type": default_key_type}
         return DictFormatConfig(
             open_fn=fixed_dict_open(
-                open_str=open_template.format(type=default_type),
+                open_str=open_template.format(**fmt_kwargs),
             ),
             close=close,
             format_entry=format_entry,
             empty_dict=(
-                empty_template.format(type=default_type)
+                empty_template.format(**fmt_kwargs)
                 if empty_template is not None
                 else None
             ),
@@ -159,17 +165,23 @@ def ordered_map_format_factory(
     open_template: str,
     close: str,
     preamble_lines: tuple[str, ...],
-) -> Callable[[str], OrderedMapFormatConfig]:
+) -> Callable[..., OrderedMapFormatConfig]:
     """Return a callable that builds an ``OrderedMapFormatConfig``.
 
-    Templates use ``{type}`` as the placeholder for the default type name.
+    Templates use ``{type}`` and optionally ``{key_type}`` as
+    placeholders for the default value type and key type names.
     """
 
     @beartype
-    def _build(default_type: str) -> OrderedMapFormatConfig:
+    def _build(
+        default_type: str,
+        *,
+        default_key_type: str = "",
+    ) -> OrderedMapFormatConfig:
         """Build an ``OrderedMapFormatConfig`` with the given default type."""
+        fmt_kwargs = {"type": default_type, "key_type": default_key_type}
         return OrderedMapFormatConfig(
-            open_str=open_template.format(type=default_type),
+            open_str=open_template.format(**fmt_kwargs),
             close=close,
             preamble_lines=preamble_lines,
         )

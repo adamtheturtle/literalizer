@@ -121,6 +121,7 @@ class FSharp(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
+    supports_default_dict_key_type = False
 
     class DateFormats(enum.Enum):
         """Date format options for FSharp."""

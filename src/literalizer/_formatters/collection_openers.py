@@ -418,6 +418,7 @@ class TypedOpenerConfig:
         date_type: str | None,
         datetime_type: str | None,
         enable_dict_type: bool,
+        dict_key_type: str = "",
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Build an element-to-type resolver.
 
@@ -425,7 +426,17 @@ class TypedOpenerConfig:
         If *date_type* or *datetime_type* is given they override the
         base values.  When *enable_dict_type* is ``False`` the
         resolver will not handle ``DictType``.
+
+        When *dict_key_type* is given, ``{key_type}`` placeholders in
+        ``dict_type_template`` are resolved before the template is
+        used.
         """
+        raw_template = self._dict_type_template if enable_dict_type else None
+        resolved_template = (
+            raw_template.replace("{key_type}", dict_key_type)
+            if raw_template is not None and dict_key_type
+            else raw_template
+        )
         return make_element_to_type(
             str_type=self._str_type,
             bool_type=self._bool_type,
@@ -436,9 +447,7 @@ class TypedOpenerConfig:
             date_type=date_type or self._date_type,
             datetime_type=datetime_type or self._datetime_type,
             list_template=list_template or self._list_template,
-            dict_type_template=(
-                self._dict_type_template if enable_dict_type else None
-            ),
+            dict_type_template=resolved_template,
             fallback_value_type=(
                 self._fallback_value_type if enable_dict_type else None
             ),
@@ -452,6 +461,7 @@ class TypedOpenerConfig:
         datetime_type: str | None,
         set_opener_template: str | None,
         narrow_dict_values: bool,
+        dict_key_type: str = "",
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
         overrides.
@@ -467,18 +477,32 @@ class TypedOpenerConfig:
         does not match the actual sequence format (e.g.
         ``Array<…>`` vs ``List<…>``), which would cause type
         mismatches in the generated code.
+
+        When *dict_key_type* is given, ``{key_type}`` placeholders in
+        ``dict_opener_template`` and ``dict_type_template`` are
+        resolved before the templates are used.
         """
         seq_resolver = self.element_to_type(
             list_template=None,
             date_type=date_type,
             datetime_type=datetime_type,
             enable_dict_type=True,
+            dict_key_type=dict_key_type,
         )
         dict_set_resolver = self.element_to_type(
             list_template=None,
             date_type=date_type,
             datetime_type=datetime_type,
             enable_dict_type=narrow_dict_values,
+            dict_key_type=dict_key_type,
+        )
+        resolved_dict_opener = (
+            self._dict_opener_template.replace(
+                "{key_type}",
+                dict_key_type,
+            )
+            if dict_key_type
+            else self._dict_opener_template
         )
         return TypeOpeners(
             seq=make_type_to_opener(
@@ -487,7 +511,7 @@ class TypedOpenerConfig:
             ),
             dict=make_type_to_opener(
                 element_to_type=dict_set_resolver,
-                opener_template=self._dict_opener_template,
+                opener_template=resolved_dict_opener,
             ),
             set=make_type_to_opener(
                 element_to_type=dict_set_resolver,

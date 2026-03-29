@@ -63,6 +63,7 @@ class Crystal(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Crystal."""
@@ -168,15 +169,23 @@ class Crystal(metaclass=LanguageCls):
                     separator=" => ",
                     format_value=passthrough_sequence_entry,
                 ),
-                empty_template="{{}} of String => {type}",
+                empty_template="{{}} of {key_type} => {type}",
                 preamble_lines=(),
                 narrowed_open=None,
             )
         )
 
-        def __call__(self, default_type: str) -> DictFormatConfig:
+        def __call__(
+            self,
+            default_type: str,
+            *,
+            default_key_type: str = "String",
+        ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(default_type)
+            return self.value(
+                default_type,
+                default_key_type=default_key_type,
+            )
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -254,6 +263,7 @@ class Crystal(metaclass=LanguageCls):
         sequence_format: SequenceFormats = SequenceFormats.ARRAY,
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "Nil",
+        default_dict_key_type: str = "String",
         default_dict_value_type: str = "Nil",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
@@ -282,6 +292,7 @@ class Crystal(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
             default_type=default_dict_value_type,
+            default_key_type=default_dict_key_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format

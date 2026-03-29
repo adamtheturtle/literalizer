@@ -73,6 +73,7 @@ class Mojo(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
+    supports_default_dict_key_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
@@ -173,15 +174,23 @@ class Mojo(metaclass=LanguageCls):
                     separator=": ",
                     format_value=passthrough_sequence_entry,
                 ),
-                empty_template="Dict[String, {type}]()",
+                empty_template="Dict[{key_type}, {type}]()",
                 preamble_lines=(),
                 narrowed_open=None,
             )
         )
 
-        def __call__(self, default_type: str) -> DictFormatConfig:
+        def __call__(
+            self,
+            default_type: str,
+            *,
+            default_key_type: str = "String",
+        ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(default_type)
+            return self.value(
+                default_type,
+                default_key_type=default_key_type,
+            )
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -246,6 +255,7 @@ class Mojo(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         default_set_element_type: str = "String",
         default_sequence_element_type: str = "String",
+        default_dict_key_type: str = "String",
         default_dict_value_type: str = "String",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
@@ -296,6 +306,7 @@ class Mojo(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(
             default_type=default_dict_value_type,
+            default_key_type=default_dict_key_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
             multiline_trailing_comma=True,
