@@ -27,7 +27,7 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import format_string_double_minimal
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -270,7 +270,7 @@ class CommonLisp(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = format_string_double_minimal
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (

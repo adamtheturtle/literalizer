@@ -129,6 +129,20 @@ def format_string_backslash_control(
 
 
 @beartype
+def format_string_double_minimal(value: str) -> str:
+    r"""Format a string with double quotes, escaping only ``\\`` and ``\"``.
+
+    For languages like Common Lisp where double-quoted strings only
+    recognise ``\\`` and ``\"`` as escape sequences.  Actual newline,
+    carriage-return, tab, and other characters are embedded literally.
+
+    Example: ``hello "world"`` -> ``"hello \"world\""``.
+    """
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+@beartype
 def format_string_backslash_single(value: str) -> str:
     r"""Format a string using backslash escaping with single quotes.
 
