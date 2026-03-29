@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
 void _check(void) {
 id my_data = @[
-    @(00),
+    @(0),
     @(01),
     @(-01),
 ];

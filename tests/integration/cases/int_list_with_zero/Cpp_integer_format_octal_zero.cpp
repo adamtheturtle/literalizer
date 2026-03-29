@@ -6,7 +6,7 @@ struct _Any {
 };
 void _check() {
 _Any my_data = std::vector<int>{
-    00,
+    0,
     01,
     -01,
 };
