@@ -85,34 +85,33 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
 
 @beartype
 @beartype
+def _walk_empty_collections(*, val: Value, result: set[type]) -> None:
+    """Walk *val* and add empty collection types to *result*."""
+    match val:
+        case ordereddict() | dict():
+            if not val:
+                result.add(dict)
+            else:
+                for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                    _walk_empty_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
+        case set():
+            if len(val) == 0:
+                result.add(set)
+        case list():
+            if not val:
+                result.add(list)
+            else:
+                for v in val:
+                    _walk_empty_collections(val=v, result=result)
+        case _:
+            pass
+
+
+@beartype
 def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
     """Return the set of collection types that have empty instances."""
     result: set[type] = set()
-
-    def _walk(val: Value) -> None:
-        """Recurse into *val*, adding empty collection types to
-        *result*.
-        """
-        match val:
-            case ordereddict() | dict():
-                if not val:
-                    result.add(dict)
-                else:
-                    for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                        _walk(val=v)  # pyright: ignore[reportUnknownArgumentType]
-            case set():
-                if len(val) == 0:
-                    result.add(set)
-            case list():
-                if not val:
-                    result.add(list)
-                else:
-                    for v in val:
-                        _walk(val=v)
-            case _:
-                pass
-
-    _walk(val=data)
+    _walk_empty_collections(val=data, result=result)
     return frozenset(result)
 
 

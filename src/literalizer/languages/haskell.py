@@ -35,7 +35,6 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
-    NO_TYPE_HINT_PREAMBLE,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -46,6 +45,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     date_scalar_preamble,
+    no_type_hint_preamble,
 )
 from literalizer._types import Value
 
@@ -576,4 +576,4 @@ class Haskell(metaclass=LanguageCls):
                 "instance IsString Val where\n    fromString = HStr"
             ),
         )
-        self.type_hint_collection_preamble_lines = NO_TYPE_HINT_PREAMBLE
+        self.type_hint_collection_preamble_lines = no_type_hint_preamble

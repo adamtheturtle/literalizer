@@ -34,7 +34,6 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
-    NO_TYPE_HINT_PREAMBLE,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -45,6 +44,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_type_hint_preamble,
 )
 
 if TYPE_CHECKING:
@@ -390,4 +390,4 @@ class Elixir(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines = NO_TYPE_HINT_PREAMBLE
+        self.type_hint_collection_preamble_lines = no_type_hint_preamble

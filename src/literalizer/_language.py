@@ -561,7 +561,7 @@ def _no_type_hint_preamble(
     return ()
 
 
-NO_TYPE_HINT_PREAMBLE: Callable[[frozenset[type]], tuple[str, ...]] = (
+no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
     _no_type_hint_preamble
 )
 """Shared callable for languages that need no type-hint preamble."""
