@@ -17,6 +17,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
+    format_bytes_base64,
     passthrough_sequence_entry,
     variable_formatter,
 )
@@ -129,6 +130,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Bytes formatting options."""
 
         HEX = enum.member(value=_format_objc_bytes)
+        BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
