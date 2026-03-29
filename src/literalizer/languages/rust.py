@@ -37,7 +37,10 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+    format_string_raw_rust,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -376,7 +379,12 @@ class Rust(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash)
+        RAW = enum.member(value=format_string_raw_rust)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -473,7 +481,7 @@ class Rust(metaclass=LanguageCls):
             datetime_format
         )
 
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(

@@ -43,6 +43,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash,
     format_string_backslash_single,
+    format_string_raw_python,
 )
 from literalizer._language import (
     CommentConfig,
@@ -713,6 +714,7 @@ class Python(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=format_string_backslash)
         SINGLE = enum.member(value=format_string_backslash_single)
+        RAW = enum.member(value=format_string_raw_python)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

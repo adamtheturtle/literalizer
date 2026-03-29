@@ -420,6 +420,7 @@ ignore_names = [
     "NO",
     "OBJECT",
     "OCTAL",
+    "RAW",
     "ORDERED",
     "ROCKET",
     "SEQ",
@@ -432,6 +433,7 @@ ignore_names = [
     "TUPLE",
     "UNDERSCORE",
     "UNORDERED_MAP",
+    "VERBATIM",
     "ZONED",
     # Used in documentation code examples
     "custom",

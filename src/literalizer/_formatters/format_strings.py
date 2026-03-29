@@ -221,6 +221,48 @@ def format_string_backslash_hash(value: str) -> str:
 
 
 @beartype
+def format_string_raw_python(value: str) -> str:
+    r"""Format a string as a Python raw string literal.
+
+    Backslashes are kept verbatim.  Double quotes inside the value are
+    escaped with a backslash (the backslash *does* appear in the raw
+    string, but Python still requires it syntactically).
+
+    Example: ``C:\path\to\file`` -> ``r"C:\path\to\file"``.
+    """
+    escaped = value.replace('"', '\\"')
+    return f'r"{escaped}"'
+
+
+@beartype
+def format_string_raw_rust(value: str) -> str:
+    r"""Format a string as a Rust raw string literal.
+
+    Uses the ``r#"…"#`` syntax.  If the value contains the closing
+    sequence ``"#``, extra ``#`` characters are added to disambiguate.
+
+    Example: ``hello\nworld`` -> ``r#"hello\nworld"#``.
+    """
+    hashes = "#"
+    while f'"{hashes}' in value:
+        hashes += "#"
+    return f'r{hashes}"{value}"{hashes}'
+
+
+@beartype
+def format_string_verbatim_csharp(value: str) -> str:
+    r"""Format a string as a C# verbatim string literal.
+
+    Backslashes are kept verbatim.  Double quotes are doubled per
+    C# verbatim-string rules.
+
+    Example: ``C:\path\to\file`` -> ``@"C:\path\to\file"``.
+    """
+    escaped = value.replace('"', '""')
+    return f'@"{escaped}"'
+
+
+@beartype
 def format_string_backslash_dollar_single(value: str) -> str:
     r"""Format a string using backslash escaping with single quotes,
     including ``$``.
