@@ -395,7 +395,7 @@ class Scala(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    def __init__(
+    def __init__(  # noqa: PLR0915
         self,
         *,
         date_format: DateFormats = DateFormats.SCALA,
