@@ -925,6 +925,7 @@ def _build_default_set_element_type_variants() -> Iterable[_Variant]:
     # The test value must differ from the language's own default *and* be
     # a valid type name for that language's linter / compiler.
     type_overrides: dict[str, str] = {
+        "Crystal": "Int32",
         "Go": "string",
         "CSharp": "string",
         "Mojo": "Int",
@@ -987,6 +988,7 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
     create a variant with a non-default value.
     """
     type_overrides: dict[str, str] = {
+        "Crystal": "Int32",
         "Go": "interface{}",
         "CSharp": "object?",
         "Dart": "Object?",
@@ -1018,11 +1020,12 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
     create a variant with a non-default key type.
     """
     type_overrides: dict[str, str] = {
+        "Crystal": "Int32",
         "Go": "any",
         "CSharp": "object",
         "Dart": "Object",
         "Kotlin": "Any",
-        "Rust": "String",
+        "Rust": "&str",
         "Swift": "AnyHashable",
         "VisualBasic": "Object",
     }
