@@ -135,6 +135,7 @@ class Go(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
     supports_default_dict_key_type = True
+    supports_default_ordered_map_value_type = True
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""
@@ -335,6 +336,7 @@ class Go(metaclass=LanguageCls):
         default_sequence_element_type: str = "any",
         default_dict_key_type: str = "string",
         default_dict_value_type: str = "any",
+        default_ordered_map_value_type: str = "any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.SHORT,
@@ -444,7 +446,7 @@ class Go(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="[][2]any{",
+                open_str=f"[][2]{default_ordered_map_value_type}{{",
                 close="}",
                 preamble_lines=(),
             )
