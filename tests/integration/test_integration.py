@@ -1018,21 +1018,22 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
     create a variant with a non-default key type.
     """
     type_overrides: dict[str, str] = {
-        "Go": "int",
-        "CSharp": "int",
-        "Dart": "int",
-        "Kotlin": "Int",
-        "Mojo": "Int",
-        "Rust": "i32",
+        "Go": "any",
+        "CSharp": "object",
+        "Dart": "Object",
+        "Kotlin": "Any",
+        "Rust": "String",
+        "Swift": "AnyHashable",
+        "VisualBasic": "Object",
     }
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         if not lang_config.lang_cls.supports_default_dict_key_type:
             continue
-        key_type = type_overrides.get(lang_name, "Int")
+        key_type = type_overrides.get(lang_name, "String")
         variants.append(
             _Variant(
-                name=f"{lang_name}_default_dict_key_type_int",
+                name=f"{lang_name}_default_dict_key_type",
                 spec=lang_config.lang_cls(default_dict_key_type=key_type),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
