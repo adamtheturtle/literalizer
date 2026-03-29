@@ -1,7 +1,7 @@
 class Check {
     public static void check() {
 var my_data = new int[]{
-    00,
+    0,
     01,
     -01
 };
