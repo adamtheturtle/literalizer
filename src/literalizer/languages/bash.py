@@ -16,6 +16,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
@@ -26,7 +27,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+    format_string_bash_single,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -133,6 +137,7 @@ class Bash(metaclass=LanguageCls):
         """Bytes formatting options."""
 
         HEX = enum.member(value=format_bytes_hex)
+        BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -218,7 +223,12 @@ class Bash(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash)
+        SINGLE = enum.member(value=format_string_bash_single)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -301,7 +311,7 @@ class Bash(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (

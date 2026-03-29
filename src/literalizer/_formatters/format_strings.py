@@ -162,6 +162,24 @@ def format_string_backslash_single_minimal(value: str) -> str:
 
 
 @beartype
+def format_string_bash_single(value: str) -> str:
+    r"""Format a string for Bash single-quoted context.
+
+    Bash single-quoted strings are completely literal — no escape
+    sequences are recognized.  The only way to embed a single quote is
+    to end the quoted region, insert an escaped single quote, and open
+    a new quoted region: ``'\''``.
+
+    Backslashes, newlines, tabs, and all other characters are kept
+    verbatim.
+
+    Example: ``hello 'world'`` -> ``'hello'\''world'``.
+    """
+    escaped = value.replace("'", r"'\''")
+    return f"'{escaped}'"
+
+
+@beartype
 def format_string_backslash_dollar(value: str) -> str:
     r"""Format a string using backslash escaping, including ``$``.
 

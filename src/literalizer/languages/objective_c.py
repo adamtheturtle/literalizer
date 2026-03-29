@@ -1,5 +1,6 @@
 """Objective-C language specification."""
 
+import base64
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -89,6 +90,16 @@ def _format_objc_bytes(value: bytes) -> str:
 
 
 @beartype
+def _format_objc_bytes_base64(value: bytes) -> str:
+    """Format bytes as an Objective-C ``NSString`` base64 literal.
+
+    Example: ``b"Hello"`` → ``@"SGVsbG8="``.
+    """
+    encoded = base64.b64encode(s=value)
+    return f'@"{encoded.decode(encoding="ascii")}"'
+
+
+@beartype
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
@@ -134,6 +145,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Bytes formatting options."""
 
         HEX = enum.member(value=_format_objc_bytes)
+        BASE64 = enum.member(value=_format_objc_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""

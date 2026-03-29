@@ -396,6 +396,7 @@ ignore_names = [
     # Enum members accessed by consumers iterating format enums
     "ALLOW",
     "ARRAY",
+    "BASE64",
     "BINARY",
     "BLOCK",
     "BTREE_MAP",
