@@ -174,6 +174,11 @@ class Toml(metaclass=LanguageCls):
 
         ASSIGN = "assign"
 
+    class DictEntryStyles(enum.Enum):
+        """Dict entry style options."""
+
+        DEFAULT = "default"
+
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
@@ -218,6 +223,7 @@ class Toml(metaclass=LanguageCls):
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
+    dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
     integer_formats = IntegerFormats
@@ -243,6 +249,7 @@ class Toml(metaclass=LanguageCls):
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.HASH,
         declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN,
+        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
         dict_format: DictFormats = DictFormats.DEFAULT,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
@@ -291,6 +298,7 @@ class Toml(metaclass=LanguageCls):
         )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
+        self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format
         self.integer_format = integer_format
         self.numeric_separator = numeric_separator

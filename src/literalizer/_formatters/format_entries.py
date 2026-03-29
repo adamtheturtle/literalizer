@@ -128,6 +128,37 @@ def dict_entry_with_separator(
 
 
 @beartype
+def dict_entry_symbol_style(
+    *,
+    format_value: Callable[[Value, str], str],
+) -> Callable[[str, Value, str], str]:
+    r"""Return a ``format_dict_entry`` callable that formats entries in
+    Ruby symbol style: ``key: value``.
+
+    The key is expected to be a quoted string (e.g. ``"name"``); the
+    surrounding quotes are stripped so the result is ``name: value``.
+
+    *format_value* is applied to the raw value and formatted string
+    before embedding.
+
+    Example: ``dict_entry_symbol_style(...)("\"name\"", ..., "\"Alice\"")``
+    -> ``'name: "Alice"'``.
+    """
+
+    @beartype
+    def _format(key: str, val: Value, value: str) -> str:
+        """Format a dict entry in symbol style."""
+        # *key* arrives already formatted as a quoted string literal
+        # (e.g. '"name"' or "'name'").  Strip the surrounding quote
+        # characters so the symbol-style output is ``name: value``
+        # rather than ``"name": value``.
+        stripped_key = key[1:-1]
+        return f"{stripped_key}: {format_value(val, value)}"
+
+    return _format
+
+
+@beartype
 def dict_entry_with_template(
     *,
     template: str,
