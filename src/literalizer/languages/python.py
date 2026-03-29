@@ -335,23 +335,44 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
 
 
 @beartype
-def _type_hint_preamble(
+def _build_type_hint_preamble(
     *,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
-) -> tuple[str, ...]:
-    """Return the preamble lines needed for type-hint annotations."""
-    defaults = {
-        default_set_element_type,
-        default_sequence_element_type,
-        default_dict_value_type,
-        default_dict_key_type,
-    }
-    if "Any" in defaults:
-        return ("from typing import Any",)
-    return ()
+) -> Callable[[frozenset[type]], tuple[str, ...]]:
+    """Build a callable that returns preamble lines for type hints.
+
+    The returned callable checks which empty collection types are
+    present in the data and only emits ``from typing import Any``
+    when at least one of them would produce an ``Any`` type hint.
+    """
+    # Pre-compute which collection types need "Any".
+    _any_types: frozenset[type] = frozenset(
+        t
+        for t, needs in (
+            (
+                dict,
+                default_dict_value_type == "Any"
+                or default_dict_key_type == "Any",
+            ),
+            (set, default_set_element_type == "Any"),
+            (list, default_sequence_element_type == "Any"),
+        )
+        if needs
+    )
+
+    def _preamble(
+        empty_collection_types: frozenset[type],
+        /,
+    ) -> tuple[str, ...]:
+        """Return ``from typing import Any`` if needed."""
+        if _any_types & empty_collection_types:
+            return ("from typing import Any",)
+        return ()
+
+    return _preamble
 
 
 @beartype
@@ -827,11 +848,11 @@ class Python(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = (
-            _type_hint_preamble(
-                default_set_element_type=default_set_element_type,
-                default_sequence_element_type=default_sequence_element_type,
-                default_dict_value_type=default_dict_value_type,
-                default_dict_key_type=default_dict_key_type,
-            )
+        self.type_hint_collection_preamble_lines: Callable[
+            [frozenset[type]], tuple[str, ...]
+        ] = _build_type_hint_preamble(
+            default_set_element_type=default_set_element_type,
+            default_sequence_element_type=default_sequence_element_type,
+            default_dict_value_type=default_dict_value_type,
+            default_dict_key_type=default_dict_key_type,
         )

@@ -307,7 +307,7 @@ exclude = [
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 executionEnvironments = [
-    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false, reportUnusedImport = false },
+    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
 ]
 
 [tool.ty]

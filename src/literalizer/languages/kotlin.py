@@ -44,6 +44,7 @@ from literalizer._formatters.type_inference import (
     ListType,
 )
 from literalizer._language import (
+    NO_TYPE_HINT_PREAMBLE,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -602,4 +603,4 @@ class Kotlin(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines = NO_TYPE_HINT_PREAMBLE

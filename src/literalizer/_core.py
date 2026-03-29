@@ -84,24 +84,34 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
 
 
 @beartype
-def _has_empty_collection(*, data: Value) -> bool:
-    """Return whether *data* contains any empty collection."""
-    match data:
-        case ordereddict() | dict():
-            if not data:
-                return True
-            return any(
-                _has_empty_collection(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            )
-        case set():
-            return len(data) == 0
-        case list():
-            if not data:
-                return True
-            return any(_has_empty_collection(data=v) for v in data)
-        case _:
-            return False
+@beartype
+def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
+    """Return the set of collection types that have empty instances."""
+    result: set[type] = set()
+
+    def _walk(val: Value) -> None:
+        """Recurse into *val*, adding empty collection types to
+        *result*.
+        """
+        match val:
+            case ordereddict() | dict():
+                if not val:
+                    result.add(dict)
+                else:
+                    for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        _walk(v)  # pyright: ignore[reportUnknownArgumentType]
+            case set():
+                if len(val) == 0:
+                    result.add(set)
+            case list():
+                if not val:
+                    result.add(list)
+                else:
+                    for v in val:
+                        _walk(v)
+
+    _walk(data)
+    return frozenset(result)
 
 
 @beartype
@@ -177,11 +187,14 @@ def _compute_preamble(
         for line in preamble
     )
     collection = _collection_preamble(types=types, language=language)
+    empty_collection_types = (
+        _collect_empty_collection_types(data=data)
+        if has_variable_declaration and types & {dict, list, set, ordereddict}
+        else frozenset()
+    )
     type_hint = (
-        language.type_hint_collection_preamble_lines
-        if has_variable_declaration
-        and types & {dict, list, set, ordereddict}
-        and _has_empty_collection(data=data)
+        language.type_hint_collection_preamble_lines(empty_collection_types)
+        if empty_collection_types
         else ()
     )
     body = language.compute_body_preamble(types, data)

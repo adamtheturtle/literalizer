@@ -24,6 +24,7 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_TYPE_HINT_PREAMBLE,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -291,4 +292,4 @@ class Racket(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
         )
 
-        self.type_hint_collection_preamble_lines: tuple[str, ...] = ()
+        self.type_hint_collection_preamble_lines = NO_TYPE_HINT_PREAMBLE
