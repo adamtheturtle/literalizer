@@ -1169,7 +1169,7 @@ def _literalize(
     )
 
     if isinstance(lines_or_early, str):
-        return lines_or_early
+        return f"{line_prefix}{lines_or_early}"
 
     body = "\n".join(lines_or_early)
 
