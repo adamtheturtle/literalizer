@@ -1393,9 +1393,9 @@ def test_golden_file_combined_variable_forms(
     )
     variable_name = lang_config.wrap_variable_name or ""
     combined = lang_config.build_combined(
-        declaration.code,
-        assignment.code,
-        variable_name,
+        declaration=declaration.code,
+        assignment=assignment.code,
+        variable_name=variable_name,
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
@@ -1605,9 +1605,9 @@ def test_line_ending_combined_variable_forms(
         error_on_coercion=False,
     )
     combined = case.lang_config.build_combined(
-        declaration.code,
-        assignment.code,
-        case.lang_config.wrap_variable_name or "",
+        declaration=declaration.code,
+        assignment=assignment.code,
+        variable_name=case.lang_config.wrap_variable_name or "",
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
