@@ -1563,7 +1563,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_dict_format_variants(), "simple_dict", ""),
         (_build_dict_format_variants(), "dict_with_list_value", "_list_val"),
         (_build_float_format_variants(), "float_list", ""),
-        (_build_float_format_variants(), "nested_float_list", "_nested"),
+        (_build_float_format_variants(), "nested_float_list", "_n"),
         (_build_integer_format_variants(), "int_list", ""),
         (_build_integer_format_variants(), "int_list_large", "_large"),
         (_build_numeric_separator_variants(), "int_list", ""),

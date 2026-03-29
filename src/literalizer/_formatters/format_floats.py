@@ -24,7 +24,7 @@ def format_float_scientific(value: float) -> str:
     Special values (inf, -inf, nan) are returned via ``repr``.
     Trailing zeros in the coefficient are stripped so the output is
     compact, but a trailing ``.0`` is preserved to keep the value
-    recognisable as a float.
+    recognizable as a float.
     """
     # inf, -inf, nan do not have an "e" component.
     if math.isinf(value) or math.isnan(value):

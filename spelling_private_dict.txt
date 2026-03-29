@@ -109,6 +109,7 @@ misclassifies
 multiline
 mypy
 namespaces
+nan
 natively
 norc
 normalise
