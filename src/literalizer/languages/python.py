@@ -335,6 +335,26 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
 
 
 @beartype
+def _type_hint_preamble(
+    *,
+    default_set_element_type: str,
+    default_sequence_element_type: str,
+    default_dict_value_type: str,
+    default_dict_key_type: str,
+) -> tuple[str, ...]:
+    """Return the preamble lines needed for type-hint annotations."""
+    defaults = {
+        default_set_element_type,
+        default_sequence_element_type,
+        default_dict_value_type,
+        default_dict_key_type,
+    }
+    if "Any" in defaults:
+        return ("from typing import Any",)
+    return ()
+
+
+@beartype
 class Python(metaclass=LanguageCls):
     """Python language specification.
 
@@ -808,13 +828,10 @@ class Python(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines: tuple[str, ...] = (
-            ("from typing import Any",)
-            if "Any"
-            in {
-                default_set_element_type,
-                default_sequence_element_type,
-                default_dict_value_type,
-                default_dict_key_type,
-            }
-            else ()
+            _type_hint_preamble(
+                default_set_element_type=default_set_element_type,
+                default_sequence_element_type=default_sequence_element_type,
+                default_dict_value_type=default_dict_value_type,
+                default_dict_key_type=default_dict_key_type,
+            )
         )
