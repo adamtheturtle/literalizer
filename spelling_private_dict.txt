@@ -136,6 +136,7 @@ reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
+repr
 roundtrip
 ruamel
 scala
