@@ -627,7 +627,7 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
         case int():
             result = spec.format_integer(value)
         case float():
-            result = repr(value)
+            result = spec.format_float(value)
         case str():
             result = spec.format_string(value)
         case bytes():
