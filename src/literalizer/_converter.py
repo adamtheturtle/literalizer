@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class _LanguageSpec:
     """Describes how a language formats scalar literals and collections.
 
