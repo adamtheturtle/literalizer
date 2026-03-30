@@ -1,5 +1,6 @@
 """C++ language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -92,14 +93,15 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 
 
 @beartype
-def _make_cpp_element_to_type() -> Callable[
-    [type | ListType | DictType], str | None
-]:
+def _make_cpp_element_to_type(
+    *,
+    int_type: str = "int",
+) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
         str_type="std::string",
         bool_type="bool",
-        int_type="int",
+        int_type=int_type,
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="std::string",
@@ -121,6 +123,48 @@ def _cpp_array_open(items: list[Value]) -> str:
     ):
         return "{"
     return f"std::array<{type_name}, {len(items)}>{{"
+
+
+@beartype
+def _apply_long_suffix_openers(
+    *,
+    fmt: SequenceFormatConfig,
+    dict_format: enum.Enum,
+) -> tuple[
+    Callable[[list[Value]], str],
+    SequenceFormatConfig,
+    DictFormatConfig,
+]:
+    """Rebuild sequence and dict openers with ``long`` as the int type."""
+    long_element_to_type = _make_cpp_element_to_type(int_type="long")
+    long_type_to_opener = make_type_to_opener(
+        element_to_type=long_element_to_type,
+        opener_template="std::vector<{type_name}>{{",
+    )
+    sequence_open = typed_sequence_open(
+        type_to_opener=long_type_to_opener,
+        fallback="{",
+    )
+    dict_opener_template = (
+        "std::unordered_map<std::string, {type_name}>{{"
+        if dict_format.name == "UNORDERED_MAP"
+        else "std::map<std::string, {type_name}>{{"
+    )
+    dict_format_config: DictFormatConfig = dataclasses.replace(
+        dict_format.value,
+        open_fn=typed_dict_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=long_element_to_type,
+                opener_template=dict_opener_template,
+            ),
+            fallback="{",
+        ),
+    )
+    return (
+        sequence_open,
+        dataclasses.replace(fmt, sequence_open=sequence_open),
+        dict_format_config,
+    )
 
 
 @beartype
@@ -456,11 +500,14 @@ class Cpp(metaclass=LanguageCls):
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.sequence_format_config: SequenceFormatConfig = (
+            sequence_format.value
+        )
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.sequence_open: Callable[[list[Value]], str] = (
+            self.sequence_format_config.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = dict_format.value
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -471,15 +518,23 @@ class Cpp(metaclass=LanguageCls):
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
-        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
-        base_int_formatter = integer_format.get_formatter(
-            numeric_separator=numeric_separator,
-        )
         self.format_integer: Callable[[int], str] = (
-            make_long_suffix_formatter(base=base_int_formatter)
-            if suffix_is_auto
-            else base_int_formatter
+            integer_format.get_formatter(
+                numeric_separator=numeric_separator,
+            )
         )
+        if numeric_literal_suffix.name == "AUTO":
+            (
+                self.sequence_open,
+                self.sequence_format_config,
+                self.dict_format_config,
+            ) = _apply_long_suffix_openers(
+                fmt=self.sequence_format_config,
+                dict_format=dict_format,
+            )
+            self.format_integer = make_long_suffix_formatter(
+                base=self.format_integer,
+            )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

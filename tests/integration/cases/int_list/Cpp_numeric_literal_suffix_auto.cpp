@@ -5,7 +5,7 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-_Any my_data = std::vector<int>{
+_Any my_data = std::vector<long>{
     1L,
     2L,
     3L,
