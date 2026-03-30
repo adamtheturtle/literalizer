@@ -1,6 +1,5 @@
 """Mojo language specification."""
 
-import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -10,7 +9,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     make_element_to_type,
     make_type_to_opener,
-    typed_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -319,27 +317,24 @@ class Mojo(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format(
             default_type=default_set_element_type,
         )
-        self.set_format_config = dataclasses.replace(
-            self.set_format_config,
-            set_open=typed_set_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=make_element_to_type(
-                        str_type="String",
-                        bool_type="Bool",
-                        int_type="Int",
-                        float_type="Float64",
-                        mixed_numeric_type="String",
-                        bytes_type=None,
-                        date_type=None,
-                        datetime_type=None,
-                        list_template="List[{inner}]",
-                        dict_type_template=None,
-                        fallback_value_type=None,
-                    ),
-                    opener_template="Set[{type_name}](",
+        self.set_format_config = self.set_format_config.with_typed_opener(
+            type_to_opener=make_type_to_opener(
+                element_to_type=make_element_to_type(
+                    str_type="String",
+                    bool_type="Bool",
+                    int_type="Int",
+                    float_type="Float64",
+                    mixed_numeric_type="String",
+                    bytes_type=None,
+                    date_type=None,
+                    datetime_type=None,
+                    list_template="List[{inner}]",
+                    dict_type_template=None,
+                    fallback_value_type=None,
                 ),
-                fallback=self.set_format_config.set_open([]),
+                opener_template="Set[{type_name}](",
             ),
+            fallback=self.set_format_config.set_open([]),
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(

@@ -14,11 +14,19 @@ pub fn main() void {
         .{ .str = "C:\\path\\to\\file" },
         .{ .str = "back\\\\slash" },
         .{ .str = "hello \\\"world\\\"" },
+        .{ .str = "path\\to \"# file" },
+        .{ .str = "trailing\\" },
+        .{ .str = "both \"quotes''' here" },
+        .{ .str = "line1\\nline2\nwith newline" },
     }};
     my_data = .{ .arr = &.{
         .{ .str = "C:\\path\\to\\file" },
         .{ .str = "back\\\\slash" },
         .{ .str = "hello \\\"world\\\"" },
+        .{ .str = "path\\to \"# file" },
+        .{ .str = "trailing\\" },
+        .{ .str = "both \"quotes''' here" },
+        .{ .str = "line1\\nline2\nwith newline" },
     }};
     my_data = .nil;
 }

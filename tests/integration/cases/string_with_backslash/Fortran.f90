@@ -21,6 +21,10 @@ program check
   my_data = flist([fval_t :: &
       fstr('C:\path\to\file'), &
       fstr('back\\slash'), &
-      fstr('hello \"world\"') &
+      fstr('hello \"world\"'), &
+      fstr('path\to "# file'), &
+      fstr('trailing\'), &
+      fstr('both "quotes'''''' here'), &
+      fstr('line1\nline2' // achar(10) // 'with newline') &
   ])
 end program check

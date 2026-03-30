@@ -1499,9 +1499,13 @@ def test_golden_file(
     wrapped = lang_config.wrap(result.code, variable_name)
 
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
+    # newline="" prevents Python text-mode from converting \r\n to \n
+    # on Windows, which would corrupt golden files containing literal
+    # CR bytes (e.g. CommonLisp string_control_chars).
     file_regression.check(
         contents=wrapped + "\n",
         extension=lang_config.lang_cls.extension,
+        newline="",
         fullpath=input_path.parent
         / (language + lang_config.lang_cls.extension),
     )
@@ -1562,6 +1566,7 @@ def test_golden_file_combined_variable_forms(
     file_regression.check(
         contents=combined + "\n",
         extension=lang_config.lang_cls.extension,
+        newline="",
         fullpath=input_path.parent
         / (language + "_combined" + lang_config.lang_cls.extension),
     )

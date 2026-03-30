@@ -421,6 +421,7 @@ ignore_names = [
     "OBJECT",
     "OCTAL",
     "OCTAL_C_STYLE",
+    "RAW",
     "ORDERED",
     "ROCKET",
     "SEQ",
@@ -433,6 +434,7 @@ ignore_names = [
     "TUPLE",
     "UNDERSCORE",
     "UNORDERED_MAP",
+    "VERBATIM",
     "ZONED",
     # Used in documentation code examples
     "custom",

@@ -16,7 +16,6 @@ from literalizer._formatters.collection_openers import (
     make_type_to_opener,
     typed_dict_open,
     typed_sequence_open,
-    typed_set_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -444,12 +443,11 @@ class Scala(metaclass=LanguageCls):
             set_opener_template=set_format.value.set_opener_template or None,
             narrow_dict_values=False,
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            set_open=typed_set_open(
+        self.set_format_config: SetFormatConfig = (
+            set_format.value.with_typed_opener(
                 type_to_opener=openers.set,
                 fallback=set_format.value.set_open([]),
-            ),
+            )
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             _resolve_sequence_open(

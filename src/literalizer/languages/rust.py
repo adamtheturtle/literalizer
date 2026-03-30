@@ -1,6 +1,5 @@
 """Rust language specification."""
 
-import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -9,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import fixed_dict_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -23,6 +21,7 @@ from literalizer._formatters.format_entries import (
     variable_formatter,
 )
 from literalizer._formatters.format_factories import (
+    dict_format_factory,
     sequence_format_factory,
     set_format_factory,
 )
@@ -37,7 +36,10 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+    format_string_raw_rust,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -292,26 +294,42 @@ class Rust(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        HASH_MAP = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="HashMap::from(["),
-            close="])",
-            format_entry=tuple_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict="HashMap::<&str, &str>::from([])",
-            preamble_lines=("use std::collections::HashMap;",),
-            narrowed_open=None,
+        HASH_MAP = enum.member(
+            value=dict_format_factory(
+                open_template="HashMap::from([",
+                close="])",
+                format_entry=tuple_dict_entry(
+                    format_value=passthrough_sequence_entry
+                ),
+                empty_template="HashMap::<{key_type}, {type}>::from([])",
+                preamble_lines=("use std::collections::HashMap;",),
+                narrowed_open=None,
+            )
         )
-        BTREE_MAP = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="BTreeMap::from(["),
-            close="])",
-            format_entry=tuple_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict="BTreeMap::<&str, &str>::from([])",
-            preamble_lines=("use std::collections::BTreeMap;",),
-            narrowed_open=None,
+        BTREE_MAP = enum.member(
+            value=dict_format_factory(
+                open_template="BTreeMap::from([",
+                close="])",
+                format_entry=tuple_dict_entry(
+                    format_value=passthrough_sequence_entry
+                ),
+                empty_template="BTreeMap::<{key_type}, {type}>::from([])",
+                preamble_lines=("use std::collections::BTreeMap;",),
+                narrowed_open=None,
+            )
         )
+
+        def __call__(
+            self,
+            default_type: str,
+            *,
+            default_key_type: str = "&str",
+        ) -> DictFormatConfig:
+            """Create a dict format config for the given type."""
+            return self.value(
+                default_type,
+                default_key_type=default_key_type,
+            )
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -381,7 +399,12 @@ class Rust(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash)
+        RAW = enum.member(value=format_string_raw_rust)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -462,18 +485,9 @@ class Rust(metaclass=LanguageCls):
             default_type=default_set_element_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        base_dict_config: DictFormatConfig = dict_format.value
-        base_empty_dict = base_dict_config.empty_dict
-        self.dict_format_config: DictFormatConfig = dataclasses.replace(
-            base_dict_config,
-            empty_dict=(
-                base_empty_dict.replace(
-                    "<&str, &str>",
-                    f"<{default_dict_key_type}, {default_dict_value_type}>",
-                )
-                if base_empty_dict is not None
-                else None
-            ),
+        self.dict_format_config: DictFormatConfig = dict_format(
+            default_type=default_dict_value_type,
+            default_key_type=default_dict_key_type,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
@@ -482,7 +496,7 @@ class Rust(metaclass=LanguageCls):
             datetime_format
         )
 
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(

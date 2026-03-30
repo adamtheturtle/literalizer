@@ -8,6 +8,8 @@ from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
+from literalizer._formatters.collection_openers import typed_set_open
+from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Value
 
 
@@ -87,6 +89,25 @@ class SetFormatConfig:
     empty_set: str | None
     preamble_lines: tuple[str, ...]
     set_opener_template: str
+
+    def with_typed_opener(
+        self,
+        *,
+        type_to_opener: Callable[[type | ListType | DictType], str | None],
+        fallback: str,
+    ) -> "SetFormatConfig":
+        """Return a copy with ``set_open`` replaced by a typed opener.
+
+        The *type_to_opener* callable is used to infer the opener from the
+        element type.  When inference fails, *fallback* is used instead.
+        """
+        return dataclasses.replace(
+            self,
+            set_open=typed_set_open(
+                type_to_opener=type_to_opener,
+                fallback=fallback,
+            ),
+        )
 
 
 @dataclasses.dataclass(frozen=True)

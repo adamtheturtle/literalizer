@@ -14,7 +14,6 @@ from literalizer._formatters.collection_openers import (
     make_type_to_opener,
     typed_dict_open,
     typed_sequence_open,
-    typed_set_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -45,7 +44,10 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_underscore,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+    format_string_verbatim_csharp,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -324,7 +326,12 @@ class CSharp(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.member(value=format_string_backslash)
+        VERBATIM = enum.member(value=format_string_verbatim_csharp)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -415,12 +422,9 @@ class CSharp(metaclass=LanguageCls):
             narrow_dict_values=False,
             dict_key_type=default_dict_key_type,
         )
-        self.set_format_config = dataclasses.replace(
-            self.set_format_config,
-            set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback=self.set_format_config.set_open([]),
-            ),
+        self.set_format_config = self.set_format_config.with_typed_opener(
+            type_to_opener=openers.set,
+            fallback=self.set_format_config.set_open([]),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(
@@ -466,7 +470,7 @@ class CSharp(metaclass=LanguageCls):
             datetime_format
         )
 
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(

@@ -8,5 +8,9 @@ my_data :: Val
 my_data = HList [
     "C:\\path\\to\\file",
     "back\\\\slash",
-    "hello \\\"world\\\""
+    "hello \\\"world\\\"",
+    "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here",
+    "line1\\nline2\nwith newline"
     ]
