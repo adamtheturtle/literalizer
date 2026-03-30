@@ -221,6 +221,68 @@ def format_string_backslash_hash(value: str) -> str:
 
 
 @beartype
+def format_string_raw_python(value: str) -> str:
+    r"""Format a string as a Python raw string literal.
+
+    Backslashes are kept verbatim.  When the value contains no double
+    quotes, ``r"…"`` is used.  When it contains double quotes,
+    ``r'''…'''`` (triple-single-quoted) is used so that the quotes
+    need no escaping.
+
+    Falls back to a regular backslash-escaped string when the value
+    cannot be represented as a raw literal (ends with an odd number of
+    backslashes, or contains both ``"`` and ``'''``).
+
+    Example: ``C:\path\to\file`` -> ``r"C:\path\to\file"``.
+    """
+    # Raw strings cannot end with an odd number of backslashes.
+    stripped = value.rstrip("\\")
+    trailing_backslashes = len(value) - len(stripped)
+    if trailing_backslashes % 2 == 1:
+        return format_string_backslash(value=value)
+    has_newline = "\n" in value or "\r" in value
+    if '"' not in value and not has_newline:
+        return f'r"{value}"'
+    if "'''" not in value:
+        return f"r'''{value}'''"
+    return format_string_backslash(value=value)
+
+
+@beartype
+def format_string_raw_rust(value: str) -> str:
+    r"""Format a string as a Rust raw string literal.
+
+    Uses the ``r#"…"#`` syntax.  If the value contains the closing
+    sequence ``"#``, extra ``#`` characters are added to disambiguate.
+
+    Falls back to a regular backslash-escaped string when the value
+    contains newlines, since indentation applied by wrapping code would
+    corrupt multiline raw string content.
+
+    Example: ``hello\nworld`` -> ``r#"hello\nworld"#``.
+    """
+    if "\n" in value or "\r" in value:
+        return format_string_backslash(value=value)
+    hashes = "#"
+    while f'"{hashes}' in value:
+        hashes += "#"
+    return f'r{hashes}"{value}"{hashes}'
+
+
+@beartype
+def format_string_verbatim_csharp(value: str) -> str:
+    r"""Format a string as a C# verbatim string literal.
+
+    Backslashes are kept verbatim.  Double quotes are doubled per
+    C# verbatim-string rules.
+
+    Example: ``C:\path\to\file`` -> ``@"C:\path\to\file"``.
+    """
+    escaped = value.replace('"', '""')
+    return f'@"{escaped}"'
+
+
+@beartype
 def format_string_backslash_dollar_single(value: str) -> str:
     r"""Format a string using backslash escaping with single quotes,
     including ``$``.

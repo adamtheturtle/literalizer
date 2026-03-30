@@ -18,6 +18,10 @@ _CVal my_data = ((_CVal){.a = (_CVal[]){
     ((_CVal){.s = "C:\\path\\to\\file"}),
     ((_CVal){.s = "back\\\\slash"}),
     ((_CVal){.s = "hello \\\"world\\\""}),
+    ((_CVal){.s = "path\\to \"# file"}),
+    ((_CVal){.s = "trailing\\"}),
+    ((_CVal){.s = "both \"quotes''' here"}),
+    ((_CVal){.s = "line1\\nline2\nwith newline"}),
 }});
     (void)my_data;
 }
