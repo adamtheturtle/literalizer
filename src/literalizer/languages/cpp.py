@@ -126,6 +126,69 @@ def _cpp_array_open(items: list[Value]) -> str:
 
 
 @beartype
+def _make_initializer_list_config(
+    *,
+    int_type: str,
+) -> SequenceFormatConfig:
+    """Build an INITIALIZER_LIST sequence config for the given int
+    type.
+    """
+    element_to_type = _make_cpp_element_to_type(int_type=int_type)
+    return SequenceFormatConfig(
+        sequence_open=typed_sequence_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template="std::vector<{type_name}>{{",
+            ),
+            fallback="{",
+        ),
+        close="}",
+        supports_heterogeneity=True,
+        single_element_trailing_comma=False,
+        supports_trailing_comma=True,
+        empty_sequence=None,
+        preamble_lines=("#include <vector>",),
+        format_entry=passthrough_sequence_entry,
+        typed_opener_fallback=None,
+    )
+
+
+_ARRAY_CONFIG = SequenceFormatConfig(
+    sequence_open=_cpp_array_open,
+    close="}",
+    supports_heterogeneity=False,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence=None,
+    preamble_lines=("#include <array>",),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+)
+
+
+@beartype
+def _make_array_config(*, int_type: str) -> SequenceFormatConfig:
+    """Return the ARRAY sequence config (ignores int_type)."""
+    del int_type
+    return _ARRAY_CONFIG
+
+
+@dataclasses.dataclass(frozen=True)
+class _NumericLiteralSuffixConfig:
+    """Configuration for a numeric literal suffix option."""
+
+    int_type: str
+    formatter_wrapper: Callable[[Callable[[int], str]], Callable[[int], str]]
+
+
+def _identity_wrapper(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Return the formatter unchanged."""
+    return base
+
+
+@beartype
 def _rebuild_dict_opener(
     *,
     int_type: str,
@@ -239,45 +302,15 @@ class Cpp(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C++."""
 
-        INITIALIZER_LIST = "initializer_list"
-        ARRAY = "array"
+        INITIALIZER_LIST = enum.member(value=_make_initializer_list_config)
+        ARRAY = enum.member(value=_make_array_config)
 
         def get_config(self, *, int_type: str) -> SequenceFormatConfig:
             """Return the sequence format config for the given int
             type.
             """
-            if self.value == "initializer_list":
-                element_to_type = _make_cpp_element_to_type(
-                    int_type=int_type,
-                )
-                return SequenceFormatConfig(
-                    sequence_open=typed_sequence_open(
-                        type_to_opener=make_type_to_opener(
-                            element_to_type=element_to_type,
-                            opener_template=("std::vector<{type_name}>{{"),
-                        ),
-                        fallback="{",
-                    ),
-                    close="}",
-                    supports_heterogeneity=True,
-                    single_element_trailing_comma=False,
-                    supports_trailing_comma=True,
-                    empty_sequence=None,
-                    preamble_lines=("#include <vector>",),
-                    format_entry=passthrough_sequence_entry,
-                    typed_opener_fallback=None,
-                )
-            return SequenceFormatConfig(
-                sequence_open=_cpp_array_open,
-                close="}",
-                supports_heterogeneity=False,
-                single_element_trailing_comma=False,
-                supports_trailing_comma=True,
-                empty_sequence=None,
-                preamble_lines=("#include <array>",),
-                format_entry=passthrough_sequence_entry,
-                typed_opener_fallback=None,
-            )
+            factory: Callable[..., SequenceFormatConfig] = self.value
+            return factory(int_type=int_type)
 
         @property
         def supports_heterogeneity(self) -> bool:
@@ -414,22 +447,28 @@ class Cpp(metaclass=LanguageCls):
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
 
-        NONE = "int"
-        AUTO = "long"
+        NONE = _NumericLiteralSuffixConfig(
+            int_type="int",
+            formatter_wrapper=_identity_wrapper,
+        )
+        AUTO = _NumericLiteralSuffixConfig(
+            int_type="long",
+            formatter_wrapper=make_long_suffix_formatter,
+        )
 
         @property
         def int_type(self) -> str:
             """Return the C++ integer type for this suffix."""
-            return self.value
+            config: _NumericLiteralSuffixConfig = self.value
+            return config.int_type
 
         def wrap_integer_formatter(
             self,
             base: Callable[[int], str],
         ) -> Callable[[int], str]:
-            """Wrap the base integer formatter if needed."""
-            if self.int_type == "long":
-                return make_long_suffix_formatter(base=base)
-            return base
+            """Wrap the base integer formatter."""
+            config: _NumericLiteralSuffixConfig = self.value
+            return config.formatter_wrapper(base)
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
