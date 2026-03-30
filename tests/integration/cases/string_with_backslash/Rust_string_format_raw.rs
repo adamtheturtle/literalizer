@@ -4,6 +4,8 @@ fn main() {
         r#"back\\slash"#,
         r#"hello \"world\""#,
         r##"path\to "# file"##,
+        r#"trailing\"#,
+        r#"both "quotes''' here"#,
     ];
     let _ = my_data;
 }

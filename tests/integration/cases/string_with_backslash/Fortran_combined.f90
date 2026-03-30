@@ -22,7 +22,9 @@ subroutine check_declaration()
       fstr('C:\path\to\file'), &
       fstr('back\\slash'), &
       fstr('hello \"world\"'), &
-      fstr('path\to "# file') &
+      fstr('path\to "# file'), &
+      fstr('trailing\'), &
+      fstr('both "quotes'''''' here') &
   ])
 end subroutine check_declaration
 
@@ -34,7 +36,9 @@ subroutine check_assignment()
       fstr('C:\path\to\file'), &
       fstr('back\\slash'), &
       fstr('hello \"world\"'), &
-      fstr('path\to "# file') &
+      fstr('path\to "# file'), &
+      fstr('trailing\'), &
+      fstr('both "quotes'''''' here') &
   ])
 end subroutine check_assignment
 

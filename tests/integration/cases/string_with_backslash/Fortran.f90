@@ -22,6 +22,8 @@ program check
       fstr('C:\path\to\file'), &
       fstr('back\\slash'), &
       fstr('hello \"world\"'), &
-      fstr('path\to "# file') &
+      fstr('path\to "# file'), &
+      fstr('trailing\'), &
+      fstr('both "quotes'''''' here') &
   ])
 end program check

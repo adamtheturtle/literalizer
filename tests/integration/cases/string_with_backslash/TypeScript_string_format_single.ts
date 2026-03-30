@@ -3,5 +3,7 @@ const my_data = [
     'back\\\\slash',
     'hello \\"world\\"',
     'path\\to "# file',
+    'trailing\\',
+    'both "quotes\'\'\' here',
 ];
 export {};

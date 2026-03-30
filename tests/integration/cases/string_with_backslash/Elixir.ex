@@ -5,6 +5,8 @@ defmodule Check do
     "back\\\\slash",
     "hello \\\"world\\\"",
     "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here",
 ]
     _ = my_data
   end

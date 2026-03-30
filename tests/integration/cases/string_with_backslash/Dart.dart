@@ -3,4 +3,6 @@ final my_data = <String>[
     "back\\\\slash",
     "hello \\\"world\\\"",
     "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here",
 ];

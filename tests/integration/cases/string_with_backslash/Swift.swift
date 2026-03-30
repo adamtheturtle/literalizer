@@ -3,4 +3,6 @@ let my_data: Any = [
     "back\\\\slash",
     "hello \\\"world\\\"",
     "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here",
 ]

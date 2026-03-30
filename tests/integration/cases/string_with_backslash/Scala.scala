@@ -4,5 +4,7 @@ val my_data = List[String](
     "back\\\\slash",
     "hello \\\"world\\\"",
     "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here",
 )
 }

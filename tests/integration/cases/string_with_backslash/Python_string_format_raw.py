@@ -3,4 +3,6 @@ my_data = (
     r"back\\slash",
     r'''hello \"world\"''',
     r'''path\to "# file''',
+    "trailing\\",
+    "both \"quotes''' here",
 )

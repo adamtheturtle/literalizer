@@ -15,6 +15,8 @@ pub fn main() void {
         .{ .str = "back\\\\slash" },
         .{ .str = "hello \\\"world\\\"" },
         .{ .str = "path\\to \"# file" },
+        .{ .str = "trailing\\" },
+        .{ .str = "both \"quotes''' here" },
     }};
     _ = my_data;
 }

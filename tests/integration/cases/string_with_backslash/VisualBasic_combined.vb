@@ -5,7 +5,9 @@ Module Check
             "C:\path\to\file",
             "back\\slash",
             "hello \""world\""",
-            "path\to ""# file"
+            "path\to ""# file",
+            "trailing\",
+            "both ""quotes''' here"
         }
     End Sub
     Sub _assignment()
@@ -14,7 +16,9 @@ Module Check
             "C:\path\to\file",
             "back\\slash",
             "hello \""world\""",
-            "path\to ""# file"
+            "path\to ""# file",
+            "trailing\",
+            "both ""quotes''' here"
         }
     End Sub
 End Module

@@ -229,11 +229,22 @@ def format_string_raw_python(value: str) -> str:
     ``r'''…'''`` (triple-single-quoted) is used so that the quotes
     need no escaping.
 
+    Falls back to a regular backslash-escaped string when the value
+    cannot be represented as a raw literal (ends with an odd number of
+    backslashes, or contains both ``"`` and ``'''``).
+
     Example: ``C:\path\to\file`` -> ``r"C:\path\to\file"``.
     """
+    # Raw strings cannot end with an odd number of backslashes.
+    stripped = value.rstrip("\\")
+    trailing_backslashes = len(value) - len(stripped)
+    if trailing_backslashes % 2 == 1:
+        return format_string_backslash(value=value)
     if '"' not in value:
         return f'r"{value}"'
-    return f"r'''{value}'''"
+    if "'''" not in value:
+        return f"r'''{value}'''"
+    return format_string_backslash(value=value)
 
 
 @beartype

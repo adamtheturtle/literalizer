@@ -9,5 +9,7 @@ my_data = HList [
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",
-    "path\\to \"# file"
+    "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here"
     ]

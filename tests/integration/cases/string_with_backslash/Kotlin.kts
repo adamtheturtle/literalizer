@@ -3,4 +3,6 @@ val my_data = arrayOf(
     "back\\\\slash",
     "hello \\\"world\\\"",
     "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here",
 )

@@ -4,6 +4,8 @@ def main():
         "back\\\\slash",
         "hello \\\"world\\\"",
         "path\\to \"# file",
+        "trailing\\",
+        "both \"quotes''' here",
     ]
     _ = my_data
     my_data = [
@@ -11,5 +13,7 @@ def main():
         "back\\\\slash",
         "hello \\\"world\\\"",
         "path\\to \"# file",
+        "trailing\\",
+        "both \"quotes''' here",
     ]
     _ = my_data

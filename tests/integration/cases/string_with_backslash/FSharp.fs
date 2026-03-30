@@ -7,5 +7,7 @@ let my_data: Val = FList [
     FStr "C:\\path\\to\\file";
     FStr "back\\\\slash";
     FStr "hello \\\"world\\\"";
-    FStr "path\\to \"# file"
+    FStr "path\\to \"# file";
+    FStr "trailing\\";
+    FStr "both \"quotes''' here"
 ]

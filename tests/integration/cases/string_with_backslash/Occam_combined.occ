@@ -16,7 +16,9 @@ PROC check ()
       MOBILE LIT(lit.str; MOBILE []BYTE "C:\\path\\to\\file"),
       MOBILE LIT(lit.str; MOBILE []BYTE "back\\\\slash"),
       MOBILE LIT(lit.str; MOBILE []BYTE "hello \\\"world\\\""),
-      MOBILE LIT(lit.str; MOBILE []BYTE "path\\to \"# file")
+      MOBILE LIT(lit.str; MOBILE []BYTE "path\\to \"# file"),
+      MOBILE LIT(lit.str; MOBILE []BYTE "trailing\\"),
+      MOBILE LIT(lit.str; MOBILE []BYTE "both \"quotes''' here")
   ]):
   SEQ
     SKIP

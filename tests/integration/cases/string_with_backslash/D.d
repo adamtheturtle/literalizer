@@ -5,5 +5,7 @@ auto my_data = JSONValue([
     JSONValue("back\\\\slash"),
     JSONValue("hello \\\"world\\\""),
     JSONValue("path\\to \"# file"),
+    JSONValue("trailing\\"),
+    JSONValue("both \"quotes''' here"),
 ]);
 }

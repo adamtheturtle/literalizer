@@ -2,11 +2,15 @@ my_data <- list(
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",
-    "path\\to \"# file"
+    "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here"
 )
 my_data <- list(
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",
-    "path\\to \"# file"
+    "path\\to \"# file",
+    "trailing\\",
+    "both \"quotes''' here"
 )

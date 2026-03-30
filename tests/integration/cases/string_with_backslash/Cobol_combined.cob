@@ -7,6 +7,8 @@ WORKING-STORAGE SECTION.
     05 FILLER PIC X(11) VALUE "back\\slash".
     05 FILLER PIC X(15) VALUE "hello \""world\""".
     05 FILLER PIC X(15) VALUE "path\to ""# file".
+    05 FILLER PIC X(9) VALUE "trailing\".
+    05 FILLER PIC X(20) VALUE "both ""quotes''' here".
 PROCEDURE DIVISION.
     INITIALIZE MY-DATA.
     STOP RUN.
