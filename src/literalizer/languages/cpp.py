@@ -95,7 +95,7 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 @beartype
 def _make_cpp_element_to_type(
     *,
-    int_type: str = "int",
+    int_type: str,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
@@ -116,7 +116,7 @@ def _make_cpp_element_to_type(
 @beartype
 def _cpp_array_open(items: list[Value]) -> str:
     """Infer element type and return a ``std::array<T, N>`` opener."""
-    element_to_type = _make_cpp_element_to_type()
+    element_to_type = _make_cpp_element_to_type(int_type="int")
     type_name = element_to_type(type(items[0])) if items else None
     if type_name is None or not all(
         element_to_type(type(i)) == type_name for i in items
@@ -258,7 +258,7 @@ class Cpp(metaclass=LanguageCls):
         INITIALIZER_LIST = SequenceFormatConfig(
             sequence_open=typed_sequence_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(),
+                    element_to_type=_make_cpp_element_to_type(int_type="int"),
                     opener_template="std::vector<{type_name}>{{",
                 ),
                 fallback="{",
@@ -330,7 +330,7 @@ class Cpp(metaclass=LanguageCls):
         MAP = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(),
+                    element_to_type=_make_cpp_element_to_type(int_type="int"),
                     opener_template="std::map<std::string, {type_name}>{{",
                 ),
                 fallback="{",
@@ -346,7 +346,7 @@ class Cpp(metaclass=LanguageCls):
         UNORDERED_MAP = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(),
+                    element_to_type=_make_cpp_element_to_type(int_type="int"),
                     opener_template=(
                         "std::unordered_map<std::string, {type_name}>{{"
                     ),
