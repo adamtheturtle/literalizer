@@ -14,7 +14,6 @@ from literalizer._formatters.collection_openers import (
     make_type_to_opener,
     typed_dict_open,
     typed_sequence_open,
-    typed_set_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -415,12 +414,9 @@ class CSharp(metaclass=LanguageCls):
             narrow_dict_values=False,
             dict_key_type=default_dict_key_type,
         )
-        self.set_format_config = dataclasses.replace(
-            self.set_format_config,
-            set_open=typed_set_open(
-                type_to_opener=openers.set,
-                fallback=self.set_format_config.set_open([]),
-            ),
+        self.set_format_config = self.set_format_config.with_typed_opener(
+            type_to_opener=openers.set,
+            fallback=self.set_format_config.set_open([]),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             typed_sequence_open(

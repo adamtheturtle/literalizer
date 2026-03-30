@@ -1,6 +1,5 @@
 """Visual Basic (.NET) language specification."""
 
-import dataclasses
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -11,7 +10,6 @@ from literalizer._formatters.collection_openers import (
     make_element_to_type,
     make_type_to_opener,
     typed_sequence_open,
-    typed_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -392,15 +390,12 @@ class VisualBasic(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format(
             default_type=default_set_element_type,
         )
-        self.set_format_config = dataclasses.replace(
-            self.set_format_config,
-            set_open=typed_set_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=element_to_type,
-                    opener_template="New HashSet(Of {type_name}) From {{",
-                ),
-                fallback=self.set_format_config.set_open([]),
+        self.set_format_config = self.set_format_config.with_typed_opener(
+            type_to_opener=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template="New HashSet(Of {type_name}) From {{",
             ),
+            fallback=self.set_format_config.set_open([]),
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format(

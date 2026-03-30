@@ -1,6 +1,5 @@
 """Go language specification."""
 
-import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -11,12 +10,10 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_sequence_open,
-    fixed_set_open,
     make_element_to_type,
     make_type_to_opener,
     typed_dict_open,
     typed_sequence_open,
-    typed_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -30,6 +27,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_factories import set_format_factory
 from literalizer._formatters.format_floats import (
     format_float_fixed,
     format_float_repr,
@@ -209,13 +207,19 @@ class Go(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Go."""
 
-        SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="map[any]struct{}{"),
-            close="}",
-            empty_set=None,
-            preamble_lines=(),
-            set_opener_template="",
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="map[{type}]struct{{}}{{",
+                close="}}",
+                empty_template=None,
+                preamble_lines=(),
+                set_opener_template="",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -421,15 +425,17 @@ class Go(metaclass=LanguageCls):
             dict_type_template=f"map[{default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
         )
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            set_open=typed_set_open(
+        base_set_config: SetFormatConfig = set_format(
+            default_type=default_set_element_type,
+        )
+        self.set_format_config: SetFormatConfig = (
+            base_set_config.with_typed_opener(
                 type_to_opener=make_type_to_opener(
                     element_to_type=init_element_to_type,
                     opener_template="map[{type_name}]struct{{}}{{",
                 ),
-                fallback=f"map[{default_set_element_type}]struct{{}}{{",
-            ),
+                fallback=base_set_config.set_open([]),
+            )
         )
         self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
             type_to_opener=make_type_to_opener(
