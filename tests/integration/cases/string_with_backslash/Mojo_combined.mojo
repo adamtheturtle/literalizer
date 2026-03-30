@@ -3,11 +3,13 @@ def main():
         "C:\\path\\to\\file",
         "back\\\\slash",
         "hello \\\"world\\\"",
+        "path\\to \"# file",
     ]
     _ = my_data
     my_data = [
         "C:\\path\\to\\file",
         "back\\\\slash",
         "hello \\\"world\\\"",
+        "path\\to \"# file",
     ]
     _ = my_data

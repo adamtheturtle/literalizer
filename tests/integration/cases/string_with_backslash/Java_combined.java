@@ -3,12 +3,14 @@ class Check {
 var my_data = new String[]{
     "C:\\path\\to\\file",
     "back\\\\slash",
-    "hello \\\"world\\\""
+    "hello \\\"world\\\"",
+    "path\\to \"# file"
 };
 my_data = new String[]{
     "C:\\path\\to\\file",
     "back\\\\slash",
-    "hello \\\"world\\\""
+    "hello \\\"world\\\"",
+    "path\\to \"# file"
 };
     }
 }

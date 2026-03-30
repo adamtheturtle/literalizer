@@ -4,10 +4,12 @@ auto my_data = JSONValue([
     JSONValue("C:\\path\\to\\file"),
     JSONValue("back\\\\slash"),
     JSONValue("hello \\\"world\\\""),
+    JSONValue("path\\to \"# file"),
 ]);
 my_data = JSONValue([
     JSONValue("C:\\path\\to\\file"),
     JSONValue("back\\\\slash"),
     JSONValue("hello \\\"world\\\""),
+    JSONValue("path\\to \"# file"),
 ]);
 }

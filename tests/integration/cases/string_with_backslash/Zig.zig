@@ -14,6 +14,7 @@ pub fn main() void {
         .{ .str = "C:\\path\\to\\file" },
         .{ .str = "back\\\\slash" },
         .{ .str = "hello \\\"world\\\"" },
+        .{ .str = "path\\to \"# file" },
     }};
     _ = my_data;
 }

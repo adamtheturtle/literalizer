@@ -4,7 +4,8 @@ Module Check
         Dim my_data = New String() {
             "C:\path\to\file",
             "back\\slash",
-            "hello \""world\"""
+            "hello \""world\""",
+            "path\to ""# file"
         }
     End Sub
     Sub _assignment()
@@ -12,7 +13,8 @@ Module Check
         my_data = New String() {
             "C:\path\to\file",
             "back\\slash",
-            "hello \""world\"""
+            "hello \""world\""",
+            "path\to ""# file"
         }
     End Sub
 End Module

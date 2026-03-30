@@ -4,6 +4,7 @@ fn main() {
             "C:\\path\\to\\file",
             "back\\\\slash",
             "hello \\\"world\\\"",
+            "path\\to \"# file",
         ];
         let _ = my_data;
     }
@@ -12,6 +13,7 @@ fn main() {
         "C:\\path\\to\\file",
         "back\\\\slash",
         "hello \\\"world\\\"",
+        "path\\to \"# file",
     ];
     let _ = my_data;
 }

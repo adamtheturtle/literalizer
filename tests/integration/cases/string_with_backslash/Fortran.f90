@@ -21,6 +21,7 @@ program check
   my_data = flist([fval_t :: &
       fstr('C:\path\to\file'), &
       fstr('back\\slash'), &
-      fstr('hello \"world\"') &
+      fstr('hello \"world\"'), &
+      fstr('path\to "# file') &
   ])
 end program check

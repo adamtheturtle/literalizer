@@ -2,5 +2,6 @@ import json
 var my_data = @[
     "C:\\path\\to\\file",
     "back\\\\slash",
-    "hello \\\"world\\\""
+    "hello \\\"world\\\"",
+    "path\\to \"# file"
 ]

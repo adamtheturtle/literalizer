@@ -21,7 +21,8 @@ subroutine check_declaration()
   my_data = flist([fval_t :: &
       fstr('C:\path\to\file'), &
       fstr('back\\slash'), &
-      fstr('hello \"world\"') &
+      fstr('hello \"world\"'), &
+      fstr('path\to "# file') &
   ])
 end subroutine check_declaration
 
@@ -32,7 +33,8 @@ subroutine check_assignment()
   my_data = flist([fval_t :: &
       fstr('C:\path\to\file'), &
       fstr('back\\slash'), &
-      fstr('hello \"world\"') &
+      fstr('hello \"world\"'), &
+      fstr('path\to "# file') &
   ])
 end subroutine check_assignment
 
