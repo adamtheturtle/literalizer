@@ -1,5 +1,6 @@
 """C++ language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -92,14 +93,15 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 
 
 @beartype
-def _make_cpp_element_to_type() -> Callable[
-    [type | ListType | DictType], str | None
-]:
+def _make_cpp_element_to_type(
+    *,
+    int_type: str,
+) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
         str_type="std::string",
         bool_type="bool",
-        int_type="int",
+        int_type=int_type,
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="std::string",
@@ -114,13 +116,102 @@ def _make_cpp_element_to_type() -> Callable[
 @beartype
 def _cpp_array_open(items: list[Value]) -> str:
     """Infer element type and return a ``std::array<T, N>`` opener."""
-    element_to_type = _make_cpp_element_to_type()
+    element_to_type = _make_cpp_element_to_type(int_type="int")
     type_name = element_to_type(type(items[0])) if items else None
     if type_name is None or not all(
         element_to_type(type(i)) == type_name for i in items
     ):
         return "{"
     return f"std::array<{type_name}, {len(items)}>{{"
+
+
+@beartype
+def _make_initializer_list_config(
+    *,
+    int_type: str,
+) -> SequenceFormatConfig:
+    """Build an INITIALIZER_LIST sequence config for the given int
+    type.
+    """
+    element_to_type = _make_cpp_element_to_type(int_type=int_type)
+    return SequenceFormatConfig(
+        sequence_open=typed_sequence_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template="std::vector<{type_name}>{{",
+            ),
+            fallback="{",
+        ),
+        close="}",
+        supports_heterogeneity=True,
+        single_element_trailing_comma=False,
+        supports_trailing_comma=True,
+        empty_sequence=None,
+        preamble_lines=("#include <vector>",),
+        format_entry=passthrough_sequence_entry,
+        typed_opener_fallback=None,
+    )
+
+
+_ARRAY_CONFIG = SequenceFormatConfig(
+    sequence_open=_cpp_array_open,
+    close="}",
+    supports_heterogeneity=False,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence=None,
+    preamble_lines=("#include <array>",),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+)
+
+
+@beartype
+def _make_array_config(*, int_type: str) -> SequenceFormatConfig:
+    """Return the ARRAY sequence config (ignores int_type)."""
+    del int_type
+    return _ARRAY_CONFIG
+
+
+@dataclasses.dataclass(frozen=True)
+class _NumericLiteralSuffixConfig:
+    """Configuration for a numeric literal suffix option."""
+
+    int_type: str
+    formatter_wrapper: Callable[[Callable[[int], str]], Callable[[int], str]]
+
+
+def _identity_wrapper(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Return the formatter unchanged."""
+    return base
+
+
+@beartype
+def _rebuild_dict_opener(
+    *,
+    int_type: str,
+    dict_format: enum.Enum,
+) -> DictFormatConfig:
+    """Rebuild the dict opener for the given int type."""
+    element_to_type = _make_cpp_element_to_type(int_type=int_type)
+    dict_opener_template = (
+        "std::unordered_map<std::string, {type_name}>{{"
+        if dict_format.name == "UNORDERED_MAP"
+        else "std::map<std::string, {type_name}>{{"
+    )
+    base_config: DictFormatConfig = dict_format.value
+    return dataclasses.replace(
+        base_config,
+        open_fn=typed_dict_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=element_to_type,
+                opener_template=dict_opener_template,
+            ),
+            fallback="{",
+        ),
+    )
 
 
 @beartype
@@ -211,41 +302,22 @@ class Cpp(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for C++."""
 
-        INITIALIZER_LIST = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(),
-                    opener_template="std::vector<{type_name}>{{",
-                ),
-                fallback="{",
-            ),
-            close="}",
-            supports_heterogeneity=True,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence=None,
-            preamble_lines=("#include <vector>",),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
-        )
-        ARRAY = SequenceFormatConfig(
-            sequence_open=_cpp_array_open,
-            close="}",
-            supports_heterogeneity=False,
-            single_element_trailing_comma=False,
-            supports_trailing_comma=True,
-            empty_sequence=None,
-            preamble_lines=("#include <array>",),
-            format_entry=passthrough_sequence_entry,
-            typed_opener_fallback=None,
-        )
+        INITIALIZER_LIST = enum.member(value=_make_initializer_list_config)
+        ARRAY = enum.member(value=_make_array_config)
+
+        def get_config(self, *, int_type: str) -> SequenceFormatConfig:
+            """Return the sequence format config for the given int
+            type.
+            """
+            factory: Callable[..., SequenceFormatConfig] = self.value
+            return factory(int_type=int_type)
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.value.supports_heterogeneity
+            return self.get_config(int_type="int").supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C++."""
@@ -286,7 +358,7 @@ class Cpp(metaclass=LanguageCls):
         MAP = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(),
+                    element_to_type=_make_cpp_element_to_type(int_type="int"),
                     opener_template="std::map<std::string, {type_name}>{{",
                 ),
                 fallback="{",
@@ -302,7 +374,7 @@ class Cpp(metaclass=LanguageCls):
         UNORDERED_MAP = DictFormatConfig(
             open_fn=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(),
+                    element_to_type=_make_cpp_element_to_type(int_type="int"),
                     opener_template=(
                         "std::unordered_map<std::string, {type_name}>{{"
                     ),
@@ -375,8 +447,28 @@ class Cpp(metaclass=LanguageCls):
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
 
-        NONE = "none"
-        AUTO = "auto"
+        NONE = _NumericLiteralSuffixConfig(
+            int_type="int",
+            formatter_wrapper=_identity_wrapper,
+        )
+        AUTO = _NumericLiteralSuffixConfig(
+            int_type="long",
+            formatter_wrapper=make_long_suffix_formatter,
+        )
+
+        @property
+        def int_type(self) -> str:
+            """Return the C++ integer type for this suffix."""
+            config: _NumericLiteralSuffixConfig = self.value
+            return config.int_type
+
+        def wrap_integer_formatter(
+            self,
+            base: Callable[[int], str],
+        ) -> Callable[[int], str]:
+            """Wrap the base integer formatter."""
+            config: _NumericLiteralSuffixConfig = self.value
+            return config.formatter_wrapper(base)
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
@@ -456,12 +548,16 @@ class Cpp(metaclass=LanguageCls):
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.sequence_format_config: SequenceFormatConfig = (
+            sequence_format.get_config(
+                int_type=numeric_literal_suffix.int_type,
+            )
+        )
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = dict_format.value
+        self.sequence_open: Callable[[list[Value]], str] = (
+            self.sequence_format_config.sequence_open
+        )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
@@ -471,14 +567,17 @@ class Cpp(metaclass=LanguageCls):
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
-        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
         base_int_formatter = integer_format.get_formatter(
             numeric_separator=numeric_separator,
         )
         self.format_integer: Callable[[int], str] = (
-            make_long_suffix_formatter(base=base_int_formatter)
-            if suffix_is_auto
-            else base_int_formatter
+            numeric_literal_suffix.wrap_integer_formatter(
+                base=base_int_formatter,
+            )
+        )
+        self.dict_format_config: DictFormatConfig = _rebuild_dict_opener(
+            int_type=numeric_literal_suffix.int_type,
+            dict_format=dict_format,
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
