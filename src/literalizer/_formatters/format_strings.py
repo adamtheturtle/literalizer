@@ -255,8 +255,14 @@ def format_string_raw_rust(value: str) -> str:
     Uses the ``r#"…"#`` syntax.  If the value contains the closing
     sequence ``"#``, extra ``#`` characters are added to disambiguate.
 
+    Falls back to a regular backslash-escaped string when the value
+    contains newlines, since indentation applied by wrapping code would
+    corrupt multiline raw string content.
+
     Example: ``hello\nworld`` -> ``r#"hello\nworld"#``.
     """
+    if "\n" in value or "\r" in value:
+        return format_string_backslash(value=value)
     hashes = "#"
     while f'"{hashes}' in value:
         hashes += "#"
