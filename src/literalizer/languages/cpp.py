@@ -471,9 +471,7 @@ class Cpp(metaclass=LanguageCls):
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
-        suffix_is_auto = (
-            numeric_literal_suffix is self.NumericLiteralSuffixes.AUTO
-        )
+        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
         base_int_formatter = integer_format.get_formatter(
             numeric_separator=numeric_separator,
         )

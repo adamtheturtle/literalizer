@@ -406,9 +406,7 @@ class Go(metaclass=LanguageCls):
         datetime_type = _type_names.get(
             datetime_format.value.type_produced,
         )
-        suffix_is_auto = (
-            numeric_literal_suffix is self.NumericLiteralSuffixes.AUTO
-        )
+        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
         go_int_type = "int64" if suffix_is_auto else "int"
         init_element_to_type = make_element_to_type(
             str_type="string",

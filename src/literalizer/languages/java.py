@@ -466,9 +466,7 @@ class Java(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
-        suffix_is_auto = (
-            numeric_literal_suffix is self.NumericLiteralSuffixes.AUTO
-        )
+        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
         cfg = (
             self._opener_config_long if suffix_is_auto else self._opener_config
         )

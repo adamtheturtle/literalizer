@@ -320,9 +320,7 @@ class C(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
-        suffix_is_auto = (
-            numeric_literal_suffix is self.NumericLiteralSuffixes.AUTO
-        )
+        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
         self.format_integer: Callable[[int], str] = (
             make_long_suffix_formatter(base=integer_format)
             if suffix_is_auto
