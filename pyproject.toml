@@ -420,6 +420,7 @@ ignore_names = [
     "NO",
     "OBJECT",
     "OCTAL",
+    "OCTAL_C_STYLE",
     "ORDERED",
     "ROCKET",
     "SEQ",
