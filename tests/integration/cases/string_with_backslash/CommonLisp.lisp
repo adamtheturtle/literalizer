@@ -5,5 +5,6 @@
     "path\\to \"# file"
     "trailing\\"
     "both \"quotes''' here"
-    "line1\\nline2\nwith newline"
+    "line1\\nline2
+with newline"
 )
