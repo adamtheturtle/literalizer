@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.03.30
+----------
+
+
 - Added ``default_ordered_map_value_type`` parameter to Go for configuring the element type in ordered map literals.
 - Added ``supports_default_ordered_map_value_type`` and ``supports_default_ordered_map_key_type`` class attributes to ``LanguageCls``.
 
