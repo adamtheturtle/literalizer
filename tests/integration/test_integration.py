@@ -1237,6 +1237,34 @@ def _build_integer_format_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_numeric_literal_suffix_variants() -> Iterable[_Variant]:
+    """Build numeric-literal-suffix variants for all languages with
+    multiple options.
+    """
+    variants: list[_Variant] = []
+    for lang_name, lang_config in _LANGUAGES.items():
+        spec = lang_config.lang_cls()
+        default_format = spec.numeric_literal_suffix
+        non_defaults = [
+            fmt
+            for fmt in spec.numeric_literal_suffixes
+            if fmt is not default_format
+        ]
+        variants.extend(
+            _Variant(
+                name=f"{lang_name}_numeric_literal_suffix_{fmt.name.lower()}",
+                spec=lang_config.lang_cls(
+                    numeric_literal_suffix=fmt,
+                ),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+            for fmt in non_defaults
+        )
+    return variants
+
+
+@beartype
 def _build_numeric_separator_variants() -> Iterable[_Variant]:
     """Build numeric-separator variants for all languages with multiple
     options.
@@ -1599,6 +1627,13 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_integer_format_variants(), "int_list", ""),
         (_build_integer_format_variants(), "int_list_large", "_large"),
         (_build_integer_format_variants(), "int_list_with_zero", "_zero"),
+        (_build_numeric_literal_suffix_variants(), "int_list", ""),
+        (_build_numeric_literal_suffix_variants(), "int_list_large", "_large"),
+        (
+            _build_numeric_literal_suffix_variants(),
+            "int_list_with_zero",
+            "_zero",
+        ),
         (_build_numeric_separator_variants(), "int_list", ""),
         (_build_numeric_separator_variants(), "int_list_large", "_large"),
         (_build_numeric_separator_variants(), "int_list_with_zero", "_zero"),

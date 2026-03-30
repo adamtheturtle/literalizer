@@ -39,6 +39,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_underscore,
+    make_long_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -132,6 +133,23 @@ class Java(metaclass=LanguageCls):
         str_type="String",
         bool_type="boolean",
         int_type="int",
+        float_type="double",
+        mixed_numeric_type="double",
+        bytes_type="String",
+        date_type="LocalDate",
+        datetime_type=None,
+        list_template="{inner}[]",
+        sequence_opener_template="new {type_name}[]{{",
+        dict_opener_template="new {type_name}[]{{",
+        set_opener_template="Set.of(",
+        dict_type_template=None,
+        fallback_value_type=None,
+    )
+
+    _opener_config_long = TypedOpenerConfig(
+        str_type="String",
+        bool_type="boolean",
+        int_type="long",
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="String",
@@ -354,6 +372,12 @@ class Java(metaclass=LanguageCls):
             ]
             return formatter
 
+    class NumericLiteralSuffixes(enum.Enum):
+        """Numeric literal suffix options."""
+
+        NONE = "none"
+        AUTO = "auto"
+
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
@@ -390,6 +414,7 @@ class Java(metaclass=LanguageCls):
     empty_dict_keys = EmptyDictKey
     float_formats = FloatFormats
     integer_formats = IntegerFormats
+    numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     string_formats = StringFormats
     trailing_commas = TrailingCommas
@@ -416,6 +441,9 @@ class Java(metaclass=LanguageCls):
         dict_format: DictFormats = DictFormats.MAP_OF_ENTRIES,
         float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
+        numeric_literal_suffix: NumericLiteralSuffixes = (
+            NumericLiteralSuffixes.NONE
+        ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
@@ -438,7 +466,10 @@ class Java(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
 
         date_tp = date_format.value.type_produced
-        cfg = self._opener_config
+        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
+        cfg = (
+            self._opener_config_long if suffix_is_auto else self._opener_config
+        )
         openers = cfg.build(
             date_type=cfg.type_name(py_type=date_tp),
             datetime_type=cfg.type_name(
@@ -464,10 +495,13 @@ class Java(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
+        base_int_formatter = integer_format.get_formatter(
+            numeric_separator=numeric_separator,
+        )
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
-            )
+            make_long_suffix_formatter(base=base_int_formatter)
+            if suffix_is_auto
+            else base_int_formatter
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
@@ -481,6 +515,7 @@ class Java(metaclass=LanguageCls):
         self.dict_format = dict_format
         self.float_format = float_format
         self.integer_format = integer_format
+        self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
