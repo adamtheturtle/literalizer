@@ -7,6 +7,7 @@ defmodule Check do
     "path\\to \"# file",
     "trailing\\",
     "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 ]
     _ = my_data
   end

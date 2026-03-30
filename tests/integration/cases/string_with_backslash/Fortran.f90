@@ -24,6 +24,7 @@ program check
       fstr('hello \"world\"'), &
       fstr('path\to "# file'), &
       fstr('trailing\'), &
-      fstr('both "quotes'''''' here') &
+      fstr('both "quotes'''''' here'), &
+      fstr('line1\nline2' // achar(10) // 'with newline') &
   ])
 end program check

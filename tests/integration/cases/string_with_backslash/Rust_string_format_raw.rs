@@ -6,6 +6,8 @@ fn main() {
         r##"path\to "# file"##,
         r#"trailing\"#,
         r#"both "quotes''' here"#,
+        r#"line1\nline2
+    with newline"#,
     ];
     let _ = my_data;
 }

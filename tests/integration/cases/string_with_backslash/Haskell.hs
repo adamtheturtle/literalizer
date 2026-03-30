@@ -11,5 +11,6 @@ my_data = HList [
     "hello \\\"world\\\"",
     "path\\to \"# file",
     "trailing\\",
-    "both \"quotes''' here"
+    "both \"quotes''' here",
+    "line1\\nline2\nwith newline"
     ]

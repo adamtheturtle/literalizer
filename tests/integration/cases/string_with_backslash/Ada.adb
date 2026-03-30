@@ -5,7 +5,8 @@ procedure Check is
        AStr ("hello \""world\"""),
        AStr ("path\to ""# file"),
        AStr ("trailing\"),
-       AStr ("both ""quotes''' here")
+       AStr ("both ""quotes''' here"),
+       AStr ("line1\nline2" & Character'Val(10) & "with newline")
    );
 begin
    null;

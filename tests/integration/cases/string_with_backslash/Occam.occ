@@ -18,7 +18,8 @@ PROC check ()
       MOBILE LIT(lit.str; MOBILE []BYTE "hello \\\"world\\\""),
       MOBILE LIT(lit.str; MOBILE []BYTE "path\\to \"# file"),
       MOBILE LIT(lit.str; MOBILE []BYTE "trailing\\"),
-      MOBILE LIT(lit.str; MOBILE []BYTE "both \"quotes''' here")
+      MOBILE LIT(lit.str; MOBILE []BYTE "both \"quotes''' here"),
+      MOBILE LIT(lit.str; MOBILE []BYTE "line1\\nline2\nwith newline")
   ]):
   SEQ
     SKIP

@@ -13,6 +13,7 @@ _Any my_data = std::vector<std::string>{
     "path\\to \"# file",
     "trailing\\",
     "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 };
 my_data = std::vector<std::string>{
     "C:\\path\\to\\file",
@@ -21,5 +22,6 @@ my_data = std::vector<std::string>{
     "path\\to \"# file",
     "trailing\\",
     "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 };
 }

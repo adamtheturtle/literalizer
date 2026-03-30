@@ -7,7 +7,8 @@ Module Check
             "hello \""world\""",
             "path\to ""# file",
             "trailing\",
-            "both ""quotes''' here"
+            "both ""quotes''' here",
+            "line1\nline2" & Chr(10) & "with newline"
         }
     End Sub
     Sub _assignment()
@@ -18,7 +19,8 @@ Module Check
             "hello \""world\""",
             "path\to ""# file",
             "trailing\",
-            "both ""quotes''' here"
+            "both ""quotes''' here",
+            "line1\nline2" & Chr(10) & "with newline"
         }
     End Sub
 End Module

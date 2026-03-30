@@ -6,6 +6,7 @@ var my_data = List[String](
     "path\\to \"# file",
     "trailing\\",
     "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 )
 my_data = List[String](
     "C:\\path\\to\\file",
@@ -14,5 +15,6 @@ my_data = List[String](
     "path\\to \"# file",
     "trailing\\",
     "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 )
 }

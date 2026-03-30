@@ -240,7 +240,8 @@ def format_string_raw_python(value: str) -> str:
     trailing_backslashes = len(value) - len(stripped)
     if trailing_backslashes % 2 == 1:
         return format_string_backslash(value=value)
-    if '"' not in value:
+    has_newline = "\n" in value or "\r" in value
+    if '"' not in value and not has_newline:
         return f'r"{value}"'
     if "'''" not in value:
         return f"r'''{value}'''"

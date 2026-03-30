@@ -9,7 +9,8 @@ let my_data : val_t = OList [
     OStr "hello \\\"world\\\"";
     OStr "path\\to \"# file";
     OStr "trailing\\";
-    OStr "both \"quotes''' here"
+    OStr "both \"quotes''' here";
+    OStr "line1\\nline2\nwith newline"
 ]
 
 end

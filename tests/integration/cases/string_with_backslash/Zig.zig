@@ -17,6 +17,7 @@ pub fn main() void {
         .{ .str = "path\\to \"# file" },
         .{ .str = "trailing\\" },
         .{ .str = "both \"quotes''' here" },
+        .{ .str = "line1\\nline2\nwith newline" },
     }};
     _ = my_data;
 }

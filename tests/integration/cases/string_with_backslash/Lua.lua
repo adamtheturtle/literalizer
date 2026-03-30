@@ -5,4 +5,5 @@ local my_data = {
     "path\\to \"# file",
     "trailing\\",
     "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 }

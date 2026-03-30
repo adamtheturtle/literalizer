@@ -24,7 +24,8 @@ subroutine check_declaration()
       fstr('hello \"world\"'), &
       fstr('path\to "# file'), &
       fstr('trailing\'), &
-      fstr('both "quotes'''''' here') &
+      fstr('both "quotes'''''' here'), &
+      fstr('line1\nline2' // achar(10) // 'with newline') &
   ])
 end subroutine check_declaration
 
@@ -38,7 +39,8 @@ subroutine check_assignment()
       fstr('hello \"world\"'), &
       fstr('path\to "# file'), &
       fstr('trailing\'), &
-      fstr('both "quotes'''''' here') &
+      fstr('both "quotes'''''' here'), &
+      fstr('line1\nline2' // achar(10) // 'with newline') &
   ])
 end subroutine check_assignment
 

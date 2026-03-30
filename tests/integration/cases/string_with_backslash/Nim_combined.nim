@@ -5,7 +5,8 @@ var my_data = @[
     "hello \\\"world\\\"",
     "path\\to \"# file",
     "trailing\\",
-    "both \"quotes''' here"
+    "both \"quotes''' here",
+    "line1\\nline2\nwith newline"
 ]
 my_data = @[
     "C:\\path\\to\\file",
@@ -13,5 +14,6 @@ my_data = @[
     "hello \\\"world\\\"",
     "path\\to \"# file",
     "trailing\\",
-    "both \"quotes''' here"
+    "both \"quotes''' here",
+    "line1\\nline2\nwith newline"
 ]

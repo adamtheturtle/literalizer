@@ -5,4 +5,6 @@ my_data = (
     r'''path\to "# file''',
     "trailing\\",
     "both \"quotes''' here",
+    r'''line1\nline2
+with newline''',
 )

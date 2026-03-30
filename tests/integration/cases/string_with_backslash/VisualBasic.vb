@@ -6,6 +6,7 @@ Module Check
         "hello \""world\""",
         "path\to ""# file",
         "trailing\",
-        "both ""quotes''' here"
+        "both ""quotes''' here",
+        "line1\nline2" & Chr(10) & "with newline"
     }
 End Module

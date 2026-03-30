@@ -6,5 +6,6 @@ val my_data = List[String](
     "path\\to \"# file",
     "trailing\\",
     "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 )
 }

@@ -6,7 +6,8 @@ var my_data = new String[]{
     "hello \\\"world\\\"",
     "path\\to \"# file",
     "trailing\\",
-    "both \"quotes''' here"
+    "both \"quotes''' here",
+    "line1\\nline2\nwith newline"
 };
 my_data = new String[]{
     "C:\\path\\to\\file",
@@ -14,7 +15,8 @@ my_data = new String[]{
     "hello \\\"world\\\"",
     "path\\to \"# file",
     "trailing\\",
-    "both \"quotes''' here"
+    "both \"quotes''' here",
+    "line1\\nline2\nwith newline"
 };
     }
 }

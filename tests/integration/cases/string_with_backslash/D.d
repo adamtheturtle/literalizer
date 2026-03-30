@@ -7,5 +7,6 @@ auto my_data = JSONValue([
     JSONValue("path\\to \"# file"),
     JSONValue("trailing\\"),
     JSONValue("both \"quotes''' here"),
+    JSONValue("line1\\nline2\nwith newline"),
 ]);
 }

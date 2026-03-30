@@ -8,6 +8,7 @@ my_data := []string{
 	"path\\to \"# file",
 	"trailing\\",
 	"both \"quotes''' here",
+	"line1\\nline2\nwith newline",
 }
 my_data = []string{
 	"C:\\path\\to\\file",
@@ -16,6 +17,7 @@ my_data = []string{
 	"path\\to \"# file",
 	"trailing\\",
 	"both \"quotes''' here",
+	"line1\\nline2\nwith newline",
 }
 _ = my_data
 }
