@@ -171,6 +171,7 @@ class LanguageCls(type):
     EmptyDictKey: type[enum.Enum]
     FloatFormats: type[enum.Enum]
     IntegerFormats: type[enum.Enum]
+    NumericLiteralSuffixes: type[enum.Enum]
     NumericSeparators: type[enum.Enum]
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]

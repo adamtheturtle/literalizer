@@ -1,5 +1,7 @@
 """Integer formatting functions."""
 
+from collections.abc import Callable
+
 from beartype import beartype
 
 
@@ -123,3 +125,37 @@ def format_integer_tick(value: int) -> str:
     Example: ``1000000`` -> ``"1'000'000"``.
     """
     return _format_integer_grouped(value=value, separator="'")
+
+
+@beartype
+def make_long_suffix_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap a formatter so its output gets an ``L`` suffix.
+
+    Example: ``100`` → ``"100L"``, ``-10`` → ``"-10L"``.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format with ``L`` suffix."""
+        return f"{base(value)}L"
+
+    return _format
+
+
+@beartype
+def make_int64_cast_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap a formatter so its output is cast to ``int64``.
+
+    Example: ``100`` → ``"int64(100)"``.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format with ``int64()`` cast."""
+        return f"int64({base(value)})"
+
+    return _format

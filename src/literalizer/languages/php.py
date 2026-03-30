@@ -227,6 +227,11 @@ class Php(metaclass=LanguageCls):
             ]
             return formatter
 
+    class NumericLiteralSuffixes(enum.Enum):
+        """Numeric literal suffix options."""
+
+        NONE = "none"
+
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
@@ -268,6 +273,7 @@ class Php(metaclass=LanguageCls):
     empty_dict_keys = EmptyDictKey
     float_formats = FloatFormats
     integer_formats = IntegerFormats
+    numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     string_formats = StringFormats
     trailing_commas = TrailingCommas
@@ -294,6 +300,9 @@ class Php(metaclass=LanguageCls):
         dict_format: DictFormats = DictFormats.DEFAULT,
         float_format: FloatFormats = FloatFormats.REPR,
         integer_format: IntegerFormats = IntegerFormats.DECIMAL,
+        numeric_literal_suffix: NumericLiteralSuffixes = (
+            NumericLiteralSuffixes.NONE
+        ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
@@ -347,6 +356,7 @@ class Php(metaclass=LanguageCls):
         self.dict_format = dict_format
         self.float_format = float_format
         self.integer_format = integer_format
+        self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
         self.string_format = string_format
         self.trailing_comma = trailing_comma
