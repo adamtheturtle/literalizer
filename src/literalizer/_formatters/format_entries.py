@@ -10,16 +10,18 @@ from literalizer._types import Value
 
 @beartype
 def strip_key_quotes(key: str) -> str:
-    """Return the content between surrounding quotes, or *key* unchanged.
+    """Strip the surrounding quotes from a formatted key string.
 
-    Handles double- and single-quoted strings.  If *key* is not a
-    quoted string (e.g. a formatted integer literal), it is returned
-    as-is.
+    Handles double- and single-quoted strings.
 
     Example::
 
         strip_key_quotes('"name"')  # => 'name'
-        strip_key_quotes("42")      # => '42'
+
+    Raises ``ValueError`` for unquoted keys.  All current input
+    formats produce quoted string keys; this guard exists so that
+    adding a new input format with non-string keys surfaces
+    immediately rather than silently slicing the wrong characters.
     """
     min_quoted_length = 2
     if (
@@ -28,7 +30,8 @@ def strip_key_quotes(key: str) -> str:
         and key[-1] == key[0]
     ):
         return key[1:-1]
-    return key  # pragma: no cover
+    msg = f"Expected a quoted key, got {key!r}"  # pragma: no cover
+    raise ValueError(msg)  # pragma: no cover
 
 
 @beartype

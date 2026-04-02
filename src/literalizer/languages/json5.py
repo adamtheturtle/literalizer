@@ -62,12 +62,11 @@ def _format_json5_dict_entry(key: str, _val: Value, value: str) -> str:
     stripped for cleaner idiomatic JSON5 output.
     """
     inner = strip_key_quotes(key=key)
-    if inner != key:  # pragma: no branch
-        identifier_pattern = re.compile(
-            pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$",
-        )
-        if identifier_pattern.match(string=inner):
-            return f"{inner}: {value}"
+    identifier_pattern = re.compile(
+        pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$",
+    )
+    if identifier_pattern.match(string=inner):
+        return f"{inner}: {value}"
     return f"{key}: {value}"
 
 

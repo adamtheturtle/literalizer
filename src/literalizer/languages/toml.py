@@ -63,10 +63,9 @@ def _format_toml_dict_entry(key: str, _val: Value, value: str) -> str:
     cleaner idiomatic output.
     """
     inner = strip_key_quotes(key=key)
-    if inner != key:
-        bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
-        if bare_key_pattern.match(string=inner):
-            return f"{inner} = {value}"
+    bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
+    if bare_key_pattern.match(string=inner):
+        return f"{inner} = {value}"
     return f"{key} = {value}"
 
 

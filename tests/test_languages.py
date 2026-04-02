@@ -532,15 +532,14 @@ def test_toml_integer_dict_key() -> None:
 
 
 def test_toml_non_quoted_dict_key() -> None:
-    """TOML format_dict_entry with a key that is not a quoted string.
-
-    When the key does not start with a double-quote character the
-    bare-key optimization is skipped and the key is used verbatim.
+    """TOML format_dict_entry rejects a key that is not a quoted
+    string.
     """
-    result = TOML.dict_format_config.format_entry(
-        "plain_key", "value", '"value"'
-    )
-    assert result == 'plain_key = "value"'
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="Expected a quoted",
+    ):
+        TOML.dict_format_config.format_entry("plain_key", "value", '"value"')
 
 
 def test_cobol_string_control_characters() -> None:
