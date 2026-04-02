@@ -12,6 +12,9 @@ from literalizer import (
     literalize_json,
     literalize_yaml,
 )
+from literalizer._formatters.format_entries import (
+    dict_entry_symbol_style,
+)
 from literalizer._language import LanguageCls
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import (
@@ -32,6 +35,9 @@ from literalizer.languages import (
 )
 from literalizer.languages.cobol import (
     _bump_levels,  # pyright: ignore[reportPrivateUsage]
+)
+from literalizer.languages.json5 import (
+    _format_json5_dict_entry,  # pyright: ignore[reportPrivateUsage]
 )
 
 COBOL = Cobol(
@@ -738,3 +744,18 @@ def test_cobol_bump_levels_rejects_non_level_line() -> None:
     """_bump_levels raises ValueError for lines without a level number."""
     with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):
         _bump_levels(content="not a level line")
+
+
+def test_json5_dict_entry_unquoted_key() -> None:
+    """_format_json5_dict_entry passes through a non-quoted key as-is."""
+    result = _format_json5_dict_entry(key="42", _val=42, value="42")
+    assert result == "42: 42"
+
+
+def test_symbol_style_dict_entry_unquoted_key() -> None:
+    """Dict_entry_symbol_style passes through a non-quoted key as-is."""
+    formatter = dict_entry_symbol_style(
+        format_value=lambda _val, value: value,
+    )
+    result = formatter("42", 42, "42")
+    assert result == "42: 42"
