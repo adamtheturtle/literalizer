@@ -65,6 +65,7 @@ def sequence_format_factory(
                 if typed_opener_fallback_template is not None
                 else None
             ),
+            uses_typed_literal_for_scalars=False,
         )
 
     return _build

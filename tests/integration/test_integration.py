@@ -101,6 +101,13 @@ def _wrap_fsharp_combined(
 
 
 @beartype
+def _wrap_gleam(content: str, variable_name: str) -> str:
+    """Wrap a Gleam let binding in a main function."""
+    indented = "  " + content.replace("\n", "\n  ")
+    return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
+
+
+@beartype
 def _wrap_go(content: str, variable_name: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
     return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
@@ -528,6 +535,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Ruby,
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
+    ),
+    literalizer.languages.Gleam.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Gleam,
+        wrap=_wrap_gleam,
+        combined_wrap=_newline_combined(wrap=_wrap_gleam),
+        wrap_variable_name="my_data",
     ),
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
