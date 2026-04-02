@@ -33,6 +33,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -116,6 +117,7 @@ class Norg(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=False,
         )
 
         @property
@@ -147,7 +149,12 @@ class Norg(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        BLOCK = "block"
+        BLOCK = DeclarationStyleConfig(
+            formatter=variable_formatter(
+                template="* {name}\n@code json\n{value}\n@end",
+            ),
+            supports_redefinition=False,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -325,9 +332,7 @@ class Norg(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_formatter(
-                template="* {name}\n@code json\n{value}\n@end",
-            )
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(

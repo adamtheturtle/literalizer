@@ -383,6 +383,7 @@ class VisualBasic(metaclass=LanguageCls):
             preamble_lines=("Imports System.Collections.Generic",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=False,
         )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
