@@ -552,6 +552,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name="my_data",
     ),
+    literalizer.languages.Dhall.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Dhall,
+        wrap=_wrap_identity,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap_variable_name="my_data",
+    ),
     literalizer.languages.Swift.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
         wrap=_wrap_identity,

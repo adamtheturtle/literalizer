@@ -13,6 +13,7 @@ from .crystal import Crystal
 from .csharp import CSharp
 from .d import D
 from .dart import Dart
+from .dhall import Dhall
 from .elixir import Elixir
 from .erlang import Erlang
 from .fortran import Fortran
@@ -63,6 +64,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         CSharp,
         D,
         Dart,
+        Dhall,
         Elixir,
         Erlang,
         Fortran,
@@ -115,6 +117,7 @@ __all__ = [
     "Crystal",
     "D",
     "Dart",
+    "Dhall",
     "Elixir",
     "Erlang",
     "FSharp",

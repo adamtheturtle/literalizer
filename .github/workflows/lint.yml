@@ -117,6 +117,9 @@ jobs:
   lint-dart:
     uses: ./.github/workflows/lint-dart.yml
 
+  lint-dhall:
+    uses: ./.github/workflows/lint-dhall.yml
+
   lint-julia:
     uses: ./.github/workflows/lint-julia.yml
 
@@ -208,6 +211,7 @@ jobs:
       - lint-clojure
       - lint-scala
       - lint-dart
+      - lint-dhall
       - lint-julia
       - lint-perl
       - lint-lua
