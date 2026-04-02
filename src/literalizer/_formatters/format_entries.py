@@ -53,6 +53,29 @@ def tuple_dict_entry(
 
 
 @beartype
+def hash_tuple_dict_entry(
+    *,
+    format_value: Callable[[Value, str], str],
+) -> Callable[[str, Value, str], str]:
+    r"""Return a ``format_dict_entry`` callable that formats entries as
+    ``#(key, value)``.
+
+    *format_value* is applied to the raw value and formatted string
+    before embedding.
+
+    Example: ``hash_tuple_dict_entry(...)("k", ..., "v")``
+    -> ``"#(k, v)"``.
+    """
+
+    @beartype
+    def _format(key: str, val: Value, value: str) -> str:
+        """Format a dict entry as a hash tuple."""
+        return f"#({key}, {format_value(val, value)})"
+
+    return _format
+
+
+@beartype
 def braced_dict_entry(
     *,
     format_value: Callable[[Value, str], str],

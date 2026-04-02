@@ -17,6 +17,7 @@ from .elixir import Elixir
 from .erlang import Erlang
 from .fortran import Fortran
 from .fsharp import FSharp
+from .gleam import Gleam
 from .go import Go
 from .groovy import Groovy
 from .haskell import Haskell
@@ -67,6 +68,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Erlang,
         Fortran,
         FSharp,
+        Gleam,
         Go,
         Groovy,
         Haskell,
@@ -119,6 +121,7 @@ __all__ = [
     "Erlang",
     "FSharp",
     "Fortran",
+    "Gleam",
     "Go",
     "Groovy",
     "Haskell",
