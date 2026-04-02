@@ -4,18 +4,19 @@ import ast
 import base64
 import json
 
-from beartype import beartype
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from literalizer import literalize_json, literalize_yaml
 from literalizer.languages import Python
 
+# Use LIST sequence format so that ast.literal_eval returns plain lists,
+# matching the JSON input directly without any conversion step.
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,
     datetime_format=Python.datetime_formats.PYTHON,
     bytes_format=Python.bytes_formats.HEX,
-    sequence_format=Python.sequence_formats.TUPLE,
+    sequence_format=Python.sequence_formats.LIST,
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.AUTO,
 )
@@ -31,18 +32,6 @@ PYTHON_BYTES = Python(
 type _JSONScalar = str | int | float | bool | None
 
 type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
-
-
-@beartype
-def _lists_to_tuples(*, value: _JSONValue) -> object:
-    """Recursively convert lists to tuples to match Python converter
-    output.
-    """
-    if isinstance(value, list):
-        return tuple(_lists_to_tuples(value=v) for v in value)
-    if isinstance(value, dict):
-        return {k: _lists_to_tuples(value=v) for k, v in value.items()}
-    return value
 
 
 # Characters valid in JSON strings: Unicode letters (L), marks (M), numbers
@@ -89,7 +78,7 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
         error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
-    assert parsed == tuple(_lists_to_tuples(value=v) for v in data)
+    assert parsed == data
 
 
 @given(data=json_scalars)
@@ -126,7 +115,7 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
         error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
-    assert parsed == _lists_to_tuples(value=data)
+    assert parsed == data
 
 
 @given(data=st.binary())
