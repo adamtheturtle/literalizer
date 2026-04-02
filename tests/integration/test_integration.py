@@ -1523,8 +1523,8 @@ def _discover_combined_cases() -> list[_CombinedCase]:
         for lang_name, lang_config in _LANGUAGES.items():
             spec = lang_config.lang_cls()
             redef_styles = _find_redefinition_styles(spec=spec)
-            for i, style in enumerate(redef_styles):
-                if i == 0:
+            for style in redef_styles:
+                if style is redef_styles[0]:
                     golden_name = f"{lang_name}_combined"
                 else:
                     style_suffix = style.name.lower()
