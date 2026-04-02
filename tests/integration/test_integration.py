@@ -506,6 +506,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name="my_data",
     ),
+    literalizer.languages.Json5.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Json5,
+        wrap=_wrap_identity,
+        combined_wrap=lambda d, _a, _v: d,
+    ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
         wrap=_wrap_ts,
