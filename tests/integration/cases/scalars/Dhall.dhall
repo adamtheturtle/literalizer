@@ -1,5 +1,5 @@
 let my_data = [
-  42,
+  +42,
   3.14,
   True,
   False,

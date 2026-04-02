@@ -52,6 +52,19 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _format_dhall_integer(value: int) -> str:
+    """Format an integer for Dhall.
+
+    Dhall distinguishes ``Natural`` (non-negative, no prefix) from
+    ``Integer`` (signed, requires ``+`` or ``-`` prefix).  To keep
+    lists type-homogeneous we always emit the ``Integer`` form.
+    """
+    if value >= 0:
+        return f"+{value}"
+    return str(value)
+
+
+@beartype
 def _format_dhall_string(value: str) -> str:
     r"""Format a string for Dhall using backslash escaping.
 
@@ -333,7 +346,7 @@ class Dhall(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = _format_dhall_string
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = _format_dhall_integer
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
