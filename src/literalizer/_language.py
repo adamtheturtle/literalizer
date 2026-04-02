@@ -26,7 +26,7 @@ class SequenceFormatConfig:
     preamble_lines: tuple[str, ...]
     format_entry: Callable[[Value, str], str]
     typed_opener_fallback: str | None
-    uses_typed_literal_for_scalars: bool = False
+    uses_typed_literal_for_scalars: bool
 
 
 @dataclasses.dataclass(frozen=True)
