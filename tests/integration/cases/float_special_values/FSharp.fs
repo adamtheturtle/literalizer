@@ -1,0 +1,10 @@
+module Check
+
+type Val =
+    | FFloat of float
+    | FList of Val list
+let my_data: Val = FList [
+    FFloat inf;
+    FFloat(-inf);
+    FFloat nan
+]

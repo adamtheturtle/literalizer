@@ -1,0 +1,6 @@
+const my_data = [
+    inf,
+    -inf,
+    nan,
+];
+export {};

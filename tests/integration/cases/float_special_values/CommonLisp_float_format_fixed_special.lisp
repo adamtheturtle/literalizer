@@ -1,0 +1,5 @@
+(list
+    inf
+    -inf
+    nan
+)

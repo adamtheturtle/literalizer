@@ -1,0 +1,5 @@
+$my_data = @(
+    inf;
+    -inf;
+    nan
+)
