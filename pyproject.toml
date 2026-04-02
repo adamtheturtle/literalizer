@@ -314,6 +314,7 @@ executionEnvironments = [
 
 [tool.ty]
 analysis.respect-type-ignore-comments = false
+src.exclude = [ "tests/integration/cases" ]
 terminal.error-on-warning = true
 
 [tool.pytest]
