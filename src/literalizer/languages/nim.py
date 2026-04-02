@@ -1,5 +1,6 @@
 """Nim language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
@@ -52,6 +53,13 @@ from literalizer._language import (
     no_type_hint_preamble,
 )
 from literalizer._types import Value
+
+
+@dataclasses.dataclass(frozen=True)
+class _NimDeclarationStyleConfig(DeclarationStyleConfig):
+    """Nim-specific declaration style config with a keyword field."""
+
+    keyword: str = ""
 
 
 @beartype
@@ -256,29 +264,32 @@ class Nim(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        VAR = DeclarationStyleConfig(
+        VAR = _NimDeclarationStyleConfig(
             formatter=_make_variable_declaration(
-                sequence_mode=False,
+                sequence_mode=True,
                 keyword="var",
                 force_sequence=False,
             ),
             supports_redefinition=True,
+            keyword="var",
         )
-        LET = DeclarationStyleConfig(
+        LET = _NimDeclarationStyleConfig(
             formatter=_make_variable_declaration(
-                sequence_mode=False,
+                sequence_mode=True,
                 keyword="let",
                 force_sequence=False,
             ),
             supports_redefinition=False,
+            keyword="let",
         )
-        CONST = DeclarationStyleConfig(
+        CONST = _NimDeclarationStyleConfig(
             formatter=_make_variable_declaration(
-                sequence_mode=False,
+                sequence_mode=True,
                 keyword="const",
                 force_sequence=True,
             ),
             supports_redefinition=False,
+            keyword="const",
         )
 
     class DictEntryStyles(enum.Enum):
@@ -495,12 +506,16 @@ class Nim(metaclass=LanguageCls):
         self.supports_collection_comments = True
         _is_sequence = sequence_format is self.sequence_formats.SEQ
         _is_const = declaration_style is self.declaration_styles.CONST
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _make_variable_declaration(
-                sequence_mode=_is_sequence,
-                keyword=declaration_style.name.lower(),
+        if _is_sequence:
+            _declaration_formatter = declaration_style.value.formatter
+        else:
+            _declaration_formatter = _make_variable_declaration(
+                sequence_mode=False,
+                keyword=declaration_style.value.keyword,
                 force_sequence=_is_const,
             )
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            _declaration_formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _make_variable_assignment(sequence_mode=_is_sequence)
