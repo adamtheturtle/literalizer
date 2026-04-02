@@ -103,7 +103,7 @@ def _wrap_fsharp_combined(
 def _wrap_gleam(content: str, variable_name: str) -> str:
     """Wrap a Gleam let binding in a main function."""
     indented = "  " + content.replace("\n", "\n  ")
-    return f"pub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
+    return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
 
 
 @beartype

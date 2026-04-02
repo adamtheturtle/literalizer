@@ -1,4 +1,5 @@
 import gleam/dict
+
 pub fn main() {
   let my_data = dict.new()
   let my_data = dict.new()

@@ -1,4 +1,5 @@
 import gleam/set
+
 pub fn main() {
   let my_data = set.from_list([
     "2024-01-15",

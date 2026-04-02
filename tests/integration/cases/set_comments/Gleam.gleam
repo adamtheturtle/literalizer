@@ -1,4 +1,5 @@
 import gleam/set
+
 pub fn main() {
   let my_data = set.from_list([
     "apple",  // inline comment

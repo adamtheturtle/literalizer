@@ -1,4 +1,5 @@
 import gleam/dict
+
 pub fn main() {
   let my_data = dict.from_list([
     #("a", dict.from_list([#("x", 1)])),
