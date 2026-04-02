@@ -45,5 +45,10 @@ jobs:
         if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
+            # Combined golden files use "name: value" variable-declaration
+            # syntax which is not standalone JSON5. Skip them.
+            if [[ "$f" == *_combined* ]]; then
+              continue
+            fi
             json5 "$f" > /dev/null || exit 1
           done < /tmp/files-to-lint
