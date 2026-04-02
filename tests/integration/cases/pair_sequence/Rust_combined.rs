@@ -1,12 +1,8 @@
 fn main() {
-    {
-        let my_data = vec![
-            "1",
-            "hello",
-        ];
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = vec![
+        "1",
+        "hello",
+    ];
     my_data = vec![
         "1",
         "hello",

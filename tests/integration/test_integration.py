@@ -88,6 +88,17 @@ def _wrap_fsharp(content: str, _variable_name: str) -> str:
     return "module Check\n\n" + content
 
 
+def _wrap_fsharp_combined(
+    declaration: str,
+    _assignment: str,
+    _variable_name: str,
+) -> str:
+    """F#: only the declaration is included because the body preamble
+    (``type Val = ...``) is baked into ``.code`` and would be duplicated.
+    """
+    return _wrap_fsharp(content=declaration, _variable_name=_variable_name)
+
+
 @beartype
 def _wrap_go(content: str, variable_name: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
@@ -305,29 +316,6 @@ def _wrap_zig(content: str, variable_name: str) -> str:
 
 
 @beartype
-def _wrap_rust_combined(
-    declaration: str,
-    assignment: str,
-    variable_name: str,
-) -> str:
-    """Rust: let declaration in an inner block, then a deferred-init
-    let + assignment in the outer scope.
-    """
-    decl_indented = "        " + declaration.replace("\n", "\n        ")
-    assign_indented = "    " + assignment.replace("\n", "\n    ")
-    return (
-        "fn main() {\n"
-        "    {\n"
-        f"{decl_indented}\n"
-        f"        let _ = {variable_name};\n"
-        "    }\n"
-        f"    let {variable_name};\n"
-        f"{assign_indented}\n"
-        f"    let _ = {variable_name};\n"
-        "}"
-    )
-
-
 @beartype
 def _wrap_fortran(content: str, _variable_name: str) -> str:
     """Wrap a Fortran variable declaration in a program."""
@@ -574,7 +562,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Rust.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Rust,
         wrap=_wrap_rust,
-        combined_wrap=_wrap_rust_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_rust),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Haskell.__name__: _LanguageConfig(
@@ -636,10 +624,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.FSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.FSharp,
         wrap=_wrap_fsharp,
-        combined_wrap=lambda d, _a, _v: _wrap_fsharp(
-            content=d,
-            _variable_name=_v,
-        ),
+        combined_wrap=_wrap_fsharp_combined,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.OCaml.__name__: _LanguageConfig(

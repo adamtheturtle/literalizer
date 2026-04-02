@@ -1,15 +1,11 @@
 fn main() {
-    {
-        let my_data = vec![
-            "42",
-            "3.14",
-            "True",
-            "False",
-            "hello \"world\"",
-        ];
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = vec![
+        "42",
+        "3.14",
+        "True",
+        "False",
+        "hello \"world\"",
+    ];
     my_data = vec![
         "42",
         "3.14",

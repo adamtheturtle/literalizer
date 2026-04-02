@@ -234,7 +234,7 @@ class FSharp(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=_format_variable_declaration_let,
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
         LET_MUTABLE = DeclarationStyleConfig(
             formatter=_format_variable_declaration_let_mutable,

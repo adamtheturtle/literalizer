@@ -2,6 +2,6 @@ module Check
 
 type Val =
     | FList of Val list
-let my_data: Val = FList [
+let mutable my_data: Val = FList [
     FList [FList []; FList []]
 ]
