@@ -279,7 +279,7 @@ class Rust(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=variable_formatter(template="let {name} = {value};"),
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
         LET_MUT = DeclarationStyleConfig(
             formatter=variable_formatter(template="let mut {name} = {value};"),

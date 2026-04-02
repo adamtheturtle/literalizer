@@ -2,4 +2,4 @@ module Check
 
 type Val =
     | FStr of string
-let my_data: Val = FStr "hello \"world\" -- not a comment"
+let mutable my_data: Val = FStr "hello \"world\" -- not a comment"

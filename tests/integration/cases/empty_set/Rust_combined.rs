@@ -1,10 +1,6 @@
 use std::collections::HashSet;
 fn main() {
-    {
-        let my_data = HashSet::<String>::new();
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = HashSet::<String>::new();
     my_data = HashSet::<String>::new();
     let _ = my_data;
 }
