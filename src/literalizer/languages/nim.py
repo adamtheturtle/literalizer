@@ -41,6 +41,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -255,9 +256,30 @@ class Nim(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        VAR = "var"
-        LET = "let"
-        CONST = "const"
+        VAR = DeclarationStyleConfig(
+            formatter=_make_variable_declaration(
+                sequence_mode=False,
+                keyword="var",
+                force_sequence=False,
+            ),
+            supports_redefinition=True,
+        )
+        LET = DeclarationStyleConfig(
+            formatter=_make_variable_declaration(
+                sequence_mode=False,
+                keyword="let",
+                force_sequence=False,
+            ),
+            supports_redefinition=False,
+        )
+        CONST = DeclarationStyleConfig(
+            formatter=_make_variable_declaration(
+                sequence_mode=False,
+                keyword="const",
+                force_sequence=True,
+            ),
+            supports_redefinition=False,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -476,7 +498,7 @@ class Nim(metaclass=LanguageCls):
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _make_variable_declaration(
                 sequence_mode=_is_sequence,
-                keyword=declaration_style.value,
+                keyword=declaration_style.name.lower(),
                 force_sequence=_is_const,
             )
         )
