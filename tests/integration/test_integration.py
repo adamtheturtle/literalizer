@@ -517,6 +517,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
+    literalizer.languages.Jsonnet.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Jsonnet,
+        wrap=_wrap_identity,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
+    ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
         wrap=_wrap_ts,
