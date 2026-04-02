@@ -20,6 +20,7 @@ jobs:
             config:
               - '**/*.yml'
               - 'pyproject.toml'
+              - 'check_toml_syntax.py'
             lang:
               - 'tests/integration/cases/**/*.toml'
       - name: Find files to lint
@@ -39,19 +40,12 @@ jobs:
           if [ -s /tmp/files-to-lint ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         if: steps.files.outputs.found == 'true'
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Check TOML syntax
         if: steps.files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            uv run --with 'tomli>=2.4.0' python -c "
-          import sys, tomli
-          with open(sys.argv[1], 'rb') as fp:
-              try:
-                  tomli.load(fp)
-              except tomli.TOMLDecodeError as e:
-                  print(f'{sys.argv[1]}: {e}', file=sys.stderr)
-                  sys.exit(1)
-          " "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py
+          < /tmp/files-to-lint
