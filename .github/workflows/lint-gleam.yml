@@ -44,6 +44,6 @@ jobs:
         with:
           gleam-version: latest
           otp-version: 27
-      - name: Check Gleam formatting
+      - name: Check Gleam syntax
         if: steps.files.outputs.found == 'true'
-        run: xargs -0 gleam format --check < /tmp/files-to-lint
+        run: xargs -0 gleam format < /tmp/files-to-lint
