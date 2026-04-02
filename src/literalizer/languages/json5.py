@@ -22,6 +22,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    strip_key_quotes,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -60,14 +61,8 @@ def _format_json5_dict_entry(key: str, _val: Value, value: str) -> str:
     5.1 ``IdentifierName`` (and is not a reserved word), the quotes are
     stripped for cleaner idiomatic JSON5 output.
     """
-    min_quoted_key_length = 2
-    is_quoted = (
-        key.startswith('"')
-        and key.endswith('"')
-        and len(key) >= min_quoted_key_length
-    )
-    if is_quoted:
-        inner = key[1:-1]
+    inner = strip_key_quotes(key=key)
+    if inner != key:
         identifier_pattern = re.compile(
             pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$",
         )
