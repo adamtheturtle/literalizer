@@ -39,21 +39,19 @@ jobs:
           if [ -s /tmp/files-to-lint ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Install taplo
+      - uses: astral-sh/setup-uv@v6
         if: steps.files.outputs.found == 'true'
-        run: |-
-          curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-linux-x86_64.gz \
-            | gzip -d - \
-            | install -m 755 /dev/stdin /usr/local/bin/taplo
       - name: Check TOML syntax
         if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
-            # taplo only validates TOML v1.0. Files that use TOML v1.1
-            # multiline inline table syntax (a line ending with "{") are
-            # intentionally skipped.
-            if grep -qP '\{ *$' "$f"; then
-              continue
-            fi
-            taplo lint "$f" || exit 1
+            uv run --with 'tomli>=2.4.0' python -c "
+          import sys, tomli
+          with open(sys.argv[1], 'rb') as fp:
+              try:
+                  tomli.load(fp)
+              except tomli.TOMLDecodeError as e:
+                  print(f'{sys.argv[1]}: {e}', file=sys.stderr)
+                  sys.exit(1)
+          " "$f" || exit 1
           done < /tmp/files-to-lint
