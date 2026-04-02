@@ -49,6 +49,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -639,7 +640,10 @@ class Python(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        ASSIGN = "assign"
+        ASSIGN = DeclarationStyleConfig(
+            formatter=variable_formatter(template="{name} = {value}"),
+            supports_redefinition=True,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""

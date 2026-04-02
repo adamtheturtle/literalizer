@@ -37,6 +37,7 @@ HStr
 HashiCorp
 Hcl
 JSONDecodeError
+Jsonnet
 LocalDate
 Lua
 Mojo
@@ -96,6 +97,7 @@ iso
 iterable
 javac
 json
+jsonnet
 kotlinc
 kroc
 kts
@@ -149,6 +151,7 @@ subclasses
 subdirectory
 superset
 swiftc
+templating
 ty
 typeclass
 unhandled

@@ -24,7 +24,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
-from literalizer._language import DeclarationStyleConfig
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -48,12 +47,7 @@ def _find_redefinition_style(
 ) -> enum.Enum | None:
     """Return a declaration style that supports redefinition, or None."""
     for style in spec.declaration_styles:
-        style_value = style.value
-        if isinstance(style_value, DeclarationStyleConfig):
-            if style_value.supports_redefinition:
-                return style
-        else:
-            # String-valued enum — dynamic languages always allow redefinition.
+        if style.value.supports_redefinition:
             return style
     return None
 
@@ -64,7 +58,12 @@ def _newline_combined(
     """Build a combined_wrap that joins declaration and assignment with a
     newline and passes through *wrap*.
     """
-    return lambda d, a, v: wrap(d + "\n" + a, v)
+
+    def combined_wrap(declaration: str, assignment: str, value: str) -> str:
+        """Join declaration and assignment with a newline, then wrap."""
+        return wrap(declaration + "\n" + assignment, value)
+
+    return combined_wrap
 
 
 @beartype
@@ -515,6 +514,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Json5.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Json5,
+        wrap=_wrap_identity,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
+    ),
+    literalizer.languages.Jsonnet.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Jsonnet,
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
