@@ -24,7 +24,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
-from literalizer._language import DeclarationStyleConfig
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -48,12 +47,7 @@ def _find_redefinition_style(
 ) -> enum.Enum | None:
     """Return a declaration style that supports redefinition, or None."""
     for style in spec.declaration_styles:
-        style_value = style.value
-        if isinstance(style_value, DeclarationStyleConfig):
-            if style_value.supports_redefinition:
-                return style
-        else:
-            # String-valued enum — dynamic languages always allow redefinition.
+        if style.value.supports_redefinition:
             return style
     return None
 
@@ -64,7 +58,12 @@ def _newline_combined(
     """Build a combined_wrap that joins declaration and assignment with a
     newline and passes through *wrap*.
     """
-    return lambda d, a, v: wrap(d + "\n" + a, v)
+
+    def combined_wrap(declaration: str, assignment: str, value: str) -> str:
+        """Join declaration and assignment with a newline, then wrap."""
+        return wrap(declaration + "\n" + assignment, value)
+
+    return combined_wrap
 
 
 @beartype
@@ -97,6 +96,13 @@ def _wrap_fsharp_combined(
     (``type Val = ...``) is baked into ``.code`` and would be duplicated.
     """
     return _wrap_fsharp(content=declaration, _variable_name=_variable_name)
+
+
+@beartype
+def _wrap_gleam(content: str, variable_name: str) -> str:
+    """Wrap a Gleam let binding in a main function."""
+    indented = "  " + content.replace("\n", "\n  ")
+    return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
 
 
 @beartype
@@ -539,7 +545,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Json5.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Json5,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
+    ),
+    literalizer.languages.Jsonnet.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Jsonnet,
+        wrap=_wrap_identity,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
@@ -557,6 +568,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Ruby,
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
+    ),
+    literalizer.languages.Gleam.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Gleam,
+        wrap=_wrap_gleam,
+        combined_wrap=_newline_combined(wrap=_wrap_gleam),
+        wrap_variable_name="my_data",
     ),
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
@@ -612,7 +629,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Hcl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Julia.__name__: _LanguageConfig(
@@ -739,7 +756,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.VisualBasic.__name__: _LanguageConfig(
@@ -763,7 +780,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Toml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Toml,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.ObjectiveC.__name__: _LanguageConfig(
@@ -781,7 +798,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Yaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Yaml,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
 }
 

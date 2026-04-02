@@ -48,6 +48,9 @@ jobs:
   lint-ruby:
     uses: ./.github/workflows/lint-ruby.yml
 
+  lint-gleam:
+    uses: ./.github/workflows/lint-gleam.yml
+
   lint-go:
     uses: ./.github/workflows/lint-go.yml
 
@@ -59,6 +62,9 @@ jobs:
 
   lint-json5:
     uses: ./.github/workflows/lint-json5.yml
+
+  lint-jsonnet:
+    uses: ./.github/workflows/lint-jsonnet.yml
 
   lint-typescript:
     uses: ./.github/workflows/lint-typescript.yml
@@ -188,10 +194,12 @@ jobs:
       - build
       - lint-bash
       - lint-ruby
+      - lint-gleam
       - lint-go
       - lint-groovy
       - lint-javascript
       - lint-json5
+      - lint-jsonnet
       - lint-typescript
       - lint-java
       - lint-c

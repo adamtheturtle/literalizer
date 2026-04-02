@@ -46,6 +46,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -226,11 +227,13 @@ class Java(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback="new Object[]{",
+            uses_typed_literal_for_scalars=False,
         )
         LIST = SequenceFormatConfig(
             sequence_open=_list_of_open,
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=False,
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -282,7 +285,10 @@ class Java(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        VAR = "var"
+        VAR = DeclarationStyleConfig(
+            formatter=variable_formatter(template="var {name} = {value};"),
+            supports_redefinition=True,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -537,7 +543,7 @@ class Java(metaclass=LanguageCls):
         self.skip_null_dict_values = True
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_formatter(template="var {name} = {value};")
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")

@@ -24,6 +24,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    strip_key_quotes,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -38,6 +39,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -61,16 +63,10 @@ def _format_toml_dict_entry(key: str, _val: Value, value: str) -> str:
     (alphanumeric, dashes, underscores only), the quotes are stripped for
     cleaner idiomatic output.
     """
-    min_quoted_key_length = 2
-    if (
-        key.startswith('"')
-        and key.endswith('"')
-        and len(key) >= min_quoted_key_length
-    ):
-        inner = key[1:-1]
-        bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
-        if bare_key_pattern.match(string=inner):
-            return f"{inner} = {value}"
+    inner = strip_key_quotes(key=key)
+    bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
+    if bare_key_pattern.match(string=inner):
+        return f"{inner} = {value}"
     return f"{key} = {value}"
 
 
@@ -148,6 +144,7 @@ class Toml(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=False,
         )
 
         @property
@@ -179,7 +176,10 @@ class Toml(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        ASSIGN = "assign"
+        ASSIGN = DeclarationStyleConfig(
+            formatter=variable_formatter(template="{name} = {value}"),
+            supports_redefinition=False,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -354,7 +354,7 @@ class Toml(metaclass=LanguageCls):
         self.skip_null_dict_values = True
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value}")
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")

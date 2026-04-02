@@ -22,6 +22,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    strip_key_quotes,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -60,8 +61,10 @@ def _format_json5_dict_entry(key: str, _val: Value, value: str) -> str:
     5.1 ``IdentifierName`` (and is not a reserved word), the quotes are
     stripped for cleaner idiomatic JSON5 output.
     """
-    inner = key[1:-1]
-    identifier_pattern = re.compile(pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$")
+    inner = strip_key_quotes(key=key)
+    identifier_pattern = re.compile(
+        pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$",
+    )
     if identifier_pattern.match(string=inner):
         return f"{inner}: {value}"
     return f"{key}: {value}"
@@ -135,6 +138,7 @@ class Json5(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=False,
         )
 
         @property
