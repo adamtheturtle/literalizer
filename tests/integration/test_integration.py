@@ -157,7 +157,7 @@ def _wrap_elixir(content: str, variable_name: str) -> str:
 @beartype
 def _wrap_elm(content: str, variable_name: str) -> str:
     """Wrap an Elm value declaration in a module."""
-    lines = content.split("\n")
+    lines = content.split(sep="\n")
     preamble_prefixes = ("type ",)
     # Find the first line that is NOT body-preamble.  A line counts as
     # preamble when it starts with a known prefix or is an indented

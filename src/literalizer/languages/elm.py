@@ -87,7 +87,7 @@ def _format_elm_integer_decimal(value: int) -> str:
 @beartype
 def _format_elm_integer_hex(value: int) -> str:
     """Format an integer as an Elm ``EInt`` hex constructor."""
-    hex_repr = format_integer_hex(value)
+    hex_repr = format_integer_hex(value=value)
     if value < 0:
         return f"EInt ({hex_repr})"
     return f"EInt {hex_repr}"
@@ -109,16 +109,18 @@ def _elm_float_wrapper(
     return _format
 
 
-_format_elm_float_repr = _elm_float_wrapper(format_float_repr)
-_format_elm_float_scientific = _elm_float_wrapper(format_float_scientific)
-_format_elm_float_fixed = _elm_float_wrapper(format_float_fixed)
+_format_elm_float_repr = _elm_float_wrapper(inner=format_float_repr)
+_format_elm_float_scientific = _elm_float_wrapper(
+    inner=format_float_scientific,
+)
+_format_elm_float_fixed = _elm_float_wrapper(inner=format_float_fixed)
 
 
 @beartype
 def _format_elm_string(value: str) -> str:
     """Format a string as an Elm ``EStr`` constructor."""
     escaped = format_string_backslash_control(
-        value,
+        value=value,
         control_char_fmt="\\u{{{:04x}}}",
     )
     return f"EStr {escaped}"
