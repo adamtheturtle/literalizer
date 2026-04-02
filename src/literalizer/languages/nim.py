@@ -56,7 +56,7 @@ from literalizer._types import Value
 @beartype
 def _make_variable_declaration(
     *,
-    sequence_mode: bool,
+    uses_typed_literal_for_scalars: bool,
     keyword: str,
     force_sequence: bool,
 ) -> Callable[[str, str, Value], str]:
@@ -73,7 +73,7 @@ def _make_variable_declaration(
             and (
                 force_sequence
                 or (
-                    sequence_mode
+                    uses_typed_literal_for_scalars
                     and all(
                         isinstance(item, (str, int, float, bool, bytes))
                         for item in _data
@@ -93,7 +93,7 @@ def _make_variable_declaration(
 @beartype
 def _make_variable_assignment(
     *,
-    sequence_mode: bool,
+    uses_typed_literal_for_scalars: bool,
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable assignment formatter."""
 
@@ -103,7 +103,7 @@ def _make_variable_assignment(
         simple scalars.
         """
         if (
-            sequence_mode
+            uses_typed_literal_for_scalars
             and isinstance(_data, list)
             and _data
             and all(
@@ -209,6 +209,7 @@ class Nim(metaclass=LanguageCls):
             preamble_lines=("import json",),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=True,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
@@ -376,7 +377,7 @@ class Nim(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    def __init__(  # noqa: PLR0915
+    def __init__(
         self,
         *,
         date_format: DateFormats = DateFormats.NIM,
@@ -471,17 +472,18 @@ class Nim(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
-        _is_sequence = sequence_format is self.sequence_formats.SEQ
         _is_const = declaration_style is self.declaration_styles.CONST
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _make_variable_declaration(
-                sequence_mode=_is_sequence,
+                uses_typed_literal_for_scalars=fmt.uses_typed_literal_for_scalars,
                 keyword=declaration_style.value,
                 force_sequence=_is_const,
             )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _make_variable_assignment(sequence_mode=_is_sequence)
+            _make_variable_assignment(
+                uses_typed_literal_for_scalars=fmt.uses_typed_literal_for_scalars
+            )
         )
         _json = ("import json",)
         self.static_preamble: Sequence[str] = ()
