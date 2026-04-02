@@ -61,7 +61,7 @@ def _format_dhall_integer(value: int) -> str:
     """
     if value >= 0:
         return f"+{value}"
-    return str(value)
+    return f"{value}"
 
 
 @beartype
