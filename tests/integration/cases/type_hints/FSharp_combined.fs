@@ -8,7 +8,7 @@ type Val =
     | FMap of (string * Val) list
     | FDate of System.DateTime
     | FDatetime of System.DateTime
-let my_data: Val = FMap [
+let mutable my_data: Val = FMap [
     ("name", FStr "Alice");
     ("age", FInt 30L);
     ("active", FBool true);

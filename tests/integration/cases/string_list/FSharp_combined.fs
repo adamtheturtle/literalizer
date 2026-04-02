@@ -3,7 +3,7 @@ module Check
 type Val =
     | FStr of string
     | FList of Val list
-let my_data: Val = FList [
+let mutable my_data: Val = FList [
     FStr "foo";
     FStr "bar";
     FStr "baz"

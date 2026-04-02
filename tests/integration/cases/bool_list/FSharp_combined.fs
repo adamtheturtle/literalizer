@@ -3,7 +3,7 @@ module Check
 type Val =
     | FBool of bool
     | FList of Val list
-let my_data: Val = FList [
+let mutable my_data: Val = FList [
     FBool true;
     FBool false;
     FBool true

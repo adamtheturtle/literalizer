@@ -147,6 +147,7 @@ str
 struct
 subclasses
 subdirectory
+superset
 swiftc
 ty
 typeclass

@@ -6,7 +6,7 @@ type Val =
     | FFloat of float
     | FStr of string
     | FList of Val list
-let my_data: Val = FList [
+let mutable my_data: Val = FList [
     FInt 42L;
     FFloat 3.14;
     FBool true;

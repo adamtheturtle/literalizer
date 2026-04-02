@@ -1,9 +1,5 @@
 fn main() {
-    {
-        let my_data = "hello \"world\" -- not a comment";
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = "hello \"world\" -- not a comment";
     my_data = "hello \"world\" -- not a comment";
     let _ = my_data;
 }

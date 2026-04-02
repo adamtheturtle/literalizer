@@ -1,14 +1,10 @@
 use std::collections::HashSet;
 fn main() {
-    {
-        let my_data = HashSet::from([
-            "apple",
-            "banana",
-            "cherry",
-        ]);
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = HashSet::from([
+        "apple",
+        "banana",
+        "cherry",
+    ]);
     my_data = HashSet::from([
         "apple",
         "banana",

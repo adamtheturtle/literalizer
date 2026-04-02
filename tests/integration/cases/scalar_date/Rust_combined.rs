@@ -1,10 +1,6 @@
 use chrono::NaiveDate;
 fn main() {
-    {
-        let my_data = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
     my_data = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
     let _ = my_data;
 }

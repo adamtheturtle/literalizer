@@ -89,6 +89,17 @@ def _wrap_fsharp(content: str, _variable_name: str) -> str:
     return "module Check\n\n" + content
 
 
+def _wrap_fsharp_combined(
+    declaration: str,
+    _assignment: str,
+    _variable_name: str,
+) -> str:
+    """F#: only the declaration is included because the body preamble
+    (``type Val = ...``) is baked into ``.code`` and would be duplicated.
+    """
+    return _wrap_fsharp(content=declaration, _variable_name=_variable_name)
+
+
 @beartype
 def _wrap_go(content: str, variable_name: str) -> str:
     """Wrap a Go short variable declaration in a main function."""
@@ -306,29 +317,6 @@ def _wrap_zig(content: str, variable_name: str) -> str:
 
 
 @beartype
-def _wrap_rust_combined(
-    declaration: str,
-    assignment: str,
-    variable_name: str,
-) -> str:
-    """Rust: let declaration in an inner block, then a deferred-init
-    let + assignment in the outer scope.
-    """
-    decl_indented = "        " + declaration.replace("\n", "\n        ")
-    assign_indented = "    " + assignment.replace("\n", "\n    ")
-    return (
-        "fn main() {\n"
-        "    {\n"
-        f"{decl_indented}\n"
-        f"        let _ = {variable_name};\n"
-        "    }\n"
-        f"    let {variable_name};\n"
-        f"{assign_indented}\n"
-        f"    let _ = {variable_name};\n"
-        "}"
-    )
-
-
 @beartype
 def _wrap_fortran(content: str, _variable_name: str) -> str:
     """Wrap a Fortran variable declaration in a program."""
@@ -519,6 +507,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_newline_combined(wrap=_wrap_identity),
         wrap_variable_name="my_data",
     ),
+    literalizer.languages.Json5.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Json5,
+        wrap=_wrap_identity,
+        combined_wrap=lambda d, _a, _v: d,
+    ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
         wrap=_wrap_ts,
@@ -575,7 +568,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Rust.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Rust,
         wrap=_wrap_rust,
-        combined_wrap=_wrap_rust_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_rust),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Haskell.__name__: _LanguageConfig(
@@ -637,10 +630,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.FSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.FSharp,
         wrap=_wrap_fsharp,
-        combined_wrap=lambda d, _a, _v: _wrap_fsharp(
-            content=d,
-            _variable_name=_v,
-        ),
+        combined_wrap=_wrap_fsharp_combined,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.OCaml.__name__: _LanguageConfig(
@@ -1419,10 +1409,12 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_le = spec.line_ending
+        default_line_ending = spec.line_ending
         default_ds = spec.declaration_style
-        non_default_le = [
-            le for le in spec.line_endings if le is not default_le
+        non_default_line_endings = [
+            line_ending
+            for line_ending in spec.line_endings
+            if line_ending is not default_line_ending
         ]
         non_default_ds = [
             ds for ds in spec.declaration_styles if ds is not default_ds
@@ -1430,17 +1422,17 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=(
-                    f"{lang_name}_line_ending_{le.name.lower()}"
+                    f"{lang_name}_line_ending_{line_ending.name.lower()}"
                     f"_decl_{ds.name.lower()}"
                 ),
                 spec=lang_config.lang_cls(
-                    line_ending=le,
+                    line_ending=line_ending,
                     declaration_style=ds,
                 ),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
-            for le in non_default_le
+            for line_ending in non_default_line_endings
             for ds in non_default_ds
         )
     return variants
@@ -1758,20 +1750,20 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
         spec = lang_config.lang_cls()
         if not _find_redefinition_styles(spec=spec):
             continue
-        default_le = spec.line_ending
-        for le in spec.line_endings:
-            if le is default_le:
+        default_line_ending = spec.line_ending
+        for line_ending in spec.line_endings:
+            if line_ending is default_line_ending:
                 continue
             for case_dir_name in ("simple_sequence", "simple_dict"):
                 name = (
                     f"{lang_name}_line_ending"
-                    f"_{le.name.lower()}_{case_dir_name}"
+                    f"_{line_ending.name.lower()}_{case_dir_name}"
                 )
                 cases.append(
                     _LineEndingCombinedCase(
                         name=name,
                         lang_config=lang_config,
-                        line_ending=le,
+                        line_ending=line_ending,
                         case_dir_name=case_dir_name,
                     )
                 )

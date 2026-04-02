@@ -1,9 +1,5 @@
 fn main() {
-    {
-        let my_data = Vec::<String>::new();
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = Vec::<String>::new();
     my_data = Vec::<String>::new();
     let _ = my_data;
 }

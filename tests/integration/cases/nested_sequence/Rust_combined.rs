@@ -1,14 +1,10 @@
 fn main() {
-    {
-        let my_data = vec![
-            "True",
-            "hi",
-            "[1, 2]",
-            "None",
-        ];
-        let _ = my_data;
-    }
-    let my_data;
+    let mut my_data = vec![
+        "True",
+        "hi",
+        "[1, 2]",
+        "None",
+    ];
     my_data = vec![
         "True",
         "hi",
