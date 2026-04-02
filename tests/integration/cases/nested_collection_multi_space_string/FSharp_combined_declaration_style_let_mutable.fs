@@ -1,0 +1,10 @@
+module Check
+
+type Val =
+    | FInt of int64
+    | FStr of string
+    | FList of Val list
+    | FMap of (string * Val) list
+let mutable my_data: Val = FList [
+    FMap [("key", FStr "hello   world"); ("value", FInt 1L)]
+]

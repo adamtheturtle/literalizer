@@ -43,19 +43,20 @@ def _wrap_identity(content: str, _variable_name: str) -> str:
     return content
 
 
-def _find_redefinition_style(
+def _find_redefinition_styles(
     spec: literalizer.Language,
-) -> enum.Enum | None:
-    """Return a declaration style that supports redefinition, or None."""
+) -> list[enum.Enum]:
+    """Return all declaration styles that support redefinition."""
+    styles: list[enum.Enum] = []
     for style in spec.declaration_styles:
         style_value = style.value
         if isinstance(style_value, DeclarationStyleConfig):
             if style_value.supports_redefinition:
-                return style
+                styles.append(style)
         else:
             # String-valued enum — dynamic languages always allow redefinition.
-            return style
-    return None
+            styles.append(style)
+    return styles
 
 
 def _newline_combined(
@@ -1498,14 +1499,61 @@ def test_golden_file(
     )
 
 
+@dataclasses.dataclass
+class _CombinedCase:
+    """A combined-variable-forms test case for a specific redefinition
+    style.
+    """
+
+    case_name: str
+    lang_name: str
+    lang_config: _LanguageConfig
+    declaration_style: enum.Enum
+    golden_file_name: str
+
+
+@beartype
+def _discover_combined_cases() -> list[_CombinedCase]:
+    """Return combined test cases for all redefinition-supporting
+    styles.
+    """
+    cases_dir = Path(__file__).parent / "cases"
+    cases: list[_CombinedCase] = []
+    for case_dir in sorted(cases_dir.iterdir()):
+        for lang_name, lang_config in _LANGUAGES.items():
+            spec = lang_config.lang_cls()
+            redef_styles = _find_redefinition_styles(spec=spec)
+            for i, style in enumerate(redef_styles):
+                if i == 0:
+                    golden_name = f"{lang_name}_combined"
+                else:
+                    style_suffix = style.name.lower()
+                    golden_name = (
+                        f"{lang_name}_combined"
+                        f"_declaration_style_{style_suffix}"
+                    )
+                cases.append(
+                    _CombinedCase(
+                        case_name=case_dir.name,
+                        lang_name=lang_name,
+                        lang_config=lang_config,
+                        declaration_style=style,
+                        golden_file_name=golden_name,
+                    )
+                )
+    return cases
+
+
+_COMBINED_CASES = _discover_combined_cases()
+
+
 @pytest.mark.parametrize(
-    argnames=("_case_name", "language"),
-    argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
+    argnames="combined_case",
+    argvalues=_COMBINED_CASES,
+    ids=[f"{c.case_name}/{c.golden_file_name}" for c in _COMBINED_CASES],
 )
 def test_golden_file_combined_variable_forms(
-    _case_name: str,
-    language: str,
+    combined_case: _CombinedCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -1513,15 +1561,11 @@ def test_golden_file_combined_variable_forms(
     new_variable=False (assignment to existing variable) produce expected
     golden output, combined in one file to show the difference in syntax.
     """
-    input_path = cases_dir / _case_name / "input.yaml"
-    lang_config = _LANGUAGES[language]
-    spec = lang_config.lang_cls()
-    redef_style = _find_redefinition_style(spec=spec)
-    if redef_style is None:
-        pytest.skip(
-            f"{language} has no declaration style that supports redefinition"
-        )
-    spec = lang_config.lang_cls(declaration_style=redef_style)
+    input_path = cases_dir / combined_case.case_name / "input.yaml"
+    lang_config = combined_case.lang_config
+    spec = lang_config.lang_cls(
+        declaration_style=combined_case.declaration_style,
+    )
     yaml_string = input_path.read_text()
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
@@ -1555,7 +1599,7 @@ def test_golden_file_combined_variable_forms(
         extension=lang_config.lang_cls.extension,
         newline="",
         fullpath=input_path.parent
-        / (language + "_combined" + lang_config.lang_cls.extension),
+        / (combined_case.golden_file_name + lang_config.lang_cls.extension),
     )
 
 
@@ -1712,7 +1756,7 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
     cases: list[_LineEndingCombinedCase] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        if _find_redefinition_style(spec=spec) is None:
+        if not _find_redefinition_styles(spec=spec):
             continue
         default_le = spec.line_ending
         for le in spec.line_endings:
@@ -1753,11 +1797,11 @@ def test_line_ending_combined_variable_forms(
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     base_spec = case.lang_config.lang_cls()
-    redef_style = _find_redefinition_style(spec=base_spec)
-    assert redef_style is not None
+    redef_styles = _find_redefinition_styles(spec=base_spec)
+    assert redef_styles
     spec = case.lang_config.lang_cls(
         line_ending=case.line_ending,
-        declaration_style=redef_style,
+        declaration_style=redef_styles[0],
     )
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
