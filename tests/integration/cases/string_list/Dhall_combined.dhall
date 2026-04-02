@@ -3,8 +3,3 @@ let my_data = [
   "bar",
   "baz",
 ] in my_data
-let my_data = [
-  "foo",
-  "bar",
-  "baz",
-] in my_data

@@ -3,8 +3,3 @@ let my_data = {
   age = 30,
   active = True,
 } in my_data
-let my_data = {
-  name = "Alice",
-  age = 30,
-  active = True,
-} in my_data

@@ -5,10 +5,3 @@ let my_data = [
   False,
   "hello \"world\"",
 ] in my_data
-let my_data = [
-  42,
-  3.14,
-  True,
-  False,
-  "hello \"world\"",
-] in my_data

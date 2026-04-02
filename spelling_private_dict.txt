@@ -15,6 +15,7 @@ CSharp
 Changelog
 Cobol
 Cpp
+Dhall
 Enum
 FBool
 FFloat
