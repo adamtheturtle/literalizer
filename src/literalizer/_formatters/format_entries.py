@@ -9,6 +9,32 @@ from literalizer._types import Value
 
 
 @beartype
+def strip_key_quotes(key: str) -> str:
+    """Strip the surrounding quotes from a formatted key string.
+
+    Handles double- and single-quoted strings.
+
+    Example::
+
+        strip_key_quotes('"name"')  # => 'name'
+
+    Raises ``ValueError`` for unquoted keys.  All current input
+    formats produce quoted string keys; this guard exists so that
+    adding a new input format with non-string keys surfaces
+    immediately rather than silently slicing the wrong characters.
+    """
+    min_quoted_length = 2
+    if (
+        len(key) >= min_quoted_length
+        and key[0] in {'"', "'"}
+        and key[-1] == key[0]
+    ):
+        return key[1:-1]
+    msg = f"Expected a quoted key, got {key!r}"  # pragma: no cover
+    raise ValueError(msg)  # pragma: no cover
+
+
+@beartype
 def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
     """Return a ``format_variable_declaration`` or
     ``format_variable_assignment`` callable from a template string.
@@ -182,12 +208,7 @@ def dict_entry_symbol_style(
     @beartype
     def _format(key: str, val: Value, value: str) -> str:
         """Format a dict entry in symbol style."""
-        # *key* arrives already formatted as a quoted string literal
-        # (e.g. '"name"' or "'name'").  Strip the surrounding quote
-        # characters so the symbol-style output is ``name: value``
-        # rather than ``"name": value``.
-        stripped_key = key[1:-1]
-        return f"{stripped_key}: {format_value(val, value)}"
+        return f"{strip_key_quotes(key=key)}: {format_value(val, value)}"
 
     return _format
 
