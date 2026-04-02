@@ -15,6 +15,14 @@ CSharp
 Changelog
 Cobol
 Cpp
+EBool
+EDict
+EFloat
+EInt
+EList
+ENull
+ESet
+EStr
 Enum
 FBool
 FFloat
