@@ -58,6 +58,25 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _gleam_nonneg_only(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap *base* so negative values fall back to decimal.
+
+    Gleam does not support negative hex/octal/binary literals.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format an integer, falling back to decimal for negatives."""
+        if value < 0:
+            return str(object=value)
+        return base(value)
+
+    return _format
+
+
+@beartype
 class Gleam(metaclass=LanguageCls):
     """Gleam language specification.
 
@@ -213,20 +232,20 @@ class Gleam(metaclass=LanguageCls):
         )
         HEX = MappingProxyType(
             mapping={
-                "NONE": format_integer_hex,
-                "UNDERSCORE": format_integer_hex,
+                "NONE": _gleam_nonneg_only(base=format_integer_hex),
+                "UNDERSCORE": _gleam_nonneg_only(base=format_integer_hex),
             }
         )
         OCTAL = MappingProxyType(
             mapping={
-                "NONE": format_integer_octal,
-                "UNDERSCORE": format_integer_octal,
+                "NONE": _gleam_nonneg_only(base=format_integer_octal),
+                "UNDERSCORE": _gleam_nonneg_only(base=format_integer_octal),
             }
         )
         BINARY = MappingProxyType(
             mapping={
-                "NONE": format_integer_binary,
-                "UNDERSCORE": format_integer_binary,
+                "NONE": _gleam_nonneg_only(base=format_integer_binary),
+                "UNDERSCORE": _gleam_nonneg_only(base=format_integer_binary),
             }
         )
 
