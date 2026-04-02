@@ -58,6 +58,17 @@ def _find_redefinition_style(
     return None
 
 
+def _declaration_only_combined(
+    declaration: str,
+    _assignment: str,
+    _variable_name: str,
+) -> str:
+    """Return just the declaration, ignoring assignment and variable
+    name.
+    """
+    return declaration
+
+
 def _newline_combined(
     wrap: Callable[[str, str], str],
 ) -> Callable[[str, str, str], str]:
@@ -516,7 +527,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Json5.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Json5,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_declaration_only_combined,
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
@@ -595,7 +606,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Hcl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_declaration_only_combined,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Julia.__name__: _LanguageConfig(
@@ -713,7 +724,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_declaration_only_combined,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.VisualBasic.__name__: _LanguageConfig(
@@ -737,7 +748,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Toml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Toml,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_declaration_only_combined,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.ObjectiveC.__name__: _LanguageConfig(
@@ -755,7 +766,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Yaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Yaml,
         wrap=_wrap_identity,
-        combined_wrap=lambda d, _a, _v: d,
+        combined_wrap=_declaration_only_combined,
     ),
 }
 
