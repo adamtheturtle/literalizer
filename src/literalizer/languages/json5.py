@@ -344,10 +344,10 @@ class Json5(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name}: {value}")
+            variable_formatter(template="{value}")
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name}: {value}")
+            variable_formatter(template="{value}")
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
