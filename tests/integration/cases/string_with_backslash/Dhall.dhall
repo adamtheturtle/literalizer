@@ -6,4 +6,4 @@ let my_data = [
   "trailing\\",
   "both \"quotes''' here",
   "line1\\nline2\nwith newline",
-]
+] in my_data

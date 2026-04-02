@@ -3,4 +3,4 @@ let my_data = [
   -- before banana
   "banana",
   -- trailing
-]
+] in my_data

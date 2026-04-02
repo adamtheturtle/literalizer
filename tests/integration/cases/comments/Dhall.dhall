@@ -4,4 +4,4 @@ let my_data = {
   port = 8080,
   -- Enable debug mode
   debug = True,
-}
+} in my_data

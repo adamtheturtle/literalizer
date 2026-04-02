@@ -6,7 +6,7 @@ let my_data = [
   "trailing\\",
   "both \"quotes''' here",
   "line1\\nline2\nwith newline",
-]
+] in my_data
 let my_data = [
   "C:\\path\\to\\file",
   "back\\\\slash",
@@ -15,4 +15,4 @@ let my_data = [
   "trailing\\",
   "both \"quotes''' here",
   "line1\\nline2\nwith newline",
-]
+] in my_data

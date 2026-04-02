@@ -4,4 +4,4 @@ let my_data = [
   True,
   False,
   "hello \"world\"",
-]
+] in my_data

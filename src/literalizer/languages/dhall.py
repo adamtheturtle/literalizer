@@ -161,6 +161,7 @@ class Dhall(metaclass=LanguageCls):
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=False,
         )
 
         @property
@@ -194,7 +195,7 @@ class Dhall(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=variable_formatter(
-                template="let {name} = {value}",
+                template="let {name} = {value} in {name}",
             ),
             supports_redefinition=True,
         )
@@ -370,7 +371,9 @@ class Dhall(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="let {name} = {value}")
+            variable_formatter(
+                template="let {name} = {value} in {name}",
+            )
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
