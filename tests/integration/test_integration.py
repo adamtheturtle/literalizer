@@ -1418,10 +1418,12 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     variants: list[_Variant] = []
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
-        default_le = spec.line_ending
+        default_line_ending = spec.line_ending
         default_ds = spec.declaration_style
-        non_default_le = [
-            le for le in spec.line_endings if le is not default_le
+        non_default_line_endings = [
+            line_ending
+            for line_ending in spec.line_endings
+            if line_ending is not default_line_ending
         ]
         non_default_ds = [
             ds for ds in spec.declaration_styles if ds is not default_ds
@@ -1429,17 +1431,17 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=(
-                    f"{lang_name}_line_ending_{le.name.lower()}"
+                    f"{lang_name}_line_ending_{line_ending.name.lower()}"
                     f"_decl_{ds.name.lower()}"
                 ),
                 spec=lang_config.lang_cls(
-                    line_ending=le,
+                    line_ending=line_ending,
                     declaration_style=ds,
                 ),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
-            for le in non_default_le
+            for line_ending in non_default_line_endings
             for ds in non_default_ds
         )
     return variants
@@ -1516,12 +1518,12 @@ def test_golden_file_combined_variable_forms(
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     spec = lang_config.lang_cls()
-    redef_style = _find_redefinition_style(spec=spec)
-    if redef_style is None:
+    redefinition_style = _find_redefinition_style(spec=spec)
+    if redefinition_style is None:
         pytest.skip(
             f"{language} has no declaration style that supports redefinition"
         )
-    spec = lang_config.lang_cls(declaration_style=redef_style)
+    spec = lang_config.lang_cls(declaration_style=redefinition_style)
     yaml_string = input_path.read_text()
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
@@ -1714,20 +1716,20 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
         spec = lang_config.lang_cls()
         if _find_redefinition_style(spec=spec) is None:
             continue
-        default_le = spec.line_ending
-        for le in spec.line_endings:
-            if le is default_le:
+        default_line_ending = spec.line_ending
+        for line_ending in spec.line_endings:
+            if line_ending is default_line_ending:
                 continue
             for case_dir_name in ("simple_sequence", "simple_dict"):
                 name = (
                     f"{lang_name}_line_ending"
-                    f"_{le.name.lower()}_{case_dir_name}"
+                    f"_{line_ending.name.lower()}_{case_dir_name}"
                 )
                 cases.append(
                     _LineEndingCombinedCase(
                         name=name,
                         lang_config=lang_config,
-                        line_ending=le,
+                        line_ending=line_ending,
                         case_dir_name=case_dir_name,
                     )
                 )
@@ -1753,11 +1755,11 @@ def test_line_ending_combined_variable_forms(
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     base_spec = case.lang_config.lang_cls()
-    redef_style = _find_redefinition_style(spec=base_spec)
-    assert redef_style is not None
+    redefinition_style = _find_redefinition_style(spec=base_spec)
+    assert redefinition_style is not None
     spec = case.lang_config.lang_cls(
         line_ending=case.line_ending,
-        declaration_style=redef_style,
+        declaration_style=redefinition_style,
     )
     declaration = literalizer.literalize_yaml(
         yaml_string=yaml_string,
