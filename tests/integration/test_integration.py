@@ -162,6 +162,36 @@ def _wrap_elixir(content: str, variable_name: str) -> str:
 
 
 @beartype
+def _wrap_elm(content: str, variable_name: str) -> str:
+    """Wrap an Elm value declaration in a module."""
+    lines = content.split(sep="\n")
+    preamble_prefixes = ("type ",)
+    # Find the first line that is NOT body-preamble.  A line counts as
+    # preamble when it starts with a known prefix or is an indented
+    # continuation of a preceding block.
+    expr_start = next(
+        (
+            idx
+            for idx, line in enumerate(iterable=lines)
+            if not (
+                any(line.startswith(p) for p in preamble_prefixes)
+                or (line.startswith("    ") and idx > 0)
+            )
+        ),
+        len(lines),
+    )
+
+    preamble = "\n".join(lines[:expr_start])
+    expression = "\n".join(lines[expr_start:])
+
+    parts = ["module Check exposing (..)"]
+    if preamble:
+        parts.append(preamble)
+    parts.append(f"{variable_name} : Val\n{expression}")
+    return "\n\n\n".join(parts)
+
+
+@beartype
 def _wrap_erlang(content: str, variable_name: str) -> str:
     """Wrap an Erlang variable binding in a module function.
 
@@ -630,6 +660,15 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Elixir,
         wrap=_wrap_elixir,
         combined_wrap=lambda d, _a, v: _wrap_elixir(
+            content=d,
+            variable_name=v,
+        ),
+        wrap_variable_name="my_data",
+    ),
+    literalizer.languages.Elm.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Elm,
+        wrap=_wrap_elm,
+        combined_wrap=lambda d, _a, v: _wrap_elm(
             content=d,
             variable_name=v,
         ),

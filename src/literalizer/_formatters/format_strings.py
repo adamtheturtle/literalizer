@@ -214,6 +214,28 @@ def format_string_backslash_dollar(value: str) -> str:
 
 
 @beartype
+def format_string_backslash_hcl(value: str) -> str:
+    r"""Format a string with HCL interpolation escaping.
+
+    Escapes backslashes, double quotes, newlines, and tabs with a backslash
+    prefix.  Additionally doubles ``$`` before ``{`` and ``%`` before ``{``
+    to prevent HCL template interpolation / directive syntax.
+
+    Example: ``prefix ${HOME}`` -> ``"prefix $${HOME}"``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace("${", "$${")
+        .replace("%{", "%%{")
+    )
+    return f'"{escaped}"'
+
+
+@beartype
 def format_string_backslash_hash(value: str) -> str:
     r"""Format a string using backslash escaping, including ``#{``.
 
