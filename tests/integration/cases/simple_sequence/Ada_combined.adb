@@ -19,6 +19,5 @@ procedure Check is
       );
    end Check_Assignment;
 begin
-   Check_Declaration;
-   Check_Assignment;
+   null;
 end Check;

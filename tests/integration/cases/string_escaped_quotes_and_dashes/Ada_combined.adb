@@ -9,6 +9,5 @@ procedure Check is
       my_data := AStr ("hello ""world"" -- not a comment");
    end Check_Assignment;
 begin
-   Check_Declaration;
-   Check_Assignment;
+   null;
 end Check;

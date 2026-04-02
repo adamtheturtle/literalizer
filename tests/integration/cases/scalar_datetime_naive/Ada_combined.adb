@@ -9,6 +9,5 @@ procedure Check is
       my_data := AStr ("2024-01-15T12:30:00");
    end Check_Assignment;
 begin
-   Check_Declaration;
-   Check_Assignment;
+   null;
 end Check;

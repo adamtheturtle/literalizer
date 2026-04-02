@@ -174,24 +174,20 @@ def _wrap_ada_combined(
     _variable_name: str,
 ) -> str:
     """Ada: declaration in one nested procedure, assignment in another."""
-    decl_indented = "      " + declaration.replace("\n", "\n      ")
-    assign_indented = "      " + assignment.replace("\n", "\n      ")
-    return (
-        "procedure Check is\n"
-        "   procedure Check_Declaration is\n"
+    decl_indented = "   " + declaration.replace("\n", "\n   ")
+    assign_indented = "   " + assignment.replace("\n", "\n   ")
+    inner = (
+        "procedure Check_Declaration is\n"
         f"{decl_indented}\n"
-        "   begin\n"
-        "      null;\n"
-        "   end Check_Declaration;\n"
-        "   procedure Check_Assignment is\n"
-        "   begin\n"
-        f"{assign_indented}\n"
-        "   end Check_Assignment;\n"
         "begin\n"
-        "   Check_Declaration;\n"
-        "   Check_Assignment;\n"
-        "end Check;"
+        "   null;\n"
+        "end Check_Declaration;\n"
+        "procedure Check_Assignment is\n"
+        "begin\n"
+        f"{assign_indented}\n"
+        "end Check_Assignment;"
     )
+    return _wrap_ada(content=inner, _variable_name=_variable_name)
 
 
 @beartype
