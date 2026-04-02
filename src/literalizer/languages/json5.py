@@ -60,10 +60,19 @@ def _format_json5_dict_entry(key: str, _val: Value, value: str) -> str:
     5.1 ``IdentifierName`` (and is not a reserved word), the quotes are
     stripped for cleaner idiomatic JSON5 output.
     """
-    inner = key[1:-1]
-    identifier_pattern = re.compile(pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$")
-    if identifier_pattern.match(string=inner):
-        return f"{inner}: {value}"
+    min_quoted_key_length = 2
+    is_quoted = (
+        key.startswith('"')
+        and key.endswith('"')
+        and len(key) >= min_quoted_key_length
+    )
+    if is_quoted:
+        inner = key[1:-1]
+        identifier_pattern = re.compile(
+            pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$",
+        )
+        if identifier_pattern.match(string=inner):
+            return f"{inner}: {value}"
     return f"{key}: {value}"
 
 

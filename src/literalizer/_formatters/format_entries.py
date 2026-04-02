@@ -159,11 +159,20 @@ def dict_entry_symbol_style(
     @beartype
     def _format(key: str, val: Value, value: str) -> str:
         """Format a dict entry in symbol style."""
-        # *key* arrives already formatted as a quoted string literal
-        # (e.g. '"name"' or "'name'").  Strip the surrounding quote
-        # characters so the symbol-style output is ``name: value``
-        # rather than ``"name": value``.
-        stripped_key = key[1:-1]
+        # *key* arrives already formatted — usually as a quoted string
+        # literal (e.g. '"name"' or "'name'"), but may be an unquoted
+        # literal for non-string keys.  Strip surrounding quote
+        # characters when present so the symbol-style output is
+        # ``name: value`` rather than ``"name": value``.
+        min_quoted_key_length = 2
+        if (
+            len(key) >= min_quoted_key_length
+            and key[0] in {'"', "'"}
+            and key[-1] == key[0]
+        ):
+            stripped_key = key[1:-1]
+        else:
+            stripped_key = key
         return f"{stripped_key}: {format_value(val, value)}"
 
     return _format

@@ -150,7 +150,13 @@ def _key_to_cobol_name(key_str: str) -> str:
     reserved words.  The result is truncated to 28 characters (leaving
     room for the prefix).
     """
-    name = key_str[1:-1].replace('""', '"')
+    min_quoted_key_length = 2
+    is_quoted = (
+        key_str.startswith('"')
+        and key_str.endswith('"')
+        and len(key_str) >= min_quoted_key_length
+    )
+    name = key_str[1:-1].replace('""', '"') if is_quoted else key_str
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
