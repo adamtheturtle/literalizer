@@ -150,6 +150,7 @@ def _make_initializer_list_config(
         preamble_lines=("#include <vector>",),
         format_entry=passthrough_sequence_entry,
         typed_opener_fallback=None,
+        uses_typed_literal_for_scalars=False,
     )
 
 
@@ -163,6 +164,7 @@ _ARRAY_CONFIG = SequenceFormatConfig(
     preamble_lines=("#include <array>",),
     format_entry=passthrough_sequence_entry,
     typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
 )
 
 
