@@ -1,0 +1,5 @@
+(list
+    (cons "my-key" "value1")
+    (cons "another-key" "value2")
+    (cons "normal_key" "value3")
+)
