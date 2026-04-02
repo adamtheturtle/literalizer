@@ -1,5 +1,0 @@
-(list
-    inf
-    -inf
-    nan
-)

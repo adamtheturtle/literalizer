@@ -1,8 +1,0 @@
-* my_data
-@code json
-[
-    inf,
-    -inf,
-    nan
-]
-@end
