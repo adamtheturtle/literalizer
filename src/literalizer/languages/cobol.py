@@ -20,6 +20,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
+    strip_key_quotes,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -30,6 +31,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -150,7 +152,7 @@ def _key_to_cobol_name(key_str: str) -> str:
     reserved words.  The result is truncated to 28 characters (leaving
     room for the prefix).
     """
-    name = key_str[1:-1].replace('""', '"')
+    name = strip_key_quotes(key=key_str).replace('""', '"')
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
@@ -311,7 +313,10 @@ class Cobol(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        TYPED = "typed"
+        TYPED = DeclarationStyleConfig(
+            formatter=_format_variable_declaration,
+            supports_redefinition=True,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -483,7 +488,7 @@ class Cobol(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment

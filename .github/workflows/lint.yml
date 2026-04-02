@@ -63,6 +63,9 @@ jobs:
   lint-json5:
     uses: ./.github/workflows/lint-json5.yml
 
+  lint-jsonnet:
+    uses: ./.github/workflows/lint-jsonnet.yml
+
   lint-typescript:
     uses: ./.github/workflows/lint-typescript.yml
 
@@ -196,6 +199,7 @@ jobs:
       - lint-groovy
       - lint-javascript
       - lint-json5
+      - lint-jsonnet
       - lint-typescript
       - lint-java
       - lint-c
