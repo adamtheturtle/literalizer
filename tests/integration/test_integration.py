@@ -460,16 +460,6 @@ def _wrap_cobol_combined(
     )
 
 
-@beartype
-def _declaration_only_combined(
-    declaration: str,
-    _assignment: str,
-    _variable_name: str,
-) -> str:
-    """Return only the declaration, ignoring the assignment."""
-    return declaration
-
-
 _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Ada.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ada,
@@ -531,7 +521,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Jsonnet.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Jsonnet,
         wrap=_wrap_identity,
-        combined_wrap=_declaration_only_combined,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
