@@ -25,6 +25,7 @@ from .hcl import Hcl
 from .java import Java
 from .javascript import JavaScript
 from .json5 import Json5
+from .jsonnet import Jsonnet
 from .julia import Julia
 from .kotlin import Kotlin
 from .lua import Lua
@@ -76,6 +77,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Java,
         JavaScript,
         Json5,
+        Jsonnet,
         Julia,
         Kotlin,
         Lua,
@@ -129,6 +131,7 @@ __all__ = [
     "Java",
     "JavaScript",
     "Json5",
+    "Jsonnet",
     "Julia",
     "Kotlin",
     "Lua",
