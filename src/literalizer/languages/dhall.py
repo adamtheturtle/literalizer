@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import functools
 import re
 from typing import TYPE_CHECKING
 
@@ -30,7 +29,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_control,
+    escape_control_chars,
 )
 from literalizer._language import (
     CommentConfig,
@@ -53,16 +52,37 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _format_dhall_string(value: str) -> str:
+    r"""Format a string for Dhall using backslash escaping.
+
+    Escapes backslashes, double quotes, dollar signs (Dhall uses
+    ``${...}`` for interpolation), newlines, tabs, and C0 control
+    characters, then wraps the result in double quotes.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("$", "\\$")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    escaped = escape_control_chars(value=escaped, fmt="\\u{:04X}")
+    return f'"{escaped}"'
+
+
+@beartype
 def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
     """Format a Dhall record entry as ``key = value``.
 
     If the key is a double-quoted string that is also a valid Dhall
-    identifier (letter or underscore followed by letters, digits, underscores,
-    or slashes), the quotes are stripped for idiomatic output.
+    simple label (letter or underscore followed by letters, digits,
+    hyphens, underscores, or slashes), the quotes are stripped for
+    idiomatic output.
     """
     inner = key[1:-1]
     identifier_pattern = re.compile(
-        pattern=r"^[A-Za-z_][A-Za-z0-9_/]*$",
+        pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$",
     )
     if identifier_pattern.match(string=inner):
         return f"{inner} = {value}"
@@ -310,10 +330,7 @@ class Dhall(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        self.format_string: Callable[[str], str] = functools.partial(
-            format_string_backslash_control,
-            control_char_fmt="\\u{:04X}",
-        )
+        self.format_string: Callable[[str], str] = _format_dhall_string
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (
