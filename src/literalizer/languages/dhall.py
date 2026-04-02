@@ -197,7 +197,7 @@ class Dhall(metaclass=LanguageCls):
             formatter=variable_formatter(
                 template="let {name} = {value} in {name}",
             ),
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
 
     class DictEntryStyles(enum.Enum):
