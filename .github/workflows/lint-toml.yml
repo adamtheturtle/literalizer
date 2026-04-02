@@ -20,6 +20,7 @@ jobs:
             config:
               - '**/*.yml'
               - 'pyproject.toml'
+              - 'check_toml_syntax.py'
             lang:
               - 'tests/integration/cases/**/*.toml'
       - name: Find files to lint
@@ -39,21 +40,12 @@ jobs:
           if [ -s /tmp/files-to-lint ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Install taplo
+      - uses: astral-sh/setup-uv@v7
         if: steps.files.outputs.found == 'true'
-        run: |-
-          curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-linux-x86_64.gz \
-            | gzip -d - \
-            | install -m 755 /dev/stdin /usr/local/bin/taplo
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Check TOML syntax
         if: steps.files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            # taplo only validates TOML v1.0. Files that use TOML v1.1
-            # multiline inline table syntax (a line ending with "{") are
-            # intentionally skipped.
-            if grep -qP '\{ *$' "$f"; then
-              continue
-            fi
-            taplo lint "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py
+          < /tmp/files-to-lint
