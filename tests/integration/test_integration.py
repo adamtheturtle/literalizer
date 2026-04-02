@@ -209,8 +209,8 @@ def _wrap_objc(content: str, variable_name: str) -> str:
 
 
 @beartype
-def _in_mojo_main(content: str, _variable_name: str) -> str:
-    """Indent content and wrap in a Mojo ``def main():`` function.
+def _wrap_mojo(content: str, variable_name: str) -> str:
+    """Wrap a Mojo variable declaration in a main function.
 
     Mojo does not support top-level code.  No statements, expressions,
     or variable declarations are allowed at module scope, so generated
@@ -222,19 +222,11 @@ def _in_mojo_main(content: str, _variable_name: str) -> str:
     (``new_variable=False``) omit it.  The distinction is stylistic
     since Mojo does not require ``var`` inside functions.
     """
-    indented = "\n".join(f"    {line}" for line in content.splitlines())
-    return f"def main():\n{indented}"
-
-
-@beartype
-def _wrap_mojo(content: str, variable_name: str) -> str:
-    """Wrap a Mojo variable declaration in a main function."""
     # Consume the variable so ``--Werror`` does not flag the
     # "assignment was never used" warning.
-    return _in_mojo_main(
-        content=content + f"\n_ = {variable_name}",
-        _variable_name=variable_name,
-    )
+    content = content + f"\n_ = {variable_name}"
+    indented = "\n".join(f"    {line}" for line in content.splitlines())
+    return f"def main():\n{indented}"
 
 
 @beartype
@@ -245,17 +237,16 @@ def _wrap_mojo_combined(
 ) -> str:
     """Wrap Mojo declaration and assignment in a main function.
 
-    This cannot use ``_newline_combined(wrap=_wrap_mojo)`` because the
-    Mojo ``--Werror`` flag treats an assignment that is immediately
+    Mojo ``--Werror`` treats an assignment that is immediately
     overwritten without being read as an error
     (``assignment to 'x' was never used``).  A bare ``_ = variable``
     must appear *between* the declaration and the reassignment, not
     only at the end.
     """
     use = f"_ = {variable_name}"
-    return _in_mojo_main(
-        content=declaration + f"\n{use}\n" + assignment + f"\n{use}",
-        _variable_name=variable_name,
+    return _wrap_mojo(
+        content=declaration + f"\n{use}\n" + assignment,
+        variable_name=variable_name,
     )
 
 
