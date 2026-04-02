@@ -1,0 +1,3 @@
+---
+- "prefix ${HOME} suffix"
+- "${interpolated}"
