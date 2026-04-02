@@ -24,7 +24,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 import literalizer.languages
-from literalizer._language import DeclarationStyleConfig
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -48,12 +47,7 @@ def _find_redefinition_style(
 ) -> enum.Enum | None:
     """Return a declaration style that supports redefinition, or None."""
     for style in spec.declaration_styles:
-        style_value = style.value
-        if isinstance(style_value, DeclarationStyleConfig):
-            if style_value.supports_redefinition:
-                return style
-        else:
-            # String-valued enum — dynamic languages always allow redefinition.
+        if style.value.supports_redefinition:
             return style
     return None
 

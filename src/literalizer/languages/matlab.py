@@ -34,6 +34,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -244,7 +245,10 @@ class Matlab(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        ASSIGN = "assign"
+        ASSIGN = DeclarationStyleConfig(
+            formatter=variable_formatter(template="{name} = {value};"),
+            supports_redefinition=True,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -432,7 +436,7 @@ class Matlab(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
