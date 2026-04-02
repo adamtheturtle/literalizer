@@ -110,7 +110,7 @@ class Dhall(metaclass=LanguageCls):
     """
 
     extension = ".dhall"
-    pygments_name = "dhall"
+    pygments_name = "text"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -157,7 +157,7 @@ class Dhall(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=None,
+            empty_sequence="[] : List {}",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -176,7 +176,7 @@ class Dhall(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="["),
             close="]",
-            empty_set=None,
+            empty_set="[] : List {}",
             preamble_lines=(),
             set_opener_template="",
         )
@@ -320,7 +320,7 @@ class Dhall(metaclass=LanguageCls):
             open_fn=fixed_dict_open(open_str="{"),
             close="}",
             format_entry=_format_dhall_dict_entry,
-            empty_dict=None,
+            empty_dict="{=}",
             preamble_lines=(),
             narrowed_open=None,
         )
