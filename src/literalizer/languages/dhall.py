@@ -88,10 +88,11 @@ def _format_dhall_string(value: str) -> str:
 def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
     """Format a Dhall record entry as ``key = value``.
 
-    If the key is a double-quoted string that is also a valid Dhall
-    simple label (letter or underscore followed by letters, digits,
-    hyphens, underscores, or slashes), the quotes are stripped for
-    idiomatic output.
+    If the key is a valid Dhall simple label (letter or underscore
+    followed by letters, digits, hyphens, underscores, or slashes),
+    the quotes are stripped for idiomatic bare output.  Otherwise the
+    key is wrapped in backticks, which Dhall uses for non-identifier
+    labels.
     """
     inner = key[1:-1]
     identifier_pattern = re.compile(
@@ -99,7 +100,7 @@ def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
     )
     if identifier_pattern.match(string=inner):
         return f"{inner} = {value}"
-    return f"{key} = {value}"
+    return f"`{inner}` = {value}"
 
 
 @beartype
@@ -167,7 +168,7 @@ class Dhall(metaclass=LanguageCls):
         LIST = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="["),
             close="]",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
             empty_sequence="[] : List {}",

@@ -1,6 +1,6 @@
 let my_data = [
-  True,
+  "True",
   "hi",
-  [+1, +2],
-  "",
+  "[1, 2]",
+  "None",
 ] in my_data

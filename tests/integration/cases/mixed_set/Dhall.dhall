@@ -1,5 +1,5 @@
 let my_data = [
-  True,
-  +42,
+  "42",
+  "True",
   "apple",
 ] in my_data
