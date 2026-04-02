@@ -49,6 +49,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -347,7 +348,10 @@ class Cpp(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        AUTO = "auto"
+        AUTO = DeclarationStyleConfig(
+            formatter=_format_variable_declaration,
+            supports_redefinition=True,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -622,7 +626,7 @@ class Cpp(metaclass=LanguageCls):
             "};",
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
