@@ -37,6 +37,7 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
+    DeclarationStyleConfig,
     DictFormatConfig,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -210,7 +211,10 @@ class VisualBasic(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        DIM = "dim"
+        DIM = DeclarationStyleConfig(
+            formatter=_format_variable_declaration,
+            supports_redefinition=True,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -453,7 +457,7 @@ class VisualBasic(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = False
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")

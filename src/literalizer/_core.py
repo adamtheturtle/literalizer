@@ -924,7 +924,7 @@ def _coerce_yaml_keys(*, data: object) -> Value:
         case ordereddict():
             omap = cast("dict[object, object]", data)
             coerced = ordereddict(
-                [(k, _coerce_yaml_keys(data=v)) for k, v in omap.items()]
+                [(f"{k}", _coerce_yaml_keys(data=v)) for k, v in omap.items()]
             )
             return cast("Value", coerced)
         case dict():
