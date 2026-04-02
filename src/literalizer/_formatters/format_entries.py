@@ -28,7 +28,7 @@ def strip_key_quotes(key: str) -> str:
         and key[-1] == key[0]
     ):
         return key[1:-1]
-    return key
+    return key  # pragma: no cover
 
 
 @beartype
