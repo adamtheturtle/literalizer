@@ -58,7 +58,12 @@ def _newline_combined(
     """Build a combined_wrap that joins declaration and assignment with a
     newline and passes through *wrap*.
     """
-    return lambda d, a, v: wrap(d + "\n" + a, v)
+
+    def combined_wrap(declaration: str, assignment: str, value: str) -> str:
+        """Join declaration and assignment with a newline, then wrap."""
+        return wrap(declaration + "\n" + assignment, value)
+
+    return combined_wrap
 
 
 @beartype
