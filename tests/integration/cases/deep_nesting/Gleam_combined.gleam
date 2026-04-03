@@ -1,11 +1,20 @@
-import gleam/dict
+pub type GVal {
+  GNull
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+  GSet(List(GVal))
+}
 
 pub fn main() {
-  let my_data = dict.from_list([
-    #("level1", dict.from_list([#("level2", dict.from_list([#("level3", dict.from_list([#("level4", dict.from_list([#("value", "deep"), #("items", ["a", "b"])]))])), #("sibling", 42)])), #("tags", [dict.from_list([#("name", "tag1"), #("meta", dict.from_list([#("priority", 1), #("labels", ["x", "y"])]))])])])),
+  let my_data = GDict([
+    #("level1", GDict([#("level2", GDict([#("level3", GDict([#("level4", GDict([#("value", GStr("deep")), #("items", GList([GStr("a"), GStr("b")]))]))])), #("sibling", GInt(42))])), #("tags", GList([GDict([#("name", GStr("tag1")), #("meta", GDict([#("priority", GInt(1)), #("labels", GList([GStr("x"), GStr("y")]))]))])]))])),
   ])
-  let my_data = dict.from_list([
-    #("level1", dict.from_list([#("level2", dict.from_list([#("level3", dict.from_list([#("level4", dict.from_list([#("value", "deep"), #("items", ["a", "b"])]))])), #("sibling", 42)])), #("tags", [dict.from_list([#("name", "tag1"), #("meta", dict.from_list([#("priority", 1), #("labels", ["x", "y"])]))])])])),
+  let my_data = GDict([
+    #("level1", GDict([#("level2", GDict([#("level3", GDict([#("level4", GDict([#("value", GStr("deep")), #("items", GList([GStr("a"), GStr("b")]))]))])), #("sibling", GInt(42))])), #("tags", GList([GDict([#("name", GStr("tag1")), #("meta", GDict([#("priority", GInt(1)), #("labels", GList([GStr("x"), GStr("y")]))]))])]))])),
   ])
   let _ = my_data
 }

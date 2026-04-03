@@ -1,15 +1,24 @@
-import gleam/set
+pub type GVal {
+  GNull
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+  GSet(List(GVal))
+}
 
 pub fn main() {
-  let my_data = set.from_list([
-    1,
-    2,
-    3,
+  let my_data = GSet([
+    GInt(1),
+    GInt(2),
+    GInt(3),
   ])
-  let my_data = set.from_list([
-    1,
-    2,
-    3,
+  let my_data = GSet([
+    GInt(1),
+    GInt(2),
+    GInt(3),
   ])
   let _ = my_data
 }

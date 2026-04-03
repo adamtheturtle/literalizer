@@ -1,14 +1,24 @@
+pub type GVal {
+  GNull
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+  GSet(List(GVal))
+}
 
 pub fn main() {
-  let my_data = [
+  let my_data = GList([
     // line 1
     // line 2
-    "a",
-  ]
-  let my_data = [
+    GStr("a"),
+  ])
+  let my_data = GList([
     // line 1
     // line 2
-    "a",
-  ]
+    GStr("a"),
+  ])
   let _ = my_data
 }
