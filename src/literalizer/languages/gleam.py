@@ -152,32 +152,6 @@ def _gleam_float_wrapper(
     return _format
 
 
-_format_gleam_float_repr = _gleam_float_wrapper(
-    inner=functools.partial(
-        format_float_repr,
-        inf_literal="",
-        neg_inf_literal="",
-        nan_literal="",
-    ),
-)
-_format_gleam_float_scientific = _gleam_float_wrapper(
-    inner=functools.partial(
-        format_float_scientific,
-        inf_literal="",
-        neg_inf_literal="",
-        nan_literal="",
-    ),
-)
-_format_gleam_float_fixed = _gleam_float_wrapper(
-    inner=functools.partial(
-        format_float_fixed,
-        inf_literal="",
-        neg_inf_literal="",
-        nan_literal="",
-    ),
-)
-
-
 @beartype
 def _gleam_dict_entry(key: str, _val: Value, value: str) -> str:
     """Format a dict entry as a hash tuple with a plain-string key.
@@ -187,22 +161,6 @@ def _gleam_dict_entry(key: str, _val: Value, value: str) -> str:
     """
     key = key.removeprefix("GStr(").removesuffix(")")
     return f"#({key}, {value})"
-
-
-_GVAL_TYPE_DECL = (
-    "pub type GVal {\n"
-    "  GNull\n"
-    "  GBool(Bool)\n"
-    "  GInt(Int)\n"
-    "  GFloat(Float)\n"
-    "  GStr(String)\n"
-    "  GList(List(GVal))\n"
-    "  GDict(List(#(String, GVal)))\n"
-    "  GSet(List(GVal))\n"
-    "}"
-)
-
-_GVAL_PREAMBLE: tuple[str, ...] = (_GVAL_TYPE_DECL,)
 
 
 @beartype
@@ -256,6 +214,21 @@ class Gleam(metaclass=LanguageCls):
     supports_default_dict_value_type = False
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
+
+    _GVAL_TYPE_DECL = (
+        "pub type GVal {\n"
+        "  GNull\n"
+        "  GBool(Bool)\n"
+        "  GInt(Int)\n"
+        "  GFloat(Float)\n"
+        "  GStr(String)\n"
+        "  GList(List(GVal))\n"
+        "  GDict(List(#(String, GVal)))\n"
+        "  GSet(List(GVal))\n"
+        "}"
+    )
+
+    _GVAL_PREAMBLE: tuple[str, ...] = (_GVAL_TYPE_DECL,)
 
     class DateFormats(enum.Enum):
         """Date format options for Gleam."""
@@ -371,9 +344,36 @@ class Gleam(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=_format_gleam_float_repr)
-        SCIENTIFIC = enum.member(value=_format_gleam_float_scientific)
-        FIXED = enum.member(value=_format_gleam_float_fixed)
+        REPR = enum.member(
+            value=_gleam_float_wrapper(
+                inner=functools.partial(
+                    format_float_repr,
+                    inf_literal="",
+                    neg_inf_literal="",
+                    nan_literal="",
+                ),
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=_gleam_float_wrapper(
+                inner=functools.partial(
+                    format_float_scientific,
+                    inf_literal="",
+                    neg_inf_literal="",
+                    nan_literal="",
+                ),
+            )
+        )
+        FIXED = enum.member(
+            value=_gleam_float_wrapper(
+                inner=functools.partial(
+                    format_float_fixed,
+                    inf_literal="",
+                    neg_inf_literal="",
+                    nan_literal="",
+                ),
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -596,7 +596,7 @@ class Gleam(metaclass=LanguageCls):
                 dict,
                 set,
             ),
-            _GVAL_PREAMBLE,
+            self._GVAL_PREAMBLE,
         )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
