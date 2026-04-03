@@ -184,9 +184,7 @@ def _wrap_elm(content: str, variable_name: str) -> str:
     preamble = "\n".join(lines[:expr_start])
     expression = "\n".join(lines[expr_start:])
 
-    parts = ["module Check exposing (..)"]
-    if preamble:
-        parts.append(preamble)
+    parts = ["module Check exposing (..)", preamble]
     parts.append(f"{variable_name} : Val\n{expression}")
     return "\n\n\n".join(parts)
 
@@ -1713,6 +1711,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             "_list_val",
         ),
         (_build_float_format_variants(), "float_list", ""),
+        (_build_float_format_variants(), "float_scientific_notation", "_s"),
         (_build_float_format_variants(), "nested_float_list", "_n"),
         (_build_integer_format_variants(), "int_list", ""),
         (_build_integer_format_variants(), "int_list_large", "_large"),
