@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -171,9 +172,30 @@ class CommonLisp(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="(/ 1.0d0 0.0d0)",
+                neg_inf_literal="(/ -1.0d0 0.0d0)",
+                nan_literal="(/ 0.0d0 0.0d0)",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="(/ 1.0d0 0.0d0)",
+                neg_inf_literal="(/ -1.0d0 0.0d0)",
+                nan_literal="(/ 0.0d0 0.0d0)",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="(/ 1.0d0 0.0d0)",
+                neg_inf_literal="(/ -1.0d0 0.0d0)",
+                nan_literal="(/ 0.0d0 0.0d0)",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -339,3 +361,4 @@ class CommonLisp(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()
