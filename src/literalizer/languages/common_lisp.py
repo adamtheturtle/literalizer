@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -52,6 +53,15 @@ if TYPE_CHECKING:
 def _format_cons_entry(key: str, _val: Value, value: str) -> str:
     """Format a Common Lisp association-list entry as a ``cons`` pair."""
     return f"(cons {key} {value})"
+
+
+_CL_INF = "sb-ext:double-float-positive-infinity"
+_CL_NEG_INF = "sb-ext:double-float-negative-infinity"
+_CL_NAN = (
+    "#.(sb-int:with-float-traps-masked (:invalid)"
+    " (- sb-ext:double-float-positive-infinity"
+    " sb-ext:double-float-positive-infinity))"
+)
 
 
 @beartype
@@ -171,9 +181,30 @@ class CommonLisp(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal=_CL_INF,
+                neg_inf_literal=_CL_NEG_INF,
+                nan_literal=_CL_NAN,
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal=_CL_INF,
+                neg_inf_literal=_CL_NEG_INF,
+                nan_literal=_CL_NAN,
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal=_CL_INF,
+                neg_inf_literal=_CL_NEG_INF,
+                nan_literal=_CL_NAN,
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -339,3 +370,4 @@ class CommonLisp(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()

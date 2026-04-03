@@ -9,18 +9,42 @@ from literalizer.languages.elm import (
 
 
 def test_scientific_inf() -> None:
-    """Inf is returned via repr."""
-    assert format_float_scientific(value=math.inf) == "inf"
+    """Inf uses the provided inf_literal."""
+    assert (
+        format_float_scientific(
+            value=math.inf,
+            inf_literal="inf",
+            neg_inf_literal="-inf",
+            nan_literal="nan",
+        )
+        == "inf"
+    )
 
 
 def test_scientific_negative_inf() -> None:
-    """Negative inf is returned via repr."""
-    assert format_float_scientific(value=-math.inf) == "-inf"
+    """Negative inf uses the provided neg_inf_literal."""
+    assert (
+        format_float_scientific(
+            value=-math.inf,
+            inf_literal="inf",
+            neg_inf_literal="-inf",
+            nan_literal="nan",
+        )
+        == "-inf"
+    )
 
 
 def test_scientific_nan() -> None:
-    """NaN is returned via repr."""
-    assert format_float_scientific(value=math.nan) == "nan"
+    """NaN uses the provided nan_literal."""
+    assert (
+        format_float_scientific(
+            value=math.nan,
+            inf_literal="inf",
+            neg_inf_literal="-inf",
+            nan_literal="nan",
+        )
+        == "nan"
+    )
 
 
 def test_elm_float_negative() -> None:

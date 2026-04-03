@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -225,9 +226,30 @@ class Ruby(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="Float::INFINITY",
+                neg_inf_literal="-Float::INFINITY",
+                nan_literal="Float::NAN",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="Float::INFINITY",
+                neg_inf_literal="-Float::INFINITY",
+                nan_literal="Float::NAN",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="Float::INFINITY",
+                neg_inf_literal="-Float::INFINITY",
+                nan_literal="Float::NAN",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -445,3 +467,4 @@ class Ruby(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()

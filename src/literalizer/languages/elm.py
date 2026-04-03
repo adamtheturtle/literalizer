@@ -2,6 +2,8 @@
 
 import datetime
 import enum
+import functools
+import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -95,12 +97,20 @@ def _format_elm_integer_hex(value: int) -> str:
 
 def _elm_float_wrapper(
     inner: Callable[[float], str],
+    *,
+    inf_literal: str = "EFloat (1 / 0)",
+    neg_inf_literal: str = "EFloat (-(1 / 0))",
+    nan_literal: str = "EFloat (0 / 0)",
 ) -> Callable[[float], str]:
     """Wrap a float formatter to produce ``EFloat`` constructors."""
 
     @beartype
     def _format(value: float) -> str:
         """Format a float with an ``EFloat`` constructor."""
+        if math.isinf(value):
+            return neg_inf_literal if value < 0 else inf_literal
+        if math.isnan(value):
+            return nan_literal
         formatted = inner(value)
         if formatted.startswith("-"):
             return f"EFloat ({formatted})"
@@ -109,11 +119,30 @@ def _elm_float_wrapper(
     return _format
 
 
-_format_elm_float_repr = _elm_float_wrapper(inner=format_float_repr)
-_format_elm_float_scientific = _elm_float_wrapper(
-    inner=format_float_scientific,
+_format_elm_float_repr = _elm_float_wrapper(
+    inner=functools.partial(
+        format_float_repr,
+        inf_literal="",
+        neg_inf_literal="",
+        nan_literal="",
+    ),
 )
-_format_elm_float_fixed = _elm_float_wrapper(inner=format_float_fixed)
+_format_elm_float_scientific = _elm_float_wrapper(
+    inner=functools.partial(
+        format_float_scientific,
+        inf_literal="",
+        neg_inf_literal="",
+        nan_literal="",
+    ),
+)
+_format_elm_float_fixed = _elm_float_wrapper(
+    inner=functools.partial(
+        format_float_fixed,
+        inf_literal="",
+        neg_inf_literal="",
+        nan_literal="",
+    ),
+)
 
 
 @beartype
@@ -502,3 +531,4 @@ class Elm(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = _build_elm_body_preamble()
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()

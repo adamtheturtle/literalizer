@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -192,9 +193,30 @@ class D(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="double.infinity",
+                neg_inf_literal="-double.infinity",
+                nan_literal="double.nan",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="double.infinity",
+                neg_inf_literal="-double.infinity",
+                nan_literal="double.nan",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="double.infinity",
+                neg_inf_literal="-double.infinity",
+                nan_literal="double.nan",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -395,3 +417,4 @@ class D(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()

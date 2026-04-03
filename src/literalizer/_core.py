@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import json
+import math
 from collections.abc import Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
@@ -160,6 +161,22 @@ def _deduplicate(*, lines: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(result)
 
 
+@beartype
+def _has_special_float(*, data: Value) -> bool:
+    """Return ``True`` if *data* contains any special float value
+    (inf, -inf, or nan).
+    """
+    match data:
+        case float():
+            return math.isinf(data) or math.isnan(data)
+        case dict():
+            return any(_has_special_float(data=v) for v in data.values())
+        case list() | set():
+            return any(_has_special_float(data=v) for v in data)
+        case _:
+            return False
+
+
 @dataclasses.dataclass(frozen=True)
 class _PreambleResult:
     """Header and body preamble lines."""
@@ -186,6 +203,11 @@ def _compute_preamble(
         if scalar_type in types
         for line in preamble
     )
+    special_float = (
+        language.special_float_preamble
+        if float in types and _has_special_float(data=data)
+        else ()
+    )
     collection = _collection_preamble(types=types, language=language)
     empty_collection_types: frozenset[type] = (
         _collect_empty_collection_types(data=data)
@@ -200,7 +222,7 @@ def _compute_preamble(
     body = language.compute_body_preamble(types, data)
     return _PreambleResult(
         header=_deduplicate(
-            lines=scalar + collection + type_hint,
+            lines=scalar + special_float + collection + type_hint,
         )
         + tuple(language.static_body_preamble),
         body=body,

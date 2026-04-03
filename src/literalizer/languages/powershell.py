@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -190,9 +191,30 @@ class PowerShell(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="[double]::PositiveInfinity",
+                neg_inf_literal="[double]::NegativeInfinity",
+                nan_literal="[double]::NaN",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="[double]::PositiveInfinity",
+                neg_inf_literal="[double]::NegativeInfinity",
+                nan_literal="[double]::NaN",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="[double]::PositiveInfinity",
+                neg_inf_literal="[double]::NegativeInfinity",
+                nan_literal="[double]::NaN",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -364,3 +386,4 @@ class PowerShell(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()
