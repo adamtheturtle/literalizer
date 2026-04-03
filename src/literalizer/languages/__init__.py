@@ -38,6 +38,7 @@ from .norg import Norg
 from .objective_c import ObjectiveC
 from .ocaml import OCaml
 from .occam import Occam
+from .odin import Odin
 from .perl import Perl
 from .php import Php
 from .powershell import PowerShell
@@ -92,6 +93,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         ObjectiveC,
         OCaml,
         Occam,
+        Odin,
         Perl,
         Php,
         PowerShell,
@@ -148,6 +150,7 @@ __all__ = [
     "OCaml",
     "ObjectiveC",
     "Occam",
+    "Odin",
     "Perl",
     "Php",
     "PowerShell",

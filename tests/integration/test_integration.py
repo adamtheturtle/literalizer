@@ -137,6 +137,12 @@ def _wrap_go(content: str, variable_name: str) -> str:
 
 
 @beartype
+def _wrap_odin(content: str, variable_name: str) -> str:
+    """Wrap an Odin short variable declaration in a main procedure."""
+    return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
+
+
+@beartype
 def _wrap_java(content: str, _variable_name: str) -> str:
     """Wrap a Java var declaration in a static method."""
     return (
@@ -770,6 +776,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Norg,
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap_variable_name="my_data",
+    ),
+    literalizer.languages.Odin.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Odin,
+        wrap=_wrap_odin,
+        combined_wrap=_newline_combined(wrap=_wrap_odin),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.VisualBasic.__name__: _LanguageConfig(
