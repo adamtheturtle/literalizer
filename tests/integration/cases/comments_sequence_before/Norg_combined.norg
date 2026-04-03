@@ -1,9 +1,0 @@
-* my_data
-@code json
-[
-    % first%
-    "a",
-    % second%
-    "b"
-]
-@end
