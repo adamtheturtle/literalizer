@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -264,9 +265,30 @@ class Go(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="math.Inf(1)",
+                neg_inf_literal="math.Inf(-1)",
+                nan_literal="math.NaN()",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="math.Inf(1)",
+                neg_inf_literal="math.Inf(-1)",
+                nan_literal="math.NaN()",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="math.Inf(1)",
+                neg_inf_literal="math.Inf(-1)",
+                nan_literal="math.NaN()",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -536,3 +558,4 @@ class Go(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ('import "math"',)

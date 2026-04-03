@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 import re
 from typing import TYPE_CHECKING
 
@@ -336,9 +337,30 @@ class Cobol(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="9.99E99",
+                neg_inf_literal="-9.99E99",
+                nan_literal="0.0",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="9.99E99",
+                neg_inf_literal="-9.99E99",
+                nan_literal="0.0",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="9.99E99",
+                neg_inf_literal="-9.99E99",
+                nan_literal="0.0",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -504,3 +526,4 @@ class Cobol(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()

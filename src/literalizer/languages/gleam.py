@@ -2,6 +2,8 @@
 
 import datetime
 import enum
+import functools
+import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -131,22 +133,49 @@ def _gleam_integer_wrapper(
 
 def _gleam_float_wrapper(
     inner: Callable[[float], str],
+    *,
+    inf_literal: str = "GFloat(todo)",
+    neg_inf_literal: str = "GFloat(todo)",
+    nan_literal: str = "GFloat(todo)",
 ) -> Callable[[float], str]:
     """Wrap a float formatter to produce ``GFloat`` constructors."""
 
     @beartype
     def _format(value: float) -> str:
         """Format a float with a ``GFloat`` constructor."""
+        if math.isinf(value):
+            return neg_inf_literal if value < 0 else inf_literal
+        if math.isnan(value):
+            return nan_literal
         return f"GFloat({inner(value)})"
 
     return _format
 
 
-_format_gleam_float_repr = _gleam_float_wrapper(inner=format_float_repr)
-_format_gleam_float_scientific = _gleam_float_wrapper(
-    inner=format_float_scientific,
+_format_gleam_float_repr = _gleam_float_wrapper(
+    inner=functools.partial(
+        format_float_repr,
+        inf_literal="",
+        neg_inf_literal="",
+        nan_literal="",
+    ),
 )
-_format_gleam_float_fixed = _gleam_float_wrapper(inner=format_float_fixed)
+_format_gleam_float_scientific = _gleam_float_wrapper(
+    inner=functools.partial(
+        format_float_scientific,
+        inf_literal="",
+        neg_inf_literal="",
+        nan_literal="",
+    ),
+)
+_format_gleam_float_fixed = _gleam_float_wrapper(
+    inner=functools.partial(
+        format_float_fixed,
+        inf_literal="",
+        neg_inf_literal="",
+        nan_literal="",
+    ),
+)
 
 
 @beartype
@@ -577,3 +606,4 @@ class Gleam(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = ()

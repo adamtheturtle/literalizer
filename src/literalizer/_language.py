@@ -605,6 +605,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     collection types present actually require it.
     """
 
+    special_float_preamble: tuple[str, ...]
+    """Preamble lines added only when special float values (inf, -inf,
+    nan) appear in the data.  Most languages set this to ``()``.
+    Languages whose special-float literals require imports (e.g. Go
+    needs ``import "math"``) populate this field so the import is only
+    emitted when actually needed.
+    """
+
 
 def _no_type_hint_preamble(
     _empty_collection_types: frozenset[type],
