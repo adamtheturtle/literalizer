@@ -1866,6 +1866,54 @@ def test_line_ending_combined_variable_forms(
     )
 
 
+def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
+    """Every file under ``cases/`` must be referenced by a parameterized
+    test.  Orphaned golden files silently rot and waste repository space.
+    """
+    cases_dir = request.config.rootpath / "tests" / "integration" / "cases"
+    expected: set[Path] = set()
+
+    for case_dir in sorted(cases_dir.iterdir()):
+        expected.add(case_dir / "input.yaml")
+
+    for case_name, lang_name in _CASES:
+        lang_config = _LANGUAGES[lang_name]
+        ext = lang_config.lang_cls.extension
+        expected.add(cases_dir / case_name / (lang_name + ext))
+
+    for combined_case in _COMBINED_CASES:
+        ext = combined_case.lang_config.lang_cls.extension
+        expected.add(
+            cases_dir
+            / combined_case.case_name
+            / (combined_case.golden_file_name + ext)
+        )
+
+    for variant_case in _FORMAT_VARIANT_CASES:
+        ext = variant_case.variant.spec.extension
+        expected.add(
+            cases_dir
+            / variant_case.case_dir_name
+            / (variant_case.variant_name + ext)
+        )
+
+    for line_ending_case in _LINE_ENDING_COMBINED_CASES:
+        line_ending_spec = line_ending_case.lang_config.lang_cls(
+            line_ending=line_ending_case.line_ending,
+        )
+        expected.add(
+            cases_dir
+            / line_ending_case.case_dir_name
+            / (line_ending_case.name + line_ending_spec.extension)
+        )
+
+    actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
+    dead_files = sorted(
+        path.relative_to(cases_dir) for path in actual - expected
+    )
+    assert not dead_files
+
+
 def _lang_cls_name(cls: literalizer.LanguageCls) -> str:
     """Return the class name for sorting."""
     return cls.__name__
