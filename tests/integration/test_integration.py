@@ -1907,7 +1907,7 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             / (line_ending_case.name + line_ending_spec.extension)
         )
 
-    actual = {path for path in cases_dir.rglob("*") if path.is_file()}
+    actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
         path.relative_to(cases_dir) for path in actual - expected
     )
