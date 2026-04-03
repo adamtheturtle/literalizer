@@ -555,7 +555,7 @@ def _pad_sibling_dicts(*, items: list[Value]) -> list[Value]:
     """
     dict_entries = [
         (i, item)
-        for i, item in enumerate(items)
+        for i, item in enumerate(iterable=items)
         if isinstance(item, dict) and not isinstance(item, ordereddict)
     ]
     if len(dict_entries) <= 1:
