@@ -1,0 +1,7 @@
+* my_data
+@code json
+[
+    {"first": "Alice", "last": "Smith", "middle": "Jane"},
+    {"first": "Bob", "last": "Jones"}
+]
+@end

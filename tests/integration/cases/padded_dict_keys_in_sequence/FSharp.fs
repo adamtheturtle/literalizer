@@ -1,0 +1,10 @@
+module Check
+
+type Val =
+    | FStr of string
+    | FList of Val list
+    | FMap of (string * Val) list
+let my_data: Val = FList [
+    FMap [("first", FStr "Alice"); ("last", FStr "Smith"); ("middle", FStr "Jane")];
+    FMap [("first", FStr "Bob"); ("last", FStr "Jones")]
+]

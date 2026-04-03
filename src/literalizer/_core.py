@@ -518,6 +518,85 @@ def _coerce_value_to_str(*, value: Value) -> str:
     return json.dumps(obj=value, default=str, sort_keys=False)
 
 
+def _list_has_uneven_dict_keys(*, items: list[Value]) -> bool:
+    """Check whether a flat list contains dicts with differing key
+    sets.
+    """
+    dict_items = [item for item in items if isinstance(item, dict)]
+    if len(dict_items) > 1:
+        first_keys = set(dict_items[0].keys())
+        return any(set(d.keys()) != first_keys for d in dict_items[1:])
+    return False
+
+
+@beartype
+def _has_uneven_dict_keys_in_lists(*, data: Value) -> bool:
+    """Recursively check whether data contains a list of dicts with
+    differing key sets.
+    """
+    match data:
+        case ordereddict() | dict():
+            return any(
+                _has_uneven_dict_keys_in_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            )
+        case list():
+            if _list_has_uneven_dict_keys(items=data):
+                return True
+            return any(_has_uneven_dict_keys_in_lists(data=v) for v in data)
+        case _:
+            return False
+
+
+def _pad_sibling_dicts(*, items: list[Value]) -> list[Value]:
+    """Pad dicts in a list so all share the same key set.
+
+    Missing keys are filled with ``None``.
+    """
+    dict_entries = [
+        (i, item)
+        for i, item in enumerate(items)
+        if isinstance(item, dict) and not isinstance(item, ordereddict)
+    ]
+    if len(dict_entries) <= 1:
+        return items
+    all_keys: list[str] = []
+    seen: set[str] = set()
+    for _, d in dict_entries:
+        for k in d:
+            if k not in seen:
+                all_keys.append(k)
+                seen.add(k)
+    for idx, d in dict_entries:
+        if set(d.keys()) != seen:
+            items[idx] = {k: d.get(k) for k in all_keys}
+    return items
+
+
+@beartype
+def _pad_dict_keys_in_lists(*, data: Value) -> Value:
+    """Recursively pad dicts in lists so all sibling dicts share the
+    same key set.
+
+    Missing keys are filled with ``None``.
+    """
+    match data:
+        case ordereddict():
+            new_ordered_map: ordereddict = ordereddict()
+            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                new_ordered_map[k] = _pad_dict_keys_in_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            return new_ordered_map
+        case dict():
+            return {
+                k: _pad_dict_keys_in_lists(data=v) for k, v in data.items()
+            }
+        case list():
+            new_list = [_pad_dict_keys_in_lists(data=v) for v in data]
+            return _pad_sibling_dicts(items=new_list)
+        case _:
+            return data
+
+
 @beartype
 def _coerce_mixed_dict_values(*, data: Value) -> Value:
     """Recursively coerce dicts whose values span multiple type families.
@@ -972,7 +1051,14 @@ def _apply_coercions(
                     "that would be coerced to strings"
                 )
                 raise HeterogeneousCoercionError(msg)
+            if _has_uneven_dict_keys_in_lists(data=data):
+                msg = (
+                    "Dicts in a list have differing key sets "
+                    "that would be padded with null values"
+                )
+                raise HeterogeneousCoercionError(msg)
         else:
+            data = _pad_dict_keys_in_lists(data=data)
             data = _coerce_heterogeneous_scalars(data=data)
             data = _coerce_heterogeneous_sibling_lists(data=data)
             data = _coerce_mixed_dict_values(data=data)
