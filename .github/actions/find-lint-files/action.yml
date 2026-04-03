@@ -1,8 +1,8 @@
 ---
 name: Find lint files
 description: >-
-  Common setup for lint workflows: checkout, detect changed files,
-  and produce a null-delimited list at /tmp/files-to-lint.
+  Detect changed files and produce a null-delimited list at
+  /tmp/files-to-lint. The repo must already be checked out.
 
 inputs:
   lang_patterns:
@@ -31,9 +31,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: false
     - id: build-yaml
       shell: bash
       run: |-
