@@ -71,9 +71,9 @@ def _format_datetime_raku(value: datetime.datetime) -> str:
         value = value.astimezone(tz=datetime.UTC)
     if value.microsecond:
         fractional_second = value.second + value.microsecond / 1_000_000
-        second_part = str(fractional_second)
+        second_part = f"{fractional_second}"
     else:
-        second_part = str(value.second)
+        second_part = f"{value.second}"
     return (
         f"DateTime.new(year => {value.year}, "
         f"month => {value.month}, day => {value.day}, "
