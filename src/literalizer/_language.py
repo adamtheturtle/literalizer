@@ -346,10 +346,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     extension: str
     """The file extension for this language, including the leading dot."""
 
-    pygments_name: str | None
-    """The Pygments lexer short name for syntax highlighting, or None if
-    Pygments does not support this language.
-    """
+    @property
+    def pygments_name(self) -> str | None:
+        """The Pygments lexer short name for syntax highlighting.
+
+        ``None`` if Pygments does not support this language.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     null_literal: str
     """The literal representing null/None."""
