@@ -12,7 +12,7 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .arr = &.{
         .{ .float = 1.100000 },
-        .{ .float = 2.200000 },
+        .{ .float = -2.200000 },
         .{ .float = 3.300000 },
     }};
     _ = my_data;

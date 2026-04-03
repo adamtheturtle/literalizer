@@ -6,10 +6,22 @@ type Val =
     | FFloat of float
     | FStr of string
     | FList of Val list
-let mutable my_data: Val = FList [
-    FInt 42L;
-    FFloat 3.14;
-    FBool true;
-    FBool false;
-    FStr "hello \"world\""
-]
+let private _checkDeclaration () =
+    let mutable my_data: Val = FList [
+        FInt 42L;
+        FFloat 3.14;
+        FBool true;
+        FBool false;
+        FStr "hello \"world\""
+    ]
+    ignore my_data
+
+let private _checkAssignment () =
+    let my_data: Val = FList [
+        FInt 42L;
+        FFloat 3.14;
+        FBool true;
+        FBool false;
+        FStr "hello \"world\""
+    ]
+    ignore my_data

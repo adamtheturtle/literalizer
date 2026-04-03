@@ -508,6 +508,8 @@ class Nim(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        self.supports_scalar_before_comments = False
+        self.supports_scalar_inline_comments = True
         _is_const = declaration_style is self.declaration_styles.CONST
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _make_variable_declaration(

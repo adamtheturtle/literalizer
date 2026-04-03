@@ -1,9 +1,0 @@
-* my_data
-@code json
-[
-    true,
-    "hi",
-    [1, 2],
-    null
-]
-@end

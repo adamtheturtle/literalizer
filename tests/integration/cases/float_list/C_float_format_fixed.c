@@ -16,7 +16,7 @@ struct _CKV { const char *k; _CVal v; };
 void _check(void) {
 _CVal my_data = ((_CVal){.a = (_CVal[]){
     ((_CVal){.f = 1.100000}),
-    ((_CVal){.f = 2.200000}),
+    ((_CVal){.f = -2.200000}),
     ((_CVal){.f = 3.300000}),
 }});
     (void)my_data;

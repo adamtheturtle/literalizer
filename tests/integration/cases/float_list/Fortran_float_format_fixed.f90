@@ -20,7 +20,7 @@ program check
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
       freal(1.100000), &
-      freal(2.200000), &
+      freal(-2.200000), &
       freal(3.300000) &
   ])
 end program check
