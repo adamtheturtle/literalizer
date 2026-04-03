@@ -217,7 +217,7 @@ class Erlang(metaclass=LanguageCls):
 
         ASSIGN = DeclarationStyleConfig(
             formatter=_format_variable_declaration,
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
 
     class DictEntryStyles(enum.Enum):

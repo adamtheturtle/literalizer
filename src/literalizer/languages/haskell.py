@@ -407,7 +407,7 @@ class Haskell(metaclass=LanguageCls):
 
         ASSIGN = DeclarationStyleConfig(
             formatter=variable_formatter(template="{name} = {value}"),
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
 
     class DictEntryStyles(enum.Enum):

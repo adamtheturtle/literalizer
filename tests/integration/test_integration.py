@@ -67,22 +67,6 @@ def _newline_combined(
     return combined_wrap
 
 
-def _declaration_only_combined(
-    wrap: Callable[[str, str], str],
-) -> Callable[[str, str, str], str]:
-    """Build a combined_wrap that discards the assignment and passes only
-    the declaration through *wrap*.
-    """
-
-    def combined_wrap(
-        declaration: str, _assignment: str, variable_name: str
-    ) -> str:
-        """Discard assignment, wrap declaration only."""
-        return wrap(declaration, variable_name)
-
-    return combined_wrap
-
-
 @beartype
 def _wrap_ocaml(content: str, _variable_name: str) -> str:
     """Wrap an OCaml ``let`` declaration in a module."""
@@ -637,7 +621,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Haskell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Haskell,
         wrap=_wrap_haskell,
-        combined_wrap=_declaration_only_combined(wrap=_wrap_haskell),
+        combined_wrap=_newline_combined(wrap=_wrap_haskell),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Hcl.__name__: _LanguageConfig(
@@ -672,19 +656,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Elixir.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elixir,
         wrap=_wrap_elixir,
-        combined_wrap=_declaration_only_combined(wrap=_wrap_elixir),
+        combined_wrap=_newline_combined(wrap=_wrap_elixir),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Elm.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elm,
         wrap=_wrap_elm,
-        combined_wrap=_declaration_only_combined(wrap=_wrap_elm),
+        combined_wrap=_newline_combined(wrap=_wrap_elm),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Erlang.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Erlang,
         wrap=_wrap_erlang,
-        combined_wrap=_declaration_only_combined(wrap=_wrap_erlang),
+        combined_wrap=_newline_combined(wrap=_wrap_erlang),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.FSharp.__name__: _LanguageConfig(
@@ -696,13 +680,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.OCaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.OCaml,
         wrap=_wrap_ocaml,
-        combined_wrap=_declaration_only_combined(wrap=_wrap_ocaml),
+        combined_wrap=_newline_combined(wrap=_wrap_ocaml),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Occam.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Occam,
         wrap=_wrap_occam,
-        combined_wrap=_declaration_only_combined(wrap=_wrap_occam),
+        combined_wrap=_newline_combined(wrap=_wrap_occam),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Groovy.__name__: _LanguageConfig(
