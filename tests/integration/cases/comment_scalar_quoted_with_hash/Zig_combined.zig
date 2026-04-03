@@ -14,5 +14,5 @@ pub fn main() void {
     var my_data: ZVal = .{ .str = "hello # world" };
     // note
     my_data = .{ .str = "hello # world" };
-    _ = my_data;
+    my_data = .nil;
 }

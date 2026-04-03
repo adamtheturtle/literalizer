@@ -1,5 +1,6 @@
 -module(check).
 -export([x/0]).
 x() ->
-    My_data = 42  % note,
+    % note
+    My_data = 42,
     My_data.

@@ -1,5 +1,6 @@
 -module(check).
 -export([x/0]).
 x() ->
-    My_data = "hello # world"  % note,
+    % note
+    My_data = "hello # world",
     My_data.

@@ -345,7 +345,7 @@ def _wrap_zig(content: str, variable_name: str) -> str:
     compiler does not warn about a ``var`` that is never mutated.
     """
     indented = "    " + content.replace("\n", "\n    ")
-    if content.startswith("var "):
+    if "var " in content:
         use = f"    {variable_name} = .nil;"
     else:
         use = f"    _ = {variable_name};"

@@ -14,5 +14,5 @@ pub fn main() void {
     var my_data: ZVal = .{ .int = 42 };
     // note
     my_data = .{ .int = 42 };
-    _ = my_data;
+    my_data = .nil;
 }
