@@ -173,8 +173,6 @@ def _build_elm_body_preamble() -> Callable[
             )
             if types & type_set
         ]
-        if not constructors:  # pragma: no cover
-            return ()
         first_line = f"type Val\n    = {constructors[0]}"
         rest_lines = [f"    | {c}" for c in constructors[1:]]
         return ("\n".join([first_line, *rest_lines]),)
