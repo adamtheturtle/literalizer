@@ -2,7 +2,7 @@ procedure Check is
    procedure Check_Declaration is
       my_data : A_Val := AList'(
           AFloat (1.1),
-          AFloat (2.2),
+          AFloat (-2.2),
           AFloat (3.3)
       );
    begin
@@ -12,7 +12,7 @@ procedure Check is
    begin
       my_data := AList'(
           AFloat (1.1),
-          AFloat (2.2),
+          AFloat (-2.2),
           AFloat (3.3)
       );
    end Check_Assignment;

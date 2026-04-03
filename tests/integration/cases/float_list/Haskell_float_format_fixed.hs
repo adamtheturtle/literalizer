@@ -14,6 +14,6 @@ instance Fractional Val where
 my_data :: Val
 my_data = HList [
     1.100000,
-    2.200000,
+    -2.200000,
     3.300000
     ]

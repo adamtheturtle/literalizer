@@ -21,7 +21,7 @@ subroutine check_declaration()
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
       freal(1.1), &
-      freal(2.2), &
+      freal(-2.2), &
       freal(3.3) &
   ])
 end subroutine check_declaration
@@ -32,7 +32,7 @@ subroutine check_assignment()
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
       freal(1.1), &
-      freal(2.2), &
+      freal(-2.2), &
       freal(3.3) &
   ])
 end subroutine check_assignment

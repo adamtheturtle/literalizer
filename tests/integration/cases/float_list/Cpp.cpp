@@ -7,7 +7,7 @@ struct _Any {
 void _check() {
 _Any my_data = std::vector<double>{
     1.1,
-    2.2,
+    -2.2,
     3.3,
 };
 }
