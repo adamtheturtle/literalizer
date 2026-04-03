@@ -16,6 +16,7 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Cpp,
+    Dhall,
     Go,
     JavaScript,
     Mojo,
@@ -1046,6 +1047,53 @@ def test_error_on_coercion_raises_for_mixed_list_values() -> None:
             new_variable=True,
             error_on_coercion=True,
         )
+
+
+def test_error_on_coercion_raises_for_mixed_dict_shapes() -> None:
+    """Error_on_coercion raises when a list has dicts with different
+    keys, including when the list is nested inside a dict.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        items:
+          - type: create
+            draft: true
+          - type: update
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_yaml(
+            yaml_string=yaml_string,
+            language=Dhall(),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_no_raise_for_uniform_dict_shapes() -> None:
+    """Error_on_coercion does not raise when all dicts in a list have
+    the same keys.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        - type: create
+          name: a
+        - type: update
+          name: b
+    """,
+    )
+    literalize_yaml(
+        yaml_string=yaml_string,
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
 
 
 def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
