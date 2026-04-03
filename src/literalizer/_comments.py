@@ -248,7 +248,7 @@ class ScalarCommentResult:
     """
 
     result: str
-    pending_before: tuple[str, ...] = ()
+    pending_before: tuple[str, ...]
 
 
 @beartype
@@ -286,7 +286,7 @@ def literalize_yaml_scalar(
     )
 
     if not scalar_comments.before and not scalar_comments.inline:
-        return ScalarCommentResult(result=base)
+        return ScalarCommentResult(result=base, pending_before=())
 
     formatted_before = tuple(
         _format_comment(
