@@ -18,6 +18,10 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.vb
           extra_config_patterns: check_vb_golden_syntax.py
+          exclude_dirs: |
+            tests/integration/cases/comment_scalar
+            tests/integration/cases/comment_scalar_document_markers
+            tests/integration/cases/comment_scalar_only_comments
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |

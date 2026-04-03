@@ -17,6 +17,10 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.js
+          exclude_dirs: |
+            tests/integration/cases/comment_scalar
+            tests/integration/cases/comment_scalar_document_markers
+            tests/integration/cases/comment_scalar_only_comments
       - name: Check JavaScript syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-

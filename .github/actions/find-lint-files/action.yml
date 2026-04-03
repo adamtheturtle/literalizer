@@ -23,6 +23,13 @@ inputs:
       or when config files changed.
     required: false
     default: ''
+  exclude_dirs:
+    description: >-
+      Newline-separated directory paths to exclude from the
+      find command (e.g. "tests/integration/cases/comment_scalar").
+      Used on non-PR events or when config files changed.
+    required: false
+    default: ''
 
 outputs:
   found:
@@ -70,10 +77,26 @@ runs:
         LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
         LANG_PATTERNS: ${{ inputs.lang_patterns }}
         EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
+        EXCLUDE_DIRS: ${{ inputs.exclude_dirs }}
       run: |-
         if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
+          # Build list of excluded directory prefixes
+          pr_exclude_dirs=()
+          if [ -n "$EXCLUDE_DIRS" ]; then
+            while IFS= read -r dir_path; do
+              [ -z "$dir_path" ] && continue
+              pr_exclude_dirs+=("$dir_path/")
+            done <<< "$EXCLUDE_DIRS"
+          fi
           # shellcheck disable=SC2086
-          for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
+          for f in $LANG_FILES; do
+            [ -f "$f" ] || continue
+            skip=false
+            for prefix in "${pr_exclude_dirs[@]}"; do
+              [[ "$f" == "$prefix"* ]] && skip=true && break
+            done
+            $skip || printf '%s\0' "$f"
+          done
         else
           # Build a find command from lang_patterns and exclude_patterns.
           # Each lang_pattern is a glob like "dir/**/*.ext"; extract the
@@ -102,6 +125,13 @@ runs:
               [ -z "$pattern" ] && continue
               exclude_args+=("!" "-name" "$pattern")
             done <<< "$EXCLUDE_PATTERNS"
+          fi
+
+          if [ -n "$EXCLUDE_DIRS" ]; then
+            while IFS= read -r dir_path; do
+              [ -z "$dir_path" ] && continue
+              exclude_args+=("-not" "-path" "${dir_path}/*")
+            done <<< "$EXCLUDE_DIRS"
           fi
 
           if [ ${#name_args[@]} -gt 2 ]; then

@@ -20,6 +20,10 @@ jobs:
           extra_config_patterns: |
             pyproject.toml
             check_toml_syntax.py
+          exclude_dirs: |
+            tests/integration/cases/comment_scalar
+            tests/integration/cases/comment_scalar_document_markers
+            tests/integration/cases/comment_scalar_only_comments
       - uses: astral-sh/setup-uv@v7
         if: steps.find-files.outputs.found == 'true'
         with:

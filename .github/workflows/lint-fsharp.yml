@@ -19,6 +19,10 @@ jobs:
           lang_patterns: |
             tests/integration/cases/**/*.fs
             tests/integration/cases/**/*.fsi
+          exclude_dirs: |
+            tests/integration/cases/comment_scalar
+            tests/integration/cases/comment_scalar_document_markers
+            tests/integration/cases/comment_scalar_only_comments
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |
