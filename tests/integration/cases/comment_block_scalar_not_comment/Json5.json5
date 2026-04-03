@@ -1,0 +1,4 @@
+{
+    description: "# not a comment\n",
+    name: "foo",
+}
