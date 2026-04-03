@@ -66,6 +66,7 @@ def sequence_format_factory(
                 else None
             ),
             uses_typed_literal_for_scalars=False,
+            requires_uniform_record_shapes=False,
         )
 
     return _build
