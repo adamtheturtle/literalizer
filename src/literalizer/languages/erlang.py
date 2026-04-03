@@ -67,13 +67,6 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
-    """Format an Erlang variable assignment."""
-    erlang_name = name[0].upper() + name[1:]
-    return f"{erlang_name} = {value}"
-
-
-@beartype
 def _format_date_erlang(value: datetime.date) -> str:
     """Format a date as an Erlang ``{Year, Month, Day}`` tuple."""
     return f"{{{value.year}, {value.month}, {value.day}}}"
@@ -217,7 +210,7 @@ class Erlang(metaclass=LanguageCls):
 
         ASSIGN = DeclarationStyleConfig(
             formatter=_format_variable_declaration,
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
 
     class DictEntryStyles(enum.Enum):
@@ -403,7 +396,7 @@ class Erlang(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _format_variable_declaration
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

@@ -13,34 +13,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: tj-actions/changed-files@v47
-        id: changes
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
         with:
-          files_yaml: |
-            config:
-              - '**/*.yml'
-            lang:
-              - 'tests/integration/cases/**/*.go'
-      - name: Find files to lint
-        id: files
-        if: github.event_name != 'pull_request' || steps.changes.outputs.config_any_changed
-          == 'true' || steps.changes.outputs.lang_any_modified == 'true'
-        env:
-          CONFIG_CHANGED: ${{ steps.changes.outputs.config_any_changed }}
-          LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
-        run: |-
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
-            # shellcheck disable=SC2086
-            for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
-          else
-            find tests/integration/cases -name "*.go" -print0
-          fi > /tmp/files-to-lint
-          if [ -s /tmp/files-to-lint ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          fi
+          lang_patterns: tests/integration/cases/**/*.go
+          find_command: find tests/integration/cases -name "*.go" -print0
       - name: Check Go syntax
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gofmt -e < /tmp/files-to-lint
       - name: Check Go compilation
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -n1 go vet < /tmp/files-to-lint

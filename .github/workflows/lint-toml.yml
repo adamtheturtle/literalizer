@@ -13,39 +13,20 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: tj-actions/changed-files@v47
-        id: changes
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
         with:
-          files_yaml: |
-            config:
-              - '**/*.yml'
-              - 'pyproject.toml'
-              - 'check_toml_syntax.py'
-            lang:
-              - 'tests/integration/cases/**/*.toml'
-      - name: Find files to lint
-        id: files
-        if: github.event_name != 'pull_request' || steps.changes.outputs.config_any_changed
-          == 'true' || steps.changes.outputs.lang_any_modified == 'true'
-        env:
-          CONFIG_CHANGED: ${{ steps.changes.outputs.config_any_changed }}
-          LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
-        run: |-
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
-            # shellcheck disable=SC2086
-            for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
-          else
-            find tests/integration/cases -name "*.toml" -print0
-          fi > /tmp/files-to-lint
-          if [ -s /tmp/files-to-lint ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          fi
+          lang_patterns: tests/integration/cases/**/*.toml
+          extra_config_patterns: |
+            pyproject.toml
+            check_toml_syntax.py
+          find_command: find tests/integration/cases -name "*.toml" -print0
       - uses: astral-sh/setup-uv@v7
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check TOML syntax
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py
           < /tmp/files-to-lint

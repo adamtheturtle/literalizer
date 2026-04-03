@@ -1,0 +1,80 @@
+---
+name: Find lint files
+description: >-
+  Detect changed files and produce a null-delimited list at
+  /tmp/files-to-lint. The repo must already be checked out.
+
+inputs:
+  lang_patterns:
+    description: >-
+      Newline-separated glob patterns for language files
+      (used for change detection by tj-actions/changed-files).
+    required: true
+  extra_config_patterns:
+    description: >-
+      Newline-separated glob patterns for extra config files
+      beyond '**/*.yml' (used for change detection).
+    required: false
+    default: ''
+  find_command:
+    description: >-
+      Shell command to find all lintable files (must output
+      null-delimited paths). Used on non-PR events or when
+      config files changed.
+    required: true
+
+outputs:
+  found:
+    description: Whether any files to lint were found
+    value: ${{ steps.files.outputs.found }}
+
+runs:
+  using: composite
+  steps:
+    - id: build-yaml
+      shell: bash
+      run: |-
+        {
+          echo "config:"
+          echo "  - '**/*.yml'"
+          if [ -n "$EXTRA_CONFIG" ]; then
+            while IFS= read -r pattern; do
+              [ -n "$pattern" ] && echo "  - '$pattern'"
+            done <<< "$EXTRA_CONFIG"
+          fi
+          echo "lang:"
+          while IFS= read -r pattern; do
+            [ -n "$pattern" ] && echo "  - '$pattern'"
+          done <<< "$LANG_PATTERNS"
+        } > /tmp/files-yaml-config.yml
+        {
+          echo "yaml<<ENDOFYAML"
+          cat /tmp/files-yaml-config.yml
+          echo "ENDOFYAML"
+        } >> "$GITHUB_OUTPUT"
+      env:
+        EXTRA_CONFIG: ${{ inputs.extra_config_patterns }}
+        LANG_PATTERNS: ${{ inputs.lang_patterns }}
+    - uses: tj-actions/changed-files@v47
+      id: changes
+      with:
+        files_yaml: ${{ steps.build-yaml.outputs.yaml }}
+    - name: Find files to lint
+      id: files
+      if: github.event_name != 'pull_request' || steps.changes.outputs.config_any_changed
+        == 'true' || steps.changes.outputs.lang_any_modified == 'true'
+      shell: bash
+      env:
+        CONFIG_CHANGED: ${{ steps.changes.outputs.config_any_changed }}
+        LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
+        FIND_COMMAND: ${{ inputs.find_command }}
+      run: |-
+        if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
+          # shellcheck disable=SC2086
+          for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
+        else
+          eval "$FIND_COMMAND"
+        fi > /tmp/files-to-lint
+        if [ -s /tmp/files-to-lint ]; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        fi
