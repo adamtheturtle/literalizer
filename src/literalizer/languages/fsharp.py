@@ -188,6 +188,7 @@ class FSharp(metaclass=LanguageCls):
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
+            requires_uniform_record_shapes=False,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="[|"),
@@ -200,6 +201,7 @@ class FSharp(metaclass=LanguageCls):
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
+            requires_uniform_record_shapes=False,
         )
 
         @property
