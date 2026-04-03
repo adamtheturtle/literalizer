@@ -27,6 +27,7 @@ class SequenceFormatConfig:
     format_entry: Callable[[Value, str], str]
     typed_opener_fallback: str | None
     uses_typed_literal_for_scalars: bool
+    requires_uniform_record_shapes: bool = False
 
 
 @dataclasses.dataclass(frozen=True)

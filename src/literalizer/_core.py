@@ -1049,7 +1049,10 @@ def _apply_coercions(
     """
     if not spec.sequence_format.supports_heterogeneity:
         if error_on_coercion:
-            if _has_mixed_dict_shapes(data=data):
+            if (
+                spec.sequence_format_config.requires_uniform_record_shapes
+                and _has_mixed_dict_shapes(data=data)
+            ):
                 msg = (
                     "List contains dicts with different key sets "
                     "that would be padded with null values"
@@ -1075,7 +1078,8 @@ def _apply_coercions(
                 )
                 raise HeterogeneousCoercionError(msg)
         else:
-            data = _coerce_mixed_dict_shapes(data=data)
+            if spec.sequence_format_config.requires_uniform_record_shapes:
+                data = _coerce_mixed_dict_shapes(data=data)
             data = _coerce_heterogeneous_scalars(data=data)
             data = _coerce_heterogeneous_sibling_lists(data=data)
             data = _coerce_mixed_dict_values(data=data)
