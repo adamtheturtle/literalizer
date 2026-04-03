@@ -1,6 +1,0 @@
-* my_data
-@code json
-[
-    {"key": "hello   world", "value": 1}
-]
-@end

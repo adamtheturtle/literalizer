@@ -2,4 +2,10 @@ module Check
 
 type Val =
     | FStr of string
-let mutable my_data: Val = FStr "hello \"world\" -- not a comment"
+let private _checkDeclaration () =
+    let mutable my_data: Val = FStr "hello \"world\" -- not a comment"
+    ignore my_data
+
+let private _checkAssignment () =
+    let my_data: Val = FStr "hello \"world\" -- not a comment"
+    ignore my_data

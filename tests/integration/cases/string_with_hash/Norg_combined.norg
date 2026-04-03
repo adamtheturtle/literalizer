@@ -1,7 +1,0 @@
-* my_data
-@code json
-[
-    "issue #{42}",
-    "color #red"
-]
-@end
