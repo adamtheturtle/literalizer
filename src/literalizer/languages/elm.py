@@ -158,7 +158,12 @@ def _build_elm_body_preamble() -> Callable[
                 (frozenset({bool}), "EBool Bool"),
                 (frozenset({int}), "EInt Int"),
                 (frozenset({float}), "EFloat Float"),
-                (frozenset({str, bytes}), "EStr String"),
+                (
+                    frozenset(
+                        {str, bytes, datetime.date, datetime.datetime},
+                    ),
+                    "EStr String",
+                ),
                 (frozenset({list}), "EList (List Val)"),
                 (
                     frozenset({dict, ordereddict}),
