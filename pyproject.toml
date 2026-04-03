@@ -307,6 +307,9 @@ project_excludes = [
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
+    "tests/integration/cases/comment_scalar",
+    "tests/integration/cases/comment_scalar_document_markers",
+    "tests/integration/cases/comment_scalar_only_comments",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
