@@ -1,5 +1,4 @@
 module fval_m
-  use, intrinsic :: ieee_arithmetic
   implicit none
   type :: fval_t
     integer :: t = 0

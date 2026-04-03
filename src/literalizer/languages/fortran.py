@@ -446,9 +446,8 @@ class Fortran(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = (
-            "module fval_m",
-            "  use, intrinsic :: ieee_arithmetic",
+        self.static_preamble: Sequence[str] = ("module fval_m",)
+        self.static_body_preamble: Sequence[str] = (
             "  implicit none",
             "  type :: fval_t",
             "    integer :: t = 0",
@@ -482,7 +481,6 @@ class Fortran(metaclass=LanguageCls):
             "; type(fval_t) :: v; end function",
             "end module fval_m",
         )
-        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
@@ -492,4 +490,6 @@ class Fortran(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
+        self.special_float_preamble: tuple[str, ...] = (
+            "  use, intrinsic :: ieee_arithmetic",
+        )
