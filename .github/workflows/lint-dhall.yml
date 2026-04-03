@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.dhall
-          find_command: find tests/integration/cases -name "*.dhall" -print0
       - name: Install dhall
         if: steps.find-files.outputs.found == 'true'
         run: |-
