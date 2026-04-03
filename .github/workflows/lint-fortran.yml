@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.f90
-          find_command: find tests/integration/cases -name "*.f90" -print0
       - name: Install gfortran
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get install -y gfortran

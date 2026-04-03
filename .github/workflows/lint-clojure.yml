@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.clj
-          find_command: find tests/integration/cases -name "*.clj" -print0
       - name: Install clj-kondo
         if: steps.find-files.outputs.found == 'true'
         uses: DeLaGuardo/setup-clojure@13

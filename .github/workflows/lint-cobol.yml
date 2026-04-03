@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cob
-          find_command: find tests/integration/cases -name "*.cob" -print0
       - name: Install GnuCOBOL
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get install -y gnucobol

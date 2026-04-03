@@ -18,7 +18,6 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.cs
           extra_config_patterns: check_csharp_golden_syntax.py
-          find_command: find tests/integration/cases -name "*.cs" -print0
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |

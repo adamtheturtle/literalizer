@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.hcl
-          find_command: find tests/integration/cases -name "*.hcl" -print0
       - name: Install hcl2json
         if: steps.find-files.outputs.found == 'true'
         run: go install github.com/tmccombs/hcl2json@latest

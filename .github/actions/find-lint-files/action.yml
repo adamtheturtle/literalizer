@@ -16,12 +16,13 @@ inputs:
       beyond '**/*.yml' (used for change detection).
     required: false
     default: ''
-  find_command:
+  exclude_patterns:
     description: >-
-      Shell command to find all lintable files (must output
-      null-delimited paths). Used on non-PR events or when
-      config files changed.
-    required: true
+      Newline-separated filename patterns to exclude from the
+      find command (e.g. "input.yaml"). Used on non-PR events
+      or when config files changed.
+    required: false
+    default: ''
 
 outputs:
   found:
@@ -67,13 +68,47 @@ runs:
       env:
         CONFIG_CHANGED: ${{ steps.changes.outputs.config_any_changed }}
         LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
-        FIND_COMMAND: ${{ inputs.find_command }}
+        LANG_PATTERNS: ${{ inputs.lang_patterns }}
+        EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
       run: |-
         if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
           # shellcheck disable=SC2086
           for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
         else
-          eval "$FIND_COMMAND"
+          # Build a find command from lang_patterns and exclude_patterns.
+          # Each lang_pattern is a glob like "dir/**/*.ext"; extract the
+          # search directory from the first pattern and collect -name args
+          # from all of them.
+          first_dir=""
+          name_args=()
+          while IFS= read -r pattern; do
+            [ -z "$pattern" ] && continue
+            # Skip negation patterns (handled by exclude_patterns)
+            [[ "$pattern" == !* ]] && continue
+            dir="${pattern%%/\*\*/*}"
+            name_part="${pattern##*/}"
+            if [ -z "$first_dir" ]; then
+              first_dir="$dir"
+            fi
+            if [ ${#name_args[@]} -gt 0 ]; then
+              name_args+=("-o")
+            fi
+            name_args+=("-name" "$name_part")
+          done <<< "$LANG_PATTERNS"
+
+          exclude_args=()
+          if [ -n "$EXCLUDE_PATTERNS" ]; then
+            while IFS= read -r pattern; do
+              [ -z "$pattern" ] && continue
+              exclude_args+=("!" "-name" "$pattern")
+            done <<< "$EXCLUDE_PATTERNS"
+          fi
+
+          if [ ${#name_args[@]} -gt 2 ]; then
+            find "$first_dir" \( "${name_args[@]}" \) "${exclude_args[@]}" -print0
+          else
+            find "$first_dir" "${name_args[@]}" "${exclude_args[@]}" -print0
+          fi
         fi > /tmp/files-to-lint
         if [ -s /tmp/files-to-lint ]; then
           echo "found=true" >> "$GITHUB_OUTPUT"

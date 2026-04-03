@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.ps1
-          find_command: find tests/integration/cases -name "*.ps1" -print0
       - name: Check PowerShell syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
