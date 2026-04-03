@@ -52,6 +52,26 @@ class LiteralizeResult:
     the generated code.  Empty when none are needed.
     """
 
+    body_preamble: tuple[str, ...]
+    """Type-definition lines (e.g. F#'s ``type Val = …``, Haskell's
+    ``data Val = …`` and typeclass instances) that are prepended to
+    :attr:`code`.  Empty when none are needed.
+
+    Use :attr:`bare_code` to obtain the literal text *without* these
+    lines.
+    """
+
+    @property
+    def bare_code(self) -> str:
+        """The literal text without :attr:`body_preamble` prepended.
+
+        Identical to :attr:`code` when :attr:`body_preamble` is empty.
+        """
+        if not self.body_preamble:
+            return self.code
+        prefix = "\n".join(self.body_preamble) + "\n"
+        return self.code[len(prefix) :]
+
 
 @beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
@@ -1310,6 +1330,7 @@ def literalize_json(
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )
 
 
@@ -1601,4 +1622,5 @@ def literalize_yaml(
     return LiteralizeResult(
         code=result,
         preamble=preamble,
+        body_preamble=computed.body,
     )

@@ -88,15 +88,39 @@ def _wrap_fsharp(content: str, _variable_name: str) -> str:
     return "module Check\n\n" + content
 
 
+@beartype
 def _wrap_fsharp_combined(
     declaration: str,
-    _assignment: str,
+    assignment: str,
     _variable_name: str,
 ) -> str:
-    """F#: only the declaration is included because the body preamble
-    (``type Val = ...``) is baked into ``.code`` and would be duplicated.
+    """F#: separate private functions to avoid duplicate definitions.
+
+    The declaration includes the body preamble (``type Val = …``)
+    before the ``let`` binding.  We split on the first ``let`` line
+    so the type definition appears once at module scope while each
+    binding lives in its own private function.
     """
-    return _wrap_fsharp(content=declaration, _variable_name=_variable_name)
+    lines = declaration.split(sep="\n")
+    let_idx = next(
+        idx
+        for idx, line in enumerate(iterable=lines)
+        if line.startswith("let")
+    )
+    preamble = "\n".join(lines[:let_idx])
+    decl_binding = "\n".join(lines[let_idx:])
+    decl_indented = "    " + decl_binding.replace("\n", "\n    ")
+    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    body = "module Check\n\n" + preamble + "\n"
+    body += (
+        "let private _checkDeclaration () =\n"
+        + decl_indented
+        + "\n    ignore my_data\n\n"
+        + "let private _checkAssignment () =\n"
+        + assign_indented
+        + "\n    ignore my_data"
+    )
+    return body
 
 
 @beartype
@@ -1616,7 +1640,7 @@ def test_golden_file_combined_variable_forms(
     variable_name = lang_config.wrap_variable_name or ""
     combined = lang_config.combined_wrap(
         declaration.code,
-        assignment.code,
+        assignment.bare_code,
         variable_name,
     )
     combined = _prepend_preamble(
@@ -1853,7 +1877,7 @@ def test_line_ending_combined_variable_forms(
     )
     combined = case.lang_config.combined_wrap(
         declaration.code,
-        assignment.code,
+        assignment.bare_code,
         case.lang_config.wrap_variable_name or "",
     )
     combined = _prepend_preamble(
