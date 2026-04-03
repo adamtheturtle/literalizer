@@ -1,16 +1,25 @@
-import gleam/set
+pub type GVal {
+  GNull
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+  GSet(List(GVal))
+}
 
 pub fn main() {
-  let my_data = set.from_list([
+  let my_data = GSet([
     // before apple
-    "apple",
-    "banana",  // banana inline
+    GStr("apple"),
+    GStr("banana"),  // banana inline
     // trailing
   ])
-  let my_data = set.from_list([
+  let my_data = GSet([
     // before apple
-    "apple",
-    "banana",  // banana inline
+    GStr("apple"),
+    GStr("banana"),  // banana inline
     // trailing
   ])
   let _ = my_data

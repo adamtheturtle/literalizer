@@ -237,9 +237,30 @@ class Zig(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="std.math.inf(f64)",
+                neg_inf_literal="-std.math.inf(f64)",
+                nan_literal="std.math.nan(f64)",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="std.math.inf(f64)",
+                neg_inf_literal="-std.math.inf(f64)",
+                nan_literal="std.math.nan(f64)",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="std.math.inf(f64)",
+                neg_inf_literal="-std.math.inf(f64)",
+                nan_literal="std.math.nan(f64)",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -461,3 +482,6 @@ class Zig(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = (
+            'const std = @import("std");',
+        )

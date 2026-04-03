@@ -1,8 +1,18 @@
+pub type GVal {
+  GNull
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+  GSet(List(GVal))
+}
 
 pub fn main() {
   let my_data = #(
-    1,
-    "hello",
+    GInt(1),
+    GStr("hello"),
   )
   let _ = my_data
 }

@@ -1,9 +1,19 @@
+pub type GVal {
+  GNull
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+  GSet(List(GVal))
+}
 
 pub fn main() {
-  let my_data = [
-    0b1,
-    0b10,
-    0b11,
-  ]
+  let my_data = GList([
+    GInt(0b1),
+    GInt(0b10),
+    GInt(0b11),
+  ])
   let _ = my_data
 }

@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import functools
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -253,9 +254,30 @@ class Fortran(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(
+            value=functools.partial(
+                format_float_repr,
+                inf_literal="ieee_value(0.0, ieee_positive_inf)",
+                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
+                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
+            )
+        )
+        SCIENTIFIC = enum.member(
+            value=functools.partial(
+                format_float_scientific,
+                inf_literal="ieee_value(0.0, ieee_positive_inf)",
+                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
+                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
+            )
+        )
+        FIXED = enum.member(
+            value=functools.partial(
+                format_float_fixed,
+                inf_literal="ieee_value(0.0, ieee_positive_inf)",
+                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
+                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
+            )
+        )
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
@@ -424,8 +446,8 @@ class Fortran(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )
-        self.static_preamble: Sequence[str] = (
-            "module fval_m",
+        self.static_preamble: Sequence[str] = ("module fval_m",)
+        self.static_body_preamble: Sequence[str] = (
             "  implicit none",
             "  type :: fval_t",
             "    integer :: t = 0",
@@ -459,7 +481,6 @@ class Fortran(metaclass=LanguageCls):
             "; type(fval_t) :: v; end function",
             "end module fval_m",
         )
-        self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
@@ -469,3 +490,6 @@ class Fortran(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
+        self.special_float_preamble: tuple[str, ...] = (
+            "  use, intrinsic :: ieee_arithmetic",
+        )
