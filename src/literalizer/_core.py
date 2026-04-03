@@ -1372,10 +1372,16 @@ def _filter_null_dict_comments(
 
 @dataclasses.dataclass(frozen=True)
 class _ResolvedComments:
-    """Result of resolving YAML comments for a collection."""
+    """Result of resolving YAML comments for a collection or scalar."""
 
     result: str
     pending: CollectionComments | None
+    pending_scalar_before: tuple[str, ...]
+    """Already-formatted comment lines to prepend before the variable
+    declaration.  Used for scalar before-comments when the language
+    does not support them inline (see
+    :attr:`~literalizer.Language.supports_scalar_before_comments`).
+    """
 
 
 @beartype
@@ -1392,7 +1398,11 @@ def _resolve_yaml_set_comments(
     """Resolve comments for a YAML set."""
     set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
     if not language.supports_collection_comments:
-        return _ResolvedComments(result=base, pending=set_comments)
+        return _ResolvedComments(
+            result=base,
+            pending=set_comments,
+            pending_scalar_before=(),
+        )
     result = apply_collection_comments(
         collection_comments=set_comments,
         base=base,
@@ -1401,7 +1411,11 @@ def _resolve_yaml_set_comments(
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
     )
-    return _ResolvedComments(result=result, pending=None)
+    return _ResolvedComments(
+        result=result,
+        pending=None,
+        pending_scalar_before=(),
+    )
 
 
 @beartype
@@ -1436,6 +1450,7 @@ def _resolve_yaml_collection_comments(
         return _ResolvedComments(
             result=base,
             pending=collection_comments,
+            pending_scalar_before=(),
         )
     result = apply_collection_comments(
         collection_comments=collection_comments,
@@ -1445,7 +1460,11 @@ def _resolve_yaml_collection_comments(
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
     )
-    return _ResolvedComments(result=result, pending=None)
+    return _ResolvedComments(
+        result=result,
+        pending=None,
+        pending_scalar_before=(),
+    )
 
 
 @beartype
@@ -1481,14 +1500,20 @@ def _resolve_yaml_comments(
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
         tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
-        result = literalize_yaml_scalar(
+        scalar_result = literalize_yaml_scalar(
             tokens=tokens,
             base=base,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
             line_prefix=line_prefix,
+            supports_scalar_before_comments=language.supports_scalar_before_comments,
+            supports_scalar_inline_comments=language.supports_scalar_inline_comments,
         )
-        return _ResolvedComments(result=result, pending=None)
+        return _ResolvedComments(
+            result=scalar_result.result,
+            pending=None,
+            pending_scalar_before=scalar_result.pending_before,
+        )
 
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
     ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
@@ -1610,6 +1635,9 @@ def literalize_yaml(
             comment_suffix=cs,
             line_prefix=line_prefix,
         )
+
+    if resolved.pending_scalar_before:
+        result = "\n".join(resolved.pending_scalar_before) + "\n" + result
 
     computed = _compute_preamble(
         data=coerced_data,

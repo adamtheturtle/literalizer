@@ -2,7 +2,7 @@
 -export([x/0]).
 x() ->
     My_data = [
-    % # section
-    "a"
-],
+        % # section
+        "a"
+    ],
     My_data.

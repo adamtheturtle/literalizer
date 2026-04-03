@@ -2,8 +2,8 @@
 -export([x/0]).
 x() ->
     My_data = [
-    "foo",
-    "bar",
-    "baz"
-],
+        "foo",
+        "bar",
+        "baz"
+    ],
     My_data.

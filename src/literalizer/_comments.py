@@ -234,6 +234,23 @@ class YamlCollectionContext:
     include_delimiters: bool
 
 
+@dataclasses.dataclass(frozen=True)
+class ScalarCommentResult:
+    """Result of formatting scalar YAML comments.
+
+    Attributes:
+        result: The formatted scalar value, possibly with inline and
+            before-comments embedded.
+        pending_before: Already-formatted comment lines that should be
+            emitted before the variable declaration.  Non-empty
+            only when ``supports_scalar_before_comments`` is
+            ``False``.
+    """
+
+    result: str
+    pending_before: tuple[str, ...]
+
+
 @beartype
 def literalize_yaml_scalar(
     *,
@@ -242,21 +259,36 @@ def literalize_yaml_scalar(
     comment_prefix: str,
     comment_suffix: str,
     line_prefix: str,
-) -> str:
+    supports_scalar_before_comments: bool,
+    supports_scalar_inline_comments: bool,
+) -> ScalarCommentResult:
     """Preserve comments for scalar YAML values.
 
     Uses :func:`_extract_scalar_comments` to obtain comments
     from pre-scanned *ruamel.yaml* tokens.  Collection values
     use :func:`_extract_yaml_comments` instead.
+
+    When *supports_scalar_before_comments* is ``False``, any
+    comments that appear before the scalar value are returned in
+    :attr:`ScalarCommentResult.pending_before` instead of being
+    embedded in the result.
+
+    When *supports_scalar_inline_comments* is ``False``, any
+    inline comment on the scalar value is also returned in
+    :attr:`ScalarCommentResult.pending_before` instead of being
+    appended after the value.
+
+    The caller is responsible for emitting pending comments
+    before the variable declaration.
     """
     scalar_comments = _extract_scalar_comments(
         tokens=tokens,
     )
 
     if not scalar_comments.before and not scalar_comments.inline:
-        return base
+        return ScalarCommentResult(result=base, pending_before=())
 
-    parts: list[str] = [
+    formatted_before = tuple(
         _format_comment(
             text=comment_text,
             comment_prefix=comment_prefix,
@@ -264,15 +296,38 @@ def literalize_yaml_scalar(
             line_prefix=line_prefix,
         )
         for comment_text in scalar_comments.before
-    ]
-    if scalar_comments.inline:
-        parts.append(
+    )
+
+    pending: tuple[str, ...] = ()
+
+    if scalar_comments.inline and supports_scalar_inline_comments:
+        inline_value = (
             f"{base}  {comment_prefix} {scalar_comments.inline}"
-            f"{comment_suffix}",
+            f"{comment_suffix}"
         )
+    elif scalar_comments.inline:
+        inline_value = base
+        formatted_inline = _format_comment(
+            text=scalar_comments.inline,
+            comment_prefix=comment_prefix,
+            comment_suffix=comment_suffix,
+            line_prefix=line_prefix,
+        )
+        pending = (formatted_inline,)
     else:
-        parts.append(base)
-    return "\n".join(parts)
+        inline_value = base
+
+    if supports_scalar_before_comments:
+        parts = [*formatted_before, inline_value]
+        return ScalarCommentResult(
+            result="\n".join(parts),
+            pending_before=pending,
+        )
+
+    return ScalarCommentResult(
+        result=inline_value,
+        pending_before=(*formatted_before, *pending),
+    )
 
 
 @beartype

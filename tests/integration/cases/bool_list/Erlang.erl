@@ -2,8 +2,8 @@
 -export([x/0]).
 x() ->
     My_data = [
-    true,
-    false,
-    true
-],
+        true,
+        false,
+        true
+    ],
     My_data.

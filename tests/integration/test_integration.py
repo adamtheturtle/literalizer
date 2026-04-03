@@ -175,10 +175,11 @@ def _wrap_scala(content: str, _variable_name: str) -> str:
 @beartype
 def _wrap_elixir(content: str, variable_name: str) -> str:
     """Wrap an Elixir variable assignment in a module function."""
+    indented = "    " + content.replace("\n", "\n    ")
     return (
         f"defmodule Check do\n"
         f"  def x do\n"
-        f"    {content}\n"
+        f"{indented}\n"
         f"    _ = {variable_name}\n"
         f"  end\n"
         f"end"
@@ -221,11 +222,12 @@ def _wrap_erlang(content: str, variable_name: str) -> str:
     Erlang does not warn about an unused variable.
     """
     erlang_varname = variable_name[0].upper() + variable_name[1:]
+    indented = "    " + content.replace("\n", "\n    ")
     return (
         f"-module(check).\n"
         f"-export([x/0]).\n"
         f"x() ->\n"
-        f"    {content},\n"
+        f"{indented},\n"
         f"    {erlang_varname}."
     )
 
@@ -367,7 +369,7 @@ def _wrap_zig(content: str, variable_name: str) -> str:
     compiler does not warn about a ``var`` that is never mutated.
     """
     indented = "    " + content.replace("\n", "\n    ")
-    if content.startswith("var "):
+    if "var " in content:
         use = f"    {variable_name} = .nil;"
     else:
         use = f"    _ = {variable_name};"
