@@ -581,6 +581,80 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
 
 
 @beartype
+def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
+    """Recursively pad dicts in lists so every dict has the same keys.
+
+    When a list contains dicts with different key sets, each dict is
+    padded with ``None`` for any missing keys so the records become
+    structurally uniform.
+    """
+    match data:
+        case ordereddict():
+            new_ordered_map: ordereddict = ordereddict()
+            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                new_ordered_map[k] = _coerce_mixed_dict_shapes(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            return new_ordered_map
+        case dict():
+            return {
+                k: _coerce_mixed_dict_shapes(data=v) for k, v in data.items()
+            }
+        case list():
+            new_list = [_coerce_mixed_dict_shapes(data=v) for v in data]
+            dicts_in_list = [v for v in new_list if isinstance(v, dict)]
+            key_sets = {frozenset(d.keys()) for d in dicts_in_list}
+            needs_padding = (
+                not all(ks == next(iter(key_sets)) for ks in key_sets)
+                if key_sets
+                else False
+            )
+            if needs_padding:
+                all_keys: list[str] = []
+                seen: set[str] = set()
+                for d in dicts_in_list:
+                    for k in d:
+                        if k not in seen:
+                            all_keys.append(k)
+                            seen.add(k)
+                new_list = [
+                    (
+                        {k: v.get(k) for k in all_keys}
+                        if isinstance(v, dict)
+                        else v
+                    )
+                    for v in new_list
+                ]
+            return new_list
+        case _:
+            return data
+
+
+@beartype
+def _has_mixed_dict_shapes(*, data: Value) -> bool:
+    """Recursively check whether data contains any list of dicts
+    with different key sets.
+    """
+    match data:
+        case ordereddict() | dict():
+            return any(
+                _has_mixed_dict_shapes(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            )
+        case list():
+            dicts_in_list = [v for v in data if isinstance(v, dict)]
+            key_sets = {frozenset(d.keys()) for d in dicts_in_list}
+            has_mixed = (
+                not all(ks == next(iter(key_sets)) for ks in key_sets)
+                if key_sets
+                else False
+            )
+            if has_mixed:
+                return True
+            return any(_has_mixed_dict_shapes(data=v) for v in data)
+        case _:
+            return False
+
+
+@beartype
 def _has_mixed_dict_values(*, data: Value) -> bool:
     """Recursively check whether data contains any dict whose values span
     multiple type families.
@@ -972,11 +1046,18 @@ def _apply_coercions(
                     "that would be coerced to strings"
                 )
                 raise HeterogeneousCoercionError(msg)
+            if _has_mixed_dict_shapes(data=data):
+                msg = (
+                    "List contains dicts with different key sets "
+                    "that would be padded with null values"
+                )
+                raise HeterogeneousCoercionError(msg)
         else:
             data = _coerce_heterogeneous_scalars(data=data)
             data = _coerce_heterogeneous_sibling_lists(data=data)
             data = _coerce_mixed_dict_values(data=data)
             data = _coerce_mixed_list_values(data=data)
+            data = _coerce_mixed_dict_shapes(data=data)
     return data
 
 
