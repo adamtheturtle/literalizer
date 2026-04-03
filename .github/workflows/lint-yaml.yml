@@ -19,8 +19,7 @@ jobs:
           lang_patterns: |
             tests/integration/cases/**/*.yaml
             !tests/integration/cases/**/input.yaml
-          find_command: find tests/integration/cases -name "*.yaml" ! -name "input.yaml"
-            -print0
+          exclude_patterns: input.yaml
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.js
-          find_command: find tests/integration/cases -name "*.js" -print0
       - name: Check JavaScript syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.nim
-          find_command: find tests/integration/cases -name "*.nim" -print0
       - name: Install Nim
         if: steps.find-files.outputs.found == 'true'
         uses: jiro4989/setup-nim-action@v2

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.kts
-          find_command: find tests/integration/cases -name "*.kts" -print0
       - name: Install Kotlin
         if: steps.find-files.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.lua
-          find_command: find tests/integration/cases -name "*.lua" -print0
       - name: Install Lua
         if: steps.find-files.outputs.found == 'true'
         uses: leafo/gh-actions-lua@v12

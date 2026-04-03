@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.ts
-          find_command: find tests/integration/cases -name "*.ts" -print0
       - name: Install TypeScript
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g typescript

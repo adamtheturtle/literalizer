@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.erl
-          find_command: find tests/integration/cases -name "*.erl" -print0
       - name: Install Erlang
         if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1

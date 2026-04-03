@@ -20,7 +20,6 @@ jobs:
           extra_config_patterns: |
             pyproject.toml
             check_toml_syntax.py
-          find_command: find tests/integration/cases -name "*.toml" -print0
       - uses: astral-sh/setup-uv@v7
         if: steps.find-files.outputs.found == 'true'
         with:

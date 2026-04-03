@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cr
-          find_command: find tests/integration/cases -name "*.cr" -print0
       - name: Install Crystal
         if: steps.find-files.outputs.found == 'true'
         uses: crystal-lang/install-crystal@v1

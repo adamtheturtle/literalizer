@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.mojo
-          find_command: find tests/integration/cases -name "*.mojo" -print0
       - name: Install pixi
         if: steps.find-files.outputs.found == 'true'
         uses: fabasoad/setup-mojo-action@v3
