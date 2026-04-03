@@ -1,4 +1,4 @@
-my_data = # just a comment
-None
-my_data = # just a comment
-None
+# just a comment
+my_data = None
+# just a comment
+my_data = None

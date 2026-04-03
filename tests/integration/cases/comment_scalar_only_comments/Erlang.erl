@@ -1,6 +1,6 @@
 -module(check).
 -export([x/0]).
 x() ->
-    My_data = % just a comment
-undefined,
+    % just a comment
+My_data = undefined,
     My_data.

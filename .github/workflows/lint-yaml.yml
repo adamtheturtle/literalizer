@@ -20,10 +20,6 @@ jobs:
             tests/integration/cases/**/*.yaml
             !tests/integration/cases/**/input.yaml
           exclude_patterns: input.yaml
-          exclude_dirs: |
-            tests/integration/cases/comment_scalar
-            tests/integration/cases/comment_scalar_document_markers
-            tests/integration/cases/comment_scalar_only_comments
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7

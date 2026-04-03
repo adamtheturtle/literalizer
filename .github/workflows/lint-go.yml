@@ -17,10 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.go
-          exclude_dirs: |
-            tests/integration/cases/comment_scalar
-            tests/integration/cases/comment_scalar_document_markers
-            tests/integration/cases/comment_scalar_only_comments
       - name: Check Go syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gofmt -e < /tmp/files-to-lint

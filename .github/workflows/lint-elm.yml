@@ -18,10 +18,6 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.elm
           extra_config_patterns: check_elm_golden_syntax.py
-          exclude_dirs: |
-            tests/integration/cases/comment_scalar
-            tests/integration/cases/comment_scalar_document_markers
-            tests/integration/cases/comment_scalar_only_comments
       - name: Install elm-format and elm
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g elm-format elm

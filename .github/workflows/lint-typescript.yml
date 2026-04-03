@@ -17,10 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.ts
-          exclude_dirs: |
-            tests/integration/cases/comment_scalar
-            tests/integration/cases/comment_scalar_document_markers
-            tests/integration/cases/comment_scalar_only_comments
       - name: Install TypeScript
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g typescript

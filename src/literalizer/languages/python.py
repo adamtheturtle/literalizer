@@ -881,6 +881,7 @@ class Python(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        self.supports_scalar_before_comments = False
         bytes_hint = bytes_format.type_hint
         date_hint = date_format.type_hint
         datetime_hint = datetime_format.type_hint

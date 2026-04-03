@@ -451,6 +451,20 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     being placed inside the ``{...}`` block.
     """
 
+    supports_scalar_before_comments: bool
+    """Whether the language supports a line comment between the
+    assignment operator and the value on the next line.
+
+    For example, in JavaScript ``const x = // note\\n42;`` is valid
+    because the parser continues the incomplete expression past the
+    line comment.  In Python ``x = # note\\n42`` is a syntax error
+    because the ``#`` comment terminates the statement.
+
+    When ``False``, YAML comments that appear before a scalar value
+    are emitted as standalone comment lines immediately before the
+    variable declaration rather than between the ``=`` and the value.
+    """
+
     @property
     def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
         """Callable that formats a new variable declaration.

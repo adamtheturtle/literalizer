@@ -290,9 +290,6 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
-    "tests/integration/cases/comment_scalar",
-    "tests/integration/cases/comment_scalar_document_markers",
-    "tests/integration/cases/comment_scalar_only_comments",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
@@ -307,9 +304,6 @@ project_excludes = [
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
-    "tests/integration/cases/comment_scalar",
-    "tests/integration/cases/comment_scalar_document_markers",
-    "tests/integration/cases/comment_scalar_only_comments",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
@@ -319,11 +313,6 @@ executionEnvironments = [
 
 [tool.ty]
 analysis.respect-type-ignore-comments = false
-src.exclude = [
-    "tests/integration/cases/comment_scalar/",
-    "tests/integration/cases/comment_scalar_document_markers/",
-    "tests/integration/cases/comment_scalar_only_comments/",
-]
 terminal.error-on-warning = true
 
 [tool.pytest]
