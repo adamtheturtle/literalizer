@@ -2,8 +2,8 @@
 -export([x/0]).
 x() ->
     My_data = [
-    inf,
-    -inf,
-    nan
-],
+        inf,
+        -inf,
+        nan
+    ],
     My_data.

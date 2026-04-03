@@ -1,10 +1,10 @@
 defmodule Check do
   def x do
     my_data = [
-    {"name", "Alice"},
-    {"age", 30},
-    {"active", true},
-]
+        {"name", "Alice"},
+        {"age", 30},
+        {"active", true},
+    ]
     _ = my_data
   end
 end

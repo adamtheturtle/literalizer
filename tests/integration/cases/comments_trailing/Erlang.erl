@@ -2,7 +2,7 @@
 -export([x/0]).
 x() ->
     My_data = [
-    "a"
-    % trailing
-],
+        "a"
+        % trailing
+    ],
     My_data.
