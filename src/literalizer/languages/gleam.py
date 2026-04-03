@@ -333,9 +333,9 @@ class Gleam(metaclass=LanguageCls):
             value=_gleam_float_wrapper(
                 inner=functools.partial(
                     format_float_repr,
-                    inf_literal="",
-                    neg_inf_literal="",
-                    nan_literal="",
+                    inf_literal="UNREACHABLE",
+                    neg_inf_literal="UNREACHABLE",
+                    nan_literal="UNREACHABLE",
                 ),
             )
         )
@@ -343,9 +343,9 @@ class Gleam(metaclass=LanguageCls):
             value=_gleam_float_wrapper(
                 inner=functools.partial(
                     format_float_scientific,
-                    inf_literal="",
-                    neg_inf_literal="",
-                    nan_literal="",
+                    inf_literal="UNREACHABLE",
+                    neg_inf_literal="UNREACHABLE",
+                    nan_literal="UNREACHABLE",
                 ),
             )
         )
@@ -353,9 +353,9 @@ class Gleam(metaclass=LanguageCls):
             value=_gleam_float_wrapper(
                 inner=functools.partial(
                     format_float_fixed,
-                    inf_literal="",
-                    neg_inf_literal="",
-                    nan_literal="",
+                    inf_literal="UNREACHABLE",
+                    neg_inf_literal="UNREACHABLE",
+                    nan_literal="UNREACHABLE",
                 ),
             )
         )
