@@ -742,6 +742,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
+    literalizer.languages.Raku.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Raku,
+        wrap=_wrap_identity,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap_variable_name="my_data",
+    ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
         wrap=_wrap_identity,

@@ -44,6 +44,7 @@ from .powershell import PowerShell
 from .python import Python
 from .r import R
 from .racket import Racket
+from .raku import Raku
 from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
@@ -98,6 +99,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Python,
         R,
         Racket,
+        Raku,
         Ruby,
         Rust,
         Scala,
@@ -154,6 +156,7 @@ __all__ = [
     "Python",
     "R",
     "Racket",
+    "Raku",
     "Ruby",
     "Rust",
     "Scala",
