@@ -1,2 +1,2 @@
-let my_data: Any = // note
-42
+// note
+let my_data: Any = 42

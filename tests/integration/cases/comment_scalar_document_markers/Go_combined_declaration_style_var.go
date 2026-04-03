@@ -1,9 +1,9 @@
 package main
 
 func main() {
-var my_data = // note
-42
-my_data = // note
-42
+// note
+var my_data = 42
+// note
+my_data = 42
 _ = my_data
 }

@@ -2,7 +2,9 @@ IDENTIFICATION DIVISION.
 PROGRAM-ID. CHECK.
 DATA DIVISION.
 WORKING-STORAGE SECTION.
-01 MY-DATA COMP-2 VALUE "hello # world"  *> note.
+*> note
+01 MY-DATA PIC X(13) VALUE "hello # world".
 PROCEDURE DIVISION.
-    MOVE "hello # world"  *> note TO MY-DATA.
+    *> note
+MOVE "hello # world" TO MY-DATA.
     STOP RUN.

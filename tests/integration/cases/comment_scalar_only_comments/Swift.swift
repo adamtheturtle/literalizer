@@ -1,2 +1,2 @@
-let my_data: Any = // just a comment
-nil
+// just a comment
+let my_data: Any = nil

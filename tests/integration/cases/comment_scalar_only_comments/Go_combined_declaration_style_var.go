@@ -1,9 +1,9 @@
 package main
 
 func main() {
-var my_data = // just a comment
-nil
-my_data = // just a comment
-nil
+// just a comment
+var my_data = nil
+// just a comment
+my_data = nil
 _ = my_data
 }

@@ -1,4 +1,4 @@
-var my_data: Any = // just a comment
-nil
-my_data = // just a comment
-nil
+// just a comment
+var my_data: Any = nil
+// just a comment
+my_data = nil
