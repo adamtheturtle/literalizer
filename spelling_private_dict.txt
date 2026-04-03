@@ -34,6 +34,15 @@ FSet
 FSharp
 FStr
 Fortran
+GBool
+GDict
+GFloat
+GInt
+GList
+GNull
+GSet
+GStr
+GVal
 HBool
 HCL
 HFloat

@@ -1,13 +1,22 @@
-import gleam/dict
+pub type GVal {
+  GNull
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+  GSet(List(GVal))
+}
 
 pub fn main() {
-  let my_data = [
-    dict.from_list([#("x", 1), #("y", 2.5)]),
-    dict.from_list([#("x", 3), #("y", 4.0)]),
-  ]
-  let my_data = [
-    dict.from_list([#("x", 1), #("y", 2.5)]),
-    dict.from_list([#("x", 3), #("y", 4.0)]),
-  ]
+  let my_data = GList([
+    GDict([#("x", GInt(1)), #("y", GFloat(2.5))]),
+    GDict([#("x", GInt(3)), #("y", GFloat(4.0))]),
+  ])
+  let my_data = GList([
+    GDict([#("x", GInt(1)), #("y", GFloat(2.5))]),
+    GDict([#("x", GInt(3)), #("y", GFloat(4.0))]),
+  ])
   let _ = my_data
 }
