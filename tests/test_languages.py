@@ -418,15 +418,35 @@ def test_java_sequence_include_delimiters_uses_braces() -> None:
     argvalues=[
         (
             [1, 2, 3],
-            "new int[]{\n    1,\n    2,\n    3\n}",
+            textwrap.dedent(
+                text="""\
+                new int[]{
+                    1,
+                    2,
+                    3
+                }"""
+            ),
         ),
         (
             ["hello", "world"],
-            'new String[]{\n    "hello",\n    "world"\n}',
+            textwrap.dedent(
+                text="""\
+                new String[]{
+                    "hello",
+                    "world"
+                }"""
+            ),
         ),
         (
             [1, "hello", True],
-            'new Object[]{\n    1,\n    "hello",\n    true\n}',
+            textwrap.dedent(
+                text="""\
+                new Object[]{
+                    1,
+                    "hello",
+                    true
+                }"""
+            ),
         ),
     ],
     ids=["all_int", "all_string", "mixed"],
