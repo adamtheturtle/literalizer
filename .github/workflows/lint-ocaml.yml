@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.ml
-          find_command: find tests/integration/cases -name "*.ml" -print0
       - name: Install OCaml
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get install -y ocaml

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.jsonnet
-          find_command: find tests/integration/cases -name "*.jsonnet" -print0
       - name: Install jsonnet
         if: steps.find-files.outputs.found == 'true'
         run: |

@@ -18,7 +18,6 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.occ
           extra_config_patterns: check_occam_golden_syntax.py
-          find_command: find tests/integration/cases -name "*.occ" -print0
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.hs
-          find_command: find tests/integration/cases -name "*.hs" -print0
       - uses: haskell-actions/setup@v2
         if: steps.find-files.outputs.found == 'true'
         with:

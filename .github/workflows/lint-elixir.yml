@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.ex
-          find_command: find tests/integration/cases -name "*.ex" -print0
       - name: Install Elixir
         if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1

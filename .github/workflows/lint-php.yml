@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.php
-          find_command: find tests/integration/cases -name "*.php" -print0
       - name: Check PHP syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 php -l < /tmp/files-to-lint

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.jl
-          find_command: find tests/integration/cases -name "*.jl" -print0
       - name: Install Julia
         if: steps.find-files.outputs.found == 'true'
         uses: julia-actions/setup-julia@v2

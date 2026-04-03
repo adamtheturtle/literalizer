@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.lisp
-          find_command: find tests/integration/cases -name "*.lisp" -print0
       - name: Install SBCL
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get install -y sbcl

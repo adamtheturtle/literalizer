@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/Matlab*.m
-          find_command: find tests/integration/cases -name "Matlab*.m" -print0
       - name: Install Octave
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update && sudo apt-get install -y octave

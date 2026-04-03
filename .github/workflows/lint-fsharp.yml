@@ -19,8 +19,6 @@ jobs:
           lang_patterns: |
             tests/integration/cases/**/*.fs
             tests/integration/cases/**/*.fsi
-          find_command: find tests/integration/cases \( -name "*.fs" -o -name "*.fsi"
-            \) -print0
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |

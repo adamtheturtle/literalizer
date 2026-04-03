@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.groovy
-          find_command: find tests/integration/cases -name "*.groovy" -print0
       - name: Install Groovy
         if: steps.find-files.outputs.found == 'true'
         uses: wtfjoke/setup-groovy@v3

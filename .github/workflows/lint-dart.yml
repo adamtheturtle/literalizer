@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.dart
-          find_command: find tests/integration/cases -name "*.dart" -print0
       - name: Install Dart
         if: steps.find-files.outputs.found == 'true'
         uses: dart-lang/setup-dart@v1

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.zig
-          find_command: find tests/integration/cases -name "*.zig" -print0
       - name: Install Zig
         if: steps.find-files.outputs.found == 'true'
         uses: mlugg/setup-zig@v2

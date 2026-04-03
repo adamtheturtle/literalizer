@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.sh
-          find_command: find tests/integration/cases -name "*.sh" -print0
       - name: Check Bash syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 bash -n < /tmp/files-to-lint

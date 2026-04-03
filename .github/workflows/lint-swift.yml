@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.swift
-          find_command: find tests/integration/cases -name "*.swift" -print0
       - name: Install Swift
         if: steps.find-files.outputs.found == 'true'
         uses: SwiftyLab/setup-swift@v1

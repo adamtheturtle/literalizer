@@ -18,7 +18,6 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.elm
           extra_config_patterns: check_elm_golden_syntax.py
-          find_command: find tests/integration/cases -name "*.elm" -print0
       - name: Install elm-format and elm
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g elm-format elm

@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.c
-          find_command: find tests/integration/cases -name "*.c" -print0
       - name: Check C syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint

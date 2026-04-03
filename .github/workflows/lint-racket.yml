@@ -17,7 +17,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.rkt
-          find_command: find tests/integration/cases -name "*.rkt" -print0
       - name: Install Racket
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get install -y racket
