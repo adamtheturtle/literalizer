@@ -24,7 +24,6 @@ def main() -> None:
         src_dir.mkdir()
         gleam_toml_path = Path(tmpdir) / "gleam.toml"
         gleam_toml_path.write_text(data=_GLEAM_TOML, encoding="utf-8")
-        # Run gleam deps download once to fetch dependencies.
         deps_result = subprocess.run(
             args=[gleam_path, "deps", "download"],
             capture_output=True,
