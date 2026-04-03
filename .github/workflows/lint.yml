@@ -168,6 +168,9 @@ jobs:
   lint-norg:
     uses: ./.github/workflows/lint-norg.yml
 
+  lint-purescript:
+    uses: ./.github/workflows/lint-purescript.yml
+
   lint-racket:
     uses: ./.github/workflows/lint-racket.yml
 
@@ -233,6 +236,7 @@ jobs:
       - lint-mojo
       - lint-nim
       - lint-norg
+      - lint-purescript
       - lint-racket
       - lint-zig
       - lint-toml
