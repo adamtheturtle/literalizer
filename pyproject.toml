@@ -319,6 +319,11 @@ executionEnvironments = [
 
 [tool.ty]
 analysis.respect-type-ignore-comments = false
+exclude = [
+    "tests/integration/cases/comment_scalar/",
+    "tests/integration/cases/comment_scalar_document_markers/",
+    "tests/integration/cases/comment_scalar_only_comments/",
+]
 terminal.error-on-warning = true
 
 [tool.pytest]
