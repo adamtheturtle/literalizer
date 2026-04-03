@@ -522,7 +522,11 @@ def _list_has_uneven_dict_keys(*, items: list[Value]) -> bool:
     """Check whether a flat list contains dicts with differing key
     sets.
     """
-    dict_items = [item for item in items if isinstance(item, dict)]
+    dict_items = [
+        item
+        for item in items
+        if isinstance(item, dict) and not isinstance(item, ordereddict)
+    ]
     if len(dict_items) > 1:
         first_keys = set(dict_items[0].keys())
         return any(set(d.keys()) != first_keys for d in dict_items[1:])
