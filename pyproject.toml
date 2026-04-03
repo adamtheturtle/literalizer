@@ -290,6 +290,9 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
+    "tests/integration/cases/comment_scalar",
+    "tests/integration/cases/comment_scalar_document_markers",
+    "tests/integration/cases/comment_scalar_only_comments",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
