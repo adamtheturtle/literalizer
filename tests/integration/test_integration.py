@@ -1707,7 +1707,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             "_list_val",
         ),
         (_build_float_format_variants(), "float_list", ""),
-        (_build_float_format_variants(), "float_scientific_notation", "_sci"),
+        (_build_float_format_variants(), "float_scientific_notation", "_s"),
         (_build_float_format_variants(), "nested_float_list", "_n"),
         (_build_integer_format_variants(), "int_list", ""),
         (_build_integer_format_variants(), "int_list_large", "_large"),
