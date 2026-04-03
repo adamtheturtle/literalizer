@@ -6,5 +6,5 @@ type Val
 
 
 my_data : Val
-my_data = -- note
-EInt 42
+-- note
+my_data = EInt 42

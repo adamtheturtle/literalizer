@@ -17,7 +17,7 @@ end module fval_m
 program check
   use fval_m
   implicit none
+  ! just a comment
   type(fval_t) :: my_data
-  my_data = ! just a comment
-  fnull()
+  my_data = fnull()
 end program check

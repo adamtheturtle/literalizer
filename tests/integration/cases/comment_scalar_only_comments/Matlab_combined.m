@@ -1,4 +1,4 @@
-my_data = % just a comment
-[];
-my_data = % just a comment
-[];
+% just a comment
+my_data = [];
+% just a comment
+my_data = [];

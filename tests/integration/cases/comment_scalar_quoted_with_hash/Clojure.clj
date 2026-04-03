@@ -1,1 +1,2 @@
-"hello # world"  ; note
+; note
+"hello # world"

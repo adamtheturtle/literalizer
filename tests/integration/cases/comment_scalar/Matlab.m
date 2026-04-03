@@ -1,2 +1,2 @@
-my_data = % note
-42;
+% note
+my_data = 42;

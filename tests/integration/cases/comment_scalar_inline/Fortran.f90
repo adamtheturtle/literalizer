@@ -17,6 +17,7 @@ end module fval_m
 program check
   use fval_m
   implicit none
+  ! note
   type(fval_t) :: my_data
-  my_data = fint(42  ! note)
+  my_data = fint(42)
 end program check

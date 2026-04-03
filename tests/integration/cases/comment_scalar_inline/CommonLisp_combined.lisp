@@ -1,2 +1,4 @@
-(defparameter *my_data* 42  ; note)
-(setf *my_data* 42  ; note)
+; note
+(defparameter *my_data* 42)
+; note
+(setf *my_data* 42)

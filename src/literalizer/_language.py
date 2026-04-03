@@ -465,6 +465,20 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     variable declaration rather than between the ``=`` and the value.
     """
 
+    supports_scalar_inline_comments: bool
+    """Whether the language supports a trailing line comment on a
+    scalar value without breaking surrounding syntax.
+
+    For example, in JavaScript ``const x = 42  // note`` is valid
+    because no closing token follows on the same line.  In C
+    ``((_CVal){.i = 42  // note});`` is a syntax error because the
+    ``//`` comment consumes the closing ``});``.
+
+    When ``False``, YAML inline comments on scalar values are emitted
+    as standalone comment lines immediately before the variable
+    declaration rather than being appended after the value.
+    """
+
     @property
     def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
         """Callable that formats a new variable declaration.

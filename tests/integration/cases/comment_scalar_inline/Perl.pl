@@ -1,1 +1,2 @@
-my $my_data = 42  # note;
+# note
+my $my_data = 42;

@@ -1,5 +1,6 @@
 class Check {
     public static void check() {
-var my_data = "hello # world"  // note;
+// note
+var my_data = "hello # world";
     }
 }

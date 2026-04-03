@@ -1,7 +1,7 @@
 def main():
-    var my_data = # just a comment
-    None
+    # just a comment
+    var my_data = None
     _ = my_data
-    my_data = # just a comment
-    None
+    # just a comment
+    my_data = None
     _ = my_data

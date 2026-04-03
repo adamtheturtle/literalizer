@@ -17,6 +17,7 @@ end module fval_m
 program check
   use fval_m
   implicit none
+  ! note
   type(fval_t) :: my_data
-  my_data = fstr('hello # world'  ! note)
+  my_data = fstr('hello # world')
 end program check

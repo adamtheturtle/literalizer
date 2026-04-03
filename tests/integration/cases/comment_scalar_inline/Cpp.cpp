@@ -4,5 +4,6 @@ struct _Any {
     _Any(std::initializer_list<_Any>) noexcept {}
 };
 void _check() {
-_Any my_data = 42  // note;
+// note
+_Any my_data = 42;
 }

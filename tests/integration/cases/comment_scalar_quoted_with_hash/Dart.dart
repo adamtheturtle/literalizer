@@ -1,1 +1,2 @@
-final my_data = "hello # world"  // note;
+// note
+final my_data = "hello # world";

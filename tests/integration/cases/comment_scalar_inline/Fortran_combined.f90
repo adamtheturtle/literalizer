@@ -17,15 +17,17 @@ end module fval_m
 subroutine check_declaration()
   use fval_m
   implicit none
+  ! note
   type(fval_t) :: my_data
-  my_data = fint(42  ! note)
+  my_data = fint(42)
 end subroutine check_declaration
 
 subroutine check_assignment()
   use fval_m
   implicit none
   type(fval_t) :: my_data
-  my_data = fint(42  ! note)
+  ! note
+  my_data = fint(42)
 end subroutine check_assignment
 
 program main

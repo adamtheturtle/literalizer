@@ -14,6 +14,7 @@ struct _CVal {
 };
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
-_CVal my_data = ((_CVal){.i = 42  // note});
+// note
+_CVal my_data = ((_CVal){.i = 42});
     (void)my_data;
 }

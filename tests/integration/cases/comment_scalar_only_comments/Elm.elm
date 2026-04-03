@@ -6,5 +6,5 @@ type Val
 
 
 my_data : Val
-my_data = -- just a comment
-ENull
+-- just a comment
+my_data = ENull

@@ -1,3 +1,5 @@
 #lang racket
-(define my_data "hello # world"  ; note)
-(set! my_data "hello # world"  ; note)
+; note
+(define my_data "hello # world")
+; note
+(set! my_data "hello # world")

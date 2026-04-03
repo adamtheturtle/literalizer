@@ -17,17 +17,17 @@ end module fval_m
 subroutine check_declaration()
   use fval_m
   implicit none
+  ! just a comment
   type(fval_t) :: my_data
-  my_data = ! just a comment
-  fnull()
+  my_data = fnull()
 end subroutine check_declaration
 
 subroutine check_assignment()
   use fval_m
   implicit none
   type(fval_t) :: my_data
-  my_data = ! just a comment
-  fnull()
+  ! just a comment
+  my_data = fnull()
 end subroutine check_assignment
 
 program main

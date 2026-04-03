@@ -1,2 +1,3 @@
 #lang racket
-"hello # world"  ; note
+; note
+"hello # world"

@@ -9,5 +9,5 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
 my_data :: Val
-my_data = -- note
-42
+-- note
+my_data = 42

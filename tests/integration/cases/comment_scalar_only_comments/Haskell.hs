@@ -1,5 +1,5 @@
 module Check where
 data Val = HNull
 my_data :: Val
-my_data = -- just a comment
-HNull
+-- just a comment
+my_data = HNull

@@ -1,1 +1,2 @@
-final my_data = 42  // note;
+// note
+final my_data = 42;

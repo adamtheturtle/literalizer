@@ -1473,6 +1473,7 @@ def _resolve_yaml_comments(
             comment_suffix=comment_suffix,
             line_prefix=line_prefix,
             supports_scalar_before_comments=language.supports_scalar_before_comments,
+            supports_scalar_inline_comments=language.supports_scalar_inline_comments,
         )
         return _ResolvedComments(
             result=scalar_result.result,

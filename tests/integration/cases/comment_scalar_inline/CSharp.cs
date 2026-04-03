@@ -1,1 +1,2 @@
-var my_data = 42  // note;
+// note
+var my_data = 42;

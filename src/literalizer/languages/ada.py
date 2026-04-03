@@ -282,7 +282,7 @@ class Ada(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    def __init__(
+    def __init__(  # noqa: PLR0915
         self,
         *,
         date_format: DateFormats = DateFormats.ISO,
@@ -382,6 +382,7 @@ class Ada(metaclass=LanguageCls):
         self.skip_null_dict_values = False
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
+        self.supports_scalar_inline_comments = False
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )

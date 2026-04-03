@@ -1,2 +1,3 @@
 #lang racket
-42  ; note
+; note
+42

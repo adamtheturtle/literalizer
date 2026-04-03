@@ -1,2 +1,2 @@
-my_data = # just a comment
-null
+# just a comment
+my_data = null
