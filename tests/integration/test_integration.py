@@ -184,7 +184,7 @@ def _wrap_elm(content: str, variable_name: str) -> str:
     expression = "\n".join(lines[expr_start:])
 
     parts = ["module Check exposing (..)"]
-    if preamble:
+    if preamble:  # pragma: no branch
         parts.append(preamble)
     parts.append(f"{variable_name} : Val\n{expression}")
     return "\n\n\n".join(parts)
