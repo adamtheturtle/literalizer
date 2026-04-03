@@ -95,12 +95,13 @@ def _format_purescript_integer_hex(value: int) -> str:
     return f"PInt {hex_repr}"
 
 
+@beartype
 def _purescript_float_wrapper(
     inner: Callable[[float], str],
     *,
-    inf_literal: str = "PFloat (1.0 / 0.0)",
-    neg_inf_literal: str = "PFloat (-(1.0 / 0.0))",
-    nan_literal: str = "PFloat (0.0 / 0.0)",
+    inf_literal: str,
+    neg_inf_literal: str,
+    nan_literal: str,
 ) -> Callable[[float], str]:
     """Wrap a float formatter to produce ``PFloat`` constructors."""
 
@@ -126,6 +127,9 @@ _format_purescript_float_repr = _purescript_float_wrapper(
         neg_inf_literal="",
         nan_literal="",
     ),
+    inf_literal="PFloat (1.0 / 0.0)",
+    neg_inf_literal="PFloat (-(1.0 / 0.0))",
+    nan_literal="PFloat (0.0 / 0.0)",
 )
 _format_purescript_float_scientific = _purescript_float_wrapper(
     inner=functools.partial(
@@ -134,6 +138,9 @@ _format_purescript_float_scientific = _purescript_float_wrapper(
         neg_inf_literal="",
         nan_literal="",
     ),
+    inf_literal="PFloat (1.0 / 0.0)",
+    neg_inf_literal="PFloat (-(1.0 / 0.0))",
+    nan_literal="PFloat (0.0 / 0.0)",
 )
 _format_purescript_float_fixed = _purescript_float_wrapper(
     inner=functools.partial(
@@ -142,6 +149,9 @@ _format_purescript_float_fixed = _purescript_float_wrapper(
         neg_inf_literal="",
         nan_literal="",
     ),
+    inf_literal="PFloat (1.0 / 0.0)",
+    neg_inf_literal="PFloat (-(1.0 / 0.0))",
+    nan_literal="PFloat (0.0 / 0.0)",
 )
 
 
