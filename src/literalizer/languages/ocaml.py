@@ -91,12 +91,6 @@ def _format_variable_declaration(name: str, value: str, data: Value) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format an OCaml variable assignment."""
-    return _format_variable_declaration(name=name, value=value, data=data)
-
-
-@beartype
 class OCaml(metaclass=LanguageCls):
     """OCaml language specification.
 
@@ -437,7 +431,7 @@ class OCaml(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _format_variable_declaration
         )
         self.element_separator = "; "
         self.format_sequence_entry: Callable[[Value, str], str] = (
