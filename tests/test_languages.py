@@ -574,17 +574,19 @@ def test_cobol_level_number_cap() -> None:
     """COBOL level numbers are capped at 49 for deeply nested
     structures.
     """
-    yaml_string = (
-        "a:\n"
-        "  b:\n"
-        "    c:\n"
-        "      d:\n"
-        "        e:\n"
-        "          f:\n"
-        "            g:\n"
-        "              h:\n"
-        "                i:\n"
-        "                  value: deep\n"
+    yaml_string = textwrap.dedent(
+        text="""\
+        a:
+          b:
+            c:
+              d:
+                e:
+                  f:
+                    g:
+                      h:
+                        i:
+                          value: deep
+        """
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
