@@ -1,14 +1,14 @@
-from math import inf, nan
+import std.math
 def main():
     var my_data = [
-        inf[DType.float64](),
-        -inf[DType.float64](),
-        nan[DType.float64](),
+        std.math.inf[DType.float64](),
+        -std.math.inf[DType.float64](),
+        std.math.nan[DType.float64](),
     ]
     _ = my_data
     my_data = [
-        inf[DType.float64](),
-        -inf[DType.float64](),
-        nan[DType.float64](),
+        std.math.inf[DType.float64](),
+        -std.math.inf[DType.float64](),
+        std.math.nan[DType.float64](),
     ]
     _ = my_data

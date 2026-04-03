@@ -20,9 +20,9 @@ subroutine check_declaration()
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-      freal(ieee_value(0.0d0, ieee_positive_inf)), &
-      freal(ieee_value(0.0d0, ieee_negative_inf)), &
-      freal(ieee_value(0.0d0, ieee_quiet_nan)) &
+      freal(ieee_value(0.0, ieee_positive_inf)), &
+      freal(ieee_value(0.0, ieee_negative_inf)), &
+      freal(ieee_value(0.0, ieee_quiet_nan)) &
   ])
 end subroutine check_declaration
 
@@ -31,9 +31,9 @@ subroutine check_assignment()
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-      freal(ieee_value(0.0d0, ieee_positive_inf)), &
-      freal(ieee_value(0.0d0, ieee_negative_inf)), &
-      freal(ieee_value(0.0d0, ieee_quiet_nan)) &
+      freal(ieee_value(0.0, ieee_positive_inf)), &
+      freal(ieee_value(0.0, ieee_negative_inf)), &
+      freal(ieee_value(0.0, ieee_quiet_nan)) &
   ])
 end subroutine check_assignment
 

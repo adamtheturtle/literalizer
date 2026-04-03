@@ -198,25 +198,25 @@ class Jsonnet(metaclass=LanguageCls):
         REPR = enum.member(
             value=functools.partial(
                 format_float_repr,
-                inf_literal="1e309",
-                neg_inf_literal="-1e309",
-                nan_literal="null",
+                inf_literal='"Infinity"',
+                neg_inf_literal='"-Infinity"',
+                nan_literal='"NaN"',
             )
         )
         SCIENTIFIC = enum.member(
             value=functools.partial(
                 format_float_scientific,
-                inf_literal="1e309",
-                neg_inf_literal="-1e309",
-                nan_literal="null",
+                inf_literal='"Infinity"',
+                neg_inf_literal='"-Infinity"',
+                nan_literal='"NaN"',
             )
         )
         FIXED = enum.member(
             value=functools.partial(
                 format_float_fixed,
-                inf_literal="1e309",
-                neg_inf_literal="-1e309",
-                nan_literal="null",
+                inf_literal='"Infinity"',
+                neg_inf_literal='"-Infinity"',
+                nan_literal='"NaN"',
             )
         )
 

@@ -257,25 +257,25 @@ class Fortran(metaclass=LanguageCls):
         REPR = enum.member(
             value=functools.partial(
                 format_float_repr,
-                inf_literal="ieee_value(0.0d0, ieee_positive_inf)",
-                neg_inf_literal="ieee_value(0.0d0, ieee_negative_inf)",
-                nan_literal="ieee_value(0.0d0, ieee_quiet_nan)",
+                inf_literal="ieee_value(0.0, ieee_positive_inf)",
+                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
+                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
             )
         )
         SCIENTIFIC = enum.member(
             value=functools.partial(
                 format_float_scientific,
-                inf_literal="ieee_value(0.0d0, ieee_positive_inf)",
-                neg_inf_literal="ieee_value(0.0d0, ieee_negative_inf)",
-                nan_literal="ieee_value(0.0d0, ieee_quiet_nan)",
+                inf_literal="ieee_value(0.0, ieee_positive_inf)",
+                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
+                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
             )
         )
         FIXED = enum.member(
             value=functools.partial(
                 format_float_fixed,
-                inf_literal="ieee_value(0.0d0, ieee_positive_inf)",
-                neg_inf_literal="ieee_value(0.0d0, ieee_negative_inf)",
-                nan_literal="ieee_value(0.0d0, ieee_quiet_nan)",
+                inf_literal="ieee_value(0.0, ieee_positive_inf)",
+                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
+                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
             )
         )
 
