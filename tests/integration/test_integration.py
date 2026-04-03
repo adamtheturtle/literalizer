@@ -619,10 +619,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Haskell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Haskell,
         wrap=_wrap_haskell,
-        combined_wrap=lambda d, _a, v: _wrap_haskell(
-            content=d,
-            variable_name=v,
-        ),
+        combined_wrap=_newline_combined(wrap=_wrap_haskell),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Hcl.__name__: _LanguageConfig(
@@ -657,28 +654,19 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.Elixir.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elixir,
         wrap=_wrap_elixir,
-        combined_wrap=lambda d, _a, v: _wrap_elixir(
-            content=d,
-            variable_name=v,
-        ),
+        combined_wrap=_newline_combined(wrap=_wrap_elixir),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Elm.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Elm,
         wrap=_wrap_elm,
-        combined_wrap=lambda d, _a, v: _wrap_elm(
-            content=d,
-            variable_name=v,
-        ),
+        combined_wrap=_newline_combined(wrap=_wrap_elm),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Erlang.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Erlang,
         wrap=_wrap_erlang,
-        combined_wrap=lambda d, _a, v: _wrap_erlang(
-            content=d,
-            variable_name=v,
-        ),
+        combined_wrap=_newline_combined(wrap=_wrap_erlang),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.FSharp.__name__: _LanguageConfig(
@@ -690,19 +678,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     literalizer.languages.OCaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.OCaml,
         wrap=_wrap_ocaml,
-        combined_wrap=lambda d, _a, _v: _wrap_ocaml(
-            content=d,
-            _variable_name=_v,
-        ),
+        combined_wrap=_newline_combined(wrap=_wrap_ocaml),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Occam.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Occam,
         wrap=_wrap_occam,
-        combined_wrap=lambda d, _a, _v: _wrap_occam(
-            content=d,
-            _variable_name=_v,
-        ),
+        combined_wrap=_newline_combined(wrap=_wrap_occam),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Groovy.__name__: _LanguageConfig(
@@ -1883,9 +1865,14 @@ def test_line_ending_combined_variable_forms(
     )
 
 
+def _lang_cls_name(cls: literalizer.LanguageCls) -> str:
+    """Return the class name for sorting."""
+    return cls.__name__
+
+
 _SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
     ALL_LANGUAGES,
-    key=lambda c: c.__name__,
+    key=_lang_cls_name,
 )
 
 

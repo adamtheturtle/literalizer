@@ -163,7 +163,7 @@ class Occam(metaclass=LanguageCls):
             formatter=variable_formatter(
                 template="VAL MOBILE LIT {name} IS {value}:",
             ),
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
 
     class DictEntryStyles(enum.Enum):
