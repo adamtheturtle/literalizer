@@ -171,6 +171,9 @@ jobs:
   lint-racket:
     uses: ./.github/workflows/lint-racket.yml
 
+  lint-scheme:
+    uses: ./.github/workflows/lint-scheme.yml
+
   lint-zig:
     uses: ./.github/workflows/lint-zig.yml
 
@@ -234,6 +237,7 @@ jobs:
       - lint-nim
       - lint-norg
       - lint-racket
+      - lint-scheme
       - lint-zig
       - lint-toml
       - lint-yaml

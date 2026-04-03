@@ -736,6 +736,11 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         wrap=_wrap_identity,
         combined_wrap=_newline_combined(wrap=_wrap_identity),
     ),
+    literalizer.languages.Scheme.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Scheme,
+        wrap=_wrap_identity,
+        combined_wrap=_newline_combined(wrap=_wrap_identity),
+    ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
         wrap=_wrap_identity,
