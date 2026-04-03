@@ -180,6 +180,9 @@ jobs:
   lint-yaml:
     uses: ./.github/workflows/lint-yaml.yml
 
+  lint-verilog:
+    uses: ./.github/workflows/lint-verilog.yml
+
   lint-visualbasic:
     uses: ./.github/workflows/lint-visualbasic.yml
 
@@ -238,6 +241,7 @@ jobs:
       - lint-toml
       - lint-yaml
       - lint-powershell
+      - lint-verilog
       - lint-visualbasic
       - lint-fortran
       - lint-objectivec

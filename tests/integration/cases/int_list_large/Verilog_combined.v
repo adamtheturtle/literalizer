@@ -1,0 +1,23 @@
+typedef enum {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef struct {
+    _VTag tag;
+    longint i;
+    real r;
+    string s;
+} _VVal;
+module check;
+initial begin
+_VVal my_data = '{
+    '{_VVAL_INT, 1000000, 0.0, ""},
+    '{_VVAL_INT, -1234, 0.0, ""},
+    '{_VVAL_INT, 255, 0.0, ""},
+    '{_VVAL_INT, -10, 0.0, ""}
+};
+my_data = '{
+    '{_VVAL_INT, 1000000, 0.0, ""},
+    '{_VVAL_INT, -1234, 0.0, ""},
+    '{_VVAL_INT, 255, 0.0, ""},
+    '{_VVAL_INT, -10, 0.0, ""}
+};
+end
+endmodule

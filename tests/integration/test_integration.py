@@ -269,6 +269,12 @@ def _wrap_d(content: str, _variable_name: str) -> str:
 
 
 @beartype
+def _wrap_verilog(content: str, _variable_name: str) -> str:
+    """Wrap a Verilog declaration in a module with an initial block."""
+    return f"module check;\ninitial begin\n{content}\nend\nendmodule"
+
+
+@beartype
 def _wrap_c(content: str, variable_name: str) -> str:
     """Wrap a C _CVal declaration in a function."""
     return f"void _check(void) {{\n{content}\n    (void){variable_name};\n}}"
@@ -770,6 +776,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.VisualBasic,
         wrap=_wrap_vb,
         combined_wrap=_wrap_vb_combined,
+        wrap_variable_name="my_data",
+    ),
+    literalizer.languages.Verilog.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Verilog,
+        wrap=_wrap_verilog,
+        combined_wrap=_newline_combined(wrap=_wrap_verilog),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Zig.__name__: _LanguageConfig(

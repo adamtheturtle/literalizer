@@ -50,6 +50,7 @@ from .swift import Swift
 from .toml import Toml
 from .typescript import TypeScript
 from .vb import VisualBasic
+from .verilog import Verilog
 from .yaml import Yaml
 from .zig import Zig
 
@@ -102,6 +103,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Swift,
         Toml,
         TypeScript,
+        Verilog,
         VisualBasic,
         Yaml,
         Zig,
@@ -157,6 +159,7 @@ __all__ = [
     "Swift",
     "Toml",
     "TypeScript",
+    "Verilog",
     "VisualBasic",
     "Yaml",
     "Zig",
