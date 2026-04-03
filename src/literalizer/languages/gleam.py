@@ -215,21 +215,6 @@ class Gleam(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
 
-    _GVAL_TYPE_DECL = (
-        "pub type GVal {\n"
-        "  GNull\n"
-        "  GBool(Bool)\n"
-        "  GInt(Int)\n"
-        "  GFloat(Float)\n"
-        "  GStr(String)\n"
-        "  GList(List(GVal))\n"
-        "  GDict(List(#(String, GVal)))\n"
-        "  GSet(List(GVal))\n"
-        "}"
-    )
-
-    _GVAL_PREAMBLE: tuple[str, ...] = (_GVAL_TYPE_DECL,)
-
     class DateFormats(enum.Enum):
         """Date format options for Gleam."""
 
@@ -596,7 +581,18 @@ class Gleam(metaclass=LanguageCls):
                 dict,
                 set,
             ),
-            self._GVAL_PREAMBLE,
+            (
+                "pub type GVal {\n"
+                "  GNull\n"
+                "  GBool(Bool)\n"
+                "  GInt(Int)\n"
+                "  GFloat(Float)\n"
+                "  GStr(String)\n"
+                "  GList(List(GVal))\n"
+                "  GDict(List(#(String, GVal)))\n"
+                "  GSet(List(GVal))\n"
+                "}",
+            ),
         )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
