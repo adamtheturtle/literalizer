@@ -448,6 +448,7 @@ class Fortran(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = (
             "module fval_m",
+            "  use, intrinsic :: ieee_arithmetic",
             "  implicit none",
             "  type :: fval_t",
             "    integer :: t = 0",
@@ -491,6 +492,4 @@ class Fortran(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = (
-            "use, intrinsic :: ieee_arithmetic",
-        )
+        self.special_float_preamble: tuple[str, ...] = ()

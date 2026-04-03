@@ -55,6 +55,15 @@ def _format_cons_entry(key: str, _val: Value, value: str) -> str:
     return f"(cons {key} {value})"
 
 
+_CL_INF = "sb-ext:double-float-positive-infinity"
+_CL_NEG_INF = "sb-ext:double-float-negative-infinity"
+_CL_NAN = (
+    "#.(sb-int:with-float-traps-masked (:invalid)"
+    " (- sb-ext:double-float-positive-infinity"
+    " sb-ext:double-float-positive-infinity))"
+)
+
+
 @beartype
 class CommonLisp(metaclass=LanguageCls):
     """Common Lisp language specification."""
@@ -175,25 +184,25 @@ class CommonLisp(metaclass=LanguageCls):
         REPR = enum.member(
             value=functools.partial(
                 format_float_repr,
-                inf_literal="(/ 1.0d0 0.0d0)",
-                neg_inf_literal="(/ -1.0d0 0.0d0)",
-                nan_literal="(/ 0.0d0 0.0d0)",
+                inf_literal=_CL_INF,
+                neg_inf_literal=_CL_NEG_INF,
+                nan_literal=_CL_NAN,
             )
         )
         SCIENTIFIC = enum.member(
             value=functools.partial(
                 format_float_scientific,
-                inf_literal="(/ 1.0d0 0.0d0)",
-                neg_inf_literal="(/ -1.0d0 0.0d0)",
-                nan_literal="(/ 0.0d0 0.0d0)",
+                inf_literal=_CL_INF,
+                neg_inf_literal=_CL_NEG_INF,
+                nan_literal=_CL_NAN,
             )
         )
         FIXED = enum.member(
             value=functools.partial(
                 format_float_fixed,
-                inf_literal="(/ 1.0d0 0.0d0)",
-                neg_inf_literal="(/ -1.0d0 0.0d0)",
-                nan_literal="(/ 0.0d0 0.0d0)",
+                inf_literal=_CL_INF,
+                neg_inf_literal=_CL_NEG_INF,
+                nan_literal=_CL_NAN,
             )
         )
 

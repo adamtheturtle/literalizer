@@ -171,9 +171,7 @@ def _has_special_float(*, data: Value) -> bool:
             return math.isinf(data) or math.isnan(data)
         case dict():
             return any(_has_special_float(data=v) for v in data.values())
-        case list():
-            return any(_has_special_float(data=v) for v in data)
-        case set():
+        case list() | set():
             return any(_has_special_float(data=v) for v in data)
         case _:
             return False

@@ -340,25 +340,25 @@ class Cobol(metaclass=LanguageCls):
         REPR = enum.member(
             value=functools.partial(
                 format_float_repr,
-                inf_literal="inf",
-                neg_inf_literal="-inf",
-                nan_literal="nan",
+                inf_literal="9.99E99",
+                neg_inf_literal="-9.99E99",
+                nan_literal="0.0",
             )
         )
         SCIENTIFIC = enum.member(
             value=functools.partial(
                 format_float_scientific,
-                inf_literal="inf",
-                neg_inf_literal="-inf",
-                nan_literal="nan",
+                inf_literal="9.99E99",
+                neg_inf_literal="-9.99E99",
+                nan_literal="0.0",
             )
         )
         FIXED = enum.member(
             value=functools.partial(
                 format_float_fixed,
-                inf_literal="inf",
-                neg_inf_literal="-inf",
-                nan_literal="nan",
+                inf_literal="9.99E99",
+                neg_inf_literal="-9.99E99",
+                nan_literal="0.0",
             )
         )
 

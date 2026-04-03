@@ -220,25 +220,25 @@ class Mojo(metaclass=LanguageCls):
         REPR = enum.member(
             value=functools.partial(
                 format_float_repr,
-                inf_literal='float("inf")',
-                neg_inf_literal='float("-inf")',
-                nan_literal='float("nan")',
+                inf_literal="inf[DType.float64]()",
+                neg_inf_literal="-inf[DType.float64]()",
+                nan_literal="nan[DType.float64]()",
             )
         )
         SCIENTIFIC = enum.member(
             value=functools.partial(
                 format_float_scientific,
-                inf_literal='float("inf")',
-                neg_inf_literal='float("-inf")',
-                nan_literal='float("nan")',
+                inf_literal="inf[DType.float64]()",
+                neg_inf_literal="-inf[DType.float64]()",
+                nan_literal="nan[DType.float64]()",
             )
         )
         FIXED = enum.member(
             value=functools.partial(
                 format_float_fixed,
-                inf_literal='float("inf")',
-                neg_inf_literal='float("-inf")',
-                nan_literal='float("nan")',
+                inf_literal="inf[DType.float64]()",
+                neg_inf_literal="-inf[DType.float64]()",
+                nan_literal="nan[DType.float64]()",
             )
         )
 
@@ -428,4 +428,6 @@ class Mojo(metaclass=LanguageCls):
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
+        self.special_float_preamble: tuple[str, ...] = (
+            "from math import inf, nan",
+        )

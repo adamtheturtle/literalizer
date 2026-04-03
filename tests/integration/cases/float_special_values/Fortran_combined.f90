@@ -1,4 +1,5 @@
 module fval_m
+  use, intrinsic :: ieee_arithmetic
   implicit none
   type :: fval_t
     integer :: t = 0
@@ -14,7 +15,6 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-use, intrinsic :: ieee_arithmetic
 subroutine check_declaration()
   use fval_m
   implicit none

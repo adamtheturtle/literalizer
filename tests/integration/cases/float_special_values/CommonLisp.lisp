@@ -1,5 +1,5 @@
 (list
-    (/ 1.0d0 0.0d0)
-    (/ -1.0d0 0.0d0)
-    (/ 0.0d0 0.0d0)
+    sb-ext:double-float-positive-infinity
+    sb-ext:double-float-negative-infinity
+    #.(sb-int:with-float-traps-masked (:invalid) (- sb-ext:double-float-positive-infinity sb-ext:double-float-positive-infinity))
 )
