@@ -71,6 +71,7 @@ YAMLError
 ZKV
 ZVal
 Zig
+backticks
 beartype
 bool
 booleans
