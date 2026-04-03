@@ -16,6 +16,14 @@ Changelog
 Cobol
 Cpp
 Dhall
+EBool
+EDict
+EFloat
+EInt
+EList
+ENull
+ESet
+EStr
 Enum
 FBool
 FFloat

@@ -3,6 +3,9 @@
 import math
 
 from literalizer._formatters.format_floats import format_float_scientific
+from literalizer.languages.elm import (
+    _format_elm_float_repr,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 def test_scientific_inf() -> None:
@@ -34,3 +37,13 @@ def test_scientific_large_value() -> None:
 def test_scientific_small_value() -> None:
     """Small values use scientific notation."""
     assert format_float_scientific(value=0.001) == "1.0e-3"
+
+
+def test_elm_float_negative() -> None:
+    """Negative floats are parenthesized in Elm."""
+    assert _format_elm_float_repr(-3.14) == "EFloat (-3.14)"
+
+
+def test_elm_float_positive() -> None:
+    """Positive floats are not parenthesized in Elm."""
+    assert _format_elm_float_repr(3.14) == "EFloat 3.14"
