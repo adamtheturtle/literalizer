@@ -23,22 +23,6 @@ def test_scientific_nan() -> None:
     assert format_float_scientific(value=math.nan) == "nan"
 
 
-def test_scientific_whole_number() -> None:
-    """Whole-number floats preserve trailing .0."""
-    assert format_float_scientific(value=0.0) == "0.0"
-    assert format_float_scientific(value=1.0) == "1.0"
-
-
-def test_scientific_large_value() -> None:
-    """Large values use scientific notation."""
-    assert format_float_scientific(value=1500.0) == "1.5e3"
-
-
-def test_scientific_small_value() -> None:
-    """Small values use scientific notation."""
-    assert format_float_scientific(value=0.001) == "1.0e-3"
-
-
 def test_elm_float_negative() -> None:
     """Negative floats are parenthesized in Elm."""
     assert _format_elm_float_repr(-3.14) == "EFloat (-3.14)"

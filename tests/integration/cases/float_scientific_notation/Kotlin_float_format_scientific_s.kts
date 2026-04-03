@@ -1,0 +1,6 @@
+val my_data = doubleArrayOf(
+    0.0,
+    1.0,
+    1.5e3,
+    1.0e-3,
+)
