@@ -19,6 +19,7 @@ jobs:
           files_yaml: |
             config:
               - '**/*.yml'
+              - 'check_elm_golden_syntax.py'
             lang:
               - 'tests/integration/cases/**/*.elm'
       - name: Find files to lint
@@ -38,12 +39,21 @@ jobs:
           if [ -s /tmp/files-to-lint ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Install elm-format
+      - name: Install elm-format and elm
         if: steps.files.outputs.found == 'true'
-        run: npm install -g elm-format
-      - name: Check Elm syntax
+        run: npm install -g elm-format elm
+      - name: Install uv
+        if: steps.files.outputs.found == 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Check Elm formatting
         if: steps.files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-to-lint
+      - name: Check Elm compiles
+        if: steps.files.outputs.found == 'true'
+        run: xargs -0 uv run --no-project python check_elm_golden_syntax.py < /tmp/files-to-lint

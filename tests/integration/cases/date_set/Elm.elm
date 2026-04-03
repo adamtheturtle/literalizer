@@ -2,7 +2,8 @@ module Check exposing (..)
 
 
 type Val
-    = ESet (List Val)
+    = EStr String
+    | ESet (List Val)
 
 
 my_data : Val
