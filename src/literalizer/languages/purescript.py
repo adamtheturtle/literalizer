@@ -263,7 +263,7 @@ class PureScript(metaclass=LanguageCls):
     """
 
     extension = ".purs"
-    pygments_name = "haskell"
+    pygments_name = None
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
