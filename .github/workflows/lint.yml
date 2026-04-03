@@ -96,6 +96,9 @@ jobs:
   lint-elixir:
     uses: ./.github/workflows/lint-elixir.yml
 
+  lint-elm:
+    uses: ./.github/workflows/lint-elm.yml
+
   lint-erlang:
     uses: ./.github/workflows/lint-erlang.yml
 
@@ -207,6 +210,7 @@ jobs:
       - lint-swift
       - lint-csharp
       - lint-elixir
+      - lint-elm
       - lint-erlang
       - lint-fsharp
       - lint-ocaml
