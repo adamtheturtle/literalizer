@@ -10,39 +10,16 @@ jobs:
   lint-mojo:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
         with:
-          persist-credentials: false
-      - uses: tj-actions/changed-files@v47
-        id: changes
-        with:
-          files_yaml: |
-            config:
-              - '**/*.yml'
-            lang:
-              - 'tests/integration/cases/**/*.mojo'
-      - name: Find files to lint
-        id: files
-        if: github.event_name != 'pull_request' || steps.changes.outputs.config_any_changed
-          == 'true' || steps.changes.outputs.lang_any_modified == 'true'
-        env:
-          CONFIG_CHANGED: ${{ steps.changes.outputs.config_any_changed }}
-          LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
-        run: |-
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
-            # shellcheck disable=SC2086
-            for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
-          else
-            find tests/integration/cases -name "*.mojo" -print0
-          fi > /tmp/files-to-lint
-          if [ -s /tmp/files-to-lint ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          fi
+          lang_patterns: tests/integration/cases/**/*.mojo
+          find_command: find tests/integration/cases -name "*.mojo" -print0
       - name: Install pixi
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         uses: fabasoad/setup-mojo-action@v3
       - name: Install Mojo
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         run: |-
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
       # The Mojo runtime has a known bug where it randomly crashes
@@ -50,7 +27,7 @@ jobs:
       # This is not caused by our code. Retry each file individually
       # so that a crash on one file does not block the rest.
       - name: Check Mojo syntax
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         run: |-
           failed=0
           while IFS= read -r -d '' f; do

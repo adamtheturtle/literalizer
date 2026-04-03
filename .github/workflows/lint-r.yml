@@ -10,40 +10,17 @@ jobs:
   lint-r:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
         with:
-          persist-credentials: false
-      - uses: tj-actions/changed-files@v47
-        id: changes
-        with:
-          files_yaml: |
-            config:
-              - '**/*.yml'
-            lang:
-              - 'tests/integration/cases/**/*.R'
-      - name: Find files to lint
-        id: files
-        if: github.event_name != 'pull_request' || steps.changes.outputs.config_any_changed
-          == 'true' || steps.changes.outputs.lang_any_modified == 'true'
-        env:
-          CONFIG_CHANGED: ${{ steps.changes.outputs.config_any_changed }}
-          LANG_FILES: ${{ steps.changes.outputs.lang_all_modified_files }}
-        run: |-
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
-            # shellcheck disable=SC2086
-            for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
-          else
-            find tests/integration/cases -name "*.R" -print0
-          fi > /tmp/files-to-lint
-          if [ -s /tmp/files-to-lint ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          fi
+          lang_patterns: tests/integration/cases/**/*.R
+          find_command: find tests/integration/cases -name "*.R" -print0
       - name: Install R
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         uses: r-lib/actions/setup-r@v2
         with:
           windows-path-include-rtools: false
       - name: Check R syntax
-        if: steps.files.outputs.found == 'true'
+        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
           < /tmp/files-to-lint
