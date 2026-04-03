@@ -1867,7 +1867,7 @@ def test_line_ending_combined_variable_forms(
 
 
 def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
-    """Every file under ``cases/`` must be referenced by a parameterised
+    """Every file under ``cases/`` must be referenced by a parameterized
     test.  Orphaned golden files silently rot and waste repository space.
     """
     cases_dir = request.config.rootpath / "tests" / "integration" / "cases"
