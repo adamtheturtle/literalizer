@@ -400,10 +400,11 @@ class Dhall(metaclass=LanguageCls):
             _format_dhall_dict_entry
         )
         self.indent = indent
-        self.indent_closing_delimiter = False
+        self.indent_closing_delimiter = self.skip_null_dict_values = False
         self.element_separator = ", "
-        self.skip_null_dict_values = False
         self.supports_collection_comments = True
+        self.supports_scalar_before_comments = True
+        self.supports_scalar_inline_comments = False
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
