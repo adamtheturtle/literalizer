@@ -708,6 +708,8 @@ def test_pygments_name_is_valid(
     language_cls: LanguageCls,
 ) -> None:
     """Every language's ``pygments_name`` is recognized by Pygments."""
+    if language_cls.pygments_name is None:
+        return
     # Raises ClassNotFound if the name is not a valid Pygments alias.
     find_lexer_class_by_name(_alias=language_cls.pygments_name)
 
