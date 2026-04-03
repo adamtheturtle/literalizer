@@ -569,7 +569,8 @@ def _pad_sibling_dicts(*, items: list[Value]) -> list[Value]:
                 seen.add(k)
     for idx, d in dict_entries:
         if set(d.keys()) != seen:
-            items[idx] = {k: d.get(k) for k in all_keys}
+            padded: dict[str, Value] = {k: d.get(k) for k in all_keys}
+            items[idx] = padded
     return items
 
 
