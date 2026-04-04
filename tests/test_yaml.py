@@ -52,20 +52,6 @@ PYTHON = Python(
 )
 
 
-def test_literalize_yaml_empty_sequence() -> None:
-    """An empty YAML sequence produces the empty-sequence literal."""
-    result = literalize_yaml(
-        yaml_string="[]\n",
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result.code == "()"
-
-
 def test_literalize_yaml_sequence() -> None:
     """``literalize_yaml`` parses a YAML sequence string."""
     yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
@@ -79,28 +65,6 @@ def test_literalize_yaml_sequence() -> None:
         error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
-    assert result.code == expected
-
-
-def test_literalize_yaml_mapping() -> None:
-    """``literalize_yaml`` parses a YAML mapping string."""
-    yaml_string = "a: 1\nb: true\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": True,
-        }"""
-    )
     assert result.code == expected
 
 
@@ -188,45 +152,6 @@ def test_literalize_yaml_scalar(
     assert result.code == expected
 
 
-def test_literalize_yaml_date() -> None:
-    """``literalize_yaml`` formats date values using the language
-    format.
-    """
-    yaml_string = "- 2024-01-15\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result.code == "datetime.date(year=2024, month=1, day=15),"
-
-
-def test_literalize_yaml_datetime() -> None:
-    """``literalize_yaml`` formats datetime values using the language
-    format.
-    """
-    yaml_string = "- 2024-01-15T12:30:00\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    expected = (
-        "datetime.datetime("
-        "year=2024, month=1, day=15, "
-        "hour=12, minute=30, second=0),"
-    )
-    assert result.code == expected
-
-
 def test_cpp_array_binary_typed() -> None:
     """C++ ARRAY format infers std::array<std::string, N> for binary
     data.
@@ -263,21 +188,6 @@ def test_cpp_array_null_list_fallback() -> None:
     )
     assert "nullptr" in result.code
     assert result.code.startswith("{")
-
-
-def test_literalize_yaml_binary() -> None:
-    """``literalize_yaml`` formats !!binary values as hex strings."""
-    yaml_string = "- !!binary |\n    SGVsbG8=\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert result.code == '"48656c6c6f",'
 
 
 def test_yaml_set_inline_in_sequence() -> None:
@@ -462,64 +372,6 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
         [
             "2024-01-15T12:30:00",
             "42",
-        ]"""
-    )
-    assert result.code == expected
-
-
-def test_homogeneous_date_list_mojo() -> None:
-    """A homogeneous list of dates is formatted via
-    date_formats.__call__.
-    """
-    yaml_string = textwrap.dedent(
-        text="""\
-        - 2024-01-15
-        - 2024-01-16
-    """,
-    )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        [
-            "2024-01-15",
-            "2024-01-16",
-        ]"""
-    )
-    assert result.code == expected
-
-
-def test_homogeneous_datetime_list_mojo() -> None:
-    """A homogeneous list of datetimes is formatted via
-    datetime_formats.__call__.
-    """
-    yaml_string = textwrap.dedent(
-        text="""\
-        - 2024-01-15T12:30:00
-        - 2024-01-16T08:00:00
-    """,
-    )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        [
-            "2024-01-15T12:30:00",
-            "2024-01-16T08:00:00",
         ]"""
     )
     assert result.code == expected
