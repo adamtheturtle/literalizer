@@ -984,7 +984,25 @@ jobs:
           --quiet < /tmp/files-to-lint
 
   lint-purescript:
-    uses: ./.github/workflows/lint-purescript.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.purs
+      - uses: purescript-contrib/setup-purescript@main
+        if: steps.find-files.outputs.found == 'true'
+        with:
+          purescript: latest
+      - name: Check PureScript syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            purs compile "$f" --codegen corefn || exit 1
+          done < /tmp/files-to-lint
 
   lint-racket:
     runs-on: ubuntu-latest
