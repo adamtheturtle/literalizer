@@ -1517,9 +1517,9 @@ def _has_empty_dict_keys(data: _YamlData) -> bool:
     if isinstance(data, dict):
         if "" in data:
             return True
-        return any(_has_empty_dict_keys(v) for v in data.values())
+        return any(_has_empty_dict_keys(data=v) for v in data.values())
     if isinstance(data, list):
-        return any(_has_empty_dict_keys(item) for item in data)
+        return any(_has_empty_dict_keys(data=item) for item in data)
     return False
 
 
@@ -1533,7 +1533,7 @@ def _cases_with_empty_dict_keys(cases_dir: Path) -> frozenset[str]:
         case_dir.name
         for case_dir in cases_dir.iterdir()
         if _has_empty_dict_keys(
-            yaml.load(stream=(case_dir / "input.yaml").read_text()),
+            data=yaml.load(stream=(case_dir / "input.yaml").read_text()),
         )
     )
 
