@@ -21,11 +21,16 @@ from typing import Any
 import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
+from ruamel.yaml import YAML
 
 import literalizer
 import literalizer.languages
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
+
+type _YamlData = (
+    str | int | float | bool | None | dict[str, _YamlData] | list[_YamlData]
+)
 
 
 @pytest.fixture(name="cases_dir")
@@ -1507,12 +1512,46 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _has_empty_dict_keys(data: _YamlData) -> bool:
+    """Return ``True`` if *data* contains an empty-string dict key."""
+    if isinstance(data, dict):
+        if "" in data:
+            return True
+        return any(_has_empty_dict_keys(v) for v in data.values())
+    if isinstance(data, list):
+        return any(_has_empty_dict_keys(item) for item in data)
+    return False
+
+
+@beartype
+def _cases_with_empty_dict_keys(cases_dir: Path) -> frozenset[str]:
+    """Return case directory names whose input YAML has empty-string
+    dict keys.
+    """
+    yaml = YAML()
+    return frozenset(
+        case_dir.name
+        for case_dir in cases_dir.iterdir()
+        if _has_empty_dict_keys(
+            yaml.load(stream=(case_dir / "input.yaml").read_text()),
+        )
+    )
+
+
+@beartype
 def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
     cases_dir = Path(__file__).parent / "cases"
+    empty_key_cases = _cases_with_empty_dict_keys(cases_dir=cases_dir)
     cases: list[tuple[str, str]] = []
     for case_dir in sorted(cases_dir.iterdir()):
-        cases.extend((case_dir.name, lang_name) for lang_name in _LANGUAGES)
+        for lang_name, lang_config in _LANGUAGES.items():
+            if (
+                case_dir.name in empty_key_cases
+                and not lang_config.lang_cls.supports_empty_dict_keys
+            ):
+                continue
+            cases.append((case_dir.name, lang_name))
     return cases
 
 
@@ -1578,9 +1617,15 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     styles.
     """
     cases_dir = Path(__file__).parent / "cases"
+    empty_key_cases = _cases_with_empty_dict_keys(cases_dir=cases_dir)
     cases: list[_CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
         for lang_name, lang_config in _LANGUAGES.items():
+            if (
+                case_dir.name in empty_key_cases
+                and not lang_config.lang_cls.supports_empty_dict_keys
+            ):
+                continue
             spec = lang_config.lang_cls()
             redef_styles = _find_redefinition_styles(spec=spec)
             for style in redef_styles:

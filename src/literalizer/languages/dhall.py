@@ -47,9 +47,36 @@ from literalizer._language import (
     no_type_hint_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import EmptyDictKeyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+_IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$")
+
+_DHALL_UNESCAPE_RE = re.compile(pattern=r"\\([$\"\\nrt]|u\{([0-9A-Fa-f]+)\})")
+
+
+def _unescape_dhall_string(value: str) -> str:
+    """Reverse Dhall double-quoted string escapes to produce raw
+    content.
+    """
+    _simple_escapes = {
+        "$": "$",
+        '"': '"',
+        "\\": "\\",
+        "n": "\n",
+        "r": "\r",
+        "t": "\t",
+    }
+
+    def _replace(match: re.Match[str]) -> str:
+        """Replace a single escape sequence with its raw character."""
+        if match.group(2) is not None:
+            return chr(int(match.group(2), 16))
+        return _simple_escapes[match.group(1)]
+
+    return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
 
 
 @beartype
@@ -81,7 +108,7 @@ def _format_dhall_string(value: str) -> str:
         .replace("\n", "\\n")
         .replace("\t", "\\t")
     )
-    escaped = escape_control_chars(value=escaped, fmt="\\u{:04X}")
+    escaped = escape_control_chars(value=escaped, fmt="\\u{{{:04X}}}")
     return f'"{escaped}"'
 
 
@@ -96,12 +123,16 @@ def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
     labels.
     """
     inner = key[1:-1]
-    identifier_pattern = re.compile(
-        pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$",
-    )
-    if identifier_pattern.match(string=inner):
+    if _IDENTIFIER_RE.match(string=inner):
         return f"{inner} = {value}"
-    return f"`{inner}` = {value}"
+    raw = _unescape_dhall_string(value=inner)
+    if not raw:
+        msg = (
+            "Dhall does not support empty-string dict keys. "
+            "Backtick-quoted labels must contain at least one character."
+        )
+        raise EmptyDictKeyError(msg)
+    return f"`{raw}` = {value}"
 
 
 @beartype
@@ -122,6 +153,10 @@ class Dhall(metaclass=LanguageCls):
 
     Dates and datetimes are rendered as quoted ISO 8601 strings because
     Dhall has no native date type.
+
+    Empty-string dict keys raise
+    :class:`~literalizer.exceptions.EmptyDictKeyError` because Dhall's
+    backtick-quoted labels must contain at least one character.
     """
 
     extension = ".dhall"
@@ -131,6 +166,7 @@ class Dhall(metaclass=LanguageCls):
     supports_default_dict_value_type = False
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
+    supports_empty_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Dhall."""
@@ -227,9 +263,14 @@ class Dhall(metaclass=LanguageCls):
         DEFAULT = "default"
 
     class EmptyDictKey(enum.Enum):
-        """Empty dict key options."""
+        """Empty dict key options.
 
-        ALLOW = "allow"
+        Dhall backtick-quoted labels must contain at least one character,
+        so empty-string dict keys always raise
+        :class:`~literalizer.exceptions.EmptyDictKeyError`.
+        """
+
+        ERROR = "error"
 
     class FloatFormats(enum.Enum):
         """Float format options."""
