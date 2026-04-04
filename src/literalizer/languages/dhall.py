@@ -74,7 +74,7 @@ def _unescape_dhall_string(value: str) -> str:
         """Replace a single escape sequence with its raw character."""
         hex_digits: str | None = match.group(2)
         if hex_digits is not None:
-            return chr(int(hex_digits, 16))
+            return chr(int(hex_digits, base=16))
         return _simple_escapes[match.group(1)]
 
     return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
