@@ -1529,13 +1529,14 @@ def _cases_with_empty_dict_keys(cases_dir: Path) -> frozenset[str]:
     dict keys.
     """
     yaml = YAML()
-    return frozenset(
-        case_dir.name
-        for case_dir in cases_dir.iterdir()
-        if _has_empty_dict_keys(
-            data=yaml.load(stream=(case_dir / "input.yaml").read_text()),
+    result: set[str] = set()
+    for case_dir in cases_dir.iterdir():
+        loaded: _YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+            stream=(case_dir / "input.yaml").read_text(),
         )
-    )
+        if _has_empty_dict_keys(data=loaded):
+            result.add(case_dir.name)
+    return frozenset(result)
 
 
 @beartype
