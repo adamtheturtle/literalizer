@@ -1,0 +1,57 @@
+---
+name: Lint language files
+description: >-
+  Checkout the repo, find files to lint, and optionally run a lint
+  command.  For workflows that need custom setup between finding
+  files and linting, omit lint_command and use the 'found' output
+  to gate subsequent steps.
+
+inputs:
+  lang_patterns:
+    description: >-
+      Newline-separated glob patterns for language files
+      (forwarded to find-lint-files).
+    required: true
+  extra_config_patterns:
+    description: >-
+      Newline-separated glob patterns for extra config files
+      (forwarded to find-lint-files).
+    required: false
+    default: ''
+  exclude_patterns:
+    description: >-
+      Newline-separated filename patterns to exclude
+      (forwarded to find-lint-files).
+    required: false
+    default: ''
+  lint_command:
+    description: >-
+      Shell command to lint the found files.  The null-delimited
+      file list is at /tmp/files-to-lint.  Only runs when files
+      are found.
+    required: false
+    default: ''
+
+outputs:
+  found:
+    description: Whether any files to lint were found
+    value: ${{ steps.find-files.outputs.found }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+    - uses: ./.github/actions/find-lint-files
+      id: find-files
+      with:
+        lang_patterns: ${{ inputs.lang_patterns }}
+        extra_config_patterns: ${{ inputs.extra_config_patterns }}
+        exclude_patterns: ${{ inputs.exclude_patterns }}
+    - name: Lint
+      if: inputs.lint_command != '' && steps.find-files.outputs.found == 'true'
+      shell: bash
+      env:
+        _LINT_CMD: ${{ inputs.lint_command }}
+      run: eval "$_LINT_CMD"

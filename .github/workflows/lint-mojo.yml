@@ -10,18 +10,15 @@ jobs:
   lint-mojo:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.mojo
       - name: Install pixi
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: fabasoad/setup-mojo-action@v3
       - name: Install Mojo
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: |-
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
       # The Mojo runtime has a known bug where it randomly crashes
@@ -29,7 +26,7 @@ jobs:
       # This is not caused by our code. Retry each file individually
       # so that a crash on one file does not block the rest.
       - name: Check Mojo syntax
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: |-
           failed=0
           while IFS= read -r -d '' f; do

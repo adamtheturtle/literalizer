@@ -10,17 +10,14 @@ jobs:
   lint-kotlin:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.kts
       - name: Install Kotlin
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1
       - name: Check Kotlin syntax
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: |-
           xargs -0 -P "$(nproc)" -n 1 kotlinc -script < /tmp/files-to-lint

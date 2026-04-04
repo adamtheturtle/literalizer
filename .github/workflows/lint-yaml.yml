@@ -10,20 +10,17 @@ jobs:
   lint-yaml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: |
             tests/integration/cases/**/*.yaml
             !tests/integration/cases/**/input.yaml
           exclude_patterns: input.yaml
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
       - name: Check YAML syntax
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: |-
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-to-lint

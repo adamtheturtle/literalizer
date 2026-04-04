@@ -10,17 +10,11 @@ jobs:
   lint-java:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.java
-      - name: Check Java syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            javac -d "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            tmpdir=$(mktemp -d)
+            while IFS= read -r -d '' f; do
+              javac -d "$tmpdir" "$f" || exit 1
+            done < /tmp/files-to-lint

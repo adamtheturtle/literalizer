@@ -10,18 +10,15 @@ jobs:
   lint-lua:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.lua
       - name: Install Lua
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: leafo/gh-actions-lua@v12
         with:
           luaVersion: '5.4'
       - name: Check Lua syntax
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: xargs -0 luac -p < /tmp/files-to-lint

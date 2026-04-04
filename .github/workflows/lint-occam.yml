@@ -10,20 +10,17 @@ jobs:
   lint-occam:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.occ
           extra_config_patterns: check_occam_golden_syntax.py
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: xargs -0 uv run --no-project python check_occam_golden_syntax.py < /tmp/files-to-lint

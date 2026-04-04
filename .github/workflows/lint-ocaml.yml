@@ -10,20 +10,12 @@ jobs:
   lint-ocaml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.ml
-      - name: Install OCaml
-        if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y ocaml
-      - name: Check OCaml syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            sudo apt-get install -y ocaml
+            tmpdir=$(mktemp -d)
+            while IFS= read -r -d '' f; do
+              ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
+            done < /tmp/files-to-lint

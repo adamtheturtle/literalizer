@@ -10,17 +10,11 @@ jobs:
   lint-powershell:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.ps1
-      - name: Check PowerShell syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            pwsh -NoProfile -NonInteractive -Command \
-              "\$null = [scriptblock]::Create((Get-Content -Raw '$f'))" || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            while IFS= read -r -d '' f; do
+              pwsh -NoProfile -NonInteractive -Command \
+                "\$null = [scriptblock]::Create((Get-Content -Raw '$f'))" || exit 1
+            done < /tmp/files-to-lint

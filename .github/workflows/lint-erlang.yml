@@ -10,22 +10,19 @@ jobs:
   lint-erlang:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.erl
       - name: Install Erlang
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: erlef/setup-beam@v1
         with:
           otp-version: '27'
           install-rebar: false
           install-hex: false
       - name: Check Erlang syntax
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)

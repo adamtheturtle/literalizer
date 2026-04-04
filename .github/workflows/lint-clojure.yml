@@ -10,18 +10,15 @@ jobs:
   lint-clojure:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.clj
       - name: Install clj-kondo
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: latest
       - name: Check Clojure syntax
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: xargs -0 clj-kondo --lint < /tmp/files-to-lint

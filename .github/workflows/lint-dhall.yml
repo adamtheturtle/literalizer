@@ -10,22 +10,13 @@ jobs:
   lint-dhall:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.dhall
-      - name: Install dhall
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
-            | tar -xj
-          echo "$PWD/bin" >> "$GITHUB_PATH"
-      - name: Check Dhall syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            dhall < "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
+              | tar -xj
+            export PATH="$PWD/bin:$PATH"
+            while IFS= read -r -d '' f; do
+              dhall < "$f" > /dev/null || exit 1
+            done < /tmp/files-to-lint

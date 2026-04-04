@@ -10,16 +10,10 @@ jobs:
   lint-objective-c:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: tests/integration/cases/**/objective_c*.m
-      - name: Check Objective-C syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            clang -fsyntax-only "$f" || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            while IFS= read -r -d '' f; do
+              clang -fsyntax-only "$f" || exit 1
+            done < /tmp/files-to-lint

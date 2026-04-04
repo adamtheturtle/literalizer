@@ -10,19 +10,11 @@ jobs:
   lint-typescript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.ts
-      - name: Install TypeScript
-        if: steps.find-files.outputs.found == 'true'
-        run: npm install -g typescript
-      - name: Check TypeScript syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            tsc --noEmit --noResolve --skipLibCheck --lib es2015 "$f" || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            npm install -g typescript
+            while IFS= read -r -d '' f; do
+              tsc --noEmit --noResolve --skipLibCheck --lib es2015 "$f" || exit 1
+            done < /tmp/files-to-lint

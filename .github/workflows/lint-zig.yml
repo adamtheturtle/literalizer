@@ -10,20 +10,17 @@ jobs:
   lint-zig:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
+        id: lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.zig
       - name: Install Zig
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         uses: mlugg/setup-zig@v2
         with:
           version: 0.14.0
       - name: Check Zig
-        if: steps.find-files.outputs.found == 'true'
+        if: steps.lint-lang.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             zig build-obj -fno-emit-bin "$f" || exit 1

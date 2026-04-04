@@ -10,19 +10,11 @@ jobs:
   lint-cobol:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: tests/integration/cases/**/*.cob
-      - name: Install GnuCOBOL
-        if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y gnucobol
-      - name: Check COBOL syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            cobc -free -fsyntax-only "$f" || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            sudo apt-get install -y gnucobol
+            while IFS= read -r -d '' f; do
+              cobc -free -fsyntax-only "$f" || exit 1
+            done < /tmp/files-to-lint

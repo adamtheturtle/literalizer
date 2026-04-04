@@ -10,26 +10,17 @@ jobs:
   lint-fsharp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
+      - uses: ./.github/actions/lint-lang
         with:
           lang_patterns: |
             tests/integration/cases/**/*.fs
             tests/integration/cases/**/*.fsi
-      - name: Initialize .NET runtime
-        if: steps.find-files.outputs.found == 'true'
-        run: |
-          mkdir -p /tmp/.dotnet/shm
-          dotnet --info
-      - name: Check F# syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
-              TMPDIR="$tmpdir" HOME="$tmpdir" \
-              dotnet fsi --nologo --exec "$f" || exit 1
-          done < /tmp/files-to-lint
+          lint_command: |-
+            mkdir -p /tmp/.dotnet/shm
+            dotnet --info
+            while IFS= read -r -d '' f; do
+              tmpdir=$(mktemp -d)
+              DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
+                TMPDIR="$tmpdir" HOME="$tmpdir" \
+                dotnet fsi --nologo --exec "$f" || exit 1
+            done < /tmp/files-to-lint
