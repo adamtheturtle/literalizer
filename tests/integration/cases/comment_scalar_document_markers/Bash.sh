@@ -1,2 +1,2 @@
-declare my_data=# note
-42
+# note
+declare my_data=42
