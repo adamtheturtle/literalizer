@@ -200,29 +200,31 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
         declaration="$my_var = 42;", assignment="$my_var = 42;"
     ),
     HASKELL: _VariableSyntax(
-        declaration=(
-            "data Val = HInt Integer\n"
-            "instance Num Val where\n"
-            "    fromInteger = HInt\n"
-            '    a + b = error "not implemented"\n'
-            '    a * b = error "not implemented"\n'
-            '    abs a = error "not implemented"\n'
-            '    signum a = error "not implemented"\n'
-            "    negate (HInt n) = HInt (negate n)\n"
-            '    negate _ = error "not implemented"\n'
-            "my_var = 42"
+        declaration=textwrap.dedent(
+            text="""\
+            data Val = HInt Integer
+            instance Num Val where
+                fromInteger = HInt
+                a + b = error "not implemented"
+                a * b = error "not implemented"
+                abs a = error "not implemented"
+                signum a = error "not implemented"
+                negate (HInt n) = HInt (negate n)
+                negate _ = error "not implemented"
+            my_var = 42"""
         ),
-        assignment=(
-            "data Val = HInt Integer\n"
-            "instance Num Val where\n"
-            "    fromInteger = HInt\n"
-            '    a + b = error "not implemented"\n'
-            '    a * b = error "not implemented"\n'
-            '    abs a = error "not implemented"\n'
-            '    signum a = error "not implemented"\n'
-            "    negate (HInt n) = HInt (negate n)\n"
-            '    negate _ = error "not implemented"\n'
-            "my_var = 42"
+        assignment=textwrap.dedent(
+            text="""\
+            data Val = HInt Integer
+            instance Num Val where
+                fromInteger = HInt
+                a + b = error "not implemented"
+                a * b = error "not implemented"
+                abs a = error "not implemented"
+                signum a = error "not implemented"
+                negate (HInt n) = HInt (negate n)
+                negate _ = error "not implemented"
+            my_var = 42"""
         ),
     ),
     DART: _VariableSyntax(
@@ -232,11 +234,17 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
         declaration="my_var = 42", assignment="my_var = 42"
     ),
     FSHARP: _VariableSyntax(
-        declaration=(
-            "type Val =\n    | FInt of int64\nlet my_var: Val = FInt 42L"
+        declaration=textwrap.dedent(
+            text="""\
+            type Val =
+                | FInt of int64
+            let my_var: Val = FInt 42L"""
         ),
-        assignment=(
-            "type Val =\n    | FInt of int64\nlet my_var: Val = FInt 42L"
+        assignment=textwrap.dedent(
+            text="""\
+            type Val =
+                | FInt of int64
+            let my_var: Val = FInt 42L"""
         ),
     ),
     CLOJURE: _VariableSyntax(
