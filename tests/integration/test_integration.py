@@ -28,10 +28,6 @@ import literalizer.languages
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
 
-type _YamlData = (
-    str | int | float | bool | None | dict[str, _YamlData] | list[_YamlData]
-)
-
 
 @pytest.fixture(name="cases_dir")
 def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
@@ -1511,15 +1507,20 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     return variants
 
 
-@beartype
-def _has_empty_dict_keys(data: _YamlData) -> bool:
+def _has_empty_dict_keys(data: object) -> bool:
     """Return ``True`` if *data* contains an empty-string dict key."""
     if isinstance(data, dict):
         if "" in data:
             return True
-        return any(_has_empty_dict_keys(data=v) for v in data.values())
+        return any(
+            _has_empty_dict_keys(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownVariableType]
+        )
     if isinstance(data, list):
-        return any(_has_empty_dict_keys(data=item) for item in data)
+        return any(
+            _has_empty_dict_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
+            for item in data  # pyright: ignore[reportUnknownVariableType]
+        )
     return False
 
 
@@ -1531,7 +1532,7 @@ def _cases_with_empty_dict_keys(cases_dir: Path) -> frozenset[str]:
     yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
-        loaded: _YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        loaded: object = yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=(case_dir / "input.yaml").read_text(),
         )
         if _has_empty_dict_keys(data=loaded):
