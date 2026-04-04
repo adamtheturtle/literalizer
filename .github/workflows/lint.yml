@@ -1067,7 +1067,24 @@ jobs:
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-to-lint
 
   lint-verilog:
-    uses: ./.github/workflows/lint-verilog.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.v
+      - name: Install Icarus Verilog
+        if: steps.find-files.outputs.found == 'true'
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Check Verilog syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            iverilog -g2012 -t null "$f" || exit 1
+          done < /tmp/files-to-lint
 
   lint-visualbasic:
     runs-on: ubuntu-latest
