@@ -1,10 +1,10 @@
 ---
 name: Lint language files
 description: >-
-  Checkout the repo, find files to lint, and optionally run a lint
-  command.  For workflows that need custom setup between finding
-  files and linting, omit lint_command and use the 'found' output
-  to gate subsequent steps.
+  Find files to lint and optionally run a lint command.  The repo
+  must already be checked out.  For workflows that need custom
+  setup between finding files and linting, omit lint_command and
+  use the 'found' output to gate subsequent steps.
 
 inputs:
   lang_patterns:
@@ -40,9 +40,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: false
     - uses: ./.github/actions/find-lint-files
       id: find-files
       with:
