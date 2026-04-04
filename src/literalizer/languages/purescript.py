@@ -233,7 +233,7 @@ class PureScript(metaclass=LanguageCls):
     types. To compile the generated code, define a ``Val`` ADT in the
     consuming module:
 
-    .. code-block:: purescript
+    .. code-block:: haskell
 
        import Data.Tuple (Tuple(..))
 
