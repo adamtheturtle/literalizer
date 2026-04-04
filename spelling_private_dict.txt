@@ -76,6 +76,7 @@ ObjectiveC
 Php
 Pygments
 Toml
+Verilog
 YAMLError
 ZKV
 ZVal
