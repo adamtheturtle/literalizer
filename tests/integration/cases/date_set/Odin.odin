@@ -1,7 +1,7 @@
 package main
 
 main :: proc() {
-my_data := map[string]struct{}{
+my_data := map[any]struct{}{
 	"2024-01-15" = {},
 	"2024-06-01" = {},
 }

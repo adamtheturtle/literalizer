@@ -12,7 +12,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
-    fixed_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -25,6 +24,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     variable_formatter,
 )
+from literalizer._formatters.format_factories import set_format_factory
 from literalizer._formatters.format_floats import (
     format_float_fixed,
     format_float_repr,
@@ -72,7 +72,7 @@ class Odin(metaclass=LanguageCls):
 
     extension = ".odin"
     pygments_name = "odin"
-    supports_default_set_element_type = False
+    supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
     supports_default_dict_key_type = False
@@ -136,15 +136,19 @@ class Odin(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Odin."""
 
-        SET = SetFormatConfig(
-            set_open=fixed_set_open(
-                open_str="map[string]struct{}{",
-            ),
-            close="}",
-            empty_set=None,
-            preamble_lines=(),
-            set_opener_template="",
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="map[{type}]struct{{}}{{",
+                close="}}",
+                empty_template=None,
+                preamble_lines=(),
+                set_opener_template="",
+            )
         )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -312,6 +316,7 @@ class Odin(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.DYNAMIC_ARRAY,
         set_format: SetFormats = SetFormats.SET,
+        default_set_element_type: str = "any",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.SHORT,
@@ -337,7 +342,9 @@ class Odin(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = set_format(
+            default_type=default_set_element_type,
+        )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(
