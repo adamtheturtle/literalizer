@@ -1018,7 +1018,26 @@ jobs:
         run: xargs -0 -I{} guile --no-auto-compile -s {} < /tmp/files-to-lint
 
   lint-raku:
-    uses: ./.github/workflows/lint-raku.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.raku
+      - name: Install Raku
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          sudo apt-get update
+          sudo apt-get install -y rakudo
+      - name: Check Raku syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            raku -c "$f" || exit 1
+          done < /tmp/files-to-lint
 
   lint-zig:
     runs-on: ubuntu-latest
