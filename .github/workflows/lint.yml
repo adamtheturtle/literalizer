@@ -1031,12 +1031,9 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.odin
       - name: Install Odin
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq llvm-14 clang-14
-          git clone --depth=1 https://github.com/odin-lang/Odin /tmp/odin
-          cd /tmp/odin && make release
-          echo "/tmp/odin" >> "$GITHUB_PATH"
+        uses: laytan/setup-odin@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check Odin
         if: steps.find-files.outputs.found == 'true'
         run: |-
