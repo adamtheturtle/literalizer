@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import textwrap
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -106,7 +107,7 @@ def _wrap_occam(
 ) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = "  " + content.replace("\n", "\n  ")
+    indented = textwrap.indent(text=content, prefix="  ")
     return (
         "\nPROC check ()\n" + indented + "\n" + "  SEQ\n" + "    SKIP\n" + ":"
     )
@@ -143,8 +144,8 @@ def _wrap_fsharp_combined(
     )
     pre_let = "\n".join(lines[:let_idx])
     decl_binding = "\n".join(lines[let_idx:])
-    decl_indented = "    " + decl_binding.replace("\n", "\n    ")
-    assign_indented = "    " + assignment.replace("\n", "\n    ")
+    decl_indented = textwrap.indent(text=decl_binding, prefix="    ")
+    assign_indented = textwrap.indent(text=assignment, prefix="    ")
     preamble_parts = list(body_preamble)
     if pre_let:
         preamble_parts.append(pre_let)
@@ -169,7 +170,7 @@ def _wrap_gleam(
 ) -> str:
     """Wrap a Gleam let binding in a main function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = "  " + content.replace("\n", "\n  ")
+    indented = textwrap.indent(text=content, prefix="  ")
     return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
 
 
@@ -259,7 +260,7 @@ def _wrap_elixir(
 ) -> str:
     """Wrap an Elixir variable assignment in a module function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = "    " + content.replace("\n", "\n    ")
+    indented = textwrap.indent(text=content, prefix="    ")
     return (
         f"defmodule Check do\n"
         f"  def x do\n"
@@ -309,7 +310,7 @@ def _wrap_erlang(
     """
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
     erlang_varname = variable_name[0].upper() + variable_name[1:]
-    indented = "    " + content.replace("\n", "\n    ")
+    indented = textwrap.indent(text=content, prefix="    ")
     return (
         f"-module(check).\n"
         f"-export([x/0]).\n"
@@ -327,7 +328,7 @@ def _wrap_ada(
 ) -> str:
     """Wrap an Ada object declaration inside a procedure."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = "   " + content.replace("\n", "\n   ")
+    indented = textwrap.indent(text=content, prefix="   ")
     return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
 
 
@@ -342,8 +343,8 @@ def _wrap_ada_combined(
     declaration = _with_body_preamble(
         content=declaration, body_preamble=body_preamble
     )
-    decl_indented = "   " + declaration.replace("\n", "\n   ")
-    assign_indented = "   " + assignment.replace("\n", "\n   ")
+    decl_indented = textwrap.indent(text=declaration, prefix="   ")
+    assign_indented = textwrap.indent(text=assignment, prefix="   ")
     inner = (
         "procedure Check_Declaration is\n"
         f"{decl_indented}\n"
@@ -466,8 +467,8 @@ def _wrap_rust(
 ) -> str:
     """Wrap a Rust let binding in a main function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = content.replace("\n", "\n    ")
-    return f"fn main() {{\n    {indented}\n    let _ = {variable_name};\n}}"
+    indented = textwrap.indent(text=content, prefix="    ")
+    return f"fn main() {{\n{indented}\n    let _ = {variable_name};\n}}"
 
 
 @beartype
@@ -499,7 +500,7 @@ def _wrap_zig(
     compiler does not warn about a ``var`` that is never mutated.
     """
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = "    " + content.replace("\n", "\n    ")
+    indented = textwrap.indent(text=content, prefix="    ")
     if "var " in content:
         use = f"    {variable_name} = .nil;"
     else:
@@ -516,7 +517,7 @@ def _wrap_fortran(
 ) -> str:
     """Wrap a Fortran variable declaration in a program."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = "  " + content.replace("\n", "\n  ")
+    indented = textwrap.indent(text=content, prefix="  ")
     return (
         "program check\n"
         "  use fval_m\n"
@@ -537,8 +538,8 @@ def _wrap_fortran_combined(
     declaration = _with_body_preamble(
         content=declaration, body_preamble=body_preamble
     )
-    decl_indented = "  " + declaration.replace("\n", "\n  ")
-    assign_indented = "  " + assignment.replace("\n", "\n  ")
+    decl_indented = textwrap.indent(text=declaration, prefix="  ")
+    assign_indented = textwrap.indent(text=assignment, prefix="  ")
     return (
         "subroutine check_declaration()\n"
         "  use fval_m\n"
@@ -568,7 +569,7 @@ def _wrap_vb(
 ) -> str:
     """Wrap a VB.NET Dim declaration inside a Module."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = "    " + content.replace("\n", "\n    ")
+    indented = textwrap.indent(text=content, prefix="    ")
     return f"Module Check\n{indented}\nEnd Module"
 
 
@@ -583,8 +584,8 @@ def _wrap_vb_combined(
     declaration = _with_body_preamble(
         content=declaration, body_preamble=body_preamble
     )
-    decl_indented = "        " + declaration.replace("\n", "\n        ")
-    assign_indented = "        " + assignment.replace("\n", "\n        ")
+    decl_indented = textwrap.indent(text=declaration, prefix="        ")
+    assign_indented = textwrap.indent(text=assignment, prefix="        ")
     return (
         "Module Check\n"
         "    Sub _declaration()\n"
