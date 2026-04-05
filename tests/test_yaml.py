@@ -1148,6 +1148,27 @@ def test_dhall_control_char_in_string() -> None:
     assert result.code == expected
 
 
+def test_dhall_control_char_key_unescaping() -> None:
+    """Dhall backtick labels unescape hex unicode escapes to raw chars."""
+    yaml_string = '{"\\x01": "value"}\n'
+    result = literalize_yaml(
+        yaml_string=yaml_string,
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_data",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        let my_data = {
+          `\x01` = "value",
+        } in my_data"""
+    )
+    assert result.code == expected
+
+
 def test_dhall_backtick_label_unescaping() -> None:
     """Dhall backtick labels contain raw content, not escape sequences."""
     yaml_string = '{"$ref": "value"}\n'
