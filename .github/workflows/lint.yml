@@ -794,6 +794,10 @@ jobs:
       - name: Set up Alire
         if: steps.find-files.outputs.found == 'true'
         uses: alire-project/setup-alire@v4
+      - name: Add GNAT to PATH
+        if: steps.find-files.outputs.found == 'true'
+        run: dirname "$(find ~/.local/share/alire/toolchains -name gnatmake -type
+          f)" >> "$GITHUB_PATH"
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
