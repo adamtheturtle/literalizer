@@ -1,6 +1,6 @@
 my $my_data = [
     # first
-    "a",
+    'a',
     # second
-    "b",
+    'b',
 ];

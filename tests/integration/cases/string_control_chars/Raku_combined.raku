@@ -1,10 +1,12 @@
 my $my_data = [
-    "line1\r\nline2",
-    "line1\rline2",
-    "",
+    'line1
+line2',
+    'line1line2',
+    '',
 ];
 $my_data = [
-    "line1\r\nline2",
-    "line1\rline2",
-    "",
+    'line1
+line2',
+    'line1line2',
+    '',
 ];

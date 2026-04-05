@@ -1,6 +1,6 @@
 my $my_data = [
-    "apple",  # inline comment
+    'apple',  # inline comment
     # before banana
-    "banana",
+    'banana',
     # trailing
 ];

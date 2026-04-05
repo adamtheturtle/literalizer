@@ -1,5 +1,5 @@
 my $my_data = [
     1,
-    "hello",
+    'hello',
     True,
 ];

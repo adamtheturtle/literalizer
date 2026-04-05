@@ -1,2 +1,2 @@
 # note
-my $my_data = "hello # world";
+my $my_data = 'hello # world';

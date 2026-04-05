@@ -1,8 +1,8 @@
 my $my_data = [
     1,
-    "hello",
+    'hello',
 ];
 $my_data = [
     1,
-    "hello",
+    'hello',
 ];

@@ -1,8 +1,8 @@
 my $my_data = [
-    "a",
+    'a',
     # trailing
 ];
 $my_data = [
-    "a",
+    'a',
     # trailing
 ];

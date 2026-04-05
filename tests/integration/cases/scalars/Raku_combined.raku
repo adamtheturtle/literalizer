@@ -3,12 +3,12 @@ my $my_data = [
     3.14,
     True,
     False,
-    "hello \"world\"",
+    'hello "world"',
 ];
 $my_data = [
     42,
     3.14,
     True,
     False,
-    "hello \"world\"",
+    'hello "world"',
 ];

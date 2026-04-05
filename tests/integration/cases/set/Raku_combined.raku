@@ -1,10 +1,10 @@
 my $my_data = [
-    "apple",
-    "banana",
-    "cherry",
+    'apple',
+    'banana',
+    'cherry',
 ];
 $my_data = [
-    "apple",
-    "banana",
-    "cherry",
+    'apple',
+    'banana',
+    'cherry',
 ];

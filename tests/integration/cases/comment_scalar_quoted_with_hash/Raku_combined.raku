@@ -1,4 +1,4 @@
 # note
-my $my_data = "hello # world";
+my $my_data = 'hello # world';
 # note
-$my_data = "hello # world";
+$my_data = 'hello # world';

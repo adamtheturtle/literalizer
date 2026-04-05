@@ -1,6 +1,6 @@
 my $my_data = {
     # Configuration
-    "name" => "app",
+    'name' => 'app',
     # Port setting
-    "port" => 3000,
+    'port' => 3000,
 };

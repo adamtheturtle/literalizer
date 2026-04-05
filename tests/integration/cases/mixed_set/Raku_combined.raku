@@ -1,10 +1,10 @@
 my $my_data = [
     True,
     42,
-    "apple",
+    'apple',
 ];
 $my_data = [
     True,
     42,
-    "apple",
+    'apple',
 ];

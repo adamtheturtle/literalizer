@@ -367,7 +367,7 @@ class Raku(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        string_format: StringFormats = StringFormats.DOUBLE,
+        string_format: StringFormats = StringFormats.SINGLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",

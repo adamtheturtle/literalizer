@@ -1,8 +1,8 @@
 my $my_data = [
     # # section
-    "a",
+    'a',
 ];
 $my_data = [
     # # section
-    "a",
+    'a',
 ];

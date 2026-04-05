@@ -1,6 +1,6 @@
 my $my_data = {
-    "name" => "Alice",
-    "age" => 30,
-    "active" => True,
-    "score" => Nil,
+    'name' => 'Alice',
+    'age' => 30,
+    'active' => True,
+    'score' => Nil,
 };

@@ -1,5 +1,5 @@
 my $my_data = [
-    "foo",
-    "bar",
-    "baz",
+    'foo',
+    'bar',
+    'baz',
 ];
