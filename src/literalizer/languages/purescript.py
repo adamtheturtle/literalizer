@@ -173,7 +173,7 @@ def _purescript_dict_entry(key: str, _val: Value, value: str) -> str:
     must be stripped from the formatted key.
     """
     key = key.removeprefix("PStr ")
-    return f"(Tuple {key} {value})"
+    return f"(Tuple {key} ({value}))"
 
 
 @beartype
@@ -213,7 +213,7 @@ def _build_purescript_body_preamble() -> Callable[
             )
             if types & type_set
         ]
-        lines: list[str] = []
+        lines: list[str] = ["import Prelude"]
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")
         first_line = f"data Val\n    = {constructors[0]}"
@@ -234,6 +234,8 @@ class PureScript(metaclass=LanguageCls):
     consuming module:
 
     .. code-block:: haskell
+
+       import Prelude
 
        data Tuple a b = Tuple a b
 

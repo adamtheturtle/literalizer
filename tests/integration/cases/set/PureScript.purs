@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Val
     = PStr String
     | PSet (Array Val)

@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Tuple a b = Tuple a b
 data Val
     = PStr String
@@ -9,6 +10,6 @@ data Val
 
 my_data :: Val
 my_data = PDict [
-    (Tuple "description" PStr "# not a comment\n"),
-    (Tuple "name" PStr "foo")
+    (Tuple "description" (PStr "# not a comment\n")),
+    (Tuple "name" (PStr "foo"))
     ]

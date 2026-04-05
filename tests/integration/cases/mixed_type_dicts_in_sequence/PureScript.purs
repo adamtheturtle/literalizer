@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Tuple a b = Tuple a b
 data Val
     = PBool Boolean
@@ -11,6 +12,6 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PDict [(Tuple "type" PStr "create"), (Tuple "pr_id" PStr "pr_1"), (Tuple "draft" PBool true)],
-    PDict [(Tuple "type" PStr "create"), (Tuple "pr_id" PStr "pr_2")]
+    PDict [(Tuple "type" (PStr "create")), (Tuple "pr_id" (PStr "pr_1")), (Tuple "draft" (PBool true))],
+    PDict [(Tuple "type" (PStr "create")), (Tuple "pr_id" (PStr "pr_2"))]
     ]

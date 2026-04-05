@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Tuple a b = Tuple a b
 data Val
     = PStr String
@@ -10,6 +11,6 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PDict [(Tuple "first" PStr "Alice"), (Tuple "last" PStr "Smith")],
-    PDict [(Tuple "first" PStr "Bob"), (Tuple "last" PStr "Jones")]
+    PDict [(Tuple "first" (PStr "Alice")), (Tuple "last" (PStr "Smith"))],
+    PDict [(Tuple "first" (PStr "Bob")), (Tuple "last" (PStr "Jones"))]
     ]

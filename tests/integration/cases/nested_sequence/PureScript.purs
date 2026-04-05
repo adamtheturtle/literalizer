@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Val
     = PNull
     | PBool Boolean

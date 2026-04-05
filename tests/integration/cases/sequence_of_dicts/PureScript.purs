@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Tuple a b = Tuple a b
 data Val
     = PInt Int
@@ -11,6 +12,6 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PDict [(Tuple "name" PStr "Alice"), (Tuple "age" PInt 30)],
-    PDict [(Tuple "name" PStr "Bob"), (Tuple "age" PInt 25)]
+    PDict [(Tuple "name" (PStr "Alice")), (Tuple "age" (PInt 30))],
+    PDict [(Tuple "name" (PStr "Bob")), (Tuple "age" (PInt 25))]
     ]
