@@ -69,9 +69,11 @@ def _wrap_tuple_scalar(value: Value, item: str) -> str:
     to use typeclass instances.
     """
     if isinstance(value, int) and not isinstance(value, bool):
-        return f"HInt {item}"
+        arg = f"({item})" if value < 0 else item
+        return f"HInt {arg}"
     if isinstance(value, float):
-        return f"HFloat {item}"
+        arg = f"({item})" if value < 0 else item
+        return f"HFloat {arg}"
     if isinstance(value, str):
         return f"HStr {item}"
     return item
