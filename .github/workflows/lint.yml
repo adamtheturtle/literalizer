@@ -499,7 +499,7 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -P "$(nproc)" -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+          xargs -0 -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
 
   lint-haskell:
     runs-on: ubuntu-latest
@@ -519,7 +519,7 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -P "$(nproc)" -n1 ghc -fno-code -outputdir "$tmpdir" < /tmp/files-to-lint
+          xargs -0 -n1 ghc -fno-code -outputdir "$tmpdir" < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
