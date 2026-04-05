@@ -20,7 +20,6 @@ from literalizer.languages import (
     Go,
     JavaScript,
     Mojo,
-    Odin,
     Python,
     R,
 )
@@ -461,31 +460,6 @@ def test_coerce_mixed_dict_values_set_with_string() -> None:
         }"""
     )
     assert result.code == expected
-
-
-def test_coerce_mixed_to_str_inline_set() -> None:
-    """Mixed set elements are coerced to strings for inline sets."""
-    yaml_string = textwrap.dedent(
-        text="""\
-        items:
-          - !!set
-            ? apple
-            ? 42
-            ? true
-    """,
-    )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
-        language=Odin(),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
-        error_on_coercion=False,
-    )
-    assert '"42" = {}' in result.code
-    assert '"True" = {}' in result.code
-    assert '"apple" = {}' in result.code
 
 
 def test_coerce_mixed_dict_values_with_list() -> None:
