@@ -1,0 +1,5 @@
+(list
+    "foo"
+    "bar"
+    "baz"
+)

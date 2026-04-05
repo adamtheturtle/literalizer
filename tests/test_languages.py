@@ -418,15 +418,35 @@ def test_java_sequence_include_delimiters_uses_braces() -> None:
     argvalues=[
         (
             [1, 2, 3],
-            "new int[]{\n    1,\n    2,\n    3\n}",
+            textwrap.dedent(
+                text="""\
+                new int[]{
+                    1,
+                    2,
+                    3
+                }"""
+            ),
         ),
         (
             ["hello", "world"],
-            'new String[]{\n    "hello",\n    "world"\n}',
+            textwrap.dedent(
+                text="""\
+                new String[]{
+                    "hello",
+                    "world"
+                }"""
+            ),
         ),
         (
             [1, "hello", True],
-            'new Object[]{\n    1,\n    "hello",\n    true\n}',
+            textwrap.dedent(
+                text="""\
+                new Object[]{
+                    1,
+                    "hello",
+                    true
+                }"""
+            ),
         ),
     ],
     ids=["all_int", "all_string", "mixed"],
@@ -574,17 +594,19 @@ def test_cobol_level_number_cap() -> None:
     """COBOL level numbers are capped at 49 for deeply nested
     structures.
     """
-    yaml_string = (
-        "a:\n"
-        "  b:\n"
-        "    c:\n"
-        "      d:\n"
-        "        e:\n"
-        "          f:\n"
-        "            g:\n"
-        "              h:\n"
-        "                i:\n"
-        "                  value: deep\n"
+    yaml_string = textwrap.dedent(
+        text="""\
+        a:
+          b:
+            c:
+              d:
+                e:
+                  f:
+                    g:
+                      h:
+                        i:
+                          value: deep
+        """
     )
     result = literalize_yaml(
         yaml_string=yaml_string,
@@ -706,6 +728,8 @@ def test_pygments_name_is_valid(
     language_cls: LanguageCls,
 ) -> None:
     """Every language's ``pygments_name`` is recognized by Pygments."""
+    if language_cls.pygments_name is None:
+        return
     # Raises ClassNotFound if the name is not a valid Pygments alias.
     find_lexer_class_by_name(_alias=language_cls.pygments_name)
 

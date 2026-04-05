@@ -48,6 +48,7 @@ from .raku import Raku
 from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
+from .scheme import Scheme
 from .swift import Swift
 from .toml import Toml
 from .typescript import TypeScript
@@ -103,6 +104,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Ruby,
         Rust,
         Scala,
+        Scheme,
         Swift,
         Toml,
         TypeScript,
@@ -160,6 +162,7 @@ __all__ = [
     "Ruby",
     "Rust",
     "Scala",
+    "Scheme",
     "Swift",
     "Toml",
     "TypeScript",
