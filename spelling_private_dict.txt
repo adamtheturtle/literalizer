@@ -75,6 +75,7 @@ OStr
 ObjectiveC
 Php
 Pygments
+Raku
 Toml
 YAMLError
 ZKV
@@ -150,6 +151,7 @@ prepended
 pyrefly
 pyright
 pytest
+rakudo
 regen
 reportAttributeAccessIssue
 reportMissingTypeStubs
