@@ -484,9 +484,11 @@ def _wrap_haskell(
     preamble = "\n".join(body_preamble)
     header = "module Check where\n" + preamble + "\n"
     # Tuples are not Val-typed, so skip the type annotation for them.
-    eq_pos = content.find("= ")
-    rhs = content[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
-    if rhs.startswith("("):
+    equals_position = content.find("= ")
+    right_hand_side = (
+        content[equals_position + 2 :].lstrip() if equals_position >= 0 else ""
+    )
+    if right_hand_side.startswith("("):
         return header + content
     return header + f"{variable_name} :: Val\n" + content
 
@@ -1683,30 +1685,32 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     for lang_name, lang_config in _LANGUAGES.items():
         spec = lang_config.lang_cls()
         default_line_ending = spec.line_ending
-        default_ds = spec.declaration_style
+        default_declaration_style = spec.declaration_style
         non_default_line_endings = [
             line_ending
             for line_ending in spec.line_endings
             if line_ending is not default_line_ending
         ]
-        non_default_ds = [
-            ds for ds in spec.declaration_styles if ds is not default_ds
+        non_default_declaration_styles = [
+            declaration_style
+            for declaration_style in spec.declaration_styles
+            if declaration_style is not default_declaration_style
         ]
         variants.extend(
             _Variant(
                 name=(
                     f"{lang_name}_line_ending_{line_ending.name.lower()}"
-                    f"_decl_{ds.name.lower()}"
+                    f"_decl_{declaration_style.name.lower()}"
                 ),
                 spec=lang_config.lang_cls(
                     line_ending=line_ending,
-                    declaration_style=ds,
+                    declaration_style=declaration_style,
                 ),
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for line_ending in non_default_line_endings
-            for ds in non_default_ds
+            for declaration_style in non_default_declaration_styles
         )
     return variants
 

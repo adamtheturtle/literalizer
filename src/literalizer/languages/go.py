@@ -97,11 +97,11 @@ def _format_date_go(value: datetime.date) -> str:
 def _format_datetime_go(value: datetime.datetime) -> str:
     """Format a datetime as a Go ``time.Date(...)`` call."""
     month = _go_month_name(month=value.month)
-    nanos = value.microsecond * 1000
+    nanoseconds = value.microsecond * 1000
     return (
         f"time.Date({value.year}, {month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second}, "
-        f"{nanos}, time.UTC)"
+        f"{nanoseconds}, time.UTC)"
     )
 
 

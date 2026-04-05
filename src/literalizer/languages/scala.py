@@ -62,12 +62,12 @@ from literalizer._types import Value
 @beartype
 def _format_datetime_scala(value: datetime.datetime) -> str:
     """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
-    tz = value.tzname() or "UTC"
-    nanos = value.microsecond * 1000
+    timezone_name = value.tzname() or "UTC"
+    nanoseconds = value.microsecond * 1000
     return (
         f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second}, "
-        f'{nanos}, ZoneId.of("{tz}"))'
+        f'{nanoseconds}, ZoneId.of("{timezone_name}"))'
     )
 
 

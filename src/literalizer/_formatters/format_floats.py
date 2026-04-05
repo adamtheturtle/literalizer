@@ -50,15 +50,15 @@ def format_float_scientific(
     if math.isnan(value):
         return nan_literal
     raw = f"{value:e}"
-    mantissa, exp_part = raw.split(sep="e")
+    mantissa, exponent_part = raw.split(sep="e")
     # Strip trailing zeros but keep at least one decimal digit.
     mantissa = mantissa.rstrip("0")
     if mantissa.endswith("."):
         mantissa += "0"
-    exp_val = int(exp_part)
-    if exp_val == 0:
+    exponent_value = int(exponent_part)
+    if exponent_value == 0:
         return mantissa
-    return f"{mantissa}e{exp_val}"
+    return f"{mantissa}e{exponent_value}"
 
 
 @beartype
