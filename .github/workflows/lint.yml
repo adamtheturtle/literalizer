@@ -12,8 +12,12 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: lint-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  pre-commit:
     strategy:
       matrix:
         python-version: ['3.13']
@@ -68,10 +72,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.rb
       - name: Check Ruby syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            ruby -c "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 ruby -c < /tmp/files-to-lint
 
   lint-gleam:
     runs-on: ubuntu-latest
@@ -152,10 +153,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.js
       - name: Check JavaScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            node --check "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 node --check < /tmp/files-to-lint
 
   lint-json5:
     runs-on: ubuntu-latest
@@ -189,9 +187,9 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.jsonnet
       - name: Install jsonnet
         if: steps.find-files.outputs.found == 'true'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq jsonnet
+        run: |-
+          go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check Jsonnet syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
@@ -214,10 +212,7 @@ jobs:
         run: npm install -g typescript
       - name: Check TypeScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            tsc --noEmit --noResolve --skipLibCheck --lib es2015 "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-to-lint
 
   lint-java:
     runs-on: ubuntu-latest
@@ -263,13 +258,10 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.cob
       - name: Install GnuCOBOL
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y gnucobol
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gnucobol
       - name: Check COBOL syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            cobc -free -fsyntax-only "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
 
   lint-cpp:
     runs-on: ubuntu-latest
@@ -500,7 +492,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.ml
       - name: Install OCaml
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y ocaml
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ocaml
       - name: Check OCaml syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
@@ -543,7 +535,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.lisp
       - name: Install SBCL
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y sbcl
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq sbcl
       - name: Check Common Lisp syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -I{} sbcl --script {} < /tmp/files-to-lint
@@ -560,10 +552,9 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.hcl
       - name: Install hcl2json
         if: steps.find-files.outputs.found == 'true'
-        run: go install github.com/tmccombs/hcl2json@latest
-      - name: Add Go bin to PATH
-        if: steps.find-files.outputs.found == 'true'
-        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+        run: |-
+          go install github.com/tmccombs/hcl2json@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check HCL syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
@@ -692,15 +683,12 @@ jobs:
       - name: Install Perl dependencies
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          sudo apt-get update
-          sudo apt-get install -y cpanminus
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq cpanminus
           sudo cpanm --notest DateTime
       - name: Check Perl syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            perl -c "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 perl -c < /tmp/files-to-lint
 
   lint-lua:
     runs-on: ubuntu-latest
@@ -772,10 +760,7 @@ jobs:
           compiler: dmd-latest
       - name: Check D syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            dmd -o- -c "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 dmd -o- -c < /tmp/files-to-lint
 
   lint-powershell:
     runs-on: ubuntu-latest
@@ -808,7 +793,7 @@ jobs:
           extra_config_patterns: check_ada_golden_syntax.py
       - name: Install GNAT
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y gnat
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gnat
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
@@ -855,10 +840,7 @@ jobs:
         uses: crystal-lang/install-crystal@v1
       - name: Check Crystal syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            crystal build --no-codegen "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 crystal build --no-codegen < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
@@ -872,7 +854,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/Matlab*.m
       - name: Install Octave
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update && sudo apt-get install -y octave
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq octave
       # Octave is a practical CI substitute, but it does not support
       # every MATLAB builtin.  Skip files that use features Octave lacks:
       #  - datetime(): not yet implemented in Octave
@@ -1027,7 +1009,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.rkt
       - name: Install Racket
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y racket
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq racket
       - name: Check Racket syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 raco make < /tmp/files-to-lint
@@ -1044,7 +1026,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.scm
       - name: Install Guile
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y guile-3.0
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq guile-3.0
       - name: Check Scheme syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -I{} guile --no-auto-compile -s {} < /tmp/files-to-lint
@@ -1066,10 +1048,7 @@ jobs:
           version: 0.14.0
       - name: Check Zig
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            zig build-obj -fno-emit-bin "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
 
   lint-toml:
     runs-on: ubuntu-latest
@@ -1110,6 +1089,9 @@ jobs:
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Check YAML syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
@@ -1173,7 +1155,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.f90
       - name: Install gfortran
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get install -y gfortran
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gfortran
       - name: Check Fortran syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
@@ -1191,14 +1173,11 @@ jobs:
           lang_patterns: tests/integration/cases/**/objective_c*.m
       - name: Check Objective-C syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            clang -fsyntax-only "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 clang -fsyntax-only < /tmp/files-to-lint
 
   completion-lint:
     needs:
-      - build
+      - pre-commit
       - lint-bash
       - lint-ruby
       - lint-gleam
