@@ -252,13 +252,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Install GnuCOBOL
+        uses: fabasoad/setup-cobol-action@v1
       - uses: ./.github/actions/find-lint-files
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cob
-      - name: Install GnuCOBOL
-        if: steps.find-files.outputs.found == 'true'
-        uses: fabasoad/setup-cobol-action@v1
       - name: Check COBOL syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
