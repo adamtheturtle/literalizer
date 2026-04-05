@@ -119,8 +119,7 @@ def _wrap_fsharp(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an F# ``let`` declaration in a module."""
-    if body_preamble:
-        return "module Check\n\n" + "\n".join(body_preamble) + "\n" + content
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return "module Check\n\n" + content
 
 
