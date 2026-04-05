@@ -414,7 +414,10 @@ class Odin(metaclass=LanguageCls):
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
         )
-        self.static_preamble: Sequence[str] = ("package main",)
+        self.static_preamble: Sequence[str] = (
+            "#+feature dynamic-literals",
+            "package main",
+        )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
