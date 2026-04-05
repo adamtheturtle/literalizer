@@ -1867,13 +1867,13 @@ def literalize_toml(
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
-    if variable_name is not None:
-        formatter = (
-            language.format_variable_declaration
-            if new_variable
-            else language.format_variable_assignment
-        )
-        result = formatter(variable_name, result, coerced_data)
+    result = _apply_variable_wrapper(
+        result=result,
+        language=language,
+        data=coerced_data,
+        variable_name=variable_name,
+        new_variable=new_variable,
+    )
     computed = _compute_preamble(
         data=coerced_data,
         language=language,
