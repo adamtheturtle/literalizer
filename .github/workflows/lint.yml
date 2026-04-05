@@ -84,7 +84,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.gleam
-          extra_config_patterns: check_gleam_golden_syntax.py
+          extra_config_patterns: check_gleam_syntax.py
       - name: Install Gleam
         if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1
@@ -99,8 +99,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Gleam compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_gleam_golden_syntax.py
-          < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-to-lint
 
   lint-go:
     runs-on: ubuntu-latest
@@ -357,7 +356,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cs
-          extra_config_patterns: check_csharp_golden_syntax.py
+          extra_config_patterns: check_csharp_syntax.py
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |
@@ -371,8 +370,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check C# syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_csharp_golden_syntax.py
-          < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_csharp_syntax.py < /tmp/files-to-lint
 
   lint-elixir:
     runs-on: ubuntu-latest
@@ -409,7 +407,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.elm
-          extra_config_patterns: check_elm_golden_syntax.py
+          extra_config_patterns: check_elm_syntax.py
       - name: Install elm-format and elm
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g elm-format elm
@@ -427,8 +425,7 @@ jobs:
           done < /tmp/files-to-lint
       - name: Check Elm compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_elm_golden_syntax.py <
-          /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
 
   lint-erlang:
     runs-on: ubuntu-latest
@@ -495,12 +492,14 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.ml
       - name: Install OCaml
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ocaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5
       - name: Check OCaml syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -P "$(nproc)" -n1 ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+          xargs -0 -P "$(nproc)" -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
 
   lint-haskell:
     runs-on: ubuntu-latest
@@ -787,7 +786,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.adb
-          extra_config_patterns: check_ada_golden_syntax.py
+          extra_config_patterns: check_ada_syntax.py
       - name: Install GNAT
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq gnat
@@ -799,8 +798,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Ada syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_ada_golden_syntax.py <
-          /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_ada_syntax.py < /tmp/files-to-lint
 
   lint-occam:
     runs-on: ubuntu-latest
@@ -812,7 +810,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.occ
-          extra_config_patterns: check_occam_golden_syntax.py
+          extra_config_patterns: check_occam_syntax.py
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
@@ -821,8 +819,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_occam_golden_syntax.py
-          < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_occam_syntax.py < /tmp/files-to-lint
 
   lint-crystal:
     runs-on: ubuntu-latest
@@ -1157,7 +1154,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.vb
-          extra_config_patterns: check_vb_golden_syntax.py
+          extra_config_patterns: check_vb_syntax.py
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |
@@ -1171,7 +1168,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check VB.NET syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_vb_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_vb_syntax.py < /tmp/files-to-lint
 
   lint-fortran:
     runs-on: ubuntu-latest
