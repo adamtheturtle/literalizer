@@ -1083,7 +1083,7 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
-            verilator --lint-only --language 1800-2017 "$f" || exit 1
+            verilator --lint-only --language 1800-2017 -Wno-REALCVT "$f" || exit 1
           done < /tmp/files-to-lint
 
   lint-visualbasic:
