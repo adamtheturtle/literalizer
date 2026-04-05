@@ -48,7 +48,7 @@ from literalizer._language import (
     no_type_hint_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import EmptyDictKeyError
+from literalizer.exceptions import InvalidDictKeyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -76,7 +76,7 @@ def _format_r_dict_entry_error(key: str, _val: Value, value: str) -> str:
             "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
             "as unnamed list elements instead."
         )
-        raise EmptyDictKeyError(msg)
+        raise InvalidDictKeyError(msg)
     return f"{key} = {value}"
 
 
@@ -109,7 +109,7 @@ class R(metaclass=LanguageCls):
             * ``EmptyDictKey.POSITIONAL`` — emit as an unnamed
               positional list element.
             * ``EmptyDictKey.ERROR`` — raise
-              :class:`~literalizer.exceptions.EmptyDictKeyError`.
+              :class:`~literalizer.exceptions.InvalidDictKeyError`.
     """
 
     extension = ".R"

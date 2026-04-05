@@ -9,8 +9,8 @@ from literalizer import (
     literalize_yaml,
 )
 from literalizer.exceptions import (
-    EmptyDictKeyError,
     HeterogeneousCoercionError,
+    InvalidDictKeyError,
     ParseError,
     YAMLParseError,
 )
@@ -727,7 +727,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
 
 
 def test_r_empty_dict_key_error() -> None:
-    """R with ERROR empty_dict_key raises EmptyDictKeyError."""
+    """R with ERROR empty_dict_key raises InvalidDictKeyError."""
     spec = R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,
@@ -736,7 +736,7 @@ def test_r_empty_dict_key_error() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(expected_exception=EmptyDictKeyError):
+    with pytest.raises(expected_exception=InvalidDictKeyError):
         literalize_yaml(
             yaml_string=yaml_string,
             language=spec,
@@ -1118,9 +1118,9 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
 
 
 def test_dhall_empty_dict_key_error() -> None:
-    """Dhall raises EmptyDictKeyError for empty-string dict keys."""
+    """Dhall raises InvalidDictKeyError for empty-string dict keys."""
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(expected_exception=EmptyDictKeyError):
+    with pytest.raises(expected_exception=InvalidDictKeyError):
         literalize_yaml(
             yaml_string=yaml_string,
             language=Dhall(),
@@ -1151,7 +1151,7 @@ def test_dhall_control_char_in_string() -> None:
 def test_dhall_control_char_key_error() -> None:
     """Dhall rejects control characters in dict keys."""
     yaml_string = '{"\\x01": "value"}\n'
-    with pytest.raises(expected_exception=EmptyDictKeyError):
+    with pytest.raises(expected_exception=InvalidDictKeyError):
         literalize_yaml(
             yaml_string=yaml_string,
             language=Dhall(),

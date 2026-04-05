@@ -47,7 +47,7 @@ from literalizer._language import (
     no_type_hint_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import EmptyDictKeyError
+from literalizer.exceptions import InvalidDictKeyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -137,7 +137,7 @@ def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
             "Backtick-quoted labels must be non-empty and contain only "
             "printable ASCII (no backticks or control characters)."
         )
-        raise EmptyDictKeyError(msg)
+        raise InvalidDictKeyError(msg)
     return f"`{raw}` = {value}"
 
 
@@ -161,7 +161,7 @@ class Dhall(metaclass=LanguageCls):
     Dhall has no native date type.
 
     Dict keys that cannot be represented as Dhall backtick-quoted labels
-    raise :class:`~literalizer.exceptions.EmptyDictKeyError`.  This
+    raise :class:`~literalizer.exceptions.InvalidDictKeyError`.  This
     includes empty keys and keys containing control characters or
     backticks, since Dhall labels only allow printable ASCII.
     """
@@ -274,7 +274,7 @@ class Dhall(metaclass=LanguageCls):
 
         Dhall backtick-quoted labels must be non-empty and contain only
         printable ASCII, so unsupported dict keys always raise
-        :class:`~literalizer.exceptions.EmptyDictKeyError`.
+        :class:`~literalizer.exceptions.InvalidDictKeyError`.
         """
 
         ERROR = "error"
