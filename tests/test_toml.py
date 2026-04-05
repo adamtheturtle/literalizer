@@ -9,6 +9,7 @@ from literalizer import (
     Language,
     literalize,
 )
+from literalizer._comments import extract_toml_comments
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
     ParseError,
@@ -20,6 +21,7 @@ from literalizer.languages import (
     JavaScript,
     Mojo,
     Python,
+    VisualBasic,
 )
 
 PYTHON = Python(
@@ -639,5 +641,60 @@ def test_comments_with_variable_declaration() -> None:
             // config
             "host": "localhost",  // default
         };"""
+    )
+    assert result.code == expected
+
+
+VISUAL_BASIC = VisualBasic(
+    date_format=VisualBasic.date_formats.ISO,
+    datetime_format=VisualBasic.datetime_formats.ISO,
+    bytes_format=VisualBasic.bytes_formats.HEX,
+    sequence_format=VisualBasic.sequence_formats.ARRAY,
+)
+
+
+def test_comments_language_without_collection_comments() -> None:
+    """Comments are prepended for languages without collection support."""
+    toml_string = '# header\nhost = "localhost"  # inline\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=VISUAL_BASIC,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="config",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "' header" in result.code
+    assert "' inline" in result.code
+
+
+def test_extract_toml_comments_non_document() -> None:
+    """``extract_toml_comments`` returns empty for non-document input."""
+    result = extract_toml_comments(toml_doc={"not": "a document"})
+    assert result.elements == ()
+    assert result.trailing == ()
+
+
+def test_comments_with_blank_lines() -> None:
+    """Blank lines between keys do not produce spurious comments."""
+    toml_string = 'host = "localhost"\n\nport = 8080\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "host": "localhost",
+            "port": 8080,
+        }"""
     )
     assert result.code == expected

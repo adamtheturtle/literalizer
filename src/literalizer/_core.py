@@ -1423,8 +1423,8 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             except TOMLKitError as exc:
                 message = f"Invalid TOML: {exc}"
                 raise TOMLParseError(message) from exc
-            data = _coerce_toml_values(data=toml_doc.unwrap())
-            return _ParsedInput(data=data, raw_data=toml_doc)
+            toml_data = _coerce_toml_values(data=toml_doc.unwrap())
+            return _ParsedInput(data=toml_data, raw_data=toml_doc)
     assert_never(input_format)  # pragma: no cover
 
 

@@ -7,6 +7,8 @@ from typing import Any
 from beartype import beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.tokens import CommentToken
+from tomlkit.items import Comment, Table, Whitespace
+from tomlkit.toml_document import TOMLDocument
 
 
 @dataclasses.dataclass(frozen=True)
@@ -176,15 +178,6 @@ def extract_toml_comments(
     nodes as "before" comments for the next keyed item, and inline
     ``trivia.comment`` values as inline comments.
     """
-    from tomlkit.items import (  # noqa: PLC0415
-        Comment,
-        Table,
-        Whitespace,
-    )
-    from tomlkit.toml_document import (  # noqa: PLC0415
-        TOMLDocument,
-    )
-
     if not isinstance(toml_doc, TOMLDocument):
         return CollectionComments(elements=(), trailing=())
 
@@ -192,11 +185,9 @@ def extract_toml_comments(
     elements: list[ElementComments] = []
 
     for key, item in toml_doc.body:
-        if isinstance(item, Whitespace):
-            continue
-        if isinstance(item, Comment):
-            raw: str = item.trivia.comment
-            if raw.startswith("#"):
+        if isinstance(item, (Whitespace, Comment)):
+            if isinstance(item, Comment):
+                raw: str = item.trivia.comment
                 pending_before.extend(
                     _strip_comment_marker(text=line)
                     for line in raw.split(sep="\n")
@@ -204,7 +195,7 @@ def extract_toml_comments(
                 )
             continue
         if key is None:
-            continue
+            continue  # pragma: no cover
         inline = ""
         if not isinstance(item, Table) and hasattr(item, "trivia"):
             raw_inline: str = item.trivia.comment
