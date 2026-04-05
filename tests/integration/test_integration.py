@@ -468,13 +468,6 @@ def _wrap_haskell(
     """Wrap a Haskell variable binding in a module."""
     preamble = "\n".join(body_preamble)
     header = "module Check where\n" + preamble + "\n"
-    # Tuples are not Val-typed, so skip the type annotation for them.
-    equals_position = content.find("= ")
-    right_hand_side = (
-        content[equals_position + 2 :].lstrip() if equals_position >= 0 else ""
-    )
-    if right_hand_side.startswith("("):
-        return header + content
     return header + f"{variable_name} :: Val\n" + content
 
 

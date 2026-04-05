@@ -61,6 +61,23 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _wrap_tuple_scalar(value: Value, item: str) -> str:
+    """Wrap scalar values in their ``Val`` constructors for tuple entries.
+
+    Integers, floats, and strings need explicit constructors inside
+    tuples because there is no single ``Val`` context for the compiler
+    to use typeclass instances.
+    """
+    if isinstance(value, int) and not isinstance(value, bool):
+        return f"HInt {item}"
+    if isinstance(value, float):
+        return f"HFloat {item}"
+    if isinstance(value, str):
+        return f"HStr {item}"
+    return item
+
+
+@beartype
 def _format_datetime_haskell(value: datetime.datetime) -> str:
     """Format a datetime as a Haskell ``HDatetime`` constructor.
 
@@ -369,9 +386,9 @@ class Haskell(metaclass=LanguageCls):
             supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
+            format_entry=_wrap_tuple_scalar,
             typed_opener_fallback=None,
-            uses_typed_literal_for_scalars=False,
+            uses_typed_literal_for_scalars=True,
             requires_uniform_record_shapes=False,
         )
 
@@ -585,7 +602,7 @@ class Haskell(metaclass=LanguageCls):
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
+            fmt.format_entry
         )
         self.format_set_entry: Callable[[Value, str], str] = (
             passthrough_set_entry
