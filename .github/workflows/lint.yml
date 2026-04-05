@@ -1198,7 +1198,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.f90
       - name: Install gfortran
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq gfortran
+        uses: fortran-lang/setup-fortran@v1
       - name: Check Fortran syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
