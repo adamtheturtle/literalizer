@@ -41,6 +41,7 @@ from .occam import Occam
 from .perl import Perl
 from .php import Php
 from .powershell import PowerShell
+from .purescript import PureScript
 from .python import Python
 from .r import R
 from .racket import Racket
@@ -97,6 +98,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Perl,
         Php,
         PowerShell,
+        PureScript,
         Python,
         R,
         Racket,
@@ -155,6 +157,7 @@ __all__ = [
     "Perl",
     "Php",
     "PowerShell",
+    "PureScript",
     "Python",
     "R",
     "Racket",
