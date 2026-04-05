@@ -673,8 +673,8 @@ def test_comments_language_without_collection_comments() -> None:
 def test_extract_toml_comments_non_document() -> None:
     """``extract_toml_comments`` returns empty for non-document input."""
     result = extract_toml_comments(toml_doc={"not": "a document"})
-    assert result.elements == ()
-    assert result.trailing == ()
+    assert not result.elements
+    assert not result.trailing
 
 
 def test_comments_with_blank_lines() -> None:
