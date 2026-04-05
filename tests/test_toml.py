@@ -15,6 +15,7 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Go,
+    Haskell,
     JavaScript,
     Mojo,
     Python,
@@ -413,3 +414,25 @@ def test_scalar_types(
         error_on_coercion=False,
     )
     assert result.code == expected
+
+
+def test_body_preamble() -> None:
+    """Languages with body preamble (e.g. Haskell) include it in code."""
+    haskell = Haskell(
+        date_format=Haskell.date_formats.ISO,
+        datetime_format=Haskell.datetime_formats.ISO,
+        bytes_format=Haskell.bytes_formats.HEX,
+        sequence_format=Haskell.sequence_formats.LIST,
+    )
+    toml_string = 'name = "alice"\n'
+    result = literalize_toml(
+        toml_string=toml_string,
+        language=haskell,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.body_preamble
+    assert result.body_preamble[0] in result.code
