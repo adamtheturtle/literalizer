@@ -39,7 +39,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar,
+    format_string_backslash_raku,
     format_string_backslash_single_minimal,
 )
 from literalizer._language import (
@@ -70,8 +70,7 @@ def _format_datetime_raku(value: datetime.datetime) -> str:
     if value.tzinfo is not None:
         value = value.astimezone(tz=datetime.UTC)
     if value.microsecond:
-        fractional_second = value.second + value.microsecond / 1_000_000
-        second_part = f"{fractional_second}"
+        second_part = f"{value.second}.{value.microsecond:06d}".rstrip("0")
     else:
         second_part = f"{value.second}"
     return (
@@ -304,7 +303,7 @@ class Raku(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_dollar)
+        DOUBLE = enum.member(value=format_string_backslash_raku)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
