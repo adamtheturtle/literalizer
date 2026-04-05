@@ -1083,6 +1083,26 @@ jobs:
         run: |-
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-to-lint
 
+  lint-systemverilog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.sv
+      - name: Install Verilator
+        if: steps.find-files.outputs.found == 'true'
+        run: sudo apt-get update && sudo apt-get install -y verilator
+      - name: Check SystemVerilog syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            verilator --lint-only --language 1800-2017 -Wno-REALCVT "$f" || exit 1
+          done < /tmp/files-to-lint
+
   lint-visualbasic:
     runs-on: ubuntu-latest
     steps:
@@ -1195,6 +1215,7 @@ jobs:
       - lint-toml
       - lint-yaml
       - lint-powershell
+      - lint-systemverilog
       - lint-visualbasic
       - lint-fortran
       - lint-objectivec

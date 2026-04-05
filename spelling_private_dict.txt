@@ -75,6 +75,7 @@ OStr
 ObjectiveC
 Php
 Pygments
+SystemVerilog
 Toml
 YAMLError
 ZKV
@@ -120,6 +121,7 @@ jsonnet
 kotlinc
 kroc
 kts
+linter
 literalize
 literalizer
 literalizer's
@@ -174,6 +176,7 @@ templating
 ty
 typeclass
 unhandled
+unterminated
 uv
 val_t
 whitespace
