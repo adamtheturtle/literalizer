@@ -457,3 +457,187 @@ def test_body_preamble() -> None:
     )
     assert result.body_preamble
     assert result.body_preamble[0] in result.code
+
+
+def test_inline_comment_preserved() -> None:
+    """Inline TOML comments appear in the output."""
+    toml_string = 'host = "localhost"  # default host\nport = 8080\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "host": "localhost",  # default host
+            "port": 8080,
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_before_comment_preserved() -> None:
+    """Standalone comments before a key appear before that element."""
+    toml_string = '# Server host\nhost = "localhost"\nport = 8080\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            # Server host
+            "host": "localhost",
+            "port": 8080,
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_trailing_comment_preserved() -> None:
+    """A comment after the last key appears as a trailing comment."""
+    toml_string = 'host = "localhost"\n# end\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "host": "localhost",
+            # end
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_mixed_comments_preserved() -> None:
+    """Inline, before, and trailing comments all preserved together."""
+    toml_string = (
+        "# Server configuration\n"
+        'host = "localhost"  # default host\n'
+        "port = 8080\n"
+    )
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            # Server configuration
+            "host": "localhost",  # default host
+            "port": 8080,
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_comments_go_output() -> None:
+    """TOML comments render with Go comment syntax."""
+    toml_string = '# Config\nhost = "localhost"  # default\nport = 8080\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=GO,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = (
+        "map[string]any{\n"
+        "\t// Config\n"
+        '\t"host": "localhost",  // default\n'
+        '\t"port": 8080,\n'
+        "}"
+    )
+    assert result.code == expected
+
+
+def test_no_comments_unchanged() -> None:
+    """TOML without comments produces the same output as before."""
+    toml_string = 'name = "test"\ncount = 42\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "name": "test",
+            "count": 42,
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_comments_without_delimiters() -> None:
+    """TOML comments work correctly without delimiters."""
+    toml_string = '# header\nhost = "localhost"  # inline\nport = 8080\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = '# header\n"host": "localhost",  # inline\n"port": 8080,'
+    assert result.code == expected
+
+
+def test_comments_with_variable_declaration() -> None:
+    """TOML comments work with variable wrapping."""
+    toml_string = '# config\nhost = "localhost"  # default\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=JAVASCRIPT,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="config",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const config = {
+            // config
+            "host": "localhost",  // default
+        };"""
+    )
+    assert result.code == expected

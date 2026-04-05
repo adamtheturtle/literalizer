@@ -5,21 +5,23 @@ import datetime
 import enum
 import json
 import math
-import tomllib
 from collections.abc import Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
 
+import tomlkit
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
+from tomlkit.exceptions import TOMLKitError
 
 from literalizer._comments import (
     CollectionComments,
     ElementComments,
     apply_collection_comments,
+    extract_toml_comments,
     extract_yaml_comments,
     literalize_yaml_scalar,
     prepend_collection_comments,
@@ -1417,12 +1419,12 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             return _ParsedInput(data=data, raw_data=raw_data)
         case InputFormat.TOML:
             try:
-                toml_data = tomllib.loads(source)
-            except tomllib.TOMLDecodeError as exc:
+                toml_doc = tomlkit.parse(source)
+            except TOMLKitError as exc:
                 message = f"Invalid TOML: {exc}"
                 raise TOMLParseError(message) from exc
-            data = _coerce_toml_values(data=toml_data)
-            return _ParsedInput(data=data, raw_data=data)
+            data = _coerce_toml_values(data=toml_doc.unwrap())
+            return _ParsedInput(data=data, raw_data=toml_doc)
     assert_never(input_format)  # pragma: no cover
 
 
@@ -1440,9 +1442,8 @@ def literalize(
 ) -> LiteralizeResult:
     r"""Convert a JSON, YAML, or TOML string to native language literal text.
 
-    YAML comments are preserved in the output using the target
-    language's comment syntax.  TOML comments are not preserved
-    because the standard-library ``tomllib`` parser discards them.
+    YAML and TOML comments are preserved in the output using the
+    target language's comment syntax.
 
     Args:
         source: The input string to convert.
@@ -1495,7 +1496,7 @@ def literalize(
         error_on_coercion=error_on_coercion,
     )
 
-    # --- YAML comment resolution ---
+    # --- Comment resolution ---
     resolved: _ResolvedComments | None = None
     if input_format is InputFormat.YAML:
         comment_cfg = language.comment_config
@@ -1518,6 +1519,23 @@ def literalize(
             include_delimiters=include_delimiters,
         )
         result = resolved.result
+    elif input_format is InputFormat.TOML:
+        comment_cfg = language.comment_config
+        comment_line_prefix = (
+            line_prefix + language.indent
+            if include_delimiters
+            else line_prefix
+        )
+        resolved = _resolve_toml_comments(
+            toml_doc=parsed.raw_data,
+            base=result,
+            language=language,
+            comment_prefix=comment_cfg.prefix,
+            comment_suffix=comment_cfg.suffix,
+            comment_line_prefix=comment_line_prefix,
+            include_delimiters=include_delimiters,
+        )
+        result = resolved.result
 
     # --- Variable wrapping ---
     result = _apply_variable_wrapper(
@@ -1528,7 +1546,7 @@ def literalize(
         new_variable=new_variable,
     )
 
-    # --- YAML pending comments ---
+    # --- Pending comments ---
     if resolved is not None and resolved.pending is not None:
         comment_cfg = language.comment_config
         result = prepend_collection_comments(
@@ -1758,10 +1776,44 @@ def _resolve_yaml_comments(
     )
 
 
+@beartype
+def _resolve_toml_comments(
+    *,
+    toml_doc: object,
+    base: str,
+    language: Language,
+    comment_prefix: str,
+    comment_suffix: str,
+    comment_line_prefix: str,
+    include_delimiters: bool,
+) -> _ResolvedComments:
+    """Extract and resolve comments from a tomlkit document."""
+    collection_comments = extract_toml_comments(toml_doc=toml_doc)
+    if not language.supports_collection_comments:
+        return _ResolvedComments(
+            result=base,
+            pending=collection_comments,
+            pending_scalar_before=(),
+        )
+    result = apply_collection_comments(
+        collection_comments=collection_comments,
+        base=base,
+        comment_prefix=comment_prefix,
+        comment_suffix=comment_suffix,
+        comment_line_prefix=comment_line_prefix,
+        include_delimiters=include_delimiters,
+    )
+    return _ResolvedComments(
+        result=result,
+        pending=None,
+        pending_scalar_before=(),
+    )
+
+
 def _coerce_toml_values(*, data: object) -> Value:
     """Recursively convert TOML-specific types to ``Value`` types.
 
-    ``tomllib`` produces ``datetime.time`` values which are not
+    ``tomlkit`` produces ``datetime.time`` values which are not
     representable in the ``Value`` type, so they are converted to
     their ISO-format string form.
     """

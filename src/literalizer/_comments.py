@@ -1,4 +1,4 @@
-"""YAML comment extraction and formatting."""
+"""YAML and TOML comment extraction and formatting."""
 
 import dataclasses
 from collections.abc import Iterable
@@ -161,6 +161,65 @@ def extract_yaml_comments(
 
     return CollectionComments(
         elements=tuple(element_map[k] for k in output_keys),
+        trailing=tuple(pending_before),
+    )
+
+
+@beartype
+def extract_toml_comments(
+    *,
+    toml_doc: object,
+) -> CollectionComments:
+    """Extract top-level comments from a parsed tomlkit document.
+
+    Iterates over the document body and collects standalone comment
+    nodes as "before" comments for the next keyed item, and inline
+    ``trivia.comment`` values as inline comments.
+    """
+    from tomlkit.items import (  # noqa: PLC0415
+        Comment,
+        Table,
+        Whitespace,
+    )
+    from tomlkit.toml_document import (  # noqa: PLC0415
+        TOMLDocument,
+    )
+
+    if not isinstance(toml_doc, TOMLDocument):
+        return CollectionComments(elements=(), trailing=())
+
+    pending_before: list[str] = []
+    elements: list[ElementComments] = []
+
+    for key, item in toml_doc.body:
+        if isinstance(item, Whitespace):
+            continue
+        if isinstance(item, Comment):
+            raw: str = item.trivia.comment
+            if raw.startswith("#"):
+                pending_before.extend(
+                    _strip_comment_marker(text=line)
+                    for line in raw.split("\n")
+                    if line.strip().startswith("#")
+                )
+            continue
+        if key is None:
+            continue
+        inline = ""
+        if not isinstance(item, Table) and hasattr(item, "trivia"):
+            raw_inline: str = item.trivia.comment
+            if raw_inline.startswith("#"):
+                inline = _strip_comment_marker(text=raw_inline)
+        elements.append(
+            ElementComments(
+                before=tuple(pending_before),
+                inline=inline,
+            ),
+        )
+        pending_before = []
+
+    return CollectionComments(
+        elements=tuple(elements),
         trailing=tuple(pending_before),
     )
 
