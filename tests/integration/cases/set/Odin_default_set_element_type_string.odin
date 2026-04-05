@@ -1,7 +1,7 @@
 package main
 
 main :: proc() {
-my_data := map[String]struct{}{
+my_data := map[string]struct{}{
 	"apple" = {},
 	"banana" = {},
 	"cherry" = {},

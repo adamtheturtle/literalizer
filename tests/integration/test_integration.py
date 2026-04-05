@@ -988,6 +988,7 @@ def _build_default_set_element_type_variants() -> Iterable[_Variant]:
         "Go": "string",
         "CSharp": "string",
         "Mojo": "Int",
+        "Odin": "string",
         "Python": "int",
         "Rust": "i32",
     }
