@@ -16,6 +16,7 @@ Changelog
 Cobol
 Cpp
 Dhall
+Dhall's
 EBool
 EDict
 EFloat
@@ -80,6 +81,7 @@ YAMLError
 ZKV
 ZVal
 Zig
+backtick
 backticks
 beartype
 bool
@@ -173,7 +175,9 @@ swiftc
 templating
 ty
 typeclass
+unescape
 unhandled
+unicode
 uv
 val_t
 whitespace
