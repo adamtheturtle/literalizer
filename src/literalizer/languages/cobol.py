@@ -102,8 +102,8 @@ def _to_cobol_entry(value: str, name: str, level: int) -> str:
 
     Example: ``"42"`` → ``"05 FILLER PIC S9(18) COMP-5 VALUE 42."``
     """
-    pic = _pic_from_value(value=value)
-    return f"{level:02d} {name} {pic} VALUE {value}."
+    picture_clause = _pic_from_value(value=value)
+    return f"{level:02d} {name} {picture_clause} VALUE {value}."
 
 
 @beartype
@@ -176,8 +176,8 @@ def _format_cobol_dict_entry(key: str, _val: Value, value: str) -> str:
     if _is_data_entry(s=value.strip()):
         bumped = _bump_levels(content=value.strip())
         return f"05 {name}.\n{bumped}"
-    pic = _pic_from_value(value=value)
-    return f"05 {name} {pic} VALUE {value}."
+    picture_clause = _pic_from_value(value=value)
+    return f"05 {name} {picture_clause} VALUE {value}."
 
 
 @beartype
@@ -196,13 +196,13 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     Scalars become an elementary 01-level item; collections become a
     group 01-level item containing 05-level sub-items.
     """
-    cob_name = _to_cobol_name(python_name=name)
+    cobol_name = _to_cobol_name(python_name=name)
     stripped = value.strip("\n")
     scalar = stripped.strip()
     if "\n" in stripped or _is_data_entry(s=scalar):
-        return f"01 {cob_name}.\n{stripped}"
-    pic = _pic_from_value(value=scalar)
-    return f"01 {cob_name} {pic} VALUE {scalar}."
+        return f"01 {cobol_name}.\n{stripped}"
+    picture_clause = _pic_from_value(value=scalar)
+    return f"01 {cobol_name} {picture_clause} VALUE {scalar}."
 
 
 @beartype
@@ -213,12 +213,12 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     ``INITIALIZE`` (which resets alphanumeric sub-items to SPACES and
     numeric sub-items to ZEROS).
     """
-    cob_name = _to_cobol_name(python_name=name)
+    cobol_name = _to_cobol_name(python_name=name)
     stripped = value.strip("\n")
     scalar = stripped.strip()
     if "\n" in stripped or _is_data_entry(s=scalar):
-        return f"INITIALIZE {cob_name}."
-    return f"MOVE {scalar} TO {cob_name}."
+        return f"INITIALIZE {cobol_name}."
+    return f"MOVE {scalar} TO {cobol_name}."
 
 
 @beartype
