@@ -1,7 +1,6 @@
 module Check where
 
 
-import Prelude
 data Val
     = PSet (Array Val)
 

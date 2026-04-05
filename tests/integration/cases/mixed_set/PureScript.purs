@@ -1,7 +1,6 @@
 module Check where
 
 
-import Prelude
 data Val
     = PBool Boolean
     | PInt Int

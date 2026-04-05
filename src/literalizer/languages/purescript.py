@@ -187,9 +187,30 @@ def _build_purescript_body_preamble() -> Callable[
     actually needed, plus any necessary imports.
     """
 
+    def _needs_prelude(val: Value) -> bool:
+        """Return True if *val* needs ``import Prelude``.
+
+        Prelude is required for ``negate`` (any negative int or float)
+        and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
+        """
+        if isinstance(val, (int, float)) and not isinstance(val, bool):
+            if isinstance(val, float):
+                return val < 0 or math.isinf(val) or math.isnan(val)
+            return val < 0
+        if isinstance(val, list):
+            return any(_needs_prelude(val=v) for v in val)
+        if isinstance(val, dict):
+            return any(_needs_prelude(val=v) for v in val.values())
+        if isinstance(val, set):
+            return any(
+                _needs_prelude(val=v)
+                for v in val
+                if isinstance(v, (int, float)) and not isinstance(v, bool)
+            )
+        return False
+
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
-        del data  # unused
         needs_tuple = bool(types & {dict, ordereddict})
         constructors = [
             constructor
@@ -213,7 +234,8 @@ def _build_purescript_body_preamble() -> Callable[
             )
             if types & type_set
         ]
-        lines: list[str] = ["import Prelude"]
+        needs_prelude = bool(types & {int, float}) and _needs_prelude(val=data)
+        lines: list[str] = ["import Prelude"] if needs_prelude else []
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")
         first_line = f"data Val\n    = {constructors[0]}"
