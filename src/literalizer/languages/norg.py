@@ -66,8 +66,7 @@ class Norg(metaclass=LanguageCls):
     """
 
     extension = ".norg"
-    # Pygments has no Norg lexer.
-    pygments_name = "text"
+    pygments_name = None
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

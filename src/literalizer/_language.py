@@ -200,7 +200,7 @@ class LanguageCls(type):
     TrailingCommas: type[enum.Enum]
     LineEndings: type[enum.Enum]
     extension: str
-    pygments_name: str
+    pygments_name: str | None
     supports_default_set_element_type: bool
     supports_default_sequence_element_type: bool
     supports_default_dict_value_type: bool
@@ -347,8 +347,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     extension: str
     """The file extension for this language, including the leading dot."""
 
-    pygments_name: str
-    """The Pygments lexer short name for syntax highlighting."""
+    @property
+    def pygments_name(self) -> str | None:
+        """The Pygments lexer short name for syntax highlighting.
+
+        ``None`` if Pygments does not support this language.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     null_literal: str
     """The literal representing null/None."""
