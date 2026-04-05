@@ -37,10 +37,24 @@ def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
     return request.config.rootpath / "tests" / "integration" / "cases"
 
 
+def _with_body_preamble(
+    content: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Prepend *body_preamble* lines to *content*."""
+    if not body_preamble:
+        return content
+    return "\n".join(body_preamble) + "\n" + content
+
+
 @beartype
-def _wrap_identity(content: str, _variable_name: str) -> str:
-    """Return content unchanged."""
-    return content
+def _wrap_noop(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Prepend body preamble without adding any surrounding wrapper."""
+    return _with_body_preamble(content, body_preamble)
 
 
 def _find_redefinition_styles(
@@ -55,28 +69,43 @@ def _find_redefinition_styles(
 
 
 def _newline_combined(
-    wrap: Callable[[str, str], str],
-) -> Callable[[str, str, str], str]:
+    wrap: Callable[[str, str, tuple[str, ...]], str],
+) -> Callable[[str, str, str, tuple[str, ...]], str]:
     """Build a combined_wrap that joins declaration and assignment with a
     newline and passes through *wrap*.
     """
 
-    def combined_wrap(declaration: str, assignment: str, value: str) -> str:
+    def combined_wrap(
+        declaration: str,
+        assignment: str,
+        value: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
         """Join declaration and assignment with a newline, then wrap."""
-        return wrap(declaration + "\n" + assignment, value)
+        return wrap(declaration + "\n" + assignment, value, body_preamble)
 
     return combined_wrap
 
 
 @beartype
-def _wrap_ocaml(content: str, _variable_name: str) -> str:
+def _wrap_ocaml(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an OCaml ``let`` declaration in a module."""
+    content = _with_body_preamble(content, body_preamble)
     return "module Check = struct\n\n" + content + "\n\nend"
 
 
 @beartype
-def _wrap_occam(content: str, _variable_name: str) -> str:
+def _wrap_occam(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC."""
+    content = _with_body_preamble(content, body_preamble)
     indented = "  " + content.replace("\n", "\n  ")
     return (
         "\nPROC check ()\n" + indented + "\n" + "  SEQ\n" + "    SKIP\n" + ":"
@@ -84,8 +113,14 @@ def _wrap_occam(content: str, _variable_name: str) -> str:
 
 
 @beartype
-def _wrap_fsharp(content: str, _variable_name: str) -> str:
+def _wrap_fsharp(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an F# ``let`` declaration in a module."""
+    if body_preamble:
+        return "module Check\n\n" + "\n".join(body_preamble) + "\n" + content
     return "module Check\n\n" + content
 
 
@@ -94,13 +129,12 @@ def _wrap_fsharp_combined(
     declaration: str,
     assignment: str,
     _variable_name: str,
+    body_preamble: tuple[str, ...],
 ) -> str:
     """F#: separate private functions to avoid duplicate definitions.
 
-    The declaration includes the body preamble (``type Val = …``)
-    before the ``let`` binding.  We split on the first ``let`` line
-    so the type definition appears once at module scope while each
-    binding lives in its own private function.
+    Any lines before the first ``let`` in *declaration* (e.g. comments)
+    are placed at module scope alongside the body preamble.
     """
     lines = declaration.split(sep="\n")
     let_idx = next(
@@ -108,11 +142,15 @@ def _wrap_fsharp_combined(
         for idx, line in enumerate(iterable=lines)
         if line.startswith("let")
     )
-    preamble = "\n".join(lines[:let_idx])
+    pre_let = "\n".join(lines[:let_idx])
     decl_binding = "\n".join(lines[let_idx:])
     decl_indented = "    " + decl_binding.replace("\n", "\n    ")
     assign_indented = "    " + assignment.replace("\n", "\n    ")
-    body = "module Check\n\n" + preamble + "\n"
+    preamble_parts = list(body_preamble)
+    if pre_let:
+        preamble_parts.append(pre_let)
+    preamble = "\n".join(preamble_parts) + "\n" if preamble_parts else ""
+    body = "module Check\n\n" + preamble
     body += (
         "let private _checkDeclaration () =\n"
         + decl_indented
@@ -125,27 +163,47 @@ def _wrap_fsharp_combined(
 
 
 @beartype
-def _wrap_gleam(content: str, variable_name: str) -> str:
+def _wrap_gleam(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Gleam let binding in a main function."""
+    content = _with_body_preamble(content, body_preamble)
     indented = "  " + content.replace("\n", "\n  ")
     return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
 
 
 @beartype
-def _wrap_go(content: str, variable_name: str) -> str:
+def _wrap_go(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Go short variable declaration in a main function."""
+    content = _with_body_preamble(content, body_preamble)
     return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
 
 
 @beartype
-def _wrap_odin(content: str, variable_name: str) -> str:
+def _wrap_odin(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an Odin short variable declaration in a main procedure."""
+    content = _with_body_preamble(content, body_preamble)
     return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
 
 
 @beartype
-def _wrap_java(content: str, _variable_name: str) -> str:
+def _wrap_java(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Java var declaration in a static method."""
+    content = _with_body_preamble(content, body_preamble)
     return (
         "class Check {\n"
         "    public static void check() {\n"
@@ -156,7 +214,11 @@ def _wrap_java(content: str, _variable_name: str) -> str:
 
 
 @beartype
-def _wrap_ts(content: str, _variable_name: str) -> str:
+def _wrap_ts(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a TypeScript variable declaration as a module.
 
     Adding ``export {}`` turns the file into a module so that ``const``
@@ -164,24 +226,40 @@ def _wrap_ts(content: str, _variable_name: str) -> str:
     duplicate-declaration errors when ``tsc`` checks all ``.ts`` files
     together.
     """
+    content = _with_body_preamble(content, body_preamble)
     return f"{content}\nexport {{}};"
 
 
 @beartype
-def _wrap_cpp(content: str, _variable_name: str) -> str:
+def _wrap_cpp(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a C++ variable declaration in a function body."""
+    content = _with_body_preamble(content, body_preamble)
     return f"void _check() {{\n{content}\n}}"
 
 
 @beartype
-def _wrap_scala(content: str, _variable_name: str) -> str:
+def _wrap_scala(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Scala variable declaration in an object."""
+    content = _with_body_preamble(content, body_preamble)
     return f"object Check {{\n{content}\n}}"
 
 
 @beartype
-def _wrap_elixir(content: str, variable_name: str) -> str:
+def _wrap_elixir(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an Elixir variable assignment in a module function."""
+    content = _with_body_preamble(content, body_preamble)
     indented = "    " + content.replace("\n", "\n    ")
     return (
         f"defmodule Check do\n"
@@ -194,68 +272,43 @@ def _wrap_elixir(content: str, variable_name: str) -> str:
 
 
 @beartype
-def _wrap_purescript(content: str, variable_name: str) -> str:
+def _wrap_purescript(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a PureScript value declaration in a module."""
-    lines = content.split(sep="\n")
-    preamble_prefixes = ("import ", "data ")
-    # Find the first line that is NOT body-preamble.  A line counts as
-    # preamble when it starts with a known prefix or is an indented
-    # continuation of a preceding block.
-    expr_start = next(
-        (
-            idx
-            for idx, line in enumerate(iterable=lines)
-            if not (
-                any(line.startswith(p) for p in preamble_prefixes)
-                or (line.startswith("    ") and idx > 0)
-            )
-        ),
-        len(lines),
-    )
-
-    preamble = "\n".join(lines[:expr_start])
-    expression = "\n".join(lines[expr_start:])
-
+    preamble = "\n".join(body_preamble)
     parts = ["module Check where", preamble]
-    parts.append(f"{variable_name} :: Val\n{expression}")
+    parts.append(f"{variable_name} :: Val\n{content}")
     return "\n\n\n".join(parts)
 
 
 @beartype
-def _wrap_elm(content: str, variable_name: str) -> str:
+def _wrap_elm(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an Elm value declaration in a module."""
-    lines = content.split(sep="\n")
-    preamble_prefixes = ("type ",)
-    # Find the first line that is NOT body-preamble.  A line counts as
-    # preamble when it starts with a known prefix or is an indented
-    # continuation of a preceding block.
-    expr_start = next(
-        (
-            idx
-            for idx, line in enumerate(iterable=lines)
-            if not (
-                any(line.startswith(p) for p in preamble_prefixes)
-                or (line.startswith("    ") and idx > 0)
-            )
-        ),
-        len(lines),
-    )
-
-    preamble = "\n".join(lines[:expr_start])
-    expression = "\n".join(lines[expr_start:])
-
+    preamble = "\n".join(body_preamble)
     parts = ["module Check exposing (..)", preamble]
-    parts.append(f"{variable_name} : Val\n{expression}")
+    parts.append(f"{variable_name} : Val\n{content}")
     return "\n\n\n".join(parts)
 
 
 @beartype
-def _wrap_erlang(content: str, variable_name: str) -> str:
+def _wrap_erlang(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an Erlang variable binding in a module function.
 
     The variable is referenced at the end of the function body so that
     Erlang does not warn about an unused variable.
     """
+    content = _with_body_preamble(content, body_preamble)
     erlang_varname = variable_name[0].upper() + variable_name[1:]
     indented = "    " + content.replace("\n", "\n    ")
     return (
@@ -268,8 +321,13 @@ def _wrap_erlang(content: str, variable_name: str) -> str:
 
 
 @beartype
-def _wrap_ada(content: str, _variable_name: str) -> str:
+def _wrap_ada(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an Ada object declaration inside a procedure."""
+    content = _with_body_preamble(content, body_preamble)
     indented = "   " + content.replace("\n", "\n   ")
     return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
 
@@ -279,8 +337,10 @@ def _wrap_ada_combined(
     declaration: str,
     assignment: str,
     _variable_name: str,
+    body_preamble: tuple[str, ...],
 ) -> str:
     """Ada: declaration in one nested procedure, assignment in another."""
+    declaration = _with_body_preamble(declaration, body_preamble)
     decl_indented = "   " + declaration.replace("\n", "\n   ")
     assign_indented = "   " + assignment.replace("\n", "\n   ")
     inner = (
@@ -294,37 +354,63 @@ def _wrap_ada_combined(
         f"{assign_indented}\n"
         "end Check_Assignment;"
     )
-    return _wrap_ada(content=inner, _variable_name=_variable_name)
+    return _wrap_ada(
+        content=inner, _variable_name=_variable_name, body_preamble=()
+    )
 
 
 @beartype
-def _wrap_d(content: str, _variable_name: str) -> str:
+def _wrap_d(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a D ``auto`` declaration in a function."""
+    content = _with_body_preamble(content, body_preamble)
     return f"void _check() {{\n{content}\n}}"
 
 
 @beartype
-def _wrap_systemverilog(content: str, _variable_name: str) -> str:
+def _wrap_systemverilog(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a SystemVerilog declaration in a module with an initial
     block.
     """
+    content = _with_body_preamble(content, body_preamble)
     return f"module check;\ninitial begin\n{content}\nend\nendmodule"
 
 
 @beartype
-def _wrap_c(content: str, variable_name: str) -> str:
+def _wrap_c(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a C _CVal declaration in a function."""
+    content = _with_body_preamble(content, body_preamble)
     return f"void _check(void) {{\n{content}\n    (void){variable_name};\n}}"
 
 
 @beartype
-def _wrap_objc(content: str, variable_name: str) -> str:
+def _wrap_objc(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap an Objective-C variable declaration in a function."""
+    content = _with_body_preamble(content, body_preamble)
     return f"void _check(void) {{\n{content}\n    (void){variable_name};\n}}"
 
 
 @beartype
-def _wrap_mojo(content: str, variable_name: str) -> str:
+def _wrap_mojo(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Mojo variable declaration in a main function.
 
     Mojo does not support top-level code.  No statements, expressions,
@@ -337,6 +423,7 @@ def _wrap_mojo(content: str, variable_name: str) -> str:
     (``new_variable=False``) omit it.  The distinction is stylistic
     since Mojo does not require ``var`` inside functions.
     """
+    content = _with_body_preamble(content, body_preamble)
     # Consume the variable so ``--Werror`` does not flag the
     # "assignment was never used" warning.
     content = content + f"\n_ = {variable_name}"
@@ -349,6 +436,7 @@ def _wrap_mojo_combined(
     declaration: str,
     assignment: str,
     variable_name: str,
+    body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap Mojo declaration and assignment in a main function.
 
@@ -358,59 +446,56 @@ def _wrap_mojo_combined(
     must appear *between* the declaration and the reassignment, not
     only at the end.
     """
+    declaration = _with_body_preamble(declaration, body_preamble)
     use = f"_ = {variable_name}"
     return _wrap_mojo(
         content=declaration + f"\n{use}\n" + assignment,
         variable_name=variable_name,
+        body_preamble=(),
     )
 
 
 @beartype
-def _wrap_rust(content: str, variable_name: str) -> str:
+def _wrap_rust(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Rust let binding in a main function."""
+    content = _with_body_preamble(content, body_preamble)
     indented = content.replace("\n", "\n    ")
     return f"fn main() {{\n    {indented}\n    let _ = {variable_name};\n}}"
 
 
 @beartype
-def _wrap_haskell(content: str, variable_name: str) -> str:
+def _wrap_haskell(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Haskell variable binding in a module."""
-    lines = content.split(sep="\n")
-    preamble_prefixes = ("import ", "instance ", "data ")
-    # Find the first line that is NOT body-preamble.  A line counts as
-    # preamble when it starts with a known prefix or is an indented
-    # continuation of a preceding block.
-    expr_start = next(
-        (
-            idx
-            for idx, line in enumerate(iterable=lines)
-            if not (
-                any(line.startswith(p) for p in preamble_prefixes)
-                or (line.startswith("    ") and idx > 0)
-            )
-        ),
-        len(lines),
-    )
-
-    preamble = "\n".join(lines[:expr_start])
-    expression = "\n".join(lines[expr_start:])
-
+    preamble = "\n".join(body_preamble)
     header = "module Check where\n" + preamble + "\n"
     # Tuples are not Val-typed, so skip the type annotation for them.
-    eq_pos = expression.find("= ")
-    rhs = expression[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
+    eq_pos = content.find("= ")
+    rhs = content[eq_pos + 2 :].lstrip() if eq_pos >= 0 else ""
     if rhs.startswith("("):
-        return header + expression
-    return header + f"{variable_name} :: Val\n" + expression
+        return header + content
+    return header + f"{variable_name} :: Val\n" + content
 
 
 @beartype
-def _wrap_zig(content: str, variable_name: str) -> str:
+def _wrap_zig(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Zig declaration in a main function.
 
     For ``var`` declarations the wrapper mutates the variable so the Zig
     compiler does not warn about a ``var`` that is never mutated.
     """
+    content = _with_body_preamble(content, body_preamble)
     indented = "    " + content.replace("\n", "\n    ")
     if "var " in content:
         use = f"    {variable_name} = .nil;"
@@ -421,8 +506,13 @@ def _wrap_zig(content: str, variable_name: str) -> str:
 
 @beartype
 @beartype
-def _wrap_fortran(content: str, _variable_name: str) -> str:
+def _wrap_fortran(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a Fortran variable declaration in a program."""
+    content = _with_body_preamble(content, body_preamble)
     indented = "  " + content.replace("\n", "\n  ")
     return (
         "program check\n"
@@ -438,8 +528,10 @@ def _wrap_fortran_combined(
     declaration: str,
     assignment: str,
     variable_name: str,
+    body_preamble: tuple[str, ...],
 ) -> str:
     """Fortran: declaration in one subroutine, assignment in another."""
+    declaration = _with_body_preamble(declaration, body_preamble)
     decl_indented = "  " + declaration.replace("\n", "\n  ")
     assign_indented = "  " + assignment.replace("\n", "\n  ")
     return (
@@ -464,8 +556,13 @@ def _wrap_fortran_combined(
 
 
 @beartype
-def _wrap_vb(content: str, _variable_name: str) -> str:
+def _wrap_vb(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a VB.NET Dim declaration inside a Module."""
+    content = _with_body_preamble(content, body_preamble)
     indented = "    " + content.replace("\n", "\n    ")
     return f"Module Check\n{indented}\nEnd Module"
 
@@ -475,8 +572,10 @@ def _wrap_vb_combined(
     declaration: str,
     assignment: str,
     variable_name: str,
+    body_preamble: tuple[str, ...],
 ) -> str:
     """VB.NET: Dim declaration in one Sub, assignment in another."""
+    declaration = _with_body_preamble(declaration, body_preamble)
     decl_indented = "        " + declaration.replace("\n", "\n        ")
     assign_indented = "        " + assignment.replace("\n", "\n        ")
     return (
@@ -509,7 +608,7 @@ class _Variant:
 
     name: str
     spec: literalizer.Language
-    wrap: Callable[[str, str], str]
+    wrap: Callable[[str, str, tuple[str, ...]], str]
     wrap_variable_name: str | None = None
 
 
@@ -518,8 +617,8 @@ class _LanguageConfig:
     """Language configuration with class, file extension, and wrapper."""
 
     lang_cls: literalizer.LanguageCls
-    wrap: Callable[[str, str], str]
-    combined_wrap: Callable[[str, str, str], str]
+    wrap: Callable[[str, str, tuple[str, ...]], str]
+    combined_wrap: Callable[[str, str, str, tuple[str, ...]], str]
     wrap_variable_name: str | None = None
 
 
@@ -534,8 +633,13 @@ _COBOL_PROGRAM_SUFFIX = "PROCEDURE DIVISION.\n    STOP RUN."
 
 
 @beartype
-def _wrap_cobol(content: str, _variable_name: str) -> str:
+def _wrap_cobol(
+    content: str,
+    _variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
     """Wrap a COBOL variable declaration in a complete program."""
+    content = _with_body_preamble(content, body_preamble)
     return _COBOL_PROGRAM_PREFIX + f"{content}\n" + _COBOL_PROGRAM_SUFFIX
 
 
@@ -544,10 +648,12 @@ def _wrap_cobol_combined(
     declaration: str,
     assignment: str,
     _variable_name: str,
+    body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap COBOL declaration (DATA DIVISION) and assignment (PROCEDURE
     DIVISION).
     """
+    declaration = _with_body_preamble(declaration, body_preamble)
     return (
         _COBOL_PROGRAM_PREFIX
         + f"{declaration}\n"
@@ -566,8 +672,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Bash.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Bash,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.C.__name__: _LanguageConfig(
@@ -590,35 +696,35 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.CommonLisp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CommonLisp,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.Clojure.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Clojure,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.Python.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Python,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.JavaScript,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Json5.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Json5,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.Jsonnet.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Jsonnet,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
@@ -628,14 +734,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Kotlin.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Kotlin,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Ruby.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Ruby,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.Gleam.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Gleam,
@@ -657,26 +763,26 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.CSharp.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.CSharp,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Dart.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dart,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Dhall.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Dhall,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Swift.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Swift,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Cpp.__name__: _LanguageConfig(
@@ -699,31 +805,31 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Hcl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Hcl,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Julia.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Julia,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.Lua.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Lua,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Perl.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Perl,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Php.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Php,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Elixir.__name__: _LanguageConfig(
@@ -764,8 +870,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Groovy.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Groovy,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Scala.__name__: _LanguageConfig(
@@ -776,36 +882,36 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.R.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.R,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Racket.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Racket,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.Raku.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Raku,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Scheme.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Scheme,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Matlab.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Matlab,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Mojo.__name__: _LanguageConfig(
@@ -816,14 +922,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Nim.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Nim,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Norg.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Norg,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Odin.__name__: _LanguageConfig(
@@ -858,14 +964,14 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.PowerShell,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Toml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Toml,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.ObjectiveC.__name__: _LanguageConfig(
@@ -882,8 +988,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Yaml.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Yaml,
-        wrap=_wrap_identity,
-        combined_wrap=_newline_combined(wrap=_wrap_identity),
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
     ),
 }
 
@@ -1667,7 +1773,9 @@ def test_golden_file(
         error_on_coercion=False,
     )
     variable_name = lang_config.wrap_variable_name or ""
-    wrapped = lang_config.wrap(result.code, variable_name)
+    wrapped = lang_config.wrap(
+        result.bare_code, variable_name, result.body_preamble
+    )
 
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     # newline="" prevents Python text-mode from converting \r\n to \n
@@ -1773,9 +1881,10 @@ def test_golden_file_combined_variable_forms(
     )
     variable_name = lang_config.wrap_variable_name or ""
     combined = lang_config.combined_wrap(
-        declaration.code,
+        declaration.bare_code,
         assignment.bare_code,
         variable_name,
+        declaration.body_preamble,
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
@@ -1914,7 +2023,9 @@ def test_format_variant_golden_file(
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
     variable_name = variant.wrap_variable_name or ""
-    wrapped = variant.wrap(result.code, variable_name)
+    wrapped = variant.wrap(
+        result.bare_code, variable_name, result.body_preamble
+    )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
         contents=wrapped + "\n",
@@ -2010,9 +2121,10 @@ def test_line_ending_combined_variable_forms(
         error_on_coercion=False,
     )
     combined = case.lang_config.combined_wrap(
-        declaration.code,
+        declaration.bare_code,
         assignment.bare_code,
         case.lang_config.wrap_variable_name or "",
+        declaration.body_preamble,
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
