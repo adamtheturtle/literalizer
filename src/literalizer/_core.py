@@ -1423,6 +1423,7 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
                 raise TOMLParseError(message) from exc
             data = _coerce_toml_values(data=toml_data)
             return _ParsedInput(data=data, raw_data=data)
+    assert_never(input_format)  # pragma: no cover
 
 
 @beartype
