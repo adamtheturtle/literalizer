@@ -73,9 +73,19 @@ ONull
 OSet
 OStr
 ObjectiveC
+PBool
+PDict
+PFloat
+PInt
+PList
+PNull
+PSet
+PStr
 Php
+PureScript
 Pygments
 Raku
+SystemVerilog
 Toml
 YAMLError
 ZKV
@@ -121,6 +131,7 @@ jsonnet
 kotlinc
 kroc
 kts
+linter
 literalize
 literalizer
 literalizer's
@@ -176,6 +187,7 @@ templating
 ty
 typeclass
 unhandled
+unterminated
 uv
 val_t
 whitespace

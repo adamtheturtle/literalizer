@@ -41,6 +41,7 @@ from .occam import Occam
 from .perl import Perl
 from .php import Php
 from .powershell import PowerShell
+from .purescript import PureScript
 from .python import Python
 from .r import R
 from .racket import Racket
@@ -50,6 +51,7 @@ from .rust import Rust
 from .scala import Scala
 from .scheme import Scheme
 from .swift import Swift
+from .systemverilog import SystemVerilog
 from .toml import Toml
 from .typescript import TypeScript
 from .vb import VisualBasic
@@ -97,6 +99,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Perl,
         Php,
         PowerShell,
+        PureScript,
         Python,
         R,
         Racket,
@@ -108,6 +111,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Swift,
         Toml,
         TypeScript,
+        SystemVerilog,
         VisualBasic,
         Yaml,
         Zig,
@@ -155,6 +159,7 @@ __all__ = [
     "Perl",
     "Php",
     "PowerShell",
+    "PureScript",
     "Python",
     "R",
     "Racket",
@@ -164,6 +169,7 @@ __all__ = [
     "Scala",
     "Scheme",
     "Swift",
+    "SystemVerilog",
     "Toml",
     "TypeScript",
     "VisualBasic",
