@@ -770,6 +770,10 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
+    if set_cfg.coerce_mixed_to_str and _all_scalars_heterogeneous(
+        values=list(value),
+    ):
+        value = {_coerce_scalar_to_str(value=v) for v in value}
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
@@ -1167,6 +1171,10 @@ def _format_collection_lines(
                 sep = spec.element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{entry}{sep}")
         case set() as set_data:
+            if spec.set_format_config.coerce_mixed_to_str and (
+                _all_scalars_heterogeneous(values=list(set_data))
+            ):
+                set_data = {_coerce_scalar_to_str(value=v) for v in set_data}
             sorted_items = sorted(
                 set_data,
                 key=lambda v: (type(v).__name__, repr(v)),

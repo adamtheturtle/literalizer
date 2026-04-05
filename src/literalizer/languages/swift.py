@@ -198,6 +198,7 @@ class Swift(metaclass=LanguageCls):
                 empty_template="Set<{type}>()",
                 preamble_lines=(),
                 set_opener_template="",
+                coerce_mixed_to_str=False,
             )
         )
 

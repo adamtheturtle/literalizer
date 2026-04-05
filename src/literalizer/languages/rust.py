@@ -248,6 +248,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="HashSet::<{type}>::new()",
                 preamble_lines=("use std::collections::HashSet;",),
                 set_opener_template="",
+                coerce_mixed_to_str=False,
             )
         )
         BTREE_SET = enum.member(
@@ -257,6 +258,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="BTreeSet::<{type}>::new()",
                 preamble_lines=("use std::collections::BTreeSet;",),
                 set_opener_template="",
+                coerce_mixed_to_str=False,
             )
         )
 

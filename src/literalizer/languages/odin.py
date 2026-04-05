@@ -146,6 +146,7 @@ class Odin(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="",
+                coerce_mixed_to_str=True,
             )
         )
 

@@ -239,6 +239,7 @@ class Dhall(metaclass=LanguageCls):
             empty_set="[] : List {}",
             preamble_lines=(),
             set_opener_template="",
+            coerce_mixed_to_str=False,
         )
 
     class CommentFormats(enum.Enum):

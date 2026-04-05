@@ -3,8 +3,8 @@ package main
 
 main :: proc() {
 my_data := map[string]struct{}{
-	true = {},
-	42 = {},
+	"42" = {},
+	"True" = {},
 	"apple" = {},
 }
 _ = my_data
