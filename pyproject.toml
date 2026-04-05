@@ -269,7 +269,7 @@ ignore = [
     "tests",
     "tests/**",
     "zizmor.yml",
-    "check_csharp_golden_syntax.py",
+    "check_csharp_syntax.py",
     ".clj-kondo",
     ".clj-kondo/**",
 ]

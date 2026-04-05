@@ -153,6 +153,7 @@ class Mojo(metaclass=LanguageCls):
                 empty_template="Set[{type}]()",
                 preamble_lines=("from std.collections import Set",),
                 set_opener_template="Set[{type_name}](",
+                coerce_mixed_to_str=False,
             )
         )
 

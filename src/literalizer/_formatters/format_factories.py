@@ -80,6 +80,7 @@ def set_format_factory(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     set_opener_template: str,
+    coerce_mixed_to_str: bool,
 ) -> Callable[[str], SetFormatConfig]:
     """Return a callable that builds a ``SetFormatConfig`` for a given
     type.
@@ -112,6 +113,7 @@ def set_format_factory(
             ),
             preamble_lines=preamble_lines,
             set_opener_template=set_opener_template,
+            coerce_mixed_to_str=coerce_mixed_to_str,
         )
 
     return _build

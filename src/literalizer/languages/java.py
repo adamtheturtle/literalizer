@@ -262,6 +262,7 @@ class Java(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
             set_opener_template="",
+            coerce_mixed_to_str=False,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
@@ -272,6 +273,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.TreeSet;",
             ),
             set_opener_template="",
+            coerce_mixed_to_str=False,
         )
 
     class CommentFormats(enum.Enum):

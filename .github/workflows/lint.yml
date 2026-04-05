@@ -72,7 +72,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.rb
       - name: Check Ruby syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 ruby -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-to-lint
 
   lint-gleam:
     runs-on: ubuntu-latest
@@ -84,7 +84,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.gleam
-          extra_config_patterns: check_gleam_golden_syntax.py
+          extra_config_patterns: check_gleam_syntax.py
       - name: Install Gleam
         if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1
@@ -99,7 +99,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Gleam compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_gleam_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-to-lint
 
   lint-go:
     runs-on: ubuntu-latest
@@ -116,7 +116,7 @@ jobs:
         run: xargs -0 gofmt -e < /tmp/files-to-lint
       - name: Check Go compilation
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 go vet < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
 
   lint-groovy:
     runs-on: ubuntu-latest
@@ -153,7 +153,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.js
       - name: Check JavaScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 node --check < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-to-lint
 
   lint-json5:
     runs-on: ubuntu-latest
@@ -212,7 +212,8 @@ jobs:
         run: npm install -g typescript
       - name: Check TypeScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib
+          es2015 < /tmp/files-to-lint
 
   lint-java:
     runs-on: ubuntu-latest
@@ -261,7 +262,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq gnucobol
       - name: Check COBOL syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
 
   lint-cpp:
     runs-on: ubuntu-latest
@@ -356,7 +357,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cs
-          extra_config_patterns: check_csharp_golden_syntax.py
+          extra_config_patterns: check_csharp_syntax.py
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |
@@ -370,7 +371,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check C# syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_csharp_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_csharp_syntax.py
+          < /tmp/files-to-lint
 
   lint-elixir:
     runs-on: ubuntu-latest
@@ -407,7 +409,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.elm
-          extra_config_patterns: check_elm_golden_syntax.py
+          extra_config_patterns: check_elm_syntax.py
       - name: Install elm-format and elm
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g elm-format elm
@@ -425,7 +427,7 @@ jobs:
           done < /tmp/files-to-lint
       - name: Check Elm compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_elm_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
 
   lint-erlang:
     runs-on: ubuntu-latest
@@ -492,14 +494,14 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.ml
       - name: Install OCaml
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ocaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5
       - name: Check OCaml syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
-          done < /tmp/files-to-lint
+          xargs -0 -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
 
   lint-haskell:
     runs-on: ubuntu-latest
@@ -519,9 +521,7 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            ghc -fno-code -outputdir "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+          xargs -0 -n1 ghc -fno-code -outputdir "$tmpdir" < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -541,7 +541,7 @@ jobs:
       - name: Check Common Lisp syntax
         if: steps.find-files.outputs.found == 'true'
         run: >-
-          xargs -0 -I{} ros run
+          xargs -0 -P "$(nproc)" -I{} ros run
           --eval '(sb-ext:disable-debugger)'
           --load {}
           --quit
@@ -672,10 +672,8 @@ jobs:
         uses: julia-actions/setup-julia@v2
       - name: Check Julia syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            julia --startup-file=no -e 'Meta.parseall(read(ARGS[1], String))' -- "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 julia --startup-file=no -e 'Meta.parseall(read(ARGS[1],
+          String))' -- < /tmp/files-to-lint
 
   lint-perl:
     runs-on: ubuntu-latest
@@ -695,7 +693,7 @@ jobs:
           sudo cpanm --notest DateTime
       - name: Check Perl syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 perl -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 perl -c < /tmp/files-to-lint
 
   lint-lua:
     runs-on: ubuntu-latest
@@ -767,7 +765,7 @@ jobs:
           compiler: dmd-latest
       - name: Check D syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 dmd -o- -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 dmd -o- -c < /tmp/files-to-lint
 
   lint-powershell:
     runs-on: ubuntu-latest
@@ -797,7 +795,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.adb
-          extra_config_patterns: check_ada_golden_syntax.py
+          extra_config_patterns: check_ada_syntax.py
       - name: Install GNAT
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq gnat
@@ -809,7 +807,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Ada syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_ada_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_syntax.py
+          < /tmp/files-to-lint
 
   lint-occam:
     runs-on: ubuntu-latest
@@ -821,7 +820,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.occ
-          extra_config_patterns: check_occam_golden_syntax.py
+          extra_config_patterns: check_occam_syntax.py
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
@@ -830,7 +829,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_occam_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_occam_syntax.py
+          < /tmp/files-to-lint
 
   lint-crystal:
     runs-on: ubuntu-latest
@@ -847,7 +847,7 @@ jobs:
         uses: crystal-lang/install-crystal@v1
       - name: Check Crystal syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 crystal build --no-codegen < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 crystal build --no-codegen < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
@@ -982,27 +982,21 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.purs
+          extra_config_patterns: check_purescript_syntax.py
       - uses: purescript-contrib/setup-purescript@main
         if: steps.find-files.outputs.found == 'true'
         with:
           purescript: latest
+      - name: Install uv
+        if: steps.find-files.outputs.found == 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Check PureScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          cat > "$tmpdir/Prelude.purs" << 'PURS'
-          module Prelude where
-          foreign import negate :: forall a. a -> a
-          foreign import div :: forall a. a -> a -> a
-          infixl 7 div as /
-          PURS
-          cat > "$tmpdir/Prelude.js" << 'JS'
-          export const negate = x => -x;
-          export const div = x => y => x / y;
-          JS
-          while IFS= read -r -d '' f; do
-            purs compile "$f" "$tmpdir/Prelude.purs" -o "$tmpdir/output" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n 1 uv run --no-project python check_purescript_syntax.py
+          < /tmp/files-to-lint
 
   lint-racket:
     runs-on: ubuntu-latest
@@ -1014,9 +1008,8 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.rkt
-      - name: Install Racket
+      - uses: Bogdanp/setup-racket@v1.15
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq racket
       - name: Check Racket syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 raco make < /tmp/files-to-lint
@@ -1033,17 +1026,13 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.odin
       - name: Install Odin
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq llvm-14 clang-14
-          git clone --depth=1 https://github.com/odin-lang/Odin /tmp/odin
-          cd /tmp/odin && make release
-          echo "/tmp/odin" >> "$GITHUB_PATH"
+        uses: laytan/setup-odin@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check Odin
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
-            case "$f" in */mixed_set/*) continue ;; esac
             odin check "$f" -file || exit 1
           done < /tmp/files-to-lint
 
@@ -1062,7 +1051,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq guile-3.0
       - name: Check Scheme syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -I{} guile --no-auto-compile -s {} < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-to-lint
 
   lint-raku:
     runs-on: ubuntu-latest
@@ -1076,10 +1065,10 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.raku
       - name: Install Raku
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq rakudo
+        uses: Raku/setup-raku@v1
       - name: Check Raku syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 raku -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
 
   lint-zig:
     runs-on: ubuntu-latest
@@ -1098,7 +1087,7 @@ jobs:
           version: 0.14.0
       - name: Check Zig
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
 
   lint-toml:
     runs-on: ubuntu-latest
@@ -1120,8 +1109,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check TOML syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py
-          < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project
+          python check_toml_syntax.py < /tmp/files-to-lint
 
   lint-yaml:
     runs-on: ubuntu-latest
@@ -1159,13 +1148,11 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.sv
       - name: Install Verilator
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update && sudo apt-get install -y verilator
+        uses: veryl-lang/setup-verilator@v1
       - name: Check SystemVerilog syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            verilator --lint-only --language 1800-2017 -Wno-REALCVT "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
+          -Wno-REALCVT < /tmp/files-to-lint
 
   lint-visualbasic:
     runs-on: ubuntu-latest
@@ -1177,7 +1164,7 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.vb
-          extra_config_patterns: check_vb_golden_syntax.py
+          extra_config_patterns: check_vb_syntax.py
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |
@@ -1191,7 +1178,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check VB.NET syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_vb_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_vb_syntax.py
+          < /tmp/files-to-lint
 
   lint-fortran:
     runs-on: ubuntu-latest
@@ -1205,7 +1193,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.f90
       - name: Install gfortran
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq gfortran
+        uses: fortran-lang/setup-fortran@v1
       - name: Check Fortran syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
@@ -1223,7 +1211,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/objective_c*.m
       - name: Check Objective-C syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 clang -fsyntax-only < /tmp/files-to-lint
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only < /tmp/files-to-lint
 
   completion-lint:
     needs:

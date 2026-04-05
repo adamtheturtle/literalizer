@@ -154,6 +154,7 @@ class Crystal(metaclass=LanguageCls):
                 empty_template="Set({type}).new",
                 preamble_lines=('require "set"',),
                 set_opener_template="",
+                coerce_mixed_to_str=False,
             )
         )
 

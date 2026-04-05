@@ -188,6 +188,7 @@ class ObjectiveC(metaclass=LanguageCls):
             empty_set="[NSSet set]",
             preamble_lines=(),
             set_opener_template="",
+            coerce_mixed_to_str=False,
         )
 
     class CommentFormats(enum.Enum):

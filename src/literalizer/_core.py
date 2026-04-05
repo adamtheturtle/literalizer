@@ -770,6 +770,10 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
+    if set_cfg.coerce_mixed_to_str and _all_scalars_heterogeneous(
+        values=list(value),
+    ):
+        value = {_coerce_scalar_to_str(value=v) for v in value}
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
@@ -1283,6 +1287,13 @@ def _literalize(
     body_prefix = (
         line_prefix + language.indent if include_delimiters else line_prefix
     )
+
+    if (
+        isinstance(data, set)
+        and spec.set_format_config.coerce_mixed_to_str
+        and _all_scalars_heterogeneous(values=list(data))
+    ):
+        data = {_coerce_scalar_to_str(value=v) for v in data}
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
