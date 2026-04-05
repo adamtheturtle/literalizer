@@ -495,13 +495,15 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.ml
       - name: Install OCaml
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ocaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5
       - name: Check OCaml syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           while IFS= read -r -d '' f; do
-            ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
+            opam exec -- ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
           done < /tmp/files-to-lint
 
   lint-haskell:
