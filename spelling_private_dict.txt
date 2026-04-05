@@ -73,7 +73,16 @@ ONull
 OSet
 OStr
 ObjectiveC
+PBool
+PDict
+PFloat
+PInt
+PList
+PNull
+PSet
+PStr
 Php
+PureScript
 Pygments
 Toml
 YAMLError
