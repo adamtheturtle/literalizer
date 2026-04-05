@@ -72,7 +72,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.rb
       - name: Check Ruby syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 ruby -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-to-lint
 
   lint-gleam:
     runs-on: ubuntu-latest
@@ -99,7 +99,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Gleam compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_gleam_golden_syntax.py
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_golden_syntax.py
           < /tmp/files-to-lint
 
   lint-go:
@@ -117,7 +117,7 @@ jobs:
         run: xargs -0 gofmt -e < /tmp/files-to-lint
       - name: Check Go compilation
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 go vet < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
 
   lint-groovy:
     runs-on: ubuntu-latest
@@ -154,7 +154,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.js
       - name: Check JavaScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 node --check < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-to-lint
 
   lint-json5:
     runs-on: ubuntu-latest
@@ -213,7 +213,8 @@ jobs:
         run: npm install -g typescript
       - name: Check TypeScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib
+          es2015 < /tmp/files-to-lint
 
   lint-java:
     runs-on: ubuntu-latest
@@ -262,7 +263,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq gnucobol
       - name: Check COBOL syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
 
   lint-cpp:
     runs-on: ubuntu-latest
@@ -371,7 +372,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check C# syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_csharp_golden_syntax.py
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_csharp_golden_syntax.py
           < /tmp/files-to-lint
 
   lint-elixir:
@@ -427,8 +428,8 @@ jobs:
           done < /tmp/files-to-lint
       - name: Check Elm compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_elm_golden_syntax.py <
-          /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_elm_golden_syntax.py
+          < /tmp/files-to-lint
 
   lint-erlang:
     runs-on: ubuntu-latest
@@ -541,7 +542,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq sbcl
       - name: Check Common Lisp syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -I{} sbcl --script {} < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -I{} sbcl --script {} < /tmp/files-to-lint
 
   lint-hcl:
     runs-on: ubuntu-latest
@@ -691,7 +692,7 @@ jobs:
           sudo cpanm --notest DateTime
       - name: Check Perl syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 perl -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 perl -c < /tmp/files-to-lint
 
   lint-lua:
     runs-on: ubuntu-latest
@@ -763,7 +764,7 @@ jobs:
           compiler: dmd-latest
       - name: Check D syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 dmd -o- -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 dmd -o- -c < /tmp/files-to-lint
 
   lint-powershell:
     runs-on: ubuntu-latest
@@ -805,8 +806,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Ada syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_ada_golden_syntax.py <
-          /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_golden_syntax.py
+          < /tmp/files-to-lint
 
   lint-occam:
     runs-on: ubuntu-latest
@@ -827,7 +828,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_occam_golden_syntax.py
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_occam_golden_syntax.py
           < /tmp/files-to-lint
 
   lint-crystal:
@@ -845,7 +846,7 @@ jobs:
         uses: crystal-lang/install-crystal@v1
       - name: Check Crystal syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 crystal build --no-codegen < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 crystal build --no-codegen < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
@@ -993,8 +994,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check PureScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n 1 uv run --no-project python check_purescript_syntax.py <
-          /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n 1 uv run --no-project python check_purescript_syntax.py
+          < /tmp/files-to-lint
 
   lint-racket:
     runs-on: ubuntu-latest
@@ -1050,7 +1051,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq guile-3.0
       - name: Check Scheme syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -I{} guile --no-auto-compile -s {} < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-to-lint
 
   lint-raku:
     runs-on: ubuntu-latest
@@ -1067,7 +1068,7 @@ jobs:
         uses: Raku/setup-raku@v1
       - name: Check Raku syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 raku -c < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
 
   lint-zig:
     runs-on: ubuntu-latest
@@ -1086,7 +1087,7 @@ jobs:
           version: 0.14.0
       - name: Check Zig
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
 
   lint-toml:
     runs-on: ubuntu-latest
@@ -1108,8 +1109,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check TOML syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py
-          < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project
+          python check_toml_syntax.py < /tmp/files-to-lint
 
   lint-yaml:
     runs-on: ubuntu-latest
@@ -1179,7 +1180,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check VB.NET syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_vb_golden_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_vb_golden_syntax.py
+          < /tmp/files-to-lint
 
   lint-fortran:
     runs-on: ubuntu-latest
@@ -1211,7 +1213,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/objective_c*.m
       - name: Check Objective-C syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 clang -fsyntax-only < /tmp/files-to-lint
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only < /tmp/files-to-lint
 
   completion-lint:
     needs:
