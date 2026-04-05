@@ -540,7 +540,7 @@ jobs:
         uses: 40ants/setup-lisp@v4
       - name: Check Common Lisp syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -I{} ros run --script {} < /tmp/files-to-lint
+        run: xargs -0 -I{} ros run --load {} --quit < /tmp/files-to-lint
 
   lint-hcl:
     runs-on: ubuntu-latest
