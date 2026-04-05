@@ -621,7 +621,7 @@ class _Variant:
     name: str
     spec: literalizer.Language
     wrap: Callable[[str, str, tuple[str, ...]], str]
-    wrap_variable_name: str | None = None
+    wrap_variable_name: str | None
 
 
 @dataclasses.dataclass
@@ -631,7 +631,7 @@ class _LanguageConfig:
     lang_cls: literalizer.LanguageCls
     wrap: Callable[[str, str, tuple[str, ...]], str]
     combined_wrap: Callable[[str, str, str, tuple[str, ...]], str]
-    wrap_variable_name: str | None = None
+    wrap_variable_name: str | None
 
 
 _COBOL_PROGRAM_PREFIX = (
@@ -712,11 +712,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.CommonLisp,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.Clojure.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Clojure,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.Python.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Python,
@@ -734,11 +736,13 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Json5,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.Jsonnet.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Jsonnet,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.TypeScript.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.TypeScript,
@@ -756,6 +760,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Ruby,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.Gleam.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Gleam,
@@ -827,6 +832,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Julia,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.Lua.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Lua,
@@ -904,6 +910,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Racket,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.Raku.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Raku,
@@ -915,6 +922,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Scheme,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
     literalizer.languages.Crystal.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Crystal,
@@ -1004,6 +1012,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Yaml,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name=None,
     ),
 }
 
