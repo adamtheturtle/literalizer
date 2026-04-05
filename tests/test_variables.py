@@ -8,9 +8,9 @@ import textwrap
 import pytest
 
 from literalizer import (
+    InputFormat,
     Language,
-    literalize_json,
-    literalize_yaml,
+    literalize,
 )
 from literalizer.languages import (
     Clojure,
@@ -277,8 +277,9 @@ def test_variable_declaration_json(
     *, language: Language, expected: str
 ) -> None:
     """Each language produces correct variable declaration syntax."""
-    result = literalize_json(
-        json_string="42",
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -296,8 +297,9 @@ def test_variable_declaration_yaml(
     *, language: Language, expected: str
 ) -> None:
     """Each language produces correct variable declaration syntax for YAML."""
-    result = literalize_yaml(
-        yaml_string="42\n",
+    result = literalize(
+        source="42\n",
+        input_format=InputFormat.YAML,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -317,8 +319,9 @@ def test_existing_variable_assignment_json(
     """Each language produces correct existing-variable assignment
     syntax.
     """
-    result = literalize_json(
-        json_string="42",
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -338,8 +341,9 @@ def test_existing_variable_assignment_yaml(
     """Each language produces correct existing-variable assignment syntax
     for YAML.
     """
-    result = literalize_yaml(
-        yaml_string="42\n",
+    result = literalize(
+        source="42\n",
+        input_format=InputFormat.YAML,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -367,8 +371,9 @@ def test_python_always_type_hints_scalars(
     """Python with ALWAYS variable_type_hints adds type annotations
     for scalar values.
     """
-    result = literalize_json(
-        json_string=json_input,
+    result = literalize(
+        source=json_input,
+        input_format=InputFormat.JSON,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=False,
@@ -381,8 +386,9 @@ def test_python_always_type_hints_scalars(
 
 def test_python_always_type_hints_dict() -> None:
     """Python ALWAYS hints infer dict type for wrapped dicts."""
-    result = literalize_json(
-        json_string='{"a": 1}',
+    result = literalize(
+        source='{"a": 1}',
+        input_format=InputFormat.JSON,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
@@ -401,8 +407,9 @@ def test_python_always_type_hints_dict() -> None:
 
 def test_python_always_type_hints_tuple() -> None:
     """Python ALWAYS hints infer tuple type for wrapped sequences."""
-    result = literalize_json(
-        json_string="[1, 2]",
+    result = literalize(
+        source="[1, 2]",
+        input_format=InputFormat.JSON,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
@@ -432,8 +439,9 @@ def test_python_always_type_hints_list() -> None:
         set_format=Python.set_formats.SET,
         variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
     )
-    result = literalize_json(
-        json_string="[1, 2]",
+    result = literalize(
+        source="[1, 2]",
+        input_format=InputFormat.JSON,
         language=lang,
         pre_indent_level=0,
         include_delimiters=True,
@@ -453,8 +461,9 @@ def test_python_always_type_hints_list() -> None:
 
 def test_python_always_type_hints_assignment_no_hint() -> None:
     """Python ALWAYS hints do not add type hints for assignments."""
-    result = literalize_json(
-        json_string="42",
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=False,
@@ -468,8 +477,9 @@ def test_python_always_type_hints_assignment_no_hint() -> None:
 def test_python_always_type_hints_set_with_colon_in_string() -> None:
     """A set element containing ``": `` is not misidentified as a dict."""
     yaml_string = "!!set\n? 'a\": b'\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
@@ -489,8 +499,9 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
 def test_python_always_type_hints_set_of_integers() -> None:
     """A set of integers is correctly identified as set, not dict."""
     yaml_string = "!!set\n? 1\n? 2\n? 3\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
@@ -511,8 +522,9 @@ def test_python_always_type_hints_set_of_integers() -> None:
 
 def test_python_always_type_hints_nested_list_in_list() -> None:
     """Nested collections get recursive type hints, not Any."""
-    result = literalize_json(
-        json_string='[true, "hi", [1, 2], null]',
+    result = literalize(
+        source='[true, "hi", [1, 2], null]',
+        input_format=InputFormat.JSON,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
@@ -534,8 +546,9 @@ def test_python_always_type_hints_nested_list_in_list() -> None:
 
 def test_python_always_type_hints_dict_with_list_values() -> None:
     """Dict with list values infers recursive type hints."""
-    result = literalize_json(
-        json_string='{"key": [1, 2, 3]}',
+    result = literalize(
+        source='{"key": [1, 2, 3]}',
+        input_format=InputFormat.JSON,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
@@ -554,8 +567,9 @@ def test_python_always_type_hints_dict_with_list_values() -> None:
 
 def test_python_always_type_hints_empty_list() -> None:
     """Empty collections still use Any since element type is unknown."""
-    result = literalize_json(
-        json_string="[]",
+    result = literalize(
+        source="[]",
+        input_format=InputFormat.JSON,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
@@ -577,8 +591,9 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         - !!omap
           - name: Bob"""
     )
-    result = literalize_yaml(
-        yaml_string=yaml_input,
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,

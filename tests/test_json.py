@@ -6,8 +6,9 @@ import textwrap
 import pytest
 
 from literalizer import (
+    InputFormat,
     Language,
-    literalize_json,
+    literalize,
 )
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
@@ -70,8 +71,9 @@ RUBY = Ruby(
 def test_dict_python() -> None:
     """Python dict renders key-value pairs with a pre-indent level."""
     data = {"user_1": "team_alpha", "user_2": "team_alpha"}
-    result = literalize_json(
-        json_string=json.dumps(obj=data),
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
@@ -85,8 +87,9 @@ def test_dict_python() -> None:
 
 def test_dict_include_delimiters() -> None:
     """Wrapping a dict adds braces and indentation."""
-    result = literalize_json(
-        json_string=json.dumps(obj={"a": 1, "b": 2}),
+    result = literalize(
+        source=json.dumps(obj={"a": 1, "b": 2}),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -112,8 +115,9 @@ def test_dict_empty(*, include_delimiters: bool) -> None:
     """An empty dict produces the language's empty-dict literal when
     delimiters are included, or an empty string without delimiters.
     """
-    result = literalize_json(
-        json_string=json.dumps(obj={}),
+    result = literalize(
+        source=json.dumps(obj={}),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=include_delimiters,
@@ -127,8 +131,9 @@ def test_dict_empty(*, include_delimiters: bool) -> None:
 
 def test_integers() -> None:
     """Integer values are rendered literally."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[42, 0, -7]),
+    result = literalize(
+        source=json.dumps(obj=[42, 0, -7]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -147,8 +152,9 @@ def test_integers() -> None:
 
 def test_floats() -> None:
     """Float values are rendered literally."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[1000.0, 3.14]),
+    result = literalize(
+        source=json.dumps(obj=[1000.0, 3.14]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -166,8 +172,9 @@ def test_floats() -> None:
 
 def test_string_escaping() -> None:
     """Special characters in strings are properly escaped."""
-    result = literalize_json(
-        json_string=json.dumps(obj=['say "hi"', "a\\b", "line1\nline2"]),
+    result = literalize(
+        source=json.dumps(obj=['say "hi"', "a\\b", "line1\nline2"]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -183,8 +190,9 @@ def test_string_escaping() -> None:
 
 def test_nested_arrays() -> None:
     """Nested arrays are rendered recursively."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[[[1, 2], [3, 4]]]),
+    result = literalize(
+        source=json.dumps(obj=[[[1, 2], [3, 4]]]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -197,8 +205,9 @@ def test_nested_arrays() -> None:
 
 def test_dicts() -> None:
     """Dicts inside a list are rendered inline."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[{"name": "alice", "age": 30}]),
+    result = literalize(
+        source=json.dumps(obj=[{"name": "alice", "age": 30}]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -211,8 +220,9 @@ def test_dicts() -> None:
 
 def test_nested_dict_in_sequence() -> None:
     """A dict nested inside a sequence is rendered inline."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[["a", {"x": 1}]]),
+    result = literalize(
+        source=json.dumps(obj=[["a", {"x": 1}]]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -225,8 +235,9 @@ def test_nested_dict_in_sequence() -> None:
 
 def test_nested_sequence_in_dict() -> None:
     """A sequence nested inside a dict is rendered inline."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[{"items": [1, 2]}]),
+    result = literalize(
+        source=json.dumps(obj=[{"items": [1, 2]}]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -239,8 +250,9 @@ def test_nested_sequence_in_dict() -> None:
 
 def test_indent_spaces() -> None:
     """Space-based prefix is prepended to each line."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[True, False]),
+    result = literalize(
+        source=json.dumps(obj=[True, False]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
@@ -253,8 +265,9 @@ def test_indent_spaces() -> None:
 
 def test_indent_tabs() -> None:
     """Pre-indent level is applied using the Go language indent."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[True, False]),
+    result = literalize(
+        source=json.dumps(obj=[True, False]),
+        input_format=InputFormat.JSON,
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
@@ -267,8 +280,9 @@ def test_indent_tabs() -> None:
 
 def test_include_delimiters() -> None:
     """Wrapping adds brackets and indentation."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[True, False]),
+    result = literalize(
+        source=json.dumps(obj=[True, False]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -288,8 +302,9 @@ def test_include_delimiters() -> None:
 
 def test_include_delimiters_with_pre_indent_level() -> None:
     """Wrapping respects the given pre_indent_level."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[["a", 1.0]]),
+    result = literalize(
+        source=json.dumps(obj=[["a", 1.0]]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=True,
@@ -311,8 +326,9 @@ def test_indent_override() -> None:
         set_format=Python.set_formats.SET,
         indent="\t",
     )
-    result = literalize_json(
-        json_string=json.dumps(obj=[True, False]),
+    result = literalize(
+        source=json.dumps(obj=[True, False]),
+        input_format=InputFormat.JSON,
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
@@ -332,8 +348,9 @@ def test_empty_data(*, include_delimiters: bool) -> None:
     """An empty list produces the language's empty-sequence literal when
     delimiters are included, or an empty string without delimiters.
     """
-    result = literalize_json(
-        json_string=json.dumps(obj=[]),
+    result = literalize(
+        source=json.dumps(obj=[]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=include_delimiters,
@@ -365,8 +382,9 @@ def test_scalar(
     *, json_string: str, language: Language, expected: str
 ) -> None:
     """Scalar values are formatted as native literals."""
-    result = literalize_json(
-        json_string=json_string,
+    result = literalize(
+        source=json_string,
+        input_format=InputFormat.JSON,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -379,8 +397,9 @@ def test_scalar(
 
 def test_scalar_with_indent() -> None:
     """Scalar values respect the pre_indent_level parameter."""
-    result = literalize_json(
-        json_string="42",
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
@@ -393,8 +412,9 @@ def test_scalar_with_indent() -> None:
 
 def test_scalar_include_delimiters_ignored() -> None:
     """Wrap is ignored for scalar values."""
-    result = literalize_json(
-        json_string="42",
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -408,8 +428,9 @@ def test_scalar_include_delimiters_ignored() -> None:
 def test_literalize_json_array() -> None:
     """``literalize_json`` parses a JSON array string."""
     json_string = '[["user_1", 1000.0], ["user_2", 2000.0]]'
-    result = literalize_json(
-        json_string=json_string,
+    result = literalize(
+        source=json_string,
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
@@ -424,8 +445,9 @@ def test_literalize_json_array() -> None:
 def test_literalize_json_object() -> None:
     """``literalize_json`` parses a JSON object string."""
     json_string = '{"a": 1, "b": true}'
-    result = literalize_json(
-        json_string=json_string,
+    result = literalize(
+        source=json_string,
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -446,8 +468,9 @@ def test_literalize_json_object() -> None:
 def test_literalize_json_invalid() -> None:
     """``literalize_json`` raises on invalid JSON."""
     with pytest.raises(expected_exception=JSONParseError):
-        literalize_json(
-            json_string="not json",
+        literalize(
+            source="not json",
+            input_format=InputFormat.JSON,
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
@@ -465,8 +488,9 @@ def test_part1_sample_python() -> None:
         ["user_1", 1002.0],
         ["user_1", 1003.0],
     ]
-    result = literalize_json(
-        json_string=json.dumps(obj=data),
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
@@ -486,8 +510,9 @@ def test_part1_sample_python() -> None:
 def test_part2_sample_go() -> None:
     """Realistic test matching part2_sample_input.json structure."""
     data = [["user_1", 49, 1000.0], ["user_9", 10, 1003.0]]
-    result = literalize_json(
-        json_string=json.dumps(obj=data),
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
@@ -503,8 +528,9 @@ def test_part2_sample_go() -> None:
 def test_literalize_json_invalid_is_parse_error() -> None:
     """``JSONParseError`` is a subclass of ``ParseError``."""
     with pytest.raises(expected_exception=ParseError):
-        literalize_json(
-            json_string="not json",
+        literalize(
+            source="not json",
+            input_format=InputFormat.JSON,
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
@@ -525,8 +551,9 @@ MOJO = Mojo(
 def test_error_on_coercion_json_raises() -> None:
     """Error_on_coercion raises for heterogeneous JSON arrays."""
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string="[1, 2.5, 3]",
+        literalize(
+            source="[1, 2.5, 3]",
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -538,8 +565,9 @@ def test_error_on_coercion_json_raises() -> None:
 
 def test_error_on_coercion_json_no_raise_homogeneous() -> None:
     """Error_on_coercion does not raise for homogeneous JSON arrays."""
-    result = literalize_json(
-        json_string="[1, 2, 3]",
+    result = literalize(
+        source="[1, 2, 3]",
+        input_format=InputFormat.JSON,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -561,8 +589,9 @@ def test_error_on_coercion_json_no_raise_homogeneous() -> None:
 def test_error_on_coercion_json_raises_sibling_lists() -> None:
     """Error_on_coercion raises for heterogeneous sibling sub-lists."""
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string='[[1, 2], ["a", "b"]]',
+        literalize(
+            source='[[1, 2], ["a", "b"]]',
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -577,8 +606,9 @@ def test_error_on_coercion_json_raises_nested_sibling_lists() -> None:
     sub-lists.
     """
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string='[[[1, 2], ["a", "b"]]]',
+        literalize(
+            source='[[[1, 2], ["a", "b"]]]',
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -593,8 +623,9 @@ def test_cpp_array_null_list_fallback_json() -> None:
     convertible (e.g. all-null list).
     """
     cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
-    result = literalize_json(
-        json_string=json.dumps(obj=[None, None]),
+    result = literalize(
+        source=json.dumps(obj=[None, None]),
+        input_format=InputFormat.JSON,
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
@@ -608,8 +639,9 @@ def test_cpp_array_null_list_fallback_json() -> None:
 
 def test_coerce_mixed_dict_values_none_with_list_json() -> None:
     """Dicts with None alongside a list are coerced to strings."""
-    result = literalize_json(
-        json_string=json.dumps(obj={"tags": ["admin"], "extra": None}),
+    result = literalize(
+        source=json.dumps(obj={"tags": ["admin"], "extra": None}),
+        input_format=InputFormat.JSON,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -629,10 +661,11 @@ def test_coerce_mixed_dict_values_none_with_list_json() -> None:
 
 def test_coerce_mixed_dict_values_with_list_json() -> None:
     """Dicts with string and list values are coerced to all strings."""
-    result = literalize_json(
-        json_string=json.dumps(
+    result = literalize(
+        source=json.dumps(
             obj={"name": "Bob", "tags": ["admin", "user"]},
         ),
+        input_format=InputFormat.JSON,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -659,8 +692,9 @@ def test_r_empty_dict_key_positional_json() -> None:
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     )
-    result = literalize_json(
-        json_string=json.dumps(obj={"": "value"}),
+    result = literalize(
+        source=json.dumps(obj={"": "value"}),
+        input_format=InputFormat.JSON,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -687,8 +721,9 @@ def test_r_empty_dict_key_error_json() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     with pytest.raises(expected_exception=InvalidDictKeyError):
-        literalize_json(
-            json_string=json.dumps(obj={"": "value"}),
+        literalize(
+            source=json.dumps(obj={"": "value"}),
+            input_format=InputFormat.JSON,
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
@@ -707,8 +742,9 @@ def test_r_empty_dict_key_error_non_empty_key_ok_json() -> None:
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     )
-    result = literalize_json(
-        json_string=json.dumps(obj={"key": "value"}),
+    result = literalize(
+        source=json.dumps(obj={"key": "value"}),
+        input_format=InputFormat.JSON,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -730,8 +766,9 @@ def test_error_on_coercion_json_raises_for_heterogeneous_dict() -> None:
     types.
     """
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string=json.dumps(obj={"a": 1, "b": 2.5}),
+        literalize(
+            source=json.dumps(obj={"a": 1, "b": 2.5}),
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -743,8 +780,9 @@ def test_error_on_coercion_json_raises_for_heterogeneous_dict() -> None:
 
 def test_error_on_coercion_json_no_effect_without_coerce_flag() -> None:
     """Error_on_coercion has no effect when language doesn't coerce."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[1, 2.5, 3]),
+    result = literalize(
+        source=json.dumps(obj=[1, 2.5, 3]),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -768,8 +806,9 @@ def test_error_on_coercion_json_raises_for_nested_heterogeneous() -> None:
     list.
     """
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string=json.dumps(obj=[[1, "hello"]]),
+        literalize(
+            source=json.dumps(obj=[[1, "hello"]]),
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -781,8 +820,9 @@ def test_error_on_coercion_json_raises_for_nested_heterogeneous() -> None:
 
 def test_error_on_coercion_json_no_raise_for_homogeneous_dict() -> None:
     """Error_on_coercion does not raise for homogeneous dict values."""
-    result = literalize_json(
-        json_string=json.dumps(obj={"a": 1, "b": 2}),
+    result = literalize(
+        source=json.dumps(obj={"a": 1, "b": 2}),
+        input_format=InputFormat.JSON,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -803,10 +843,11 @@ def test_error_on_coercion_json_no_raise_for_homogeneous_dict() -> None:
 def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
     """Error_on_coercion raises when a dict has values of mixed types."""
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string=json.dumps(
+        literalize(
+            source=json.dumps(
                 obj={"name": "Bob", "tags": ["admin", "user"]},
             ),
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -819,8 +860,9 @@ def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
 def test_error_on_coercion_json_raises_for_mixed_list_values() -> None:
     """Error_on_coercion raises when a list has mixed element types."""
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string=json.dumps(obj=["hello", ["nested"]]),
+        literalize(
+            source=json.dumps(obj=["hello", ["nested"]]),
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -841,8 +883,9 @@ def test_error_on_coercion_json_raises_for_mixed_dict_shapes() -> None:
         ],
     }
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string=json.dumps(obj=data),
+        literalize(
+            source=json.dumps(obj=data),
+            input_format=InputFormat.JSON,
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
@@ -860,8 +903,9 @@ def test_error_on_coercion_json_no_raise_for_uniform_dict_shapes() -> None:
         {"type": "create", "name": "a"},
         {"type": "update", "name": "b"},
     ]
-    literalize_json(
-        json_string=json.dumps(obj=data),
+    literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
@@ -874,10 +918,11 @@ def test_error_on_coercion_json_no_raise_for_uniform_dict_shapes() -> None:
 def test_error_on_coercion_json_raises_for_mixed_dict_none_list() -> None:
     """Error_on_coercion raises when a dict has None alongside a list."""
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_json(
-            json_string=json.dumps(
+        literalize(
+            source=json.dumps(
                 obj={"tags": ["admin"], "extra": None},
             ),
+            input_format=InputFormat.JSON,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -890,8 +935,9 @@ def test_error_on_coercion_json_raises_for_mixed_dict_none_list() -> None:
 def test_dhall_empty_dict_key_error_json() -> None:
     """Dhall raises InvalidDictKeyError for empty-string dict keys."""
     with pytest.raises(expected_exception=InvalidDictKeyError):
-        literalize_json(
-            json_string=json.dumps(obj={"": "value"}),
+        literalize(
+            source=json.dumps(obj={"": "value"}),
+            input_format=InputFormat.JSON,
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
@@ -903,8 +949,9 @@ def test_dhall_empty_dict_key_error_json() -> None:
 
 def test_dhall_control_char_in_string_json() -> None:
     """Dhall escapes control characters using braced unicode escapes."""
-    result = literalize_json(
-        json_string=json.dumps(obj="\x01"),
+    result = literalize(
+        source=json.dumps(obj="\x01"),
+        input_format=InputFormat.JSON,
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
@@ -919,8 +966,9 @@ def test_dhall_control_char_in_string_json() -> None:
 def test_dhall_control_char_key_error_json() -> None:
     """Dhall rejects control characters in dict keys."""
     with pytest.raises(expected_exception=InvalidDictKeyError):
-        literalize_json(
-            json_string=json.dumps(obj={"\x01": "value"}),
+        literalize(
+            source=json.dumps(obj={"\x01": "value"}),
+            input_format=InputFormat.JSON,
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
@@ -932,8 +980,9 @@ def test_dhall_control_char_key_error_json() -> None:
 
 def test_dhall_backtick_label_unescaping_json() -> None:
     """Dhall backtick labels contain raw content, not escape sequences."""
-    result = literalize_json(
-        json_string=json.dumps(obj={"$ref": "value"}),
+    result = literalize(
+        source=json.dumps(obj={"$ref": "value"}),
+        input_format=InputFormat.JSON,
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,

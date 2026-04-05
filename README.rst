@@ -33,7 +33,7 @@ Usage
 
    """Example of using literalizer."""
 
-   from literalizer import literalize_yaml
+   from literalizer import InputFormat, literalize
    from literalizer.languages import Go
 
    # YAML comments are preserved using the target language's comment syntax
@@ -44,8 +44,9 @@ Usage
    # Enable debug mode for development
    debug: true
    """
-   result = literalize_yaml(
-       yaml_string=yaml_config,
+   result = literalize(
+       source=yaml_config,
+       input_format=InputFormat.YAML,
        error_on_coercion=False,
        language=Go(
            date_format=Go.date_formats.GO,

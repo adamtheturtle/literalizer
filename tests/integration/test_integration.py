@@ -1787,8 +1787,9 @@ def test_golden_file(
     input_path = cases_dir / _case_name / "input.yaml"
     lang_config = _LANGUAGES[language]
     yaml_string = input_path.read_text()
-    result = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
         language=lang_config.lang_cls(),
         pre_indent_level=0,
         include_delimiters=True,
@@ -1885,8 +1886,9 @@ def test_golden_file_combined_variable_forms(
         declaration_style=combined_case.declaration_style,
     )
     yaml_string = input_path.read_text()
-    declaration = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
+    declaration = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -1894,8 +1896,9 @@ def test_golden_file_combined_variable_forms(
         new_variable=True,
         error_on_coercion=False,
     )
-    assignment = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
+    assignment = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -2047,8 +2050,9 @@ def test_format_variant_golden_file(
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
     try:
-        result = literalizer.literalize_yaml(
-            yaml_string=yaml_string,
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
             language=variant.spec,
             pre_indent_level=0,
             include_delimiters=True,
@@ -2138,8 +2142,9 @@ def test_line_ending_combined_variable_forms(
         line_ending=case.line_ending,
         declaration_style=redef_styles[0],
     )
-    declaration = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
+    declaration = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -2147,8 +2152,9 @@ def test_line_ending_combined_variable_forms(
         new_variable=True,
         error_on_coercion=False,
     )
-    assignment = literalizer.literalize_yaml(
-        yaml_string=yaml_string,
+    assignment = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,

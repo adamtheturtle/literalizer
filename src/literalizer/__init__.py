@@ -1,10 +1,9 @@
 """Convert data structures to native language literal syntax."""
 
 from literalizer._core import (
+    InputFormat,
     LiteralizeResult,
-    literalize_json,
-    literalize_toml,
-    literalize_yaml,
+    literalize,
 )
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
@@ -29,6 +28,7 @@ __all__ = [
     "DateFormatConfig",
     "DatetimeFormatConfig",
     "DictFormatConfig",
+    "InputFormat",
     "Language",
     "LanguageCls",
     "LiteralizeResult",
@@ -39,7 +39,5 @@ __all__ = [
     "fixed_dict_open",
     "fixed_sequence_open",
     "fixed_set_open",
-    "literalize_json",
-    "literalize_toml",
-    "literalize_yaml",
+    "literalize",
 ]

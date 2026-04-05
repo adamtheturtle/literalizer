@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import enum
 import json
 import math
 import tomllib
@@ -35,6 +36,14 @@ from literalizer.exceptions import (
     TOMLParseError,
     YAMLParseError,
 )
+
+
+class InputFormat(enum.Enum):
+    """Supported input serialization formats."""
+
+    JSON = enum.auto()
+    YAML = enum.auto()
+    TOML = enum.auto()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1375,10 +1384,53 @@ def _apply_variable_wrapper(
     return formatter(variable_name, result, data)
 
 
+@dataclasses.dataclass(frozen=True)
+class _ParsedInput:
+    """Result of parsing an input string."""
+
+    data: Value
+    raw_data: object
+
+
+def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
+    """Parse and coerce an input string according to its format."""
+    match input_format:
+        case InputFormat.JSON:
+            try:
+                data = json.loads(s=source)
+            except json.JSONDecodeError as exc:
+                message = (
+                    f"Invalid JSON: {exc.msg}"
+                    f" at line {exc.lineno} column {exc.colno}"
+                )
+                raise JSONParseError(message) from exc
+            return _ParsedInput(data=data, raw_data=data)
+        case InputFormat.YAML:
+            ruamel_yaml = YAML(typ="safe")
+            try:
+                # https://sourceforge.net/p/ruamel-yaml/tickets/564/
+                raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
+            except YAMLError as exc:
+                message = f"Invalid YAML: {exc}"
+                raise YAMLParseError(message) from exc
+            data = _coerce_yaml_keys(data=raw_data)
+            return _ParsedInput(data=data, raw_data=raw_data)
+        case InputFormat.TOML:
+            try:
+                toml_data = tomllib.loads(source)
+            except tomllib.TOMLDecodeError as exc:
+                message = f"Invalid TOML: {exc}"
+                raise TOMLParseError(message) from exc
+            data = _coerce_toml_values(data=toml_data)
+            return _ParsedInput(data=data, raw_data=data)
+    assert_never(input_format)  # pragma: no cover
+
+
 @beartype
-def literalize_json(
+def literalize(
     *,
-    json_string: str,
+    source: str,
+    input_format: InputFormat,
     language: Language,
     pre_indent_level: int,
     include_delimiters: bool,
@@ -1386,13 +1438,15 @@ def literalize_json(
     new_variable: bool,
     error_on_coercion: bool,
 ) -> LiteralizeResult:
-    r"""Convert a JSON string to native language literal text.
+    r"""Convert a JSON, YAML, or TOML string to native language literal text.
 
-    Convert a JSON string to native language literal text.
+    YAML comments are preserved in the output using the target
+    language's comment syntax.  TOML comments are not preserved
+    because the standard-library ``tomllib`` parser discards them.
 
     Args:
-        json_string: A JSON string representing a scalar, array, or
-            object.
+        source: The input string to convert.
+        input_format: The serialization format of *source*.
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
@@ -1418,19 +1472,21 @@ def literalize_json(
             heterogeneity.
 
     Raises:
-        JSONParseError: If *json_string* is not valid JSON.
+        JSONParseError: If *input_format* is ``JSON`` and *source* is
+            not valid JSON.
+        YAMLParseError: If *input_format* is ``YAML`` and *source* is
+            not valid YAML.
+        TOMLParseError: If *input_format* is ``TOML`` and *source* is
+            not valid TOML.
         HeterogeneousCoercionError: If *error_on_coercion* is ``True``
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
     line_prefix = language.indent * pre_indent_level
-    try:
-        data = json.loads(s=json_string)
-    except json.JSONDecodeError as exc:
-        message = (
-            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
-        )
-        raise JSONParseError(message) from exc
+    parsed = _parse_input(source=source, input_format=input_format)
+    data = parsed.data
+
+    # --- Format ---
     result = _literalize(
         data=data,
         language=language,
@@ -1438,13 +1494,55 @@ def literalize_json(
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
-    if variable_name is not None:
-        formatter = (
-            language.format_variable_declaration
-            if new_variable
-            else language.format_variable_assignment
+
+    # --- YAML comment resolution ---
+    resolved: _ResolvedComments | None = None
+    if input_format is InputFormat.YAML:
+        comment_cfg = language.comment_config
+        cp = comment_cfg.prefix
+        cs = comment_cfg.suffix
+        comment_line_prefix = (
+            line_prefix + language.indent
+            if include_delimiters
+            else line_prefix
         )
-        result = formatter(variable_name, result, data)
+        resolved = _resolve_yaml_comments(
+            yaml_string=source,
+            data=parsed.raw_data,
+            base=result,
+            language=language,
+            comment_prefix=cp,
+            comment_suffix=cs,
+            comment_line_prefix=comment_line_prefix,
+            line_prefix=line_prefix,
+            include_delimiters=include_delimiters,
+        )
+        result = resolved.result
+
+    # --- Variable wrapping ---
+    result = _apply_variable_wrapper(
+        result=result,
+        language=language,
+        data=data,
+        variable_name=variable_name,
+        new_variable=new_variable,
+    )
+
+    # --- YAML pending comments ---
+    if resolved is not None and resolved.pending is not None:
+        comment_cfg = language.comment_config
+        result = prepend_collection_comments(
+            collection_comments=resolved.pending,
+            base=result,
+            comment_prefix=comment_cfg.prefix,
+            comment_suffix=comment_cfg.suffix,
+            line_prefix=line_prefix,
+        )
+
+    if resolved is not None and resolved.pending_scalar_before:
+        result = "\n".join(resolved.pending_scalar_before) + "\n" + result
+
+    # --- Preamble ---
     computed = _compute_preamble(
         data=data,
         language=language,
@@ -1453,10 +1551,13 @@ def literalize_json(
     preamble = tuple(language.static_preamble) + computed.header
     if computed.body:
         result = "\n".join(computed.body) + "\n" + result
+
+    pre_decl = resolved.pending_scalar_before if resolved is not None else ()
     return LiteralizeResult(
         code=result,
         preamble=preamble,
         body_preamble=computed.body,
+        pre_declaration_comments=pre_decl,
     )
 
 
@@ -1657,130 +1758,6 @@ def _resolve_yaml_comments(
     )
 
 
-@beartype
-def literalize_yaml(
-    *,
-    yaml_string: str,
-    language: Language,
-    pre_indent_level: int,
-    include_delimiters: bool,
-    variable_name: str | None,
-    new_variable: bool,
-    error_on_coercion: bool,
-) -> LiteralizeResult:
-    r"""Convert a YAML string to native language literal text.
-
-    YAML comments are preserved in the output using the target
-    language's comment syntax.  The comment prefix is read from the
-    ``comment_prefix`` attribute of *language* (defaulting to
-    ``"#"`` when the attribute is absent).
-
-    Args:
-        yaml_string: A YAML string representing a scalar, sequence, or
-            mapping.
-        language: A :class:`Language` instance describing how to format
-            literals.  Use one of the built-in constants
-            (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        pre_indent_level: Number of ``indent`` steps to prepend to
-            every output line.  For example, ``2`` with a 4-space
-            indent produces an 8-space margin.  Defaults to ``0``.
-        include_delimiters: If True, include the collection delimiters
-            (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
-        variable_name: If given, wrap the output in a variable
-            declaration using the language's
-            ``format_variable_declaration`` or
-            ``format_variable_assignment`` callable.
-        new_variable: If ``True`` (the default), use
-            ``format_variable_declaration`` (e.g. ``const x =`` in
-            JavaScript).  If ``False``, use
-            ``format_variable_assignment`` (e.g. ``x =``).  Only
-            relevant when *variable_name* is given.
-        error_on_coercion: If ``True``, raise
-            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
-            instead of silently coercing heterogeneous scalar
-            collections to strings.  Only has an effect when the
-            the language's sequence format does not support
-            heterogeneity.
-
-    Raises:
-        YAMLParseError: If *yaml_string* is not valid YAML.
-        HeterogeneousCoercionError: If *error_on_coercion* is ``True``
-            and the data contains heterogeneous scalar collections
-            that would be coerced.
-    """
-    line_prefix = language.indent * pre_indent_level
-    ruamel_yaml = YAML(typ="safe")
-    try:
-        # https://sourceforge.net/p/ruamel-yaml/tickets/564/
-        data = ruamel_yaml.load(stream=yaml_string)  # pyright: ignore[reportUnknownMemberType]
-    except YAMLError as exc:
-        message = f"Invalid YAML: {exc}"
-        raise YAMLParseError(message) from exc
-    coerced_data = _coerce_yaml_keys(data=data)
-    base = _literalize(
-        data=coerced_data,
-        language=language,
-        line_prefix=line_prefix,
-        include_delimiters=include_delimiters,
-        error_on_coercion=error_on_coercion,
-    )
-
-    comment_cfg = language.comment_config
-    cp = comment_cfg.prefix
-    cs = comment_cfg.suffix
-    comment_line_prefix = (
-        line_prefix + language.indent if include_delimiters else line_prefix
-    )
-
-    resolved = _resolve_yaml_comments(
-        yaml_string=yaml_string,
-        data=data,
-        base=base,
-        language=language,
-        comment_prefix=cp,
-        comment_suffix=cs,
-        comment_line_prefix=comment_line_prefix,
-        line_prefix=line_prefix,
-        include_delimiters=include_delimiters,
-    )
-    result = resolved.result
-
-    result = _apply_variable_wrapper(
-        result=result,
-        language=language,
-        data=coerced_data,
-        variable_name=variable_name,
-        new_variable=new_variable,
-    )
-
-    if resolved.pending is not None:
-        result = prepend_collection_comments(
-            collection_comments=resolved.pending,
-            base=result,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            line_prefix=line_prefix,
-        )
-
-    if resolved.pending_scalar_before:
-        result = "\n".join(resolved.pending_scalar_before) + "\n" + result
-
-    computed = _compute_preamble(
-        data=coerced_data,
-        language=language,
-        has_variable_declaration=variable_name is not None and new_variable,
-    )
-    preamble = tuple(language.static_preamble) + computed.header
-    if computed.body:
-        result = "\n".join(computed.body) + "\n" + result
-    return LiteralizeResult(
-        code=result,
-        preamble=preamble,
-        body_preamble=computed.body,
-        pre_declaration_comments=resolved.pending_scalar_before,
-    )
-
-
 def _coerce_toml_values(*, data: object) -> Value:
     """Recursively convert TOML-specific types to ``Value`` types.
 
@@ -1803,87 +1780,3 @@ def _coerce_toml_values(*, data: object) -> Value:
             return data.isoformat()
         case _:
             return cast("Value", data)
-
-
-@beartype
-def literalize_toml(
-    *,
-    toml_string: str,
-    language: Language,
-    pre_indent_level: int,
-    include_delimiters: bool,
-    variable_name: str | None,
-    new_variable: bool,
-    error_on_coercion: bool,
-) -> LiteralizeResult:
-    r"""Convert a TOML string to native language literal text.
-
-    TOML comments are not preserved in the output because the
-    standard-library ``tomllib`` parser discards them.
-
-    Args:
-        toml_string: A TOML string representing a table.
-        language: A :class:`Language` instance describing how to format
-            literals.  Use one of the built-in constants
-            (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
-        pre_indent_level: Number of ``indent`` steps to prepend to
-            every output line.  For example, ``2`` with a 4-space
-            indent produces an 8-space margin.  Defaults to ``0``.
-        include_delimiters: If True, include the collection delimiters
-            (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
-        variable_name: If given, wrap the output in a variable
-            declaration using the language's
-            ``format_variable_declaration`` or
-            ``format_variable_assignment`` callable.
-        new_variable: If ``True`` (the default), use
-            ``format_variable_declaration`` (e.g. ``const x =`` in
-            JavaScript).  If ``False``, use
-            ``format_variable_assignment`` (e.g. ``x =``).  Only
-            relevant when *variable_name* is given.
-        error_on_coercion: If ``True``, raise
-            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
-            instead of silently coercing heterogeneous scalar
-            collections to strings.  Only has an effect when the
-            the language's sequence format does not support
-            heterogeneity.
-
-    Raises:
-        TOMLParseError: If *toml_string* is not valid TOML.
-        HeterogeneousCoercionError: If *error_on_coercion* is ``True``
-            and the data contains heterogeneous scalar collections
-            that would be coerced.
-    """
-    line_prefix = language.indent * pre_indent_level
-    try:
-        data = tomllib.loads(toml_string)
-    except tomllib.TOMLDecodeError as exc:
-        message = f"Invalid TOML: {exc}"
-        raise TOMLParseError(message) from exc
-    coerced_data = _coerce_toml_values(data=data)
-    result = _literalize(
-        data=coerced_data,
-        language=language,
-        line_prefix=line_prefix,
-        include_delimiters=include_delimiters,
-        error_on_coercion=error_on_coercion,
-    )
-    result = _apply_variable_wrapper(
-        result=result,
-        language=language,
-        data=coerced_data,
-        variable_name=variable_name,
-        new_variable=new_variable,
-    )
-    computed = _compute_preamble(
-        data=coerced_data,
-        language=language,
-        has_variable_declaration=variable_name is not None and new_variable,
-    )
-    preamble = tuple(language.static_preamble) + computed.header
-    if computed.body:
-        result = "\n".join(computed.body) + "\n" + result
-    return LiteralizeResult(
-        code=result,
-        preamble=preamble,
-        body_preamble=computed.body,
-    )
