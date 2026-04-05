@@ -303,6 +303,7 @@ class Elm(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type="Val",
         )
 
         @property
@@ -522,8 +523,24 @@ class Elm(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
+        _base_declaration = declaration_style.value.formatter
+        _sequence_declared_type = sequence_format.value.declared_type
+
+        @beartype
+        def _elm_declaration(
+            name: str,
+            value: str,
+            data: Value,
+        ) -> str:
+            """Format a variable declaration with type annotation."""
+            base = _base_declaration(name, value, data)
+            decl_type = (
+                _sequence_declared_type if isinstance(data, list) else "Val"
+            )
+            return f"{name} : {decl_type}\n{base}"
+
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _elm_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")

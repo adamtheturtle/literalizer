@@ -123,6 +123,7 @@ class CommonLisp(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type=None,
         )
 
         @property

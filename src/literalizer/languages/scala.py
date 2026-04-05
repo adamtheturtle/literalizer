@@ -217,6 +217,7 @@ class Scala(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type=None,
         )
         SEQ = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="Seq("),
@@ -230,6 +231,7 @@ class Scala(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="Array("),
@@ -243,6 +245,7 @@ class Scala(metaclass=LanguageCls):
             typed_opener_fallback="Array(",
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type=None,
         )
 
         @property
