@@ -258,7 +258,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.cob
       - name: Install GnuCOBOL
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq gnucobol
+        uses: fabasoad/setup-cobol-action@v1
       - name: Check COBOL syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
