@@ -9,8 +9,8 @@ from literalizer import (
     literalize_yaml,
 )
 from literalizer.exceptions import (
-    EmptyDictKeyError,
     HeterogeneousCoercionError,
+    InvalidDictKeyError,
     ParseError,
     YAMLParseError,
 )
@@ -579,7 +579,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
 
 
 def test_r_empty_dict_key_error() -> None:
-    """R with ERROR empty_dict_key raises EmptyDictKeyError."""
+    """R with ERROR empty_dict_key raises InvalidDictKeyError."""
     spec = R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,
@@ -588,7 +588,7 @@ def test_r_empty_dict_key_error() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(expected_exception=EmptyDictKeyError):
+    with pytest.raises(expected_exception=InvalidDictKeyError):
         literalize_yaml(
             yaml_string=yaml_string,
             language=spec,
