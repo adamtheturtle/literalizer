@@ -473,17 +473,9 @@ def _wrap_haskell(
         content[equals_position + 2 :].lstrip() if equals_position >= 0 else ""
     )
     if right_hand_side.startswith("("):
-        # Count tuple elements by splitting on top-level commas.
+        # Count tuple elements from the top-level commas plus one.
         inner = right_hand_side[1 : right_hand_side.rfind(")")]
-        depth = 0
-        arity = 1
-        for ch in inner:
-            if ch in "([":
-                depth += 1
-            elif ch in ")]":
-                depth -= 1
-            elif ch == "," and depth == 0:
-                arity += 1
+        arity = inner.count(",") + 1
         val_tuple = ", ".join(["Val"] * arity)
         type_ann = f"{variable_name} :: ({val_tuple})\n"
     else:

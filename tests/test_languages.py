@@ -20,6 +20,7 @@ from literalizer.languages import (
     CSharp,
     Fortran,
     Go,
+    Haskell,
     Java,
     JavaScript,
     Kotlin,
@@ -761,3 +762,25 @@ def test_cobol_bump_levels_rejects_non_level_line() -> None:
     """_bump_levels raises ValueError for lines without a level number."""
     with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):
         _bump_levels(content="not a level line")
+
+
+def test_haskell_tuple_wraps_negative_float() -> None:
+    """Negative floats in Haskell tuples are parenthesized.
+
+    Covers the float branch of ``_wrap_tuple_scalar``.
+    See #952 to replace this with an integration test.
+    """
+    haskell = Haskell(
+        sequence_format=Haskell.sequence_formats.TUPLE,
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj=[[1.5, -2.5]]),
+        language=haskell,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "HFloat (-2.5)" in result.code
+    assert "HFloat 1.5" in result.code
