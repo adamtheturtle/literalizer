@@ -468,7 +468,27 @@ def _wrap_haskell(
     """Wrap a Haskell variable binding in a module."""
     preamble = "\n".join(body_preamble)
     header = "module Check where\n" + preamble + "\n"
-    return header + f"{variable_name} :: Val\n" + content
+    equals_position = content.find("= ")
+    right_hand_side = (
+        content[equals_position + 2 :].lstrip() if equals_position >= 0 else ""
+    )
+    if right_hand_side.startswith("("):
+        # Count tuple elements by splitting on top-level commas.
+        inner = right_hand_side[1 : right_hand_side.rfind(")")]
+        depth = 0
+        arity = 1
+        for ch in inner:
+            if ch in "([":
+                depth += 1
+            elif ch in ")]":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                arity += 1
+        val_tuple = ", ".join(["Val"] * arity)
+        type_ann = f"{variable_name} :: ({val_tuple})\n"
+    else:
+        type_ann = f"{variable_name} :: Val\n"
+    return header + type_ann + content
 
 
 @beartype

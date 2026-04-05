@@ -12,7 +12,7 @@ instance Num Val where
     signum a = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-my_data :: Val
+my_data :: (Val, Val, Val, Val)
 my_data = (
     HInt 1,
     HStr "hello",
