@@ -206,17 +206,17 @@ class SystemVerilog(metaclass=LanguageCls):
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
 
-        DEFAULT = "default"
+        DEFAULT = enum.auto()
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        DEFAULT = "default"
+        DEFAULT = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
 
-        ALLOW = "allow"
+        ALLOW = enum.auto()
 
     class FloatFormats(enum.Enum):
         """Float format options."""
@@ -264,12 +264,12 @@ class SystemVerilog(metaclass=LanguageCls):
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
 
-        NONE = "none"
+        NONE = enum.auto()
 
     class NumericSeparators(enum.Enum):
         """Numeric separator options."""
 
-        NONE = "none"
+        NONE = enum.auto()
 
     class StringFormats(enum.Enum):
         """String format options."""
@@ -291,7 +291,7 @@ class SystemVerilog(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = "auto"
+        AUTO = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
