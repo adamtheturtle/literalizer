@@ -1563,11 +1563,10 @@ def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
     cases: list[tuple[str, str]] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
+        non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
         for lang_name, lang_config in _LANGUAGES.items():
-            if (
-                case_dir.name in _NON_TRIVIAL_KEY_CASES
-                and not lang_config.lang_cls.supports_arbitrary_dict_keys
-            ):
+            cls = lang_config.lang_cls
+            if non_trivial and not cls.supports_non_printable_ascii_dict_keys:
                 continue
             cases.append((case_dir.name, lang_name))
     return cases
@@ -1636,13 +1635,12 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     """
     cases: list[_CombinedCase] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
+        non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
         for lang_name, lang_config in _LANGUAGES.items():
-            if (
-                case_dir.name in _NON_TRIVIAL_KEY_CASES
-                and not lang_config.lang_cls.supports_arbitrary_dict_keys
-            ):
+            cls = lang_config.lang_cls
+            if non_trivial and not cls.supports_non_printable_ascii_dict_keys:
                 continue
-            spec = lang_config.lang_cls()
+            spec = cls()
             redef_styles = _find_redefinition_styles(spec=spec)
             for style in redef_styles:
                 if style is redef_styles[0]:
