@@ -195,7 +195,11 @@ def _build_purescript_body_preamble() -> Callable[
         """
         if isinstance(val, (int, float)) and not isinstance(val, bool):
             if isinstance(val, float):
-                return val < 0 or math.isinf(val) or math.isnan(val)
+                return (
+                    math.copysign(1, val) < 0
+                    or math.isinf(val)
+                    or math.isnan(val)
+                )
             return val < 0
         if isinstance(val, list):
             return any(_needs_prelude(val=v) for v in val)
