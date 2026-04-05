@@ -54,7 +54,7 @@ def _wrap_noop(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Prepend body preamble without adding any surrounding wrapper."""
-    return _with_body_preamble(content, body_preamble)
+    return _with_body_preamble(content=content, body_preamble=body_preamble)
 
 
 def _find_redefinition_styles(
@@ -94,7 +94,7 @@ def _wrap_ocaml(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an OCaml ``let`` declaration in a module."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return "module Check = struct\n\n" + content + "\n\nend"
 
 
@@ -105,7 +105,7 @@ def _wrap_occam(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an occam-pi ``VAL`` declaration in a PROC."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = "  " + content.replace("\n", "\n  ")
     return (
         "\nPROC check ()\n" + indented + "\n" + "  SEQ\n" + "    SKIP\n" + ":"
@@ -169,7 +169,7 @@ def _wrap_gleam(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a Gleam let binding in a main function."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = "  " + content.replace("\n", "\n  ")
     return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
 
@@ -181,7 +181,7 @@ def _wrap_go(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a Go short variable declaration in a main function."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
 
 
@@ -192,7 +192,7 @@ def _wrap_odin(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an Odin short variable declaration in a main procedure."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
 
 
@@ -203,7 +203,7 @@ def _wrap_java(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a Java var declaration in a static method."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return (
         "class Check {\n"
         "    public static void check() {\n"
@@ -226,7 +226,7 @@ def _wrap_ts(
     duplicate-declaration errors when ``tsc`` checks all ``.ts`` files
     together.
     """
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"{content}\nexport {{}};"
 
 
@@ -237,7 +237,7 @@ def _wrap_cpp(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a C++ variable declaration in a function body."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"void _check() {{\n{content}\n}}"
 
 
@@ -248,7 +248,7 @@ def _wrap_scala(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a Scala variable declaration in an object."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"object Check {{\n{content}\n}}"
 
 
@@ -259,7 +259,7 @@ def _wrap_elixir(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an Elixir variable assignment in a module function."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = "    " + content.replace("\n", "\n    ")
     return (
         f"defmodule Check do\n"
@@ -308,7 +308,7 @@ def _wrap_erlang(
     The variable is referenced at the end of the function body so that
     Erlang does not warn about an unused variable.
     """
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     erlang_varname = variable_name[0].upper() + variable_name[1:]
     indented = "    " + content.replace("\n", "\n    ")
     return (
@@ -327,7 +327,7 @@ def _wrap_ada(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an Ada object declaration inside a procedure."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = "   " + content.replace("\n", "\n   ")
     return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
 
@@ -340,7 +340,9 @@ def _wrap_ada_combined(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Ada: declaration in one nested procedure, assignment in another."""
-    declaration = _with_body_preamble(declaration, body_preamble)
+    declaration = _with_body_preamble(
+        content=declaration, body_preamble=body_preamble
+    )
     decl_indented = "   " + declaration.replace("\n", "\n   ")
     assign_indented = "   " + assignment.replace("\n", "\n   ")
     inner = (
@@ -366,7 +368,7 @@ def _wrap_d(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a D ``auto`` declaration in a function."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"void _check() {{\n{content}\n}}"
 
 
@@ -379,7 +381,7 @@ def _wrap_systemverilog(
     """Wrap a SystemVerilog declaration in a module with an initial
     block.
     """
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"module check;\ninitial begin\n{content}\nend\nendmodule"
 
 
@@ -390,7 +392,7 @@ def _wrap_c(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a C _CVal declaration in a function."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"void _check(void) {{\n{content}\n    (void){variable_name};\n}}"
 
 
@@ -401,7 +403,7 @@ def _wrap_objc(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an Objective-C variable declaration in a function."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"void _check(void) {{\n{content}\n    (void){variable_name};\n}}"
 
 
@@ -423,7 +425,7 @@ def _wrap_mojo(
     (``new_variable=False``) omit it.  The distinction is stylistic
     since Mojo does not require ``var`` inside functions.
     """
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     # Consume the variable so ``--Werror`` does not flag the
     # "assignment was never used" warning.
     content = content + f"\n_ = {variable_name}"
@@ -446,7 +448,9 @@ def _wrap_mojo_combined(
     must appear *between* the declaration and the reassignment, not
     only at the end.
     """
-    declaration = _with_body_preamble(declaration, body_preamble)
+    declaration = _with_body_preamble(
+        content=declaration, body_preamble=body_preamble
+    )
     use = f"_ = {variable_name}"
     return _wrap_mojo(
         content=declaration + f"\n{use}\n" + assignment,
@@ -462,7 +466,7 @@ def _wrap_rust(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a Rust let binding in a main function."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = content.replace("\n", "\n    ")
     return f"fn main() {{\n    {indented}\n    let _ = {variable_name};\n}}"
 
@@ -495,7 +499,7 @@ def _wrap_zig(
     For ``var`` declarations the wrapper mutates the variable so the Zig
     compiler does not warn about a ``var`` that is never mutated.
     """
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = "    " + content.replace("\n", "\n    ")
     if "var " in content:
         use = f"    {variable_name} = .nil;"
@@ -512,7 +516,7 @@ def _wrap_fortran(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a Fortran variable declaration in a program."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = "  " + content.replace("\n", "\n  ")
     return (
         "program check\n"
@@ -531,7 +535,9 @@ def _wrap_fortran_combined(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Fortran: declaration in one subroutine, assignment in another."""
-    declaration = _with_body_preamble(declaration, body_preamble)
+    declaration = _with_body_preamble(
+        content=declaration, body_preamble=body_preamble
+    )
     decl_indented = "  " + declaration.replace("\n", "\n  ")
     assign_indented = "  " + assignment.replace("\n", "\n  ")
     return (
@@ -562,7 +568,7 @@ def _wrap_vb(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a VB.NET Dim declaration inside a Module."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     indented = "    " + content.replace("\n", "\n    ")
     return f"Module Check\n{indented}\nEnd Module"
 
@@ -575,7 +581,9 @@ def _wrap_vb_combined(
     body_preamble: tuple[str, ...],
 ) -> str:
     """VB.NET: Dim declaration in one Sub, assignment in another."""
-    declaration = _with_body_preamble(declaration, body_preamble)
+    declaration = _with_body_preamble(
+        content=declaration, body_preamble=body_preamble
+    )
     decl_indented = "        " + declaration.replace("\n", "\n        ")
     assign_indented = "        " + assignment.replace("\n", "\n        ")
     return (
@@ -639,7 +647,7 @@ def _wrap_cobol(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a COBOL variable declaration in a complete program."""
-    content = _with_body_preamble(content, body_preamble)
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return _COBOL_PROGRAM_PREFIX + f"{content}\n" + _COBOL_PROGRAM_SUFFIX
 
 
@@ -653,7 +661,9 @@ def _wrap_cobol_combined(
     """Wrap COBOL declaration (DATA DIVISION) and assignment (PROCEDURE
     DIVISION).
     """
-    declaration = _with_body_preamble(declaration, body_preamble)
+    declaration = _with_body_preamble(
+        content=declaration, body_preamble=body_preamble
+    )
     return (
         _COBOL_PROGRAM_PREFIX
         + f"{declaration}\n"
