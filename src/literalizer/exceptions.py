@@ -17,6 +17,10 @@ class TOMLParseError(ParseError):
     """Raised when a TOML string cannot be parsed."""
 
 
+class JSON5ParseError(ParseError):
+    """Raised when a JSON5 string cannot be parsed."""
+
+
 class InvalidDictKeyError(Exception):
     """Raised when a dict key cannot be represented in the target language.
 

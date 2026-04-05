@@ -1,4 +1,4 @@
-"""Core conversion logic: formatting values and parsing JSON/YAML/TOML."""
+"""Core conversion logic: formatting values and parsing input formats."""
 
 import dataclasses
 import datetime
@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
 
+import pyjson5
 import tomlkit
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
@@ -34,6 +35,7 @@ from literalizer._language import Language
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
+    JSON5ParseError,
     JSONParseError,
     TOMLParseError,
     YAMLParseError,
@@ -44,6 +46,7 @@ class InputFormat(enum.Enum):
     """Supported input serialization formats."""
 
     JSON = enum.auto()
+    JSON5 = enum.auto()
     YAML = enum.auto()
     TOML = enum.auto()
 
@@ -1407,6 +1410,13 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
                 )
                 raise JSONParseError(message) from exc
             return _ParsedInput(data=data, raw_data=data)
+        case InputFormat.JSON5:
+            try:
+                data = pyjson5.decode(data=source)
+            except pyjson5.Json5DecoderException as exc:
+                message = f"Invalid JSON5: {exc}"
+                raise JSON5ParseError(message) from exc
+            return _ParsedInput(data=data, raw_data=data)
         case InputFormat.YAML:
             ruamel_yaml = YAML(typ="safe")
             try:
@@ -1440,7 +1450,8 @@ def literalize(
     new_variable: bool,
     error_on_coercion: bool,
 ) -> LiteralizeResult:
-    r"""Convert a JSON, YAML, or TOML string to native language literal text.
+    r"""Convert a JSON, JSON5, YAML, or TOML string to a native
+    language literal.
 
     YAML and TOML comments are preserved in the output using the
     target language's comment syntax.
@@ -1475,6 +1486,8 @@ def literalize(
     Raises:
         JSONParseError: If *input_format* is ``JSON`` and *source* is
             not valid JSON.
+        JSON5ParseError: If *input_format* is ``JSON5`` and *source*
+            is not valid JSON5.
         YAMLParseError: If *input_format* is ``YAML`` and *source* is
             not valid YAML.
         TOMLParseError: If *input_format* is ``TOML`` and *source* is
