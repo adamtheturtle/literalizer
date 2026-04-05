@@ -1,0 +1,33 @@
+typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef struct {
+    _VTag tag;
+    longint i;
+    real r;
+    string s;
+} _VVal;
+typedef struct {
+    string k;
+    _VVal v;
+} _VKV;
+module check;
+initial begin
+static _VVal my_data[] = '{
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "C:\\path\\to\\file"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "back\\\\slash"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello \\\"world\\\""},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "path\\to \"# file"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "trailing\\"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "both \"quotes''' here"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "line1\\nline2\nwith newline"}
+};
+my_data = '{
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "C:\\path\\to\\file"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "back\\\\slash"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello \\\"world\\\""},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "path\\to \"# file"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "trailing\\"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "both \"quotes''' here"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "line1\\nline2\nwith newline"}
+};
+end
+endmodule

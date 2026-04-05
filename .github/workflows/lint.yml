@@ -983,6 +983,38 @@ jobs:
         run: xargs -0 npx tree-sitter parse --lib-path /tmp/norg.so --lang-name norg
           --quiet < /tmp/files-to-lint
 
+  lint-purescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.purs
+      - uses: purescript-contrib/setup-purescript@main
+        if: steps.find-files.outputs.found == 'true'
+        with:
+          purescript: latest
+      - name: Check PureScript syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          tmpdir=$(mktemp -d)
+          cat > "$tmpdir/Prelude.purs" << 'PURS'
+          module Prelude where
+          foreign import negate :: forall a. a -> a
+          foreign import div :: forall a. a -> a -> a
+          infixl 7 div as /
+          PURS
+          cat > "$tmpdir/Prelude.js" << 'JS'
+          export const negate = x => -x;
+          export const div = x => y => x / y;
+          JS
+          while IFS= read -r -d '' f; do
+            purs compile "$f" "$tmpdir/Prelude.purs" -o "$tmpdir/output" || exit 1
+          done < /tmp/files-to-lint
+
   lint-racket:
     runs-on: ubuntu-latest
     steps:
@@ -1082,6 +1114,26 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-to-lint
+
+  lint-systemverilog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.sv
+      - name: Install Verilator
+        if: steps.find-files.outputs.found == 'true'
+        run: sudo apt-get update && sudo apt-get install -y verilator
+      - name: Check SystemVerilog syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            verilator --lint-only --language 1800-2017 -Wno-REALCVT "$f" || exit 1
+          done < /tmp/files-to-lint
 
   lint-visualbasic:
     runs-on: ubuntu-latest
@@ -1189,12 +1241,14 @@ jobs:
       - lint-mojo
       - lint-nim
       - lint-norg
+      - lint-purescript
       - lint-racket
       - lint-scheme
       - lint-zig
       - lint-toml
       - lint-yaml
       - lint-powershell
+      - lint-systemverilog
       - lint-visualbasic
       - lint-fortran
       - lint-objectivec

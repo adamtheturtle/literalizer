@@ -188,6 +188,34 @@ def _wrap_elixir(content: str, variable_name: str) -> str:
 
 
 @beartype
+def _wrap_purescript(content: str, variable_name: str) -> str:
+    """Wrap a PureScript value declaration in a module."""
+    lines = content.split(sep="\n")
+    preamble_prefixes = ("import ", "data ")
+    # Find the first line that is NOT body-preamble.  A line counts as
+    # preamble when it starts with a known prefix or is an indented
+    # continuation of a preceding block.
+    expr_start = next(
+        (
+            idx
+            for idx, line in enumerate(iterable=lines)
+            if not (
+                any(line.startswith(p) for p in preamble_prefixes)
+                or (line.startswith("    ") and idx > 0)
+            )
+        ),
+        len(lines),
+    )
+
+    preamble = "\n".join(lines[:expr_start])
+    expression = "\n".join(lines[expr_start:])
+
+    parts = ["module Check where", preamble]
+    parts.append(f"{variable_name} :: Val\n{expression}")
+    return "\n\n\n".join(parts)
+
+
+@beartype
 def _wrap_elm(content: str, variable_name: str) -> str:
     """Wrap an Elm value declaration in a module."""
     lines = content.split(sep="\n")
@@ -267,6 +295,14 @@ def _wrap_ada_combined(
 def _wrap_d(content: str, _variable_name: str) -> str:
     """Wrap a D ``auto`` declaration in a function."""
     return f"void _check() {{\n{content}\n}}"
+
+
+@beartype
+def _wrap_systemverilog(content: str, _variable_name: str) -> str:
+    """Wrap a SystemVerilog declaration in a module with an initial
+    block.
+    """
+    return f"module check;\ninitial begin\n{content}\nend\nendmodule"
 
 
 @beartype
@@ -784,10 +820,22 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_wrap_vb_combined,
         wrap_variable_name="my_data",
     ),
+    literalizer.languages.SystemVerilog.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.SystemVerilog,
+        wrap=_wrap_systemverilog,
+        combined_wrap=_newline_combined(wrap=_wrap_systemverilog),
+        wrap_variable_name="my_data",
+    ),
     literalizer.languages.Zig.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Zig,
         wrap=_wrap_zig,
         combined_wrap=_newline_combined(wrap=_wrap_zig),
+        wrap_variable_name="my_data",
+    ),
+    literalizer.languages.PureScript.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.PureScript,
+        wrap=_wrap_purescript,
+        combined_wrap=_newline_combined(wrap=_wrap_purescript),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
