@@ -61,15 +61,43 @@ class LiteralizeResult:
     lines.
     """
 
+    pre_declaration_comments: tuple[str, ...] = ()
+    """Already-formatted comment lines that appear between
+    :attr:`body_preamble` and the variable declaration/assignment in
+    :attr:`code`.  These come from scalar before-comments when the
+    language does not support them inline.
+
+    Included in :attr:`bare_code` but excluded from
+    :attr:`declaration_code`.
+    """
+
     @property
     def bare_code(self) -> str:
         """The literal text without :attr:`body_preamble` prepended.
 
         Identical to :attr:`code` when :attr:`body_preamble` is empty.
+        :attr:`pre_declaration_comments` are preserved.
         """
         if not self.body_preamble:
             return self.code
         prefix = "\n".join(self.body_preamble) + "\n"
+        return self.code[len(prefix) :]
+
+    @property
+    def declaration_code(self) -> str:
+        """The literal text without :attr:`body_preamble` or
+        :attr:`pre_declaration_comments` prepended.
+
+        Use this when you need just the variable declaration or
+        assignment, without any preceding comment lines.
+        """
+        all_prefix_lines = (
+            *self.body_preamble,
+            *self.pre_declaration_comments,
+        )
+        if not all_prefix_lines:
+            return self.code
+        prefix = "\n".join(all_prefix_lines) + "\n"
         return self.code[len(prefix) :]
 
 
@@ -1747,4 +1775,5 @@ def literalize_yaml(
         code=result,
         preamble=preamble,
         body_preamble=computed.body,
+        pre_declaration_comments=resolved.pending_scalar_before,
     )

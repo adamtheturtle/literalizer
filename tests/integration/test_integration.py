@@ -134,25 +134,10 @@ def _wrap_fsharp_combined(
     _variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
-    """F#: separate private functions to avoid duplicate definitions.
-
-    Any lines before the first ``let`` in *declaration* (e.g. comments)
-    are placed at module scope alongside the body preamble.
-    """
-    lines = declaration.split(sep="\n")
-    let_idx = next(
-        idx
-        for idx, line in enumerate(iterable=lines)
-        if line.startswith("let")
-    )
-    pre_let = "\n".join(lines[:let_idx])
-    decl_binding = "\n".join(lines[let_idx:])
-    decl_indented = textwrap.indent(text=decl_binding, prefix="    ")
+    """F#: separate private functions to avoid duplicate definitions."""
+    decl_indented = textwrap.indent(text=declaration, prefix="    ")
     assign_indented = textwrap.indent(text=assignment, prefix="    ")
-    preamble_parts = list(body_preamble)
-    if pre_let:
-        preamble_parts.append(pre_let)
-    preamble = "\n".join(preamble_parts) + "\n" if preamble_parts else ""
+    preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
     body = "module Check\n\n" + preamble
     body += (
         "let private _checkDeclaration () =\n"
@@ -1910,11 +1895,15 @@ def test_golden_file_combined_variable_forms(
         error_on_coercion=False,
     )
     variable_name = lang_config.wrap_variable_name or ""
+    decl_preamble = (
+        *declaration.body_preamble,
+        *declaration.pre_declaration_comments,
+    )
     combined = lang_config.combined_wrap(
-        declaration.bare_code,
+        declaration.declaration_code,
         assignment.bare_code,
         variable_name,
-        declaration.body_preamble,
+        decl_preamble,
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
@@ -2157,11 +2146,15 @@ def test_line_ending_combined_variable_forms(
         new_variable=False,
         error_on_coercion=False,
     )
+    decl_preamble = (
+        *declaration.body_preamble,
+        *declaration.pre_declaration_comments,
+    )
     combined = case.lang_config.combined_wrap(
-        declaration.bare_code,
+        declaration.declaration_code,
         assignment.bare_code,
         case.lang_config.wrap_variable_name or "",
-        declaration.body_preamble,
+        decl_preamble,
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
