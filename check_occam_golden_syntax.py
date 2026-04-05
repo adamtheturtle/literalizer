@@ -1,4 +1,4 @@
-"""Check syntax of Occam-pi golden files."""
+"""Check syntax of an Occam-pi golden file."""
 
 import sys
 from pathlib import Path
@@ -126,13 +126,13 @@ def _check_file(path: Path) -> str | None:
 
 
 def main() -> None:
-    """Check syntax of each given Occam-pi golden file."""
-    for filename in sys.argv[1:]:
-        src = Path(filename)
-        error = _check_file(path=src)
-        if error is not None:
-            sys.stderr.write(f"{filename}: Occam-pi syntax error: {error}\n")
-            sys.exit(1)
+    """Check syntax of the given Occam-pi golden file."""
+    filename = sys.argv[1]
+    src = Path(filename)
+    error = _check_file(path=src)
+    if error is not None:
+        sys.stderr.write(f"{filename}: Occam-pi syntax error: {error}\n")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

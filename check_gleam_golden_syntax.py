@@ -1,4 +1,4 @@
-"""Check syntax of Gleam golden files using ``gleam check``."""
+"""Check syntax of a Gleam golden file using ``gleam check``."""
 
 import shutil
 import subprocess
@@ -17,7 +17,8 @@ gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 
 
 def main() -> None:
-    """Check syntax of each given Gleam golden file."""
+    """Check syntax of the given Gleam golden file."""
+    filename = sys.argv[1]
     gleam_path = shutil.which(cmd="gleam") or "gleam"
     with tempfile.TemporaryDirectory() as tmpdir:
         src_dir = Path(tmpdir) / "src"
@@ -38,27 +39,26 @@ def main() -> None:
             )
             sys.stderr.write(msg)
             sys.exit(1)
-        for filename in sys.argv[1:]:
-            src = Path(filename)
-            target = src_dir / "check.gleam"
-            target.write_text(
-                data=src.read_text(encoding="utf-8"),
-                encoding="utf-8",
+        src = Path(filename)
+        target = src_dir / "check.gleam"
+        target.write_text(
+            data=src.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            args=[gleam_path, "check"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=tmpdir,
+        )
+        if result.returncode != 0:
+            msg = (
+                f"{filename}: gleam check failed\n"
+                f"{result.stderr}{result.stdout}"
             )
-            result = subprocess.run(
-                args=[gleam_path, "check"],
-                capture_output=True,
-                text=True,
-                check=False,
-                cwd=tmpdir,
-            )
-            if result.returncode != 0:
-                msg = (
-                    f"{filename}: gleam check failed\n"
-                    f"{result.stderr}{result.stdout}"
-                )
-                sys.stderr.write(msg)
-                sys.exit(1)
+            sys.stderr.write(msg)
+            sys.exit(1)
 
 
 if __name__ == "__main__":
