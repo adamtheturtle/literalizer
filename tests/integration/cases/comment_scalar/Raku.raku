@@ -1,0 +1,2 @@
+my $my_data = # note
+42;

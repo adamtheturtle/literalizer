@@ -214,6 +214,33 @@ def format_string_backslash_dollar(value: str) -> str:
 
 
 @beartype
+def format_string_backslash_raku(value: str) -> str:
+    r"""Format a string for Raku double-quoted strings.
+
+    Escapes backslashes, double quotes, newlines, tabs, dollar signs,
+    at signs, percent signs, and curly braces with a backslash prefix,
+    then wraps the result in double quotes.  This prevents Raku from
+    interpreting sigil characters (``$``, ``@``, ``%``) or closure blocks
+    (``{…}``) as interpolation.
+
+    Example: ``prefix ${HOME}`` -> ``"prefix \$\{HOME\}"``.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+        .replace("$", "\\$")
+        .replace("@", "\\@")
+        .replace("%", "\\%")
+        .replace("{", "\\{")
+        .replace("}", "\\}")
+    )
+    return f'"{escaped}"'
+
+
+@beartype
 def format_string_backslash_hcl(value: str) -> str:
     r"""Format a string with HCL interpolation escaping.
 
