@@ -11,16 +11,19 @@ from literalizer import (
 )
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
+    InvalidDictKeyError,
     JSONParseError,
     ParseError,
 )
 from literalizer.languages import (
     Cpp,
     CSharp,
+    Dhall,
     Go,
     JavaScript,
     Mojo,
     Python,
+    R,
     Ruby,
 )
 
@@ -583,3 +586,365 @@ def test_error_on_coercion_json_raises_nested_sibling_lists() -> None:
             new_variable=True,
             error_on_coercion=True,
         )
+
+
+def test_cpp_array_null_list_fallback_json() -> None:
+    """C++ ARRAY format falls back when schema type is not directly
+    convertible (e.g. all-null list).
+    """
+    cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
+    result = literalize_json(
+        json_string=json.dumps(obj=[None, None]),
+        language=cpp_array,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "nullptr" in result.code
+    assert result.code.startswith("{")
+
+
+def test_coerce_mixed_dict_values_none_with_list_json() -> None:
+    """Dicts with None alongside a list are coerced to strings."""
+    result = literalize_json(
+        json_string=json.dumps(obj={"tags": ["admin"], "extra": None}),
+        language=MOJO,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "tags": "[\\"admin\\"]",
+            "extra": "None",
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_coerce_mixed_dict_values_with_list_json() -> None:
+    """Dicts with string and list values are coerced to all strings."""
+    result = literalize_json(
+        json_string=json.dumps(
+            obj={"name": "Bob", "tags": ["admin", "user"]},
+        ),
+        language=MOJO,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "name": "Bob",
+            "tags": "[\\"admin\\", \\"user\\"]",
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_r_empty_dict_key_positional_json() -> None:
+    """R with POSITIONAL empty_dict_key emits unnamed list elements."""
+    spec = R(
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
+        empty_dict_key=R.empty_dict_keys.POSITIONAL,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj={"": "value"}),
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        list(
+            "value"
+        )"""
+    )
+    assert result.code == expected
+
+
+def test_r_empty_dict_key_error_json() -> None:
+    """R with ERROR empty_dict_key raises InvalidDictKeyError."""
+    spec = R(
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
+        empty_dict_key=R.empty_dict_keys.ERROR,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
+    )
+    with pytest.raises(expected_exception=InvalidDictKeyError):
+        literalize_json(
+            json_string=json.dumps(obj={"": "value"}),
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+
+
+def test_r_empty_dict_key_error_non_empty_key_ok_json() -> None:
+    """R with ERROR empty_dict_key does not raise for non-empty keys."""
+    spec = R(
+        date_format=R.date_formats.R,
+        datetime_format=R.datetime_formats.R,
+        empty_dict_key=R.empty_dict_keys.ERROR,
+        bytes_format=R.bytes_formats.HEX,
+        sequence_format=R.sequence_formats.LIST,
+    )
+    result = literalize_json(
+        json_string=json.dumps(obj={"key": "value"}),
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        list(
+            "key" = "value"
+        )"""
+    )
+    assert result.code == expected
+
+
+def test_error_on_coercion_json_raises_for_heterogeneous_dict() -> None:
+    """Error_on_coercion raises when dict values have mixed scalar
+    types.
+    """
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_json(
+            json_string=json.dumps(obj={"a": 1, "b": 2.5}),
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_no_effect_without_coerce_flag() -> None:
+    """Error_on_coercion has no effect when language doesn't coerce."""
+    result = literalize_json(
+        json_string=json.dumps(obj=[1, 2.5, 3]),
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        (
+            1,
+            2.5,
+            3,
+        )"""
+    )
+    assert result.code == expected
+
+
+def test_error_on_coercion_json_raises_for_nested_heterogeneous() -> None:
+    """Error_on_coercion raises for heterogeneous data nested in a
+    list.
+    """
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_json(
+            json_string=json.dumps(obj=[[1, "hello"]]),
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_no_raise_for_homogeneous_dict() -> None:
+    """Error_on_coercion does not raise for homogeneous dict values."""
+    result = literalize_json(
+        json_string=json.dumps(obj={"a": 1, "b": 2}),
+        language=MOJO,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        {
+            "a": 1,
+            "b": 2,
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
+    """Error_on_coercion raises when a dict has values of mixed types."""
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_json(
+            json_string=json.dumps(
+                obj={"name": "Bob", "tags": ["admin", "user"]},
+            ),
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_raises_for_mixed_list_values() -> None:
+    """Error_on_coercion raises when a list has mixed element types."""
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_json(
+            json_string=json.dumps(obj=["hello", ["nested"]]),
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_raises_for_mixed_dict_shapes() -> None:
+    """Error_on_coercion raises when a list has dicts with different
+    keys, including when the list is nested inside a dict.
+    """
+    data = {
+        "items": [
+            {"type": "create", "draft": True},
+            {"type": "update"},
+        ],
+    }
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_json(
+            json_string=json.dumps(obj=data),
+            language=Dhall(),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_no_raise_for_uniform_dict_shapes() -> None:
+    """Error_on_coercion does not raise when all dicts in a list have
+    the same keys.
+    """
+    data = [
+        {"type": "create", "name": "a"},
+        {"type": "update", "name": "b"},
+    ]
+    literalize_json(
+        json_string=json.dumps(obj=data),
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=True,
+    )
+
+
+def test_error_on_coercion_json_raises_for_mixed_dict_none_list() -> None:
+    """Error_on_coercion raises when a dict has None alongside a list."""
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize_json(
+            json_string=json.dumps(
+                obj={"tags": ["admin"], "extra": None},
+            ),
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_dhall_empty_dict_key_error_json() -> None:
+    """Dhall raises InvalidDictKeyError for empty-string dict keys."""
+    with pytest.raises(expected_exception=InvalidDictKeyError):
+        literalize_json(
+            json_string=json.dumps(obj={"": "value"}),
+            language=Dhall(),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+
+
+def test_dhall_control_char_in_string_json() -> None:
+    """Dhall escapes control characters using braced unicode escapes."""
+    result = literalize_json(
+        json_string=json.dumps(obj="\x01"),
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_data",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = 'let my_data = "\\u{0001}" in my_data'
+    assert result.code == expected
+
+
+def test_dhall_control_char_key_error_json() -> None:
+    """Dhall rejects control characters in dict keys."""
+    with pytest.raises(expected_exception=InvalidDictKeyError):
+        literalize_json(
+            json_string=json.dumps(obj={"\x01": "value"}),
+            language=Dhall(),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+
+
+def test_dhall_backtick_label_unescaping_json() -> None:
+    """Dhall backtick labels contain raw content, not escape sequences."""
+    result = literalize_json(
+        json_string=json.dumps(obj={"$ref": "value"}),
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_data",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        let my_data = {
+          `$ref` = "value",
+        } in my_data"""
+    )
+    assert result.code == expected
