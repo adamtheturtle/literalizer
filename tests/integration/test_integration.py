@@ -1540,16 +1540,18 @@ def _cases_with_empty_dict_keys(cases_dir: Path) -> frozenset[str]:
     return frozenset(result)
 
 
+_CASES_DIR = Path(__file__).parent / "cases"
+_EMPTY_KEY_CASES = _cases_with_empty_dict_keys(cases_dir=_CASES_DIR)
+
+
 @beartype
 def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
-    cases_dir = Path(__file__).parent / "cases"
-    empty_key_cases = _cases_with_empty_dict_keys(cases_dir=cases_dir)
     cases: list[tuple[str, str]] = []
-    for case_dir in sorted(cases_dir.iterdir()):
+    for case_dir in sorted(_CASES_DIR.iterdir()):
         for lang_name, lang_config in _LANGUAGES.items():
             if (
-                case_dir.name in empty_key_cases
+                case_dir.name in _EMPTY_KEY_CASES
                 and not lang_config.lang_cls.supports_empty_dict_keys
             ):
                 continue
@@ -1618,13 +1620,11 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     """Return combined test cases for all redefinition-supporting
     styles.
     """
-    cases_dir = Path(__file__).parent / "cases"
-    empty_key_cases = _cases_with_empty_dict_keys(cases_dir=cases_dir)
     cases: list[_CombinedCase] = []
-    for case_dir in sorted(cases_dir.iterdir()):
+    for case_dir in sorted(_CASES_DIR.iterdir()):
         for lang_name, lang_config in _LANGUAGES.items():
             if (
-                case_dir.name in empty_key_cases
+                case_dir.name in _EMPTY_KEY_CASES
                 and not lang_config.lang_cls.supports_empty_dict_keys
             ):
                 continue

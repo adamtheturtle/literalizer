@@ -56,6 +56,10 @@ _IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$")
 
 _DHALL_UNESCAPE_RE = re.compile(pattern=r"\\([$\"\\nrt]|u\{([0-9A-Fa-f]+)\})")
 
+# Dhall backtick labels allow printable ASCII excluding backtick:
+# %x20-5F / %x61-7E (space through underscore, a-z plus {|}~).
+_BACKTICK_LABEL_RE = re.compile(pattern=r"^[\x20-\x5f\x61-\x7e]+$")
+
 
 def _unescape_dhall_string(value: str) -> str:
     """Reverse Dhall double-quoted string escapes to produce raw
@@ -127,10 +131,11 @@ def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
     if _IDENTIFIER_RE.match(string=inner):
         return f"{inner} = {value}"
     raw = _unescape_dhall_string(value=inner)
-    if not raw:
+    if not raw or not _BACKTICK_LABEL_RE.match(string=raw):
         msg = (
-            "Dhall does not support empty-string dict keys. "
-            "Backtick-quoted labels must contain at least one character."
+            "Dhall does not support this dict key. "
+            "Backtick-quoted labels must be non-empty and contain only "
+            "printable ASCII (no backticks or control characters)."
         )
         raise EmptyDictKeyError(msg)
     return f"`{raw}` = {value}"
@@ -155,9 +160,10 @@ class Dhall(metaclass=LanguageCls):
     Dates and datetimes are rendered as quoted ISO 8601 strings because
     Dhall has no native date type.
 
-    Empty-string dict keys raise
-    :class:`~literalizer.exceptions.EmptyDictKeyError` because Dhall's
-    backtick-quoted labels must contain at least one character.
+    Dict keys that cannot be represented as Dhall backtick-quoted labels
+    raise :class:`~literalizer.exceptions.EmptyDictKeyError`.  This
+    includes empty keys and keys containing control characters or
+    backticks, since Dhall labels only allow printable ASCII.
     """
 
     extension = ".dhall"
@@ -266,8 +272,8 @@ class Dhall(metaclass=LanguageCls):
     class EmptyDictKey(enum.Enum):
         """Empty dict key options.
 
-        Dhall backtick-quoted labels must contain at least one character,
-        so empty-string dict keys always raise
+        Dhall backtick-quoted labels must be non-empty and contain only
+        printable ASCII, so unsupported dict keys always raise
         :class:`~literalizer.exceptions.EmptyDictKeyError`.
         """
 
