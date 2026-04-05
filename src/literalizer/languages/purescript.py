@@ -187,9 +187,22 @@ def _build_purescript_body_preamble() -> Callable[
     actually needed, plus any necessary imports.
     """
 
+    def _has_special_float(val: Value) -> bool:
+        """Return True if *val* contains any inf or NaN float."""
+        if isinstance(val, float):
+            return math.isinf(val) or math.isnan(val)
+        if isinstance(val, list):
+            return any(_has_special_float(v) for v in val)
+        if isinstance(val, dict):
+            return any(_has_special_float(v) for v in val.values())
+        if isinstance(val, set):
+            return any(
+                _has_special_float(v) for v in val if isinstance(v, float)
+            )
+        return False
+
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
-        del data  # unused
         needs_tuple = bool(types & {dict, ordereddict})
         constructors = [
             constructor
@@ -213,7 +226,8 @@ def _build_purescript_body_preamble() -> Callable[
             )
             if types & type_set
         ]
-        lines: list[str] = ["import Prelude"]
+        needs_prelude = float in types and _has_special_float(val=data)
+        lines: list[str] = ["import Prelude"] if needs_prelude else []
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")
         first_line = f"data Val\n    = {constructors[0]}"
