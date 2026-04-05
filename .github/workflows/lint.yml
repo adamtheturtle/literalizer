@@ -1152,7 +1152,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.sv
       - name: Install Verilator
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update && sudo apt-get install -y verilator
+        uses: veryl-lang/setup-verilator@v1
       - name: Check SystemVerilog syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
