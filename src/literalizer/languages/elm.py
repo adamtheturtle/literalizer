@@ -534,11 +534,10 @@ class Elm(metaclass=LanguageCls):
         ) -> str:
             """Format a variable declaration with type annotation."""
             base = _base_declaration(name, value, data)
-            if isinstance(data, list):
-                if _sequence_declared_type is None:
-                    return base
-                return f"{name} : {_sequence_declared_type}\n{base}"
-            return f"{name} : Val\n{base}"
+            decl_type = (
+                _sequence_declared_type if isinstance(data, list) else "Val"
+            )
+            return f"{name} : {decl_type}\n{base}"
 
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _elm_declaration
