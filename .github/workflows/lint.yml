@@ -187,7 +187,9 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.jsonnet
       - name: Install jsonnet
         if: steps.find-files.outputs.found == 'true'
-        run: go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+        run: |-
+          go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check Jsonnet syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
