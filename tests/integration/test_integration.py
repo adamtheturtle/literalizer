@@ -21,6 +21,7 @@ from typing import Any
 import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
+from ruamel.yaml import YAML
 
 import literalizer
 import literalizer.languages
@@ -193,6 +194,34 @@ def _wrap_elixir(content: str, variable_name: str) -> str:
 
 
 @beartype
+def _wrap_purescript(content: str, variable_name: str) -> str:
+    """Wrap a PureScript value declaration in a module."""
+    lines = content.split(sep="\n")
+    preamble_prefixes = ("import ", "data ")
+    # Find the first line that is NOT body-preamble.  A line counts as
+    # preamble when it starts with a known prefix or is an indented
+    # continuation of a preceding block.
+    expr_start = next(
+        (
+            idx
+            for idx, line in enumerate(iterable=lines)
+            if not (
+                any(line.startswith(p) for p in preamble_prefixes)
+                or (line.startswith("    ") and idx > 0)
+            )
+        ),
+        len(lines),
+    )
+
+    preamble = "\n".join(lines[:expr_start])
+    expression = "\n".join(lines[expr_start:])
+
+    parts = ["module Check where", preamble]
+    parts.append(f"{variable_name} :: Val\n{expression}")
+    return "\n\n\n".join(parts)
+
+
+@beartype
 def _wrap_elm(content: str, variable_name: str) -> str:
     """Wrap an Elm value declaration in a module."""
     lines = content.split(sep="\n")
@@ -272,6 +301,14 @@ def _wrap_ada_combined(
 def _wrap_d(content: str, _variable_name: str) -> str:
     """Wrap a D ``auto`` declaration in a function."""
     return f"void _check() {{\n{content}\n}}"
+
+
+@beartype
+def _wrap_systemverilog(content: str, _variable_name: str) -> str:
+    """Wrap a SystemVerilog declaration in a module with an initial
+    block.
+    """
+    return f"module check;\ninitial begin\n{content}\nend\nendmodule"
 
 
 @beartype
@@ -795,10 +832,22 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_wrap_vb_combined,
         wrap_variable_name="my_data",
     ),
+    literalizer.languages.SystemVerilog.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.SystemVerilog,
+        wrap=_wrap_systemverilog,
+        combined_wrap=_newline_combined(wrap=_wrap_systemverilog),
+        wrap_variable_name="my_data",
+    ),
     literalizer.languages.Zig.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Zig,
         wrap=_wrap_zig,
         combined_wrap=_newline_combined(wrap=_wrap_zig),
+        wrap_variable_name="my_data",
+    ),
+    literalizer.languages.PureScript.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.PureScript,
+        wrap=_wrap_purescript,
+        combined_wrap=_newline_combined(wrap=_wrap_purescript),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.PowerShell.__name__: _LanguageConfig(
@@ -1524,13 +1573,63 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     return variants
 
 
+def _has_non_printable_ascii_dict_keys(data: object) -> bool:
+    """Return ``True`` if *data* contains a dict key that is empty or
+    has characters outside printable ASCII.
+    """
+    if isinstance(data, dict):
+        for key in data:  # pyright: ignore[reportUnknownVariableType]
+            if isinstance(key, str) and (
+                not key or not key.isprintable() or not key.isascii()
+            ):
+                return True
+        return any(
+            _has_non_printable_ascii_dict_keys(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownVariableType]
+        )
+    if isinstance(data, list):
+        return any(
+            _has_non_printable_ascii_dict_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
+            for item in data  # pyright: ignore[reportUnknownVariableType]
+        )
+    return False
+
+
+@beartype
+def _cases_with_non_trivial_dict_keys(
+    cases_dir: Path,
+) -> frozenset[str]:
+    """Return case directory names whose input YAML has dict keys that
+    some languages cannot represent (empty or non-printable-ASCII).
+    """
+    yaml = YAML()
+    result: set[str] = set()
+    for case_dir in cases_dir.iterdir():
+        loaded: object = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+            stream=(case_dir / "input.yaml").read_text(),
+        )
+        if _has_non_printable_ascii_dict_keys(data=loaded):
+            result.add(case_dir.name)
+    return frozenset(result)
+
+
+_CASES_DIR = Path(__file__).parent / "cases"
+_NON_TRIVIAL_KEY_CASES = _cases_with_non_trivial_dict_keys(
+    cases_dir=_CASES_DIR,
+)
+
+
 @beartype
 def _discover_cases() -> list[tuple[str, str]]:
     """Return ``(case_name, language)`` tuples."""
-    cases_dir = Path(__file__).parent / "cases"
     cases: list[tuple[str, str]] = []
-    for case_dir in sorted(cases_dir.iterdir()):
-        cases.extend((case_dir.name, lang_name) for lang_name in _LANGUAGES)
+    for case_dir in sorted(_CASES_DIR.iterdir()):
+        non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
+        for lang_name, lang_config in _LANGUAGES.items():
+            cls = lang_config.lang_cls
+            if non_trivial and not cls.supports_non_printable_ascii_dict_keys:
+                continue
+            cases.append((case_dir.name, lang_name))
     return cases
 
 
@@ -1595,11 +1694,14 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     """Return combined test cases for all redefinition-supporting
     styles.
     """
-    cases_dir = Path(__file__).parent / "cases"
     cases: list[_CombinedCase] = []
-    for case_dir in sorted(cases_dir.iterdir()):
+    for case_dir in sorted(_CASES_DIR.iterdir()):
+        non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
         for lang_name, lang_config in _LANGUAGES.items():
-            spec = lang_config.lang_cls()
+            cls = lang_config.lang_cls
+            if non_trivial and not cls.supports_non_printable_ascii_dict_keys:
+                continue
+            spec = cls()
             redef_styles = _find_redefinition_styles(spec=spec)
             for style in redef_styles:
                 if style is redef_styles[0]:

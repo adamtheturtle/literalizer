@@ -13,9 +13,12 @@ class YAMLParseError(ParseError):
     """Raised when a YAML string cannot be parsed."""
 
 
-class EmptyDictKeyError(Exception):
-    """Raised when a dict contains an empty-string key and the language
-    specification is configured to reject them.
+class InvalidDictKeyError(Exception):
+    """Raised when a dict key cannot be represented in the target language.
+
+    This includes empty-string keys and keys containing characters that
+    the language's label syntax does not support (e.g. control characters
+    in Dhall backtick-quoted labels).
     """
 
 
