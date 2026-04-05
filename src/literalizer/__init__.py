@@ -3,6 +3,7 @@
 from literalizer._core import (
     LiteralizeResult,
     literalize_json,
+    literalize_toml,
     literalize_yaml,
 )
 from literalizer._formatters.collection_openers import (
@@ -39,5 +40,6 @@ __all__ = [
     "fixed_sequence_open",
     "fixed_set_open",
     "literalize_json",
+    "literalize_toml",
     "literalize_yaml",
 ]

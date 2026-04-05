@@ -13,6 +13,10 @@ class YAMLParseError(ParseError):
     """Raised when a YAML string cannot be parsed."""
 
 
+class TOMLParseError(ParseError):
+    """Raised when a TOML string cannot be parsed."""
+
+
 class InvalidDictKeyError(Exception):
     """Raised when a dict key cannot be represented in the target language.
 
