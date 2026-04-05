@@ -187,17 +187,25 @@ def _build_purescript_body_preamble() -> Callable[
     actually needed, plus any necessary imports.
     """
 
-    def _has_special_float(val: Value) -> bool:
-        """Return True if *val* contains any inf or NaN float."""
-        if isinstance(val, float):
-            return math.isinf(val) or math.isnan(val)
+    def _needs_prelude(val: Value) -> bool:
+        """Return True if *val* needs ``import Prelude``.
+
+        Prelude is required for ``negate`` (any negative int or float)
+        and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
+        """
+        if isinstance(val, (int, float)) and not isinstance(val, bool):
+            if isinstance(val, float):
+                return val < 0 or math.isinf(val) or math.isnan(val)
+            return val < 0
         if isinstance(val, list):
-            return any(_has_special_float(val=v) for v in val)
+            return any(_needs_prelude(val=v) for v in val)
         if isinstance(val, dict):
-            return any(_has_special_float(val=v) for v in val.values())
+            return any(_needs_prelude(val=v) for v in val.values())
         if isinstance(val, set):
             return any(
-                _has_special_float(val=v) for v in val if isinstance(v, float)
+                _needs_prelude(val=v)
+                for v in val
+                if isinstance(v, (int, float)) and not isinstance(v, bool)
             )
         return False
 
@@ -226,7 +234,7 @@ def _build_purescript_body_preamble() -> Callable[
             )
             if types & type_set
         ]
-        needs_prelude = float in types and _has_special_float(val=data)
+        needs_prelude = bool(types & {int, float}) and _needs_prelude(val=data)
         lines: list[str] = ["import Prelude"] if needs_prelude else []
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")

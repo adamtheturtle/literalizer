@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Val
     = PInt Int
     | PList (Array Val)
