@@ -1,9 +1,10 @@
-"""Core conversion logic: formatting values and parsing JSON/YAML."""
+"""Core conversion logic: formatting values and parsing JSON/YAML/TOML."""
 
 import dataclasses
 import datetime
 import json
 import math
+import tomllib
 from collections.abc import Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
@@ -31,6 +32,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
     JSONParseError,
+    TOMLParseError,
     YAMLParseError,
 )
 
@@ -1776,4 +1778,112 @@ def literalize_yaml(
         preamble=preamble,
         body_preamble=computed.body,
         pre_declaration_comments=resolved.pending_scalar_before,
+    )
+
+
+def _coerce_toml_values(*, data: object) -> Value:
+    """Recursively convert TOML-specific types to ``Value`` types.
+
+    ``tomllib`` produces ``datetime.time`` values which are not
+    representable in the ``Value`` type, so they are converted to
+    their ISO-format string form.
+    """
+    match data:
+        case dict():
+            return {
+                k: _coerce_toml_values(data=v)
+                for k, v in cast("dict[str, object]", data).items()
+            }
+        case list():
+            return [
+                _coerce_toml_values(data=item)
+                for item in cast("list[object]", data)
+            ]
+        case datetime.time():
+            return data.isoformat()
+        case _:
+            return cast("Value", data)
+
+
+@beartype
+def literalize_toml(
+    *,
+    toml_string: str,
+    language: Language,
+    pre_indent_level: int,
+    include_delimiters: bool,
+    variable_name: str | None,
+    new_variable: bool,
+    error_on_coercion: bool,
+) -> LiteralizeResult:
+    r"""Convert a TOML string to native language literal text.
+
+    TOML comments are not preserved in the output because the
+    standard-library ``tomllib`` parser discards them.
+
+    Args:
+        toml_string: A TOML string representing a table.
+        language: A :class:`Language` instance describing how to format
+            literals.  Use one of the built-in constants
+            (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
+        pre_indent_level: Number of ``indent`` steps to prepend to
+            every output line.  For example, ``2`` with a 4-space
+            indent produces an 8-space margin.  Defaults to ``0``.
+        include_delimiters: If True, include the collection delimiters
+            (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
+        variable_name: If given, wrap the output in a variable
+            declaration using the language's
+            ``format_variable_declaration`` or
+            ``format_variable_assignment`` callable.
+        new_variable: If ``True`` (the default), use
+            ``format_variable_declaration`` (e.g. ``const x =`` in
+            JavaScript).  If ``False``, use
+            ``format_variable_assignment`` (e.g. ``x =``).  Only
+            relevant when *variable_name* is given.
+        error_on_coercion: If ``True``, raise
+            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
+            instead of silently coercing heterogeneous scalar
+            collections to strings.  Only has an effect when the
+            the language's sequence format does not support
+            heterogeneity.
+
+    Raises:
+        TOMLParseError: If *toml_string* is not valid TOML.
+        HeterogeneousCoercionError: If *error_on_coercion* is ``True``
+            and the data contains heterogeneous scalar collections
+            that would be coerced.
+    """
+    line_prefix = language.indent * pre_indent_level
+    try:
+        data = tomllib.loads(toml_string)
+    except tomllib.TOMLDecodeError as exc:
+        message = f"Invalid TOML: {exc}"
+        raise TOMLParseError(message) from exc
+    coerced_data = _coerce_toml_values(data=data)
+    result = _literalize(
+        data=coerced_data,
+        language=language,
+        line_prefix=line_prefix,
+        include_delimiters=include_delimiters,
+        error_on_coercion=error_on_coercion,
+    )
+    if variable_name is not None:
+        formatter = (
+            language.format_variable_declaration
+            if new_variable
+            else language.format_variable_assignment
+        )
+        result = formatter(variable_name, result, coerced_data)
+    computed = _compute_preamble(
+        data=coerced_data,
+        language=language,
+        has_variable_declaration=variable_name is not None and new_variable,
+    )
+    preamble = tuple(language.static_preamble) + computed.header
+    if computed.body:
+        result = "\n".join(computed.body) + "\n" + result
+    return LiteralizeResult(
+        code=result,
+        preamble=preamble,
+        body_preamble=computed.body,
     )
