@@ -85,6 +85,7 @@ PStr
 Php
 PureScript
 Pygments
+Raku
 SystemVerilog
 Toml
 YAMLError
@@ -163,6 +164,7 @@ prepended
 pyrefly
 pyright
 pytest
+rakudo
 regen
 reportAttributeAccessIssue
 reportMissingTypeStubs
