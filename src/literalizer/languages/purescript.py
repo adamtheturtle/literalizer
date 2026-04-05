@@ -192,12 +192,12 @@ def _build_purescript_body_preamble() -> Callable[
         if isinstance(val, float):
             return math.isinf(val) or math.isnan(val)
         if isinstance(val, list):
-            return any(_has_special_float(v) for v in val)
+            return any(_has_special_float(val=v) for v in val)
         if isinstance(val, dict):
-            return any(_has_special_float(v) for v in val.values())
+            return any(_has_special_float(val=v) for v in val.values())
         if isinstance(val, set):
             return any(
-                _has_special_float(v) for v in val if isinstance(v, float)
+                _has_special_float(val=v) for v in val if isinstance(v, float)
             )
         return False
 
