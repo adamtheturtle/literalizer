@@ -99,7 +99,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Gleam compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_gleam_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-to-lint
 
   lint-go:
     runs-on: ubuntu-latest
@@ -370,7 +370,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check C# syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_csharp_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_csharp_syntax.py < /tmp/files-to-lint
 
   lint-elixir:
     runs-on: ubuntu-latest
@@ -425,7 +425,7 @@ jobs:
           done < /tmp/files-to-lint
       - name: Check Elm compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
 
   lint-erlang:
     runs-on: ubuntu-latest
@@ -802,7 +802,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Ada syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_ada_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_ada_syntax.py < /tmp/files-to-lint
 
   lint-occam:
     runs-on: ubuntu-latest
@@ -823,7 +823,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_occam_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_occam_syntax.py < /tmp/files-to-lint
 
   lint-crystal:
     runs-on: ubuntu-latest
@@ -1113,7 +1113,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check TOML syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py
+        run: xargs -0 -n1 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py
           < /tmp/files-to-lint
 
   lint-yaml:
@@ -1184,7 +1184,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check VB.NET syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_vb_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_vb_syntax.py < /tmp/files-to-lint
 
   lint-fortran:
     runs-on: ubuntu-latest
