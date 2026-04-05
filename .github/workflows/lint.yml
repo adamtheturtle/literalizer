@@ -535,7 +535,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.lisp
       - name: Install SBCL
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq sbcl
+        uses: 40ants/setup-lisp@v4
       - name: Check Common Lisp syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -I{} sbcl --script {} < /tmp/files-to-lint
