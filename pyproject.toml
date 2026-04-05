@@ -30,6 +30,7 @@ dependencies = [
     # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
     # which has a maximum ruamel.yaml version of 0.18.16.
     "ruamel-yaml>=0.18.16",
+    "tomlkit>=0.12",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.12.24",
