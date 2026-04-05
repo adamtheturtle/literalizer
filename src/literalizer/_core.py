@@ -1171,10 +1171,6 @@ def _format_collection_lines(
                 sep = spec.element_separator.strip() if add_sep else ""
                 lines.append(f"{body_prefix}{entry}{sep}")
         case set() as set_data:
-            if spec.set_format_config.coerce_mixed_to_str and (
-                _all_scalars_heterogeneous(values=list(set_data))
-            ):
-                set_data = {_coerce_scalar_to_str(value=v) for v in set_data}
             sorted_items = sorted(
                 set_data,
                 key=lambda v: (type(v).__name__, repr(v)),
@@ -1291,6 +1287,13 @@ def _literalize(
     body_prefix = (
         line_prefix + language.indent if include_delimiters else line_prefix
     )
+
+    if (
+        isinstance(data, set)
+        and spec.set_format_config.coerce_mixed_to_str
+        and _all_scalars_heterogeneous(values=list(data))
+    ):
+        data = {_coerce_scalar_to_str(value=v) for v in data}
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
