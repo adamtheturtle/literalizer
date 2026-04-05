@@ -1807,6 +1807,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_set_variants(), "set", ""),
         (_build_default_set_element_type_variants(), "empty_set", ""),
         (_build_default_set_element_type_variants(), "set", ""),
+        (_build_default_set_element_type_variants(), "mixed_set", ""),
         (
             _build_default_sequence_element_type_variants(),
             "empty_sequence",
