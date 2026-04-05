@@ -99,8 +99,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Gleam compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py
-          < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-to-lint
 
   lint-go:
     runs-on: ubuntu-latest
@@ -428,8 +427,7 @@ jobs:
           done < /tmp/files-to-lint
       - name: Check Elm compiles
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_elm_syntax.py
-          < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
 
   lint-erlang:
     runs-on: ubuntu-latest
