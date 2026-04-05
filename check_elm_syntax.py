@@ -1,6 +1,7 @@
 """Check syntax of an Elm golden file using ``elm make``."""
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -36,12 +37,16 @@ def main() -> None:
             data=src.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
+        elm_home = Path(tmpdir) / ".elm"
+        elm_home.mkdir()
+        env = {**os.environ, "ELM_HOME": str(object=elm_home)}
         result = subprocess.run(
             args=[elm_path, "make", "src/Check.elm", "--output=/dev/null"],
             capture_output=True,
             text=True,
             check=False,
             cwd=tmpdir,
+            env=env,
         )
         if result.returncode != 0:
             msg = (
