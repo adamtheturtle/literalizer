@@ -215,7 +215,7 @@ def _build_purescript_body_preamble() -> Callable[
         ]
         lines: list[str] = []
         if needs_tuple:
-            lines.append("import Data.Tuple (Tuple(..))")
+            lines.append("data Tuple a b = Tuple a b")
         first_line = f"data Val\n    = {constructors[0]}"
         rest_lines = [f"    | {c}" for c in constructors[1:]]
         lines.append("\n".join([first_line, *rest_lines]))
@@ -235,7 +235,7 @@ class PureScript(metaclass=LanguageCls):
 
     .. code-block:: haskell
 
-       import Data.Tuple (Tuple(..))
+       data Tuple a b = Tuple a b
 
        data Val
            = PNull

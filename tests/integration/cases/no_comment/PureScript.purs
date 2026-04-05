@@ -1,7 +1,7 @@
 module Check where
 
 
-import Data.Tuple (Tuple(..))
+data Tuple a b = Tuple a b
 data Val
     = PStr String
     | PDict (Array (Tuple String Val))
