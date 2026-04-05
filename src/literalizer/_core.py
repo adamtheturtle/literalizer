@@ -1419,7 +1419,7 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             return _ParsedInput(data=data, raw_data=raw_data)
         case InputFormat.TOML:
             try:
-                toml_doc = tomlkit.parse(source)
+                toml_doc = tomlkit.parse(string=source)
             except TOMLKitError as exc:
                 message = f"Invalid TOML: {exc}"
                 raise TOMLParseError(message) from exc

@@ -199,7 +199,7 @@ def extract_toml_comments(
             if raw.startswith("#"):
                 pending_before.extend(
                     _strip_comment_marker(text=line)
-                    for line in raw.split("\n")
+                    for line in raw.split(sep="\n")
                     if line.strip().startswith("#")
                 )
             continue
