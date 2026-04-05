@@ -1,0 +1,4 @@
+(list
+    "a"
+    ; trailing
+)
