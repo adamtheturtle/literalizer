@@ -993,21 +993,17 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.purs
-          extra_config_patterns: check_purescript_golden_syntax.py
       - uses: purescript-contrib/setup-purescript@main
         if: steps.find-files.outputs.found == 'true'
         with:
           purescript: latest
-      - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       - name: Check PureScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_purescript_golden_syntax.py
-          < /tmp/files-to-lint
+        run: |-
+          tmpdir=$(mktemp -d)
+          while IFS= read -r -d '' f; do
+            purs compile "$f" -o "$tmpdir" || exit 1
+          done < /tmp/files-to-lint
 
   lint-racket:
     runs-on: ubuntu-latest
