@@ -220,7 +220,7 @@ def format_string_backslash_raku(value: str) -> str:
     Escapes backslashes, double quotes, newlines, tabs, dollar signs,
     at signs, percent signs, and curly braces with a backslash prefix,
     then wraps the result in double quotes.  This prevents Raku from
-    interpreting sigils (``$``, ``@``, ``%``) or closure blocks
+    interpreting sigil characters (``$``, ``@``, ``%``) or closure blocks
     (``{…}``) as interpolation.
 
     Example: ``prefix ${HOME}`` -> ``"prefix \$\{HOME\}"``.
