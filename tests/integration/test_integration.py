@@ -269,8 +269,10 @@ def _wrap_d(content: str, _variable_name: str) -> str:
 
 
 @beartype
-def _wrap_verilog(content: str, _variable_name: str) -> str:
-    """Wrap a Verilog declaration in a module with an initial block."""
+def _wrap_systemverilog(content: str, _variable_name: str) -> str:
+    """Wrap a SystemVerilog declaration in a module with an initial
+    block.
+    """
     return f"module check;\ninitial begin\n{content}\nend\nendmodule"
 
 
@@ -784,10 +786,10 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_wrap_vb_combined,
         wrap_variable_name="my_data",
     ),
-    literalizer.languages.Verilog.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Verilog,
-        wrap=_wrap_verilog,
-        combined_wrap=_newline_combined(wrap=_wrap_verilog),
+    literalizer.languages.SystemVerilog.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.SystemVerilog,
+        wrap=_wrap_systemverilog,
+        combined_wrap=_newline_combined(wrap=_wrap_systemverilog),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Zig.__name__: _LanguageConfig(

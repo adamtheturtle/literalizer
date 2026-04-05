@@ -48,10 +48,10 @@ from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
 from .swift import Swift
+from .systemverilog import SystemVerilog
 from .toml import Toml
 from .typescript import TypeScript
 from .vb import VisualBasic
-from .verilog import Verilog
 from .yaml import Yaml
 from .zig import Zig
 
@@ -105,7 +105,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Swift,
         Toml,
         TypeScript,
-        Verilog,
+        SystemVerilog,
         VisualBasic,
         Yaml,
         Zig,
@@ -160,9 +160,9 @@ __all__ = [
     "Rust",
     "Scala",
     "Swift",
+    "SystemVerilog",
     "Toml",
     "TypeScript",
-    "Verilog",
     "VisualBasic",
     "Yaml",
     "Zig",

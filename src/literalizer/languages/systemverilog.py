@@ -1,4 +1,4 @@
-"""Verilog language specification."""
+"""SystemVerilog language specification."""
 
 import datetime
 import enum
@@ -47,15 +47,15 @@ from literalizer._types import Value
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-_VERILOG_INT_BITS = 64
+_SV_INT_BITS = 64
 
 
 @beartype
-def _format_integer_hex_verilog(value: int) -> str:
-    """Format an integer as a Verilog hexadecimal literal."""
+def _format_integer_hex_sv(value: int) -> str:
+    """Format an integer as a SystemVerilog hexadecimal literal."""
     if value < 0:
-        return f"-{_VERILOG_INT_BITS}'h{abs(value):x}"
-    return f"{_VERILOG_INT_BITS}'h{value:x}"
+        return f"-{_SV_INT_BITS}'h{abs(value):x}"
+    return f"{_SV_INT_BITS}'h{value:x}"
 
 
 @beartype
@@ -65,7 +65,7 @@ def _escape_nested(text: str) -> str:
 
 
 @beartype
-def _format_verilog_entry(original: Value, formatted: str) -> str:
+def _format_sv_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in a named ``_VVal`` struct literal."""
     match original:
         case str() | bytes() | datetime.date():
@@ -85,30 +85,30 @@ def _format_verilog_entry(original: Value, formatted: str) -> str:
 
 @beartype
 def _format_variable_declaration(name: str, value: str, data: Value) -> str:
-    """Format a Verilog variable declaration."""
+    """Format a SystemVerilog variable declaration."""
     if isinstance(data, (list, set)):
         return f"static _VVal {name}[] = {value};"
     if isinstance(data, dict):
         return f"static _VKV {name}[] = {value};"
-    wrapped = _format_verilog_entry(original=data, formatted=value)
+    wrapped = _format_sv_entry(original=data, formatted=value)
     return f"static _VVal {name} = {wrapped};"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format a Verilog variable assignment."""
+    """Format a SystemVerilog variable assignment."""
     if isinstance(data, (list, set, dict)):
         return f"{name} = {value};"
-    wrapped = _format_verilog_entry(original=data, formatted=value)
+    wrapped = _format_sv_entry(original=data, formatted=value)
     return f"{name} = {wrapped};"
 
 
 @beartype
-class Verilog(metaclass=LanguageCls):
-    """Verilog language specification."""
+class SystemVerilog(metaclass=LanguageCls):
+    """SystemVerilog language specification."""
 
-    extension = ".v"
-    pygments_name = "verilog"
+    extension = ".sv"
+    pygments_name = "systemverilog"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -116,7 +116,7 @@ class Verilog(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
 
     class DateFormats(enum.Enum):
-        """Date format options for Verilog."""
+        """Date format options for SystemVerilog."""
 
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
@@ -125,7 +125,7 @@ class Verilog(metaclass=LanguageCls):
             return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
-        """Datetime format options for Verilog."""
+        """Datetime format options for SystemVerilog."""
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -147,7 +147,7 @@ class Verilog(metaclass=LanguageCls):
             return self.value(value=data)
 
     class SequenceFormats(enum.Enum):
-        """Sequence type options for Verilog."""
+        """Sequence type options for SystemVerilog."""
 
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="'{"),
@@ -171,7 +171,7 @@ class Verilog(metaclass=LanguageCls):
             return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
-        """Set type options for Verilog."""
+        """Set type options for SystemVerilog."""
 
         SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="'{"),
@@ -252,7 +252,7 @@ class Verilog(metaclass=LanguageCls):
         """Integer format options."""
 
         DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=_format_integer_hex_verilog)
+        HEX = enum.member(value=_format_integer_hex_sv)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
@@ -334,7 +334,7 @@ class Verilog(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
     ) -> None:
-        """Initialize Verilog language specification."""
+        """Initialize SystemVerilog language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
@@ -347,7 +347,7 @@ class Verilog(metaclass=LanguageCls):
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         vkv_entry = dict_entry_with_template(
             template="_VKV'{{k: {key}, v: {value}}}",
-            format_value=_format_verilog_entry,
+            format_value=_format_sv_entry,
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="'{"),
@@ -367,11 +367,9 @@ class Verilog(metaclass=LanguageCls):
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
-            _format_verilog_entry
+            _format_sv_entry
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            _format_verilog_entry
-        )
+        self.format_set_entry: Callable[[Value, str], str] = _format_sv_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
