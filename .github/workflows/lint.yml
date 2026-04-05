@@ -791,9 +791,9 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.adb
           extra_config_patterns: check_ada_golden_syntax.py
-      - name: Install GNAT
+      - name: Set up Alire
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq gnat
+        uses: alire-project/setup-alire@v4
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
