@@ -500,7 +500,7 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           while IFS= read -r -d '' f; do
-            ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
+            opam exec -- ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
           done < /tmp/files-to-lint
 
   lint-haskell:
