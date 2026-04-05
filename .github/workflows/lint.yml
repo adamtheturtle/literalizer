@@ -975,27 +975,21 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.purs
+          extra_config_patterns: check_purescript_syntax.py
       - uses: purescript-contrib/setup-purescript@main
         if: steps.find-files.outputs.found == 'true'
         with:
           purescript: latest
+      - name: Install uv
+        if: steps.find-files.outputs.found == 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Check PureScript syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          cat > "$tmpdir/Prelude.purs" << 'PURS'
-          module Prelude where
-          foreign import negate :: forall a. a -> a
-          foreign import div :: forall a. a -> a -> a
-          infixl 7 div as /
-          PURS
-          cat > "$tmpdir/Prelude.js" << 'JS'
-          export const negate = x => -x;
-          export const div = x => y => x / y;
-          JS
-          while IFS= read -r -d '' f; do
-            purs compile "$f" "$tmpdir/Prelude.purs" -o "$tmpdir/output" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n 1 uv run --no-project python check_purescript_syntax.py <
+          /tmp/files-to-lint
 
   lint-racket:
     runs-on: ubuntu-latest
