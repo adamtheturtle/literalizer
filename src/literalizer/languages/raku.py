@@ -39,7 +39,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
+    format_string_backslash_dollar,
     format_string_backslash_single_minimal,
 )
 from literalizer._language import (
@@ -304,7 +304,7 @@ class Raku(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=format_string_backslash_dollar)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
