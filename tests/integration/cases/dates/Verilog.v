@@ -1,15 +1,19 @@
-typedef enum {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
     real r;
     string s;
 } _VVal;
+typedef struct {
+    string k;
+    _VVal v;
+} _VKV;
 module check;
 initial begin
-_VVal my_data = '{
-    "date", '{_VVAL_STR, 0, 0.0, "2024-01-15"},
-    "datetime", '{_VVAL_STR, 0, 0.0, "2024-01-15T12:30:00+00:00"}
+static _VKV my_data[] = '{
+    _VKV'{k: "date", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15"}},
+    _VKV'{k: "datetime", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15T12:30:00+00:00"}}
 };
 end
 endmodule

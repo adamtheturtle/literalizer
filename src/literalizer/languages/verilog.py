@@ -17,7 +17,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
-    dict_entry_with_separator,
+    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -27,7 +27,6 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     CommentConfig,
@@ -48,19 +47,38 @@ from literalizer._types import Value
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+_VERILOG_INT_BITS = 64
+
+
+@beartype
+def _format_integer_hex_verilog(value: int) -> str:
+    """Format an integer as a Verilog hexadecimal literal."""
+    if value < 0:
+        return f"-{_VERILOG_INT_BITS}'h{abs(value):x}"
+    return f"{_VERILOG_INT_BITS}'h{value:x}"
+
+
+@beartype
+def _escape_nested(text: str) -> str:
+    """Escape a nested collection literal for embedding as a string."""
+    return text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
 
 @beartype
 def _format_verilog_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate ``_VVal`` assignment."""
+    """Wrap a formatted entry in a named ``_VVal`` struct literal."""
     match original:
         case str() | bytes() | datetime.date():
-            return f"'{{_VVAL_STR, 0, 0.0, {formatted}}}"
+            return f"_VVal'{{tag: _VVAL_STR, i: 0, r: 0.0, s: {formatted}}}"
         case bool():
             return formatted
         case int():
-            return f'\'{{_VVAL_INT, {formatted}, 0.0, ""}}'
+            return f'_VVal\'{{tag: _VVAL_INT, i: {formatted}, r: 0.0, s: ""}}'
         case float():
-            return f'\'{{_VVAL_REAL, 0, {formatted}, ""}}'
+            return f'_VVal\'{{tag: _VVAL_REAL, i: 0, r: {formatted}, s: ""}}'
+        case list() | dict() | set():
+            escaped = _escape_nested(text=formatted)
+            return f'_VVal\'{{tag: _VVAL_STR, i: 0, r: 0.0, s: "{escaped}"}}'
         case _:
             return formatted
 
@@ -68,13 +86,19 @@ def _format_verilog_entry(original: Value, formatted: str) -> str:
 @beartype
 def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format a Verilog variable declaration."""
+    if isinstance(data, (list, set)):
+        return f"static _VVal {name}[] = {value};"
+    if isinstance(data, dict):
+        return f"static _VKV {name}[] = {value};"
     wrapped = _format_verilog_entry(original=data, formatted=value)
-    return f"_VVal {name} = {wrapped};"
+    return f"static _VVal {name} = {wrapped};"
 
 
 @beartype
 def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format a Verilog variable assignment."""
+    if isinstance(data, (list, set, dict)):
+        return f"{name} = {value};"
     wrapped = _format_verilog_entry(original=data, formatted=value)
     return f"{name} = {wrapped};"
 
@@ -228,7 +252,7 @@ class Verilog(metaclass=LanguageCls):
         """Integer format options."""
 
         DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
+        HEX = enum.member(value=_format_integer_hex_verilog)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
@@ -313,21 +337,22 @@ class Verilog(metaclass=LanguageCls):
         """Initialize Verilog language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = '\'{_VVAL_STR, 0, 0.0, ""}'
-        self.true_literal = '\'{_VVAL_INT, 1, 0.0, ""}'
-        self.false_literal = '\'{_VVAL_INT, 0, 0.0, ""}'
+        self.null_literal = '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
+        self.true_literal = '_VVal\'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}'
+        self.false_literal = '_VVal\'{tag: _VVAL_INT, i: 0, r: 0.0, s: ""}'
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        vkv_entry = dict_entry_with_template(
+            template="_VKV'{{k: {key}, v: {value}}}",
+            format_value=_format_verilog_entry,
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=fixed_dict_open(open_str="'{"),
             close="}",
-            format_entry=dict_entry_with_separator(
-                separator=", ",
-                format_value=_format_verilog_entry,
-            ),
+            format_entry=vkv_entry,
             empty_dict="'{}",
             preamble_lines=(),
             narrowed_open=None,
@@ -367,10 +392,7 @@ class Verilog(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_separator(
-                separator=", ",
-                format_value=_format_verilog_entry,
-            )
+            vkv_entry
         )
         self.indent = indent
         self.indent_closing_delimiter = False
@@ -386,13 +408,17 @@ class Verilog(metaclass=LanguageCls):
             _format_variable_assignment
         )
         self.static_preamble: Sequence[str] = (
-            "typedef enum {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;",
+            "typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;",
             "typedef struct {",
             "    _VTag tag;",
             "    longint i;",
             "    real r;",
             "    string s;",
             "} _VVal;",
+            "typedef struct {",
+            "    string k;",
+            "    _VVal v;",
+            "} _VKV;",
         )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

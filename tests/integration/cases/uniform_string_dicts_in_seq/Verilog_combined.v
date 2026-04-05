@@ -1,19 +1,23 @@
-typedef enum {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
     real r;
     string s;
 } _VVal;
+typedef struct {
+    string k;
+    _VVal v;
+} _VKV;
 module check;
 initial begin
-_VVal my_data = '{
-    '{"first", '{_VVAL_STR, 0, 0.0, "Alice"}, "last", '{_VVAL_STR, 0, 0.0, "Smith"}},
-    '{"first", '{_VVAL_STR, 0, 0.0, "Bob"}, "last", '{_VVAL_STR, 0, 0.0, "Jones"}}
+static _VVal my_data[] = '{
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"first\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Alice\"}}, _VKV'{k: \"last\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Smith\"}}}"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"first\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Bob\"}}, _VKV'{k: \"last\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Jones\"}}}"}
 };
 my_data = '{
-    '{"first", '{_VVAL_STR, 0, 0.0, "Alice"}, "last", '{_VVAL_STR, 0, 0.0, "Smith"}},
-    '{"first", '{_VVAL_STR, 0, 0.0, "Bob"}, "last", '{_VVAL_STR, 0, 0.0, "Jones"}}
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"first\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Alice\"}}, _VKV'{k: \"last\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Smith\"}}}"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"first\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Bob\"}}, _VKV'{k: \"last\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Jones\"}}}"}
 };
 end
 endmodule

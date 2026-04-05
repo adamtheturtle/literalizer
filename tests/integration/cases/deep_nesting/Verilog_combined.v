@@ -1,17 +1,21 @@
-typedef enum {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
     real r;
     string s;
 } _VVal;
+typedef struct {
+    string k;
+    _VVal v;
+} _VKV;
 module check;
 initial begin
-_VVal my_data = '{
-    "level1", '{"level2", '{"level3", '{"level4", '{"value", '{_VVAL_STR, 0, 0.0, "deep"}, "items", '{'{_VVAL_STR, 0, 0.0, "a"}, '{_VVAL_STR, 0, 0.0, "b"}}}}, "sibling", '{_VVAL_INT, 42, 0.0, ""}}, "tags", '{'{"name", '{_VVAL_STR, 0, 0.0, "tag1"}, "meta", '{"priority", '{_VVAL_INT, 1, 0.0, ""}, "labels", '{'{_VVAL_STR, 0, 0.0, "x"}, '{_VVAL_STR, 0, 0.0, "y"}}}}}}
+static _VKV my_data[] = '{
+    _VKV'{k: "level1", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"level2\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"level3\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"'{_VKV'{k: \\\\\\\"level4\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"'{_VKV'{k: \\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\"deep\\\\\\\\\\\\\\\"}}, _VKV'{k: \\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"a\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"b\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}}\\\\\\\\\\\\\\\"}}}\\\\\\\"}}}\\\"}}, _VKV'{k: \\\"sibling\\\", v: _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \\\"\\\"}}}\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"'{_VKV'{k: \\\\\\\"name\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"tag1\\\\\\\"}}, _VKV'{k: \\\\\\\"meta\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"'{_VKV'{k: \\\\\\\\\\\\\\\"priority\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\"}}, _VKV'{k: \\\\\\\\\\\\\\\"labels\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}}\\\\\\\\\\\\\\\"}}}\\\\\\\"}}}\\\"}}\"}}}"}}
 };
 my_data = '{
-    "level1", '{"level2", '{"level3", '{"level4", '{"value", '{_VVAL_STR, 0, 0.0, "deep"}, "items", '{'{_VVAL_STR, 0, 0.0, "a"}, '{_VVAL_STR, 0, 0.0, "b"}}}}, "sibling", '{_VVAL_INT, 42, 0.0, ""}}, "tags", '{'{"name", '{_VVAL_STR, 0, 0.0, "tag1"}, "meta", '{"priority", '{_VVAL_INT, 1, 0.0, ""}, "labels", '{'{_VVAL_STR, 0, 0.0, "x"}, '{_VVAL_STR, 0, 0.0, "y"}}}}}}
+    _VKV'{k: "level1", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"level2\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"level3\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"'{_VKV'{k: \\\\\\\"level4\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"'{_VKV'{k: \\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\"deep\\\\\\\\\\\\\\\"}}, _VKV'{k: \\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"a\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"b\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}}\\\\\\\\\\\\\\\"}}}\\\\\\\"}}}\\\"}}, _VKV'{k: \\\"sibling\\\", v: _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \\\"\\\"}}}\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"'{_VKV'{k: \\\\\\\"name\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"tag1\\\\\\\"}}, _VKV'{k: \\\\\\\"meta\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"'{_VKV'{k: \\\\\\\\\\\\\\\"priority\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\"}}, _VKV'{k: \\\\\\\\\\\\\\\"labels\\\\\\\\\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}}\\\\\\\\\\\\\\\"}}}\\\\\\\"}}}\\\"}}\"}}}"}}
 };
 end
 endmodule

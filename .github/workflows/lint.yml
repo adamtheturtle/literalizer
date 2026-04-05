@@ -1076,14 +1076,15 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.v
-          extra_config_patterns: check_verilog_golden_syntax.py
-      - name: Install uv
+      - name: Install Verilator
         if: steps.find-files.outputs.found == 'true'
-        uses: astral-sh/setup-uv@v7
+        run: sudo apt-get update && sudo apt-get install -y verilator
       - name: Check Verilog syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 uv run --no-project python check_verilog_golden_syntax.py <
-          /tmp/files-to-lint
+        run: |-
+          while IFS= read -r -d '' f; do
+            verilator --lint-only --language 1800-2017 "$f" || exit 1
+          done < /tmp/files-to-lint
 
   lint-visualbasic:
     runs-on: ubuntu-latest
