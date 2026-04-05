@@ -197,7 +197,7 @@ def extract_toml_comments(
         if key is None:
             continue  # pragma: no cover
         inline = ""
-        if not isinstance(item, Table) and hasattr(item, "trivia"):
+        if not isinstance(item, Table):
             raw_inline: str = item.trivia.comment
             if raw_inline.startswith("#"):
                 inline = _strip_comment_marker(text=raw_inline)
