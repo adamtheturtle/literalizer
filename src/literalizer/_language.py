@@ -206,7 +206,7 @@ class LanguageCls(type):
     supports_default_dict_value_type: bool
     supports_default_dict_key_type: bool
     supports_default_ordered_map_value_type: bool
-    supports_non_printable_ascii_dict_keys: bool = True
+    supports_non_printable_ascii_dict_keys: bool
 
 
 @runtime_checkable
