@@ -500,9 +500,7 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            ocamlopt -c -o "$tmpdir/check.o" "$f" || exit 1
-          done < /tmp/files-to-lint
+          xargs -0 -n1 ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
 
   lint-haskell:
     runs-on: ubuntu-latest
@@ -522,9 +520,7 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            ghc -fno-code -outputdir "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+          xargs -0 -n1 ghc -fno-code -outputdir "$tmpdir" < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -668,10 +664,8 @@ jobs:
         uses: julia-actions/setup-julia@v2
       - name: Check Julia syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            julia --startup-file=no -e 'Meta.parseall(read(ARGS[1], String))' -- "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 julia --startup-file=no -e 'Meta.parseall(read(ARGS[1],
+          String))' -- < /tmp/files-to-lint
 
   lint-perl:
     runs-on: ubuntu-latest
@@ -1150,10 +1144,8 @@ jobs:
         uses: veryl-lang/setup-verilator@v1
       - name: Check SystemVerilog syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            verilator --lint-only --language 1800-2017 -Wno-REALCVT "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -n1 verilator --lint-only --language 1800-2017 -Wno-REALCVT
+          < /tmp/files-to-lint
 
   lint-visualbasic:
     runs-on: ubuntu-latest
