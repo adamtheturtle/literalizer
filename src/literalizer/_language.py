@@ -28,6 +28,7 @@ class SequenceFormatConfig:
     typed_opener_fallback: str | None
     uses_typed_literal_for_scalars: bool
     requires_uniform_record_shapes: bool
+    declared_type: str | None
 
 
 @dataclasses.dataclass(frozen=True)

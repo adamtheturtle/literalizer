@@ -262,27 +262,23 @@ def _wrap_elixir(
 @beartype
 def _wrap_purescript(
     content: str,
-    variable_name: str,
+    _variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a PureScript value declaration in a module."""
     preamble = "\n".join(body_preamble)
-    parts = ["module Check where", preamble]
-    parts.append(f"{variable_name} :: Val\n{content}")
-    return "\n\n\n".join(parts)
+    return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
 
 @beartype
 def _wrap_elm(
     content: str,
-    variable_name: str,
+    _variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap an Elm value declaration in a module."""
     preamble = "\n".join(body_preamble)
-    parts = ["module Check exposing (..)", preamble]
-    parts.append(f"{variable_name} : Val\n{content}")
-    return "\n\n\n".join(parts)
+    return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
 
 @beartype
@@ -462,20 +458,12 @@ def _wrap_rust(
 @beartype
 def _wrap_haskell(
     content: str,
-    variable_name: str,
+    _variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
     """Wrap a Haskell variable binding in a module."""
     preamble = "\n".join(body_preamble)
-    header = "module Check where\n" + preamble + "\n"
-    # Tuples are not Val-typed, so skip the type annotation for them.
-    equals_position = content.find("= ")
-    right_hand_side = (
-        content[equals_position + 2 :].lstrip() if equals_position >= 0 else ""
-    )
-    if right_hand_side.startswith("("):
-        return header + content
-    return header + f"{variable_name} :: Val\n" + content
+    return "module Check where\n" + preamble + "\n" + content
 
 
 @beartype

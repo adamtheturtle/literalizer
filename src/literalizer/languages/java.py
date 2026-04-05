@@ -231,6 +231,7 @@ class Java(metaclass=LanguageCls):
             typed_opener_fallback="new Object[]{",
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type=None,
         )
         LIST = SequenceFormatConfig(
             sequence_open=_list_of_open,
@@ -244,6 +245,7 @@ class Java(metaclass=LanguageCls):
             supports_trailing_comma=False,
             empty_sequence="List.of()",
             preamble_lines=("import java.util.List;",),
+            declared_type=None,
         )
 
         @property

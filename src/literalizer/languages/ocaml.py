@@ -84,11 +84,22 @@ def _format_ocaml_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
-    """Format an OCaml variable declaration."""
-    val_type = "val_t array" if value.lstrip().startswith("[|") else "val_t"
-    wrapped = _format_ocaml_entry(original=data, formatted=value)
-    return f"let {name} : {val_type} = {wrapped}"
+def _build_ocaml_declaration(
+    *,
+    sequence_declared_type: str,
+) -> Callable[[str, str, Value], str]:
+    """Build an OCaml variable declaration formatter."""
+
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format a variable declaration."""
+        decl_type = (
+            sequence_declared_type if isinstance(data, list) else "val_t"
+        )
+        wrapped = _format_ocaml_entry(original=data, formatted=value)
+        return f"let {name} : {decl_type} = {wrapped}"
+
+    return _format
 
 
 @beartype
@@ -177,6 +188,7 @@ class OCaml(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type="val_t",
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="[|"),
@@ -190,6 +202,7 @@ class OCaml(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type="val_t array",
         )
 
         @property
@@ -223,7 +236,9 @@ class OCaml(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
+            formatter=_build_ocaml_declaration(
+                sequence_declared_type="val_t",
+            ),
             supports_redefinition=False,
         )
 
@@ -455,11 +470,16 @@ class OCaml(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
+        _ocaml_decl = _build_ocaml_declaration(
+            sequence_declared_type=(
+                sequence_format.value.declared_type or "val_t"
+            ),
+        )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _ocaml_decl
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            _ocaml_decl
         )
         self.element_separator = "; "
         self.format_sequence_entry: Callable[[Value, str], str] = (

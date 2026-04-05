@@ -8,6 +8,6 @@ instance Num Val where
     signum a = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-my_data :: Val
 -- note
+my_data :: Val
 my_data = 42

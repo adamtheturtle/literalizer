@@ -3,6 +3,7 @@
 import datetime
 import enum
 import functools
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -53,7 +54,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
 
 @beartype
@@ -81,31 +82,25 @@ def _format_fsharp_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration_let(
-    name: str, value: str, data: Value
-) -> str:
-    """Format an F# ``let`` variable declaration."""
-    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
-    wrapped = _format_fsharp_entry(original=data, formatted=value)
-    return f"let {name}: {val_type} = {wrapped}"
+def _build_fsharp_declaration(
+    *,
+    template: str,
+    sequence_declared_type: str,
+) -> Callable[[str, str, Value], str]:
+    """Build an F# variable declaration/assignment formatter."""
 
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format a variable declaration or assignment."""
+        decl_type = sequence_declared_type if isinstance(data, list) else "Val"
+        wrapped = _format_fsharp_entry(original=data, formatted=value)
+        return template.format(
+            name=name,
+            declared_type=decl_type,
+            wrapped=wrapped,
+        )
 
-@beartype
-def _format_variable_declaration_let_mutable(
-    name: str, value: str, data: Value
-) -> str:
-    """Format an F# ``let mutable`` variable declaration."""
-    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
-    wrapped = _format_fsharp_entry(original=data, formatted=value)
-    return f"let mutable {name}: {val_type} = {wrapped}"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format an F# variable assignment."""
-    val_type = "Val array" if value.lstrip().startswith("[|") else "Val"
-    wrapped = _format_fsharp_entry(original=data, formatted=value)
-    return f"let {name}: {val_type} = {wrapped}"
+    return _format
 
 
 @beartype
@@ -190,6 +185,7 @@ class FSharp(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type="Val",
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(open_str="[|"),
@@ -203,6 +199,7 @@ class FSharp(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type="Val array",
         )
 
         @property
@@ -240,11 +237,17 @@ class FSharp(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_let,
+            formatter=_build_fsharp_declaration(
+                template="let {name}: {declared_type} = {wrapped}",
+                sequence_declared_type="Val",
+            ),
             supports_redefinition=False,
         )
         LET_MUTABLE = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_let_mutable,
+            formatter=_build_fsharp_declaration(
+                template="let mutable {name}: {declared_type} = {wrapped}",
+                sequence_declared_type="Val",
+            ),
             supports_redefinition=True,
         )
 
@@ -446,11 +449,25 @@ class FSharp(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
+        _sequence_declared_type = sequence_format.value.declared_type or "Val"
+        _keyword = (
+            "let mutable"
+            if declaration_style.value.supports_redefinition
+            else "let"
+        )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _build_fsharp_declaration(
+                template=(
+                    f"{_keyword} {{name}}: {{declared_type}} = {{wrapped}}"
+                ),
+                sequence_declared_type=_sequence_declared_type,
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _build_fsharp_declaration(
+                template="let {name}: {declared_type} = {wrapped}",
+                sequence_declared_type=_sequence_declared_type,
+            )
         )
         self.element_separator = "; "
         self.format_sequence_entry: Callable[[Value, str], str] = (

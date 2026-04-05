@@ -413,6 +413,7 @@ class VisualBasic(metaclass=LanguageCls):
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
+            declared_type=None,
         )
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format

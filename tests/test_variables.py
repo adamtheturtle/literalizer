@@ -211,6 +211,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-ass
                 signum a = error "not implemented"
                 negate (HInt n) = HInt (negate n)
                 negate _ = error "not implemented"
+            my_var :: Val
             my_var = 42"""
         ),
         assignment=textwrap.dedent(
