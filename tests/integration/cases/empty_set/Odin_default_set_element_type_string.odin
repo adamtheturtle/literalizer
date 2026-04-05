@@ -2,6 +2,6 @@
 package main
 
 main :: proc() {
-my_data := map[string]struct{}{}
+my_data := map[int]struct{}{}
 _ = my_data
 }

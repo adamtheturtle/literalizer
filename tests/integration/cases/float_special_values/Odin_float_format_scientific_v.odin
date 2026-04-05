@@ -4,9 +4,9 @@ import "core:math"
 
 main :: proc() {
 my_data := [dynamic]any{
-	math.INF_F64,
-	-math.INF_F64,
-	math.NAN_F64,
+	math.inf_f64(1),
+	math.inf_f64(-1),
+	math.nan_f64(),
 }
 _ = my_data
 }

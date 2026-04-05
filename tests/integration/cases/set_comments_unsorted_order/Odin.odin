@@ -2,7 +2,7 @@
 package main
 
 main :: proc() {
-my_data := map[any]struct{}{
+my_data := map[string]struct{}{
 	// before apple
 	"apple" = {},
 	"banana" = {},  // banana inline

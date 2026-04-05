@@ -12,6 +12,8 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
+    make_element_to_type,
+    make_type_to_opener,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -191,25 +193,25 @@ class Odin(metaclass=LanguageCls):
         REPR = enum.member(
             value=functools.partial(
                 format_float_repr,
-                inf_literal="math.INF_F64",
-                neg_inf_literal="-math.INF_F64",
-                nan_literal="math.NAN_F64",
+                inf_literal="math.inf_f64(1)",
+                neg_inf_literal="math.inf_f64(-1)",
+                nan_literal="math.nan_f64()",
             )
         )
         SCIENTIFIC = enum.member(
             value=functools.partial(
                 format_float_scientific,
-                inf_literal="math.INF_F64",
-                neg_inf_literal="-math.INF_F64",
-                nan_literal="math.NAN_F64",
+                inf_literal="math.inf_f64(1)",
+                neg_inf_literal="math.inf_f64(-1)",
+                nan_literal="math.nan_f64()",
             )
         )
         FIXED = enum.member(
             value=functools.partial(
                 format_float_fixed,
-                inf_literal="math.INF_F64",
-                neg_inf_literal="-math.INF_F64",
-                nan_literal="math.NAN_F64",
+                inf_literal="math.inf_f64(1)",
+                neg_inf_literal="math.inf_f64(-1)",
+                nan_literal="math.nan_f64()",
             )
         )
 
@@ -316,7 +318,7 @@ class Odin(metaclass=LanguageCls):
         bytes_format: BytesFormats = BytesFormats.HEX,
         sequence_format: SequenceFormats = SequenceFormats.DYNAMIC_ARRAY,
         set_format: SetFormats = SetFormats.SET,
-        default_set_element_type: str = "any",
+        default_set_element_type: str = "string",
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
         declaration_style: DeclarationStyles = DeclarationStyles.SHORT,
@@ -342,8 +344,30 @@ class Odin(metaclass=LanguageCls):
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format(
+        init_element_to_type = make_element_to_type(
+            str_type="string",
+            bool_type="bool",
+            int_type="int",
+            float_type="f64",
+            mixed_numeric_type="f64",
+            bytes_type="string",
+            date_type="string",
+            datetime_type="string",
+            list_template="[dynamic]{inner}",
+            dict_type_template="map[string]{inner}",
+            fallback_value_type="string",
+        )
+        base_set_config: SetFormatConfig = set_format(
             default_type=default_set_element_type,
+        )
+        self.set_format_config: SetFormatConfig = (
+            base_set_config.with_typed_opener(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=init_element_to_type,
+                    opener_template="map[{type_name}]struct{{}}{{",
+                ),
+                fallback=base_set_config.set_open([]),
+            )
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
