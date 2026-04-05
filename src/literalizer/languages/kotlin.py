@@ -190,6 +190,7 @@ class Kotlin(metaclass=LanguageCls):
     supports_default_dict_value_type = True
     supports_default_dict_key_type = True
     supports_default_ordered_map_value_type = False
+    supports_non_printable_ascii_dict_keys = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
