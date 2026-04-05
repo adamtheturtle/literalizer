@@ -26,6 +26,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -236,8 +237,8 @@ class OCaml(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=_build_ocaml_declaration(
-                sequence_declared_type="val_t",
+            formatter=variable_formatter(
+                template="let {name} = {value}",
             ),
             supports_redefinition=False,
         )

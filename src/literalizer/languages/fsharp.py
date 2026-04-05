@@ -25,6 +25,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -237,16 +238,14 @@ class FSharp(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=_build_fsharp_declaration(
-                template="let {name}: {declared_type} = {wrapped}",
-                sequence_declared_type="Val",
+            formatter=variable_formatter(
+                template="let {name} = {value}",
             ),
             supports_redefinition=False,
         )
         LET_MUTABLE = DeclarationStyleConfig(
-            formatter=_build_fsharp_declaration(
-                template="let mutable {name}: {declared_type} = {wrapped}",
-                sequence_declared_type="Val",
+            formatter=variable_formatter(
+                template="let mutable {name} = {value}",
             ),
             supports_redefinition=True,
         )
