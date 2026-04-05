@@ -8,9 +8,9 @@ from pygments.lexers import find_lexer_class_by_name
 
 import literalizer.languages
 from literalizer import (
+    InputFormat,
     Language,
-    literalize_json,
-    literalize_yaml,
+    literalize,
 )
 from literalizer._language import LanguageCls
 from literalizer.exceptions import NullInCollectionError
@@ -133,8 +133,9 @@ TYPESCRIPT = TypeScript(
 )
 def test_language_sequence(*, language: Language, expected: str) -> None:
     """Each language produces the correct sequence literal."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
+    result = literalize(
+        source=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
+        input_format=InputFormat.JSON,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -147,8 +148,9 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
 
 def test_ruby_dict() -> None:
     """Ruby dicts use => syntax and nil."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[{"key": None}]),
+    result = literalize(
+        source=json.dumps(obj=[{"key": None}]),
+        input_format=InputFormat.JSON,
         language=RUBY,
         pre_indent_level=0,
         include_delimiters=False,
@@ -161,8 +163,9 @@ def test_ruby_dict() -> None:
 
 def test_dict_ruby() -> None:
     """Ruby dict renders with => syntax."""
-    result = literalize_json(
-        json_string=json.dumps(obj={"user_1": "team_alpha"}),
+    result = literalize(
+        source=json.dumps(obj={"user_1": "team_alpha"}),
+        input_format=InputFormat.JSON,
         language=RUBY,
         pre_indent_level=1,
         include_delimiters=False,
@@ -177,8 +180,9 @@ def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
     """Java Map.ofEntries() must not have a trailing comma before the
     closing paren.
     """
-    result = literalize_json(
-        json_string=json.dumps(obj={"name": "Alice", "age": 30}),
+    result = literalize(
+        source=json.dumps(obj={"name": "Alice", "age": 30}),
+        input_format=InputFormat.JSON,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -199,8 +203,9 @@ def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
 def test_java_dict_skips_null_values() -> None:
     """Java Map.ofEntries() omits entries with null values."""
     data = {"name": "Alice", "score": None, "age": 30}
-    result = literalize_json(
-        json_string=json.dumps(obj=data),
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -220,8 +225,9 @@ def test_java_dict_skips_null_values() -> None:
 
 def test_java_dict_skips_null_values_no_include_delimiters() -> None:
     """Java dict omits null entries even without include_delimiters."""
-    result = literalize_json(
-        json_string=json.dumps(obj={"a": None, "b": 1}),
+    result = literalize(
+        source=json.dumps(obj={"a": None, "b": 1}),
+        input_format=InputFormat.JSON,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=False,
@@ -237,8 +243,9 @@ def test_java_dict_all_null_values_include_delimiters() -> None:
     """Java dict where all values are null produces empty
     Map.ofEntries().
     """
-    result = literalize_json(
-        json_string=json.dumps(obj={"a": None, "b": None}),
+    result = literalize(
+        source=json.dumps(obj={"a": None, "b": None}),
+        input_format=InputFormat.JSON,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -251,8 +258,9 @@ def test_java_dict_all_null_values_include_delimiters() -> None:
 
 def test_java_dict_all_null_values_with_pre_indent_level() -> None:
     """Java all-null dict with pre_indent_level includes line_prefix."""
-    result = literalize_json(
-        json_string=json.dumps(obj={"a": None, "b": None}),
+    result = literalize(
+        source=json.dumps(obj={"a": None, "b": None}),
+        input_format=InputFormat.JSON,
         language=JAVA,
         pre_indent_level=1,
         include_delimiters=True,
@@ -266,8 +274,9 @@ def test_java_dict_all_null_values_with_pre_indent_level() -> None:
 def test_java_yaml_dict_null_values_with_comments() -> None:
     """Java YAML dict with null values and comments does not crash."""
     yaml_string = "# comment\nname: Alice\nscore: null\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -296,8 +305,9 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         debug: true
         """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -326,8 +336,9 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         port: null  # not configured yet
         """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -350,8 +361,9 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
     delimiters.
     """
     yaml_string = "a: null\nb: null\n# trailing\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -374,8 +386,9 @@ def test_java_yaml_ordered_map_skips_null_values() -> None:
           - age: 30
         """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -393,8 +406,9 @@ def test_java_yaml_ordered_map_skips_null_values() -> None:
 
 def test_java_sequence_include_delimiters_uses_braces() -> None:
     """Java wrapped sequences use ``new Object[]{…}``."""
-    result = literalize_json(
-        json_string=json.dumps(obj=[1, "hello", True]),
+    result = literalize(
+        source=json.dumps(obj=[1, "hello", True]),
+        input_format=InputFormat.JSON,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -455,8 +469,9 @@ def test_java_typed_array_opener(
     *, json_input: list[object], expected: str
 ) -> None:
     """Java uses typed array openers inferred from element types."""
-    result = literalize_json(
-        json_string=json.dumps(obj=json_input),
+    result = literalize(
+        source=json.dumps(obj=json_input),
+        input_format=InputFormat.JSON,
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
@@ -485,8 +500,9 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
     characters (newlines, tabs, etc.) are represented as ``char(N)``
     expressions joined with ``+``.
     """
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=Matlab(
             date_format=Matlab.date_formats.ISO,
             datetime_format=Matlab.datetime_formats.ISO,
@@ -509,8 +525,9 @@ def test_matlab_dict_key_with_quote() -> None:
     double-quoted string, which represents a literal ``"`` character.
     """
     yaml_string = '{"hello \\"world\\"": 1}\n'
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=Matlab(
             date_format=Matlab.date_formats.ISO,
             datetime_format=Matlab.datetime_formats.ISO,
@@ -533,8 +550,9 @@ def test_toml_integer_dict_key() -> None:
     Integer keys are not quoted strings, so the bare-key optimisation is
     skipped and the raw formatted key is used directly.
     """
-    result = literalize_yaml(
-        yaml_string="1: value\n",
+    result = literalize(
+        source="1: value\n",
+        input_format=InputFormat.YAML,
         language=TOML,
         pre_indent_level=0,
         include_delimiters=True,
@@ -564,8 +582,9 @@ def test_toml_non_quoted_dict_key() -> None:
 
 def test_cobol_string_control_characters() -> None:
     """COBOL string literals replace control characters with spaces."""
-    result = literalize_yaml(
-        yaml_string='"line1\\nline2"\n',
+    result = literalize(
+        source='"line1\\nline2"\n',
+        input_format=InputFormat.YAML,
         language=COBOL,
         pre_indent_level=0,
         include_delimiters=False,
@@ -578,8 +597,9 @@ def test_cobol_string_control_characters() -> None:
 
 def test_cobol_string_tab_characters() -> None:
     """COBOL string literals replace tab characters with spaces."""
-    result = literalize_yaml(
-        yaml_string='"col1\\tcol2"\n',
+    result = literalize(
+        source='"col1\\tcol2"\n',
+        input_format=InputFormat.YAML,
         language=COBOL,
         pre_indent_level=0,
         include_delimiters=False,
@@ -608,8 +628,9 @@ def test_cobol_level_number_cap() -> None:
                           value: deep
         """
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=COBOL,
         pre_indent_level=1,
         include_delimiters=True,
@@ -638,8 +659,9 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
     """COBOL data names must not end with a hyphen after truncation."""
     long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
     yaml_string = f'"{long_key}": 1\n'
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=COBOL,
         pre_indent_level=1,
         include_delimiters=True,
@@ -657,8 +679,9 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
 def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     """Line continuation handles escaped quotes before inline comments."""
     yaml_string = "host: it's here  # a comment\nport: 80  # another\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=FORTRAN,
         pre_indent_level=0,
         variable_name="cfg",
@@ -675,8 +698,9 @@ def test_java_list_format() -> None:
     spec = Java(
         sequence_format=Java.sequence_formats.LIST,
     )
-    result = literalize_json(
-        json_string=json.dumps(obj=[1, "hello", True]),
+    result = literalize(
+        source=json.dumps(obj=[1, "hello", True]),
+        input_format=InputFormat.JSON,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -701,8 +725,9 @@ def test_java_list_rejects_null_elements() -> None:
         sequence_format=Java.sequence_formats.LIST,
     )
     with pytest.raises(expected_exception=NullInCollectionError):
-        literalize_json(
-            json_string=json.dumps(obj=[1, None, "hello"]),
+        literalize(
+            source=json.dumps(obj=[1, None, "hello"]),
+            input_format=InputFormat.JSON,
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
@@ -744,8 +769,9 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         default_dict_value_type="str",
         default_dict_key_type="str",
     )
-    result = literalize_yaml(
-        yaml_string="{}\n",
+    result = literalize(
+        source="{}\n",
+        input_format=InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,

@@ -21,13 +21,13 @@ Requires Python |minimum-python-version|\+.
 Usage
 -----
 
-Use :func:`literalizer.literalize_yaml` (or :func:`literalizer.literalize_json` for JSON input) to convert data to native language literals:
+Use :func:`literalizer.literalize` to convert data to native language literals:
 
 .. code-block:: python
 
    """Example of using literalizer."""
 
-   from literalizer import literalize_yaml
+   from literalizer import InputFormat, literalize
    from literalizer.languages import Go
 
    # YAML comments are preserved using the target language's comment syntax
@@ -38,8 +38,9 @@ Use :func:`literalizer.literalize_yaml` (or :func:`literalizer.literalize_json` 
    # Enable debug mode for development
    debug: true
    """
-   result = literalize_yaml(  # returns LiteralizeResult with .code and .preamble
-       yaml_string=yaml_config,
+   result = literalize(  # returns LiteralizeResult with .code and .preamble
+       source=yaml_config,
+       input_format=InputFormat.YAML,
        error_on_coercion=False,
        language=Go(
            date_format=Go.date_formats.GO,

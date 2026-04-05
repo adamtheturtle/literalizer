@@ -5,8 +5,9 @@ import textwrap
 import pytest
 
 from literalizer import (
+    InputFormat,
     Language,
-    literalize_yaml,
+    literalize,
 )
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
@@ -55,8 +56,9 @@ PYTHON = Python(
 def test_literalize_yaml_sequence() -> None:
     """``literalize_yaml`` parses a YAML sequence string."""
     yaml_string = "- [user_1, 1000.0]\n- [user_2, 2000.0]\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
@@ -79,8 +81,9 @@ def test_literalize_yaml_indent_override() -> None:
         indent="\t",
     )
     yaml_string = "a: 1\nb: true\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
@@ -95,8 +98,9 @@ def test_literalize_yaml_indent_override() -> None:
 def test_literalize_yaml_invalid() -> None:
     """``literalize_yaml`` raises on invalid YAML."""
     with pytest.raises(expected_exception=YAMLParseError):
-        literalize_yaml(
-            yaml_string=":\n  :\n    - ][",
+        literalize(
+            source=":\n  :\n    - ][",
+            input_format=InputFormat.YAML,
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
@@ -109,8 +113,9 @@ def test_literalize_yaml_invalid() -> None:
 def test_literalize_yaml_invalid_is_parse_error() -> None:
     """``YAMLParseError`` is a subclass of ``ParseError``."""
     with pytest.raises(expected_exception=ParseError):
-        literalize_yaml(
-            yaml_string=":\n  :\n    - ][",
+        literalize(
+            source=":\n  :\n    - ][",
+            input_format=InputFormat.YAML,
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
@@ -140,8 +145,9 @@ def test_literalize_yaml_scalar(
     expected: str,
 ) -> None:
     """``literalize_yaml`` handles scalar YAML values."""
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -158,8 +164,9 @@ def test_cpp_array_binary_typed() -> None:
     """
     cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
     yaml_string = "- !!binary |\n    SGVsbG8=\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
@@ -177,8 +184,9 @@ def test_cpp_array_null_list_fallback() -> None:
     """
     cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
     yaml_string = "- null\n- null\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
@@ -194,8 +202,9 @@ def test_yaml_set_inline_in_sequence() -> None:
     """A !!set nested in a sequence is formatted inline using set
     delimiters.
     """
-    result = literalize_yaml(
-        yaml_string="- !!set\n  ? a\n  ? b\n",
+    result = literalize(
+        source="- !!set\n  ? a\n  ? b\n",
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -208,8 +217,9 @@ def test_yaml_set_inline_in_sequence() -> None:
 
 def test_yaml_set_inline_with_format_set_entry() -> None:
     """A !!set nested in a list uses format_set_entry when provided."""
-    result = literalize_yaml(
-        yaml_string="- !!set\n  ? a\n",
+    result = literalize(
+        source="- !!set\n  ? a\n",
+        input_format=InputFormat.YAML,
         language=GO,
         pre_indent_level=0,
         include_delimiters=False,
@@ -222,8 +232,9 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
 
 def test_yaml_empty_set_inline() -> None:
     """An empty !!set nested in a list uses empty_set override."""
-    result = literalize_yaml(
-        yaml_string="- !!set {}\n",
+    result = literalize(
+        source="- !!set {}\n",
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -247,8 +258,9 @@ def test_ordered_map_nested_in_sequence() -> None:
           - age: 30
         """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -274,8 +286,9 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
         key2: 42
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -302,8 +315,9 @@ def test_coerce_heterogeneous_set() -> None:
         ? "hello"
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -329,8 +343,9 @@ def test_coerce_heterogeneous_date_in_collection() -> None:
         - 42
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -358,8 +373,9 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
         - 42
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -386,8 +402,9 @@ def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
           - city: Paris
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -414,8 +431,9 @@ def test_coerce_mixed_dict_values_none_with_list() -> None:
         extra:
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -442,8 +460,9 @@ def test_coerce_mixed_dict_values_set_with_string() -> None:
           ? admin
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -472,8 +491,9 @@ def test_coerce_mixed_dict_values_with_list() -> None:
           - user
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -502,8 +522,9 @@ def test_coerce_mixed_ordered_map_values() -> None:
             - admin
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -532,8 +553,9 @@ def test_r_empty_dict_key_positional() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -560,8 +582,9 @@ def test_r_empty_dict_key_positional_is_default() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -589,8 +612,9 @@ def test_r_empty_dict_key_error() -> None:
     )
     yaml_string = '{"": "value"}\n'
     with pytest.raises(expected_exception=InvalidDictKeyError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
@@ -610,8 +634,9 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"key": "value"}\n'
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -632,8 +657,9 @@ def test_error_on_coercion_raises_for_heterogeneous_list() -> None:
     """Error_on_coercion raises when a list has mixed scalar types."""
     yaml_string = "- 1\n- 2.5\n- 3\n"
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -654,8 +680,9 @@ def test_error_on_coercion_raises_for_heterogeneous_dict() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -668,8 +695,9 @@ def test_error_on_coercion_raises_for_heterogeneous_dict() -> None:
 def test_error_on_coercion_no_raise_for_homogeneous() -> None:
     """Error_on_coercion does not raise for homogeneous collections."""
     yaml_string = "- 1\n- 2\n- 3\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -691,8 +719,9 @@ def test_error_on_coercion_no_raise_for_homogeneous() -> None:
 def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
     """Error_on_coercion has no effect when language doesn't coerce."""
     yaml_string = "- 1\n- 2.5\n- 3\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -722,8 +751,9 @@ def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -743,8 +773,9 @@ def test_error_on_coercion_raises_for_heterogeneous_ordered_map() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -764,8 +795,9 @@ def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -783,8 +815,9 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
         b: 2
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -811,8 +844,9 @@ def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
           - city: Paris
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -839,8 +873,9 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
         ? 2
     """,
     )
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -869,8 +904,9 @@ def test_error_on_coercion_raises_for_mixed_dict_values() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -890,8 +926,9 @@ def test_error_on_coercion_raises_for_mixed_list_values() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -914,8 +951,9 @@ def test_error_on_coercion_raises_for_mixed_dict_shapes() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
@@ -937,8 +975,9 @@ def test_error_on_coercion_no_raise_for_uniform_dict_shapes() -> None:
           name: b
     """,
     )
-    literalize_yaml(
-        yaml_string=yaml_string,
+    literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
@@ -958,8 +997,9 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
     """,
     )
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -973,8 +1013,9 @@ def test_dhall_empty_dict_key_error() -> None:
     """Dhall raises InvalidDictKeyError for empty-string dict keys."""
     yaml_string = '{"": "value"}\n'
     with pytest.raises(expected_exception=InvalidDictKeyError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
@@ -987,8 +1028,9 @@ def test_dhall_empty_dict_key_error() -> None:
 def test_dhall_control_char_in_string() -> None:
     """Dhall escapes control characters using braced unicode escapes."""
     yaml_string = '"\\x01"\n'
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
@@ -1004,8 +1046,9 @@ def test_dhall_control_char_key_error() -> None:
     """Dhall rejects control characters in dict keys."""
     yaml_string = '{"\\x01": "value"}\n'
     with pytest.raises(expected_exception=InvalidDictKeyError):
-        literalize_yaml(
-            yaml_string=yaml_string,
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
@@ -1018,8 +1061,9 @@ def test_dhall_control_char_key_error() -> None:
 def test_dhall_backtick_label_unescaping() -> None:
     """Dhall backtick labels contain raw content, not escape sequences."""
     yaml_string = '{"$ref": "value"}\n'
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,

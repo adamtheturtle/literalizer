@@ -20,7 +20,7 @@ returns this response:
    // Response
    {"id": 42, "name": "Alice", "email": "alice@example.com", "created": true}
 
-|project| converts these into native literals for each language using :func:`literalizer.literalize_json`:
+|project| converts these into native literals for each language using :func:`literalizer.literalize`:
 
 .. code-block:: python
 
@@ -28,7 +28,7 @@ returns this response:
 
    import textwrap
 
-   from literalizer import literalize_json
+   from literalizer import InputFormat, literalize
    from literalizer.languages import Python
 
    request_json = '{"name": "Alice", "email": "alice@example.com"}'
@@ -37,8 +37,9 @@ returns this response:
        ' "email": "alice@example.com", "created": true}'
    )
 
-   request_literal = literalize_json(
-       json_string=request_json,
+   request_literal = literalize(
+       source=request_json,
+       input_format=InputFormat.JSON,
        error_on_coercion=False,
        language=Python(
            date_format=Python.date_formats.PYTHON,
@@ -61,8 +62,9 @@ returns this response:
        }""",
    )
 
-   response_literal = literalize_json(
-       json_string=response_json,
+   response_literal = literalize(
+       source=response_json,
+       input_format=InputFormat.JSON,
        error_on_coercion=False,
        language=Python(
            date_format=Python.date_formats.PYTHON,

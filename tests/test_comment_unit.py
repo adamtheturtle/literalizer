@@ -5,8 +5,9 @@ cases.
 import pytest
 
 from literalizer import (
+    InputFormat,
     Language,
-    literalize_yaml,
+    literalize,
 )
 from literalizer.languages import (
     Go,
@@ -46,8 +47,9 @@ RUBY = Ruby(
 def test_yaml_comment_scalar_only_comments() -> None:
     """Scalar YAML with only markers and comments, no value line."""
     yaml_string = "---\n# just a comment\n...\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -62,8 +64,9 @@ def test_yaml_comment_scalar_only_comments() -> None:
 def test_yaml_comment_no_include_delimiters() -> None:
     """Comments work with include_delimiters=False."""
     yaml_string = "# comment\n- a\n- b\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,

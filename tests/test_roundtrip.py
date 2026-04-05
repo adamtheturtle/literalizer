@@ -7,7 +7,7 @@ import json
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from literalizer import literalize_json, literalize_yaml
+from literalizer import InputFormat, literalize
 from literalizer.languages import Python
 
 # Use LIST sequence format so that ast.literal_eval returns plain lists,
@@ -68,8 +68,9 @@ json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
 @given(data=json_arrays)
 def test_roundtrip_array(data: list[_JSONValue]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
-    result = literalize_json(
-        json_string=json.dumps(obj=data),
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -84,8 +85,9 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
 @given(data=json_scalars)
 def test_roundtrip_scalar(data: _JSONScalar) -> None:
     """Scalar -> Python literal -> ast.literal_eval round-trips."""
-    result = literalize_json(
-        json_string=json.dumps(obj=data),
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
@@ -105,8 +107,9 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much])
 def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
-    result = literalize_json(
-        json_string=json.dumps(obj=data),
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -139,8 +142,9 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
     """
     encoded = base64.b64encode(s=data).decode()
     yaml_string = f"- !!binary |\n  {encoded}\n"
-    result = literalize_yaml(
-        yaml_string=yaml_string,
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,

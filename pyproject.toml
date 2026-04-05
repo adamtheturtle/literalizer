@@ -111,8 +111,8 @@ lint.ignore = [
     "D212",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
-    # literalize_json and literalize_yaml have 6 keyword-only arguments,
-    # which is justified by the public API design.
+    # literalize has 8 keyword-only arguments, which is justified by the
+    # public API design.
     "PLR0913",
 ]
 lint.per-file-ignores."doccmd_*.py" = [

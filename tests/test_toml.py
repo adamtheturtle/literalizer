@@ -5,8 +5,9 @@ import textwrap
 import pytest
 
 from literalizer import (
+    InputFormat,
     Language,
-    literalize_toml,
+    literalize,
 )
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
@@ -46,8 +47,9 @@ JAVASCRIPT = JavaScript(
 def test_dict_python() -> None:
     """Python dict renders key-value pairs from TOML."""
     toml_string = 'user_1 = "team_alpha"\nuser_2 = "team_alpha"\n'
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
@@ -62,8 +64,9 @@ def test_dict_python() -> None:
 def test_dict_include_delimiters() -> None:
     """Wrapping a dict adds braces and indentation."""
     toml_string = "a = 1\nb = 2\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -83,8 +86,9 @@ def test_dict_include_delimiters() -> None:
 
 def test_empty_table() -> None:
     """An empty TOML string produces an empty dict."""
-    result = literalize_toml(
-        toml_string="",
+    result = literalize(
+        source="",
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -98,8 +102,9 @@ def test_empty_table() -> None:
 def test_integers() -> None:
     """Integer values in a TOML array are rendered literally."""
     toml_string = "values = [42, 0, -7]\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -119,8 +124,9 @@ def test_integers() -> None:
 def test_floats() -> None:
     """Float values are rendered literally."""
     toml_string = "values = [1000.0, 3.14]\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -140,8 +146,9 @@ def test_floats() -> None:
 def test_booleans() -> None:
     """Boolean values are formatted per language."""
     toml_string = "enabled = true\nverbose = false\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -162,8 +169,9 @@ def test_booleans() -> None:
 def test_nested_table() -> None:
     """Nested TOML tables are rendered as nested dicts."""
     toml_string = '[server]\nname = "test"\nport = 8080\n'
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -183,8 +191,9 @@ def test_nested_table() -> None:
 def test_array_of_tables() -> None:
     """TOML array-of-tables produces a list of dicts."""
     toml_string = '[[items]]\nname = "a"\n\n[[items]]\nname = "b"\n'
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -204,8 +213,9 @@ def test_array_of_tables() -> None:
 def test_date_python() -> None:
     """TOML date values are converted to Python date literals."""
     toml_string = "created = 2024-01-15\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -225,8 +235,9 @@ def test_date_python() -> None:
 def test_datetime_python() -> None:
     """TOML datetime values are converted to Python datetime literals."""
     toml_string = "updated = 2024-01-15T10:30:00\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -242,8 +253,9 @@ def test_datetime_python() -> None:
 def test_time_coerced_to_string() -> None:
     """TOML time values are coerced to ISO-format strings."""
     toml_string = "start = 10:30:00\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -263,8 +275,9 @@ def test_time_coerced_to_string() -> None:
 def test_invalid_toml() -> None:
     """``literalize_toml`` raises on invalid TOML."""
     with pytest.raises(expected_exception=TOMLParseError):
-        literalize_toml(
-            toml_string="not = [valid toml",
+        literalize(
+            source="not = [valid toml",
+            input_format=InputFormat.TOML,
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
@@ -277,8 +290,9 @@ def test_invalid_toml() -> None:
 def test_invalid_toml_is_parse_error() -> None:
     """``TOMLParseError`` is a subclass of ``ParseError``."""
     with pytest.raises(expected_exception=ParseError):
-        literalize_toml(
-            toml_string="not = [valid toml",
+        literalize(
+            source="not = [valid toml",
+            input_format=InputFormat.TOML,
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
@@ -291,8 +305,9 @@ def test_invalid_toml_is_parse_error() -> None:
 def test_variable_declaration() -> None:
     """Variable name wraps the output in a declaration."""
     toml_string = 'name = "alice"\n'
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=JAVASCRIPT,
         pre_indent_level=0,
         include_delimiters=True,
@@ -312,8 +327,9 @@ def test_variable_declaration() -> None:
 def test_variable_assignment() -> None:
     """``new_variable=False`` uses assignment syntax."""
     toml_string = 'name = "alice"\n'
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -333,8 +349,9 @@ def test_variable_assignment() -> None:
 def test_go_output() -> None:
     """TOML input renders correctly for Go."""
     toml_string = 'name = "test"\ncount = 42\n'
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=GO,
         pre_indent_level=0,
         include_delimiters=True,
@@ -358,8 +375,9 @@ def test_error_on_coercion_raises() -> None:
     """Error_on_coercion raises for heterogeneous TOML arrays."""
     toml_string = "values = [1, 2.5, 3]\n"
     with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize_toml(
-            toml_string=toml_string,
+        literalize(
+            source=toml_string,
+            input_format=InputFormat.TOML,
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
@@ -372,8 +390,9 @@ def test_error_on_coercion_raises() -> None:
 def test_error_on_coercion_no_raise_homogeneous() -> None:
     """Error_on_coercion does not raise for homogeneous TOML arrays."""
     toml_string = "values = [1, 2, 3]\n"
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
@@ -404,8 +423,9 @@ def test_scalar_types(
     *, toml_string: str, language: Language, expected: str
 ) -> None:
     """Various TOML scalar types render correctly."""
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
@@ -425,8 +445,9 @@ def test_body_preamble() -> None:
         sequence_format=Haskell.sequence_formats.LIST,
     )
     toml_string = 'name = "alice"\n'
-    result = literalize_toml(
-        toml_string=toml_string,
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
         language=haskell,
         pre_indent_level=0,
         include_delimiters=True,
