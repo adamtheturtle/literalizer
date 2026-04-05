@@ -1007,9 +1007,8 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.rkt
-      - name: Install Racket
+      - uses: Bogdanp/setup-racket@v1.15
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq racket
       - name: Check Racket syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 raco make < /tmp/files-to-lint
