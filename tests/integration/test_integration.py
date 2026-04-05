@@ -37,6 +37,7 @@ def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
     return request.config.rootpath / "tests" / "integration" / "cases"
 
 
+@beartype
 def _with_body_preamble(
     content: str,
     body_preamble: tuple[str, ...],
@@ -57,6 +58,7 @@ def _wrap_noop(
     return _with_body_preamble(content=content, body_preamble=body_preamble)
 
 
+@beartype
 def _find_redefinition_styles(
     spec: literalizer.Language,
 ) -> list[enum.Enum]:
@@ -68,6 +70,7 @@ def _find_redefinition_styles(
     ]
 
 
+@beartype
 def _newline_combined(
     wrap: Callable[[str, str, tuple[str, ...]], str],
 ) -> Callable[[str, str, str, tuple[str, ...]], str]:
@@ -507,7 +510,6 @@ def _wrap_zig(
     return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
 
-@beartype
 @beartype
 def _wrap_fortran(
     content: str,
