@@ -1988,6 +1988,7 @@ def _build_variant_cases() -> list[_VariantCase]:
             "dict_with_list_value",
             "_list_val",
         ),
+        (_build_sequence_variants(), "float_list", "_float"),
         (_build_float_format_variants(), "float_list", ""),
         (_build_float_format_variants(), "float_scientific_notation", "_s"),
         (_build_float_format_variants(), "float_special_values", "_v"),
