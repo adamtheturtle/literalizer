@@ -1,0 +1,6 @@
+---
+name: Alice
+tags: !!set
+  ? apple
+  ? 42
+  ? true

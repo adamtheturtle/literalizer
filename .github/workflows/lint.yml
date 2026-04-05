@@ -1028,7 +1028,6 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
-            case "$f" in */mixed_set/*) continue ;; esac
             odin check "$f" -file || exit 1
           done < /tmp/files-to-lint
 

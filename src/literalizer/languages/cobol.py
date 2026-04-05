@@ -303,6 +303,7 @@ class Cobol(metaclass=LanguageCls):
             empty_set="05 FILLER PIC X(1) VALUE SPACES.",
             preamble_lines=(),
             set_opener_template="",
+            coerce_mixed_to_str=False,
         )
 
     class CommentFormats(enum.Enum):

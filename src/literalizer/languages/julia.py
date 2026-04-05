@@ -190,6 +190,7 @@ class Julia(metaclass=LanguageCls):
             empty_set="Set()",
             preamble_lines=(),
             set_opener_template="",
+            coerce_mixed_to_str=False,
         )
 
     class CommentFormats(enum.Enum):

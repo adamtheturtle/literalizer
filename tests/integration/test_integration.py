@@ -1035,11 +1035,19 @@ def _build_set_variants() -> Iterable[_Variant]:
 
 
 @beartype
-def _build_default_set_element_type_variants() -> Iterable[_Variant]:
+def _build_default_set_element_type_variants(
+    *,
+    should_coerce_mixed: bool = False,
+) -> Iterable[_Variant]:
     """Build default-set-type variants for languages that support it.
 
     For each language that advertises ``supports_default_set_element_type``,
     create a variant with a non-default value.
+
+    When *should_coerce_mixed* is ``True``, only include languages whose
+    set format has ``coerce_mixed_to_str`` enabled, since overriding
+    ``default_set_element_type`` to a typed key produces invalid code
+    for mixed sets when elements are not coerced.
     """
     # The test value must differ from the language's own default *and* be
     # a valid type name for that language's linter / compiler.
@@ -1057,12 +1065,18 @@ def _build_default_set_element_type_variants() -> Iterable[_Variant]:
         if not lang_config.lang_cls.supports_default_set_element_type:
             continue
         string_type = type_overrides.get(lang_name, "String")
+        spec = lang_config.lang_cls(
+            default_set_element_type=string_type,
+        )
+        if (
+            should_coerce_mixed
+            and not spec.set_format_config.coerce_mixed_to_str
+        ):
+            continue
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_set_element_type_string",
-                spec=lang_config.lang_cls(
-                    default_set_element_type=string_type
-                ),
+                spec=spec,
                 wrap=lang_config.wrap,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
@@ -1807,6 +1821,13 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_set_variants(), "set", ""),
         (_build_default_set_element_type_variants(), "empty_set", ""),
         (_build_default_set_element_type_variants(), "set", ""),
+        (
+            _build_default_set_element_type_variants(
+                should_coerce_mixed=True,
+            ),
+            "mixed_set",
+            "",
+        ),
         (
             _build_default_sequence_element_type_variants(),
             "empty_sequence",
