@@ -1,4 +1,4 @@
-"""Core conversion logic: formatting values and parsing JSON/YAML/TOML."""
+"""Core conversion logic: formatting values and parsing input formats."""
 
 import dataclasses
 import datetime
@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
 
+import pyjson5
 import tomlkit
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
@@ -34,6 +35,7 @@ from literalizer._language import Language
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
+    JSON5ParseError,
     JSONParseError,
     TOMLParseError,
     YAMLParseError,
@@ -44,6 +46,7 @@ class InputFormat(enum.Enum):
     """Supported input serialization formats."""
 
     JSON = enum.auto()
+    JSON5 = enum.auto()
     YAML = enum.auto()
     TOML = enum.auto()
 
@@ -1394,37 +1397,63 @@ class _ParsedInput:
     raw_data: object
 
 
+def _parse_json(*, source: str) -> _ParsedInput:
+    """Parse a JSON string into a ``_ParsedInput``."""
+    try:
+        data = json.loads(s=source)
+    except json.JSONDecodeError as exc:
+        message = (
+            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
+        )
+        raise JSONParseError(message) from exc
+    return _ParsedInput(data=data, raw_data=data)
+
+
+def _parse_json5(*, source: str) -> _ParsedInput:
+    """Parse a JSON5 string into a ``_ParsedInput``."""
+    try:
+        data = pyjson5.decode(data=source)  # pylint: disable=no-member
+    except pyjson5.Json5DecoderException as exc:  # pylint: disable=no-member
+        message = f"Invalid JSON5: {exc}"
+        raise JSON5ParseError(message) from exc
+    return _ParsedInput(data=data, raw_data=data)
+
+
+def _parse_yaml(*, source: str) -> _ParsedInput:
+    """Parse a YAML string into a ``_ParsedInput``."""
+    ruamel_yaml = YAML(typ="safe")
+    try:
+        # https://sourceforge.net/p/ruamel-yaml/tickets/564/
+        raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
+    except YAMLError as exc:
+        message = f"Invalid YAML: {exc}"
+        raise YAMLParseError(message) from exc
+    data = _coerce_yaml_keys(data=raw_data)
+    return _ParsedInput(data=data, raw_data=raw_data)
+
+
+def _parse_toml(*, source: str) -> _ParsedInput:
+    """Parse a TOML string into a ``_ParsedInput``."""
+    try:
+        toml_doc = tomlkit.parse(string=source)
+    except TOMLKitError as exc:
+        message = f"Invalid TOML: {exc}"
+        raise TOMLParseError(message) from exc
+    toml_data = _coerce_toml_values(data=toml_doc.unwrap())
+    return _ParsedInput(data=toml_data, raw_data=toml_doc)
+
+
 def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
     """Parse and coerce an input string according to its format."""
     match input_format:
         case InputFormat.JSON:
-            try:
-                data = json.loads(s=source)
-            except json.JSONDecodeError as exc:
-                message = (
-                    f"Invalid JSON: {exc.msg}"
-                    f" at line {exc.lineno} column {exc.colno}"
-                )
-                raise JSONParseError(message) from exc
-            return _ParsedInput(data=data, raw_data=data)
+            return _parse_json(source=source)
+        case InputFormat.JSON5:
+            return _parse_json5(source=source)
         case InputFormat.YAML:
-            ruamel_yaml = YAML(typ="safe")
-            try:
-                # https://sourceforge.net/p/ruamel-yaml/tickets/564/
-                raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-            except YAMLError as exc:
-                message = f"Invalid YAML: {exc}"
-                raise YAMLParseError(message) from exc
-            data = _coerce_yaml_keys(data=raw_data)
-            return _ParsedInput(data=data, raw_data=raw_data)
+            return _parse_yaml(source=source)
         case InputFormat.TOML:
-            try:
-                toml_doc = tomlkit.parse(string=source)
-            except TOMLKitError as exc:
-                message = f"Invalid TOML: {exc}"
-                raise TOMLParseError(message) from exc
-            toml_data = _coerce_toml_values(data=toml_doc.unwrap())
-            return _ParsedInput(data=toml_data, raw_data=toml_doc)
+            return _parse_toml(source=source)
     assert_never(input_format)  # pragma: no cover
 
 
@@ -1440,7 +1469,8 @@ def literalize(
     new_variable: bool,
     error_on_coercion: bool,
 ) -> LiteralizeResult:
-    r"""Convert a JSON, YAML, or TOML string to native language literal text.
+    r"""Convert a JSON, JSON5, YAML, or TOML string to a native
+    language literal.
 
     YAML and TOML comments are preserved in the output using the
     target language's comment syntax.
@@ -1475,6 +1505,8 @@ def literalize(
     Raises:
         JSONParseError: If *input_format* is ``JSON`` and *source* is
             not valid JSON.
+        JSON5ParseError: If *input_format* is ``JSON5`` and *source*
+            is not valid JSON5.
         YAMLParseError: If *input_format* is ``YAML`` and *source* is
             not valid YAML.
         TOMLParseError: If *input_format* is ``TOML`` and *source* is

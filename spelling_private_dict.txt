@@ -161,6 +161,7 @@ parsers
 pragma
 pre
 prepended
+pyjson5
 pyrefly
 pyright
 pytest
