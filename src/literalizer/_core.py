@@ -1690,24 +1690,14 @@ def _resolve_yaml_collection_comments(
             collection_comments=collection_comments,
         )
 
-    if not language.supports_collection_comments:
-        return _ResolvedComments(
-            result=base,
-            pending=collection_comments,
-            pending_scalar_before=(),
-        )
-    result = apply_collection_comments(
+    return _resolve_collection_comments(
         collection_comments=collection_comments,
         base=base,
+        language=language,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
-    )
-    return _ResolvedComments(
-        result=result,
-        pending=None,
-        pending_scalar_before=(),
     )
 
 
