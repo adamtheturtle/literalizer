@@ -1149,7 +1149,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.sv
       - name: Install Verilator
         if: steps.find-files.outputs.found == 'true'
-        uses: veryl-lang/setup-verilator@v1
+        uses: veryl-lang/setup-verilator@v2
       - name: Check SystemVerilog syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
