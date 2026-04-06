@@ -1397,6 +1397,16 @@ class _ParsedInput:
     raw_data: object
 
 
+def _parse_json5(*, source: str) -> _ParsedInput:
+    """Parse a JSON5 string into a ``_ParsedInput``."""
+    try:
+        data = pyjson5.decode(data=source)  # pylint: disable=no-member
+    except pyjson5.Json5DecoderException as exc:  # pylint: disable=no-member
+        message = f"Invalid JSON5: {exc}"
+        raise JSON5ParseError(message) from exc
+    return _ParsedInput(data=data, raw_data=data)
+
+
 def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
     """Parse and coerce an input string according to its format."""
     match input_format:
@@ -1411,12 +1421,7 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
                 raise JSONParseError(message) from exc
             return _ParsedInput(data=data, raw_data=data)
         case InputFormat.JSON5:
-            try:
-                data = pyjson5.decode(data=source)
-            except pyjson5.Json5DecoderException as exc:
-                message = f"Invalid JSON5: {exc}"
-                raise JSON5ParseError(message) from exc
-            return _ParsedInput(data=data, raw_data=data)
+            return _parse_json5(source=source)
         case InputFormat.YAML:
             ruamel_yaml = YAML(typ="safe")
             try:
