@@ -1,7 +1,7 @@
 |project|
 =========
 
-|project| converts JSON data structures to native language literal syntax.
+|project| converts JSON, JSON5, YAML, and TOML data structures to native language literal syntax.
 
 Supported languages
 -------------------
@@ -65,9 +65,9 @@ Use :func:`literalizer.literalize` to convert data to native language literals:
 Use cases
 ---------
 
-* Generate test fixtures from JSON samples.
+* Generate test fixtures from JSON, JSON5, YAML, or TOML samples.
 * Convert API responses to language-native data structures for documentation.
-* Create type-safe literal data from JSON config files.
+* Create type-safe literal data from JSON, JSON5, YAML, or TOML config files.
 
 CLI
 ---
