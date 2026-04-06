@@ -3,7 +3,7 @@
 literalizer
 ===========
 
-``literalizer`` converts JSON and YAML data structures to native language literal syntax.
+``literalizer`` converts JSON, JSON5, YAML, and TOML data structures to native language literal syntax.
 
 .. contents::
    :local:
@@ -11,10 +11,12 @@ literalizer
 Supported languages
 -------------------
 
-Ada, Bash, C, C#, C++, Clojure, COBOL, Common Lisp, Crystal, D, Dart, Elixir,
-Erlang, F#, Go, Groovy, Haskell, HCL, Java, JavaScript, Julia, Kotlin, Lua,
-MATLAB, Mojo, Nim, Norg, OCaml, Occam-pi, Perl, PHP, PowerShell, Python, R, Racket,
-Ruby, Rust, Scala, Swift, TOML, TypeScript, Visual Basic, Zig.
+Ada, Bash, C, C#, C++, Clojure, COBOL, Common Lisp, Crystal, D, Dart, Dhall,
+Elixir, Elm, Erlang, F#, Fortran, Gleam, Go, Groovy, Haskell, HCL, Java,
+JavaScript, JSON5, Jsonnet, Julia, Kotlin, Lua, MATLAB, Mojo, Nim, Norg,
+Objective-C, OCaml, Occam-pi, Odin, Perl, PHP, PowerShell, PureScript, Python,
+R, Racket, Raku, Ruby, Rust, Scala, Scheme, Swift, SystemVerilog, TOML,
+TypeScript, Visual Basic, YAML, Zig.
 
 Installation
 ------------
@@ -71,9 +73,9 @@ Usage
 Use cases
 ---------
 
-* Generate test fixtures from JSON or YAML samples.
-* Generate multi-language request/response examples for JSON or YAML API docs (see `guide <https://adamtheturtle.github.io/literalizer/json-api-use-case.html>`__).
-* Create type-safe literal data from JSON or YAML config files.
+* Generate test fixtures from JSON, JSON5, YAML, or TOML samples.
+* Generate multi-language request/response examples for API docs (see `guide <https://adamtheturtle.github.io/literalizer/json-api-use-case.html>`__).
+* Create type-safe literal data from JSON, JSON5, YAML, or TOML config files.
 
 CLI
 ---

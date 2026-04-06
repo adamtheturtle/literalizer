@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- Added new output languages: Dhall, Elm, Gleam, JSON5, Jsonnet, Odin, PureScript, Raku, Scheme, SystemVerilog.
+- Unified ``literalize_json``, ``literalize_yaml``, and ``literalize_toml`` into a single ``literalize`` function with an ``InputFormat`` parameter.
+- Added TOML input support (``InputFormat.TOML``) with comment preservation.
+- Added JSON5 input format (``InputFormat.JSON5``).
+- Added ``body_preamble``, ``bare_code``, ``declaration_code``, and ``pre_declaration_comments`` attributes to ``LiteralizeResult``.
+- Added ``requires_uniform_record_shapes`` and ``declared_type`` to ``SequenceFormatConfig``.
+- Added ``supports_scalar_before_comments`` and ``supports_scalar_inline_comments`` language properties.
+
 2026.03.30
 ----------
 
