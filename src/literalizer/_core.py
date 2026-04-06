@@ -1648,9 +1648,9 @@ class _ResolvedComments:
 
 
 @beartype
-def _resolve_yaml_set_comments(
+def _resolve_collection_comments(
     *,
-    ruamel_set: CommentedSet,
+    collection_comments: CollectionComments,
     base: str,
     language: Language,
     comment_prefix: str,
@@ -1658,16 +1658,15 @@ def _resolve_yaml_set_comments(
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Resolve comments for a YAML set."""
-    set_comments = extract_yaml_comments(ruamel_data=ruamel_set)
+    """Resolve pre-extracted collection comments."""
     if not language.supports_collection_comments:
         return _ResolvedComments(
             result=base,
-            pending=set_comments,
+            pending=collection_comments,
             pending_scalar_before=(),
         )
     result = apply_collection_comments(
-        collection_comments=set_comments,
+        collection_comments=collection_comments,
         base=base,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
@@ -1709,24 +1708,14 @@ def _resolve_yaml_collection_comments(
             collection_comments=collection_comments,
         )
 
-    if not language.supports_collection_comments:
-        return _ResolvedComments(
-            result=base,
-            pending=collection_comments,
-            pending_scalar_before=(),
-        )
-    result = apply_collection_comments(
+    return _resolve_collection_comments(
         collection_comments=collection_comments,
         base=base,
+        language=language,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
-    )
-    return _ResolvedComments(
-        result=result,
-        pending=None,
-        pending_scalar_before=(),
     )
 
 
@@ -1749,8 +1738,10 @@ def _resolve_yaml_comments(
         ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
         )
-        return _resolve_yaml_set_comments(
-            ruamel_set=ruamel_set,
+        return _resolve_collection_comments(
+            collection_comments=extract_yaml_comments(
+                ruamel_data=ruamel_set,
+            ),
             base=base,
             language=language,
             comment_prefix=comment_prefix,
@@ -1806,25 +1797,14 @@ def _resolve_toml_comments(
     include_delimiters: bool,
 ) -> _ResolvedComments:
     """Extract and resolve comments from a tomlkit document."""
-    collection_comments = extract_toml_comments(toml_doc=toml_doc)
-    if not language.supports_collection_comments:
-        return _ResolvedComments(
-            result=base,
-            pending=collection_comments,
-            pending_scalar_before=(),
-        )
-    result = apply_collection_comments(
-        collection_comments=collection_comments,
+    return _resolve_collection_comments(
+        collection_comments=extract_toml_comments(toml_doc=toml_doc),
         base=base,
+        language=language,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
-    )
-    return _ResolvedComments(
-        result=result,
-        pending=None,
-        pending_scalar_before=(),
     )
 
 
