@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.06
+----------
+
+
 - Added new output languages: Dhall, Elm, Gleam, JSON5, Jsonnet, Odin, PureScript, Raku, Scheme, SystemVerilog.
 - Unified ``literalize_json``, ``literalize_yaml``, and ``literalize_toml`` into a single ``literalize`` function with an ``InputFormat`` parameter.
 - Added TOML input support (``InputFormat.TOML``) with comment preservation.
