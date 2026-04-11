@@ -120,7 +120,6 @@ class CommentConfig:
 
     prefix: str
     suffix: str
-    separator: str = " "
 
 
 @dataclasses.dataclass(frozen=True)

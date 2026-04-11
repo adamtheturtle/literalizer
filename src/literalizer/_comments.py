@@ -221,15 +221,11 @@ def _format_comment(
     text: str,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     line_prefix: str,
 ) -> str:
     """Format a single comment line."""
     if text:
-        return (
-            f"{line_prefix}{comment_prefix}{comment_separator}"
-            f"{text}{comment_suffix}"
-        )
+        return f"{line_prefix}{comment_prefix} {text}{comment_suffix}"
     return f"{line_prefix}{comment_prefix}{comment_suffix}"
 
 
@@ -284,7 +280,6 @@ class YamlCollectionContext:
     trailing: tuple[str, ...]
     comment_prefix: str
     comment_suffix: str
-    comment_separator: str
     comment_line_prefix: str
     include_delimiters: bool
 
@@ -313,7 +308,6 @@ def literalize_yaml_scalar(
     base: str,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     line_prefix: str,
     supports_scalar_before_comments: bool,
     supports_scalar_inline_comments: bool,
@@ -349,7 +343,6 @@ def literalize_yaml_scalar(
             text=comment_text,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            comment_separator=comment_separator,
             line_prefix=line_prefix,
         )
         for comment_text in scalar_comments.before
@@ -359,8 +352,8 @@ def literalize_yaml_scalar(
 
     if scalar_comments.inline and supports_scalar_inline_comments:
         inline_value = (
-            f"{base}  {comment_prefix}{comment_separator}"
-            f"{scalar_comments.inline}{comment_suffix}"
+            f"{base}  {comment_prefix} {scalar_comments.inline}"
+            f"{comment_suffix}"
         )
     elif scalar_comments.inline:
         inline_value = base
@@ -368,7 +361,6 @@ def literalize_yaml_scalar(
             text=scalar_comments.inline,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            comment_separator=comment_separator,
             line_prefix=line_prefix,
         )
         pending = (formatted_inline,)
@@ -418,7 +410,6 @@ def literalize_yaml_collection(
                 text=comment_text,
                 comment_prefix=ctx.comment_prefix,
                 comment_suffix=ctx.comment_suffix,
-                comment_separator=ctx.comment_separator,
                 line_prefix=effective_indent,
             )
             for comment_text in element_comment.before
@@ -426,8 +417,7 @@ def literalize_yaml_collection(
         if element_comment.inline:
             inline_text = element_comment.inline
             output_line = (
-                f"{body_line}  {ctx.comment_prefix}"
-                f"{ctx.comment_separator}{inline_text}"
+                f"{body_line}  {ctx.comment_prefix} {inline_text}"
                 f"{ctx.comment_suffix}"
             )
         else:
@@ -439,7 +429,6 @@ def literalize_yaml_collection(
             text=comment_text,
             comment_prefix=ctx.comment_prefix,
             comment_suffix=ctx.comment_suffix,
-            comment_separator=ctx.comment_separator,
             line_prefix=effective_indent,
         )
         for comment_text in ctx.trailing
@@ -457,7 +446,6 @@ def prepend_collection_comments(
     base: str,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     line_prefix: str,
 ) -> str:
     """Flatten all collection comments as lines before *base*.
@@ -477,7 +465,6 @@ def prepend_collection_comments(
             text=text,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            comment_separator=comment_separator,
             line_prefix=line_prefix,
         )
 
@@ -499,7 +486,6 @@ def apply_collection_comments(
     base: str,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> str:
@@ -522,7 +508,6 @@ def apply_collection_comments(
         trailing=collection_comments.trailing,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
-        comment_separator=comment_separator,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
     )

@@ -643,11 +643,6 @@ class Python(metaclass=LanguageCls):
             prefix="#",
             suffix="",
         )
-        DOCSTRING = CommentConfig(
-            prefix='"""',
-            suffix='"""',
-            separator="",
-        )
 
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""

@@ -1534,7 +1534,6 @@ def literalize(
         comment_cfg = language.comment_config
         cp = comment_cfg.prefix
         cs = comment_cfg.suffix
-        csep = comment_cfg.separator
         comment_line_prefix = (
             line_prefix + language.indent
             if include_delimiters
@@ -1547,7 +1546,6 @@ def literalize(
             language=language,
             comment_prefix=cp,
             comment_suffix=cs,
-            comment_separator=csep,
             comment_line_prefix=comment_line_prefix,
             line_prefix=line_prefix,
             include_delimiters=include_delimiters,
@@ -1566,7 +1564,6 @@ def literalize(
             language=language,
             comment_prefix=comment_cfg.prefix,
             comment_suffix=comment_cfg.suffix,
-            comment_separator=comment_cfg.separator,
             comment_line_prefix=comment_line_prefix,
             include_delimiters=include_delimiters,
         )
@@ -1589,7 +1586,6 @@ def literalize(
             base=result,
             comment_prefix=comment_cfg.prefix,
             comment_suffix=comment_cfg.suffix,
-            comment_separator=comment_cfg.separator,
             line_prefix=line_prefix,
         )
 
@@ -1673,7 +1669,6 @@ def _resolve_collection_comments(
     language: Language,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
@@ -1689,7 +1684,6 @@ def _resolve_collection_comments(
         base=base,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
-        comment_separator=comment_separator,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
     )
@@ -1709,7 +1703,6 @@ def _resolve_yaml_collection_comments(
     language: Language,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
@@ -1735,7 +1728,6 @@ def _resolve_yaml_collection_comments(
         language=language,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
-        comment_separator=comment_separator,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
     )
@@ -1750,7 +1742,6 @@ def _resolve_yaml_comments(
     language: Language,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     comment_line_prefix: str,
     line_prefix: str,
     include_delimiters: bool,
@@ -1769,7 +1760,6 @@ def _resolve_yaml_comments(
             language=language,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            comment_separator=comment_separator,
             comment_line_prefix=comment_line_prefix,
             include_delimiters=include_delimiters,
         )
@@ -1783,7 +1773,6 @@ def _resolve_yaml_comments(
             base=base,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            comment_separator=comment_separator,
             line_prefix=line_prefix,
             supports_scalar_before_comments=language.supports_scalar_before_comments,
             supports_scalar_inline_comments=language.supports_scalar_inline_comments,
@@ -1805,7 +1794,6 @@ def _resolve_yaml_comments(
         language=language,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
-        comment_separator=comment_separator,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
     )
@@ -1819,7 +1807,6 @@ def _resolve_toml_comments(
     language: Language,
     comment_prefix: str,
     comment_suffix: str,
-    comment_separator: str = " ",
     comment_line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
@@ -1830,7 +1817,6 @@ def _resolve_toml_comments(
         language=language,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
-        comment_separator=comment_separator,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
     )
