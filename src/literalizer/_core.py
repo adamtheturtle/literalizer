@@ -596,7 +596,7 @@ def _coerce_value_to_str(*, value: Value) -> str:
     if isinstance(value, str):
         return value
     bucket = _scalar_type_bucket(value=value)
-    if bucket is not None or value is None:
+    if bucket is not None:
         return _coerce_scalar_to_str(value=value)
     if isinstance(value, set):
         sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
