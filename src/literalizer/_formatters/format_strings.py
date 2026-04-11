@@ -20,7 +20,7 @@ class _StringFormatter(Protocol):
 def _build_backslash_formatter(
     *,
     quote_char: str,
-    extra_replacements: Sequence[tuple[str, str]] = (),
+    extra_replacements: Sequence[tuple[str, str]],
 ) -> _StringFormatter:
     r"""Return a backslash-escape string formatter.
 
@@ -51,6 +51,7 @@ def _build_backslash_formatter(
 
 format_string_backslash = _build_backslash_formatter(
     quote_char='"',
+    extra_replacements=(),
 )
 r"""Format a string using backslash escaping.
 
@@ -62,6 +63,7 @@ Example: ``hello "world"`` -> ``"hello \"world\""``.
 
 format_string_backslash_single = _build_backslash_formatter(
     quote_char="'",
+    extra_replacements=(),
 )
 r"""Format a string using backslash escaping with single quotes.
 
