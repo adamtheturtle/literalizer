@@ -10,7 +10,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     make_element_to_type,
     make_type_to_opener,
-    typed_sequence_open,
+    typed_collection_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -384,7 +384,7 @@ class VisualBasic(metaclass=LanguageCls):
             opener_template="New {type_name}() {{",
         )
         fmt = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
+            sequence_open=typed_collection_open(
                 type_to_opener=vb_type_to_opener,
                 fallback=f"New {default_sequence_element_type}() {{",
             ),

@@ -14,8 +14,8 @@ from literalizer._formatters.collection_openers import (
     fixed_set_open,
     make_element_to_type,
     make_type_to_opener,
+    typed_collection_open,
     typed_dict_open,
-    typed_sequence_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -137,7 +137,7 @@ def _make_initializer_list_config(
     """
     element_to_type = _make_cpp_element_to_type(int_type=int_type)
     return SequenceFormatConfig(
-        sequence_open=typed_sequence_open(
+        sequence_open=typed_collection_open(
             type_to_opener=make_type_to_opener(
                 element_to_type=element_to_type,
                 opener_template="std::vector<{type_name}>{{",

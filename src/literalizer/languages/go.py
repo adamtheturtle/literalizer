@@ -13,8 +13,8 @@ from literalizer._formatters.collection_openers import (
     fixed_sequence_open,
     make_element_to_type,
     make_type_to_opener,
+    typed_collection_open,
     typed_dict_open,
-    typed_sequence_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -447,12 +447,14 @@ class Go(metaclass=LanguageCls):
                 fallback=base_set_config.set_open([]),
             )
         )
-        self.sequence_open: Callable[[list[Value]], str] = typed_sequence_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=init_element_to_type,
-                opener_template="[]{type_name}{{",
-            ),
-            fallback=f"[]{default_sequence_element_type}{{",
+        self.sequence_open: Callable[[list[Value]], str] = (
+            typed_collection_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=init_element_to_type,
+                    opener_template="[]{type_name}{{",
+                ),
+                fallback=f"[]{default_sequence_element_type}{{",
+            )
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             open_fn=typed_dict_open(
