@@ -292,6 +292,7 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
+    "tests/integration/cases/call_",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
