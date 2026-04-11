@@ -189,6 +189,10 @@ class Ruby(metaclass=LanguageCls):
             prefix="#",
             suffix="",
         )
+        BLOCK = CommentConfig(
+            prefix="=begin",
+            suffix=" =end",
+        )
 
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""

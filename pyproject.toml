@@ -402,6 +402,7 @@ ignore_names = [
     "BTREE_SET",
     "CONTAINERS_MAP",
     "DICTIONARY",
+    "DOCSTRING",
     "HASH_MAP",
     "HASH_SET",
     "HEX",
