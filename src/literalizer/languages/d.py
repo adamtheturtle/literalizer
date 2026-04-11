@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-import functools
+import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -197,33 +197,16 @@ class D(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="double.infinity",
-                neg_inf_literal="-double.infinity",
-                nan_literal="double.nan",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="double.infinity",
-                neg_inf_literal="-double.infinity",
-                nan_literal="double.nan",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="double.infinity",
-                neg_inf_literal="-double.infinity",
-                nan_literal="double.nan",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                return "-double.infinity" if value < 0 else "double.infinity"
+            if math.isnan(value):
+                return "double.nan"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):

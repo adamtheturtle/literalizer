@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-import functools
+import math
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -219,33 +219,18 @@ class Mojo(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="std.math.inf[DType.float64]()",
-                neg_inf_literal="-std.math.inf[DType.float64]()",
-                nan_literal="std.math.nan[DType.float64]()",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="std.math.inf[DType.float64]()",
-                neg_inf_literal="-std.math.inf[DType.float64]()",
-                nan_literal="std.math.nan[DType.float64]()",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="std.math.inf[DType.float64]()",
-                neg_inf_literal="-std.math.inf[DType.float64]()",
-                nan_literal="std.math.nan[DType.float64]()",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                if value < 0:
+                    return "-std.math.inf[DType.float64]()"
+                return "std.math.inf[DType.float64]()"
+            if math.isnan(value):
+                return "std.math.nan[DType.float64]()"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
