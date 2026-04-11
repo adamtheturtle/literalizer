@@ -1,6 +1,7 @@
 """Language-specific tests for literalizer converter."""
 
 import json
+import re
 import textwrap
 
 import pytest
@@ -724,7 +725,15 @@ def test_java_list_rejects_null_elements() -> None:
     spec = Java(
         sequence_format=Java.sequence_formats.LIST,
     )
-    with pytest.raises(expected_exception=NullInCollectionError):
+    expected_msg = re.escape(
+        pattern="Java's List.of() does not accept null elements"
+        " (got 3 items, including null). "
+        "Use sequence_format=ARRAY instead."
+    )
+    with pytest.raises(
+        expected_exception=NullInCollectionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj=[1, None, "hello"]),
             input_format=InputFormat.JSON,

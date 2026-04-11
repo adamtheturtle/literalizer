@@ -1,5 +1,6 @@
 """Tests for YAML-related literalizer functionality."""
 
+import re
 import textwrap
 
 import pytest
@@ -611,7 +612,15 @@ def test_r_empty_dict_key_error() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    expected_msg = re.escape(
+        pattern='R does not support the dict key "". '
+        "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
+        "as unnamed list elements instead."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -903,7 +912,14 @@ def test_error_on_coercion_raises_for_mixed_dict_values() -> None:
           - user
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -925,7 +941,14 @@ def test_error_on_coercion_raises_for_mixed_list_values() -> None:
           - nested
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains elements of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -950,7 +973,14 @@ def test_error_on_coercion_raises_for_mixed_dict_shapes() -> None:
           - type: update
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains dicts with different key sets "
+        "that would be padded with null values",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -996,7 +1026,14 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
         extra:
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, none)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -1012,7 +1049,15 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
 def test_dhall_empty_dict_key_error() -> None:
     """Dhall raises InvalidDictKeyError for empty-string dict keys."""
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    expected_msg = re.escape(
+        pattern='Dhall does not support the dict key "". '
+        "Backtick-quoted labels must be non-empty and contain only "
+        "printable ASCII (no backticks or control characters)."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -1045,7 +1090,15 @@ def test_dhall_control_char_in_string() -> None:
 def test_dhall_control_char_key_error() -> None:
     """Dhall rejects control characters in dict keys."""
     yaml_string = '{"\\x01": "value"}\n'
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    expected_msg = re.escape(
+        pattern='Dhall does not support the dict key "\\u{0001}". '
+        "Backtick-quoted labels must be non-empty and contain only "
+        "printable ASCII (no backticks or control characters)."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,

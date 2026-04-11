@@ -457,15 +457,74 @@ def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
             return False
 
 
+def _collect_scalar_type_names(*, data: Value) -> set[str]:
+    """Collect the names of scalar type buckets found in *data*."""
+    names: set[str] = set()
+    match data:
+        case ordereddict() | dict():
+            for v in data.values():  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                names |= _collect_scalar_type_names(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        case list():
+            for v in data:
+                names |= _collect_scalar_type_names(data=v)
+        case set():
+            for v in data:
+                names |= _collect_scalar_type_names(data=v)
+        case _:
+            names.add(_value_type_family(value=data))
+    return names
+
+
+def _describe_heterogeneous_types(*, data: Value) -> str:
+    """Return a sorted, comma-separated string of scalar type names in
+    *data*.
+    """
+    return ", ".join(sorted(_collect_scalar_type_names(data=data)))
+
+
+def _find_first_mixed_values(*, data: Value) -> Sequence[Value]:
+    """Return the first collection of children in *data* that spans
+    multiple type families.
+
+    Walks the tree until it finds a dict-values or list-elements level
+    where ``_dict_values_mixed_types`` is ``True``.
+    """
+    children: Sequence[Value]
+    match data:
+        case ordereddict() | dict():
+            children = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case list():
+            children = data
+        case _:
+            return []
+    if _dict_values_mixed_types(values=children):
+        return children
+    for child in children:
+        result = _find_first_mixed_values(data=child)
+        if result:
+            return result
+    return []
+
+
+def _describe_mixed_type_families(*, data: Value) -> str:
+    """Return a sorted, comma-separated string of type families for the
+    first collection in *data* whose children span multiple families.
+    """
+    values = _find_first_mixed_values(data=data)
+    return ", ".join(sorted({_value_type_family(value=v) for v in values}))
+
+
 @beartype
 def _check_heterogeneous(*, data: Value) -> None:
     """Recursively check for heterogeneous all-scalar collections and
     raise if found.
     """
     if _has_heterogeneous(data=data):
+        types = _describe_heterogeneous_types(data=data)
         msg = (
             "Collection contains heterogeneous scalar types "
             "that would be coerced to strings"
+            f" (found types: {types})"
         )
         raise HeterogeneousCoercionError(msg)
 
@@ -1130,21 +1189,27 @@ def _apply_coercions(
                 raise HeterogeneousCoercionError(msg)
             _check_heterogeneous(data=data)
             if _has_heterogeneous_sibling_lists(data=data):
+                types = _describe_heterogeneous_types(data=data)
                 msg = (
                     "Collection contains heterogeneous scalar types "
                     "that would be coerced to strings"
+                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_dict_values(data=data):
+                types = _describe_mixed_type_families(data=data)
                 msg = (
                     "Dict contains values of mixed types "
                     "that would be coerced to strings"
+                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_list_values(data=data):
+                types = _describe_mixed_type_families(data=data)
                 msg = (
                     "List contains elements of mixed types "
                     "that would be coerced to strings"
+                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
         else:

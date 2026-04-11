@@ -72,7 +72,7 @@ def _format_r_dict_entry_error(key: str, _val: Value, value: str) -> str:
     """Format an R named list entry, raising on empty-string keys."""
     if key == '""':
         msg = (
-            "R does not support empty-string dict keys. "
+            f"R does not support the dict key {key}. "
             "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
             "as unnamed list elements instead."
         )

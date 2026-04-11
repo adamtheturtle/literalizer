@@ -1,6 +1,7 @@
 """Tests for literalizer JSON conversion."""
 
 import json
+import re
 import textwrap
 
 import pytest
@@ -550,7 +551,14 @@ MOJO = Mojo(
 
 def test_error_on_coercion_json_raises() -> None:
     """Error_on_coercion raises for heterogeneous JSON arrays."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Collection contains heterogeneous scalar types "
+        "that would be coerced to strings (found types: float, int)"
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source="[1, 2.5, 3]",
             input_format=InputFormat.JSON,
@@ -588,7 +596,14 @@ def test_error_on_coercion_json_no_raise_homogeneous() -> None:
 
 def test_error_on_coercion_json_raises_sibling_lists() -> None:
     """Error_on_coercion raises for heterogeneous sibling sub-lists."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Collection contains heterogeneous scalar types "
+        "that would be coerced to strings (found types: int, str)"
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source='[[1, 2], ["a", "b"]]',
             input_format=InputFormat.JSON,
@@ -605,7 +620,14 @@ def test_error_on_coercion_json_raises_nested_sibling_lists() -> None:
     """Error_on_coercion raises for nested heterogeneous sibling
     sub-lists.
     """
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Collection contains heterogeneous scalar types "
+        "that would be coerced to strings (found types: int, str)"
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source='[[[1, 2], ["a", "b"]]]',
             input_format=InputFormat.JSON,
@@ -720,7 +742,15 @@ def test_r_empty_dict_key_error_json() -> None:
         bytes_format=R.bytes_formats.HEX,
         sequence_format=R.sequence_formats.LIST,
     )
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    expected_msg = re.escape(
+        pattern='R does not support the dict key "". '
+        "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
+        "as unnamed list elements instead."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj={"": "value"}),
             input_format=InputFormat.JSON,
@@ -842,7 +872,14 @@ def test_error_on_coercion_json_no_raise_for_homogeneous_dict() -> None:
 
 def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
     """Error_on_coercion raises when a dict has values of mixed types."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(
                 obj={"name": "Bob", "tags": ["admin", "user"]},
@@ -857,9 +894,76 @@ def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
         )
 
 
+def test_error_on_coercion_json_raises_for_nested_mixed_dict_values() -> None:
+    """Error_on_coercion raises when a nested dict has mixed types.
+
+    Uses a dict with multiple values where the first child (a
+    homogeneous dict) does not have mixed types, so the search must
+    skip past it and its scalar leaves before finding the mixed one.
+    """
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=json.dumps(
+                obj={
+                    "a": {"x": 1},
+                    "b": {"x": "hello", "y": [1]},
+                },
+            ),
+            input_format=InputFormat.JSON,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_raises_for_nested_mixed_list_values() -> None:
+    """Error_on_coercion raises when a nested list has mixed types.
+
+    Uses a list whose first element is a homogeneous list, so the
+    search must skip past it before finding the mixed second element.
+    """
+    expected_msg = re.escape(
+        pattern="List contains elements of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=json.dumps(
+                obj=[[1, 2], ["hello", ["nested"]]],
+            ),
+            input_format=InputFormat.JSON,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
 def test_error_on_coercion_json_raises_for_mixed_list_values() -> None:
     """Error_on_coercion raises when a list has mixed element types."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains elements of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj=["hello", ["nested"]]),
             input_format=InputFormat.JSON,
@@ -882,7 +986,14 @@ def test_error_on_coercion_json_raises_for_mixed_dict_shapes() -> None:
             {"type": "update"},
         ],
     }
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains dicts with different key sets "
+        "that would be padded with null values",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj=data),
             input_format=InputFormat.JSON,
@@ -917,7 +1028,14 @@ def test_error_on_coercion_json_no_raise_for_uniform_dict_shapes() -> None:
 
 def test_error_on_coercion_json_raises_for_mixed_dict_none_list() -> None:
     """Error_on_coercion raises when a dict has None alongside a list."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, none)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(
                 obj={"tags": ["admin"], "extra": None},
@@ -934,7 +1052,15 @@ def test_error_on_coercion_json_raises_for_mixed_dict_none_list() -> None:
 
 def test_dhall_empty_dict_key_error_json() -> None:
     """Dhall raises InvalidDictKeyError for empty-string dict keys."""
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    expected_msg = re.escape(
+        pattern='Dhall does not support the dict key "". '
+        "Backtick-quoted labels must be non-empty and contain only "
+        "printable ASCII (no backticks or control characters)."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj={"": "value"}),
             input_format=InputFormat.JSON,
@@ -965,7 +1091,15 @@ def test_dhall_control_char_in_string_json() -> None:
 
 def test_dhall_control_char_key_error_json() -> None:
     """Dhall rejects control characters in dict keys."""
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    expected_msg = re.escape(
+        pattern='Dhall does not support the dict key "\\u{0001}". '
+        "Backtick-quoted labels must be non-empty and contain only "
+        "printable ASCII (no backticks or control characters)."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj={"\x01": "value"}),
             input_format=InputFormat.JSON,
