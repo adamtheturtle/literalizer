@@ -1,6 +1,7 @@
 """Factory functions for building format configurations."""
 
 from collections.abc import Callable
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -16,6 +17,36 @@ from literalizer._language import (
     SetFormatConfig,
 )
 from literalizer._types import Value
+
+
+@runtime_checkable
+class _DictFormatBuilder(Protocol):
+    """Protocol for the callable returned by ``dict_format_factory``."""
+
+    def __call__(
+        self,
+        default_type: str,
+        *,
+        default_key_type: str = "",
+    ) -> DictFormatConfig:
+        """Build a ``DictFormatConfig`` with the given default type."""
+        ...
+
+
+@runtime_checkable
+class _OrderedMapFormatBuilder(Protocol):
+    """Protocol for the callable returned by
+    ``ordered_map_format_factory``.
+    """
+
+    def __call__(
+        self,
+        default_type: str,
+        *,
+        default_key_type: str = "",
+    ) -> OrderedMapFormatConfig:
+        """Build an ``OrderedMapFormatConfig`` with the given default type."""
+        ...
 
 
 @beartype
@@ -129,7 +160,7 @@ def dict_format_factory(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     narrowed_open: str | None,
-) -> Callable[..., DictFormatConfig]:
+) -> _DictFormatBuilder:
     """Return a callable that builds a ``DictFormatConfig`` for a given
     type.
 
@@ -170,7 +201,7 @@ def ordered_map_format_factory(
     open_template: str,
     close: str,
     preamble_lines: tuple[str, ...],
-) -> Callable[..., OrderedMapFormatConfig]:
+) -> _OrderedMapFormatBuilder:
     """Return a callable that builds an ``OrderedMapFormatConfig``.
 
     Templates use ``{type}`` and optionally ``{key_type}`` as
