@@ -387,15 +387,16 @@ def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
             new_list = [
                 _coerce_heterogeneous_sibling_lists(data=v) for v in data
             ]
-            sublists: list[list[Value]] = [
-                v for v in new_list if isinstance(v, list)
-            ]
+            sublists: list[list[Value]] = []
+            all_elements: list[Value] = []
+            for v in new_list:
+                if isinstance(v, list):
+                    sublists.append(v)
+                    all_elements.extend(v)
             if (
                 len(sublists) == len(new_list)
                 and len(sublists) > 1
-                and _all_scalars_heterogeneous(
-                    values=[e for sub in sublists for e in sub],
-                )
+                and _all_scalars_heterogeneous(values=all_elements)
             ):
                 return [
                     [_coerce_scalar_to_str(value=e) for e in sub]
