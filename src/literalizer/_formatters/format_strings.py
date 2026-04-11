@@ -1,9 +1,149 @@
 """String formatting functions."""
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
+
+
+@runtime_checkable
+class _StringFormatter(Protocol):
+    """Protocol for string formatting functions."""
+
+    def __call__(self, value: str) -> str:
+        """Format *value* using backslash escaping."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@beartype
+def _build_backslash_formatter(
+    *,
+    quote_char: str,
+    extra_replacements: Sequence[tuple[str, str]],
+) -> _StringFormatter:
+    r"""Return a backslash-escape string formatter.
+
+    Every returned formatter applies the same base escapes — backslash,
+    *quote_char*, ``\r``, ``\n``, ``\t`` — then any *extra_replacements*
+    in order, and finally wraps the result in *quote_char*.
+
+    *extra_replacements* is a sequence of ``(old, new)`` pairs passed to
+    :meth:`str.replace`.
+    """
+
+    @beartype
+    def _format(value: str) -> str:
+        """Format *value* using backslash escaping."""
+        escaped = (
+            value.replace("\\", "\\\\")
+            .replace(quote_char, f"\\{quote_char}")
+            .replace("\r", "\\r")
+            .replace("\n", "\\n")
+            .replace("\t", "\\t")
+        )
+        for old, new in extra_replacements:
+            escaped = escaped.replace(old, new)
+        return f"{quote_char}{escaped}{quote_char}"
+
+    return _format
+
+
+format_string_backslash = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=(),
+)
+r"""Format a string using backslash escaping.
+
+Escapes backslashes, double quotes, and newlines with a backslash
+prefix, then wraps the result in double quotes.
+
+Example: ``hello "world"`` -> ``"hello \"world\""``.
+"""
+
+format_string_backslash_single = _build_backslash_formatter(
+    quote_char="'",
+    extra_replacements=(),
+)
+r"""Format a string using backslash escaping with single quotes.
+
+Escapes backslashes, single quotes, and newlines with a backslash
+prefix, then wraps the result in single quotes.
+
+Example: ``hello 'world'`` -> ``'hello \'world\''``.
+"""
+
+format_string_backslash_dollar = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[("$", "\\$")],
+)
+r"""Format a string using backslash escaping, including ``$``.
+
+Escapes backslashes, double quotes, newlines, tabs, and dollar signs
+with a backslash prefix, then wraps the result in double quotes.
+
+Example: ``price $10`` -> ``"price \$10"``.
+"""
+
+format_string_backslash_raku = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("$", "\\$"),
+        ("@", "\\@"),
+        ("%", "\\%"),
+        ("{", "\\{"),
+        ("}", "\\}"),
+    ],
+)
+r"""Format a string for Raku double-quoted strings.
+
+Escapes backslashes, double quotes, newlines, tabs, dollar signs,
+at signs, percent signs, and curly braces with a backslash prefix,
+then wraps the result in double quotes.  This prevents Raku from
+interpreting sigil characters (``$``, ``@``, ``%``) or closure blocks
+(``{…}``) as interpolation.
+
+Example: ``prefix ${HOME}`` -> ``"prefix \$\{HOME\}"``.
+"""
+
+format_string_backslash_hcl = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[("${", "$${"), ("%{", "%%{")],
+)
+r"""Format a string with HCL interpolation escaping.
+
+Escapes backslashes, double quotes, newlines, and tabs with a backslash
+prefix.  Additionally doubles ``$`` before ``{`` and ``%`` before ``{``
+to prevent HCL template interpolation / directive syntax.
+
+Example: ``prefix ${HOME}`` -> ``"prefix $${HOME}"``.
+"""
+
+format_string_backslash_hash = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[("#{", "\\#{")],
+)
+r"""Format a string using backslash escaping, including ``#{``.
+
+Escapes backslashes, double quotes, newlines, tabs, and the
+interpolation sequence ``#{`` with a backslash prefix, then wraps the
+result in double quotes.
+
+Example: ``Issue #{42}`` -> ``"Issue \#{42}"``.
+"""
+
+format_string_backslash_dollar_single = _build_backslash_formatter(
+    quote_char="'",
+    extra_replacements=[("$", "\\$")],
+)
+r"""Format a string using backslash escaping with single quotes,
+including ``$``.
+
+Escapes backslashes, single quotes, newlines, tabs, and dollar signs
+with a backslash prefix, then wraps the result in single quotes.
+
+Example: ``price $10`` -> ``'price \$10'``.
+"""
 
 
 @beartype
@@ -82,25 +222,6 @@ def escape_control_chars(value: str, *, fmt: str) -> str:
 
 
 @beartype
-def format_string_backslash(value: str) -> str:
-    r"""Format a string using backslash escaping.
-
-    Escapes backslashes, double quotes, and newlines with a backslash
-    prefix, then wraps the result in double quotes.
-
-    Example: ``hello "world"`` -> ``"hello \"world\""``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
-    return f'"{escaped}"'
-
-
-@beartype
 def format_string_backslash_control(
     value: str,
     *,
@@ -143,25 +264,6 @@ def format_string_double_minimal(value: str) -> str:
 
 
 @beartype
-def format_string_backslash_single(value: str) -> str:
-    r"""Format a string using backslash escaping with single quotes.
-
-    Escapes backslashes, single quotes, and newlines with a backslash
-    prefix, then wraps the result in single quotes.
-
-    Example: ``hello 'world'`` -> ``'hello \'world\''``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace("'", "\\'")
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
-    return f"'{escaped}'"
-
-
-@beartype
 def format_string_backslash_single_minimal(value: str) -> str:
     r"""Format a string with single quotes, escaping only ``\\`` and ``\'``.
 
@@ -194,96 +296,6 @@ def format_string_bash_single(value: str) -> str:
 
 
 @beartype
-def format_string_backslash_dollar(value: str) -> str:
-    r"""Format a string using backslash escaping, including ``$``.
-
-    Escapes backslashes, double quotes, newlines, tabs, and dollar signs
-    with a backslash prefix, then wraps the result in double quotes.
-
-    Example: ``price $10`` -> ``"price \$10"``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace("$", "\\$")
-    )
-    return f'"{escaped}"'
-
-
-@beartype
-def format_string_backslash_raku(value: str) -> str:
-    r"""Format a string for Raku double-quoted strings.
-
-    Escapes backslashes, double quotes, newlines, tabs, dollar signs,
-    at signs, percent signs, and curly braces with a backslash prefix,
-    then wraps the result in double quotes.  This prevents Raku from
-    interpreting sigil characters (``$``, ``@``, ``%``) or closure blocks
-    (``{…}``) as interpolation.
-
-    Example: ``prefix ${HOME}`` -> ``"prefix \$\{HOME\}"``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace("$", "\\$")
-        .replace("@", "\\@")
-        .replace("%", "\\%")
-        .replace("{", "\\{")
-        .replace("}", "\\}")
-    )
-    return f'"{escaped}"'
-
-
-@beartype
-def format_string_backslash_hcl(value: str) -> str:
-    r"""Format a string with HCL interpolation escaping.
-
-    Escapes backslashes, double quotes, newlines, and tabs with a backslash
-    prefix.  Additionally doubles ``$`` before ``{`` and ``%`` before ``{``
-    to prevent HCL template interpolation / directive syntax.
-
-    Example: ``prefix ${HOME}`` -> ``"prefix $${HOME}"``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace("${", "$${")
-        .replace("%{", "%%{")
-    )
-    return f'"{escaped}"'
-
-
-@beartype
-def format_string_backslash_hash(value: str) -> str:
-    r"""Format a string using backslash escaping, including ``#{``.
-
-    Escapes backslashes, double quotes, newlines, tabs, and the
-    interpolation sequence ``#{`` with a backslash prefix, then wraps the
-    result in double quotes.
-
-    Example: ``Issue #{42}`` -> ``"Issue \#{42}"``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace("#{", "\\#{")
-    )
-    return f'"{escaped}"'
-
-
-@beartype
 def format_string_raw_python(value: str) -> str:
     r"""Format a string as a Python raw string literal.
 
@@ -302,13 +314,13 @@ def format_string_raw_python(value: str) -> str:
     stripped = value.rstrip("\\")
     trailing_backslashes = len(value) - len(stripped)
     if trailing_backslashes % 2 == 1:
-        return format_string_backslash(value=value)
+        return format_string_backslash(value)
     has_newline = "\n" in value or "\r" in value
     if '"' not in value and not has_newline:
         return f'r"{value}"'
     if "'''" not in value:
         return f"r'''{value}'''"
-    return format_string_backslash(value=value)
+    return format_string_backslash(value)
 
 
 @beartype
@@ -325,7 +337,7 @@ def format_string_raw_rust(value: str) -> str:
     Example: ``hello\nworld`` -> ``r#"hello\nworld"#``.
     """
     if "\n" in value or "\r" in value:
-        return format_string_backslash(value=value)
+        return format_string_backslash(value)
     hashes = "#"
     while f'"{hashes}' in value:
         hashes += "#"
@@ -343,24 +355,3 @@ def format_string_verbatim_csharp(value: str) -> str:
     """
     escaped = value.replace('"', '""')
     return f'@"{escaped}"'
-
-
-@beartype
-def format_string_backslash_dollar_single(value: str) -> str:
-    r"""Format a string using backslash escaping with single quotes,
-    including ``$``.
-
-    Escapes backslashes, single quotes, newlines, tabs, and dollar signs
-    with a backslash prefix, then wraps the result in single quotes.
-
-    Example: ``price $10`` -> ``'price \$10'``.
-    """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace("'", "\\'")
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-        .replace("$", "\\$")
-    )
-    return f"'{escaped}'"
