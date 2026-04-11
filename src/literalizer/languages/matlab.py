@@ -340,7 +340,7 @@ class Matlab(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        NO = "no"
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -409,9 +409,7 @@ class Matlab(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = dict_format.value
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
-            multiline_trailing_comma=False,
-        )
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

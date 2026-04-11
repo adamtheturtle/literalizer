@@ -271,7 +271,7 @@ class Mojo(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        YES = "yes"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -369,9 +369,7 @@ class Mojo(metaclass=LanguageCls):
             default_type=default_dict_value_type,
             default_key_type=default_dict_key_type,
         )
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
-            multiline_trailing_comma=True,
-        )
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
