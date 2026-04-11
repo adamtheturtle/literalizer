@@ -30,6 +30,8 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_double_minimal
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -358,3 +360,4 @@ class CommonLisp(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config = CallStyleConfig(kind=CallStyleKind.POSITIONAL)

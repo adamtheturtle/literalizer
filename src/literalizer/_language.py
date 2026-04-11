@@ -165,6 +165,36 @@ class DeclarationStyleConfig:
     supports_redefinition: bool
 
 
+class CallStyleKind(enum.Enum):
+    """How a language passes arguments in function calls."""
+
+    KEYWORD = "keyword"
+    """Named arguments: ``func(name=value)``."""
+
+    POSITIONAL = "positional"
+    """Positional arguments only: ``func(value1, value2)``."""
+
+    OBJECT = "object"
+    """Arguments wrapped in an object literal:
+    ``func({ name: value })``.
+    """
+
+
+@dataclasses.dataclass(frozen=True)
+class CallStyleConfig:
+    """Describes how a language formats function call arguments.
+
+    *kind* indicates the calling convention.  *keyword_separator* is the
+    string placed between the parameter name and its value for
+    :attr:`CallStyleKind.KEYWORD` and :attr:`CallStyleKind.OBJECT`
+    styles (e.g. ``"="`` for Python, ``": "`` for Ruby).  It is
+    ``None`` for :attr:`CallStyleKind.POSITIONAL` languages.
+    """
+
+    kind: CallStyleKind
+    keyword_separator: str | None = None
+
+
 class SequenceFormat(Protocol):
     """Protocol for sequence format Enum members."""
 
@@ -648,6 +678,12 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     Languages whose special-float literals require imports (e.g. Go
     needs ``import "math"``) populate this field so the import is only
     emitted when actually needed.
+    """
+
+    call_style_config: CallStyleConfig
+    """Describes how this language passes arguments in function calls.
+
+    See :class:`CallStyleConfig` for details.
     """
 
 

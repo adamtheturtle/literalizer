@@ -40,6 +40,8 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -477,3 +479,4 @@ class Zig(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = (
             'const std = @import("std");',
         )
+        self.call_style_config = CallStyleConfig(kind=CallStyleKind.POSITIONAL)

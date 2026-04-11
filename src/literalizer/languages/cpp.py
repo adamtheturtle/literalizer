@@ -47,6 +47,8 @@ from literalizer._formatters.type_inference import (
     ListType,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -664,3 +666,4 @@ class Cpp(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ("#include <cmath>",)
+        self.call_style_config = CallStyleConfig(kind=CallStyleKind.POSITIONAL)

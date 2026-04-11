@@ -31,7 +31,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     infer_element_type,
 )
-from literalizer._language import Language
+from literalizer._language import CallStyleKind, Language
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     HeterogeneousCoercionError,
@@ -1731,6 +1731,157 @@ def literalize(
         preamble=preamble,
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
+    )
+
+
+@beartype
+def _format_call_args(
+    *,
+    values: list[Value],
+    params: Sequence[str],
+    language: Language,
+) -> str:
+    """Format argument values for a single function call.
+
+    Returns the parenthesised argument list including the surrounding
+    ``(`` and ``)``.
+    """
+    style = language.call_style_config
+    formatted = [
+        _format_value(value=v, spec=language, dict_open_override=None)
+        for v in values
+    ]
+    sep = language.element_separator
+
+    kw_sep = style.keyword_separator
+    match style.kind:
+        case CallStyleKind.POSITIONAL:
+            inner = sep.join(formatted)
+        case CallStyleKind.KEYWORD:
+            inner = sep.join(
+                f"{name}{kw_sep}{val}"
+                for name, val in zip(params, formatted, strict=True)
+            )
+        case CallStyleKind.OBJECT:
+            entries = sep.join(
+                f"{name}{kw_sep}{val}"
+                for name, val in zip(params, formatted, strict=True)
+            )
+            inner = f"{{ {entries} }}"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+    return f"({inner})"
+
+
+@beartype
+def _assemble_call(
+    *,
+    call_function: str,
+    args_str: str,
+    call_wrapper: str | None,
+) -> str:
+    """Build one complete call expression, optionally wrapped."""
+    call_expr = f"{call_function}{args_str}"
+    if call_wrapper is not None:
+        call_expr = call_wrapper.replace("$0", call_expr)
+    return call_expr
+
+
+@beartype
+def literalize_call(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    call_function: str,
+    call_params: Sequence[str],
+    call_wrapper: str | None = None,
+    per_element: bool = True,
+) -> LiteralizeResult:
+    r"""Convert data to function call expressions in the target language.
+
+    Each top-level list element (when *per_element* is ``True``) becomes
+    a separate function call with arguments formatted according to the
+    language's :attr:`~Language.call_style_config`.
+
+    Args:
+        source: The input string to convert.
+        input_format: The serialization format of *source*.
+        language: A :class:`Language` instance describing how to format
+            literals.
+        call_function: The function expression to call
+            (e.g. ``"throttler.should_send_notification"``).
+        call_params: Parameter names, positionally mapped to each
+            element in each row.  For :attr:`CallStyleKind.POSITIONAL`
+            languages these are unused in the output but still
+            determine how many values to expect per row.
+        call_wrapper: Optional template wrapping each call, where
+            ``$0`` is replaced by the call expression
+            (e.g. ``"print($0)"``).
+        per_element: If ``True`` (default), each top-level list element
+            becomes a separate call.  If ``False``, the whole
+            literalized value is passed as a single argument.
+    """
+    parsed = _parse_input(source=source, input_format=input_format)
+    data = parsed.data
+
+    if per_element:
+        if not isinstance(data, list):
+            msg = (
+                "per_element=True requires a top-level list, "
+                f"got {type(data).__name__}"
+            )
+            raise TypeError(msg)
+
+        lines: list[str] = []
+        for element in data:
+            if isinstance(element, list):
+                values: list[Value] = element
+            else:
+                values = [element]
+
+            args_str = _format_call_args(
+                values=values,
+                params=call_params,
+                language=language,
+            )
+            lines.append(
+                _assemble_call(
+                    call_function=call_function,
+                    args_str=args_str,
+                    call_wrapper=call_wrapper,
+                )
+            )
+        result = "\n".join(lines)
+    else:
+        lit = _literalize(
+            data=data,
+            language=language,
+            line_prefix="",
+            include_delimiters=True,
+            error_on_coercion=False,
+        )
+        args_str = f"({lit})"
+        result = _assemble_call(
+            call_function=call_function,
+            args_str=args_str,
+            call_wrapper=call_wrapper,
+        )
+
+    computed = _compute_preamble(
+        data=data,
+        language=language,
+        has_variable_declaration=False,
+    )
+    preamble = tuple(language.static_preamble) + computed.header
+    if computed.body:
+        result = "\n".join(computed.body) + "\n" + result
+
+    return LiteralizeResult(
+        code=result,
+        preamble=preamble,
+        body_preamble=computed.body,
     )
 
 

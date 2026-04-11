@@ -33,6 +33,8 @@ from literalizer._formatters.format_strings import (
     escape_control_chars,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -352,7 +354,7 @@ class Dhall(metaclass=LanguageCls):
     trailing_commas = TrailingCommas
     line_endings = LineEndings
 
-    def __init__(
+    def __init__(  # noqa: PLR0915
         self,
         *,
         date_format: DateFormats = DateFormats.ISO,
@@ -457,4 +459,5 @@ class Dhall(metaclass=LanguageCls):
         )
 
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
