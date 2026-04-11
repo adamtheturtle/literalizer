@@ -1836,13 +1836,9 @@ def literalize_call(
 
         lines: list[str] = []
         for element in data:
-            if isinstance(element, list):
-                values: list[Value] = element
-            else:
-                values = [element]
-
+            arg_values = element if isinstance(element, list) else [element]
             args_str = _format_call_args(
-                values=values,
+                values=cast("list[Value]", arg_values),
                 params=call_params,
                 language=language,
             )

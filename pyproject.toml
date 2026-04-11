@@ -314,6 +314,7 @@ executionEnvironments = [
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
+exclude = [ "tests/integration/cases/call_*/" ]
 
 [tool.pytest]
 ini_options.xfail_strict = true
