@@ -64,8 +64,15 @@ def _parse_after_token(
 ) -> _ParsedAfterToken:
     """Parse an after-element comment token.
 
-    The *column* of the token determines whether its first line
-    is an inline comment (column > 0) or a standalone comment.
+    ruamel.yaml stores each comment as a ``CommentToken`` whose
+    ``column`` attribute records the column position where the
+    comment appeared in the original YAML source.  An inline
+    comment (one that follows a value on the same line) always has
+    ``column > 0`` because it appears after at least some content.
+    A standalone comment that starts at the beginning of a line has
+    ``column == 0``.  We use this to decide whether the first line
+    of the token should be treated as an inline comment or as a
+    standalone (before-next-element) comment.
     """
     value: str = token.value
     column: int = token.column
