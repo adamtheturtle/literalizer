@@ -487,37 +487,36 @@ def _describe_heterogeneous_types(*, data: Value) -> str:
     return ", ".join(sorted(_collect_scalar_type_names(data=data)))
 
 
-def _collect_mixed_type_families(*, data: Value) -> set[str]:
-    """Collect type family names from *data*, including collection types.
+def _find_first_mixed_values(*, data: Value) -> Sequence[Value]:
+    """Return the first collection of children in *data* that spans
+    multiple type families.
 
-    Unlike `_collect_scalar_type_names` which recurses into collections,
-    this reports the type family of each direct child value so that
-    mixed-type errors can show "dict, str" or "int, list" instead of
-    only scalar types.
+    Walks the tree until it finds a dict-values or list-elements level
+    where ``_dict_values_mixed_types`` is ``True``.
     """
-    families: set[str] = set()
+    children: Sequence[Value]
     match data:
         case ordereddict() | dict():
-            values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            if _dict_values_mixed_types(values=values):
-                return {_value_type_family(value=v) for v in values}
-            for v in values:
-                families |= _collect_mixed_type_families(data=v)
+            children = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
         case list():
-            if _dict_values_mixed_types(values=data):
-                return {_value_type_family(value=v) for v in data}
-            for v in data:
-                families |= _collect_mixed_type_families(data=v)
+            children = data
         case _:
-            families.add(_value_type_family(value=data))
-    return families
+            return []
+    if _dict_values_mixed_types(values=children):
+        return children
+    for child in children:
+        result = _find_first_mixed_values(data=child)
+        if result:
+            return result
+    return []
 
 
 def _describe_mixed_type_families(*, data: Value) -> str:
-    """Return a sorted, comma-separated string of type families in
-    *data*, including collection types.
+    """Return a sorted, comma-separated string of type families for the
+    first collection in *data* whose children span multiple families.
     """
-    return ", ".join(sorted(_collect_mixed_type_families(data=data)))
+    values = _find_first_mixed_values(data=data)
+    return ", ".join(sorted({_value_type_family(value=v) for v in values}))
 
 
 @beartype

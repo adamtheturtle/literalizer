@@ -894,6 +894,66 @@ def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
         )
 
 
+def test_error_on_coercion_json_raises_for_nested_mixed_dict_values() -> None:
+    """Error_on_coercion raises when a nested dict has mixed types.
+
+    Uses a dict with multiple values where the first child (a
+    homogeneous dict) does not have mixed types, so the search must
+    skip past it and its scalar leaves before finding the mixed one.
+    """
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=json.dumps(
+                obj={
+                    "a": {"x": 1},
+                    "b": {"x": "hello", "y": [1]},
+                },
+            ),
+            input_format=InputFormat.JSON,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
+def test_error_on_coercion_json_raises_for_nested_mixed_list_values() -> None:
+    """Error_on_coercion raises when a nested list has mixed types.
+
+    Uses a list whose first element is a homogeneous list, so the
+    search must skip past it before finding the mixed second element.
+    """
+    expected_msg = re.escape(
+        pattern="List contains elements of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=json.dumps(
+                obj=[[1, 2], ["hello", ["nested"]]],
+            ),
+            input_format=InputFormat.JSON,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
 def test_error_on_coercion_json_raises_for_mixed_list_values() -> None:
     """Error_on_coercion raises when a list has mixed element types."""
     expected_msg = re.escape(
