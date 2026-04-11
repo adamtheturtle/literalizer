@@ -1155,6 +1155,22 @@ def _apply_coercions(
     return data
 
 
+def _append_entries(
+    *,
+    formatted_entries: Sequence[str],
+    lines: list[str],
+    body_prefix: str,
+    trailing_comma: bool,
+    spec: Language,
+) -> None:
+    """Append formatted entries with separators to *lines*."""
+    last_idx = len(formatted_entries) - 1
+    for i, entry in enumerate(iterable=formatted_entries):
+        add_sep = i < last_idx or trailing_comma
+        sep = spec.element_separator.strip() if add_sep else ""
+        lines.append(f"{body_prefix}{entry}{sep}")
+
+
 def _format_collection_lines(
     *,
     data: dict[str, Value] | set[Scalar] | list[Value],
@@ -1187,8 +1203,8 @@ def _format_collection_lines(
                     spec=spec,
                     dict_open_override=None,
                 )
-            last_idx = len(entries) - 1
-            for i, (k, v) in enumerate(iterable=entries):
+            formatted_entries: list[str] = []
+            for k, v in entries:
                 formatted_key = _format_value(
                     value=k,
                     spec=spec,
@@ -1211,25 +1227,37 @@ def _format_collection_lines(
                         spec=spec,
                     )
                 )
-                add_sep = i < last_idx or trailing_comma
-                sep = spec.element_separator.strip() if add_sep else ""
-                lines.append(f"{body_prefix}{entry}{sep}")
+                formatted_entries.append(entry)
+            _append_entries(
+                formatted_entries=formatted_entries,
+                lines=lines,
+                body_prefix=body_prefix,
+                trailing_comma=trailing_comma,
+                spec=spec,
+            )
         case set() as set_data:
             sorted_items = sorted(
                 set_data,
                 key=lambda v: (type(v).__name__, repr(v)),
             )
-            last_idx = len(sorted_items) - 1
-            for i, item in enumerate(iterable=sorted_items):
-                formatted = _format_value(
-                    value=item,
-                    spec=spec,
-                    dict_open_override=None,
+            formatted_entries = [
+                spec.format_set_entry(
+                    item,
+                    _format_value(
+                        value=item,
+                        spec=spec,
+                        dict_open_override=None,
+                    ),
                 )
-                entry = spec.format_set_entry(item, formatted)
-                add_sep = i < last_idx or trailing_comma
-                sep = spec.element_separator.strip() if add_sep else ""
-                lines.append(f"{body_prefix}{entry}{sep}")
+                for item in sorted_items
+            ]
+            _append_entries(
+                formatted_entries=formatted_entries,
+                lines=lines,
+                body_prefix=body_prefix,
+                trailing_comma=trailing_comma,
+                spec=spec,
+            )
         case list() as list_data:
             seq_trailing = (
                 trailing_comma
@@ -1239,9 +1267,8 @@ def _format_collection_lines(
                 items=list_data,
                 spec=spec,
             )
-            last_idx = len(list_data) - 1
-            for i, element in enumerate(iterable=list_data):
-                formatted = spec.format_sequence_entry(
+            formatted_entries = [
+                spec.format_sequence_entry(
                     element,
                     _format_value(
                         value=element,
@@ -1249,9 +1276,15 @@ def _format_collection_lines(
                         dict_open_override=dict_open_override,
                     ),
                 )
-                add_sep = i < last_idx or seq_trailing
-                sep = spec.element_separator.strip() if add_sep else ""
-                lines.append(f"{body_prefix}{formatted}{sep}")
+                for element in list_data
+            ]
+            _append_entries(
+                formatted_entries=formatted_entries,
+                lines=lines,
+                body_prefix=body_prefix,
+                trailing_comma=seq_trailing,
+                spec=spec,
+            )
         case _ as unreachable:
             assert_never(unreachable)
     return lines
