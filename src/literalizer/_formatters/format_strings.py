@@ -2,8 +2,17 @@
 
 import re
 from collections.abc import Callable, Sequence
+from typing import Protocol
 
 from beartype import beartype
+
+
+class _StringFormatter(Protocol):
+    """Protocol for string formatting callables."""
+
+    def __call__(self, value: str) -> str:
+        """Format *value* using backslash escaping."""
+        ...
 
 
 @beartype
@@ -11,7 +20,7 @@ def _build_backslash_formatter(
     *,
     quote_char: str,
     extra_replacements: Sequence[tuple[str, str]] = (),
-) -> Callable[[str], str]:
+) -> _StringFormatter:
     r"""Return a backslash-escape string formatter.
 
     Every returned formatter applies the same base escapes — backslash,
