@@ -280,8 +280,8 @@ class CSharp(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="double.PositiveInfinity")
-        NEG_INF = enum.nonmember(value="double.NegativeInfinity")
+        POSITIVE_INFINITY = enum.nonmember(value="double.PositiveInfinity")
+        NEGATIVE_INFINITY = enum.nonmember(value="double.NegativeInfinity")
         NAN = enum.nonmember(value="double.NaN")
 
         REPR = enum.member(value=format_float_repr)

@@ -273,8 +273,8 @@ class Swift(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="Double.infinity")
-        NEG_INF = enum.nonmember(value="-Double.infinity")
+        POSITIVE_INFINITY = enum.nonmember(value="Double.infinity")
+        NEGATIVE_INFINITY = enum.nonmember(value="-Double.infinity")
         NAN = enum.nonmember(value="Double.nan")
 
         REPR = enum.member(value=format_float_repr)

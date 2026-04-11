@@ -393,8 +393,8 @@ ignore_names = [
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
     # FloatSpecialsMixin nonmember attributes read by mixin __call__
-    "POS_INF",
-    "NEG_INF",
+    "POSITIVE_INFINITY",
+    "NEGATIVE_INFINITY",
     "NAN",
     # Enum members accessed by consumers iterating format enums
     "ALLOW",

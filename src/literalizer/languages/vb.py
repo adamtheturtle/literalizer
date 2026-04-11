@@ -262,8 +262,8 @@ class VisualBasic(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="Double.PositiveInfinity")
-        NEG_INF = enum.nonmember(value="Double.NegativeInfinity")
+        POSITIVE_INFINITY = enum.nonmember(value="Double.PositiveInfinity")
+        NEGATIVE_INFINITY = enum.nonmember(value="Double.NegativeInfinity")
         NAN = enum.nonmember(value="Double.NaN")
 
         REPR = enum.member(value=format_float_repr)

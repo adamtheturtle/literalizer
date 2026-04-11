@@ -192,8 +192,8 @@ class Php(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="INF")
-        NEG_INF = enum.nonmember(value="-INF")
+        POSITIVE_INFINITY = enum.nonmember(value="INF")
+        NEGATIVE_INFINITY = enum.nonmember(value="-INF")
         NAN = enum.nonmember(value="NAN")
 
         REPR = enum.member(value=format_float_repr)

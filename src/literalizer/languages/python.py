@@ -671,8 +671,8 @@ class Python(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value='float("inf")')
-        NEG_INF = enum.nonmember(value='float("-inf")')
+        POSITIVE_INFINITY = enum.nonmember(value='float("inf")')
+        NEGATIVE_INFINITY = enum.nonmember(value='float("-inf")')
         NAN = enum.nonmember(value='float("nan")')
 
         REPR = enum.member(value=format_float_repr)

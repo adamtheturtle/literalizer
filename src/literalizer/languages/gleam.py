@@ -326,8 +326,8 @@ class Gleam(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="GFloat(todo)")
-        NEG_INF = enum.nonmember(value="GFloat(todo)")  # noqa: PIE796
+        POSITIVE_INFINITY = enum.nonmember(value="GFloat(todo)")
+        NEGATIVE_INFINITY = enum.nonmember(value="GFloat(todo)")  # noqa: PIE796
         NAN = enum.nonmember(value="GFloat(todo)")  # noqa: PIE796
 
         REPR = enum.member(value=_gleam_float_wrapper(inner=format_float_repr))

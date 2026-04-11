@@ -217,8 +217,8 @@ class Bash(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="inf")
-        NEG_INF = enum.nonmember(value="-inf")
+        POSITIVE_INFINITY = enum.nonmember(value="inf")
+        NEGATIVE_INFINITY = enum.nonmember(value="-inf")
         NAN = enum.nonmember(value="nan")
 
         REPR = enum.member(value=format_float_repr)

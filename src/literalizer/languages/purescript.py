@@ -376,8 +376,8 @@ class PureScript(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="PFloat (1.0 / 0.0)")
-        NEG_INF = enum.nonmember(value="PFloat (-(1.0 / 0.0))")
+        POSITIVE_INFINITY = enum.nonmember(value="PFloat (1.0 / 0.0)")
+        NEGATIVE_INFINITY = enum.nonmember(value="PFloat (-(1.0 / 0.0))")
         NAN = enum.nonmember(value="PFloat (0.0 / 0.0)")
 
         REPR = enum.member(value=_format_purescript_float_repr)

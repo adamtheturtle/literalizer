@@ -230,8 +230,8 @@ class ObjectiveC(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="INFINITY")
-        NEG_INF = enum.nonmember(value="-INFINITY")
+        POSITIVE_INFINITY = enum.nonmember(value="INFINITY")
+        NEGATIVE_INFINITY = enum.nonmember(value="-INFINITY")
         NAN = enum.nonmember(value="NAN")
 
         REPR = enum.member(value=format_float_repr)

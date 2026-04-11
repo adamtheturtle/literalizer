@@ -170,8 +170,8 @@ class Racket(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="+inf.0")
-        NEG_INF = enum.nonmember(value="-inf.0")
+        POSITIVE_INFINITY = enum.nonmember(value="+inf.0")
+        NEGATIVE_INFINITY = enum.nonmember(value="-inf.0")
         NAN = enum.nonmember(value="+nan.0")
 
         REPR = enum.member(value=format_float_repr)

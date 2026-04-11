@@ -240,8 +240,8 @@ class R(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="Inf")
-        NEG_INF = enum.nonmember(value="-Inf")
+        POSITIVE_INFINITY = enum.nonmember(value="Inf")
+        NEGATIVE_INFINITY = enum.nonmember(value="-Inf")
         NAN = enum.nonmember(value="NaN")
 
         REPR = enum.member(value=format_float_repr)

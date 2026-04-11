@@ -180,8 +180,8 @@ class FloatSpecialsMixin:
 
     Subclasses must define three ``enum.nonmember`` class attributes:
 
-    - ``POS_INF`` — string returned for positive infinity
-    - ``NEG_INF`` — string returned for negative infinity
+    - ``POSITIVE_INFINITY`` — string returned for positive infinity
+    - ``NEGATIVE_INFINITY`` — string returned for negative infinity
     - ``NAN`` — string returned for NaN
 
     The ``__call__`` method checks for special float values first and
@@ -190,15 +190,15 @@ class FloatSpecialsMixin:
 
     def __call__(self, value: float, /) -> str:
         """Format a float, handling inf and nan via class constants."""
-        # Attributes ``POS_INF``, ``NEG_INF``, ``NAN``, and ``value``
-        # are provided by enum subclasses via ``enum.nonmember()`` /
-        # ``enum.member()``.  Accessed through ``vars()`` so that all
-        # three type checkers (mypy, pyright, ty) stay happy without
-        # per-line suppression comments.
+        # Attributes ``POSITIVE_INFINITY``, ``NEGATIVE_INFINITY``,
+        # ``NAN``, and ``value`` are provided by enum subclasses via
+        # ``enum.nonmember()`` / ``enum.member()``.  Accessed through
+        # ``vars()`` so that all three type checkers (mypy, pyright,
+        # ty) stay happy without per-line suppression comments.
         attrs = vars(type(self))
         if math.isinf(value):
-            inf = attrs["NEG_INF"] if value < 0 else attrs["POS_INF"]
-            return cast("str", inf)
+            key = "NEGATIVE_INFINITY" if value < 0 else "POSITIVE_INFINITY"
+            return cast("str", attrs[key])
         if math.isnan(value):
             return cast("str", attrs["NAN"])
         formatter = cast(

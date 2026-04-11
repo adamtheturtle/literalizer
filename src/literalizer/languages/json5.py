@@ -198,8 +198,8 @@ class Json5(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="Infinity")
-        NEG_INF = enum.nonmember(value="-Infinity")
+        POSITIVE_INFINITY = enum.nonmember(value="Infinity")
+        NEGATIVE_INFINITY = enum.nonmember(value="-Infinity")
         NAN = enum.nonmember(value="NaN")
 
         REPR = enum.member(value=format_float_repr)

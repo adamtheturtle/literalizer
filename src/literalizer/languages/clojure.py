@@ -166,8 +166,8 @@ class Clojure(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="Double/POSITIVE_INFINITY")
-        NEG_INF = enum.nonmember(value="Double/NEGATIVE_INFINITY")
+        POSITIVE_INFINITY = enum.nonmember(value="Double/POSITIVE_INFINITY")
+        NEGATIVE_INFINITY = enum.nonmember(value="Double/NEGATIVE_INFINITY")
         NAN = enum.nonmember(value="Double/NaN")
 
         REPR = enum.member(value=format_float_repr)

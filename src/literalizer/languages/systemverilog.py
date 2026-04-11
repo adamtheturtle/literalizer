@@ -222,8 +222,12 @@ class SystemVerilog(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        POS_INF = enum.nonmember(value="$bitstoreal(64'h7FF0000000000000)")
-        NEG_INF = enum.nonmember(value="$bitstoreal(64'hFFF0000000000000)")
+        POSITIVE_INFINITY = enum.nonmember(
+            value="$bitstoreal(64'h7FF0000000000000)",
+        )
+        NEGATIVE_INFINITY = enum.nonmember(
+            value="$bitstoreal(64'hFFF0000000000000)",
+        )
         NAN = enum.nonmember(value="$bitstoreal(64'h7FF8000000000000)")
 
         REPR = enum.member(value=format_float_repr)
