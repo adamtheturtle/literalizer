@@ -484,7 +484,7 @@ class Fortran(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = (
             "  use, intrinsic :: ieee_arithmetic",
         )
-        self.call_style_config = CallStyleConfig(
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.KEYWORD,
             keyword_separator="=",
         )

@@ -459,5 +459,7 @@ class Dhall(metaclass=LanguageCls):
         )
 
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble

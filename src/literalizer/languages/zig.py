@@ -479,4 +479,6 @@ class Zig(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = (
             'const std = @import("std");',
         )
-        self.call_style_config = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )

@@ -418,7 +418,7 @@ class Mojo(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ("import std.math",)
-        self.call_style_config = CallStyleConfig(
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.KEYWORD,
             keyword_separator="=",
         )
