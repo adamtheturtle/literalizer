@@ -2,11 +2,12 @@
 
 import re
 from collections.abc import Callable, Sequence
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
 
+@runtime_checkable
 class _StringFormatter(Protocol):
     """Protocol for string formatting callables."""
 
