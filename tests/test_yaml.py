@@ -1,5 +1,6 @@
 """Tests for YAML-related literalizer functionality."""
 
+import re
 import textwrap
 
 import pytest
@@ -611,9 +612,14 @@ def test_r_empty_dict_key_error() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
+    expected_msg = re.escape(
+        pattern='R does not support the dict key "". '
+        "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
+        "as unnamed list elements instead."
+    )
     with pytest.raises(
         expected_exception=InvalidDictKeyError,
-        match=r'dict key ""',
+        match=f"^{expected_msg}$",
     ):
         literalize(
             source=yaml_string,
@@ -1015,9 +1021,14 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
 def test_dhall_empty_dict_key_error() -> None:
     """Dhall raises InvalidDictKeyError for empty-string dict keys."""
     yaml_string = '{"": "value"}\n'
+    expected_msg = re.escape(
+        pattern='Dhall does not support the dict key "". '
+        "Backtick-quoted labels must be non-empty and contain only "
+        "printable ASCII (no backticks or control characters)."
+    )
     with pytest.raises(
         expected_exception=InvalidDictKeyError,
-        match=r'dict key ""',
+        match=f"^{expected_msg}$",
     ):
         literalize(
             source=yaml_string,
@@ -1051,9 +1062,14 @@ def test_dhall_control_char_in_string() -> None:
 def test_dhall_control_char_key_error() -> None:
     """Dhall rejects control characters in dict keys."""
     yaml_string = '{"\\x01": "value"}\n'
+    expected_msg = re.escape(
+        pattern='Dhall does not support the dict key "\\u{0001}". '
+        "Backtick-quoted labels must be non-empty and contain only "
+        "printable ASCII (no backticks or control characters)."
+    )
     with pytest.raises(
         expected_exception=InvalidDictKeyError,
-        match="dict key",
+        match=f"^{expected_msg}$",
     ):
         literalize(
             source=yaml_string,
