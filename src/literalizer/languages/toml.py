@@ -3,6 +3,7 @@
 import datetime
 import enum
 import functools
+import math
 import re
 from typing import TYPE_CHECKING
 
@@ -203,33 +204,16 @@ class Toml(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="inf",
-                neg_inf_literal="-inf",
-                nan_literal="nan",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="inf",
-                neg_inf_literal="-inf",
-                nan_literal="nan",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="inf",
-                neg_inf_literal="-inf",
-                nan_literal="nan",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                return "-inf" if value < 0 else "inf"
+            if math.isnan(value):
+                return "nan"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):

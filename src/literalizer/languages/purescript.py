@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import functools
 import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
@@ -98,10 +97,6 @@ def _format_purescript_integer_hex(value: int) -> str:
 @beartype
 def _purescript_float_wrapper(
     inner: Callable[[float], str],
-    *,
-    inf_literal: str,
-    neg_inf_literal: str,
-    nan_literal: str,
 ) -> Callable[[float], str]:
     """Wrap a float formatter to produce ``PFloat`` constructors."""
 
@@ -109,9 +104,11 @@ def _purescript_float_wrapper(
     def _format(value: float) -> str:
         """Format a float with a ``PFloat`` constructor."""
         if math.isinf(value):
-            return neg_inf_literal if value < 0 else inf_literal
+            if value < 0:
+                return "PFloat (-(1.0 / 0.0))"
+            return "PFloat (1.0 / 0.0)"
         if math.isnan(value):
-            return nan_literal
+            return "PFloat (0.0 / 0.0)"
         formatted = inner(value)
         if formatted.startswith("-"):
             return f"PFloat ({formatted})"
@@ -121,37 +118,13 @@ def _purescript_float_wrapper(
 
 
 _format_purescript_float_repr = _purescript_float_wrapper(
-    inner=functools.partial(
-        format_float_repr,
-        inf_literal="",
-        neg_inf_literal="",
-        nan_literal="",
-    ),
-    inf_literal="PFloat (1.0 / 0.0)",
-    neg_inf_literal="PFloat (-(1.0 / 0.0))",
-    nan_literal="PFloat (0.0 / 0.0)",
+    inner=format_float_repr,
 )
 _format_purescript_float_scientific = _purescript_float_wrapper(
-    inner=functools.partial(
-        format_float_scientific,
-        inf_literal="",
-        neg_inf_literal="",
-        nan_literal="",
-    ),
-    inf_literal="PFloat (1.0 / 0.0)",
-    neg_inf_literal="PFloat (-(1.0 / 0.0))",
-    nan_literal="PFloat (0.0 / 0.0)",
+    inner=format_float_scientific,
 )
 _format_purescript_float_fixed = _purescript_float_wrapper(
-    inner=functools.partial(
-        format_float_fixed,
-        inf_literal="",
-        neg_inf_literal="",
-        nan_literal="",
-    ),
-    inf_literal="PFloat (1.0 / 0.0)",
-    neg_inf_literal="PFloat (-(1.0 / 0.0))",
-    nan_literal="PFloat (0.0 / 0.0)",
+    inner=format_float_fixed,
 )
 
 

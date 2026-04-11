@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-import functools
+import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -193,33 +193,16 @@ class Odin(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="math.inf_f64(1)",
-                neg_inf_literal="math.inf_f64(-1)",
-                nan_literal="math.nan_f64()",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="math.inf_f64(1)",
-                neg_inf_literal="math.inf_f64(-1)",
-                nan_literal="math.nan_f64()",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="math.inf_f64(1)",
-                neg_inf_literal="math.inf_f64(-1)",
-                nan_literal="math.nan_f64()",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                return "math.inf_f64(-1)" if value < 0 else "math.inf_f64(1)"
+            if math.isnan(value):
+                return "math.nan_f64()"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):

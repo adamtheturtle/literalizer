@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-import functools
+import math
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -222,33 +222,18 @@ class SystemVerilog(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="$bitstoreal(64'h7FF0000000000000)",
-                neg_inf_literal="$bitstoreal(64'hFFF0000000000000)",
-                nan_literal="$bitstoreal(64'h7FF8000000000000)",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="$bitstoreal(64'h7FF0000000000000)",
-                neg_inf_literal="$bitstoreal(64'hFFF0000000000000)",
-                nan_literal="$bitstoreal(64'h7FF8000000000000)",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="$bitstoreal(64'h7FF0000000000000)",
-                neg_inf_literal="$bitstoreal(64'hFFF0000000000000)",
-                nan_literal="$bitstoreal(64'h7FF8000000000000)",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                if value < 0:
+                    return "$bitstoreal(64'hFFF0000000000000)"
+                return "$bitstoreal(64'h7FF0000000000000)"
+            if math.isnan(value):
+                return "$bitstoreal(64'h7FF8000000000000)"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):

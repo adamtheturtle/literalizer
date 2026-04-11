@@ -3,6 +3,7 @@
 import datetime
 import enum
 import functools
+import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -241,33 +242,18 @@ class Zig(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="std.math.inf(f64)",
-                neg_inf_literal="-std.math.inf(f64)",
-                nan_literal="std.math.nan(f64)",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="std.math.inf(f64)",
-                neg_inf_literal="-std.math.inf(f64)",
-                nan_literal="std.math.nan(f64)",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="std.math.inf(f64)",
-                neg_inf_literal="-std.math.inf(f64)",
-                nan_literal="std.math.nan(f64)",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                if value < 0:
+                    return "-std.math.inf(f64)"
+                return "std.math.inf(f64)"
+            if math.isnan(value):
+                return "std.math.nan(f64)"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):

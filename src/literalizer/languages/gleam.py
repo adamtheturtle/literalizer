@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import functools
 import math
 from collections.abc import Callable
 from types import MappingProxyType
@@ -133,10 +132,6 @@ def _gleam_integer_wrapper(
 
 def _gleam_float_wrapper(
     inner: Callable[[float], str],
-    *,
-    inf_literal: str = "GFloat(todo)",
-    neg_inf_literal: str = "GFloat(todo)",
-    nan_literal: str = "GFloat(todo)",
 ) -> Callable[[float], str]:
     """Wrap a float formatter to produce ``GFloat`` constructors."""
 
@@ -144,9 +139,9 @@ def _gleam_float_wrapper(
     def _format(value: float) -> str:
         """Format a float with a ``GFloat`` constructor."""
         if math.isinf(value):
-            return neg_inf_literal if value < 0 else inf_literal
+            return "GFloat(todo)"
         if math.isnan(value):
-            return nan_literal
+            return "GFloat(todo)"
         return f"GFloat({inner(value)})"
 
     return _format
@@ -335,35 +330,12 @@ class Gleam(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=_gleam_float_wrapper(
-                inner=functools.partial(
-                    format_float_repr,
-                    inf_literal="UNREACHABLE",
-                    neg_inf_literal="UNREACHABLE",
-                    nan_literal="UNREACHABLE",
-                ),
-            )
-        )
+        REPR = enum.member(value=_gleam_float_wrapper(inner=format_float_repr))
         SCIENTIFIC = enum.member(
-            value=_gleam_float_wrapper(
-                inner=functools.partial(
-                    format_float_scientific,
-                    inf_literal="UNREACHABLE",
-                    neg_inf_literal="UNREACHABLE",
-                    nan_literal="UNREACHABLE",
-                ),
-            )
+            value=_gleam_float_wrapper(inner=format_float_scientific)
         )
         FIXED = enum.member(
-            value=_gleam_float_wrapper(
-                inner=functools.partial(
-                    format_float_fixed,
-                    inf_literal="UNREACHABLE",
-                    neg_inf_literal="UNREACHABLE",
-                    nan_literal="UNREACHABLE",
-                ),
-            )
+            value=_gleam_float_wrapper(inner=format_float_fixed)
         )
 
         def __call__(self, value: float, /) -> str:

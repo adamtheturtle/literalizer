@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-import functools
+import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -280,33 +280,18 @@ class CSharp(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="double.PositiveInfinity",
-                neg_inf_literal="double.NegativeInfinity",
-                nan_literal="double.NaN",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="double.PositiveInfinity",
-                neg_inf_literal="double.NegativeInfinity",
-                nan_literal="double.NaN",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="double.PositiveInfinity",
-                neg_inf_literal="double.NegativeInfinity",
-                nan_literal="double.NaN",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                if value < 0:
+                    return "double.NegativeInfinity"
+                return "double.PositiveInfinity"
+            if math.isnan(value):
+                return "double.NaN"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):

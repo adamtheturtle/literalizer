@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-import functools
+import math
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -258,33 +258,18 @@ class Fortran(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="ieee_value(0.0, ieee_positive_inf)",
-                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
-                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="ieee_value(0.0, ieee_positive_inf)",
-                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
-                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="ieee_value(0.0, ieee_positive_inf)",
-                neg_inf_literal="ieee_value(0.0, ieee_negative_inf)",
-                nan_literal="ieee_value(0.0, ieee_quiet_nan)",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                if value < 0:
+                    return "ieee_value(0.0, ieee_negative_inf)"
+                return "ieee_value(0.0, ieee_positive_inf)"
+            if math.isnan(value):
+                return "ieee_value(0.0, ieee_quiet_nan)"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):

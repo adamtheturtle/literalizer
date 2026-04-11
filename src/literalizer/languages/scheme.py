@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-import functools
+import math
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -170,33 +170,16 @@ class Scheme(metaclass=LanguageCls):
     class FloatFormats(enum.Enum):
         """Float format options."""
 
-        REPR = enum.member(
-            value=functools.partial(
-                format_float_repr,
-                inf_literal="+inf.0",
-                neg_inf_literal="-inf.0",
-                nan_literal="+nan.0",
-            )
-        )
-        SCIENTIFIC = enum.member(
-            value=functools.partial(
-                format_float_scientific,
-                inf_literal="+inf.0",
-                neg_inf_literal="-inf.0",
-                nan_literal="+nan.0",
-            )
-        )
-        FIXED = enum.member(
-            value=functools.partial(
-                format_float_fixed,
-                inf_literal="+inf.0",
-                neg_inf_literal="-inf.0",
-                nan_literal="+nan.0",
-            )
-        )
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a float."""
+            if math.isinf(value):
+                return "-inf.0" if value < 0 else "+inf.0"
+            if math.isnan(value):
+                return "+nan.0"
             return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
