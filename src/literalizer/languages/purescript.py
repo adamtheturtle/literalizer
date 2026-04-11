@@ -40,6 +40,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -103,12 +104,6 @@ def _purescript_float_wrapper(
     @beartype
     def _format(value: float) -> str:
         """Format a float with a ``PFloat`` constructor."""
-        if math.isinf(value):
-            if value < 0:
-                return "PFloat (-(1.0 / 0.0))"
-            return "PFloat (1.0 / 0.0)"
-        if math.isnan(value):
-            return "PFloat (0.0 / 0.0)"
         formatted = inner(value)
         if formatted.startswith("-"):
             return f"PFloat ({formatted})"
@@ -378,17 +373,16 @@ class PureScript(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
+
+        pos_inf = enum.nonmember(value="PFloat (1.0 / 0.0)")
+        neg_inf = enum.nonmember(value="PFloat (-(1.0 / 0.0))")
+        nan = enum.nonmember(value="PFloat (0.0 / 0.0)")
 
         REPR = enum.member(value=_format_purescript_float_repr)
         SCIENTIFIC = enum.member(value=_format_purescript_float_scientific)
         FIXED = enum.member(value=_format_purescript_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            formatter: Callable[[float], str] = self.value
-            return formatter(value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

@@ -3,8 +3,9 @@
 import dataclasses
 import datetime
 import enum
+import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 from beartype import beartype
 
@@ -172,6 +173,39 @@ class SequenceFormat(Protocol):
     def supports_heterogeneity(self) -> bool:
         """Whether this sequence format supports mixed-type elements."""
         ...  # pylint: disable=unnecessary-ellipsis
+
+
+class FloatSpecialsMixin:
+    """Mixin for FloatFormats enums that handles inf/nan dispatch.
+
+    Subclasses must define three ``enum.nonmember`` class attributes:
+
+    - ``pos_inf`` — string returned for positive infinity
+    - ``neg_inf`` — string returned for negative infinity
+    - ``nan`` — string returned for NaN
+
+    The ``__call__`` method checks for special float values first and
+    delegates to ``self.value(value=value)`` for finite values.
+    """
+
+    def __call__(self, value: float, /) -> str:
+        """Format a float, handling inf and nan via class constants."""
+        # Attributes ``pos_inf``, ``neg_inf``, ``nan``, and ``value``
+        # are provided by enum subclasses via ``enum.nonmember()`` /
+        # ``enum.member()``.  Accessed through ``vars()`` so that all
+        # three type checkers (mypy, pyright, ty) stay happy without
+        # per-line suppression comments.
+        attrs = vars(type(self))
+        if math.isinf(value):
+            inf = attrs["neg_inf"] if value < 0 else attrs["pos_inf"]
+            return cast("str", inf)
+        if math.isnan(value):
+            return cast("str", attrs["nan"])
+        formatter = cast(
+            "Callable[[float], str]",
+            self.value,  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
+        )
+        return formatter(value)
 
 
 class LanguageCls(type):
