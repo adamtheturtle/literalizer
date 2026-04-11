@@ -487,6 +487,39 @@ def _describe_heterogeneous_types(*, data: Value) -> str:
     return ", ".join(sorted(_collect_scalar_type_names(data=data)))
 
 
+def _collect_mixed_type_families(*, data: Value) -> set[str]:
+    """Collect type family names from *data*, including collection types.
+
+    Unlike `_collect_scalar_type_names` which recurses into collections,
+    this reports the type family of each direct child value so that
+    mixed-type errors can show "dict, str" or "int, list" instead of
+    only scalar types.
+    """
+    families: set[str] = set()
+    match data:
+        case ordereddict() | dict():
+            values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            if _dict_values_mixed_types(values=values):
+                return {_value_type_family(value=v) for v in values}
+            for v in values:
+                families |= _collect_mixed_type_families(data=v)
+        case list():
+            if _dict_values_mixed_types(values=data):
+                return {_value_type_family(value=v) for v in data}
+            for v in data:
+                families |= _collect_mixed_type_families(data=v)
+        case _:
+            families.add(_value_type_family(value=data))
+    return families
+
+
+def _describe_mixed_type_families(*, data: Value) -> str:
+    """Return a sorted, comma-separated string of type families in
+    *data*, including collection types.
+    """
+    return ", ".join(sorted(_collect_mixed_type_families(data=data)))
+
+
 @beartype
 def _check_heterogeneous(*, data: Value) -> None:
     """Recursively check for heterogeneous all-scalar collections and
@@ -1153,11 +1186,9 @@ def _apply_coercions(
                 spec.sequence_format_config.requires_uniform_record_shapes
                 and _has_mixed_dict_shapes(data=data)
             ):
-                types = _describe_heterogeneous_types(data=data)
                 msg = (
                     "List contains dicts with different key sets "
                     "that would be padded with null values"
-                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
             _check_heterogeneous(data=data)
@@ -1170,7 +1201,7 @@ def _apply_coercions(
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_dict_values(data=data):
-                types = _describe_heterogeneous_types(data=data)
+                types = _describe_mixed_type_families(data=data)
                 msg = (
                     "Dict contains values of mixed types "
                     "that would be coerced to strings"
@@ -1178,7 +1209,7 @@ def _apply_coercions(
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_list_values(data=data):
-                types = _describe_heterogeneous_types(data=data)
+                types = _describe_mixed_type_families(data=data)
                 msg = (
                     "List contains elements of mixed types "
                     "that would be coerced to strings"

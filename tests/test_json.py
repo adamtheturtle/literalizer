@@ -872,7 +872,14 @@ def test_error_on_coercion_json_no_raise_for_homogeneous_dict() -> None:
 
 def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
     """Error_on_coercion raises when a dict has values of mixed types."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(
                 obj={"name": "Bob", "tags": ["admin", "user"]},
@@ -889,7 +896,14 @@ def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
 
 def test_error_on_coercion_json_raises_for_mixed_list_values() -> None:
     """Error_on_coercion raises when a list has mixed element types."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains elements of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj=["hello", ["nested"]]),
             input_format=InputFormat.JSON,
@@ -912,7 +926,14 @@ def test_error_on_coercion_json_raises_for_mixed_dict_shapes() -> None:
             {"type": "update"},
         ],
     }
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains dicts with different key sets "
+        "that would be padded with null values",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(obj=data),
             input_format=InputFormat.JSON,
@@ -947,7 +968,14 @@ def test_error_on_coercion_json_no_raise_for_uniform_dict_shapes() -> None:
 
 def test_error_on_coercion_json_raises_for_mixed_dict_none_list() -> None:
     """Error_on_coercion raises when a dict has None alongside a list."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, none)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=json.dumps(
                 obj={"tags": ["admin"], "extra": None},

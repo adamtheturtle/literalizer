@@ -912,7 +912,14 @@ def test_error_on_coercion_raises_for_mixed_dict_values() -> None:
           - user
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -934,7 +941,14 @@ def test_error_on_coercion_raises_for_mixed_list_values() -> None:
           - nested
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains elements of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -959,7 +973,14 @@ def test_error_on_coercion_raises_for_mixed_dict_shapes() -> None:
           - type: update
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="List contains dicts with different key sets "
+        "that would be padded with null values",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -1005,7 +1026,14 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
         extra:
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, none)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
