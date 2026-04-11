@@ -976,6 +976,36 @@ def test_error_on_coercion_json_raises_for_mixed_list_values() -> None:
         )
 
 
+def test_error_on_coercion_json_mixed_dict_inside_mixed_list() -> None:
+    """Error message reports dict type families when a mixed dict is
+    nested inside a mixed list.
+
+    ``_find_first_mixed_values`` must only consider dicts (not lists)
+    when called from the ``_has_mixed_dict_values`` error path, otherwise
+    it finds the enclosing mixed list first and reports wrong types.
+    """
+    expected_msg = re.escape(
+        pattern="Dict contains values of mixed types "
+        "that would be coerced to strings (found types: list, str)",
+    )
+    with pytest.raises(
+        expected_exception=HeterogeneousCoercionError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=json.dumps(
+                obj={"wrapper": [{"a": "x", "b": [1]}, "text"]},
+            ),
+            input_format=InputFormat.JSON,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=True,
+        )
+
+
 def test_error_on_coercion_json_raises_for_mixed_dict_shapes() -> None:
     """Error_on_coercion raises when a list has dicts with different
     keys, including when the list is nested inside a dict.

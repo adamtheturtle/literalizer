@@ -482,35 +482,55 @@ def _describe_heterogeneous_types(*, data: Value) -> str:
     return ", ".join(sorted(_collect_scalar_type_names(data=data)))
 
 
-def _find_first_mixed_values(*, data: Value) -> Sequence[Value]:
+def _find_first_mixed_values(
+    *,
+    data: Value,
+    container_type: type,
+) -> Sequence[Value]:
     """Return the first collection of children in *data* that spans
     multiple type families.
 
-    Walks the tree until it finds a dict-values or list-elements level
-    where ``_dict_values_mixed_types`` is ``True``.
+    Only considers collections whose immediate container matches
+    *container_type* (``dict`` or ``list``).
     """
     children: Sequence[Value]
     match data:
         case ordereddict() | dict():
             children = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            if container_type is dict and _dict_values_mixed_types(
+                values=children,
+            ):
+                return children
         case list():
             children = data
+            if container_type is list and _dict_values_mixed_types(
+                values=children,
+            ):
+                return children
         case _:
             return []
-    if _dict_values_mixed_types(values=children):
-        return children
     for child in children:
-        result = _find_first_mixed_values(data=child)
+        result = _find_first_mixed_values(
+            data=child,
+            container_type=container_type,
+        )
         if result:
             return result
     return []
 
 
-def _describe_mixed_type_families(*, data: Value) -> str:
+def _describe_mixed_type_families(
+    *,
+    data: Value,
+    container_type: type,
+) -> str:
     """Return a sorted, comma-separated string of type families for the
     first collection in *data* whose children span multiple families.
     """
-    values = _find_first_mixed_values(data=data)
+    values = _find_first_mixed_values(
+        data=data,
+        container_type=container_type,
+    )
     return ", ".join(sorted({_value_type_family(value=v) for v in values}))
 
 
@@ -1197,7 +1217,10 @@ def _apply_coercions(
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_dict_values(data=data):
-                types = _describe_mixed_type_families(data=data)
+                types = _describe_mixed_type_families(
+                    data=data,
+                    container_type=dict,
+                )
                 msg = (
                     "Dict contains values of mixed types "
                     "that would be coerced to strings"
@@ -1205,7 +1228,10 @@ def _apply_coercions(
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_list_values(data=data):
-                types = _describe_mixed_type_families(data=data)
+                types = _describe_mixed_type_families(
+                    data=data,
+                    container_type=list,
+                )
                 msg = (
                     "List contains elements of mixed types "
                     "that would be coerced to strings"
