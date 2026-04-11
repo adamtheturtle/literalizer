@@ -178,29 +178,42 @@ class SequenceFormat(Protocol):
 class FloatSpecialsMixin:
     """Mixin for FloatFormats enums that handles inf/nan dispatch.
 
-    Subclasses must define three ``enum.nonmember`` class attributes:
+    Subclasses pass three keyword arguments to the class definition:
 
-    - ``POSITIVE_INFINITY`` — string returned for positive infinity
-    - ``NEGATIVE_INFINITY`` — string returned for negative infinity
-    - ``NAN`` — string returned for NaN
+    - ``positive_infinity`` — string returned for positive infinity
+    - ``negative_infinity`` — string returned for negative infinity
+    - ``nan`` — string returned for NaN
 
     The ``__call__`` method checks for special float values first and
-    delegates to ``self.value(value=value)`` for finite values.
+    delegates to the enum member's formatter for finite values.
     """
+
+    POSITIVE_INFINITY: str
+    NEGATIVE_INFINITY: str
+    NAN: str
+
+    def __init_subclass__(
+        cls,
+        *,
+        positive_infinity: str = "",
+        negative_infinity: str = "",
+        nan: str = "",
+        **kwargs: object,
+    ) -> None:
+        """Store float-special strings as class attributes."""
+        super().__init_subclass__(**kwargs)
+        cls.POSITIVE_INFINITY = positive_infinity
+        cls.NEGATIVE_INFINITY = negative_infinity
+        cls.NAN = nan
 
     def __call__(self, value: float, /) -> str:
         """Format a float, handling inf and nan via class constants."""
-        # Attributes ``POSITIVE_INFINITY``, ``NEGATIVE_INFINITY``,
-        # ``NAN``, and ``value`` are provided by enum subclasses via
-        # ``enum.nonmember()`` / ``enum.member()``.  Accessed through
-        # ``vars()`` so that all three type checkers (mypy, pyright,
-        # ty) stay happy without per-line suppression comments.
-        attrs = vars(type(self))
         if math.isinf(value):
-            key = "NEGATIVE_INFINITY" if value < 0 else "POSITIVE_INFINITY"
-            return cast("str", attrs[key])
+            if value < 0:
+                return self.NEGATIVE_INFINITY
+            return self.POSITIVE_INFINITY
         if math.isnan(value):
-            return cast("str", attrs["NAN"])
+            return self.NAN
         formatter = cast(
             "Callable[[float], str]",
             self.value,  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]  # ty: ignore[unresolved-attribute]

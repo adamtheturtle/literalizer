@@ -338,12 +338,14 @@ class Cobol(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="9.99E99",
+        negative_infinity="-9.99E99",
+        nan="0.0",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="9.99E99")
-        NEGATIVE_INFINITY = enum.nonmember(value="-9.99E99")
-        NAN = enum.nonmember(value="0.0")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

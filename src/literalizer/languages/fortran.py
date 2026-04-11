@@ -255,16 +255,14 @@ class Fortran(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="ieee_value(0.0, ieee_positive_inf)",
+        negative_infinity="ieee_value(0.0, ieee_negative_inf)",
+        nan="ieee_value(0.0, ieee_quiet_nan)",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(
-            value="ieee_value(0.0, ieee_positive_inf)",
-        )
-        NEGATIVE_INFINITY = enum.nonmember(
-            value="ieee_value(0.0, ieee_negative_inf)",
-        )
-        NAN = enum.nonmember(value="ieee_value(0.0, ieee_quiet_nan)")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

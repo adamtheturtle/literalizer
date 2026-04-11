@@ -381,12 +381,14 @@ class Kotlin(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Double.POSITIVE_INFINITY",
+        negative_infinity="Double.NEGATIVE_INFINITY",
+        nan="Double.NaN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="Double.POSITIVE_INFINITY")
-        NEGATIVE_INFINITY = enum.nonmember(value="Double.NEGATIVE_INFINITY")
-        NAN = enum.nonmember(value="Double.NaN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

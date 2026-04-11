@@ -227,12 +227,14 @@ class ObjectiveC(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="INFINITY",
+        negative_infinity="-INFINITY",
+        nan="NAN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="INFINITY")
-        NEGATIVE_INFINITY = enum.nonmember(value="-INFINITY")
-        NAN = enum.nonmember(value="NAN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

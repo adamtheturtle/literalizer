@@ -266,12 +266,14 @@ class Go(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="math.Inf(1)",
+        negative_infinity="math.Inf(-1)",
+        nan="math.NaN()",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="math.Inf(1)")
-        NEGATIVE_INFINITY = enum.nonmember(value="math.Inf(-1)")
-        NAN = enum.nonmember(value="math.NaN()")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

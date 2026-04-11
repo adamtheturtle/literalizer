@@ -227,12 +227,14 @@ class Ruby(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Float::INFINITY",
+        negative_infinity="-Float::INFINITY",
+        nan="Float::NAN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="Float::INFINITY")
-        NEGATIVE_INFINITY = enum.nonmember(value="-Float::INFINITY")
-        NAN = enum.nonmember(value="Float::NAN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

@@ -234,12 +234,14 @@ class Elixir(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity=":infinity",
+        negative_infinity=":negative_infinity",
+        nan=":nan",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value=":infinity")
-        NEGATIVE_INFINITY = enum.nonmember(value=":negative_infinity")
-        NAN = enum.nonmember(value=":nan")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

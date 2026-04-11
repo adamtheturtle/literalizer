@@ -285,12 +285,14 @@ class Matlab(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Inf",
+        negative_infinity="-Inf",
+        nan="NaN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="Inf")
-        NEGATIVE_INFINITY = enum.nonmember(value="-Inf")
-        NAN = enum.nonmember(value="NaN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

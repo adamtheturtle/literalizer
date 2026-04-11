@@ -167,12 +167,14 @@ class Scheme(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="+inf.0",
+        negative_infinity="-inf.0",
+        nan="+nan.0",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="+inf.0")
-        NEGATIVE_INFINITY = enum.nonmember(value="-inf.0")
-        NAN = enum.nonmember(value="+nan.0")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

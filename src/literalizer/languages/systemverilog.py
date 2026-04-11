@@ -219,16 +219,14 @@ class SystemVerilog(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="$bitstoreal(64'h7FF0000000000000)",
+        negative_infinity="$bitstoreal(64'hFFF0000000000000)",
+        nan="$bitstoreal(64'h7FF8000000000000)",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(
-            value="$bitstoreal(64'h7FF0000000000000)",
-        )
-        NEGATIVE_INFINITY = enum.nonmember(
-            value="$bitstoreal(64'hFFF0000000000000)",
-        )
-        NAN = enum.nonmember(value="$bitstoreal(64'h7FF8000000000000)")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

@@ -340,12 +340,14 @@ class Rust(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="f64::INFINITY",
+        negative_infinity="f64::NEG_INFINITY",
+        nan="f64::NAN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="f64::INFINITY")
-        NEGATIVE_INFINITY = enum.nonmember(value="f64::NEG_INFINITY")
-        NAN = enum.nonmember(value="f64::NAN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

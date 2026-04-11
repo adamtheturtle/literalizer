@@ -246,12 +246,14 @@ class Dart(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="double.infinity",
+        negative_infinity="double.negativeInfinity",
+        nan="double.nan",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="double.infinity")
-        NEGATIVE_INFINITY = enum.nonmember(value="double.negativeInfinity")
-        NAN = enum.nonmember(value="double.nan")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

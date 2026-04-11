@@ -259,12 +259,14 @@ class VisualBasic(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Double.PositiveInfinity",
+        negative_infinity="Double.NegativeInfinity",
+        nan="Double.NaN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="Double.PositiveInfinity")
-        NEGATIVE_INFINITY = enum.nonmember(value="Double.NegativeInfinity")
-        NAN = enum.nonmember(value="Double.NaN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

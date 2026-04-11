@@ -190,12 +190,14 @@ class Odin(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="math.inf_f64(1)",
+        negative_infinity="math.inf_f64(-1)",
+        nan="math.nan_f64()",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="math.inf_f64(1)")
-        NEGATIVE_INFINITY = enum.nonmember(value="math.inf_f64(-1)")
-        NAN = enum.nonmember(value="math.nan_f64()")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

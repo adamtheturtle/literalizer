@@ -668,12 +668,14 @@ class Python(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity='float("inf")',
+        negative_infinity='float("-inf")',
+        nan='float("nan")',
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value='float("inf")')
-        NEGATIVE_INFINITY = enum.nonmember(value='float("-inf")')
-        NAN = enum.nonmember(value='float("nan")')
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

@@ -209,12 +209,14 @@ class Lua(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="math.huge",
+        negative_infinity="-math.huge",
+        nan="(0/0)",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="math.huge")
-        NEGATIVE_INFINITY = enum.nonmember(value="-math.huge")
-        NAN = enum.nonmember(value="(0/0)")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

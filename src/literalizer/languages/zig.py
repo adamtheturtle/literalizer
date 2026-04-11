@@ -239,12 +239,14 @@ class Zig(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="std.math.inf(f64)",
+        negative_infinity="-std.math.inf(f64)",
+        nan="std.math.nan(f64)",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="std.math.inf(f64)")
-        NEGATIVE_INFINITY = enum.nonmember(value="-std.math.inf(f64)")
-        NAN = enum.nonmember(value="std.math.nan(f64)")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

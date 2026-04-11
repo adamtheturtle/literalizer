@@ -182,12 +182,14 @@ class CommonLisp(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity=_CL_INF,
+        negative_infinity=_CL_NEG_INF,
+        nan=_CL_NAN,
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value=_CL_INF)
-        NEGATIVE_INFINITY = enum.nonmember(value=_CL_NEG_INF)
-        NAN = enum.nonmember(value=_CL_NAN)
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

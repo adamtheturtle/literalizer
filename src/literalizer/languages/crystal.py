@@ -219,12 +219,14 @@ class Crystal(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Float64::INFINITY",
+        negative_infinity="-Float64::INFINITY",
+        nan="Float64::NAN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="Float64::INFINITY")
-        NEGATIVE_INFINITY = enum.nonmember(value="-Float64::INFINITY")
-        NAN = enum.nonmember(value="Float64::NAN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

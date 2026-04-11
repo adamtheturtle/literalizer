@@ -323,12 +323,14 @@ class Gleam(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="GFloat(todo)",
+        negative_infinity="GFloat(todo)",
+        nan="GFloat(todo)",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="GFloat(todo)")
-        NEGATIVE_INFINITY = enum.nonmember(value="GFloat(todo)")  # noqa: PIE796
-        NAN = enum.nonmember(value="GFloat(todo)")  # noqa: PIE796
 
         REPR = enum.member(value=_gleam_float_wrapper(inner=format_float_repr))
         SCIENTIFIC = enum.member(

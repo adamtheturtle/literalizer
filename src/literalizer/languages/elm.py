@@ -332,12 +332,14 @@ class Elm(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="EFloat (1 / 0)",
+        negative_infinity="EFloat (-(1 / 0))",
+        nan="EFloat (0 / 0)",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="EFloat (1 / 0)")
-        NEGATIVE_INFINITY = enum.nonmember(value="EFloat (-(1 / 0))")
-        NAN = enum.nonmember(value="EFloat (0 / 0)")
 
         REPR = enum.member(value=_format_elm_float_repr)
         SCIENTIFIC = enum.member(value=_format_elm_float_scientific)

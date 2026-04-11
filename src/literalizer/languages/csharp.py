@@ -277,12 +277,14 @@ class CSharp(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(FloatSpecialsMixin, enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="double.PositiveInfinity",
+        negative_infinity="double.NegativeInfinity",
+        nan="double.NaN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="double.PositiveInfinity")
-        NEGATIVE_INFINITY = enum.nonmember(value="double.NegativeInfinity")
-        NAN = enum.nonmember(value="double.NaN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
