@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -43,6 +42,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -138,10 +138,6 @@ def _gleam_float_wrapper(
     @beartype
     def _format(value: float) -> str:
         """Format a float with a ``GFloat`` constructor."""
-        if math.isinf(value):
-            return "GFloat(todo)"
-        if math.isnan(value):
-            return "GFloat(todo)"
         return f"GFloat({inner(value)})"
 
     return _format
@@ -327,7 +323,13 @@ class Gleam(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="GFloat(todo)",
+        negative_infinity="GFloat(todo)",
+        nan="GFloat(todo)",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=_gleam_float_wrapper(inner=format_float_repr))
@@ -337,11 +339,6 @@ class Gleam(metaclass=LanguageCls):
         FIXED = enum.member(
             value=_gleam_float_wrapper(inner=format_float_fixed)
         )
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            formatter: Callable[[float], str] = self.value
-            return formatter(value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -39,6 +38,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -219,22 +219,18 @@ class Crystal(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Float64::INFINITY",
+        negative_infinity="-Float64::INFINITY",
+        nan="Float64::NAN",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            if math.isinf(value):
-                if value < 0:
-                    return "-Float64::INFINITY"
-                return "Float64::INFINITY"
-            if math.isnan(value):
-                return "Float64::NAN"
-            return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
