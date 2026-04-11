@@ -357,7 +357,6 @@ class Go(metaclass=LanguageCls):
         """Trailing comma options."""
 
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
-        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
