@@ -471,12 +471,7 @@ def _collect_scalar_type_names(*, data: Value) -> set[str]:
             for v in data:
                 names |= _collect_scalar_type_names(data=v)
         case _:
-            bucket = _scalar_type_bucket(value=data)
-            # Every Value scalar (including None) has a type bucket;
-            # the None return only applies to collections, which are
-            # handled above.
-            if bucket is not None:  # pragma: no branch
-                names.add(bucket.__name__)
+            names.add(_value_type_family(value=data))
     return names
 
 
