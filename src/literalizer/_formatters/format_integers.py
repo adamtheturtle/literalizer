@@ -6,7 +6,7 @@ from beartype import beartype
 
 
 @beartype
-def _format_with_base(value: int, *, prefix: str, fmt: str) -> str:
+def _format_with_base(*, value: int, prefix: str, fmt: str) -> str:
     """Format an integer with a base prefix.
 
     Negative values are formatted with a leading ``-``.
@@ -24,7 +24,7 @@ def format_integer_hex(value: int) -> str:
 
     Example: ``255`` -> ``"0xff"``, ``-10`` -> ``"-0xa"``.
     """
-    return _format_with_base(value, prefix="0x", fmt="x")
+    return _format_with_base(value=value, prefix="0x", fmt="x")
 
 
 @beartype
@@ -35,7 +35,7 @@ def format_integer_octal(value: int) -> str:
 
     Example: ``255`` -> ``"0o377"``, ``-10`` -> ``"-0o12"``.
     """
-    return _format_with_base(value, prefix="0o", fmt="o")
+    return _format_with_base(value=value, prefix="0o", fmt="o")
 
 
 @beartype
@@ -50,7 +50,7 @@ def format_integer_octal_c_style(value: int) -> str:
     # representation of zero in C-family languages.
     if value == 0:
         return "0"
-    return _format_with_base(value, prefix="0", fmt="o")
+    return _format_with_base(value=value, prefix="0", fmt="o")
 
 
 @beartype
@@ -61,7 +61,7 @@ def format_integer_binary(value: int) -> str:
 
     Example: ``255`` -> ``"0b11111111"``, ``-10`` -> ``"-0b1010"``.
     """
-    return _format_with_base(value, prefix="0b", fmt="b")
+    return _format_with_base(value=value, prefix="0b", fmt="b")
 
 
 @beartype
@@ -72,7 +72,7 @@ def format_integer_hex_erlang(value: int) -> str:
 
     Example: ``255`` -> ``"16#FF"``, ``-10`` -> ``"-16#A"``.
     """
-    return _format_with_base(value, prefix="16#", fmt="X")
+    return _format_with_base(value=value, prefix="16#", fmt="X")
 
 
 @beartype
@@ -83,7 +83,7 @@ def format_integer_binary_erlang(value: int) -> str:
 
     Example: ``255`` -> ``"2#11111111"``, ``-10`` -> ``"-2#1010"``.
     """
-    return _format_with_base(value, prefix="2#", fmt="b")
+    return _format_with_base(value=value, prefix="2#", fmt="b")
 
 
 @beartype
