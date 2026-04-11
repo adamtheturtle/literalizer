@@ -921,6 +921,8 @@ def _compute_dict_open_override(
         for item in items
         if isinstance(item, dict) and not isinstance(item, ordereddict)
     ]
+    # Widening compares openers across dicts, so we need at least two
+    # to have anything to compare.
     min_dicts_for_widening = 2
     if len(dicts) < min_dicts_for_widening:
         return None
