@@ -646,6 +646,7 @@ class Python(metaclass=LanguageCls):
         DOCSTRING = CommentConfig(
             prefix='"""',
             suffix='"""',
+            separator="",
         )
 
     class DeclarationStyles(enum.Enum):
