@@ -38,13 +38,13 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
-    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    format_special_float,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -197,14 +197,25 @@ class Jsonnet(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(
-        FloatSpecialsMixin,
-        enum.Enum,
-        positive_infinity='"Infinity"',
-        negative_infinity='"-Infinity"',
-        nan='"NaN"',
-    ):
+    class FloatFormats(enum.Enum):
         """Float format options."""
+
+        POSITIVE_INFINITY = enum.nonmember(value='"Infinity"')
+        NEGATIVE_INFINITY = enum.nonmember(value='"-Infinity"')
+        NAN = enum.nonmember(value='"NaN"')
+
+        def __call__(self, value: float, /) -> str:
+            """Format a float."""
+            special = format_special_float(
+                value=value,
+                positive_infinity=self.POSITIVE_INFINITY,
+                negative_infinity=self.NEGATIVE_INFINITY,
+                nan=self.NAN,
+            )
+            if special is not None:
+                return special
+            formatter: Callable[[float], str] = self.value
+            return formatter(value)
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

@@ -33,13 +33,13 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
-    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    format_special_float,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -219,14 +219,29 @@ class SystemVerilog(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(
-        FloatSpecialsMixin,
-        enum.Enum,
-        positive_infinity="$bitstoreal(64'h7FF0000000000000)",
-        negative_infinity="$bitstoreal(64'hFFF0000000000000)",
-        nan="$bitstoreal(64'h7FF8000000000000)",
-    ):
+    class FloatFormats(enum.Enum):
         """Float format options."""
+
+        POSITIVE_INFINITY = enum.nonmember(
+            value="$bitstoreal(64'h7FF0000000000000)",
+        )
+        NEGATIVE_INFINITY = enum.nonmember(
+            value="$bitstoreal(64'hFFF0000000000000)",
+        )
+        NAN = enum.nonmember(value="$bitstoreal(64'h7FF8000000000000)")
+
+        def __call__(self, value: float, /) -> str:
+            """Format a float."""
+            special = format_special_float(
+                value=value,
+                positive_infinity=self.POSITIVE_INFINITY,
+                negative_infinity=self.NEGATIVE_INFINITY,
+                nan=self.NAN,
+            )
+            if special is not None:
+                return special
+            formatter: Callable[[float], str] = self.value
+            return formatter(value)
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

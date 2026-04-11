@@ -175,47 +175,26 @@ class SequenceFormat(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
-class FloatSpecialsMixin:
-    """Mixin for FloatFormats enums that handles inf/nan dispatch.
+@beartype
+def format_special_float(
+    *,
+    value: float,
+    positive_infinity: str,
+    negative_infinity: str,
+    nan: str,
+) -> str | None:
+    """Return the special-float literal, or ``None`` for finite values.
 
-    Subclasses pass three keyword arguments to the class definition:
-
-    - ``positive_infinity`` — string returned for positive infinity
-    - ``negative_infinity`` — string returned for negative infinity
-    - ``nan`` — string returned for NaN
-
-    The ``__call__`` method checks for special float values first and
-    delegates to the enum member's formatter for finite values.
+    Called from each language's ``FloatFormats.__call__`` to centralise
+    the ``isinf``/``isnan`` dispatch.
     """
-
-    POSITIVE_INFINITY: str
-    NEGATIVE_INFINITY: str
-    NAN: str
-    value: Callable[[float], str]
-
-    def __init_subclass__(
-        cls,
-        *,
-        positive_infinity: str = "",
-        negative_infinity: str = "",
-        nan: str = "",
-        **kwargs: object,
-    ) -> None:
-        """Store float-special strings as class attributes."""
-        super().__init_subclass__(**kwargs)
-        cls.POSITIVE_INFINITY = positive_infinity
-        cls.NEGATIVE_INFINITY = negative_infinity
-        cls.NAN = nan
-
-    def __call__(self, value: float, /) -> str:
-        """Format a float, handling inf and nan via class constants."""
-        if math.isinf(value):
-            if value < 0:
-                return self.NEGATIVE_INFINITY
-            return self.POSITIVE_INFINITY
-        if math.isnan(value):
-            return self.NAN
-        return self.value(value)
+    if math.isinf(value):
+        if value < 0:
+            return negative_infinity
+        return positive_infinity
+    if math.isnan(value):
+        return nan
+    return None
 
 
 class LanguageCls(type):

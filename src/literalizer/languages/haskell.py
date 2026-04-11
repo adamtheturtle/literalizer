@@ -46,13 +46,13 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
-    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
     date_scalar_preamble,
+    format_special_float,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -432,14 +432,25 @@ class Haskell(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(
-        FloatSpecialsMixin,
-        enum.Enum,
-        positive_infinity="(1/0)",
-        negative_infinity="(-1/0)",
-        nan="(0/0)",
-    ):
+    class FloatFormats(enum.Enum):
         """Float format options."""
+
+        POSITIVE_INFINITY = enum.nonmember(value="(1/0)")
+        NEGATIVE_INFINITY = enum.nonmember(value="(-1/0)")
+        NAN = enum.nonmember(value="(0/0)")
+
+        def __call__(self, value: float, /) -> str:
+            """Format a float."""
+            special = format_special_float(
+                value=value,
+                positive_infinity=self.POSITIVE_INFINITY,
+                negative_infinity=self.NEGATIVE_INFINITY,
+                nan=self.NAN,
+            )
+            if special is not None:
+                return special
+            formatter: Callable[[float], str] = self.value
+            return formatter(value)
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
