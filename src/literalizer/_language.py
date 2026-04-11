@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, cast, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -191,6 +191,7 @@ class FloatSpecialsMixin:
     POSITIVE_INFINITY: str
     NEGATIVE_INFINITY: str
     NAN: str
+    value: Callable[[float], str]
 
     def __init_subclass__(
         cls,
@@ -214,11 +215,7 @@ class FloatSpecialsMixin:
             return self.POSITIVE_INFINITY
         if math.isnan(value):
             return self.NAN
-        formatter = cast(
-            "Callable[[float], str]",
-            self.value,  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]  # ty: ignore[unresolved-attribute]
-        )
-        return formatter(value)
+        return self.value(value)
 
 
 class LanguageCls(type):
