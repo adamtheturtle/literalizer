@@ -1,12 +1,12 @@
 #include <initializer_list>
 #include <string>
 #include <array>
-struct _Any {
-    template<class T> _Any(T&&) noexcept {}
-    _Any(std::initializer_list<_Any>) noexcept {}
+struct Any {
+    template<class T> Any(T&&) noexcept {}
+    Any(std::initializer_list<Any>) noexcept {}
 };
-void _check() {
-_Any my_data = std::array<std::string, 2>{
+void check_() {
+Any my_data = std::array<std::string, 2>{
     "1",
     "hello",
 };
