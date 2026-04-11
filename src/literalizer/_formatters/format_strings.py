@@ -9,11 +9,11 @@ from beartype import beartype
 
 @runtime_checkable
 class _StringFormatter(Protocol):
-    """Protocol for string formatting callables."""
+    """Protocol for string formatting functions."""
 
     def __call__(self, value: str) -> str:
         """Format *value* using backslash escaping."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @beartype
