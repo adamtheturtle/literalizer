@@ -104,7 +104,7 @@ def _format_gleam_bytes_base64(value: bytes) -> str:
 @beartype
 def _format_gleam_string(value: str) -> str:
     """Format a string as a Gleam ``GStr`` constructor."""
-    escaped = format_string_backslash(value=value)
+    escaped = format_string_backslash(value)
     return f"GStr({escaped})"
 
 
