@@ -240,7 +240,7 @@ class Occam(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        NO = "no"
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -321,9 +321,7 @@ class Occam(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
-            multiline_trailing_comma=False,
-        )
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (

@@ -222,7 +222,7 @@ class Hcl(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        YES = "yes"
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
@@ -301,9 +301,7 @@ class Hcl(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = TrailingCommaConfig(
-            multiline_trailing_comma=True,
-        )
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
