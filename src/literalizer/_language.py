@@ -192,13 +192,12 @@ class FloatSpecialsMixin:
     def __init_subclass__(
         cls,
         *,
-        positive_infinity: str = "",
-        negative_infinity: str = "",
-        nan: str = "",
-        **kwargs: object,
+        positive_infinity: str,
+        negative_infinity: str,
+        nan: str,
     ) -> None:
         """Store float-special strings as class attributes."""
-        super().__init_subclass__(**kwargs)
+        super().__init_subclass__()
         cls._positive_infinity = positive_infinity
         cls._negative_infinity = negative_infinity
         cls._nan = nan
