@@ -692,26 +692,24 @@ def _coerce_mixed_dict_values(*, data: Value) -> Value:
     """
     match data:
         case ordereddict():
-            new_ordered_map: ordereddict = ordereddict()
-            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                new_ordered_map[k] = _coerce_mixed_dict_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            ordered_map_vals: list[Value] = list(new_ordered_map.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            ordered_map_vals: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
             if _dict_values_mixed_types(values=ordered_map_vals):
-                for k in new_ordered_map:  # pyright: ignore[reportUnknownVariableType]
-                    new_ordered_map[k] = _coerce_value_to_str(
-                        value=new_ordered_map[k],  # pyright: ignore[reportUnknownArgumentType]
-                    )
-            return new_ordered_map
+                new_ordered_map: ordereddict = ordereddict()
+                for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                    new_ordered_map[k] = _coerce_value_to_str(value=v)  # pyright: ignore[reportUnknownArgumentType]
+                return new_ordered_map
+            new_ordered_map_recursed: ordereddict = ordereddict()
+            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                new_ordered_map_recursed[k] = _coerce_mixed_dict_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            return new_ordered_map_recursed
         case dict():
-            new_dict: dict[str, Value] = {
+            if _dict_values_mixed_types(values=list(data.values())):
+                return {
+                    k: _coerce_value_to_str(value=v) for k, v in data.items()
+                }
+            return {
                 k: _coerce_mixed_dict_values(data=v) for k, v in data.items()
             }
-            if _dict_values_mixed_types(values=list(new_dict.values())):
-                new_dict = {
-                    k: _coerce_value_to_str(value=v)
-                    for k, v in new_dict.items()
-                }
-            return new_dict
         case list():
             return [_coerce_mixed_dict_values(data=v) for v in data]
         case _:
@@ -737,10 +735,9 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
                 k: _coerce_mixed_list_values(data=v) for k, v in data.items()
             }
         case list():
-            new_list = [_coerce_mixed_list_values(data=v) for v in data]
-            if _dict_values_mixed_types(values=new_list):
-                return [_coerce_value_to_str(value=v) for v in new_list]
-            return new_list
+            if _dict_values_mixed_types(values=data):
+                return [_coerce_value_to_str(value=v) for v in data]
+            return [_coerce_mixed_list_values(data=v) for v in data]
         case _:
             return data
 
