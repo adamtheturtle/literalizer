@@ -59,6 +59,7 @@ JSONDecodeError
 Jsonnet
 LocalDate
 Lua
+Mixin
 Mojo
 NEL
 Nim

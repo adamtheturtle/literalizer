@@ -230,9 +230,9 @@ class Ruby(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="Float::INFINITY")
-        neg_inf = enum.nonmember(value="-Float::INFINITY")
-        nan = enum.nonmember(value="Float::NAN")
+        POS_INF = enum.nonmember(value="Float::INFINITY")
+        NEG_INF = enum.nonmember(value="-Float::INFINITY")
+        NAN = enum.nonmember(value="Float::NAN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

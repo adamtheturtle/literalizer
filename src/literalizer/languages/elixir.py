@@ -237,9 +237,9 @@ class Elixir(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value=":infinity")
-        neg_inf = enum.nonmember(value=":negative_infinity")
-        nan = enum.nonmember(value=":nan")
+        POS_INF = enum.nonmember(value=":infinity")
+        NEG_INF = enum.nonmember(value=":negative_infinity")
+        NAN = enum.nonmember(value=":nan")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

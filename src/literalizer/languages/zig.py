@@ -242,9 +242,9 @@ class Zig(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="std.math.inf(f64)")
-        neg_inf = enum.nonmember(value="-std.math.inf(f64)")
-        nan = enum.nonmember(value="std.math.nan(f64)")
+        POS_INF = enum.nonmember(value="std.math.inf(f64)")
+        NEG_INF = enum.nonmember(value="-std.math.inf(f64)")
+        NAN = enum.nonmember(value="std.math.nan(f64)")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

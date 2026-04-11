@@ -185,9 +185,9 @@ class CommonLisp(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value=_CL_INF)
-        neg_inf = enum.nonmember(value=_CL_NEG_INF)
-        nan = enum.nonmember(value=_CL_NAN)
+        POS_INF = enum.nonmember(value=_CL_INF)
+        NEG_INF = enum.nonmember(value=_CL_NEG_INF)
+        NAN = enum.nonmember(value=_CL_NAN)
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

@@ -205,9 +205,9 @@ class C(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="INFINITY")
-        neg_inf = enum.nonmember(value="-INFINITY")
-        nan = enum.nonmember(value="NAN")
+        POS_INF = enum.nonmember(value="INFINITY")
+        NEG_INF = enum.nonmember(value="-INFINITY")
+        NAN = enum.nonmember(value="NAN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

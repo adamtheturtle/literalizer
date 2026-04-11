@@ -219,9 +219,9 @@ class Mojo(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="std.math.inf[DType.float64]()")
-        neg_inf = enum.nonmember(value="-std.math.inf[DType.float64]()")
-        nan = enum.nonmember(value="std.math.nan[DType.float64]()")
+        POS_INF = enum.nonmember(value="std.math.inf[DType.float64]()")
+        NEG_INF = enum.nonmember(value="-std.math.inf[DType.float64]()")
+        NAN = enum.nonmember(value="std.math.nan[DType.float64]()")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

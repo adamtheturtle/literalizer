@@ -297,9 +297,9 @@ class Nim(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="Inf")
-        neg_inf = enum.nonmember(value="-Inf")
-        nan = enum.nonmember(value="NaN")
+        POS_INF = enum.nonmember(value="Inf")
+        NEG_INF = enum.nonmember(value="-Inf")
+        NAN = enum.nonmember(value="NaN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

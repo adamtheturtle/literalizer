@@ -180,9 +180,9 @@ class FloatSpecialsMixin:
 
     Subclasses must define three ``enum.nonmember`` class attributes:
 
-    - ``pos_inf`` — string returned for positive infinity
-    - ``neg_inf`` — string returned for negative infinity
-    - ``nan`` — string returned for NaN
+    - ``POS_INF`` — string returned for positive infinity
+    - ``NEG_INF`` — string returned for negative infinity
+    - ``NAN`` — string returned for NaN
 
     The ``__call__`` method checks for special float values first and
     delegates to ``self.value(value=value)`` for finite values.
@@ -190,17 +190,17 @@ class FloatSpecialsMixin:
 
     def __call__(self, value: float, /) -> str:
         """Format a float, handling inf and nan via class constants."""
-        # Attributes ``pos_inf``, ``neg_inf``, ``nan``, and ``value``
+        # Attributes ``POS_INF``, ``NEG_INF``, ``NAN``, and ``value``
         # are provided by enum subclasses via ``enum.nonmember()`` /
         # ``enum.member()``.  Accessed through ``vars()`` so that all
         # three type checkers (mypy, pyright, ty) stay happy without
         # per-line suppression comments.
         attrs = vars(type(self))
         if math.isinf(value):
-            inf = attrs["neg_inf"] if value < 0 else attrs["pos_inf"]
+            inf = attrs["NEG_INF"] if value < 0 else attrs["POS_INF"]
             return cast("str", inf)
         if math.isnan(value):
-            return cast("str", attrs["nan"])
+            return cast("str", attrs["NAN"])
         formatter = cast(
             "Callable[[float], str]",
             self.value,  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]  # ty: ignore[unresolved-attribute]

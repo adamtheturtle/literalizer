@@ -193,9 +193,9 @@ class Odin(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="math.inf_f64(1)")
-        neg_inf = enum.nonmember(value="math.inf_f64(-1)")
-        nan = enum.nonmember(value="math.nan_f64()")
+        POS_INF = enum.nonmember(value="math.inf_f64(1)")
+        NEG_INF = enum.nonmember(value="math.inf_f64(-1)")
+        NAN = enum.nonmember(value="math.nan_f64()")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

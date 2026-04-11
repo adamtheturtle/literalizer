@@ -178,9 +178,9 @@ class Groovy(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="Double.POSITIVE_INFINITY")
-        neg_inf = enum.nonmember(value="Double.NEGATIVE_INFINITY")
-        nan = enum.nonmember(value="Double.NaN")
+        POS_INF = enum.nonmember(value="Double.POSITIVE_INFINITY")
+        NEG_INF = enum.nonmember(value="Double.NEGATIVE_INFINITY")
+        NAN = enum.nonmember(value="Double.NaN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

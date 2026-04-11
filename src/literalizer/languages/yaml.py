@@ -185,9 +185,9 @@ class Yaml(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value=".inf")
-        neg_inf = enum.nonmember(value="-.inf")
-        nan = enum.nonmember(value=".nan")
+        POS_INF = enum.nonmember(value=".inf")
+        NEG_INF = enum.nonmember(value="-.inf")
+        NAN = enum.nonmember(value=".nan")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

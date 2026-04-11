@@ -341,9 +341,9 @@ class Cobol(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="9.99E99")
-        neg_inf = enum.nonmember(value="-9.99E99")
-        nan = enum.nonmember(value="0.0")
+        POS_INF = enum.nonmember(value="9.99E99")
+        NEG_INF = enum.nonmember(value="-9.99E99")
+        NAN = enum.nonmember(value="0.0")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

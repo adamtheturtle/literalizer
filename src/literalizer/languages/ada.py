@@ -201,9 +201,9 @@ class Ada(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="1.0 / 0.0")
-        neg_inf = enum.nonmember(value="-1.0 / 0.0")
-        nan = enum.nonmember(value="0.0 / 0.0")
+        POS_INF = enum.nonmember(value="1.0 / 0.0")
+        NEG_INF = enum.nonmember(value="-1.0 / 0.0")
+        NAN = enum.nonmember(value="0.0 / 0.0")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

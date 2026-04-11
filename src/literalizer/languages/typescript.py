@@ -278,9 +278,9 @@ class TypeScript(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="Infinity")
-        neg_inf = enum.nonmember(value="-Infinity")
-        nan = enum.nonmember(value="NaN")
+        POS_INF = enum.nonmember(value="Infinity")
+        NEG_INF = enum.nonmember(value="-Infinity")
+        NAN = enum.nonmember(value="NaN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

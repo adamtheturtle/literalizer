@@ -258,9 +258,9 @@ class Fortran(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="ieee_value(0.0, ieee_positive_inf)")
-        neg_inf = enum.nonmember(value="ieee_value(0.0, ieee_negative_inf)")
-        nan = enum.nonmember(value="ieee_value(0.0, ieee_quiet_nan)")
+        POS_INF = enum.nonmember(value="ieee_value(0.0, ieee_positive_inf)")
+        NEG_INF = enum.nonmember(value="ieee_value(0.0, ieee_negative_inf)")
+        NAN = enum.nonmember(value="ieee_value(0.0, ieee_quiet_nan)")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

@@ -212,9 +212,9 @@ class Lua(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="math.huge")
-        neg_inf = enum.nonmember(value="-math.huge")
-        nan = enum.nonmember(value="(0/0)")
+        POS_INF = enum.nonmember(value="math.huge")
+        NEG_INF = enum.nonmember(value="-math.huge")
+        NAN = enum.nonmember(value="(0/0)")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

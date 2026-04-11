@@ -343,9 +343,9 @@ class Rust(metaclass=LanguageCls):
     class FloatFormats(FloatSpecialsMixin, enum.Enum):
         """Float format options."""
 
-        pos_inf = enum.nonmember(value="f64::INFINITY")
-        neg_inf = enum.nonmember(value="f64::NEG_INFINITY")
-        nan = enum.nonmember(value="f64::NAN")
+        POS_INF = enum.nonmember(value="f64::INFINITY")
+        NEG_INF = enum.nonmember(value="f64::NEG_INFINITY")
+        NAN = enum.nonmember(value="f64::NAN")
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
