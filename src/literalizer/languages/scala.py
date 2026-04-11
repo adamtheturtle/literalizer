@@ -15,8 +15,8 @@ from literalizer._formatters.collection_openers import (
     fixed_sequence_open,
     fixed_set_open,
     make_type_to_opener,
+    typed_collection_open,
     typed_dict_open,
-    typed_sequence_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -79,7 +79,7 @@ def _list_sequence_open(
     datetime_type: str | None,
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the List format."""
-    return typed_sequence_open(
+    return typed_collection_open(
         type_to_opener=make_type_to_opener(
             element_to_type=cfg.element_to_type(
                 list_template="List[{inner}]",
@@ -112,7 +112,7 @@ def _resolve_sequence_open(
             datetime_type=datetime_type,
         )
     if fmt.typed_opener_fallback is not None:
-        return typed_sequence_open(
+        return typed_collection_open(
             type_to_opener=openers.seq,
             fallback=fmt.typed_opener_fallback,
         )

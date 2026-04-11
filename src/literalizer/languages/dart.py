@@ -10,8 +10,8 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_sequence_open,
+    typed_collection_open,
     typed_dict_open,
-    typed_sequence_open,
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
@@ -383,7 +383,7 @@ class Dart(metaclass=LanguageCls):
             dict_key_type=default_dict_key_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
-            typed_sequence_open(
+            typed_collection_open(
                 type_to_opener=openers.seq,
                 fallback=fmt.typed_opener_fallback,
             )

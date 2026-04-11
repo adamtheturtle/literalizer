@@ -13,8 +13,8 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     make_type_to_opener,
+    typed_collection_open,
     typed_dict_open,
-    typed_sequence_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -441,7 +441,7 @@ class CSharp(metaclass=LanguageCls):
             fallback=self.set_format_config.set_open([]),
         )
         self.sequence_open: Callable[[list[Value]], str] = (
-            typed_sequence_open(
+            typed_collection_open(
                 type_to_opener=openers.seq,
                 fallback=fmt.typed_opener_fallback,
             )

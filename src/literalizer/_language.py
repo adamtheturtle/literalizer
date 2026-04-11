@@ -8,7 +8,7 @@ from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import typed_set_open
+from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Value
 
@@ -107,7 +107,7 @@ class SetFormatConfig:
         """
         return dataclasses.replace(
             self,
-            set_open=typed_set_open(
+            set_open=typed_collection_open(
                 type_to_opener=type_to_opener,
                 fallback=fallback,
             ),

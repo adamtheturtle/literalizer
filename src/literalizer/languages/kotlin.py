@@ -14,8 +14,8 @@ from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_sequence_open,
     make_type_to_opener,
+    typed_collection_open,
     typed_dict_open,
-    typed_sequence_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -112,7 +112,7 @@ def _kotlin_list_sequence_open(
             return f"listOf<{dict_resolver(element_type)}>("
         return _kotlin_type_to_opener(element_type=element_type)
 
-    return typed_sequence_open(
+    return typed_collection_open(
         type_to_opener=_combined_opener,
         fallback="listOf<Any?>(",
     )
@@ -257,7 +257,7 @@ class Kotlin(metaclass=LanguageCls):
         """Sequence type options for Kotlin."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=typed_sequence_open(
+            sequence_open=typed_collection_open(
                 type_to_opener=_kotlin_type_to_opener,
                 fallback="listOf<Any?>(",
             ),

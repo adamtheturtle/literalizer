@@ -14,7 +14,7 @@ from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
-    typed_sequence_open,
+    typed_collection_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -500,7 +500,7 @@ class Java(metaclass=LanguageCls):
             narrow_dict_values=False,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
-            typed_sequence_open(
+            typed_collection_open(
                 type_to_opener=openers.seq,
                 fallback=fmt.typed_opener_fallback,
             )

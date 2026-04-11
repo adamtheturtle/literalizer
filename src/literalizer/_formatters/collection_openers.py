@@ -1,7 +1,6 @@
 """Collection opener functions and typed opener configuration."""
 
 import datetime
-import functools
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -176,88 +175,16 @@ def make_type_to_opener(
 
 
 @beartype
-def _typed_set_open(
-    items: list[Value],
-    *,
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
-    fallback: str,
-) -> str:
-    """Infer the common element type and return the language-specific
-    opener for sets.
-
-    Uses direct ``type()`` checks on the Python runtime objects to
-    determine the element type, then passes it to *type_to_opener*
-    which returns the language-specific opening delimiter.  When
-    inference is not possible or *type_to_opener* returns ``None``,
-    *fallback* is returned instead.
-    """
-    element_type = infer_element_type(items=items)
-    if element_type is None:
-        return fallback
-    return type_to_opener(element_type) or fallback
-
-
-@beartype
-def typed_set_open(
+def typed_collection_open(
     *,
     type_to_opener: Callable[[type | ListType | DictType], str | None],
     fallback: str,
 ) -> Callable[[list[Value]], str]:
-    """Return a ``set_open`` callable that infers the common
-    element type and delegates to *type_to_opener*.
+    """Return a callable that infers the common element type and
+    delegates to *type_to_opener*.
 
-    When inference is not possible or *type_to_opener* returns
-    ``None``, *fallback* is used instead.
-
-    Example::
-
-        def my_opener(element_type: type | ListType) -> str | None:
-            if element_type is str:
-                return "Set[String]("
-            return None
-
-        set_open = typed_set_open(
-            type_to_opener=my_opener,
-            fallback="Set[String](",
-        )
-    """
-    return functools.partial(
-        _typed_set_open,
-        type_to_opener=type_to_opener,
-        fallback=fallback,
-    )
-
-
-@beartype
-def _typed_sequence_open(
-    items: list[Value],
-    *,
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
-    fallback: str,
-) -> str:
-    """Infer the common element type and return the language-specific
-    opener.
-
-    Uses direct ``type()`` checks on the Python runtime objects
-    to determine the element type, then passes it to
-    *type_to_opener* which returns the language-specific opening
-    delimiter.  When inference is not possible or *type_to_opener*
-    returns ``None``, *fallback* is returned instead.
-    """
-    element_type = infer_element_type(items=items)
-    if element_type is None:
-        return fallback
-    return type_to_opener(element_type) or fallback
-
-
-@beartype
-def typed_sequence_open(
-    *,
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
-    fallback: str,
-) -> Callable[[list[Value]], str]:
-    """Return a ``sequence_open`` callable that infers the common
-    element type and delegates to *type_to_opener*.
+    Works for both sequences and sets — any collection whose items
+    are presented as a ``list[Value]``.
 
     When inference is not possible or *type_to_opener* returns
     ``None``, *fallback* is used instead.
@@ -269,39 +196,21 @@ def typed_sequence_open(
                 return "[]string{"
             return None
 
-        sequence_open = typed_sequence_open(
+        sequence_open = typed_collection_open(
             type_to_opener=my_opener,
             fallback="[]any{",
         )
     """
-    return functools.partial(
-        _typed_sequence_open,
-        type_to_opener=type_to_opener,
-        fallback=fallback,
-    )
 
+    @beartype
+    def _open(items: list[Value]) -> str:
+        """Infer element type and return the opener or fallback."""
+        element_type = infer_element_type(items=items)
+        if element_type is None:
+            return fallback
+        return type_to_opener(element_type) or fallback
 
-@beartype
-def _typed_dict_open(
-    items: dict[str, Value],
-    *,
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
-    fallback: str,
-) -> str:
-    """Infer a common value type and return the language-specific
-    opener.
-
-    Treats the dict values as a list and infers a common element
-    type, then passes it to *type_to_opener* which returns the
-    language-specific opening delimiter.  When inference is not
-    possible or *type_to_opener* returns ``None``, *fallback* is
-    returned instead.
-    """
-    values = list(items.values())
-    element_type = infer_element_type(items=values)
-    if element_type is None:
-        return fallback
-    return type_to_opener(element_type) or fallback
+    return _open
 
 
 @beartype
@@ -328,11 +237,16 @@ def typed_dict_open(
             fallback="map[string]any{",
         )
     """
-    return functools.partial(
-        _typed_dict_open,
-        type_to_opener=type_to_opener,
-        fallback=fallback,
-    )
+
+    @beartype
+    def _open(items: dict[str, Value]) -> str:
+        """Infer value type and return the opener or fallback."""
+        element_type = infer_element_type(items=list(items.values()))
+        if element_type is None:
+            return fallback
+        return type_to_opener(element_type) or fallback
+
+    return _open
 
 
 @dataclass(frozen=True)
