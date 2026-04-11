@@ -54,6 +54,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -61,7 +62,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    format_special_float,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -381,25 +381,14 @@ class Kotlin(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Double.POSITIVE_INFINITY",
+        negative_infinity="Double.NEGATIVE_INFINITY",
+        nan="Double.NaN",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="Double.POSITIVE_INFINITY")
-        NEGATIVE_INFINITY = enum.nonmember(value="Double.NEGATIVE_INFINITY")
-        NAN = enum.nonmember(value="Double.NaN")
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            special = format_special_float(
-                value=value,
-                positive_infinity=self.POSITIVE_INFINITY,
-                negative_infinity=self.NEGATIVE_INFINITY,
-                nan=self.NAN,
-            )
-            if special is not None:
-                return special
-            formatter: Callable[[float], str] = self.value
-            return formatter(value)
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)

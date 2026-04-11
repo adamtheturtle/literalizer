@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 from beartype import beartype
 
@@ -175,26 +175,44 @@ class SequenceFormat(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
-@beartype
-def format_special_float(
-    *,
-    value: float,
-    positive_infinity: str,
-    negative_infinity: str,
-    nan: str,
-) -> str | None:
-    """Return the special-float literal, or ``None`` for finite values.
+class FloatSpecialsMixin:
+    """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 
-    Called from each language's ``FloatFormats.__call__`` to centralise
-    the ``isinf``/``isnan`` dispatch.
+    Subclasses pass ``positive_infinity``, ``negative_infinity``, and
+    ``nan`` as keyword arguments to the class definition.  The mixin
+    stores them and provides a ``__call__`` that handles the
+    ``isinf``/``isnan`` dispatch, delegating finite values to the enum
+    member's formatter.
     """
-    if math.isinf(value):
-        if value < 0:
-            return negative_infinity
-        return positive_infinity
-    if math.isnan(value):
-        return nan
-    return None
+
+    _positive_infinity: str
+    _negative_infinity: str
+    _nan: str
+
+    def __init_subclass__(
+        cls,
+        *,
+        positive_infinity: str = "",
+        negative_infinity: str = "",
+        nan: str = "",
+        **kwargs: object,
+    ) -> None:
+        """Store float-special strings as class attributes."""
+        super().__init_subclass__(**kwargs)
+        cls._positive_infinity = positive_infinity
+        cls._negative_infinity = negative_infinity
+        cls._nan = nan
+
+    def __call__(self, value: float, /) -> str:
+        """Format a float, handling inf and nan."""
+        if math.isinf(value):
+            if value < 0:
+                return self._negative_infinity
+            return self._positive_infinity
+        if math.isnan(value):
+            return self._nan
+        formatter: Callable[[float], str] = cast("enum.Enum", self).value
+        return formatter(value)
 
 
 class LanguageCls(type):

@@ -127,6 +127,8 @@ init
 initialisation
 initializer
 initializers
+isinf
+isnan
 iso
 iterable
 javac
@@ -143,6 +145,7 @@ localhost
 luac
 matlab
 misclassifies
+mixin
 multiline
 mypy
 namespaces

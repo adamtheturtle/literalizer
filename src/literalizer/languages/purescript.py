@@ -40,12 +40,12 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
-    format_special_float,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -373,25 +373,14 @@ class PureScript(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="PFloat (1.0 / 0.0)",
+        negative_infinity="PFloat (-(1.0 / 0.0))",
+        nan="PFloat (0.0 / 0.0)",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="PFloat (1.0 / 0.0)")
-        NEGATIVE_INFINITY = enum.nonmember(value="PFloat (-(1.0 / 0.0))")
-        NAN = enum.nonmember(value="PFloat (0.0 / 0.0)")
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            special = format_special_float(
-                value=value,
-                positive_infinity=self.POSITIVE_INFINITY,
-                negative_infinity=self.NEGATIVE_INFINITY,
-                nan=self.NAN,
-            )
-            if special is not None:
-                return special
-            formatter: Callable[[float], str] = self.value
-            return formatter(value)
 
         REPR = enum.member(value=_format_purescript_float_repr)
         SCIENTIFIC = enum.member(value=_format_purescript_float_scientific)

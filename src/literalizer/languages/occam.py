@@ -34,13 +34,13 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    format_special_float,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -185,25 +185,14 @@ class Occam(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="inf",
+        negative_infinity="-inf",
+        nan="nan",
+    ):
         """Float format options."""
-
-        POSITIVE_INFINITY = enum.nonmember(value="inf")
-        NEGATIVE_INFINITY = enum.nonmember(value="-inf")
-        NAN = enum.nonmember(value="nan")
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            special = format_special_float(
-                value=value,
-                positive_infinity=self.POSITIVE_INFINITY,
-                negative_infinity=self.NEGATIVE_INFINITY,
-                nan=self.NAN,
-            )
-            if special is not None:
-                return special
-            formatter: Callable[[float], str] = self.value
-            return formatter(value)
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
