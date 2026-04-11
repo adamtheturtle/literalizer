@@ -1,12 +1,12 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-struct _Any {
-    template<class T> _Any(T&&) noexcept {}
-    _Any(std::initializer_list<_Any>) noexcept {}
+struct Any {
+    template<class T> Any(T&&) noexcept {}
+    Any(std::initializer_list<Any>) noexcept {}
 };
-void _check() {
-_Any my_data = std::map<std::string, std::string>{
+void check_() {
+Any my_data = std::map<std::string, std::string>{
     {"key", "it's here"},  // a comment
 };
 my_data = std::map<std::string, std::string>{

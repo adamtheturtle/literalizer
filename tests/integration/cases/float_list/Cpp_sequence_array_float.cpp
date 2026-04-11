@@ -1,11 +1,11 @@
 #include <initializer_list>
 #include <array>
-struct _Any {
-    template<class T> _Any(T&&) noexcept {}
-    _Any(std::initializer_list<_Any>) noexcept {}
+struct Any {
+    template<class T> Any(T&&) noexcept {}
+    Any(std::initializer_list<Any>) noexcept {}
 };
-void _check() {
-_Any my_data = std::array<double, 3>{
+void check_() {
+Any my_data = std::array<double, 3>{
     1.1,
     -2.2,
     3.3,
