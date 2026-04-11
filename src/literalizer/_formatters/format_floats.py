@@ -5,6 +5,23 @@ import math
 from beartype import beartype
 
 
+def _handle_special_float(
+    *,
+    value: float,
+    inf_literal: str,
+    neg_inf_literal: str,
+    nan_literal: str,
+) -> str | None:
+    """Return a literal for inf, -inf, or nan; ``None`` for finite
+    values.
+    """
+    if math.isinf(value):
+        return neg_inf_literal if value < 0 else inf_literal
+    if math.isnan(value):
+        return nan_literal
+    return None
+
+
 @beartype
 def format_float_repr(
     value: float,
@@ -20,10 +37,14 @@ def format_float_repr(
 
     Special values (inf, -inf, nan) use the provided literals.
     """
-    if math.isinf(value):
-        return neg_inf_literal if value < 0 else inf_literal
-    if math.isnan(value):
-        return nan_literal
+    special = _handle_special_float(
+        value=value,
+        inf_literal=inf_literal,
+        neg_inf_literal=neg_inf_literal,
+        nan_literal=nan_literal,
+    )
+    if special is not None:
+        return special
     return repr(value)
 
 
@@ -44,11 +65,14 @@ def format_float_scientific(
     compact, but a trailing ``.0`` is preserved to keep the value
     recognizable as a float.
     """
-    # inf, -inf, nan do not have an "e" component.
-    if math.isinf(value):
-        return neg_inf_literal if value < 0 else inf_literal
-    if math.isnan(value):
-        return nan_literal
+    special = _handle_special_float(
+        value=value,
+        inf_literal=inf_literal,
+        neg_inf_literal=neg_inf_literal,
+        nan_literal=nan_literal,
+    )
+    if special is not None:
+        return special
     raw = f"{value:e}"
     mantissa, exponent_part = raw.split(sep="e")
     # Strip trailing zeros but keep at least one decimal digit.
@@ -73,8 +97,12 @@ def format_float_fixed(
 
     Example: ``1500.0`` -> ``"1500.000000"``, ``0.001`` -> ``"0.001000"``.
     """
-    if math.isinf(value):
-        return neg_inf_literal if value < 0 else inf_literal
-    if math.isnan(value):
-        return nan_literal
+    special = _handle_special_float(
+        value=value,
+        inf_literal=inf_literal,
+        neg_inf_literal=neg_inf_literal,
+        nan_literal=nan_literal,
+    )
+    if special is not None:
+        return special
     return f"{value:f}"
