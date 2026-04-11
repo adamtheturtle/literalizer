@@ -1498,11 +1498,11 @@ def literalize(
     source: str,
     input_format: InputFormat,
     language: Language,
-    pre_indent_level: int,
-    include_delimiters: bool,
-    variable_name: str | None,
-    new_variable: bool,
-    error_on_coercion: bool,
+    pre_indent_level: int = 0,
+    include_delimiters: bool = True,
+    variable_name: str | None = None,
+    new_variable: bool = True,
+    error_on_coercion: bool = False,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
     language literal.
