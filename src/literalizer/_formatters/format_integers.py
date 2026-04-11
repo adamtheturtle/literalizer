@@ -6,6 +6,17 @@ from beartype import beartype
 
 
 @beartype
+def _format_with_base(*, value: int, prefix: str, fmt: str) -> str:
+    """Format an integer with a base prefix.
+
+    Negative values are formatted with a leading ``-``.
+    """
+    if value < 0:
+        return f"-{prefix}{abs(value):{fmt}}"
+    return f"{prefix}{value:{fmt}}"
+
+
+@beartype
 def format_integer_hex(value: int) -> str:
     """Format an integer as a hexadecimal literal.
 
@@ -13,9 +24,7 @@ def format_integer_hex(value: int) -> str:
 
     Example: ``255`` -> ``"0xff"``, ``-10`` -> ``"-0xa"``.
     """
-    if value < 0:
-        return f"-0x{abs(value):x}"
-    return f"0x{value:x}"
+    return _format_with_base(value=value, prefix="0x", fmt="x")
 
 
 @beartype
@@ -26,9 +35,7 @@ def format_integer_octal(value: int) -> str:
 
     Example: ``255`` -> ``"0o377"``, ``-10`` -> ``"-0o12"``.
     """
-    if value < 0:
-        return f"-0o{abs(value):o}"
-    return f"0o{value:o}"
+    return _format_with_base(value=value, prefix="0o", fmt="o")
 
 
 @beartype
@@ -43,9 +50,7 @@ def format_integer_octal_c_style(value: int) -> str:
     # representation of zero in C-family languages.
     if value == 0:
         return "0"
-    if value < 0:
-        return f"-0{abs(value):o}"
-    return f"0{value:o}"
+    return _format_with_base(value=value, prefix="0", fmt="o")
 
 
 @beartype
@@ -56,9 +61,7 @@ def format_integer_binary(value: int) -> str:
 
     Example: ``255`` -> ``"0b11111111"``, ``-10`` -> ``"-0b1010"``.
     """
-    if value < 0:
-        return f"-0b{abs(value):b}"
-    return f"0b{value:b}"
+    return _format_with_base(value=value, prefix="0b", fmt="b")
 
 
 @beartype
@@ -69,9 +72,7 @@ def format_integer_hex_erlang(value: int) -> str:
 
     Example: ``255`` -> ``"16#FF"``, ``-10`` -> ``"-16#A"``.
     """
-    if value < 0:
-        return f"-16#{abs(value):X}"
-    return f"16#{value:X}"
+    return _format_with_base(value=value, prefix="16#", fmt="X")
 
 
 @beartype
@@ -82,9 +83,7 @@ def format_integer_binary_erlang(value: int) -> str:
 
     Example: ``255`` -> ``"2#11111111"``, ``-10`` -> ``"-2#1010"``.
     """
-    if value < 0:
-        return f"-2#{abs(value):b}"
-    return f"2#{value:b}"
+    return _format_with_base(value=value, prefix="2#", fmt="b")
 
 
 @beartype
