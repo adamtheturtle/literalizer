@@ -84,7 +84,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.gleam
-          extra_config_patterns: check_gleam_syntax.py
+          extra_config_patterns: |
+            check_gleam_syntax.py
+            check_syntax_helpers.py
       - name: Install Gleam
         if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1
@@ -358,7 +360,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cs
-          extra_config_patterns: check_csharp_syntax.py
+          extra_config_patterns: |
+            check_csharp_syntax.py
+            check_syntax_helpers.py
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |
@@ -796,7 +800,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.adb
-          extra_config_patterns: check_ada_syntax.py
+          extra_config_patterns: |
+            check_ada_syntax.py
+            check_syntax_helpers.py
       - name: Install GNAT
         if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq gnat
@@ -983,7 +989,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.purs
-          extra_config_patterns: check_purescript_syntax.py
+          extra_config_patterns: |
+            check_purescript_syntax.py
+            check_syntax_helpers.py
       - uses: purescript-contrib/setup-purescript@main
         if: steps.find-files.outputs.found == 'true'
         with:
@@ -1165,7 +1173,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.vb
-          extra_config_patterns: check_vb_syntax.py
+          extra_config_patterns: |
+            check_vb_syntax.py
+            check_syntax_helpers.py
       - name: Initialize .NET runtime
         if: steps.find-files.outputs.found == 'true'
         run: |

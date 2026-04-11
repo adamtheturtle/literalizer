@@ -272,6 +272,7 @@ ignore = [
     "tests/**",
     "zizmor.yml",
     "check_csharp_syntax.py",
+    "check_syntax_helpers.py",
     ".clj-kondo",
     ".clj-kondo/**",
 ]
@@ -298,6 +299,7 @@ follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
+search-path = [ ".", "src" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false

@@ -7,44 +7,18 @@ import sys
 import tempfile
 from pathlib import Path
 
-_DOTNET_ENV = {
-    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
-    "DOTNET_NOLOGO": "1",
-}
-
-
-def _target_framework(dotnet_path: str) -> str:
-    """Return the target framework moniker for the installed
-    ``dotnet``.
-    """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        dotnet_tmp = Path(tmpdir) / "tmp"
-        dotnet_tmp.mkdir()
-        env = os.environ.copy()
-        env.update(
-            {
-                "TMPDIR": dotnet_tmp.as_posix(),
-                "HOME": dotnet_tmp.as_posix(),
-                **_DOTNET_ENV,
-            }
-        )
-        result = subprocess.run(
-            args=[dotnet_path, "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            env=env,
-        )
-    version = result.stdout.strip()
-    major_minor = ".".join(version.split(sep=".")[:2])
-    return f"net{major_minor}"
+from check_syntax_helpers import (
+    DOTNET_ENV,
+    dotnet_target_framework,
+    fail_on_error,
+)
 
 
 def main() -> None:
     """Check syntax of the given C# golden file."""
     filename = sys.argv[1]
     dotnet_path: str = shutil.which(cmd="dotnet") or "dotnet"
-    target_framework = _target_framework(dotnet_path=dotnet_path)
+    target_framework = dotnet_target_framework(dotnet_path=dotnet_path)
     content = Path(filename).read_text(encoding="utf-8")
 
     csproj = (
@@ -77,7 +51,7 @@ def main() -> None:
             {
                 "TMPDIR": dotnet_tmp.as_posix(),
                 "HOME": dotnet_tmp.as_posix(),
-                **_DOTNET_ENV,
+                **DOTNET_ENV,
             }
         )
         result = subprocess.run(
@@ -87,12 +61,11 @@ def main() -> None:
             check=False,
             env=env,
         )
-    if result.returncode != 0:
-        msg = (
-            f"{filename}: dotnet build failed\n{result.stderr}{result.stdout}"
-        )
-        sys.stderr.write(msg)
-        sys.exit(1)
+    fail_on_error(
+        result=result,
+        filename=filename,
+        label="dotnet build failed",
+    )
 
 
 if __name__ == "__main__":

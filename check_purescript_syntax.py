@@ -6,6 +6,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from check_syntax_helpers import fail_on_error
+
 _PRELUDE_PURS = """\
 module Prelude where
 foreign import negate :: forall a. a -> a
@@ -43,13 +45,11 @@ def main() -> None:
             text=True,
             check=False,
         )
-        if result.returncode != 0:
-            msg = (
-                f"{filename}: purs compile failed\n"
-                f"{result.stderr}{result.stdout}"
-            )
-            sys.stderr.write(msg)
-            sys.exit(1)
+        fail_on_error(
+            result=result,
+            filename=filename,
+            label="purs compile failed",
+        )
 
 
 if __name__ == "__main__":

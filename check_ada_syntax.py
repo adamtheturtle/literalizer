@@ -6,6 +6,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from check_syntax_helpers import fail_on_error
+
 
 def main() -> None:
     """Check syntax of the given Ada golden file."""
@@ -23,10 +25,11 @@ def main() -> None:
             check=False,
             cwd=tmpdir,
         )
-    if result.returncode != 0:
-        msg = f"{filename}: Ada syntax error\n{result.stderr}"
-        sys.stderr.write(msg)
-        sys.exit(1)
+    fail_on_error(
+        result=result,
+        filename=filename,
+        label="Ada syntax error",
+    )
 
 
 if __name__ == "__main__":

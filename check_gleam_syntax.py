@@ -6,6 +6,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from check_syntax_helpers import fail_on_error
+
 _GLEAM_TOML = """\
 name = "check"
 version = "1.0.0"
@@ -32,13 +34,11 @@ def main() -> None:
             check=False,
             cwd=tmpdir,
         )
-        if deps_result.returncode != 0:
-            msg = (
-                f"gleam deps download failed\n"
-                f"{deps_result.stderr}{deps_result.stdout}"
-            )
-            sys.stderr.write(msg)
-            sys.exit(1)
+        fail_on_error(
+            result=deps_result,
+            filename=filename,
+            label="gleam deps download failed",
+        )
         src = Path(filename)
         target = src_dir / "check.gleam"
         target.write_text(
@@ -52,13 +52,11 @@ def main() -> None:
             check=False,
             cwd=tmpdir,
         )
-        if result.returncode != 0:
-            msg = (
-                f"{filename}: gleam check failed\n"
-                f"{result.stderr}{result.stdout}"
-            )
-            sys.stderr.write(msg)
-            sys.exit(1)
+        fail_on_error(
+            result=result,
+            filename=filename,
+            label="gleam check failed",
+        )
 
 
 if __name__ == "__main__":
