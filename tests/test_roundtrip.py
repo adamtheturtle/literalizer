@@ -184,7 +184,7 @@ def test_roundtrip_bytes_erlang_binary(data: bytes) -> None:
         return
     match = re.fullmatch(pattern=r"<<(.+)>>", string=result)
     assert match is not None
-    byte_values = [int(x.strip()) for x in match.group(1).split(",")]
+    byte_values = [int(x.strip()) for x in match.group(1).split(sep=",")]
     assert bytes(byte_values) == data
 
 
@@ -261,5 +261,5 @@ def test_roundtrip_yaml_binary_erlang(data: bytes) -> None:
         return
     match = re.fullmatch(pattern=r"<<(.+)>>", string=code)
     assert match is not None
-    byte_values = [int(x.strip()) for x in match.group(1).split(",")]
+    byte_values = [int(x.strip()) for x in match.group(1).split(sep=",")]
     assert bytes(byte_values) == data
