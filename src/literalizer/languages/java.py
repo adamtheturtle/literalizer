@@ -86,7 +86,8 @@ def _list_of_open(items: list[Any]) -> str:
     """
     if any(item is None for item in items):
         msg = (
-            "Java's List.of() does not accept null elements. "
+            f"Java's List.of() does not accept null elements"
+            f" (got {len(items)} items, including null). "
             "Use sequence_format=ARRAY instead."
         )
         raise NullInCollectionError(msg)

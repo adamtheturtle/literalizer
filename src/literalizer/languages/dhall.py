@@ -133,7 +133,7 @@ def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
     raw = _unescape_dhall_string(value=inner)
     if not raw or not _BACKTICK_LABEL_RE.match(string=raw):
         msg = (
-            "Dhall does not support this dict key. "
+            f"Dhall does not support the dict key {key}. "
             "Backtick-quoted labels must be non-empty and contain only "
             "printable ASCII (no backticks or control characters)."
         )

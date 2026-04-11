@@ -724,7 +724,10 @@ def test_java_list_rejects_null_elements() -> None:
     spec = Java(
         sequence_format=Java.sequence_formats.LIST,
     )
-    with pytest.raises(expected_exception=NullInCollectionError):
+    with pytest.raises(
+        expected_exception=NullInCollectionError,
+        match="3 items, including null",
+    ):
         literalize(
             source=json.dumps(obj=[1, None, "hello"]),
             input_format=InputFormat.JSON,

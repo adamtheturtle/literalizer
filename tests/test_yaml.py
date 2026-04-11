@@ -611,7 +611,10 @@ def test_r_empty_dict_key_error() -> None:
         sequence_format=R.sequence_formats.LIST,
     )
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=r'dict key ""',
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -1012,7 +1015,10 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
 def test_dhall_empty_dict_key_error() -> None:
     """Dhall raises InvalidDictKeyError for empty-string dict keys."""
     yaml_string = '{"": "value"}\n'
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=r'dict key ""',
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -1045,7 +1051,10 @@ def test_dhall_control_char_in_string() -> None:
 def test_dhall_control_char_key_error() -> None:
     """Dhall rejects control characters in dict keys."""
     yaml_string = '{"\\x01": "value"}\n'
-    with pytest.raises(expected_exception=InvalidDictKeyError):
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match="dict key",
+    ):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,

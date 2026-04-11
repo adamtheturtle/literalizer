@@ -457,15 +457,46 @@ def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
             return False
 
 
+def _collect_scalar_type_names(*, data: Value) -> set[str]:
+    """Collect the names of scalar type buckets found in *data*."""
+    names: set[str] = set()
+    match data:
+        case ordereddict() | dict():
+            for v in data.values():  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                names |= _collect_scalar_type_names(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        case list():
+            for v in data:
+                names |= _collect_scalar_type_names(data=v)
+        case set():
+            for v in data:
+                bucket = _scalar_type_bucket(value=v)
+                if bucket is not None:
+                    names.add(bucket.__name__)
+        case _:
+            bucket = _scalar_type_bucket(value=data)
+            if bucket is not None:
+                names.add(bucket.__name__)
+    return names
+
+
+def _describe_heterogeneous_types(*, data: Value) -> str:
+    """Return a sorted, comma-separated string of scalar type names in
+    *data*.
+    """
+    return ", ".join(sorted(_collect_scalar_type_names(data=data)))
+
+
 @beartype
 def _check_heterogeneous(*, data: Value) -> None:
     """Recursively check for heterogeneous all-scalar collections and
     raise if found.
     """
     if _has_heterogeneous(data=data):
+        types = _describe_heterogeneous_types(data=data)
         msg = (
             "Collection contains heterogeneous scalar types "
             "that would be coerced to strings"
+            f" (found types: {types})"
         )
         raise HeterogeneousCoercionError(msg)
 
@@ -1121,28 +1152,36 @@ def _apply_coercions(
                 spec.sequence_format_config.requires_uniform_record_shapes
                 and _has_mixed_dict_shapes(data=data)
             ):
+                types = _describe_heterogeneous_types(data=data)
                 msg = (
                     "List contains dicts with different key sets "
                     "that would be padded with null values"
+                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
             _check_heterogeneous(data=data)
             if _has_heterogeneous_sibling_lists(data=data):
+                types = _describe_heterogeneous_types(data=data)
                 msg = (
                     "Collection contains heterogeneous scalar types "
                     "that would be coerced to strings"
+                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_dict_values(data=data):
+                types = _describe_heterogeneous_types(data=data)
                 msg = (
                     "Dict contains values of mixed types "
                     "that would be coerced to strings"
+                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
             if _has_mixed_list_values(data=data):
+                types = _describe_heterogeneous_types(data=data)
                 msg = (
                     "List contains elements of mixed types "
                     "that would be coerced to strings"
+                    f" (found types: {types})"
                 )
                 raise HeterogeneousCoercionError(msg)
         else:
