@@ -56,6 +56,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -369,6 +370,35 @@ class Go(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_for_syntax_check(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a Go declaration in ``func main()`` for syntax
+        checking.
+        """
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
+
+    @staticmethod
+    def combined_wrap_for_syntax_check(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Go declaration + assignment for syntax checking."""
+        return Go.wrap_for_syntax_check(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,

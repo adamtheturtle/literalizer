@@ -58,7 +58,9 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    combined_wrap_noop,
     date_scalar_preamble,
+    wrap_noop,
 )
 from literalizer._types import Value
 
@@ -771,6 +773,9 @@ class Python(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    wrap_for_syntax_check = staticmethod(wrap_noop)
+    combined_wrap_for_syntax_check = staticmethod(combined_wrap_noop)
 
     def __init__(  # noqa: PLR0915
         self,

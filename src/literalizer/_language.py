@@ -707,6 +707,45 @@ no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
 """Shared callable for languages that need no type-hint preamble."""
 
 
+@beartype
+def prepend_body_preamble(
+    content: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Prepend *body_preamble* lines to *content*."""
+    if not body_preamble:
+        return content
+    return "\n".join(body_preamble) + "\n" + content
+
+
+@beartype
+def wrap_noop(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Default syntax-check wrapper that only prepends body preamble."""
+    del variable_name  # unused
+    return prepend_body_preamble(content=content, body_preamble=body_preamble)
+
+
+@beartype
+def combined_wrap_noop(
+    declaration: str,
+    assignment: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Default combined syntax-check wrapper: join with newline, prepend
+    preamble.
+    """
+    return wrap_noop(
+        content=declaration + "\n" + assignment,
+        variable_name=variable_name,
+        body_preamble=body_preamble,
+    )
+
+
 def body_preamble_from_scalars(
     *,
     scalar_body_preamble: dict[type, tuple[str, ...]],

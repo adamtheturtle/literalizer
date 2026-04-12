@@ -163,17 +163,6 @@ def _wrap_gleam(
 
 
 @beartype
-def _wrap_go(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Go short variable declaration in a main function."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
-
-
-@beartype
 def _wrap_odin(
     content: str,
     variable_name: str,
@@ -695,8 +684,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Python.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Python,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap=literalizer.languages.Python.wrap_for_syntax_check,
+        combined_wrap=literalizer.languages.Python.combined_wrap_for_syntax_check,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
@@ -743,8 +732,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
-        wrap=_wrap_go,
-        combined_wrap=_newline_combined(wrap=_wrap_go),
+        wrap=literalizer.languages.Go.wrap_for_syntax_check,
+        combined_wrap=literalizer.languages.Go.combined_wrap_for_syntax_check,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Java.__name__: _LanguageConfig(
