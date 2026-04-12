@@ -327,23 +327,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.rs
-      - name: Check Rust syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cargo init "$tmpdir/chrono-check"
-          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
-          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
-          deps="$tmpdir/chrono-check/target/debug/deps"
-          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
-          while IFS= read -r -d '' f; do
-            rustc --edition 2021 \
-              -L "dependency=$deps" \
-              --extern "chrono=$chrono_rlib" \
-              "$f" -o "$tmpdir/out" 2>&1 || exit 1
-          done < /tmp/files-to-lint
-      - name: Run Rust binaries
+      # Compile and run in one step because the compiled binary lives in a
+      # temp directory that is cleaned up when the step exits.
+      - name: Check Rust syntax and run binaries
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
