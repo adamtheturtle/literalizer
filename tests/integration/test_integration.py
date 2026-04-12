@@ -1921,9 +1921,9 @@ def test_golden_file_combined_variable_forms(
 def _build_constructor_name_variants() -> Iterable[_Variant]:
     """Build constructor-name variants for Fortran.
 
-    Fortran emits constructor function calls (``fint``, ``fstr``, etc.)
-    in its output.  The constructor name parameters let users customise
-    those names.
+    Fortran emits constructor function calls (e.g. ``fnull``) in its
+    output.  The constructor name parameters let users customize those
+    names.
     """
     lang_config = _LANGUAGES["Fortran"]
     return [
