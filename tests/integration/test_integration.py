@@ -2354,21 +2354,22 @@ class _CallCase:
     lang_name: str
 
 
-# Languages where C-style function-call syntax is fundamentally
-# invalid (data-only formats, languages where ``.`` is not member
-# access, etc.).  These are skipped for call golden-file tests.
-_CALL_SKIP_LANGUAGES: frozenset[str] = frozenset(
+# Languages whose CI linters accept call golden files.  Only these
+# are included in call golden-file tests.
+_CALL_LANGUAGES: frozenset[str] = frozenset(
     {
-        "Bash",  # () creates subshell, . sources a file
-        "Dhall",  # pure functional, no call statements
-        "Gleam",  # module-based dispatch, no object.method()
-        "Jsonnet",  # functional, no side-effectful calls
-        "Json5",  # data format
-        "Norg",  # markup format
-        "Php",  # . is string concat, print is a keyword
-        "Toml",  # data format
-        "Yaml",  # data format
-        "Hcl",  # config format
+        "C",
+        "Cpp",
+        "CSharp",
+        "Java",
+        "JavaScript",
+        "Kotlin",
+        "ObjectiveC",
+        "Python",
+        "Ruby",
+        "Rust",
+        "Swift",
+        "TypeScript",
     }
 )
 
@@ -2381,7 +2382,7 @@ def _discover_call_cases() -> list[_CallCase]:
         cases.extend(
             _CallCase(config=config, lang_name=lang_name)
             for lang_name in _LANGUAGES
-            if lang_name not in _CALL_SKIP_LANGUAGES
+            if lang_name in _CALL_LANGUAGES
         )
     return cases
 
