@@ -92,7 +92,7 @@ _format_c_entry = _make_format_c_entry(
 @beartype
 def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format a C variable declaration."""
-    wrapped = _format_c_entry(original=data, formatted=value)
+    wrapped = _format_c_entry(data, value)
     return f"CVal {name} = {wrapped};"
 
 
@@ -430,13 +430,13 @@ class C(metaclass=LanguageCls):
         @beartype
         def _format_decl(name: str, value: str, data: Value) -> str:
             """Format a C variable declaration."""
-            wrapped = format_entry(original=data, formatted=value)
+            wrapped = format_entry(data, value)
             return f"CVal {name} = {wrapped};"
 
         @beartype
         def _format_assign(name: str, value: str, data: Value) -> str:
             """Format a C variable assignment."""
-            wrapped = format_entry(original=data, formatted=value)
+            wrapped = format_entry(data, value)
             return f"{name} = {wrapped};"
 
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
