@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import math
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -42,6 +41,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -261,22 +261,18 @@ class VisualBasic(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Double.PositiveInfinity",
+        negative_infinity="Double.NegativeInfinity",
+        nan="Double.NaN",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            if math.isinf(value):
-                if value < 0:
-                    return "Double.NegativeInfinity"
-                return "Double.PositiveInfinity"
-            if math.isnan(value):
-                return "Double.NaN"
-            return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

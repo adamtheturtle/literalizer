@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import math
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -54,6 +53,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -113,7 +113,7 @@ def _make_cpp_element_to_type(
         datetime_type=None,
         list_template="std::vector<{inner}>",
         dict_type_template="std::map<std::string, {inner}>",
-        fallback_value_type="_Any",
+        fallback_value_type="Any",
     )
 
 
@@ -231,7 +231,7 @@ def _format_variable_declaration(
     _data: Value,
 ) -> str:
     """Format a C++ variable declaration."""
-    return f"_Any {name} = {value};"
+    return f"Any {name} = {value};"
 
 
 @beartype
@@ -410,20 +410,18 @@ class Cpp(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="INFINITY",
+        negative_infinity="-INFINITY",
+        nan="NAN",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            if math.isinf(value):
-                return "-INFINITY" if value < 0 else "INFINITY"
-            if math.isnan(value):
-                return "NAN"
-            return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -635,9 +633,9 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
         self.static_body_preamble: Sequence[str] = (
-            "struct _Any {",
-            "    template<class T> _Any(T&&) noexcept {}",
-            "    _Any(std::initializer_list<_Any>) noexcept {}",
+            "struct Any {",
+            "    template<class T> Any(T&&) noexcept {}",
+            "    Any(std::initializer_list<Any>) noexcept {}",
             "};",
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (

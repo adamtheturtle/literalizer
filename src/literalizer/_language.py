@@ -3,8 +3,9 @@
 import dataclasses
 import datetime
 import enum
+import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 from beartype import beartype
 
@@ -202,6 +203,45 @@ class SequenceFormat(Protocol):
     def supports_heterogeneity(self) -> bool:
         """Whether this sequence format supports mixed-type elements."""
         ...  # pylint: disable=unnecessary-ellipsis
+
+
+class FloatSpecialsMixin:
+    """Mixin for ``FloatFormats`` enums that provides ``__call__``.
+
+    Subclasses pass ``positive_infinity``, ``negative_infinity``, and
+    ``nan`` as keyword arguments to the class definition.  The mixin
+    stores them and provides a ``__call__`` that handles the
+    ``isinf``/``isnan`` dispatch, delegating finite values to the enum
+    member's formatter.
+    """
+
+    _positive_infinity: str
+    _negative_infinity: str
+    _nan: str
+
+    def __init_subclass__(
+        cls,
+        *,
+        positive_infinity: str,
+        negative_infinity: str,
+        nan: str,
+    ) -> None:
+        """Store float-special strings as class attributes."""
+        super().__init_subclass__()
+        cls._positive_infinity = positive_infinity
+        cls._negative_infinity = negative_infinity
+        cls._nan = nan
+
+    def __call__(self, value: float, /) -> str:
+        """Format a float, handling inf and nan."""
+        if math.isinf(value):
+            if value < 0:
+                return self._negative_infinity
+            return self._positive_infinity
+        if math.isnan(value):
+            return self._nan
+        formatter: Callable[[float], str] = cast("enum.Enum", self).value
+        return formatter(value)
 
 
 class LanguageCls(type):

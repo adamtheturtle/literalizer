@@ -3,7 +3,6 @@
 import datetime
 import enum
 import functools
-import math
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
@@ -54,6 +53,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -670,20 +670,18 @@ class Python(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity='float("inf")',
+        negative_infinity='float("-inf")',
+        nan='float("nan")',
+    ):
         """Float format options."""
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            if math.isinf(value):
-                return 'float("-inf")' if value < 0 else 'float("inf")'
-            if math.isnan(value):
-                return 'float("nan")'
-            return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

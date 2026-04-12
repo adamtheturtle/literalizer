@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import math
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -42,6 +41,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -218,22 +218,18 @@ class Mojo(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="std.math.inf[DType.float64]()",
+        negative_infinity="-std.math.inf[DType.float64]()",
+        nan="std.math.nan[DType.float64]()",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            if math.isinf(value):
-                if value < 0:
-                    return "-std.math.inf[DType.float64]()"
-                return "std.math.inf[DType.float64]()"
-            if math.isnan(value):
-                return "std.math.nan[DType.float64]()"
-            return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

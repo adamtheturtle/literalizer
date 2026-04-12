@@ -226,7 +226,7 @@ def _wrap_cpp(
 ) -> str:
     """Wrap a C++ variable declaration in a function body."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void _check() {{\n{content}\n}}"
+    return f"void check_() {{\n{content}\n}}"
 
 
 @beartype

@@ -3,12 +3,12 @@
 #include <cstddef>
 #include <chrono>
 #include <map>
-struct _Any {
-    template<class T> _Any(T&&) noexcept {}
-    _Any(std::initializer_list<_Any>) noexcept {}
+struct Any {
+    template<class T> Any(T&&) noexcept {}
+    Any(std::initializer_list<Any>) noexcept {}
 };
-void _check() {
-_Any my_data = {
+void check_() {
+Any my_data = {
     {"name", "Alice"},
     {"age", 30},
     {"active", true},

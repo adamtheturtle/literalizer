@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import math
 import re
 from typing import TYPE_CHECKING
 
@@ -40,6 +39,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -283,20 +283,18 @@ class Dhall(metaclass=LanguageCls):
 
         ERROR = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Infinity",
+        negative_infinity="-Infinity",
+        nan="NaN",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            if math.isinf(value):
-                return "-Infinity" if value < 0 else "Infinity"
-            if math.isnan(value):
-                return "NaN"
-            return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

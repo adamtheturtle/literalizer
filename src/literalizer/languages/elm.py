@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -42,6 +41,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -104,12 +104,6 @@ def _elm_float_wrapper(
     @beartype
     def _format(value: float) -> str:
         """Format a float with an ``EFloat`` constructor."""
-        if math.isinf(value):
-            if value < 0:
-                return "EFloat (-(1 / 0))"
-            return "EFloat (1 / 0)"
-        if math.isnan(value):
-            return "EFloat (0 / 0)"
         formatted = inner(value)
         if formatted.startswith("-"):
             return f"EFloat ({formatted})"
@@ -340,17 +334,18 @@ class Elm(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="EFloat (1 / 0)",
+        negative_infinity="EFloat (-(1 / 0))",
+        nan="EFloat (0 / 0)",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=_format_elm_float_repr)
         SCIENTIFIC = enum.member(value=_format_elm_float_scientific)
         FIXED = enum.member(value=_format_elm_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            formatter: Callable[[float], str] = self.value
-            return formatter(value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

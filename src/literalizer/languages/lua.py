@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import math
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -41,6 +40,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -211,20 +211,18 @@ class Lua(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="math.huge",
+        negative_infinity="-math.huge",
+        nan="(0/0)",
+    ):
         """Float format options."""
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
-
-        def __call__(self, value: float, /) -> str:
-            """Format a float."""
-            if math.isinf(value):
-                return "-math.huge" if value < 0 else "math.huge"
-            if math.isnan(value):
-                return "(0/0)"
-            return self.value(value=value)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

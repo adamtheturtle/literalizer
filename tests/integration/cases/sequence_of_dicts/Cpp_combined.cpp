@@ -2,16 +2,16 @@
 #include <string>
 #include <map>
 #include <vector>
-struct _Any {
-    template<class T> _Any(T&&) noexcept {}
-    _Any(std::initializer_list<_Any>) noexcept {}
+struct Any {
+    template<class T> Any(T&&) noexcept {}
+    Any(std::initializer_list<Any>) noexcept {}
 };
-void _check() {
-_Any my_data = std::vector<std::map<std::string, _Any>>{
+void check_() {
+Any my_data = std::vector<std::map<std::string, Any>>{
     {{"name", "Alice"}, {"age", 30}},
     {{"name", "Bob"}, {"age", 25}},
 };
-my_data = std::vector<std::map<std::string, _Any>>{
+my_data = std::vector<std::map<std::string, Any>>{
     {{"name", "Alice"}, {"age", 30}},
     {{"name", "Bob"}, {"age", 25}},
 };
