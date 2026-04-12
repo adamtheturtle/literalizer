@@ -57,6 +57,7 @@ from .tcl import Tcl
 from .toml import Toml
 from .typescript import TypeScript
 from .vb import VisualBasic
+from .wren import Wren
 from .yaml import Yaml
 from .zig import Zig
 
@@ -117,6 +118,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         TypeScript,
         SystemVerilog,
         VisualBasic,
+        Wren,
         Yaml,
         Zig,
     }
@@ -179,6 +181,7 @@ __all__ = [
     "Toml",
     "TypeScript",
     "VisualBasic",
+    "Wren",
     "Yaml",
     "Zig",
 ]
