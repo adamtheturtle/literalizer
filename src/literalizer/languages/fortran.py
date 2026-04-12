@@ -395,9 +395,9 @@ class Fortran(metaclass=LanguageCls):
         )
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = f"{null_name}()"
-        self.true_literal = f"{bool_name}(.true.)"
-        self.false_literal = f"{bool_name}(.false.)"
+        self.null_literal: str = f"{null_name}()"
+        self.true_literal: str = f"{bool_name}(.true.)"
+        self.false_literal: str = f"{bool_name}(.false.)"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = (
             SequenceFormatConfig(
