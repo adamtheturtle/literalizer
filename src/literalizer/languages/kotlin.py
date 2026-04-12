@@ -555,7 +555,7 @@ class Kotlin(metaclass=LanguageCls):
             default_dict_key_type,
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=typed_dict_open(
+            dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
                         list_template=None,

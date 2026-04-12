@@ -477,7 +477,7 @@ class Scala(metaclass=LanguageCls):
         )
         dict_spec: _ScalaDictSpec = dict_format.value
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=typed_dict_open(
+            dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=self._opener_config.element_to_type(
                         list_template=None,

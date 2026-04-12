@@ -481,7 +481,7 @@ class Gleam(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="GDict(["),
+            dict_open=fixed_dict_open(open_str="GDict(["),
             close="])",
             format_entry=_gleam_dict_entry,
             empty_dict=None,

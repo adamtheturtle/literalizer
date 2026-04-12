@@ -978,7 +978,7 @@ def _format_dict_value(
     opener = (
         open_override
         if open_override is not None
-        else dict_cfg.open_fn(dict_items)
+        else dict_cfg.dict_open(dict_items)
     )
     return opener + joined + dict_cfg.close
 
@@ -992,7 +992,7 @@ def _compute_dict_open_override(
     """Return a widened dict opener when dicts in a list infer
     different value types, or ``None`` when no widening is needed.
     """
-    open_fn = spec.dict_format_config.open_fn
+    dict_open = spec.dict_format_config.dict_open
     dicts: list[dict[str, Value]] = [
         item
         for item in items
@@ -1013,7 +1013,7 @@ def _compute_dict_open_override(
         for d in dicts
     ]
 
-    openers = {open_fn(d) for d in filtered_dicts}
+    openers = {dict_open(d) for d in filtered_dicts}
     if len(openers) <= 1:
         return None
 
@@ -1024,7 +1024,7 @@ def _compute_dict_open_override(
         for v in d.values():
             combined[f"_k{idx}"] = v
             idx += 1
-    return open_fn(combined)
+    return dict_open(combined)
 
 
 @beartype
@@ -1136,7 +1136,7 @@ def _wrap_body(
     elif isinstance(data, dict):
         dict_cfg = spec.dict_format_config
 
-        opening = f"{line_prefix}{dict_cfg.open_fn(data)}"
+        opening = f"{line_prefix}{dict_cfg.dict_open(data)}"
         closing = f"{close_prefix}{dict_cfg.close}"
     elif isinstance(data, set):
         sorted_set: list[Value] = sorted(
