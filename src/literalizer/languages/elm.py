@@ -550,9 +550,9 @@ class Elm(metaclass=LanguageCls):
         """Initialize Elm language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = f"{constructor_prefix}Null"
-        self.true_literal = f"{constructor_prefix}Bool True"
-        self.false_literal = f"{constructor_prefix}Bool False"
+        self.null_literal: str = f"{constructor_prefix}Null"
+        self.true_literal: str = f"{constructor_prefix}Bool True"
+        self.false_literal: str = f"{constructor_prefix}Bool False"
         fmt = sequence_format.value
         _seq_open = fixed_sequence_open(
             open_str=f"{constructor_prefix}List [",

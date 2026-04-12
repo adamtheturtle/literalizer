@@ -420,9 +420,9 @@ class OCaml(metaclass=LanguageCls):
         """Initialize OCaml language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = f"{constructor_prefix}Null"
-        self.true_literal = f"{constructor_prefix}Bool true"
-        self.false_literal = f"{constructor_prefix}Bool false"
+        self.null_literal: str = f"{constructor_prefix}Null"
+        self.true_literal: str = f"{constructor_prefix}Bool true"
+        self.false_literal: str = f"{constructor_prefix}Bool false"
         _entry_formatter = _build_ocaml_entry_formatter(
             prefix=constructor_prefix,
         )

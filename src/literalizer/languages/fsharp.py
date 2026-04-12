@@ -404,9 +404,9 @@ class FSharp(metaclass=LanguageCls):
         )
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = f"{constructor_prefix}Null"
-        self.true_literal = f"{constructor_prefix}Bool true"
-        self.false_literal = f"{constructor_prefix}Bool false"
+        self.null_literal: str = f"{constructor_prefix}Null"
+        self.true_literal: str = f"{constructor_prefix}Bool true"
+        self.false_literal: str = f"{constructor_prefix}Bool false"
         fmt = sequence_format.value
         if sequence_format.name == "ARRAY":
             self.sequence_format_config: SequenceFormatConfig = fmt
