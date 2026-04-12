@@ -71,8 +71,10 @@ if TYPE_CHECKING:
 def _js_call_stub(name: str, /) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
     root = name.split(sep=".", maxsplit=1)[0]
-    if root in {"print", "console", "process"}:
+    if root == "console":
         return ()
+    if root in {"print", "process"}:
+        return (f"function {root}() {{}}",)
     return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
 
 
