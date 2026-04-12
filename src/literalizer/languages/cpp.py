@@ -212,7 +212,7 @@ def _rebuild_dict_opener(
     base_config: DictFormatConfig = dict_format.value
     return dataclasses.replace(
         base_config,
-        open_fn=typed_dict_open(
+        dict_open=typed_dict_open(
             type_to_opener=make_type_to_opener(
                 element_to_type=element_to_type,
                 opener_template=dict_opener_template,
@@ -369,7 +369,7 @@ class Cpp(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP = DictFormatConfig(
-            open_fn=typed_dict_open(
+            dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=_make_cpp_element_to_type(int_type="int"),
                     opener_template="std::map<std::string, {type_name}>{{",
@@ -385,7 +385,7 @@ class Cpp(metaclass=LanguageCls):
             narrowed_open=None,
         )
         UNORDERED_MAP = DictFormatConfig(
-            open_fn=typed_dict_open(
+            dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=_make_cpp_element_to_type(int_type="int"),
                     opener_template=(

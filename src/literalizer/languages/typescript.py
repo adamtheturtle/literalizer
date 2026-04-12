@@ -248,7 +248,7 @@ class TypeScript(metaclass=LanguageCls):
         """Dict/map format options."""
 
         OBJECT = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="{"),
+            dict_open=fixed_dict_open(open_str="{"),
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",
@@ -259,7 +259,7 @@ class TypeScript(metaclass=LanguageCls):
             narrowed_open=None,
         )
         MAP = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="new Map<string, unknown>(["),
+            dict_open=fixed_dict_open(open_str="new Map<string, unknown>(["),
             close="])",
             format_entry=dict_entry_with_template(
                 template="[{key}, {value}]",

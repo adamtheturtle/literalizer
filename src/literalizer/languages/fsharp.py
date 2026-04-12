@@ -378,7 +378,7 @@ class FSharp(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="FMap ["),
+            dict_open=fixed_dict_open(open_str="FMap ["),
             close="]",
             format_entry=tuple_dict_entry(
                 format_value=_format_fsharp_entry,

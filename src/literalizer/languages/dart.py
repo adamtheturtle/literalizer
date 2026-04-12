@@ -387,7 +387,7 @@ class Dart(metaclass=LanguageCls):
             else fmt.sequence_open
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=typed_dict_open(
+            dict_open=typed_dict_open(
                 type_to_opener=openers.dict,
                 fallback=(
                     f"<{default_dict_key_type}, {default_dict_value_type}>{{"
