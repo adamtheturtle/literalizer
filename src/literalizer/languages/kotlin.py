@@ -156,6 +156,17 @@ class _KotlinDictSpec:
 
 
 @beartype
+def _kotlin_call_stub(name: str) -> tuple[str, ...]:
+    """Return Kotlin stub declarations for a call name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (f"fun {parts[0]}(vararg a: Any?): Any? = null",)
+    root, method = parts[0], parts[1]
+    return (
+        f"val {root} = object {{ fun {method}(vararg a: Any?): Any? = null }}",
+    )
+
+
 class Kotlin(metaclass=LanguageCls):
     """Kotlin language specification.
 
@@ -665,3 +676,4 @@ class Kotlin(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=" = ",
         )
+        self.format_call_stub = _kotlin_call_stub

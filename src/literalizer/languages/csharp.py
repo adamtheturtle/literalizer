@@ -81,6 +81,15 @@ class _CSharpDictSpec:
 
 
 @beartype
+def _csharp_call_stub(name: str) -> tuple[str, ...]:
+    """Return C# stub declarations for a call expression name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (f"static dynamic {parts[0]}(params dynamic[] a) => null;",)
+    root = parts[0]
+    return (f"static dynamic {root} = new System.Dynamic.ExpandoObject();",)
+
+
 class CSharp(metaclass=LanguageCls):
     """C# language specification.
 
@@ -556,3 +565,4 @@ class CSharp(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.format_call_stub = _csharp_call_stub

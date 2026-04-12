@@ -62,6 +62,12 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _dart_call_stub(name: str) -> tuple[str, ...]:
+    """Return Dart stub declarations for a call name."""
+    root = name.split(".", maxsplit=1)[0]
+    return (f"dynamic {root};",)
+
+
 class Dart(metaclass=LanguageCls):
     """Dart language specification.
 
@@ -473,3 +479,4 @@ class Dart(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=": ",
         )
+        self.format_call_stub = _dart_call_stub

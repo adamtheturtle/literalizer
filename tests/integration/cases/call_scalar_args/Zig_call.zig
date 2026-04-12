@@ -10,6 +10,7 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
+    fn process(a: anytype) void {}
     process("hello")
     process(42)
     process(.{ .bool = true })

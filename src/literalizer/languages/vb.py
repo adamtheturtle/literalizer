@@ -124,6 +124,23 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
+def _vb_call_stub(name: str) -> tuple[str, ...]:
+    """Return Visual Basic stub declarations for a call name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (
+            f"Private Function {parts[0]}"
+            f"(ParamArray a() As Variant) As Variant",
+            "End Function",
+        )
+    root, method = parts[0], parts[1]
+    return (
+        f"Private Function {root}_{method}"
+        f"(ParamArray a() As Variant) As Variant",
+        "End Function",
+    )
+
+
 class VisualBasic(metaclass=LanguageCls):
     """Visual Basic (.NET) language specification.
 
@@ -487,3 +504,4 @@ class VisualBasic(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=":=",
         )
+        self.format_call_stub = _vb_call_stub

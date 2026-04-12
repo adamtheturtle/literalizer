@@ -67,6 +67,12 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _ts_call_stub(name: str) -> tuple[str, ...]:
+    """Return TypeScript stub declarations for a call name."""
+    root = name.split(".", maxsplit=1)[0]
+    return (f"declare const {root}: any;",)
+
+
 class TypeScript(metaclass=LanguageCls):
     """TypeScript language specification.
 
@@ -495,3 +501,4 @@ class TypeScript(metaclass=LanguageCls):
             kind=CallStyleKind.OBJECT,
             keyword_separator=": ",
         )
+        self.format_call_stub = _ts_call_stub

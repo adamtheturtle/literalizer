@@ -14,6 +14,7 @@ struct _CVal {
 };
 struct _CKV { const char *k; _CVal v; };
 void _check(void) {
+int process();
 process("hello")
 process(42)
 process(((_CVal){.b = true}))

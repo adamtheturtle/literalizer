@@ -54,6 +54,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
+    _no_call_stub,
     date_scalar_preamble,
     no_type_hint_preamble,
 )
@@ -652,3 +653,4 @@ class Haskell(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.format_call_stub = _no_call_stub

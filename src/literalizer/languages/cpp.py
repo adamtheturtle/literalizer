@@ -235,6 +235,19 @@ def _format_variable_declaration(
 
 
 @beartype
+def _cpp_call_stub(name: str) -> tuple[str, ...]:
+    """Return C++ stub declarations for a call expression name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (f"auto {parts[0]}(auto...) {{ return 0; }}",)
+    root, method = parts[0], parts[1]
+    type_name = f"_{root}Type"
+    return (
+        f"struct {type_name} {{ auto {method}(auto...) {{ return 0; }} }};",
+        f"{type_name} {root};",
+    )
+
+
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
 
@@ -667,3 +680,4 @@ class Cpp(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.format_call_stub = _cpp_call_stub

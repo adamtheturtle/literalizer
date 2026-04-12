@@ -726,6 +726,27 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     See :class:`CallStyleConfig` for details.
     """
 
+    format_call_stub: Callable[[str], tuple[str, ...]]
+    """Return stub declaration lines for a name used in a call
+    expression.
+
+    *name* is either a simple identifier (``"process"``) for a
+    function call, or a dotted path (``"throttler.check"``) for a
+    method call on an object.
+
+    Returns an empty tuple when no stub is needed (e.g. for
+    builtins, or in languages whose linters only check syntax).
+    """
+
+
+def _no_call_stub(_name: str) -> tuple[str, ...]:
+    """Return no stub lines.
+
+    Used by languages whose linters only check syntax, not name
+    resolution.
+    """
+    return ()
+
 
 def _no_type_hint_preamble(
     _empty_collection_types: frozenset[type],

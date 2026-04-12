@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import re
 import textwrap
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -2337,6 +2338,26 @@ def _discover_call_cases() -> list[_CallCase]:
 _CALL_CASES = _discover_call_cases()
 
 
+@beartype
+def _extract_call_names(
+    *,
+    call_function: str,
+    call_wrapper: str | None,
+) -> list[str]:
+    """Extract names needing stubs from call config.
+
+    Returns dotted names (e.g. ``"throttler.check"``) and simple names
+    (e.g. ``"print"``).
+    """
+    names: list[str] = [call_function]
+    if call_wrapper is not None:
+        # Extract the function name from wrapper like "print($0)".
+        wrapper_match = re.match(r"(\w[\w.]*)\s*\(", call_wrapper)
+        if wrapper_match:
+            names.append(wrapper_match.group(1))
+    return names
+
+
 @pytest.mark.parametrize(
     argnames="call_case",
     argvalues=_CALL_CASES,
@@ -2350,21 +2371,31 @@ def test_call_golden_file(
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
     lang_config = _LANGUAGES[call_case.lang_name]
+    spec = lang_config.lang_cls()
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     result = literalizer.literalize_call(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
-        language=lang_config.lang_cls(),
+        language=spec,
         call_function=config.call_function,
         call_params=config.call_params,
         call_wrapper=config.call_wrapper,
         per_element=config.per_element,
     )
-    variable_name = lang_config.wrap_variable_name or ""
-    wrapped = lang_config.wrap(
-        result.bare_code, variable_name, result.body_preamble
+    # Build stub declarations for undefined names.
+    call_names = _extract_call_names(
+        call_function=config.call_function,
+        call_wrapper=config.call_wrapper,
     )
+    stub_lines: list[str] = []
+    for name in call_names:
+        stub_lines.extend(spec.format_call_stub(name))
+    stub_prefix = "\n".join(stub_lines) + "\n" if stub_lines else ""
+    code = stub_prefix + result.bare_code
+
+    variable_name = lang_config.wrap_variable_name or ""
+    wrapped = lang_config.wrap(code, variable_name, result.body_preamble)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     golden_name = f"{call_case.lang_name}_call"
     file_regression.check(

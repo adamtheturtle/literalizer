@@ -93,6 +93,20 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
 
 
 @beartype
+def _rust_call_stub(name: str) -> tuple[str, ...]:
+    """Return Rust stub declarations for a call name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (f"fn {parts[0]}<T>(_: T) {{}}",)
+    root, method = parts[0], parts[1]
+    type_name = f"_{root.title()}Type"
+    return (
+        f"struct {type_name};",
+        f"impl {type_name} {{ fn {method}<T, U>(&self, _: T, _: U) {{}} }}",
+        f"let {root} = {type_name};",
+    )
+
+
 class Rust(metaclass=LanguageCls):
     """Rust language specification.
 
@@ -572,3 +586,4 @@ class Rust(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.format_call_stub = _rust_call_stub

@@ -131,6 +131,15 @@ class _ScalaDictSpec:
 
 
 @beartype
+def _scala_call_stub(name: str) -> tuple[str, ...]:
+    """Return Scala stub declarations for a call name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}(a: Any*): Any = null",)
+    root, method = parts[0], parts[1]
+    return (f"val {root} = new {{ def {method}(a: Any*): Any = null }}",)
+
+
 class Scala(metaclass=LanguageCls):
     """Scala language specification."""
 
@@ -578,3 +587,4 @@ class Scala(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=" = ",
         )
+        self.format_call_stub = _scala_call_stub

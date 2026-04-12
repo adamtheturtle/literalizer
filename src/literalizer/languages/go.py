@@ -117,6 +117,20 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
 
 
 @beartype
+def _go_call_stub(name: str) -> tuple[str, ...]:
+    """Return Go stub declarations for a call expression name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (f"func {parts[0]}(args ...any) any {{ return nil }}",)
+    root, method = parts[0], parts[1]
+    type_name = f"_{root}Type"
+    return (
+        f"type {type_name} struct{{}}",
+        f"func ({type_name}) {method}(args ...any) any {{ return nil }}",
+        f"var {root} = {type_name}{{}}",
+    )
+
+
 class Go(metaclass=LanguageCls):
     """Go language specification.
 
@@ -551,3 +565,4 @@ class Go(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.format_call_stub = _go_call_stub

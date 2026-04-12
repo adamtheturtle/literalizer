@@ -89,6 +89,17 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 
 @beartype
+def _ada_call_stub(name: str) -> tuple[str, ...]:
+    """Return Ada stub declarations for a call name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (
+            f"   function {parts[0]} (A : Integer) return Integer is (A);",
+        )
+    # Ada dotted names are package references; stubs are complex.
+    return ()
+
+
 class Ada(metaclass=LanguageCls):
     """Ada language specification."""
 
@@ -390,3 +401,4 @@ class Ada(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator="=>",
         )
+        self.format_call_stub = _ada_call_stub

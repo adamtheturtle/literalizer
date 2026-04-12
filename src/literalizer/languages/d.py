@@ -81,6 +81,20 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 
 @beartype
+def _d_call_stub(name: str) -> tuple[str, ...]:
+    """Return D stub declarations for a call name."""
+    parts = name.split(".")
+    if len(parts) == 1:
+        return (f"auto {parts[0]}(T...)(T args) {{ return 0; }}",)
+    root, method = parts[0], parts[1]
+    type_name = f"_{root}Type"
+    return (
+        f"struct {type_name} {{"
+        f" auto {method}(T...)(T args) {{ return 0; }} }}",
+        f"{type_name} {root};",
+    )
+
+
 class D(metaclass=LanguageCls):
     """D language specification."""
 
@@ -410,3 +424,4 @@ class D(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.format_call_stub = _d_call_stub

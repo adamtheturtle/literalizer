@@ -10,6 +10,8 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
+    const throttler = struct { pub fn check(a: anytype, b: anytype) void {} }{};
+    fn print(a: anytype) void {}
     print(throttler.check("user_1", 1000.0))
     print(throttler.check("user_2", 2000.5))
     _ = my_data;

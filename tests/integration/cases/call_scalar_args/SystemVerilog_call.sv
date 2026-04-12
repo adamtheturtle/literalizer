@@ -11,6 +11,7 @@ typedef struct {
 } _VKV;
 module check;
 initial begin
+function automatic void process(string a); endfunction
 process("hello")
 process(42)
 process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""})

@@ -51,6 +51,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
+    _no_call_stub,
     body_preamble_from_scalars,
     no_type_hint_preamble,
 )
@@ -493,3 +494,4 @@ class FSharp(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.format_call_stub = _no_call_stub
