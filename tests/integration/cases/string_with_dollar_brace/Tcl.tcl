@@ -1,4 +1,4 @@
 set my_data [list \
-    "prefix ${HOME} suffix" \
-    "${interpolated}" \
+    "prefix \${HOME} suffix" \
+    "\${interpolated}" \
 ]

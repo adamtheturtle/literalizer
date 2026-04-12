@@ -1,4 +1,4 @@
 set my_data [list \
-    "price $10" \
-    "$HOME" \
+    "price \$10" \
+    "\$HOME" \
 ]

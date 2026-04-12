@@ -26,7 +26,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
+    format_string_backslash_tcl,
 )
 from literalizer._language import (
     CommentConfig,
@@ -238,7 +238,7 @@ class Tcl(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=format_string_backslash_tcl)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
