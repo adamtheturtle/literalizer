@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import textwrap
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -50,6 +51,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -447,6 +449,34 @@ class Gleam(metaclass=LanguageCls):
         NONE = "none"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a Gleam let binding in a main function."""
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        indented = textwrap.indent(text=content, prefix="  ")
+        return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Gleam declaration + assignment in a main function."""
+        return Gleam.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,

@@ -57,6 +57,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -377,6 +378,34 @@ class TypeScript(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a TypeScript declaration as a module."""
+        del variable_name
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return f"{content}\nexport {{}};"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap TypeScript declaration + assignment as a module."""
+        return TypeScript.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,

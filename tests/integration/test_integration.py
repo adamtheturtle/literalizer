@@ -14,8 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import textwrap
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -39,27 +38,6 @@ def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
 
 
 @beartype
-def _with_body_preamble(
-    content: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Prepend *body_preamble* lines to *content*."""
-    if not body_preamble:
-        return content
-    return "\n".join(body_preamble) + "\n" + content
-
-
-@beartype
-def _wrap_noop(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Prepend body preamble without adding any surrounding wrapper."""
-    return _with_body_preamble(content=content, body_preamble=body_preamble)
-
-
-@beartype
 def _find_redefinition_styles(
     spec: literalizer.Language,
 ) -> list[enum.Enum]:
@@ -69,500 +47,6 @@ def _find_redefinition_styles(
         for style in spec.declaration_styles
         if style.value.supports_redefinition
     ]
-
-
-@beartype
-def _newline_combined(
-    wrap: Callable[[str, str, tuple[str, ...]], str],
-) -> Callable[[str, str, str, tuple[str, ...]], str]:
-    """Build a combined_wrap that joins declaration and assignment with a
-    newline and passes through *wrap*.
-    """
-
-    def combined_wrap(
-        declaration: str,
-        assignment: str,
-        value: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Join declaration and assignment with a newline, then wrap."""
-        return wrap(declaration + "\n" + assignment, value, body_preamble)
-
-    return combined_wrap
-
-
-@beartype
-def _wrap_ocaml(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an OCaml ``let`` declaration in a module."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return "module Check = struct\n\n" + content + "\n\nend"
-
-
-@beartype
-def _wrap_occam(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an occam-pi ``VAL`` declaration in a PROC."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="  ")
-    return (
-        "\nPROC check ()\n" + indented + "\n" + "  SEQ\n" + "    SKIP\n" + ":"
-    )
-
-
-@beartype
-def _wrap_fsharp(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an F# ``let`` declaration in a module."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return "module Check\n\n" + content
-
-
-@beartype
-def _wrap_fsharp_combined(
-    declaration: str,
-    assignment: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """F#: separate private functions to avoid duplicate definitions."""
-    decl_indented = textwrap.indent(text=declaration, prefix="    ")
-    assign_indented = textwrap.indent(text=assignment, prefix="    ")
-    preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
-    body = "module Check\n\n" + preamble
-    body += (
-        "let private _checkDeclaration () =\n"
-        + decl_indented
-        + "\n    ignore my_data\n\n"
-        + "let private _checkAssignment () =\n"
-        + assign_indented
-        + "\n    ignore my_data"
-    )
-    return body
-
-
-@beartype
-def _wrap_gleam(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Gleam let binding in a main function."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="  ")
-    return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
-
-
-@beartype
-def _wrap_odin(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an Odin short variable declaration in a main procedure."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
-
-
-@beartype
-def _wrap_java(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Java var declaration in a static method."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return (
-        "class Check {\n"
-        "    public static void check() {\n"
-        f"{content}\n"
-        "    }\n"
-        "}"
-    )
-
-
-@beartype
-def _wrap_ts(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a TypeScript variable declaration as a module.
-
-    Adding ``export {}`` turns the file into a module so that ``const``
-    declarations are module-scoped rather than global, preventing
-    duplicate-declaration errors when ``tsc`` checks all ``.ts`` files
-    together.
-    """
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"{content}\nexport {{}};"
-
-
-@beartype
-def _wrap_cpp(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a C++ variable declaration in a function body."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void check_() {{\n{content}\n}}"
-
-
-@beartype
-def _wrap_scala(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Scala variable declaration in an object."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"object Check {{\n{content}\n}}"
-
-
-@beartype
-def _wrap_elixir(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an Elixir variable assignment in a module function."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="    ")
-    return (
-        f"defmodule Check do\n"
-        f"  def x do\n"
-        f"{indented}\n"
-        f"    _ = {variable_name}\n"
-        f"  end\n"
-        f"end"
-    )
-
-
-@beartype
-def _wrap_purescript(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a PureScript value declaration in a module."""
-    preamble = "\n".join(body_preamble)
-    return f"module Check where\n\n\n{preamble}\n\n\n{content}"
-
-
-@beartype
-def _wrap_elm(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an Elm value declaration in a module."""
-    preamble = "\n".join(body_preamble)
-    return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
-
-
-@beartype
-def _wrap_erlang(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an Erlang variable binding in a module function.
-
-    The variable is referenced at the end of the function body so that
-    Erlang does not warn about an unused variable.
-    """
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    erlang_varname = variable_name[0].upper() + variable_name[1:]
-    indented = textwrap.indent(text=content, prefix="    ")
-    return (
-        f"-module(check).\n"
-        f"-export([x/0]).\n"
-        f"x() ->\n"
-        f"{indented},\n"
-        f"    {erlang_varname}."
-    )
-
-
-@beartype
-def _wrap_ada(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an Ada object declaration inside a procedure."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="   ")
-    return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
-
-
-@beartype
-def _wrap_ada_combined(
-    declaration: str,
-    assignment: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Ada: declaration in one nested procedure, assignment in another."""
-    declaration = _with_body_preamble(
-        content=declaration, body_preamble=body_preamble
-    )
-    decl_indented = textwrap.indent(text=declaration, prefix="   ")
-    assign_indented = textwrap.indent(text=assignment, prefix="   ")
-    inner = (
-        "procedure Check_Declaration is\n"
-        f"{decl_indented}\n"
-        "begin\n"
-        "   null;\n"
-        "end Check_Declaration;\n"
-        "procedure Check_Assignment is\n"
-        "begin\n"
-        f"{assign_indented}\n"
-        "end Check_Assignment;"
-    )
-    return _wrap_ada(
-        content=inner, _variable_name=_variable_name, body_preamble=()
-    )
-
-
-@beartype
-def _wrap_d(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a D ``auto`` declaration in a function."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void _check() {{\n{content}\n}}"
-
-
-@beartype
-def _wrap_systemverilog(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a SystemVerilog declaration in a module with an initial
-    block.
-    """
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"module check;\ninitial begin\n{content}\nend\nendmodule"
-
-
-@beartype
-def _wrap_c(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a C ``CVal`` declaration in a function."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
-
-
-@beartype
-def _wrap_objc(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap an Objective-C variable declaration in a function."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
-
-
-@beartype
-def _wrap_mojo(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Mojo variable declaration in a main function.
-
-    Mojo does not support top-level code.  No statements, expressions,
-    or variable declarations are allowed at module scope, so generated
-    output must be placed inside a function body.
-
-    Inside a function, ``var`` is optional: both ``var x = [...]`` and
-    ``x = [...]`` are valid.  Declarations (``new_variable=True``)
-    include ``var`` for explicit variable binding; assignments
-    (``new_variable=False``) omit it.  The distinction is stylistic
-    since Mojo does not require ``var`` inside functions.
-    """
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    # Consume the variable so ``--Werror`` does not flag the
-    # "assignment was never used" warning.
-    content = content + f"\n_ = {variable_name}"
-    indented = textwrap.indent(text=content, prefix="    ")
-    return f"def main():\n{indented}"
-
-
-@beartype
-def _wrap_mojo_combined(
-    declaration: str,
-    assignment: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap Mojo declaration and assignment in a main function.
-
-    Mojo ``--Werror`` treats an assignment that is immediately
-    overwritten without being read as an error
-    (``assignment to 'x' was never used``).  A bare ``_ = variable``
-    must appear *between* the declaration and the reassignment, not
-    only at the end.
-    """
-    declaration = _with_body_preamble(
-        content=declaration, body_preamble=body_preamble
-    )
-    use = f"_ = {variable_name}"
-    return _wrap_mojo(
-        content=declaration + f"\n{use}\n" + assignment,
-        variable_name=variable_name,
-        body_preamble=(),
-    )
-
-
-@beartype
-def _wrap_rust(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Rust let binding in a main function."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="    ")
-    return f"fn main() {{\n{indented}\n    let _ = {variable_name};\n}}"
-
-
-@beartype
-def _wrap_haskell(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Haskell variable binding in a module."""
-    preamble = "\n".join(body_preamble)
-    return "module Check where\n" + preamble + "\n" + content
-
-
-@beartype
-def _wrap_zig(
-    content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Zig declaration in a main function.
-
-    For ``var`` declarations the wrapper mutates the variable so the Zig
-    compiler does not warn about a ``var`` that is never mutated.
-    """
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="    ")
-    if "var " in content:
-        use = f"    {variable_name} = .nil;"
-    else:
-        use = f"    _ = {variable_name};"
-    return f"pub fn main() void {{\n{indented}\n{use}\n}}"
-
-
-@beartype
-def _wrap_fortran(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a Fortran variable declaration in a program."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="  ")
-    return (
-        "program check\n"
-        "  use fval_m\n"
-        "  implicit none\n"
-        f"{indented}\n"
-        "end program check"
-    )
-
-
-@beartype
-def _wrap_fortran_combined(
-    declaration: str,
-    assignment: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Fortran: declaration in one subroutine, assignment in another."""
-    declaration = _with_body_preamble(
-        content=declaration, body_preamble=body_preamble
-    )
-    decl_indented = textwrap.indent(text=declaration, prefix="  ")
-    assign_indented = textwrap.indent(text=assignment, prefix="  ")
-    return (
-        "subroutine check_declaration()\n"
-        "  use fval_m\n"
-        "  implicit none\n"
-        f"{decl_indented}\n"
-        "end subroutine check_declaration\n"
-        "\n"
-        "subroutine check_assignment()\n"
-        "  use fval_m\n"
-        "  implicit none\n"
-        f"  type(fval_t) :: {variable_name}\n"
-        f"{assign_indented}\n"
-        "end subroutine check_assignment\n"
-        "\n"
-        "program main\n"
-        "  call check_declaration()\n"
-        "  call check_assignment()\n"
-        "end program main"
-    )
-
-
-@beartype
-def _wrap_vb(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a VB.NET Dim declaration inside a Module."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    indented = textwrap.indent(text=content, prefix="    ")
-    return f"Module Check\n{indented}\nEnd Module"
-
-
-@beartype
-def _wrap_vb_combined(
-    declaration: str,
-    assignment: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """VB.NET: Dim declaration in one Sub, assignment in another."""
-    declaration = _with_body_preamble(
-        content=declaration, body_preamble=body_preamble
-    )
-    decl_indented = textwrap.indent(text=declaration, prefix="        ")
-    assign_indented = textwrap.indent(text=assignment, prefix="        ")
-    return (
-        "Module Check\n"
-        "    Sub _declaration()\n"
-        f"{decl_indented}\n"
-        "    End Sub\n"
-        "    Sub _assignment()\n"
-        f"        Dim {variable_name} As Object\n"
-        f"{assign_indented}\n"
-        "    End Sub\n"
-        "End Module"
-    )
 
 
 @beartype
@@ -582,412 +66,40 @@ class _Variant:
 
     name: str
     spec: literalizer.Language
-    wrap: Callable[[str, str, tuple[str, ...]], str]
+    lang_cls: literalizer.LanguageCls
     wrap_variable_name: str | None
 
 
 @dataclasses.dataclass
 class _LanguageConfig:
-    """Language configuration with class, file extension, and wrapper."""
+    """Language configuration for integration tests."""
 
     lang_cls: literalizer.LanguageCls
-    wrap: Callable[[str, str, tuple[str, ...]], str]
-    combined_wrap: Callable[[str, str, str, tuple[str, ...]], str]
     wrap_variable_name: str | None
 
 
-_COBOL_PROGRAM_PREFIX = (
-    "IDENTIFICATION DIVISION.\n"
-    "PROGRAM-ID. CHECK.\n"
-    "DATA DIVISION.\n"
-    "WORKING-STORAGE SECTION.\n"
+_NO_VARIABLE_NAME_LANGUAGES: frozenset[literalizer.LanguageCls] = frozenset(
+    {
+        literalizer.languages.Clojure,
+        literalizer.languages.CommonLisp,
+        literalizer.languages.Json5,
+        literalizer.languages.Jsonnet,
+        literalizer.languages.Julia,
+        literalizer.languages.Racket,
+        literalizer.languages.Ruby,
+        literalizer.languages.Scheme,
+        literalizer.languages.Yaml,
+    }
 )
 
-_COBOL_PROGRAM_SUFFIX = "PROCEDURE DIVISION.\n    STOP RUN."
-
-
-@beartype
-def _wrap_cobol(
-    content: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap a COBOL variable declaration in a complete program."""
-    content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return _COBOL_PROGRAM_PREFIX + f"{content}\n" + _COBOL_PROGRAM_SUFFIX
-
-
-@beartype
-def _wrap_cobol_combined(
-    declaration: str,
-    assignment: str,
-    _variable_name: str,
-    body_preamble: tuple[str, ...],
-) -> str:
-    """Wrap COBOL declaration (DATA DIVISION) and assignment (PROCEDURE
-    DIVISION).
-    """
-    declaration = _with_body_preamble(
-        content=declaration, body_preamble=body_preamble
-    )
-    return (
-        _COBOL_PROGRAM_PREFIX
-        + f"{declaration}\n"
-        + "PROCEDURE DIVISION.\n"
-        + f"    {assignment}\n"
-        + "    STOP RUN."
-    )
-
-
 _LANGUAGES: dict[str, _LanguageConfig] = {
-    literalizer.languages.Ada.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Ada,
-        wrap=_wrap_ada,
-        combined_wrap=_wrap_ada_combined,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Bash.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Bash,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.C.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.C,
-        wrap=_wrap_c,
-        combined_wrap=_newline_combined(wrap=_wrap_c),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Cobol.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Cobol,
-        wrap=_wrap_cobol,
-        combined_wrap=_wrap_cobol_combined,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.D.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.D,
-        wrap=_wrap_d,
-        combined_wrap=_newline_combined(wrap=_wrap_d),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.CommonLisp.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.CommonLisp,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.Clojure.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Clojure,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.Python.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Python,
-        wrap=literalizer.languages.Python.wrap_in_file,
-        combined_wrap=literalizer.languages.Python.wrap_combined_in_file,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.JavaScript.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.JavaScript,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Json5.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Json5,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.Jsonnet.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Jsonnet,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.TypeScript.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.TypeScript,
-        wrap=_wrap_ts,
-        combined_wrap=_newline_combined(wrap=_wrap_ts),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Kotlin.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Kotlin,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Ruby.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Ruby,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.Gleam.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Gleam,
-        wrap=_wrap_gleam,
-        combined_wrap=_newline_combined(wrap=_wrap_gleam),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Go.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Go,
-        wrap=literalizer.languages.Go.wrap_in_file,
-        combined_wrap=literalizer.languages.Go.wrap_combined_in_file,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Java.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Java,
-        wrap=_wrap_java,
-        combined_wrap=_newline_combined(wrap=_wrap_java),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.CSharp.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.CSharp,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Dart.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Dart,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Dhall.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Dhall,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Swift.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Swift,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Cpp.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Cpp,
-        wrap=_wrap_cpp,
-        combined_wrap=_newline_combined(wrap=_wrap_cpp),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Rust.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Rust,
-        wrap=_wrap_rust,
-        combined_wrap=_newline_combined(wrap=_wrap_rust),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Haskell.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Haskell,
-        wrap=_wrap_haskell,
-        combined_wrap=_newline_combined(wrap=_wrap_haskell),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Hcl.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Hcl,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Julia.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Julia,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.Lua.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Lua,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Perl.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Perl,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Php.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Php,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Elixir.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Elixir,
-        wrap=_wrap_elixir,
-        combined_wrap=_newline_combined(wrap=_wrap_elixir),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Elm.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Elm,
-        wrap=_wrap_elm,
-        combined_wrap=_newline_combined(wrap=_wrap_elm),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Erlang.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Erlang,
-        wrap=_wrap_erlang,
-        combined_wrap=_newline_combined(wrap=_wrap_erlang),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.FSharp.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.FSharp,
-        wrap=_wrap_fsharp,
-        combined_wrap=_wrap_fsharp_combined,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.OCaml.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.OCaml,
-        wrap=_wrap_ocaml,
-        combined_wrap=_newline_combined(wrap=_wrap_ocaml),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Occam.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Occam,
-        wrap=_wrap_occam,
-        combined_wrap=_newline_combined(wrap=_wrap_occam),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Groovy.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Groovy,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Scala.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Scala,
-        wrap=_wrap_scala,
-        combined_wrap=_newline_combined(wrap=_wrap_scala),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.R.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.R,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Racket.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Racket,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.Raku.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Raku,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Scheme.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Scheme,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
-    literalizer.languages.Crystal.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Crystal,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Matlab.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Matlab,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Mojo.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Mojo,
-        wrap=_wrap_mojo,
-        combined_wrap=_wrap_mojo_combined,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Nim.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Nim,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Norg.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Norg,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Odin.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Odin,
-        wrap=_wrap_odin,
-        combined_wrap=_newline_combined(wrap=_wrap_odin),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.VisualBasic.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.VisualBasic,
-        wrap=_wrap_vb,
-        combined_wrap=_wrap_vb_combined,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.SystemVerilog.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.SystemVerilog,
-        wrap=_wrap_systemverilog,
-        combined_wrap=_newline_combined(wrap=_wrap_systemverilog),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Zig.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Zig,
-        wrap=_wrap_zig,
-        combined_wrap=_newline_combined(wrap=_wrap_zig),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.PureScript.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.PureScript,
-        wrap=_wrap_purescript,
-        combined_wrap=_newline_combined(wrap=_wrap_purescript),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.PowerShell.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.PowerShell,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Toml.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Toml,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.ObjectiveC.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.ObjectiveC,
-        wrap=_wrap_objc,
-        combined_wrap=_newline_combined(wrap=_wrap_objc),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Fortran.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Fortran,
-        wrap=_wrap_fortran,
-        combined_wrap=_wrap_fortran_combined,
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Tcl.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Tcl,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Wren.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Wren,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name="my_data",
-    ),
-    literalizer.languages.Yaml.__name__: _LanguageConfig(
-        lang_cls=literalizer.languages.Yaml,
-        wrap=_wrap_noop,
-        combined_wrap=_newline_combined(wrap=_wrap_noop),
-        wrap_variable_name=None,
-    ),
+    lang_cls.__name__: _LanguageConfig(
+        lang_cls=lang_cls,
+        wrap_variable_name=(
+            None if lang_cls in _NO_VARIABLE_NAME_LANGUAGES else "my_data"
+        ),
+    )
+    for lang_cls in ALL_LANGUAGES
 }
 
 _COVERED_LANGUAGES = frozenset(cfg.lang_cls for cfg in _LANGUAGES.values())
@@ -1028,7 +140,7 @@ def _build_date_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_date_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(date_format=fmt),
-                    wrap=lang_config.wrap,
+                    lang_cls=lang_config.lang_cls,
                     wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
@@ -1054,7 +166,7 @@ def _build_datetime_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_datetime_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(datetime_format=fmt),
-                    wrap=lang_config.wrap,
+                    lang_cls=lang_config.lang_cls,
                     wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
@@ -1080,7 +192,7 @@ def _build_sequence_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(sequence_format=fmt),
-                    wrap=lang_config.wrap,
+                    lang_cls=lang_config.lang_cls,
                     wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
@@ -1105,7 +217,7 @@ def _build_sequence_varname_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(sequence_format=fmt),
-                    wrap=lang_config.wrap,
+                    lang_cls=lang_config.lang_cls,
                     wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
@@ -1130,7 +242,7 @@ def _build_set_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_set_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(set_format=fmt),
-                    wrap=lang_config.wrap,
+                    lang_cls=lang_config.lang_cls,
                     wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
@@ -1180,7 +292,7 @@ def _build_default_set_element_type_variants(
             _Variant(
                 name=f"{lang_name}_default_set_element_type_string",
                 spec=spec,
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
         )
@@ -1212,7 +324,7 @@ def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     default_sequence_element_type=string_type,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
         )
@@ -1245,7 +357,7 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
             _Variant(
                 name=f"{lang_name}_default_dict_value_type_string",
                 spec=lang_config.lang_cls(default_dict_value_type=string_type),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
         )
@@ -1279,7 +391,7 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
             _Variant(
                 name=f"{lang_name}_default_dict_key_type",
                 spec=lang_config.lang_cls(default_dict_key_type=key_type),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
         )
@@ -1309,7 +421,7 @@ def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     default_ordered_map_value_type=value_type,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
         )
@@ -1335,7 +447,7 @@ def _build_comment_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_comment_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(comment_format=fmt),
-                    wrap=lang_config.wrap,
+                    lang_cls=lang_config.lang_cls,
                     wrap_variable_name=lang_config.wrap_variable_name,
                 )
             )
@@ -1361,7 +473,7 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
                 _Variant(
                     name=f"{lang_name}_type_hints_{fmt.name.lower()}",
                     spec=lang_config.lang_cls(variable_type_hints=fmt),
-                    wrap=lang_config.wrap,
+                    lang_cls=lang_config.lang_cls,
                     wrap_variable_name="my_data",
                 )
             )
@@ -1386,7 +498,7 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     declaration_style=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1412,7 +524,7 @@ def _build_dict_format_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     dict_format=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1438,7 +550,7 @@ def _build_dict_entry_style_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     dict_entry_style=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1464,7 +576,7 @@ def _build_integer_format_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     integer_format=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1492,7 +604,7 @@ def _build_numeric_literal_suffix_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     numeric_literal_suffix=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1518,7 +630,7 @@ def _build_numeric_separator_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     numeric_separator=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1544,7 +656,7 @@ def _build_float_format_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     float_format=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1570,7 +682,7 @@ def _build_string_format_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     string_format=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1596,7 +708,7 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     bytes_format=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1622,7 +734,7 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     trailing_comma=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1648,7 +760,7 @@ def _build_line_ending_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     line_ending=fmt,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for fmt in non_defaults
@@ -1689,7 +801,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
                     line_ending=line_ending,
                     declaration_style=declaration_style,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
             for line_ending in non_default_line_endings
@@ -1787,7 +899,7 @@ def test_golden_file(
         error_on_coercion=False,
     )
     variable_name = lang_config.wrap_variable_name or ""
-    wrapped = lang_config.wrap(
+    wrapped = lang_config.lang_cls.wrap_in_file(  # type: ignore[misc]
         result.bare_code, variable_name, result.body_preamble
     )
 
@@ -1900,7 +1012,7 @@ def test_golden_file_combined_variable_forms(
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = lang_config.combined_wrap(
+    combined = lang_config.lang_cls.wrap_combined_in_file(  # type: ignore[misc]
         declaration.declaration_code,
         assignment.bare_code,
         variable_name,
@@ -1941,7 +1053,7 @@ def _build_constructor_name_variants() -> Iterable[_Variant]:
                 set_name="jset",
                 entry_name="jentry",
             ),
-            wrap=lang_config.wrap,
+            lang_cls=lang_config.lang_cls,
             wrap_variable_name=lang_config.wrap_variable_name,
         ),
     ]
@@ -1971,7 +1083,7 @@ def _build_type_name_variants() -> Iterable[_Variant]:
             _Variant(
                 name=f"{lang_name}_type_name_{custom_name}",
                 spec=lang_config.lang_cls(type_name=custom_name),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
         )
@@ -1999,7 +1111,7 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
                 key_field="key",
                 value_field="val",
             ),
-            wrap=lang_config.wrap,
+            lang_cls=lang_config.lang_cls,
             wrap_variable_name=lang_config.wrap_variable_name,
         ),
     ]
@@ -2142,7 +1254,7 @@ def test_format_variant_golden_file(
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
     variable_name = variant.wrap_variable_name or ""
-    wrapped = variant.wrap(
+    wrapped = variant.lang_cls.wrap_in_file(  # type: ignore[misc]
         result.bare_code, variable_name, result.body_preamble
     )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
@@ -2245,7 +1357,7 @@ def test_line_ending_combined_variable_forms(
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = case.lang_config.combined_wrap(
+    combined = case.lang_config.lang_cls.wrap_combined_in_file(  # type: ignore[misc]
         declaration.declaration_code,
         assignment.bare_code,
         case.lang_config.wrap_variable_name or "",

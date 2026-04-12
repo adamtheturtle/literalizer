@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import textwrap
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -47,6 +48,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -327,6 +329,47 @@ class VisualBasic(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a VB.NET Dim declaration inside a Module."""
+        del variable_name
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        indented = textwrap.indent(text=content, prefix="    ")
+        return f"Module Check\n{indented}\nEnd Module"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap VB.NET declaration + assignment in separate Subs."""
+        declaration = prepend_body_preamble(
+            content=declaration,
+            body_preamble=body_preamble,
+        )
+        decl_indented = textwrap.indent(text=declaration, prefix="        ")
+        assign_indented = textwrap.indent(text=assignment, prefix="        ")
+        return (
+            "Module Check\n"
+            "    Sub _declaration()\n"
+            f"{decl_indented}\n"
+            "    End Sub\n"
+            "    Sub _assignment()\n"
+            f"        Dim {variable_name} As Object\n"
+            f"{assign_indented}\n"
+            "    End Sub\n"
+            "End Module"
+        )
 
     def __init__(  # noqa: PLR0915
         self,

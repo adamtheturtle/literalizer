@@ -44,6 +44,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -303,6 +304,35 @@ class ObjectiveC(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap an Objective-C declaration in a function."""
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return (
+            f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
+        )
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Objective-C declaration + assignment in a function."""
+        return ObjectiveC.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,

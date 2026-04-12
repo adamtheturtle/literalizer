@@ -55,6 +55,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -414,6 +415,34 @@ class Scala(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a Scala declaration in an object."""
+        del variable_name
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return f"object Check {{\n{content}\n}}"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Scala declaration + assignment in an object."""
+        return Scala.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,

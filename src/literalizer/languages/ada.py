@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import textwrap
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -41,6 +42,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -266,6 +268,53 @@ class Ada(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap an Ada object declaration inside a procedure."""
+        del variable_name
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        indented = textwrap.indent(text=content, prefix="   ")
+        return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Ada declaration + assignment in nested procedures."""
+        del variable_name
+        declaration = prepend_body_preamble(
+            content=declaration,
+            body_preamble=body_preamble,
+        )
+        decl_indented = textwrap.indent(text=declaration, prefix="   ")
+        assign_indented = textwrap.indent(text=assignment, prefix="   ")
+        inner = (
+            "procedure Check_Declaration is\n"
+            f"{decl_indented}\n"
+            "begin\n"
+            "   null;\n"
+            "end Check_Declaration;\n"
+            "procedure Check_Assignment is\n"
+            "begin\n"
+            f"{assign_indented}\n"
+            "end Check_Assignment;"
+        )
+        inner_indented = textwrap.indent(text=inner, prefix="   ")
+        return (
+            f"procedure Check is\n{inner_indented}\n"
+            "begin\n   null;\nend Check;"
+        )
 
     def __init__(  # noqa: PLR0915
         self,

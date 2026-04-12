@@ -411,6 +411,31 @@ class Elm(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap an Elm value declaration in a module."""
+        del variable_name
+        preamble = "\n".join(body_preamble)
+        return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Elm declaration + assignment in a module."""
+        return Elm.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
+
     def __init__(  # noqa: PLR0915
         self,
         *,

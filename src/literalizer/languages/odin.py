@@ -52,6 +52,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -293,6 +294,33 @@ class Odin(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap an Odin declaration in a main procedure."""
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Odin declaration + assignment in a main procedure."""
+        return Odin.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,
