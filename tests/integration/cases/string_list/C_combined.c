@@ -1,28 +1,28 @@
 #include <stdbool.h>
 #include <stddef.h>
-typedef struct _CVal _CVal;
-typedef struct _CKV _CKV;
-struct _CVal {
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
     union {
         _Bool b;
         long long i;
         double f;
         const char *s;
-        const _CVal *a;
-        const _CKV *m;
+        const CVal *a;
+        const CKV *m;
     };
 };
-struct _CKV { const char *k; _CVal v; };
-void _check(void) {
-_CVal my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.s = "foo"}),
-    ((_CVal){.s = "bar"}),
-    ((_CVal){.s = "baz"}),
+struct CKV { const char *k; CVal v; };
+void check_(void) {
+CVal my_data = ((CVal){.a = (CVal[]){
+    ((CVal){.s = "foo"}),
+    ((CVal){.s = "bar"}),
+    ((CVal){.s = "baz"}),
 }});
-my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.s = "foo"}),
-    ((_CVal){.s = "bar"}),
-    ((_CVal){.s = "baz"}),
+my_data = ((CVal){.a = (CVal[]){
+    ((CVal){.s = "foo"}),
+    ((CVal){.s = "bar"}),
+    ((CVal){.s = "baz"}),
 }});
     (void)my_data;
 }

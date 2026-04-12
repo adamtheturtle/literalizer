@@ -54,18 +54,18 @@ if TYPE_CHECKING:
 
 @beartype
 def _format_c_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate ``_CVal`` union
+    """Wrap a formatted entry in the appropriate ``CVal`` union
     literal.
     """
     match original:
         case str() | bytes() | datetime.date():
-            return f"((_CVal){{.s = {formatted}}})"
+            return f"((CVal){{.s = {formatted}}})"
         case bool():
             return formatted
         case int():
-            return f"((_CVal){{.i = {formatted}}})"
+            return f"((CVal){{.i = {formatted}}})"
         case float():
-            return f"((_CVal){{.f = {formatted}}})"
+            return f"((CVal){{.f = {formatted}}})"
         case _:
             return formatted
 
@@ -74,7 +74,7 @@ def _format_c_entry(original: Value, formatted: str) -> str:
 def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format a C variable declaration."""
     wrapped = _format_c_entry(original=data, formatted=value)
-    return f"_CVal {name} = {wrapped};"
+    return f"CVal {name} = {wrapped};"
 
 
 @beartype
@@ -133,7 +133,7 @@ class C(metaclass=LanguageCls):
 
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_sequence_open(
-                open_str="((_CVal){.a = (_CVal[]){",
+                open_str="((CVal){.a = (CVal[]){",
             ),
             close="}})",
             supports_heterogeneity=True,
@@ -159,7 +159,7 @@ class C(metaclass=LanguageCls):
         """Set type options for C."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="((_CVal){.a = (_CVal[]){"),
+            set_open=fixed_set_open(open_str="((CVal){.a = (CVal[]){"),
             close="}})",
             empty_set=None,
             preamble_lines=(),
@@ -306,16 +306,16 @@ class C(metaclass=LanguageCls):
         """Initialize C language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "((_CVal){.s = NULL})"
-        self.true_literal = "((_CVal){.b = true})"
-        self.false_literal = "((_CVal){.b = false})"
+        self.null_literal = "((CVal){.s = NULL})"
+        self.true_literal = "((CVal){.b = true})"
+        self.false_literal = "((CVal){.b = false})"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = fmt
         self.set_format = set_format
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="((_CVal){.m = (_CKV[]){"),
+            dict_open=fixed_dict_open(open_str="((CVal){.m = (CKV[]){"),
             close="}})",
             format_entry=braced_dict_entry(
                 format_value=_format_c_entry,
@@ -356,7 +356,7 @@ class C(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="((_CVal){.m = (_CKV[]){",
+                open_str="((CVal){.m = (CKV[]){",
                 close="}})",
                 preamble_lines=(),
             )
@@ -380,19 +380,19 @@ class C(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = (
             "#include <stdbool.h>",
             "#include <stddef.h>",
-            "typedef struct _CVal _CVal;",
-            "typedef struct _CKV _CKV;",
-            "struct _CVal {",
+            "typedef struct CVal CVal;",
+            "typedef struct CKV CKV;",
+            "struct CVal {",
             "    union {",
             "        _Bool b;",
             "        long long i;",
             "        double f;",
             "        const char *s;",
-            "        const _CVal *a;",
-            "        const _CKV *m;",
+            "        const CVal *a;",
+            "        const CKV *m;",
             "    };",
             "};",
-            "struct _CKV { const char *k; _CVal v; };",
+            "struct CKV { const char *k; CVal v; };",
         )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

@@ -1,30 +1,30 @@
 #include <stdbool.h>
 #include <stddef.h>
-typedef struct _CVal _CVal;
-typedef struct _CKV _CKV;
-struct _CVal {
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
     union {
         _Bool b;
         long long i;
         double f;
         const char *s;
-        const _CVal *a;
-        const _CKV *m;
+        const CVal *a;
+        const CKV *m;
     };
 };
-struct _CKV { const char *k; _CVal v; };
-void _check(void) {
-_CVal my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.i = 1000000}),
-    ((_CVal){.i = -1234}),
-    ((_CVal){.i = 255}),
-    ((_CVal){.i = -10}),
+struct CKV { const char *k; CVal v; };
+void check_(void) {
+CVal my_data = ((CVal){.a = (CVal[]){
+    ((CVal){.i = 1000000}),
+    ((CVal){.i = -1234}),
+    ((CVal){.i = 255}),
+    ((CVal){.i = -10}),
 }});
-my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.i = 1000000}),
-    ((_CVal){.i = -1234}),
-    ((_CVal){.i = 255}),
-    ((_CVal){.i = -10}),
+my_data = ((CVal){.a = (CVal[]){
+    ((CVal){.i = 1000000}),
+    ((CVal){.i = -1234}),
+    ((CVal){.i = 255}),
+    ((CVal){.i = -10}),
 }});
     (void)my_data;
 }

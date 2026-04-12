@@ -1,24 +1,24 @@
 #include <stdbool.h>
 #include <stddef.h>
-typedef struct _CVal _CVal;
-typedef struct _CKV _CKV;
-struct _CVal {
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
     union {
         _Bool b;
         long long i;
         double f;
         const char *s;
-        const _CVal *a;
-        const _CKV *m;
+        const CVal *a;
+        const CKV *m;
     };
 };
-struct _CKV { const char *k; _CVal v; };
+struct CKV { const char *k; CVal v; };
 #include <math.h>
-void _check(void) {
-_CVal my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.f = INFINITY}),
-    ((_CVal){.f = -INFINITY}),
-    ((_CVal){.f = NAN}),
+void check_(void) {
+CVal my_data = ((CVal){.a = (CVal[]){
+    ((CVal){.f = INFINITY}),
+    ((CVal){.f = -INFINITY}),
+    ((CVal){.f = NAN}),
 }});
     (void)my_data;
 }
