@@ -73,7 +73,11 @@ runs:
       run: |-
         if [ "${{ github.event_name }}" = "pull_request" ] && [ "$CONFIG_CHANGED" != "true" ]; then
           # shellcheck disable=SC2086
-          for f in $LANG_FILES; do [ -f "$f" ] && printf '%s\0' "$f"; done
+          for f in $LANG_FILES; do
+            # Call golden files reference undefined names by design.
+            [[ "$f" == */call_*/* ]] && continue
+            [ -f "$f" ] && printf '%s\0' "$f"
+          done
         else
           # Build a find command from lang_patterns and exclude_patterns.
           # Each lang_pattern is a glob like "dir/**/*.ext"; extract the
@@ -96,7 +100,8 @@ runs:
             name_args+=("-name" "$name_part")
           done <<< "$LANG_PATTERNS"
 
-          exclude_args=()
+          # Call golden files reference undefined names by design.
+          exclude_args=("-not" "-path" "*/call_*/*")
           if [ -n "$EXCLUDE_PATTERNS" ]; then
             while IFS= read -r pattern; do
               [ -z "$pattern" ] && continue
