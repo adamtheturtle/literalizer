@@ -28,7 +28,9 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import format_integer_hex
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_percent,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -212,7 +214,7 @@ class Wren(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=format_string_backslash_percent)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
