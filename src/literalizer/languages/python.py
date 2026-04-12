@@ -774,8 +774,33 @@ class Python(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    wrap_for_syntax_check = staticmethod(wrap_noop)
-    combined_wrap_for_syntax_check = staticmethod(combined_wrap_noop)
+    @staticmethod
+    def wrap_for_syntax_check(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Python code for syntax checking (no-op)."""
+        return wrap_noop(
+            content=content,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
+
+    @staticmethod
+    def combined_wrap_for_syntax_check(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Python declaration + assignment for syntax checking."""
+        return combined_wrap_noop(
+            declaration=declaration,
+            assignment=assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,
