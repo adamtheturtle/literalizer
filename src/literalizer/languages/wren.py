@@ -344,7 +344,7 @@ class Wren(metaclass=LanguageCls):
         self.element_separator = ", "
         self.skip_null_dict_values = True
         self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
+        self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
