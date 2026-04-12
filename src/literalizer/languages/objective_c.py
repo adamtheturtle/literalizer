@@ -106,7 +106,7 @@ def _format_objc_bytes_base64(value: bytes) -> str:
 
 def _objc_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Objective-C stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"int {parts[0]}();",)
     root, method = parts[0], parts[1]

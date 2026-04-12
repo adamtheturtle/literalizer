@@ -82,7 +82,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 def _d_call_stub(name: str, /) -> tuple[str, ...]:
     """Return D stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"auto {parts[0]}(T...)(T args) {{ return 0; }}",)
     root, method = parts[0], parts[1]

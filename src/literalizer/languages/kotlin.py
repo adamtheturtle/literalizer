@@ -157,7 +157,7 @@ class _KotlinDictSpec:
 
 def _kotlin_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Kotlin stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"fun {parts[0]}(vararg a: Any?): Any? = null",)
     root, method = parts[0], parts[1]

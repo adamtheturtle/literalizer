@@ -80,7 +80,7 @@ class _CSharpDictSpec:
 
 def _csharp_call_stub(name: str, /) -> tuple[str, ...]:
     """Return C# stub declarations for a call expression name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"static dynamic {parts[0]}(params dynamic[] a) => null;",)
     root = parts[0]

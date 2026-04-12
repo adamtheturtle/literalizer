@@ -94,7 +94,7 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
 
 def _rust_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Rust stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"fn {parts[0]}<T>(_: T) {{}}",)
     root, method = parts[0], parts[1]

@@ -118,7 +118,7 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
 
 def _go_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Go stub declarations for a call expression name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"func {parts[0]}(args ...any) any {{ return nil }}",)
     root, method = parts[0], parts[1]

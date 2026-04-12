@@ -236,7 +236,7 @@ def _format_variable_declaration(
 
 def _cpp_call_stub(name: str, /) -> tuple[str, ...]:
     """Return C++ stub declarations for a call expression name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"auto {parts[0]}(auto...) {{ return 0; }}",)
     root, method = parts[0], parts[1]

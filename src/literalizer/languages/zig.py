@@ -125,7 +125,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 def _zig_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Zig stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"fn {parts[0]}(a: anytype) void {{}}",)
     root, method = parts[0], parts[1]

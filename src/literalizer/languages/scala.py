@@ -132,7 +132,7 @@ class _ScalaDictSpec:
 
 def _scala_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}(a: Any*): Any = null",)
     root, method = parts[0], parts[1]

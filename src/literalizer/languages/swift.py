@@ -100,7 +100,7 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
 
 def _swift_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"func {parts[0]}(_ a: Any...) -> Any {{ 0 }}",)
     root, method = parts[0], parts[1]

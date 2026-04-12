@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 
 def _crystal_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}(*a); end",)
     root, method = parts[0], parts[1]

@@ -90,7 +90,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 def _ada_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Ada stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (
             f"   function {parts[0]} (A : Integer) return Integer is (A);",

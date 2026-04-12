@@ -2352,7 +2352,10 @@ def _extract_call_names(
     names: list[str] = [call_function]
     if call_wrapper is not None:
         # Extract the function name from wrapper like "print($0)".
-        wrapper_match = re.match(r"(\w[\w.]*)\s*\(", call_wrapper)
+        wrapper_match = re.match(
+            pattern=r"(\w[\w.]*)\s*\(",
+            string=call_wrapper,
+        )
         if wrapper_match:
             names.append(wrapper_match.group(1))
     return names

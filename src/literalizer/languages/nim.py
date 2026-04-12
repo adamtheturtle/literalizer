@@ -124,7 +124,7 @@ def _make_variable_assignment(
 
 def _nim_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Nim stub declarations for a call name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"proc {parts[0]}(a: varargs[string]) {{.used.}} = discard",)
     root, method = parts[0], parts[1]

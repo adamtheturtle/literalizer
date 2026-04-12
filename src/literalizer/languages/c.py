@@ -88,7 +88,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 def _c_call_stub(name: str, /) -> tuple[str, ...]:
     """Return C stub declarations for a call expression name."""
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"int {parts[0]}();",)
     root, method = parts[0], parts[1]
