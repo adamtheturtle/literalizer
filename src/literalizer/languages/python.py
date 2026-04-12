@@ -58,9 +58,9 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    combined_wrap_noop,
     date_scalar_preamble,
-    wrap_noop,
+    wrap_combined_in_file_noop,
+    wrap_in_file_noop,
 )
 from literalizer._types import Value
 
@@ -775,27 +775,27 @@ class Python(metaclass=LanguageCls):
     line_endings = LineEndings
 
     @staticmethod
-    def wrap_for_syntax_check(
+    def wrap_in_file(
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap Python code for syntax checking (no-op)."""
-        return wrap_noop(
+        """Wrap Python code in a valid file (no-op)."""
+        return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
 
     @staticmethod
-    def combined_wrap_for_syntax_check(
+    def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap Python declaration + assignment for syntax checking."""
-        return combined_wrap_noop(
+        """Wrap Python declaration + assignment in a valid file."""
+        return wrap_combined_in_file_noop(
             declaration=declaration,
             assignment=assignment,
             variable_name=variable_name,

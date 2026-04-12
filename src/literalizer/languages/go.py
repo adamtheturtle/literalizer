@@ -372,14 +372,12 @@ class Go(metaclass=LanguageCls):
     line_endings = LineEndings
 
     @staticmethod
-    def wrap_for_syntax_check(
+    def wrap_in_file(
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Go declaration in ``func main()`` for syntax
-        checking.
-        """
+        """Wrap a Go declaration in ``func main()``."""
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -387,14 +385,14 @@ class Go(metaclass=LanguageCls):
         return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
 
     @staticmethod
-    def combined_wrap_for_syntax_check(
+    def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap Go declaration + assignment for syntax checking."""
-        return Go.wrap_for_syntax_check(
+        """Wrap Go declaration + assignment in ``func main()``."""
+        return Go.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,

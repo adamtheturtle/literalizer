@@ -684,8 +684,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Python.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Python,
-        wrap=literalizer.languages.Python.wrap_for_syntax_check,
-        combined_wrap=literalizer.languages.Python.combined_wrap_for_syntax_check,
+        wrap=literalizer.languages.Python.wrap_in_file,
+        combined_wrap=literalizer.languages.Python.wrap_combined_in_file,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.JavaScript.__name__: _LanguageConfig(
@@ -732,8 +732,8 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     ),
     literalizer.languages.Go.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Go,
-        wrap=literalizer.languages.Go.wrap_for_syntax_check,
-        combined_wrap=literalizer.languages.Go.combined_wrap_for_syntax_check,
+        wrap=literalizer.languages.Go.wrap_in_file,
+        combined_wrap=literalizer.languages.Go.wrap_combined_in_file,
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Java.__name__: _LanguageConfig(

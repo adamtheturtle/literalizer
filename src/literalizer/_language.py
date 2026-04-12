@@ -250,6 +250,23 @@ class LanguageCls(type):
     supports_default_ordered_map_value_type: bool
     supports_non_printable_ascii_dict_keys: bool
 
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a code snippet in a complete, valid file."""
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a declaration and assignment in a complete, valid file."""
+
 
 @runtime_checkable
 class Language(Protocol):  # pylint: disable=too-many-public-methods
@@ -719,27 +736,27 @@ def prepend_body_preamble(
 
 
 @beartype
-def wrap_noop(
+def wrap_in_file_noop(
     content: str,
     variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
-    """Default syntax-check wrapper that only prepends body preamble."""
+    """Default ``wrap_in_file`` that only prepends body preamble."""
     del variable_name  # unused
     return prepend_body_preamble(content=content, body_preamble=body_preamble)
 
 
 @beartype
-def combined_wrap_noop(
+def wrap_combined_in_file_noop(
     declaration: str,
     assignment: str,
     variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
-    """Default combined syntax-check wrapper: join with newline, prepend
+    """Default ``wrap_combined_in_file``: join with newline, prepend
     preamble.
     """
-    return wrap_noop(
+    return wrap_in_file_noop(
         content=declaration + "\n" + assignment,
         variable_name=variable_name,
         body_preamble=body_preamble,
