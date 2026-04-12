@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := {
+mut my_data := {
 	'name': 'Alice',
 	'tags': [true, 42, 'apple'],
 }

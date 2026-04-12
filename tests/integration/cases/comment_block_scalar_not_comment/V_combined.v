@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := {
+mut my_data := {
 	'description': '# not a comment\n',
 	'name': 'foo',
 }

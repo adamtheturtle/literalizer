@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := {
+mut my_data := {
 	'message': 'no comment here',
 }
 my_data = {

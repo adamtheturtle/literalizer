@@ -1294,9 +1294,9 @@ jobs:
           git clone --depth=1 https://github.com/vlang/v /tmp/vlang
           cd /tmp/vlang && make
           sudo ln -s /tmp/vlang/v /usr/local/bin/v
-      - name: Run V files
+      - name: Check V syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 v fmt -verify < /tmp/files-to-lint
 
   completion-lint:
     needs:

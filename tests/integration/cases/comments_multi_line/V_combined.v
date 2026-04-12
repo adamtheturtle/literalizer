@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := [
+mut my_data := [
 	// line 1
 	// line 2
 	'a',

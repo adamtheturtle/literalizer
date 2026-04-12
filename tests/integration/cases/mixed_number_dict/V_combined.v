@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := {
+mut my_data := {
 	'a': 1,
 	'b': 2.5,
 	'c': 3,

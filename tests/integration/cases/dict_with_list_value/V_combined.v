@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := {
+mut my_data := {
 	'name': 'Alice',
 	'scores': [10, 20, 30],
 }

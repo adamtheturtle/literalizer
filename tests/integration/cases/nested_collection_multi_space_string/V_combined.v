@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := [
+mut my_data := [
 	{'key': 'hello   world', 'value': 1},
 ]
 my_data = [

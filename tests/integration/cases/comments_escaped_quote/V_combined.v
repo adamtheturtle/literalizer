@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := {
+mut my_data := {
 	'key': 'value " # not a comment',  // real
 }
 my_data = {

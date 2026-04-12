@@ -167,7 +167,7 @@ class V(metaclass=LanguageCls):
 
         ASSIGN = DeclarationStyleConfig(
             formatter=variable_formatter(template="{name} := {value}"),
-            supports_redefinition=True,
+            supports_redefinition=False,
         )
         MUT = DeclarationStyleConfig(
             formatter=variable_formatter(template="mut {name} := {value}"),

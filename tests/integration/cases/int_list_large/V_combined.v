@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := [
+mut my_data := [
 	1000000,
 	-1234,
 	255,

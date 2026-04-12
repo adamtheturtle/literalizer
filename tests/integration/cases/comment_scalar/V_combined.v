@@ -1,7 +1,7 @@
 
 fn main() {
 // note
-my_data := 42
+mut my_data := 42
 // note
 my_data = 42
 	_ = my_data

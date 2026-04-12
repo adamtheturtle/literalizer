@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := [
+mut my_data := [
 	{'x': 1, 'y': 2.5},
 	{'x': 3, 'y': 4.0},
 ]

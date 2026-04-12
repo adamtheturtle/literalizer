@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := [
+mut my_data := [
 	// before apple
 	'apple',
 	'banana',  // banana inline

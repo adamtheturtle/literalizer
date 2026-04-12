@@ -1,6 +1,6 @@
 
 fn main() {
-my_data := [
+mut my_data := [
 	'C:\\path\\to\\file',
 	'back\\\\slash',
 	'hello \\"world\\"',

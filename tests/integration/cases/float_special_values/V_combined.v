@@ -1,7 +1,7 @@
 import math
 
 fn main() {
-my_data := [
+mut my_data := [
 	math.inf,
 	-math.inf,
 	math.nan,
