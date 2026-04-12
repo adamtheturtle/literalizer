@@ -73,19 +73,6 @@ prefix, then wraps the result in single quotes.
 Example: ``hello 'world'`` -> ``'hello \'world\''``.
 """
 
-format_string_backslash_single_dollar = _build_backslash_formatter(
-    quote_char="'",
-    extra_replacements=[("$", "\\$")],
-)
-r"""Format a string using backslash escaping with single quotes,
-including ``$``.
-
-Escapes backslashes, single quotes, newlines, tabs, and dollar signs
-with a backslash prefix, then wraps the result in single quotes.
-
-Example: ``price $10`` -> ``'price \$10'``.
-"""
-
 format_string_backslash_dollar = _build_backslash_formatter(
     quote_char='"',
     extra_replacements=[("$", "\\$")],

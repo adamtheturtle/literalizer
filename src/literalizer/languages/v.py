@@ -36,7 +36,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_single_dollar,
+    format_string_backslash_dollar_single,
 )
 from literalizer._language import (
     CommentConfig,
@@ -346,7 +346,7 @@ class V(metaclass=LanguageCls):
             datetime_format
         )
         self.format_string: Callable[[str], str] = (
-            format_string_backslash_single_dollar
+            format_string_backslash_dollar_single
         )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
