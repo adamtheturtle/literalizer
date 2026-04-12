@@ -9,6 +9,8 @@ from pygments.lexers import find_lexer_class_by_name
 
 import literalizer.languages
 from literalizer import (
+    CallStyleConfig,
+    CallStyleKind,
     InputFormat,
     Language,
     literalize,
@@ -805,6 +807,31 @@ def test_literalize_call_per_element_false() -> None:
     )
     assert "process(" in result.code
     assert "1," in result.code
+
+
+def test_literalize_call_missing_keyword_separator_raises() -> None:
+    """Literalize_call raises ValueError for keyword style without
+    separator.
+    """
+
+    class BadLang(Python):
+        """Python variant with missing keyword_separator."""
+
+    lang = BadLang()
+    lang.call_style_config = CallStyleConfig(
+        kind=CallStyleKind.KEYWORD,
+    )
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="keyword_separator",
+    ):
+        literalize_call(
+            source="- [1]",
+            input_format=InputFormat.YAML,
+            language=lang,
+            call_function="f",
+            call_params=["x"],
+        )
 
 
 def test_literalize_call_per_element_non_list_raises() -> None:

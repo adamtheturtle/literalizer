@@ -1754,21 +1754,26 @@ def _format_call_args(
     ]
     sep = language.element_separator
 
-    kw_sep = style.keyword_separator
     match style.kind:
         case CallStyleKind.POSITIONAL:
             inner = sep.join(formatted)
-        case CallStyleKind.KEYWORD:
-            inner = sep.join(
+        case CallStyleKind.KEYWORD | CallStyleKind.OBJECT:
+            kw_sep = style.keyword_separator
+            if kw_sep is None:
+                msg = (
+                    f"keyword_separator must be set for "
+                    f"{style.kind.value!r} call style"
+                )
+                raise ValueError(msg)
+            named = sep.join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
-        case CallStyleKind.OBJECT:
-            entries = sep.join(
-                f"{name}{kw_sep}{val}"
-                for name, val in zip(params, formatted, strict=True)
+            inner = (
+                f"{{ {named} }}"
+                if style.kind is CallStyleKind.OBJECT
+                else named
             )
-            inner = f"{{ {entries} }}"
         case _ as unreachable:
             assert_never(unreachable)
 
