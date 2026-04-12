@@ -325,7 +325,7 @@ class Java(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP_OF_ENTRIES = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="Map.ofEntries("),
+            dict_open=fixed_dict_open(open_str="Map.ofEntries("),
             close=")",
             format_entry=dict_entry_with_template(
                 template="Map.entry({key}, {value})",
@@ -336,7 +336,7 @@ class Java(metaclass=LanguageCls):
             narrowed_open=None,
         )
         HASH_MAP = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="new HashMap<>(Map.ofEntries("),
+            dict_open=fixed_dict_open(open_str="new HashMap<>(Map.ofEntries("),
             close="))",
             format_entry=dict_entry_with_template(
                 template="Map.entry({key}, {value})",

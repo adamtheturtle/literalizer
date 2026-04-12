@@ -267,7 +267,7 @@ class Matlab(metaclass=LanguageCls):
         """Dict/map format options."""
 
         STRUCT = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="struct("),
+            dict_open=fixed_dict_open(open_str="struct("),
             close=")",
             format_entry=_format_matlab_dict_entry,
             empty_dict="struct()",
@@ -275,7 +275,7 @@ class Matlab(metaclass=LanguageCls):
             narrowed_open=None,
         )
         CONTAINERS_MAP = DictFormatConfig(
-            open_fn=_containers_map_open,
+            dict_open=_containers_map_open,
             narrowed_open=None,
             close="})",
             format_entry=_format_containers_map_entry,

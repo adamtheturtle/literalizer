@@ -199,6 +199,9 @@ class Gleam(metaclass=LanguageCls):
               e.g. ``GList([GInt(1), GInt(2), GInt(3)])``.
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``#(GInt(1), GInt(2), GInt(3))``.
+
+        type_name: Name of the generated custom type.  Defaults to
+            ``"GVal"``.
     """
 
     extension = ".gleam"
@@ -471,6 +474,7 @@ class Gleam(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.NONE,
         indent: str = "  ",
+        type_name: str = "GVal",
     ) -> None:
         """Initialize Gleam language specification."""
         self.variable_type_hints = variable_type_hints
@@ -484,7 +488,7 @@ class Gleam(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="GDict(["),
+            dict_open=fixed_dict_open(open_str="GDict(["),
             close="])",
             format_entry=_gleam_dict_entry,
             empty_dict=None,
@@ -562,15 +566,15 @@ class Gleam(metaclass=LanguageCls):
                 set,
             ),
             (
-                "pub type GVal {\n"
+                f"pub type {type_name} {{\n"
                 "  GNull\n"
                 "  GBool(Bool)\n"
                 "  GInt(Int)\n"
                 "  GFloat(Float)\n"
                 "  GStr(String)\n"
-                "  GList(List(GVal))\n"
-                "  GDict(List(#(String, GVal)))\n"
-                "  GSet(List(GVal))\n"
+                f"  GList(List({type_name}))\n"
+                f"  GDict(List(#(String, {type_name})))\n"
+                f"  GSet(List({type_name}))\n"
                 "}",
             ),
         )

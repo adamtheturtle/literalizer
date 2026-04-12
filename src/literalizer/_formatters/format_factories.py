@@ -178,7 +178,7 @@ def dict_format_factory(
         """Build a ``DictFormatConfig`` with the given default type."""
         fmt_kwargs = {"type": default_type, "key_type": default_key_type}
         return DictFormatConfig(
-            open_fn=fixed_dict_open(
+            dict_open=fixed_dict_open(
                 open_str=open_template.format(**fmt_kwargs),
             ),
             close=close,

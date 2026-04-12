@@ -1,27 +1,27 @@
 #include <stdbool.h>
 #include <stddef.h>
-typedef struct _CVal _CVal;
-typedef struct _CKV _CKV;
-struct _CVal {
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
     union {
         _Bool b;
         long long i;
         double f;
         const char *s;
-        const _CVal *a;
-        const _CKV *m;
+        const CVal *a;
+        const CKV *m;
     };
 };
-struct _CKV { const char *k; _CVal v; };
-void _check(void) {
-_CVal my_data = ((_CVal){.a = (_CVal[]){
-    ((_CVal){.s = "C:\\path\\to\\file"}),
-    ((_CVal){.s = "back\\\\slash"}),
-    ((_CVal){.s = "hello \\\"world\\\""}),
-    ((_CVal){.s = "path\\to \"# file"}),
-    ((_CVal){.s = "trailing\\"}),
-    ((_CVal){.s = "both \"quotes''' here"}),
-    ((_CVal){.s = "line1\\nline2\nwith newline"}),
+struct CKV { const char *k; CVal v; };
+void check_(void) {
+CVal my_data = ((CVal){.a = (CVal[]){
+    ((CVal){.s = "C:\\path\\to\\file"}),
+    ((CVal){.s = "back\\\\slash"}),
+    ((CVal){.s = "hello \\\"world\\\""}),
+    ((CVal){.s = "path\\to \"# file"}),
+    ((CVal){.s = "trailing\\"}),
+    ((CVal){.s = "both \"quotes''' here"}),
+    ((CVal){.s = "line1\\nline2\nwith newline"}),
 }});
     (void)my_data;
 }

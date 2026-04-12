@@ -227,7 +227,7 @@ class JavaScript(metaclass=LanguageCls):
         """Dict/map format options."""
 
         OBJECT = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="{"),
+            dict_open=fixed_dict_open(open_str="{"),
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",
@@ -238,7 +238,7 @@ class JavaScript(metaclass=LanguageCls):
             narrowed_open=None,
         )
         MAP = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="new Map(["),
+            dict_open=fixed_dict_open(open_str="new Map(["),
             close="])",
             format_entry=dict_entry_with_template(
                 template="[{key}, {value}]",

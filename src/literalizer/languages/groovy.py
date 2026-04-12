@@ -288,7 +288,7 @@ class Groovy(metaclass=LanguageCls):
         )
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="["),
+            dict_open=fixed_dict_open(open_str="["),
             close="]",
             format_entry=dict_entry_with_separator(
                 separator=": ",

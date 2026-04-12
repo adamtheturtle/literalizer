@@ -59,6 +59,9 @@ jobs:
       - name: Check Bash syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 bash -n < /tmp/files-to-lint
+      - name: Run Bash files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-to-lint
 
   lint-ruby:
     runs-on: ubuntu-latest
@@ -73,6 +76,9 @@ jobs:
       - name: Check Ruby syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-to-lint
+      - name: Run Ruby files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 ruby < /tmp/files-to-lint
 
   lint-gleam:
     runs-on: ubuntu-latest
@@ -117,6 +123,9 @@ jobs:
       - name: Check Go compilation
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
+      - name: Run Go files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 go run < /tmp/files-to-lint
 
   lint-groovy:
     runs-on: ubuntu-latest
@@ -154,6 +163,9 @@ jobs:
       - name: Check JavaScript syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-to-lint
+      - name: Run JavaScript files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 node < /tmp/files-to-lint
 
   lint-json5:
     runs-on: ubuntu-latest
@@ -246,6 +258,10 @@ jobs:
       - name: Check C syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint
+      - name: Run clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --checks='-*,bugprone-reserved-identifier'
+          --warnings-as-errors='*' --extra-arg=-std=c11 < /tmp/files-to-lint
 
   lint-cobol:
     runs-on: ubuntu-latest
@@ -311,7 +327,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.rs
-      - name: Check Rust syntax
+      # Compile and run in one step because the compiled binary lives in a
+      # temp directory that is cleaned up when the step exits.
+      - name: Check Rust syntax and run binaries
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
@@ -326,6 +344,7 @@ jobs:
               -L "dependency=$deps" \
               --extern "chrono=$chrono_rlib" \
               "$f" -o "$tmpdir/out" 2>&1 || exit 1
+            "$tmpdir/out" || exit 1
           done < /tmp/files-to-lint
 
   lint-swift:
@@ -1217,6 +1236,10 @@ jobs:
       - name: Check Objective-C syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only < /tmp/files-to-lint
+      - name: Run clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy --checks='-*,bugprone-reserved-identifier'
+          --warnings-as-errors='*' < /tmp/files-to-lint
 
   completion-lint:
     needs:

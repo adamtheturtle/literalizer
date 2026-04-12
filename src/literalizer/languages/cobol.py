@@ -446,7 +446,7 @@ class Cobol(metaclass=LanguageCls):
         self.false_literal = '"FALSE"'
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str=""),
+            dict_open=fixed_dict_open(open_str=""),
             close="",
             format_entry=_format_cobol_dict_entry,
             empty_dict="05 FILLER PIC X(1) VALUE SPACES.",

@@ -86,8 +86,13 @@ def _format_datetime_haskell(value: datetime.datetime) -> str:
     )
 
 
-def _num_instance(*, has_int: bool, has_float: bool) -> str:
-    """Build the ``Num Val`` instance with only relevant constructors."""
+def _num_instance(
+    *,
+    has_int: bool,
+    has_float: bool,
+    type_name: str,
+) -> str:
+    """Build the ``Num`` instance with only relevant constructors."""
     if has_int:
         from_integer = "    fromInteger = HInt"
     else:
@@ -100,7 +105,7 @@ def _num_instance(*, has_int: bool, has_float: bool) -> str:
     negate_parts.append('    negate _ = error "not implemented"')
     return "\n".join(
         [
-            "instance Num Val where",
+            f"instance Num {type_name} where",
             from_integer,
             '    a + b = error "not implemented"',
             '    a * b = error "not implemented"',
@@ -149,14 +154,15 @@ def _build_scalar_body_preamble(
     datetime_format: enum.Enum,
     is_string_import: str,
     is_string_instance: str,
+    type_name: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
     The callable receives the set of types present in the data and the
-    original data value, and returns only the imports, ``data Val``
-    constructors, and typeclass instances that are actually needed.
+    original data value, and returns only the imports, the type
+    declaration, and typeclass instances that are actually needed.
 
-    The returned lines are ordered: imports first, then ``data Val``,
+    The returned lines are ordered: imports first, then the data type,
     then typeclass instances.
     """
     include_hdate = date_format.value.type_produced is datetime.date
@@ -176,9 +182,12 @@ def _build_scalar_body_preamble(
                 (frozenset({int}), "HInt Integer"),
                 (frozenset({float}), "HFloat Double"),
                 (frozenset({str, bytes}), "HStr String"),
-                (frozenset({list}), "HList [Val]"),
-                (frozenset({dict, ordereddict}), "HMap [(String, Val)]"),
-                (frozenset({set}), "HSet [Val]"),
+                (frozenset({list}), f"HList [{type_name}]"),
+                (
+                    frozenset({dict, ordereddict}),
+                    f"HMap [(String, {type_name})]",
+                ),
+                (frozenset({set}), f"HSet [{type_name}]"),
             )
             if types & type_set
         ]
@@ -220,17 +229,21 @@ def _build_scalar_body_preamble(
         has_int = int in types
         if has_float or has_int:
             instances.append(
-                _num_instance(has_int=has_int, has_float=has_float),
+                _num_instance(
+                    has_int=has_int,
+                    has_float=has_float,
+                    type_name=type_name,
+                ),
             )
         if has_float:
             instances.append(
-                "instance Fractional Val where\n"
+                f"instance Fractional {type_name} where\n"
                 "    fromRational r = HFloat (realToFrac r)\n"
                 '    a / b = error "not implemented"'
             )
 
         lines: list[str] = imports
-        lines.append("data Val = " + " | ".join(data_val_parts))
+        lines.append(f"data {type_name} = " + " | ".join(data_val_parts))
         lines.extend(instances)
         return tuple(lines)
 
@@ -296,6 +309,9 @@ class Haskell(metaclass=LanguageCls):
               Requires the ``time`` package.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        type_name: Name of the generated custom type.  Defaults to
+            ``"Val"``.
     """
 
     extension = ".hs"
@@ -535,6 +551,7 @@ class Haskell(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        type_name: str = "Val",
     ) -> None:
         """Initialize Haskell language specification."""
         self.variable_type_hints = variable_type_hints
@@ -548,7 +565,7 @@ class Haskell(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="HMap ["),
+            dict_open=fixed_dict_open(open_str="HMap ["),
             close="]",
             format_entry=tuple_dict_entry(
                 format_value=passthrough_sequence_entry
@@ -605,7 +622,12 @@ class Haskell(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
         _base_declaration = declaration_style.value.formatter
-        _sequence_declared_type = sequence_format.value.declared_type
+        _raw_declared = sequence_format.value.declared_type
+        _sequence_declared_type = (
+            _raw_declared.replace("Val", type_name)
+            if _raw_declared is not None
+            else None
+        )
 
         @beartype
         def _haskell_declaration(name: str, value: str, data: Value) -> str:
@@ -615,7 +637,7 @@ class Haskell(metaclass=LanguageCls):
                 if _sequence_declared_type is None:
                     return base
                 return f"{name} :: {_sequence_declared_type}\n{base}"
-            return f"{name} :: Val\n{base}"
+            return f"{name} :: {type_name}\n{base}"
 
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _haskell_declaration
@@ -645,8 +667,9 @@ class Haskell(metaclass=LanguageCls):
             datetime_format=datetime_format,
             is_string_import="import Data.String (IsString(fromString))",
             is_string_instance=(
-                "instance IsString Val where\n    fromString = HStr"
+                f"instance IsString {type_name} where\n    fromString = HStr"
             ),
+            type_name=type_name,
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()

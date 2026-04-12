@@ -90,13 +90,18 @@ def _build_fsharp_declaration(
     *,
     template: str,
     sequence_declared_type: str,
+    scalar_declared_type: str,
 ) -> Callable[[str, str, Value], str]:
     """Build an F# variable declaration/assignment formatter."""
 
     @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Format a variable declaration or assignment."""
-        decl_type = sequence_declared_type if isinstance(data, list) else "Val"
+        decl_type = (
+            sequence_declared_type
+            if isinstance(data, list)
+            else scalar_declared_type
+        )
         wrapped = _format_fsharp_entry(original=data, formatted=value)
         return template.format(
             name=name,
@@ -121,6 +126,9 @@ class FSharp(metaclass=LanguageCls):
 
             * ``datetime_formats.FSHARP`` — ``System.DateTime(...)`` call,
               e.g. ``System.DateTime(2024, 1, 15, 12, 30, 0)``.
+
+        type_name: Name of the generated custom type.  Defaults to
+            ``"Val"``.
     """
 
     extension = ".fs"
@@ -368,6 +376,7 @@ class FSharp(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        type_name: str = "Val",
     ) -> None:
         """Initialize FSharp language specification."""
         self.variable_type_hints = variable_type_hints
@@ -381,7 +390,7 @@ class FSharp(metaclass=LanguageCls):
         self.set_format_config: SetFormatConfig = set_format.value
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="FMap ["),
+            dict_open=fixed_dict_open(open_str="FMap ["),
             close="]",
             format_entry=tuple_dict_entry(
                 format_value=_format_fsharp_entry,
@@ -430,7 +439,12 @@ class FSharp(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
-        _sequence_declared_type = sequence_format.value.declared_type or "Val"
+        _raw_declared = sequence_format.value.declared_type
+        _sequence_declared_type = (
+            _raw_declared.replace("Val", type_name)
+            if _raw_declared is not None
+            else type_name
+        )
         _keyword = (
             "let mutable"
             if declaration_style.value.supports_redefinition
@@ -442,12 +456,14 @@ class FSharp(metaclass=LanguageCls):
                     f"{_keyword} {{name}}: {{declared_type}} = {{wrapped}}"
                 ),
                 sequence_declared_type=_sequence_declared_type,
+                scalar_declared_type=type_name,
             )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _build_fsharp_declaration(
                 template="let {name}: {declared_type} = {wrapped}",
                 sequence_declared_type=_sequence_declared_type,
+                scalar_declared_type=type_name,
             )
         )
         self.element_separator = "; "
@@ -457,7 +473,7 @@ class FSharp(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        _header = "type Val ="
+        _header = f"type {type_name} ="
         _f_str = "    | FStr of string"
         self.scalar_body_preamble: dict[
             type,
@@ -469,10 +485,13 @@ class FSharp(metaclass=LanguageCls):
             float: (_header, "    | FFloat of float"),
             str: (_header, _f_str),
             bytes: (_header, _f_str),
-            list: (_header, "    | FList of Val list"),
-            dict: (_header, "    | FMap of (string * Val) list"),
-            ordereddict: (_header, "    | FMap of (string * Val) list"),
-            set: (_header, "    | FSet of Val list"),
+            list: (_header, f"    | FList of {type_name} list"),
+            dict: (_header, f"    | FMap of (string * {type_name}) list"),
+            ordereddict: (
+                _header,
+                f"    | FMap of (string * {type_name}) list",
+            ),
+            set: (_header, f"    | FSet of {type_name} list"),
             datetime.date: (
                 _header,
                 _f_str,

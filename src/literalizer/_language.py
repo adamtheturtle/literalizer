@@ -127,7 +127,7 @@ class CommentConfig:
 class DictFormatConfig:
     """Configuration for dict formatting."""
 
-    open_fn: Callable[[dict[str, Value]], str]
+    dict_open: Callable[[dict[str, Value]], str]
     close: str
     format_entry: Callable[[str, Value, str], str]
     empty_dict: str | None

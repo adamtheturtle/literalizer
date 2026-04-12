@@ -333,7 +333,7 @@ class Lua(metaclass=LanguageCls):
             format_value=passthrough_sequence_entry,
         )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="{"),
+            dict_open=fixed_dict_open(open_str="{"),
             close="}",
             format_entry=lua_dict_entry,
             empty_dict=None,

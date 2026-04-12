@@ -227,7 +227,7 @@ class Julia(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DICT = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="Dict("),
+            dict_open=fixed_dict_open(open_str="Dict("),
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" => ",
@@ -238,7 +238,7 @@ class Julia(metaclass=LanguageCls):
             narrowed_open=None,
         )
         ORDERED = DictFormatConfig(
-            open_fn=fixed_dict_open(open_str="OrderedDict("),
+            dict_open=fixed_dict_open(open_str="OrderedDict("),
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" => ",

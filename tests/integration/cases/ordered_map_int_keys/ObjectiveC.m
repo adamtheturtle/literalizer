@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void _check(void) {
+void check_(void) {
 id my_data = @{
     @"1": @"one",
     @"2": @"two",
