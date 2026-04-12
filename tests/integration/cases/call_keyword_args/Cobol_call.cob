@@ -1,4 +1,10 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
 print(throttler.check("user_1"
 1000.0))
 print(throttler.check("user_2"
 2000.5))
+PROCEDURE DIVISION.
+    STOP RUN.

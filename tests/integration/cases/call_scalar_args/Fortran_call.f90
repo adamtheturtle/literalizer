@@ -14,6 +14,10 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-process(value='hello')
-process(value=42)
-process(value=fbool(.true.))
+program check
+  use fval_m
+  implicit none
+  process(value='hello')
+  process(value=42)
+  process(value=fbool(.true.))
+end program check

@@ -9,6 +9,9 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-process("hello")
-process(42)
-process(.{ .bool = true })
+pub fn main() void {
+    process("hello")
+    process(42)
+    process(.{ .bool = true })
+    _ = my_data;
+}

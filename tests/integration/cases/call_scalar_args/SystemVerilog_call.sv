@@ -9,6 +9,10 @@ typedef struct {
     string k;
     _VVal v;
 } _VKV;
+module check;
+initial begin
 process("hello")
 process(42)
 process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""})
+end
+endmodule

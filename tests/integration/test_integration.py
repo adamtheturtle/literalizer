@@ -2361,7 +2361,10 @@ def test_call_golden_file(
         call_wrapper=config.call_wrapper,
         per_element=config.per_element,
     )
-    wrapped = result.bare_code
+    variable_name = lang_config.wrap_variable_name or ""
+    wrapped = lang_config.wrap(
+        result.bare_code, variable_name, result.body_preamble
+    )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     golden_name = f"{call_case.lang_name}_call"
     file_regression.check(

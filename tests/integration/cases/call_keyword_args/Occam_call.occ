@@ -10,5 +10,10 @@ MOBILE DATA TYPE LIT IS
     lit.pair ; MOBILE []BYTE ; MOBILE LIT
     lit.set ; MOBILE []MOBILE LIT
 :
-print(throttler.check("user_1", 1000.0))
-print(throttler.check("user_2", 2000.5))
+
+PROC check ()
+  print(throttler.check("user_1", 1000.0))
+  print(throttler.check("user_2", 2000.5))
+  SEQ
+    SKIP
+:

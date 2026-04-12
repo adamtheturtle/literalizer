@@ -1,4 +1,6 @@
 Imports System.Collections.Generic
-process(value:="hello")
-process(value:=42)
-process(value:=True)
+Module Check
+    process(value:="hello")
+    process(value:=42)
+    process(value:=True)
+End Module

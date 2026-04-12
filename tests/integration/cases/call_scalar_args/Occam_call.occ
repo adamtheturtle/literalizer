@@ -10,6 +10,11 @@ MOBILE DATA TYPE LIT IS
     lit.pair ; MOBILE []BYTE ; MOBILE LIT
     lit.set ; MOBILE []MOBILE LIT
 :
-process("hello")
-process(42)
-process(MOBILE LIT(lit.bool; TRUE))
+
+PROC check ()
+  process("hello")
+  process(42)
+  process(MOBILE LIT(lit.bool; TRUE))
+  SEQ
+    SKIP
+:
