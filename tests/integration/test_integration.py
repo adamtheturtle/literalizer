@@ -1924,7 +1924,7 @@ def _build_type_name_variants() -> Iterable[_Variant]:
 
     These languages emit a custom algebraic data type in their body
     preamble (e.g. ``data Val = …`` in Haskell).  The ``type_name``
-    constructor parameter lets users customise that name.
+    constructor parameter lets users customize that name.
     """
     custom_names: dict[str, str] = {
         "Elm": "JsonVal",
