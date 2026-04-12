@@ -12,7 +12,7 @@ struct CVal {
         const CKV *m;
     };
 };
-struct CKV { const char *k; CVal v; };  // NOLINT(altera-struct-pack-align)
+struct CKV { const char *k; CVal v; };
 static void check_(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.a = (CVal[]){((CVal){.f = 1.500000}), ((CVal){.f = 2.500000})}}),

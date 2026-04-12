@@ -5,8 +5,8 @@
 #include <map>
 namespace {
 struct Any {
-    template<class T> Any(T&& /*unused*/) noexcept {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions,bugprone-forwarding-reference-overload)
-    Any(std::initializer_list<Any> /*unused*/) noexcept {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    template<class T> Any(T&& /*unused*/) noexcept {}
+    Any(std::initializer_list<Any> /*unused*/) noexcept {}
 };
 }  // namespace
 static void check_() {

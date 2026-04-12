@@ -12,7 +12,7 @@ struct CVal {
         const CKV *m;
     };
 };
-struct CKV { const char *k; CVal v; };  // NOLINT(altera-struct-pack-align)
+struct CKV { const char *k; CVal v; };
 static void check_(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.m = (CKV[]){{"type", ((CVal){.s = "create"})}, {"pr_id", ((CVal){.s = "pr_1"})}, {"draft", ((CVal){.b = true})}}}),

@@ -392,8 +392,7 @@ class C(metaclass=LanguageCls):
             "        const CKV *m;",
             "    };",
             "};",
-            "struct CKV { const char *k; CVal v; };"
-            "  // NOLINT(altera-struct-pack-align)",
+            "struct CKV { const char *k; CVal v; };",
         )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}

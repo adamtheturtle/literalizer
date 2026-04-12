@@ -633,10 +633,8 @@ class Cpp(metaclass=LanguageCls):
         self.static_body_preamble: Sequence[str] = (
             "namespace {",
             "struct Any {",
-            "    template<class T> Any(T&& /*unused*/) noexcept {}"
-            "  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions,bugprone-forwarding-reference-overload)",  # noqa: E501
-            "    Any(std::initializer_list<Any> /*unused*/) noexcept {}"
-            "  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)",  # noqa: E501
+            "    template<class T> Any(T&& /*unused*/) noexcept {}",
+            "    Any(std::initializer_list<Any> /*unused*/) noexcept {}",
             "};",
             "}  // namespace",
         )
