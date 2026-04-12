@@ -1,5 +1,6 @@
 """Haskell language specification."""
 
+import dataclasses
 import datetime
 import enum
 import functools
@@ -61,26 +62,38 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-@beartype
-def _format_datetime_haskell(value: datetime.datetime) -> str:
-    """Format a datetime as a Haskell ``HDatetime`` constructor.
-
-    Timezone-aware datetimes are converted to UTC first, since
-    ``UTCTime`` represents a point in time in UTC.
+def _build_haskell_datetime_formatter(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Datetime``
+    constructors.
     """
-    if value.tzinfo is not None:
-        value = value.astimezone(tz=datetime.UTC)
-    total_seconds = value.hour * 3600 + value.minute * 60 + value.second
-    if value.microsecond:
-        picos = total_seconds * 10**12 + value.microsecond * 10**6
-        time_part = f"picosecondsToDiffTime {picos}"
-    else:
-        time_part = f"secondsToDiffTime {total_seconds}"
-    return (
-        f"HDatetime (UTCTime "
-        f"(fromGregorian {value.year} {value.month} {value.day}) "
-        f"({time_part}))"
-    )
+
+    @beartype
+    def _format(value: datetime.datetime) -> str:
+        """Format a datetime as a Haskell datetime constructor.
+
+        Timezone-aware datetimes are converted to UTC first, since
+        ``UTCTime`` represents a point in time in UTC.
+        """
+        if value.tzinfo is not None:
+            value = value.astimezone(tz=datetime.UTC)
+        total_seconds = value.hour * 3600 + value.minute * 60 + value.second
+        if value.microsecond:
+            picos = total_seconds * 10**12 + value.microsecond * 10**6
+            time_part = f"picosecondsToDiffTime {picos}"
+        else:
+            time_part = f"secondsToDiffTime {total_seconds}"
+        return (
+            f"{prefix}Datetime (UTCTime "
+            f"(fromGregorian {value.year} {value.month} {value.day}) "
+            f"({time_part}))"
+        )
+
+    return _format
+
+
+_format_datetime_haskell = _build_haskell_datetime_formatter(prefix="H")
 
 
 def _num_instance(
@@ -88,17 +101,26 @@ def _num_instance(
     has_int: bool,
     has_float: bool,
     type_name: str,
+    constructor_prefix: str,
 ) -> str:
     """Build the ``Num`` instance with only relevant constructors."""
     if has_int:
-        from_integer = "    fromInteger = HInt"
+        from_integer = f"    fromInteger = {constructor_prefix}Int"
     else:
-        from_integer = "    fromInteger n = HFloat (fromIntegral n)"
+        from_integer = (
+            f"    fromInteger n = {constructor_prefix}Float (fromIntegral n)"
+        )
     negate_parts: list[str] = []
     if has_int:
-        negate_parts.append("    negate (HInt n) = HInt (negate n)")
+        negate_parts.append(
+            f"    negate ({constructor_prefix}Int n) = "
+            f"{constructor_prefix}Int (negate n)"
+        )
     if has_float:
-        negate_parts.append("    negate (HFloat f) = HFloat (negate f)")
+        negate_parts.append(
+            f"    negate ({constructor_prefix}Float f) = "
+            f"{constructor_prefix}Float (negate f)"
+        )
     negate_parts.append('    negate _ = error "not implemented"')
     return "\n".join(
         [
@@ -152,6 +174,7 @@ def _build_scalar_body_preamble(
     is_string_import: str,
     is_string_instance: str,
     type_name: str,
+    constructor_prefix: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
@@ -171,29 +194,30 @@ def _build_scalar_body_preamble(
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
+        p = constructor_prefix
         data_val_parts = [
             constructor
             for type_set, constructor in (
-                (frozenset({type(None)}), "HNull"),
-                (frozenset({bool}), "HBool Bool"),
-                (frozenset({int}), "HInt Integer"),
-                (frozenset({float}), "HFloat Double"),
-                (frozenset({str, bytes}), "HStr String"),
-                (frozenset({list}), f"HList [{type_name}]"),
+                (frozenset({type(None)}), f"{p}Null"),
+                (frozenset({bool}), f"{p}Bool Bool"),
+                (frozenset({int}), f"{p}Int Integer"),
+                (frozenset({float}), f"{p}Float Double"),
+                (frozenset({str, bytes}), f"{p}Str String"),
+                (frozenset({list}), f"{p}List [{type_name}]"),
                 (
                     frozenset({dict, ordereddict}),
-                    f"HMap [(String, {type_name})]",
+                    f"{p}Map [(String, {type_name})]",
                 ),
-                (frozenset({set}), f"HSet [{type_name}]"),
+                (frozenset({set}), f"{p}Set [{type_name}]"),
             )
             if types & type_set
         ]
         import_items: list[str] = []
         if include_hdate and datetime.date in types:
-            data_val_parts.append("HDate Day")
+            data_val_parts.append(f"{p}Date Day")
             import_items.extend(["Day", "fromGregorian"])
         if include_hdatetime and datetime.datetime in types:
-            data_val_parts.append("HDatetime UTCTime")
+            data_val_parts.append(f"{p}Datetime UTCTime")
             import_items.extend(
                 _datetime_import_items(
                     has_from_gregorian="fromGregorian" in import_items,
@@ -206,8 +230,8 @@ def _build_scalar_body_preamble(
             or (date_needs_is_string and datetime.date in types)
             or (datetime_needs_is_string and datetime.datetime in types)
         )
-        if needs_is_string and "HStr String" not in data_val_parts:
-            data_val_parts.append("HStr String")
+        if needs_is_string and f"{p}Str String" not in data_val_parts:
+            data_val_parts.append(f"{p}Str String")
 
         # Emit imports first, then data declaration, then instances.
         imports: list[str] = []
@@ -230,12 +254,13 @@ def _build_scalar_body_preamble(
                     has_int=has_int,
                     has_float=has_float,
                     type_name=type_name,
+                    constructor_prefix=constructor_prefix,
                 ),
             )
         if has_float:
             instances.append(
                 f"instance Fractional {type_name} where\n"
-                "    fromRational r = HFloat (realToFrac r)\n"
+                f"    fromRational r = {p}Float (realToFrac r)\n"
                 '    a / b = error "not implemented"'
             )
 
@@ -309,6 +334,10 @@ class Haskell(metaclass=LanguageCls):
 
         type_name: Name of the generated custom type.  Defaults to
             ``"Val"``.
+
+        constructor_prefix: Prefix for generated constructor names.
+            Defaults to ``"H"``, producing constructors like ``HNull``,
+            ``HBool``, ``HInt``, etc.
     """
 
     extension = ".hs"
@@ -549,20 +578,38 @@ class Haskell(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
         type_name: str = "Val",
+        constructor_prefix: str = "H",
     ) -> None:
         """Initialize Haskell language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "HNull"
-        self.true_literal = "HBool True"
-        self.false_literal = "HBool False"
+        self.null_literal = f"{constructor_prefix}Null"
+        self.true_literal = f"{constructor_prefix}Bool True"
+        self.false_literal = f"{constructor_prefix}Bool False"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        if sequence_format is self.SequenceFormats.LIST:
+            _seq_open = fixed_sequence_open(
+                open_str=f"{constructor_prefix}List [",
+            )
+            self.sequence_format_config: SequenceFormatConfig = (
+                dataclasses.replace(fmt, sequence_open=_seq_open)
+            )
+            self.sequence_open: Callable[[list[Value]], str] = _seq_open
+        else:
+            self.sequence_format_config = fmt
+            self.sequence_open = fmt.sequence_open
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=fixed_set_open(
+                open_str=f"{constructor_prefix}Set [",
+            ),
+        )
+
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="HMap ["),
+            dict_open=fixed_dict_open(
+                open_str=f"{constructor_prefix}Map [",
+            ),
             close="]",
             format_entry=tuple_dict_entry(
                 format_value=passthrough_sequence_entry
@@ -573,10 +620,25 @@ class Haskell(metaclass=LanguageCls):
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
-        )
+        if date_format is self.DateFormats.HASKELL:
+            self.format_date: Callable[[datetime.date], str] = (
+                date_ymd_formatter(
+                    template=(
+                        f"{constructor_prefix}Date "
+                        f"(fromGregorian {{year}} {{month}} {{day}})"
+                    ),
+                )
+            )
+        else:
+            self.format_date = date_format
+        if datetime_format is self.DatetimeFormats.HASKELL:
+            self.format_datetime: Callable[[datetime.datetime], str] = (
+                _build_haskell_datetime_formatter(
+                    prefix=constructor_prefix,
+                )
+            )
+        else:
+            self.format_datetime = datetime_format
         self.format_string: Callable[[str], str] = functools.partial(
             format_string_backslash_control,
             control_char_fmt="\\x{:02x}",
@@ -603,7 +665,7 @@ class Haskell(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="HMap [",
+                open_str=f"{constructor_prefix}Map [",
                 close="]",
                 preamble_lines=(),
             )
@@ -664,9 +726,11 @@ class Haskell(metaclass=LanguageCls):
             datetime_format=datetime_format,
             is_string_import="import Data.String (IsString(fromString))",
             is_string_instance=(
-                f"instance IsString {type_name} where\n    fromString = HStr"
+                f"instance IsString {type_name} where\n"
+                f"    fromString = {constructor_prefix}Str"
             ),
             type_name=type_name,
+            constructor_prefix=constructor_prefix,
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()

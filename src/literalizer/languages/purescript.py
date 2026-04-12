@@ -1,5 +1,6 @@
 """PureScript language specification."""
 
+import dataclasses
 import datetime
 import enum
 import math
@@ -54,100 +55,178 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-@beartype
-def _format_purescript_date_iso(value: datetime.date) -> str:
-    """Format a date as a PureScript string via ISO 8601."""
-    return f"PStr {format_date_iso(value=value)}"
-
-
-@beartype
-def _format_purescript_datetime_iso(value: datetime.datetime) -> str:
-    """Format a datetime as a PureScript string via ISO 8601."""
-    return f"PStr {format_datetime_iso(value=value)}"
-
-
-@beartype
-def _format_purescript_bytes_hex(value: bytes) -> str:
-    """Format bytes as a PureScript hex string."""
-    return f"PStr {format_bytes_hex(value=value)}"
-
-
-@beartype
-def _format_purescript_bytes_base64(value: bytes) -> str:
-    """Format bytes as a PureScript base64 string."""
-    return f"PStr {format_bytes_base64(value=value)}"
-
-
-@beartype
-def _format_purescript_integer_decimal(value: int) -> str:
-    """Format an integer as a PureScript ``PInt`` constructor."""
-    if value < 0:
-        return f"PInt ({value})"
-    return f"PInt {value}"
-
-
-@beartype
-def _format_purescript_integer_hex(value: int) -> str:
-    """Format an integer as a PureScript ``PInt`` hex constructor."""
-    hex_repr = format_integer_hex(value=value)
-    if value < 0:
-        return f"PInt ({hex_repr})"
-    return f"PInt {hex_repr}"
-
-
-@beartype
-def _purescript_float_wrapper(
-    inner: Callable[[float], str],
-) -> Callable[[float], str]:
-    """Wrap a float formatter to produce ``PFloat`` constructors."""
+def _build_purescript_date_iso(
+    prefix: str,
+) -> Callable[[datetime.date], str]:
+    """Build a date formatter that produces ``{prefix}Str``
+    constructors.
+    """
 
     @beartype
-    def _format(value: float) -> str:
-        """Format a float with a ``PFloat`` constructor."""
-        formatted = inner(value)
-        if formatted.startswith("-"):
-            return f"PFloat ({formatted})"
-        return f"PFloat {formatted}"
+    def _format(value: datetime.date) -> str:
+        """Format a date as a PureScript string via ISO 8601."""
+        return f"{prefix}Str {format_date_iso(value=value)}"
 
     return _format
 
 
-_format_purescript_float_repr = _purescript_float_wrapper(
+def _build_purescript_datetime_iso(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    @beartype
+    def _format(value: datetime.datetime) -> str:
+        """Format a datetime as a PureScript string via ISO 8601."""
+        return f"{prefix}Str {format_datetime_iso(value=value)}"
+
+    return _format
+
+
+def _build_purescript_bytes_hex(
+    prefix: str,
+) -> Callable[[bytes], str]:
+    """Build a bytes formatter that produces ``{prefix}Str`` hex
+    constructors.
+    """
+
+    @beartype
+    def _format(value: bytes) -> str:
+        """Format bytes as a PureScript hex string."""
+        return f"{prefix}Str {format_bytes_hex(value=value)}"
+
+    return _format
+
+
+def _build_purescript_bytes_base64(
+    prefix: str,
+) -> Callable[[bytes], str]:
+    """Build a bytes formatter that produces ``{prefix}Str`` base64
+    constructors.
+    """
+
+    @beartype
+    def _format(value: bytes) -> str:
+        """Format bytes as a PureScript base64 string."""
+        return f"{prefix}Str {format_bytes_base64(value=value)}"
+
+    return _format
+
+
+def _build_purescript_integer_formatter(
+    prefix: str,
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Build an integer formatter that produces ``{prefix}Int``
+    constructors.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format an integer with a constructor prefix."""
+        formatted = base(value)
+        if value < 0:
+            return f"{prefix}Int ({formatted})"
+        return f"{prefix}Int {formatted}"
+
+    return _format
+
+
+def _build_purescript_float_wrapper(
+    prefix: str,
+    inner: Callable[[float], str],
+) -> Callable[[float], str]:
+    """Build a float formatter that produces ``{prefix}Float``
+    constructors.
+    """
+
+    @beartype
+    def _format(value: float) -> str:
+        """Format a float with a constructor prefix."""
+        formatted = inner(value)
+        if formatted.startswith("-"):
+            return f"{prefix}Float ({formatted})"
+        return f"{prefix}Float {formatted}"
+
+    return _format
+
+
+def _build_purescript_str_formatter(
+    prefix: str,
+) -> Callable[[str], str]:
+    """Build a string formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    @beartype
+    def _format(value: str) -> str:
+        """Format a string with a constructor prefix."""
+        escaped = format_string_backslash_control(
+            value=value,
+            control_char_fmt="\\x{:02x}",
+        )
+        return f"{prefix}Str {escaped}"
+
+    return _format
+
+
+def _build_purescript_dict_entry(
+    prefix: str,
+) -> Callable[[str, Value, str], str]:
+    """Build a dict-entry formatter that strips the ``{prefix}Str`` prefix
+    from keys.
+    """
+    _str_prefix = f"{prefix}Str "
+
+    @beartype
+    def _format(key: str, _val: Value, value: str) -> str:
+        """Format a dict entry as a ``Tuple`` with a plain-string key.
+
+        Dict keys are ``String``, not ``Val``, so the ``{prefix}Str``
+        constructor must be stripped from the formatted key.
+        """
+        key = key.removeprefix(_str_prefix)
+        return f"(Tuple {key} ({value}))"
+
+    return _format
+
+
+# Backward-compatible module-level aliases used by the Enum members.
+_format_purescript_date_iso = _build_purescript_date_iso(prefix="P")
+_format_purescript_datetime_iso = _build_purescript_datetime_iso(prefix="P")
+_format_purescript_bytes_hex = _build_purescript_bytes_hex(prefix="P")
+_format_purescript_bytes_base64 = _build_purescript_bytes_base64(prefix="P")
+_format_purescript_integer_decimal = _build_purescript_integer_formatter(
+    prefix="P",
+    base=str,
+)
+_format_purescript_integer_hex = _build_purescript_integer_formatter(
+    prefix="P",
+    base=format_integer_hex,
+)
+_format_purescript_float_repr = _build_purescript_float_wrapper(
+    prefix="P",
     inner=format_float_repr,
 )
-_format_purescript_float_scientific = _purescript_float_wrapper(
+_format_purescript_float_scientific = _build_purescript_float_wrapper(
+    prefix="P",
     inner=format_float_scientific,
 )
-_format_purescript_float_fixed = _purescript_float_wrapper(
+_format_purescript_float_fixed = _build_purescript_float_wrapper(
+    prefix="P",
     inner=format_float_fixed,
 )
-
-
-@beartype
-def _format_purescript_string(value: str) -> str:
-    """Format a string as a PureScript ``PStr`` constructor."""
-    escaped = format_string_backslash_control(
-        value=value,
-        control_char_fmt="\\x{:02x}",
-    )
-    return f"PStr {escaped}"
-
-
-@beartype
-def _purescript_dict_entry(key: str, _val: Value, value: str) -> str:
-    """Format a dict entry as a ``Tuple`` with a plain-string key.
-
-    Dict keys are ``String``, not ``Val``, so the ``PStr`` constructor
-    must be stripped from the formatted key.
-    """
-    key = key.removeprefix("PStr ")
-    return f"(Tuple {key} ({value}))"
+_format_purescript_string = _build_purescript_str_formatter(prefix="P")
+_purescript_dict_entry = _build_purescript_dict_entry(prefix="P")
 
 
 @beartype
 def _build_purescript_body_preamble(
     *,
     type_name: str,
+    constructor_prefix: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for PureScript.
 
@@ -184,26 +263,27 @@ def _build_purescript_body_preamble(
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
+        p = constructor_prefix
         needs_tuple = bool(types & {dict, ordereddict})
         constructors = [
             constructor
             for type_set, constructor in (
-                (frozenset({type(None)}), "PNull"),
-                (frozenset({bool}), "PBool Boolean"),
-                (frozenset({int}), "PInt Int"),
-                (frozenset({float}), "PFloat Number"),
+                (frozenset({type(None)}), f"{p}Null"),
+                (frozenset({bool}), f"{p}Bool Boolean"),
+                (frozenset({int}), f"{p}Int Int"),
+                (frozenset({float}), f"{p}Float Number"),
                 (
                     frozenset(
                         {str, bytes, datetime.date, datetime.datetime},
                     ),
-                    "PStr String",
+                    f"{p}Str String",
                 ),
-                (frozenset({list}), f"PList (Array {type_name})"),
+                (frozenset({list}), f"{p}List (Array {type_name})"),
                 (
                     frozenset({dict, ordereddict}),
-                    f"PDict (Array (Tuple String {type_name}))",
+                    f"{p}Dict (Array (Tuple String {type_name}))",
                 ),
-                (frozenset({set}), f"PSet (Array {type_name})"),
+                (frozenset({set}), f"{p}Set (Array {type_name})"),
             )
             if types & type_set
         ]
@@ -217,6 +297,26 @@ def _build_purescript_body_preamble(
         return tuple(lines)
 
     return _compute
+
+
+_INT_BASE: dict[str, Callable[[int], str]] = {
+    "DECIMAL": str,
+    "HEX": format_integer_hex,
+}
+
+_FLOAT_BASE: dict[str, Callable[[float], str]] = {
+    "REPR": format_float_repr,
+    "SCIENTIFIC": format_float_scientific,
+    "FIXED": format_float_fixed,
+}
+
+_BYTES_FORMATTERS: dict[
+    str,
+    Callable[[str], Callable[[bytes], str]],
+] = {
+    "HEX": _build_purescript_bytes_hex,
+    "BASE64": _build_purescript_bytes_base64,
+}
 
 
 @beartype
@@ -260,6 +360,10 @@ class PureScript(metaclass=LanguageCls):
 
         type_name: Name of the generated custom type.  Defaults to
             ``"Val"``.
+
+        constructor_prefix: Prefix for generated constructor names.
+            Defaults to ``"P"``, producing constructors like ``PNull``,
+            ``PBool``, ``PInt``, etc.
     """
 
     extension = ".purs"
@@ -303,7 +407,7 @@ class PureScript(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for PureScript."""
@@ -476,35 +580,84 @@ class PureScript(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
         type_name: str = "Val",
+        constructor_prefix: str = "P",
     ) -> None:
         """Initialize PureScript language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "PNull"
-        self.true_literal = "PBool true"
-        self.false_literal = "PBool false"
+        self.null_literal = f"{constructor_prefix}Null"
+        self.true_literal = f"{constructor_prefix}Bool true"
+        self.false_literal = f"{constructor_prefix}Bool false"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        _seq_open = fixed_sequence_open(
+            open_str=f"{constructor_prefix}List [",
+        )
+        self.sequence_format_config: SequenceFormatConfig = (
+            dataclasses.replace(fmt, sequence_open=_seq_open)
+        )
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=fixed_set_open(
+                open_str=f"{constructor_prefix}Set [",
+            ),
+        )
+        self.sequence_open: Callable[[list[Value]], str] = _seq_open
+        _dict_entry = _build_purescript_dict_entry(
+            prefix=constructor_prefix,
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="PDict ["),
+            dict_open=fixed_dict_open(
+                open_str=f"{constructor_prefix}Dict [",
+            ),
             close="]",
-            format_entry=_purescript_dict_entry,
+            format_entry=_dict_entry,
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+        self.format_bytes: Callable[[bytes], str] = _BYTES_FORMATTERS[
+            bytes_format.name
+        ](constructor_prefix)
+        del date_format  # Only ISO format available.
+        self.format_date: Callable[[datetime.date], str] = (
+            _build_purescript_date_iso(prefix=constructor_prefix)
         )
-        self.format_string: Callable[[str], str] = _format_purescript_string
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = integer_format
+        del datetime_format  # Only ISO format available.
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _build_purescript_datetime_iso(prefix=constructor_prefix)
+        )
+        self.format_string: Callable[[str], str] = (
+            _build_purescript_str_formatter(
+                prefix=constructor_prefix,
+            )
+        )
+        self.format_integer: Callable[[int], str] = (
+            _build_purescript_integer_formatter(
+                prefix=constructor_prefix,
+                base=_INT_BASE[integer_format.name],
+            )
+        )
+
+        _pos_inf = f"{constructor_prefix}Float (1.0 / 0.0)"
+        _neg_inf = f"{constructor_prefix}Float (-(1.0 / 0.0))"
+        _nan_val = f"{constructor_prefix}Float (0.0 / 0.0)"
+        _float_finite = _build_purescript_float_wrapper(
+            prefix=constructor_prefix,
+            inner=_FLOAT_BASE[float_format.name],
+        )
+
+        @beartype
+        def _format_float_with_specials(value: float) -> str:
+            """Format a float, handling inf and nan."""
+            if math.isinf(value):
+                return _neg_inf if value < 0 else _pos_inf
+            if math.isnan(value):
+                return _nan_val
+            return _float_finite(value)
+
+        self.format_float: Callable[[float], str] = _format_float_with_specials
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
@@ -525,13 +678,13 @@ class PureScript(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="PDict [",
+                open_str=f"{constructor_prefix}Dict [",
                 close="]",
                 preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _purescript_dict_entry
+            _dict_entry
         )
         self.indent = indent
         self.indent_closing_delimiter = True
@@ -575,6 +728,9 @@ class PureScript(metaclass=LanguageCls):
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
-        ] = _build_purescript_body_preamble(type_name=type_name)
+        ] = _build_purescript_body_preamble(
+            type_name=type_name,
+            constructor_prefix=constructor_prefix,
+        )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
