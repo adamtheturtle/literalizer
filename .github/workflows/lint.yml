@@ -1288,18 +1288,22 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.v
+          extra_config_patterns: check_v_syntax.py
       - name: Install V
         if: steps.find-files.outputs.found == 'true'
         run: |
           git clone --depth=1 https://github.com/vlang/v /tmp/vlang
           cd /tmp/vlang && make
           sudo ln -s /tmp/vlang/v /usr/local/bin/v
-      - name: Check V formatting
+      - name: Install uv
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 v fmt -verify < /tmp/files-to-lint
-      - name: Check V compilation
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Check V syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 v -check-syntax < /tmp/files-to-lint
+        run: xargs -0 -n1 uv run --no-project python check_v_syntax.py < /tmp/files-to-lint
 
   completion-lint:
     needs:
