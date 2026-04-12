@@ -15,7 +15,7 @@ from literalizer.exceptions import HeterogeneousCoercionError
 
 
 @beartype
-def _scalar_type_bucket(*, value: Value) -> type | None:
+def scalar_type_bucket(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
     collections.
     """
@@ -38,7 +38,7 @@ def _scalar_type_bucket(*, value: Value) -> type | None:
 
 
 @beartype
-def _coerce_scalar_to_str(
+def coerce_scalar_to_str(
     *,
     value: Value,
 ) -> str:
@@ -71,7 +71,7 @@ def _scalar_type_buckets(
     """
     buckets: set[type] = set()
     for v in values:
-        bucket = _scalar_type_bucket(value=v)
+        bucket = scalar_type_bucket(value=v)
         if bucket is None:
             return None
         buckets.add(bucket)
@@ -79,7 +79,7 @@ def _scalar_type_buckets(
 
 
 @beartype
-def _all_scalars_heterogeneous(
+def all_scalars_heterogeneous(
     *,
     values: Sequence[Value],
 ) -> bool:
@@ -117,10 +117,10 @@ def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
             if (
                 len(sublists) == len(new_list)
                 and len(sublists) > 1
-                and _all_scalars_heterogeneous(values=all_elements)
+                and all_scalars_heterogeneous(values=all_elements)
             ):
                 return [
-                    [_coerce_scalar_to_str(value=e) for e in sub]
+                    [coerce_scalar_to_str(value=e) for e in sub]
                     for sub in sublists
                 ]
             return new_list
@@ -139,13 +139,13 @@ def _has_heterogeneous(*, data: Value) -> bool:
         case list():
             children = data
         case set():
-            return _all_scalars_heterogeneous(values=list(data))
+            return all_scalars_heterogeneous(values=list(data))
         case _:
             return False
 
     return any(
         _has_heterogeneous(data=v) for v in children
-    ) or _all_scalars_heterogeneous(values=children)
+    ) or all_scalars_heterogeneous(values=children)
 
 
 @beartype
@@ -171,7 +171,7 @@ def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
             return (
                 len(sublists) == len(data)
                 and len(sublists) > 1
-                and _all_scalars_heterogeneous(
+                and all_scalars_heterogeneous(
                     values=[e for sub in sublists for e in sub],
                 )
             )
@@ -337,9 +337,9 @@ def _coerce_heterogeneous_ordereddict(
     for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
         new_ordered_map[k] = _coerce_heterogeneous_scalars(data=v)  # pyright: ignore[reportUnknownArgumentType]
     ordered_map_vals: list[Value] = list(new_ordered_map.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-    if _all_scalars_heterogeneous(values=ordered_map_vals):
+    if all_scalars_heterogeneous(values=ordered_map_vals):
         for k in new_ordered_map:  # pyright: ignore[reportUnknownVariableType]
-            new_ordered_map[k] = _coerce_scalar_to_str(
+            new_ordered_map[k] = coerce_scalar_to_str(
                 value=new_ordered_map[k],  # pyright: ignore[reportUnknownArgumentType]
             )
     return new_ordered_map
@@ -354,11 +354,11 @@ def _coerce_heterogeneous_dict(
     new_dict: dict[str, Value] = {
         k: _coerce_heterogeneous_scalars(data=v) for k, v in data.items()
     }
-    if _all_scalars_heterogeneous(
+    if all_scalars_heterogeneous(
         values=list(new_dict.values()),
     ):
         new_dict = {
-            k: _coerce_scalar_to_str(value=v) for k, v in new_dict.items()
+            k: coerce_scalar_to_str(value=v) for k, v in new_dict.items()
         }
     return new_dict
 
@@ -370,8 +370,8 @@ def _coerce_heterogeneous_set(
 ) -> set[Scalar]:
     """Coerce a set with heterogeneous scalar values."""
     items: list[Value] = list(data)
-    if _all_scalars_heterogeneous(values=items):
-        return {_coerce_scalar_to_str(value=v) for v in items}
+    if all_scalars_heterogeneous(values=items):
+        return {coerce_scalar_to_str(value=v) for v in items}
     return data
 
 
@@ -382,8 +382,8 @@ def _coerce_heterogeneous_list(
 ) -> list[Value]:
     """Coerce a list with heterogeneous scalar values."""
     new_list = [_coerce_heterogeneous_scalars(data=v) for v in data]
-    if _all_scalars_heterogeneous(values=new_list):
-        return [_coerce_scalar_to_str(value=v) for v in new_list]
+    if all_scalars_heterogeneous(values=new_list):
+        return [coerce_scalar_to_str(value=v) for v in new_list]
     return new_list
 
 
@@ -452,9 +452,9 @@ def _coerce_value_to_str(*, value: Value) -> str:
     """Convert any value (scalar or collection) to a string."""
     if isinstance(value, str):
         return value
-    bucket = _scalar_type_bucket(value=value)
+    bucket = scalar_type_bucket(value=value)
     if bucket is not None:
-        return _coerce_scalar_to_str(value=value)
+        return coerce_scalar_to_str(value=value)
     if isinstance(value, set):
         sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
         return json.dumps(obj=sorted_items, default=str)
@@ -693,7 +693,7 @@ def _build_coercion_steps(
     return steps
 
 
-def _apply_coercions(  # pyright: ignore[reportUnusedFunction]
+def apply_coercions(
     *,
     data: Value,
     spec: Language,

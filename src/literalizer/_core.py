@@ -19,10 +19,10 @@ from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
 
 from literalizer._coercions import (
-    _all_scalars_heterogeneous,  # pyright: ignore[reportPrivateUsage]
-    _apply_coercions,  # pyright: ignore[reportPrivateUsage]
-    _coerce_scalar_to_str,  # pyright: ignore[reportPrivateUsage]
-    _scalar_type_bucket,  # pyright: ignore[reportPrivateUsage]
+    all_scalars_heterogeneous,
+    apply_coercions,
+    coerce_scalar_to_str,
+    scalar_type_bucket,
 )
 from literalizer._comments import (
     CollectionComments,
@@ -188,7 +188,7 @@ def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
 def _preamble_scalar_type(*, value: Value) -> type | None:
     """Return the preamble-relevant type for a scalar.
 
-    Like :func:`_scalar_type_bucket` but distinguishes
+    Like :func:`scalar_type_bucket` but distinguishes
     ``datetime.datetime`` from ``datetime.date`` (they need different
     preamble lines).
     """
@@ -196,7 +196,7 @@ def _preamble_scalar_type(*, value: Value) -> type | None:
         return datetime.datetime
     if isinstance(value, datetime.date):
         return datetime.date
-    return _scalar_type_bucket(value=value)
+    return scalar_type_bucket(value=value)
 
 
 @beartype
@@ -336,10 +336,10 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
-    if set_cfg.coerce_mixed_to_str and _all_scalars_heterogeneous(
+    if set_cfg.coerce_mixed_to_str and all_scalars_heterogeneous(
         values=list(value),
     ):
-        value = {_coerce_scalar_to_str(value=v) for v in value}
+        value = {coerce_scalar_to_str(value=v) for v in value}
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
@@ -803,7 +803,7 @@ def _literalize(
             collections to strings.
     """
     spec = language
-    data = _apply_coercions(
+    data = apply_coercions(
         data=data,
         spec=spec,
         error_on_coercion=error_on_coercion,
@@ -842,9 +842,9 @@ def _literalize(
     if (
         isinstance(data, set)
         and spec.set_format_config.coerce_mixed_to_str
-        and _all_scalars_heterogeneous(values=list(data))
+        and all_scalars_heterogeneous(values=list(data))
     ):
-        data = {_coerce_scalar_to_str(value=v) for v in data}
+        data = {coerce_scalar_to_str(value=v) for v in data}
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma

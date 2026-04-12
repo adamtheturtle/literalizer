@@ -178,7 +178,6 @@ reportPrivateUsage
 reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
-reportUnusedFunction
 repr
 roundtrip
 ruamel
