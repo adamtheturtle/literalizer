@@ -633,8 +633,8 @@ class Cpp(metaclass=LanguageCls):
         self.static_body_preamble: Sequence[str] = (
             "namespace {",
             "struct Any {",
-            "    template<class T> Any(T&& /*unused*/) noexcept {}",
-            "    Any(std::initializer_list<Any> /*unused*/) noexcept {}",
+            "    template<class T> Any(T&&) noexcept {}",
+            "    Any(std::initializer_list<Any>) noexcept {}",
             "};",
             "}  // namespace",
         )
