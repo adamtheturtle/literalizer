@@ -597,7 +597,7 @@ class Gleam(metaclass=LanguageCls):
         self.true_literal = f"{constructor_prefix}Bool(True)"
         self.false_literal = f"{constructor_prefix}Bool(False)"
         fmt = sequence_format.value
-        if sequence_format is self.SequenceFormats.LIST:
+        if sequence_format.name == "LIST":
             _seq_open = fixed_sequence_open(
                 open_str=f"{constructor_prefix}List([",
             )

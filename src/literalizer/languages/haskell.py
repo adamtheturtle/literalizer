@@ -587,7 +587,7 @@ class Haskell(metaclass=LanguageCls):
         self.true_literal = f"{constructor_prefix}Bool True"
         self.false_literal = f"{constructor_prefix}Bool False"
         fmt = sequence_format.value
-        if sequence_format is self.SequenceFormats.LIST:
+        if sequence_format.name == "LIST":
             _seq_open = fixed_sequence_open(
                 open_str=f"{constructor_prefix}List [",
             )
@@ -620,7 +620,7 @@ class Haskell(metaclass=LanguageCls):
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        if date_format is self.DateFormats.HASKELL:
+        if date_format.name == "HASKELL":
             self.format_date: Callable[[datetime.date], str] = (
                 date_ymd_formatter(
                     template=(
@@ -631,7 +631,7 @@ class Haskell(metaclass=LanguageCls):
             )
         else:
             self.format_date = date_format
-        if datetime_format is self.DatetimeFormats.HASKELL:
+        if datetime_format.name == "HASKELL":
             self.format_datetime: Callable[[datetime.datetime], str] = (
                 _build_haskell_datetime_formatter(
                     prefix=constructor_prefix,

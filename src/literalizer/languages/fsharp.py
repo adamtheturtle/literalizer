@@ -408,7 +408,7 @@ class FSharp(metaclass=LanguageCls):
         self.true_literal = f"{constructor_prefix}Bool true"
         self.false_literal = f"{constructor_prefix}Bool false"
         fmt = sequence_format.value
-        if sequence_format is self.SequenceFormats.ARRAY:
+        if sequence_format.name == "ARRAY":
             self.sequence_format_config: SequenceFormatConfig = fmt
             self.sequence_open: Callable[[list[Value]], str] = (
                 fmt.sequence_open

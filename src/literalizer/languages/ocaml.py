@@ -427,7 +427,7 @@ class OCaml(metaclass=LanguageCls):
             prefix=constructor_prefix,
         )
         fmt = sequence_format.value
-        if sequence_format is self.SequenceFormats.LIST:
+        if sequence_format.name == "LIST":
             _seq_open = fixed_sequence_open(
                 open_str=f"{constructor_prefix}List [",
             )
@@ -464,13 +464,13 @@ class OCaml(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
-        if date_format is self.DateFormats.OCAML:
+        if date_format.name == "OCAML":
             self.format_date = date_ymd_formatter(
                 template=(
                     f"{constructor_prefix}Date ({{year}}, {{month}}, {{day}})"
                 ),
             )
-        if datetime_format is self.DatetimeFormats.OCAML:
+        if datetime_format.name == "OCAML":
             self.format_datetime = datetime_ymdhms_formatter(
                 template=(
                     f"{constructor_prefix}Datetime "
