@@ -70,8 +70,7 @@ def _format_set_entry(_original: Value, item: str) -> str:
     return f"{item} = {{}}"
 
 
-@beartype
-def _odin_call_stub(name: str) -> tuple[str, ...]:
+def _odin_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Odin stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

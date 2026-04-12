@@ -739,7 +739,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """
 
 
-def _no_call_stub(_name: str) -> tuple[str, ...]:
+def _no_call_stub(_name: str, /) -> tuple[str, ...]:
     """Return no stub lines.
 
     Used by languages whose linters only check syntax, not name

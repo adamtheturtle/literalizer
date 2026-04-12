@@ -6,8 +6,6 @@ from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
-from beartype import beartype
-
 from literalizer._formatters.collection_openers import fixed_sequence_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -56,8 +54,7 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-@beartype
-def _crystal_call_stub(name: str) -> tuple[str, ...]:
+def _crystal_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

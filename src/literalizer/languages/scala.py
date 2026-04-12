@@ -130,8 +130,7 @@ class _ScalaDictSpec:
     preamble_lines: tuple[str, ...]
 
 
-@beartype
-def _scala_call_stub(name: str) -> tuple[str, ...]:
+def _scala_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

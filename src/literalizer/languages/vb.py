@@ -123,8 +123,7 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     return f"Dim {name} = {value}"
 
 
-@beartype
-def _vb_call_stub(name: str) -> tuple[str, ...]:
+def _vb_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Visual Basic stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

@@ -98,8 +98,7 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
-@beartype
-def _swift_call_stub(name: str) -> tuple[str, ...]:
+def _swift_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

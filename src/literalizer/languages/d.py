@@ -80,8 +80,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     return f"{name} = {wrapped};"
 
 
-@beartype
-def _d_call_stub(name: str) -> tuple[str, ...]:
+def _d_call_stub(name: str, /) -> tuple[str, ...]:
     """Return D stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

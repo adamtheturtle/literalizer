@@ -6,8 +6,6 @@ from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
-from beartype import beartype
-
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
@@ -66,8 +64,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-@beartype
-def _ts_call_stub(name: str) -> tuple[str, ...]:
+def _ts_call_stub(name: str, /) -> tuple[str, ...]:
     """Return TypeScript stub declarations for a call name."""
     root = name.split(".", maxsplit=1)[0]
     return (f"declare const {root}: any;",)

@@ -122,8 +122,7 @@ def _make_variable_assignment(
     return _format
 
 
-@beartype
-def _nim_call_stub(name: str) -> tuple[str, ...]:
+def _nim_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Nim stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

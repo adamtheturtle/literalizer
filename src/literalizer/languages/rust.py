@@ -92,8 +92,7 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
     return f"NaiveDateTime::new({date}, {time_call})"
 
 
-@beartype
-def _rust_call_stub(name: str) -> tuple[str, ...]:
+def _rust_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Rust stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

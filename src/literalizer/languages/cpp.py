@@ -234,8 +234,7 @@ def _format_variable_declaration(
     return f"Any {name} = {value};"
 
 
-@beartype
-def _cpp_call_stub(name: str) -> tuple[str, ...]:
+def _cpp_call_stub(name: str, /) -> tuple[str, ...]:
     """Return C++ stub declarations for a call expression name."""
     parts = name.split(".")
     if len(parts) == 1:

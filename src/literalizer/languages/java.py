@@ -96,8 +96,7 @@ def _list_of_open(items: list[Any]) -> str:
     return "List.of("
 
 
-@beartype
-def _java_call_stub(name: str) -> tuple[str, ...]:
+def _java_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Java stub declarations for a call expression name."""
     parts = name.split(".")
     if len(parts) == 1:

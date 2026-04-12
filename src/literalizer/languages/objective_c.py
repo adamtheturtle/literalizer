@@ -104,8 +104,7 @@ def _format_objc_bytes_base64(value: bytes) -> str:
     return f'@"{encoded.decode(encoding="ascii")}"'
 
 
-@beartype
-def _objc_call_stub(name: str) -> tuple[str, ...]:
+def _objc_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Objective-C stub declarations for a call name."""
     parts = name.split(".")
     if len(parts) == 1:

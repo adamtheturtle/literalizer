@@ -116,8 +116,7 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
     return f"{item}: struct{{}}{{}}"
 
 
-@beartype
-def _go_call_stub(name: str) -> tuple[str, ...]:
+def _go_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Go stub declarations for a call expression name."""
     parts = name.split(".")
     if len(parts) == 1:
