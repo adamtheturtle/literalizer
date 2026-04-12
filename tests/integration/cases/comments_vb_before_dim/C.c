@@ -1,24 +1,24 @@
 #include <stdbool.h>
 #include <stddef.h>
-typedef struct _CVal _CVal;
-typedef struct _CKV _CKV;
-struct _CVal {
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
     union {
         _Bool b;
         long long i;
         double f;
         const char *s;
-        const _CVal *a;
-        const _CKV *m;
+        const CVal *a;
+        const CKV *m;
     };
 };
-struct _CKV { const char *k; _CVal v; };
-void _check(void) {
-_CVal my_data = ((_CVal){.m = (_CKV[]){
+struct CKV { const char *k; CVal v; };
+void check_(void) {
+CVal my_data = ((CVal){.m = (CKV[]){
     // Configuration
-    {"name", ((_CVal){.s = "app"})},
+    {"name", ((CVal){.s = "app"})},
     // Port setting
-    {"port", ((_CVal){.i = 3000})},
+    {"port", ((CVal){.i = 3000})},
 }});
     (void)my_data;
 }

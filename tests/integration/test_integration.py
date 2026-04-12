@@ -375,9 +375,9 @@ def _wrap_c(
     variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
-    """Wrap a C _CVal declaration in a function."""
+    """Wrap a C CVal declaration in a function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void _check(void) {{\n{content}\n    (void){variable_name};\n}}"
+    return f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
 
 
 @beartype
@@ -388,7 +388,7 @@ def _wrap_objc(
 ) -> str:
     """Wrap an Objective-C variable declaration in a function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void _check(void) {{\n{content}\n    (void){variable_name};\n}}"
+    return f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
 
 
 @beartype
