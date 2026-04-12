@@ -1278,6 +1278,26 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-to-lint
 
+  lint-v:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.v
+      - name: Install V
+        if: steps.find-files.outputs.found == 'true'
+        run: |
+          git clone --depth=1 https://github.com/vlang/v /tmp/vlang
+          cd /tmp/vlang && make
+          sudo ln -s /tmp/vlang/v /usr/local/bin/v
+      - name: Run V files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
+
   completion-lint:
     needs:
       - pre-commit
@@ -1331,6 +1351,7 @@ jobs:
       - lint-scheme
       - lint-zig
       - lint-toml
+      - lint-v
       - lint-wren
       - lint-yaml
       - lint-powershell

@@ -174,6 +174,17 @@ def _wrap_go(
 
 
 @beartype
+def _wrap_v(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Wrap a V declaration in a main function."""
+    content = _with_body_preamble(content=content, body_preamble=body_preamble)
+    return f"\nfn main() {{\n{content}\n\t_ = {variable_name}\n}}"
+
+
+@beartype
 def _wrap_odin(
     content: str,
     variable_name: str,
@@ -985,6 +996,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         lang_cls=literalizer.languages.Tcl,
         wrap=_wrap_noop,
         combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name="my_data",
+    ),
+    literalizer.languages.V.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.V,
+        wrap=_wrap_v,
+        combined_wrap=_newline_combined(wrap=_wrap_v),
         wrap_variable_name="my_data",
     ),
     literalizer.languages.Wren.__name__: _LanguageConfig(

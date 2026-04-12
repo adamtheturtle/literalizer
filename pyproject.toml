@@ -410,6 +410,7 @@ ignore_names = [
     "LET_MUT",
     "LET_MUTABLE",
     "MAP",
+    "MUT",
     "MAP_OF_ENTRIES",
     "MAP_SET",
     "EPOCH",
