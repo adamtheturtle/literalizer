@@ -260,7 +260,7 @@ jobs:
         run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --checks='*,-altera-*,-llvmlibc-*,-fuchsia-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-clang-analyzer-deadcode.DeadStores,-google-runtime-int,-modernize-raw-string-literal,-misc-const-correctness,-llvm-include-order,-misc-include-cleaner,-misc-use-anonymous-namespace,-bugprone-narrowing-conversions,-cppcoreguidelines-narrowing-conversions,-google-explicit-constructor,-hicpp-explicit-conversions,-bugprone-forwarding-reference-overload,-hicpp-named-parameter,-readability-named-parameter'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --checks='*,-altera-*,-llvmlibc-*,-fuchsia-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-clang-analyzer-deadcode.DeadStores,-google-runtime-int,-modernize-raw-string-literal,-misc-const-correctness,-llvm-include-order,-misc-include-cleaner,-misc-use-anonymous-namespace,-misc-use-internal-linkage,-bugprone-narrowing-conversions,-cppcoreguidelines-narrowing-conversions,-google-explicit-constructor,-hicpp-explicit-conversions,-bugprone-forwarding-reference-overload,-hicpp-named-parameter,-readability-named-parameter'
           --warnings-as-errors='*' --extra-arg=-std=c11 < /tmp/files-to-lint
 
   lint-cobol:
@@ -296,7 +296,7 @@ jobs:
         run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --checks='*,-altera-*,-llvmlibc-*,-fuchsia-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-clang-analyzer-deadcode.DeadStores,-google-runtime-int,-modernize-raw-string-literal,-misc-const-correctness,-llvm-include-order,-misc-include-cleaner,-misc-use-anonymous-namespace,-bugprone-narrowing-conversions,-cppcoreguidelines-narrowing-conversions,-google-explicit-constructor,-hicpp-explicit-conversions,-bugprone-forwarding-reference-overload,-hicpp-named-parameter,-readability-named-parameter'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --checks='*,-altera-*,-llvmlibc-*,-fuchsia-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-clang-analyzer-deadcode.DeadStores,-google-runtime-int,-modernize-raw-string-literal,-misc-const-correctness,-llvm-include-order,-misc-include-cleaner,-misc-use-anonymous-namespace,-misc-use-internal-linkage,-bugprone-narrowing-conversions,-cppcoreguidelines-narrowing-conversions,-google-explicit-constructor,-hicpp-explicit-conversions,-bugprone-forwarding-reference-overload,-hicpp-named-parameter,-readability-named-parameter'
           --warnings-as-errors='*' --extra-arg=-std=c++20 < /tmp/files-to-lint
 
   lint-kotlin:
@@ -1255,7 +1255,7 @@ jobs:
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only < /tmp/files-to-lint
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy --checks='*,-altera-*,-llvmlibc-*,-fuchsia-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-clang-analyzer-deadcode.DeadStores,-google-runtime-int,-modernize-raw-string-literal,-misc-const-correctness,-llvm-include-order,-misc-include-cleaner,-misc-use-anonymous-namespace,-bugprone-narrowing-conversions,-cppcoreguidelines-narrowing-conversions,-google-explicit-constructor,-hicpp-explicit-conversions,-bugprone-forwarding-reference-overload,-hicpp-named-parameter,-readability-named-parameter'
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy --checks='*,-altera-*,-llvmlibc-*,-fuchsia-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-clang-analyzer-deadcode.DeadStores,-google-runtime-int,-modernize-raw-string-literal,-misc-const-correctness,-llvm-include-order,-misc-include-cleaner,-misc-use-anonymous-namespace,-misc-use-internal-linkage,-bugprone-narrowing-conversions,-cppcoreguidelines-narrowing-conversions,-google-explicit-constructor,-hicpp-explicit-conversions,-bugprone-forwarding-reference-overload,-hicpp-named-parameter,-readability-named-parameter'
           --warnings-as-errors='*' < /tmp/files-to-lint
 
   lint-wren:

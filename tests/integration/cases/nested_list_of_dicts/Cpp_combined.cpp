@@ -2,12 +2,10 @@
 #include <string>
 #include <map>
 #include <vector>
-namespace {
 struct Any {
     template<class T> Any(T&&) noexcept {}
     Any(std::initializer_list<Any>) noexcept {}
 };
-}  // namespace
 static void check_() {
 Any my_data = std::vector<std::vector<std::map<std::string, std::string>>>{
     std::vector<std::map<std::string, std::string>>{std::map<std::string, std::string>{{"name", "Alice"}}, std::map<std::string, std::string>{{"name", "Bob"}}},
