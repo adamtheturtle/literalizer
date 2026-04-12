@@ -13,7 +13,7 @@ struct CVal {
     };
 };
 struct CKV { const char *key; CVal val; };
-void check_(void) {
+static void check_(void) {
 CVal my_data = ((CVal){.dict = (CKV[]){
     {"name", ((CVal){.str = "Alice"})},
     {"age", ((CVal){.integer = 30})},

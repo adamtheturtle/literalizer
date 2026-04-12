@@ -13,7 +13,7 @@ struct CVal {
     };
 };
 struct CKV { const char *key; CVal val; };
-void check_(void) {
+static void check_(void) {
 CVal my_data = ((CVal){.arr = (CVal[]){
     ((CVal){.integer = 1}),
     ((CVal){.str = "hello"}),

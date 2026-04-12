@@ -1,11 +1,13 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
+namespace {
 struct Any {
     template<class T> Any(T&&) noexcept {}
     Any(std::initializer_list<Any>) noexcept {}
 };
-void check_() {
+}  // namespace
+static void check_() {
 Any my_data = std::vector<std::string>{
     "100% done",
     "%(name) is here",
