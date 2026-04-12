@@ -1,14 +1,14 @@
 
 fn main() {
-mut my_data := [
-	1,
-	2.5,
-	3,
-]
-my_data = [
-	1,
-	2.5,
-	3,
-]
+	mut my_data := [
+		1,
+		2.5,
+		3,
+	]
+	my_data = [
+		1,
+		2.5,
+		3,
+	]
 	_ = my_data
 }

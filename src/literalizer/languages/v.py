@@ -374,8 +374,8 @@ class V(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="[",
-                close="]",
+                open_str="{",
+                close="}",
                 preamble_lines=(),
             )
         )

@@ -1,16 +1,16 @@
 
 fn main() {
-mut my_data := [
-	1,
-	'hello',
-	true,
-	none,
-]
-my_data = [
-	1,
-	'hello',
-	true,
-	none,
-]
+	mut my_data := [
+		1,
+		'hello',
+		true,
+		none,
+	]
+	my_data = [
+		1,
+		'hello',
+		true,
+		none,
+	]
 	_ = my_data
 }

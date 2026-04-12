@@ -1,9 +1,9 @@
 
 fn main() {
-my_data := [
-	0b0,
-	0b1,
-	-0b1,
-]
+	my_data := [
+		0b0,
+		0b1,
+		-0b1,
+	]
 	_ = my_data
 }

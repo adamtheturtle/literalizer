@@ -1,5 +1,5 @@
 
 fn main() {
-mut my_data := []
+	mut my_data := []
 	_ = my_data
 }

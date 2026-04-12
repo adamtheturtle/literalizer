@@ -181,7 +181,8 @@ def _wrap_v(
 ) -> str:
     """Wrap a V declaration in a main function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"\nfn main() {{\n{content}\n\t_ = {variable_name}\n}}"
+    indented = textwrap.indent(text=content, prefix="\t")
+    return f"\nfn main() {{\n{indented}\n\t_ = {variable_name}\n}}"
 
 
 @beartype

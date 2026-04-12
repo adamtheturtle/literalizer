@@ -1,12 +1,12 @@
 
 fn main() {
-mut my_data := [
-	'name': 'Alice',
-	'scores': {'1': 'first', '2': 'second'},
-]
-my_data = [
-	'name': 'Alice',
-	'scores': {'1': 'first', '2': 'second'},
-]
+	mut my_data := {
+		'name': 'Alice',
+		'scores': {'1': 'first', '2': 'second'},
+	}
+	my_data = {
+		'name': 'Alice',
+		'scores': {'1': 'first', '2': 'second'},
+	}
 	_ = my_data
 }
