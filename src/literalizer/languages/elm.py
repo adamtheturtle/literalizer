@@ -580,45 +580,51 @@ class Elm(metaclass=LanguageCls):
             narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = _BYTES_FORMATTERS[
-            bytes_format.name
-        ](constructor_prefix)
-        del date_format  # Only ISO format available.
-        self.format_date: Callable[[datetime.date], str] = _build_elm_date_iso(
-            prefix=constructor_prefix
-        )
-        del datetime_format  # Only ISO format available.
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            _build_elm_datetime_iso(prefix=constructor_prefix)
-        )
-        self.format_string: Callable[[str], str] = _build_elm_str_formatter(
-            prefix=constructor_prefix,
-        )
-        self.format_integer: Callable[[int], str] = (
-            _build_elm_integer_formatter(
+        if constructor_prefix == "E":
+            self.format_bytes: Callable[[bytes], str] = bytes_format
+            self.format_date: Callable[[datetime.date], str] = date_format
+            self.format_datetime: Callable[[datetime.datetime], str] = (
+                datetime_format
+            )
+            self.format_string: Callable[[str], str] = _format_elm_string
+            self.format_integer: Callable[[int], str] = integer_format
+        else:
+            self.format_bytes = _BYTES_FORMATTERS[bytes_format.name](
+                constructor_prefix
+            )
+            self.format_date = _build_elm_date_iso(prefix=constructor_prefix)
+            self.format_datetime = _build_elm_datetime_iso(
+                prefix=constructor_prefix
+            )
+            self.format_string = _build_elm_str_formatter(
+                prefix=constructor_prefix,
+            )
+            self.format_integer = _build_elm_integer_formatter(
                 prefix=constructor_prefix,
                 base=_INT_BASE[integer_format.name],
             )
-        )
 
-        _pos_inf = f"{constructor_prefix}Float (1 / 0)"
-        _neg_inf = f"{constructor_prefix}Float (-(1 / 0))"
-        _nan_val = f"{constructor_prefix}Float (0 / 0)"
-        _float_finite = _build_elm_float_wrapper(
-            prefix=constructor_prefix,
-            inner=_FLOAT_BASE[float_format.name],
-        )
+        if constructor_prefix == "E":
+            self.format_float: Callable[[float], str] = float_format
+        else:
+            _pos_inf = f"{constructor_prefix}Float (1 / 0)"
+            _neg_inf = f"{constructor_prefix}Float (-(1 / 0))"
+            _nan_val = f"{constructor_prefix}Float (0 / 0)"
+            _float_finite = _build_elm_float_wrapper(
+                prefix=constructor_prefix,
+                inner=_FLOAT_BASE[float_format.name],
+            )
 
-        @beartype
-        def _format_float_with_specials(value: float) -> str:
-            """Format a float, handling inf and nan."""
-            if math.isinf(value):
-                return _neg_inf if value < 0 else _pos_inf
-            if math.isnan(value):
-                return _nan_val
-            return _float_finite(value)
+            @beartype
+            def _format_float_with_specials(value: float) -> str:
+                """Format a float, handling inf and nan."""
+                if math.isinf(value):
+                    return _neg_inf if value < 0 else _pos_inf
+                if math.isnan(value):
+                    return _nan_val
+                return _float_finite(value)
 
-        self.format_float: Callable[[float], str] = _format_float_with_specials
+            self.format_float = _format_float_with_specials
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

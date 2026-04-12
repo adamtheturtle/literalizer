@@ -2130,6 +2130,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
         (_build_type_name_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "simple_dict", ""),
+        (_build_constructor_prefix_variants(), "float_special_values", "_v"),
+        (_build_constructor_prefix_variants(), "float_list", "_float"),
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
