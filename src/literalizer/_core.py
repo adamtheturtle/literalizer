@@ -5,7 +5,7 @@ import datetime
 import enum
 import json
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
 
@@ -1185,6 +1185,110 @@ def _coerce_yaml_keys(*, data: object) -> Value:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True)
+class _CoercionStep:
+    """A single coercion: a check that raises on error, and a
+    transform that applies the coercion.
+    """
+
+    check: Callable[[Value], None]
+    coerce: Callable[[Value], Value]
+
+
+def _build_coercion_steps(
+    *,
+    spec: Language,
+) -> list[_CoercionStep]:
+    """Build the ordered list of coercion steps for the given spec."""
+
+    def _check_mixed_dict_shapes(data: Value) -> None:
+        """Raise if data contains dicts with different key sets."""
+        if _has_mixed_dict_shapes(data=data):
+            msg = (
+                "List contains dicts with different key sets "
+                "that would be padded with null values"
+            )
+            raise HeterogeneousCoercionError(msg)
+
+    def _check_heterogeneous_sibling_lists(data: Value) -> None:
+        """Raise if sibling lists have heterogeneous scalar types."""
+        if _has_heterogeneous_sibling_lists(data=data):
+            types = _describe_heterogeneous_types(data=data)
+            msg = (
+                "Collection contains heterogeneous scalar types "
+                "that would be coerced to strings"
+                f" (found types: {types})"
+            )
+            raise HeterogeneousCoercionError(msg)
+
+    def _check_mixed_dict_values(data: Value) -> None:
+        """Raise if any dict has values spanning multiple type
+        families.
+        """
+        if _has_mixed_dict_values(data=data):
+            types = _describe_mixed_type_families(
+                data=data,
+                container_type=dict,
+            )
+            msg = (
+                "Dict contains values of mixed types "
+                "that would be coerced to strings"
+                f" (found types: {types})"
+            )
+            raise HeterogeneousCoercionError(msg)
+
+    def _check_mixed_list_values(data: Value) -> None:
+        """Raise if any list has elements spanning multiple type
+        families.
+        """
+        if _has_mixed_list_values(data=data):
+            types = _describe_mixed_type_families(
+                data=data,
+                container_type=list,
+            )
+            msg = (
+                "List contains elements of mixed types "
+                "that would be coerced to strings"
+                f" (found types: {types})"
+            )
+            raise HeterogeneousCoercionError(msg)
+
+    steps: list[_CoercionStep] = []
+
+    if spec.sequence_format_config.requires_uniform_record_shapes:
+        steps.append(
+            _CoercionStep(
+                check=_check_mixed_dict_shapes,
+                coerce=lambda data: _coerce_mixed_dict_shapes(data=data),
+            )
+        )
+
+    steps.extend(
+        [
+            _CoercionStep(
+                check=lambda data: _check_heterogeneous(data=data),
+                coerce=lambda data: _coerce_heterogeneous_scalars(data=data),
+            ),
+            _CoercionStep(
+                check=_check_heterogeneous_sibling_lists,
+                coerce=lambda data: _coerce_heterogeneous_sibling_lists(
+                    data=data,
+                ),
+            ),
+            _CoercionStep(
+                check=_check_mixed_dict_values,
+                coerce=lambda data: _coerce_mixed_dict_values(data=data),
+            ),
+            _CoercionStep(
+                check=_check_mixed_list_values,
+                coerce=lambda data: _coerce_mixed_list_values(data=data),
+            ),
+        ]
+    )
+
+    return steps
+
+
 def _apply_coercions(
     *,
     data: Value,
@@ -1195,54 +1299,13 @@ def _apply_coercions(
     format.
     """
     if not spec.sequence_format.supports_heterogeneity:
+        steps = _build_coercion_steps(spec=spec)
         if error_on_coercion:
-            if (
-                spec.sequence_format_config.requires_uniform_record_shapes
-                and _has_mixed_dict_shapes(data=data)
-            ):
-                msg = (
-                    "List contains dicts with different key sets "
-                    "that would be padded with null values"
-                )
-                raise HeterogeneousCoercionError(msg)
-            _check_heterogeneous(data=data)
-            if _has_heterogeneous_sibling_lists(data=data):
-                types = _describe_heterogeneous_types(data=data)
-                msg = (
-                    "Collection contains heterogeneous scalar types "
-                    "that would be coerced to strings"
-                    f" (found types: {types})"
-                )
-                raise HeterogeneousCoercionError(msg)
-            if _has_mixed_dict_values(data=data):
-                types = _describe_mixed_type_families(
-                    data=data,
-                    container_type=dict,
-                )
-                msg = (
-                    "Dict contains values of mixed types "
-                    "that would be coerced to strings"
-                    f" (found types: {types})"
-                )
-                raise HeterogeneousCoercionError(msg)
-            if _has_mixed_list_values(data=data):
-                types = _describe_mixed_type_families(
-                    data=data,
-                    container_type=list,
-                )
-                msg = (
-                    "List contains elements of mixed types "
-                    "that would be coerced to strings"
-                    f" (found types: {types})"
-                )
-                raise HeterogeneousCoercionError(msg)
+            for step in steps:
+                step.check(data)
         else:
-            if spec.sequence_format_config.requires_uniform_record_shapes:
-                data = _coerce_mixed_dict_shapes(data=data)
-            data = _coerce_heterogeneous_scalars(data=data)
-            data = _coerce_heterogeneous_sibling_lists(data=data)
-            data = _coerce_mixed_dict_values(data=data)
-            data = _coerce_mixed_list_values(data=data)
+            for step in steps:
+                data = step.coerce(data)
     return data
 
 
