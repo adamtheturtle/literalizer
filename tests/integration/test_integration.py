@@ -226,7 +226,7 @@ def _wrap_cpp(
 ) -> str:
     """Wrap a C++ variable declaration in a function body."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void check_() {{\n{content}\n}}"
+    return f"static void check_() {{\n{content}\n}}"
 
 
 @beartype
@@ -377,7 +377,8 @@ def _wrap_c(
 ) -> str:
     """Wrap a C ``CVal`` declaration in a function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
+    void_cast = f"    (void){variable_name};"
+    return f"static void check_(void) {{\n{content}\n{void_cast}\n}}"
 
 
 @beartype
@@ -388,7 +389,8 @@ def _wrap_objc(
 ) -> str:
     """Wrap an Objective-C variable declaration in a function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
-    return f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
+    void_cast = f"    (void){variable_name};"
+    return f"static void check_(void) {{\n{content}\n{void_cast}\n}}"
 
 
 @beartype

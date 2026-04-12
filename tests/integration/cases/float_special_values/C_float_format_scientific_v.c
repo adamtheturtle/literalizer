@@ -12,9 +12,9 @@ struct CVal {
         const CKV *m;
     };
 };
-struct CKV { const char *k; CVal v; };
+struct CKV { const char *k; CVal v; };  // NOLINT(altera-struct-pack-align)
 #include <math.h>
-void check_(void) {
+static void check_(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = INFINITY}),
     ((CVal){.f = -INFINITY}),

@@ -631,10 +631,14 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
         self.static_body_preamble: Sequence[str] = (
+            "namespace {",
             "struct Any {",
-            "    template<class T> Any(T&&) noexcept {}",
-            "    Any(std::initializer_list<Any>) noexcept {}",
+            "    template<class T> Any(T&& /*unused*/) noexcept {}"
+            "  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions,bugprone-forwarding-reference-overload)",  # noqa: E501
+            "    Any(std::initializer_list<Any> /*unused*/) noexcept {}"
+            "  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)",  # noqa: E501
             "};",
+            "}  // namespace",
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter

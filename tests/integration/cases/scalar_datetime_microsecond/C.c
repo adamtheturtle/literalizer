@@ -12,8 +12,8 @@ struct CVal {
         const CKV *m;
     };
 };
-struct CKV { const char *k; CVal v; };
-void check_(void) {
+struct CKV { const char *k; CVal v; };  // NOLINT(altera-struct-pack-align)
+static void check_(void) {
 CVal my_data = ((CVal){.s = "2024-01-15T12:30:00.123456+00:00"});
     (void)my_data;
 }

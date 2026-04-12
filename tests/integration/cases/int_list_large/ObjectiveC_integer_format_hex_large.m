@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+static void check_(void) {
 id my_data = @[
     @(0xf4240),
     @(-0x4d2),

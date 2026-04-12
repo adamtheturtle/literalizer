@@ -12,8 +12,8 @@ struct CVal {
         const CKV *m;
     };
 };
-struct CKV { const char *k; CVal v; };
-void check_(void) {
+struct CKV { const char *k; CVal v; };  // NOLINT(altera-struct-pack-align)
+static void check_(void) {
 // note
 CVal my_data = ((CVal){.s = "hello # world"});
     (void)my_data;

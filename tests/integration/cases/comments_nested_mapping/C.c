@@ -12,8 +12,8 @@ struct CVal {
         const CKV *m;
     };
 };
-struct CKV { const char *k; CVal v; };
-void check_(void) {
+struct CKV { const char *k; CVal v; };  // NOLINT(altera-struct-pack-align)
+static void check_(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"a", ((CVal){.m = (CKV[]){{"x", ((CVal){.i = 1})}}})},
     {"b", ((CVal){.i = 2})},
