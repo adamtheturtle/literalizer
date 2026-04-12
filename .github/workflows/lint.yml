@@ -59,6 +59,9 @@ jobs:
       - name: Check Bash syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 bash -n < /tmp/files-to-lint
+      - name: Run Bash files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-to-lint
 
   lint-ruby:
     runs-on: ubuntu-latest
@@ -73,6 +76,9 @@ jobs:
       - name: Check Ruby syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-to-lint
+      - name: Run Ruby files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 ruby < /tmp/files-to-lint
 
   lint-gleam:
     runs-on: ubuntu-latest
@@ -117,6 +123,9 @@ jobs:
       - name: Check Go compilation
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
+      - name: Run Go files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 go run < /tmp/files-to-lint
 
   lint-groovy:
     runs-on: ubuntu-latest
@@ -154,6 +163,9 @@ jobs:
       - name: Check JavaScript syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-to-lint
+      - name: Run JavaScript files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 node < /tmp/files-to-lint
 
   lint-json5:
     runs-on: ubuntu-latest
@@ -330,6 +342,23 @@ jobs:
               -L "dependency=$deps" \
               --extern "chrono=$chrono_rlib" \
               "$f" -o "$tmpdir/out" 2>&1 || exit 1
+          done < /tmp/files-to-lint
+      - name: Run Rust binaries
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cargo init "$tmpdir/chrono-check"
+          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
+          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
+          deps="$tmpdir/chrono-check/target/debug/deps"
+          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
+          while IFS= read -r -d '' f; do
+            rustc --edition 2021 \
+              -L "dependency=$deps" \
+              --extern "chrono=$chrono_rlib" \
+              "$f" -o "$tmpdir/out" 2>&1 || exit 1
+            "$tmpdir/out" || exit 1
           done < /tmp/files-to-lint
 
   lint-swift:
