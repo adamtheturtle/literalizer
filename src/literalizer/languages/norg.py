@@ -75,6 +75,7 @@ class Norg(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     class DateFormats(enum.Enum):
         """Date format options for Norg."""

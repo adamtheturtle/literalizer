@@ -24,7 +24,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML
 
 import literalizer
-import literalizer.languages
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -78,25 +77,11 @@ class _LanguageConfig:
     wrap_variable_name: str | None
 
 
-_NO_VARIABLE_NAME_LANGUAGES: frozenset[literalizer.LanguageCls] = frozenset(
-    {
-        literalizer.languages.Clojure,
-        literalizer.languages.CommonLisp,
-        literalizer.languages.Json5,
-        literalizer.languages.Jsonnet,
-        literalizer.languages.Julia,
-        literalizer.languages.Racket,
-        literalizer.languages.Ruby,
-        literalizer.languages.Scheme,
-        literalizer.languages.Yaml,
-    }
-)
-
 _LANGUAGES: dict[str, _LanguageConfig] = {
     lang_cls.__name__: _LanguageConfig(
         lang_cls=lang_cls,
         wrap_variable_name=(
-            None if lang_cls in _NO_VARIABLE_NAME_LANGUAGES else "my_data"
+            "my_data" if lang_cls.supports_variable_names else None
         ),
     )
     for lang_cls in ALL_LANGUAGES
