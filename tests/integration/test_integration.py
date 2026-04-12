@@ -884,8 +884,10 @@ def test_golden_file(
         error_on_coercion=False,
     )
     variable_name = lang_config.wrap_variable_name or ""
-    wrapped = lang_config.lang_cls.wrap_in_file(  # type: ignore[misc]
-        result.bare_code, variable_name, result.body_preamble
+    wrapped = lang_config.lang_cls.wrap_in_file(
+        content=result.bare_code,
+        variable_name=variable_name,
+        body_preamble=result.body_preamble,
     )
 
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
@@ -997,11 +999,11 @@ def test_golden_file_combined_variable_forms(
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = lang_config.lang_cls.wrap_combined_in_file(  # type: ignore[misc]
-        declaration.declaration_code,
-        assignment.bare_code,
-        variable_name,
-        decl_preamble,
+    combined = lang_config.lang_cls.wrap_combined_in_file(
+        declaration=declaration.declaration_code,
+        assignment=assignment.bare_code,
+        variable_name=variable_name,
+        body_preamble=decl_preamble,
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
@@ -1239,8 +1241,10 @@ def test_format_variant_golden_file(
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
     variable_name = variant.wrap_variable_name or ""
-    wrapped = variant.lang_cls.wrap_in_file(  # type: ignore[misc]
-        result.bare_code, variable_name, result.body_preamble
+    wrapped = variant.lang_cls.wrap_in_file(
+        content=result.bare_code,
+        variable_name=variable_name,
+        body_preamble=result.body_preamble,
     )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
@@ -1342,11 +1346,11 @@ def test_line_ending_combined_variable_forms(
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = case.lang_config.lang_cls.wrap_combined_in_file(  # type: ignore[misc]
-        declaration.declaration_code,
-        assignment.bare_code,
-        case.lang_config.wrap_variable_name or "",
-        decl_preamble,
+    combined = case.lang_config.lang_cls.wrap_combined_in_file(
+        declaration=declaration.declaration_code,
+        assignment=assignment.bare_code,
+        variable_name=case.lang_config.wrap_variable_name or "",
+        body_preamble=decl_preamble,
     )
     combined = _prepend_preamble(
         wrapped=combined, preamble=declaration.preamble
