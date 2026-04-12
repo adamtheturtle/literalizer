@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void _check(void) {
+void check_(void) {
 struct _throttler_t { int (*check)(); };
 struct _throttler_t throttler;
 int print();

@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void _check(void) {
+void check_(void) {
 int process();
 process(@"hello")
 process(42)
