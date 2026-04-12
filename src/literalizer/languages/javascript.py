@@ -68,6 +68,14 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _js_call_stub(name: str, /) -> tuple[str, ...]:
+    """Return JavaScript stub declarations for a call name."""
+    root = name.split(sep=".", maxsplit=1)[0]
+    if root == "print":
+        return ("function print() {}",)
+    return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
+
+
 class JavaScript(metaclass=LanguageCls):
     """JavaScript language specification.
 
@@ -472,4 +480,5 @@ class JavaScript(metaclass=LanguageCls):
             kind=CallStyleKind.OBJECT,
             keyword_separator=": ",
         )
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _js_call_stub
+        self.format_call_preamble_stub = no_call_stub

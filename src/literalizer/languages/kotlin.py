@@ -64,6 +64,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -676,3 +677,4 @@ class Kotlin(metaclass=LanguageCls):
             keyword_separator=" = ",
         )
         self.format_call_stub = _kotlin_call_stub
+        self.format_call_preamble_stub = no_call_stub

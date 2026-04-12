@@ -734,8 +734,23 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     function call, or a dotted path (``"throttler.check"``) for a
     method call on an object.
 
+    Stub lines are placed **inside** the language wrapper (e.g.
+    inside ``func main()`` for Go, inside ``class Check`` for Java).
+    Languages that need stubs at file/package scope should use
+    :attr:`format_call_preamble_stub` instead.
+
     Returns an empty tuple when no stub is needed (e.g. for
     builtins, or in languages whose linters only check syntax).
+    """
+
+    format_call_preamble_stub: Callable[[str], tuple[str, ...]]
+    """Like :attr:`format_call_stub` but the lines are placed
+    **before** the language wrapper — at file, package, or module
+    scope.
+
+    Most languages return an empty tuple here and put all stubs in
+    :attr:`format_call_stub`.  Languages like Go that cannot declare
+    types inside function bodies use this instead.
     """
 
 

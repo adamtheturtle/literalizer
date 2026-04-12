@@ -46,6 +46,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -422,3 +423,4 @@ class C(metaclass=LanguageCls):
             kind=CallStyleKind.POSITIONAL,
         )
         self.format_call_stub = _c_call_stub
+        self.format_call_preamble_stub = no_call_stub

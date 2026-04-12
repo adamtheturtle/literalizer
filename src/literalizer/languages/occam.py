@@ -387,3 +387,4 @@ class Occam(metaclass=LanguageCls):
             kind=CallStyleKind.POSITIONAL,
         )
         self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = no_call_stub

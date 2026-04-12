@@ -57,6 +57,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -564,4 +565,5 @@ class Go(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = _go_call_stub
+        self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = _go_call_stub

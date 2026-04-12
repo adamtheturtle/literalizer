@@ -2354,6 +2354,25 @@ class _CallCase:
     lang_name: str
 
 
+# Languages where C-style function-call syntax is fundamentally
+# invalid (data-only formats, languages where ``.`` is not member
+# access, etc.).  These are skipped for call golden-file tests.
+_CALL_SKIP_LANGUAGES: frozenset[str] = frozenset(
+    {
+        "Bash",  # () creates subshell, . sources a file
+        "Dhall",  # pure functional, no call statements
+        "Gleam",  # module-based dispatch, no object.method()
+        "Jsonnet",  # functional, no side-effectful calls
+        "Json5",  # data format
+        "Norg",  # markup format
+        "Php",  # . is string concat, print is a keyword
+        "Toml",  # data format
+        "Yaml",  # data format
+        "Hcl",  # config format
+    }
+)
+
+
 @beartype
 def _discover_call_cases() -> list[_CallCase]:
     """Return call test cases for all languages."""
@@ -2362,6 +2381,7 @@ def _discover_call_cases() -> list[_CallCase]:
         cases.extend(
             _CallCase(config=config, lang_name=lang_name)
             for lang_name in _LANGUAGES
+            if lang_name not in _CALL_SKIP_LANGUAGES
         )
     return cases
 
@@ -2422,15 +2442,18 @@ def test_call_golden_file(
         call_function=config.call_function,
         call_wrapper=config.call_wrapper,
     )
-    stub_lines: list[str] = []
+    body_stubs: list[str] = []
+    preamble_stubs: list[str] = []
     for name in call_names:
-        stub_lines.extend(spec.format_call_stub(name))
-    stub_prefix = "\n".join(stub_lines) + "\n" if stub_lines else ""
+        body_stubs.extend(spec.format_call_stub(name))
+        preamble_stubs.extend(spec.format_call_preamble_stub(name))
+    stub_prefix = "\n".join(body_stubs) + "\n" if body_stubs else ""
     code = stub_prefix + result.bare_code
 
     variable_name = lang_config.wrap_variable_name or ""
     wrapped = lang_config.wrap(code, variable_name, result.body_preamble)
-    wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
+    all_preamble = result.preamble + tuple(preamble_stubs)
+    wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     golden_name = f"{call_case.lang_name}_call"
     file_regression.check(
         contents=wrapped + "\n",

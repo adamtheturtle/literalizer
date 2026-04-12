@@ -56,6 +56,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -131,12 +132,24 @@ class _ScalaDictSpec:
 
 
 def _scala_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Scala stub declarations for a call name."""
+    """Return Scala stub declarations for a call name.
+
+    Uses ``Dynamic`` to accept arbitrary named arguments.
+    """
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"def {parts[0]}(a: Any*): Any = null",)
-    root, method = parts[0], parts[1]
-    return (f"val {root} = new {{ def {method}(a: Any*): Any = null }}",)
+        return (
+            "import scala.language.dynamics",
+            f"object {parts[0]} extends Dynamic {{"
+            f" def applyDynamic(n: String)(a: Any*): Any = null }}",
+        )
+    root = parts[0]
+    return (
+        "import scala.language.dynamics",
+        f"object {root} extends Dynamic {{"
+        f" def applyDynamicNamed(n: String)"
+        f"(a: (String, Any)*): Any = null }}",
+    )
 
 
 class Scala(metaclass=LanguageCls):
@@ -587,3 +600,4 @@ class Scala(metaclass=LanguageCls):
             keyword_separator=" = ",
         )
         self.format_call_stub = _scala_call_stub
+        self.format_call_preamble_stub = no_call_stub

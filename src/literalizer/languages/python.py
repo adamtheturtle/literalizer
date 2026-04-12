@@ -926,3 +926,4 @@ class Python(metaclass=LanguageCls):
             keyword_separator="=",
         )
         self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = no_call_stub

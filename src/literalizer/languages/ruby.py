@@ -70,6 +70,19 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _ruby_call_stub(name: str, /) -> tuple[str, ...]:
+    """Return Ruby stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}(*a); end",)
+    root, method = parts[0], parts[1]
+    cls = root.capitalize() + "Type"
+    return (
+        f"class {cls}; def {method}(*a, **kw); end; end",
+        f"{root} = {cls}.new",
+    )
+
+
 class Ruby(metaclass=LanguageCls):
     """Ruby language specification.
 
@@ -462,4 +475,5 @@ class Ruby(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=": ",
         )
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _ruby_call_stub
+        self.format_call_preamble_stub = no_call_stub

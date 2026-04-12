@@ -462,4 +462,5 @@ class Dhall(metaclass=LanguageCls):
             kind=CallStyleKind.POSITIONAL,
         )
         self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = no_call_stub
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
