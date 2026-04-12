@@ -234,7 +234,7 @@ class LanguageCls(type):
     DictEntryStyles: type[enum.Enum]
     DictFormats: type[enum.Enum]
     EmptyDictKey: type[enum.Enum]
-    FloatFormats: type[enum.Enum]
+    FloatFormats: type[FloatSpecialsMixin]
     IntegerFormats: type[enum.Enum]
     NumericLiteralSuffixes: type[enum.Enum]
     NumericSeparators: type[enum.Enum]
