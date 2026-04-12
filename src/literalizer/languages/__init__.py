@@ -53,9 +53,11 @@ from .scala import Scala
 from .scheme import Scheme
 from .swift import Swift
 from .systemverilog import SystemVerilog
+from .tcl import Tcl
 from .toml import Toml
 from .typescript import TypeScript
 from .vb import VisualBasic
+from .wren import Wren
 from .yaml import Yaml
 from .zig import Zig
 
@@ -111,10 +113,12 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Scala,
         Scheme,
         Swift,
+        Tcl,
         Toml,
         TypeScript,
         SystemVerilog,
         VisualBasic,
+        Wren,
         Yaml,
         Zig,
     }
@@ -173,9 +177,11 @@ __all__ = [
     "Scheme",
     "Swift",
     "SystemVerilog",
+    "Tcl",
     "Toml",
     "TypeScript",
     "VisualBasic",
+    "Wren",
     "Yaml",
     "Zig",
 ]

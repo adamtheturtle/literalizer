@@ -88,6 +88,7 @@ PureScript
 Pygments
 Raku
 SystemVerilog
+Tcl
 Toml
 YAMLError
 ZKV

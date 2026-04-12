@@ -327,23 +327,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.rs
-      - name: Check Rust syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cargo init "$tmpdir/chrono-check"
-          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
-          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
-          deps="$tmpdir/chrono-check/target/debug/deps"
-          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
-          while IFS= read -r -d '' f; do
-            rustc --edition 2021 \
-              -L "dependency=$deps" \
-              --extern "chrono=$chrono_rlib" \
-              "$f" -o "$tmpdir/out" 2>&1 || exit 1
-          done < /tmp/files-to-lint
-      - name: Run Rust binaries
+      # Compile and run in one step because the compiled binary lives in a
+      # temp directory that is cleaned up when the step exits.
+      - name: Check Rust syntax and run binaries
         if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
@@ -751,6 +737,23 @@ jobs:
       - name: Check Lua syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 luac -p < /tmp/files-to-lint
+
+  lint-tcl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.tcl
+      - name: Install Tcl
+        if: steps.find-files.outputs.found == 'true'
+        run: sudo apt-get update && sudo apt-get install -y tcl
+      - name: Check Tcl syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-to-lint
 
   lint-php:
     runs-on: ubuntu-latest
@@ -1255,6 +1258,26 @@ jobs:
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy --checks='*,-altera-*,-llvmlibc-*,-fuchsia-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-clang-analyzer-deadcode.DeadStores,-google-runtime-int,-modernize-raw-string-literal,-misc-const-correctness,-llvm-include-order,-misc-include-cleaner,-misc-use-anonymous-namespace,-bugprone-narrowing-conversions,-cppcoreguidelines-narrowing-conversions,-google-explicit-constructor,-hicpp-explicit-conversions,-bugprone-forwarding-reference-overload,-hicpp-named-parameter,-readability-named-parameter'
           --warnings-as-errors='*' < /tmp/files-to-lint
 
+  lint-wren:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.wren
+      - name: Install Wren CLI
+        if: steps.find-files.outputs.found == 'true'
+        run: |
+          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
+          unzip -o /tmp/wren.zip -d /tmp/wren
+          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
+      - name: Run Wren files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-to-lint
+
   completion-lint:
     needs:
       - pre-commit
@@ -1290,6 +1313,7 @@ jobs:
       - lint-julia
       - lint-perl
       - lint-lua
+      - lint-tcl
       - lint-php
       - lint-r
       - lint-d
@@ -1307,6 +1331,7 @@ jobs:
       - lint-scheme
       - lint-zig
       - lint-toml
+      - lint-wren
       - lint-yaml
       - lint-powershell
       - lint-systemverilog
