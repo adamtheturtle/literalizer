@@ -740,7 +740,8 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     :attr:`format_call_preamble_stub` instead.
 
     Returns an empty tuple when no stub is needed (e.g. for
-    builtins, or in languages whose linters only check syntax).
+    builtins, or in languages whose lint checks only verify
+    syntax).
     """
 
     format_call_preamble_stub: Callable[[str], tuple[str, ...]]

@@ -60,14 +60,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-def _dart_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Dart stub declarations for a call name."""
-    root = name.split(sep=".", maxsplit=1)[0]
-    if root == "print":
-        return ()
-    return (f"dynamic {root};",)
-
-
 class Dart(metaclass=LanguageCls):
     """Dart language specification.
 
@@ -479,5 +471,5 @@ class Dart(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=": ",
         )
-        self.format_call_stub = _dart_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

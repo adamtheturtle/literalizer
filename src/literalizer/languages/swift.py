@@ -99,19 +99,6 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
-def _swift_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Swift stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"func {parts[0]}(_ a: Any...) -> Any {{ 0 }}",)
-    root, method = parts[0], parts[1]
-    cls = f"_{root}Type"
-    return (
-        f"class {cls} {{ func {method}(_ a: Any...) -> Any {{ 0 }} }}",
-        f"let {root} = {cls}()",
-    )
-
-
 class Swift(metaclass=LanguageCls):
     """Swift language specification."""
 
@@ -516,5 +503,5 @@ class Swift(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=": ",
         )
-        self.format_call_stub = _swift_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

@@ -106,20 +106,6 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     return f"{name} = {wrapped};"
 
 
-def _sv_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return SystemVerilog stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"function automatic void {parts[0]}(string a); endfunction",)
-    root, method = parts[0], parts[1]
-    return (
-        f"class _{root}_t;",
-        f"  function void {method}(string a, real b); endfunction",
-        "endclass",
-        f"_{root}_t {root} = new;",
-    )
-
-
 class SystemVerilog(metaclass=LanguageCls):
     """SystemVerilog language specification."""
 
@@ -432,5 +418,5 @@ class SystemVerilog(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = _sv_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

@@ -123,20 +123,6 @@ def _make_variable_assignment(
     return _format
 
 
-def _nim_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Nim stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"proc {parts[0]}(a: varargs[string]) {{.used.}} = discard",)
-    root, method = parts[0], parts[1]
-    cls = root.title() + "Type"
-    return (
-        f"type {cls} = object",
-        f"proc {method}(self: {cls}, a: varargs[string]) {{.used.}} = discard",
-        f"let {root} {{.used.}} = {cls}()",
-    )
-
-
 class Nim(metaclass=LanguageCls):
     """Nim language specification.
 
@@ -550,5 +536,5 @@ class Nim(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=" = ",
         )
-        self.format_call_stub = _nim_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

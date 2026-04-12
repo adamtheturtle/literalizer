@@ -71,20 +71,6 @@ def _format_set_entry(_original: Value, item: str) -> str:
     return f"{item} = {{}}"
 
 
-def _odin_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Odin stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"{parts[0]} :: proc(_: ..any) {{}}",)
-    root, method = parts[0], parts[1]
-    type_name = f"_{root}_type"
-    return (
-        f"{type_name} :: struct {{}}",
-        f"{method} :: proc(_: {type_name}, _: ..any) {{}}",
-        f"{root} := {type_name}{{}}",
-    )
-
-
 class Odin(metaclass=LanguageCls):
     """Odin language specification."""
 
@@ -456,5 +442,5 @@ class Odin(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = _odin_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

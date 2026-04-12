@@ -97,22 +97,6 @@ def _list_of_open(items: list[Any]) -> str:
     return "List.of("
 
 
-def _java_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Java stub declarations for a call expression name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (
-            f"    static Object {parts[0]}(Object... a) {{ return null; }}",
-        )
-    root, method = parts[0], parts[1]
-    cls = f"_{root}Type"
-    return (
-        f"    static class {cls} {{ Object {method}"
-        f"(Object... a) {{ return null; }} }}",
-        f"    static {cls} {root} = new {cls}();",
-    )
-
-
 class Java(metaclass=LanguageCls):
     """Java language specification.
 
@@ -599,5 +583,5 @@ class Java(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = _java_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

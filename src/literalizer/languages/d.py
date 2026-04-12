@@ -81,20 +81,6 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     return f"{name} = {wrapped};"
 
 
-def _d_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return D stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"auto {parts[0]}(T...)(T args) {{ return 0; }}",)
-    root, method = parts[0], parts[1]
-    type_name = f"_{root}Type"
-    return (
-        f"struct {type_name} {{"
-        f" auto {method}(T...)(T args) {{ return 0; }} }}",
-        f"{type_name} {root};",
-    )
-
-
 class D(metaclass=LanguageCls):
     """D language specification."""
 
@@ -425,4 +411,4 @@ class D(metaclass=LanguageCls):
             kind=CallStyleKind.POSITIONAL,
         )
         self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = _d_call_stub
+        self.format_call_preamble_stub = no_call_stub

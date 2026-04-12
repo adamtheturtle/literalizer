@@ -131,27 +131,6 @@ class _ScalaDictSpec:
     preamble_lines: tuple[str, ...]
 
 
-def _scala_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Scala stub declarations for a call name.
-
-    Uses ``Dynamic`` to accept arbitrary named arguments.
-    """
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (
-            "import scala.language.dynamics",
-            f"object {parts[0]} extends Dynamic {{"
-            f" def applyDynamic(n: String)(a: Any*): Any = null }}",
-        )
-    root = parts[0]
-    return (
-        "import scala.language.dynamics",
-        f"object {root} extends Dynamic {{"
-        f" def applyDynamicNamed(n: String)"
-        f"(a: (String, Any)*): Any = null }}",
-    )
-
-
 class Scala(metaclass=LanguageCls):
     """Scala language specification."""
 
@@ -599,5 +578,5 @@ class Scala(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=" = ",
         )
-        self.format_call_stub = _scala_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

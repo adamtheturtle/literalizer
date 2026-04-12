@@ -105,18 +105,6 @@ def _format_objc_bytes_base64(value: bytes) -> str:
     return f'@"{encoded.decode(encoding="ascii")}"'
 
 
-def _objc_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Objective-C stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"int {parts[0]}();",)
-    root, method = parts[0], parts[1]
-    return (
-        f"struct _{root}_t {{ int (*{method})(); }};",
-        f"struct _{root}_t {root};",
-    )
-
-
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
@@ -432,5 +420,5 @@ class ObjectiveC(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = _objc_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

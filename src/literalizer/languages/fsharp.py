@@ -113,19 +113,6 @@ def _build_fsharp_declaration(
 
 
 @beartype
-def _fsharp_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return F# stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"let {parts[0]} (a: obj) : obj = a",)
-    root, method = parts[0], parts[1]
-    return (
-        f"type _{root}Type() =",
-        f"    member _.{method} (a: obj, b: obj) : obj = a",
-        f"let {root} = _{root}Type()",
-    )
-
-
 class FSharp(metaclass=LanguageCls):
     """F# language specification.
 
@@ -526,5 +513,5 @@ class FSharp(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = _fsharp_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

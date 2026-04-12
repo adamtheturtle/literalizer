@@ -55,19 +55,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-def _crystal_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Crystal stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"def {parts[0]}(*a); end",)
-    root, method = parts[0], parts[1]
-    cls = root.capitalize() + "Type"
-    return (
-        f"class {cls}; def {method}(*a); end; end",
-        f"{root} = {cls}.new",
-    )
-
-
 class Crystal(metaclass=LanguageCls):
     """Crystal language specification.
 
@@ -433,5 +420,5 @@ class Crystal(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=": ",
         )
-        self.format_call_stub = _crystal_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

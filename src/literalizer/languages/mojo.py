@@ -63,15 +63,6 @@ def _format_mojo_ordered_map_entry(key: str, _val: Value, value: str) -> str:
     return f"Tuple({key}, {value})"
 
 
-def _mojo_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return Mojo stub declarations for a call name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"fn {parts[0]}(a: object): pass",)
-    root, _method = parts[0], parts[1]
-    return (f"var {root} = object()",)
-
-
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
 
@@ -427,5 +418,5 @@ class Mojo(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator="=",
         )
-        self.format_call_stub = _mojo_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

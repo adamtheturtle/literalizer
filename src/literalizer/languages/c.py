@@ -92,18 +92,6 @@ _format_c_entry = _make_format_c_entry(
 )
 
 
-def _c_call_stub(name: str, /) -> tuple[str, ...]:
-    """Return C stub declarations for a call expression name."""
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"int {parts[0]}();",)
-    root, method = parts[0], parts[1]
-    return (
-        f"struct _{root}_t {{ int (*{method})(); }};",
-        f"struct _{root}_t {root};",
-    )
-
-
 @beartype
 class C(metaclass=LanguageCls):
     """C language specification."""
@@ -484,5 +472,5 @@ class C(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = _c_call_stub
+        self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
