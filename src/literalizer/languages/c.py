@@ -90,13 +90,6 @@ _format_c_entry = _make_format_c_entry(
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
-    """Format a C variable declaration."""
-    wrapped = _format_c_entry(data, value)
-    return f"CVal {name} = {wrapped};"
-
-
-@beartype
 class C(metaclass=LanguageCls):
     """C language specification."""
 
@@ -195,7 +188,9 @@ class C(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
+            formatter=lambda name, value, data: (
+                f"CVal {name} = {_format_c_entry(data, value)};"
+            ),
             supports_redefinition=True,
         )
 
