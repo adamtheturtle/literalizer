@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 
 def _ts_call_stub(name: str, /) -> tuple[str, ...]:
     """Return TypeScript stub declarations for a call name."""
-    root = name.split(".", maxsplit=1)[0]
+    root = name.split(sep=".", maxsplit=1)[0]
     return (f"declare const {root}: any;",)
 
 

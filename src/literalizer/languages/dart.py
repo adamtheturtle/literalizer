@@ -61,7 +61,7 @@ if TYPE_CHECKING:
 
 def _dart_call_stub(name: str, /) -> tuple[str, ...]:
     """Return Dart stub declarations for a call name."""
-    root = name.split(".", maxsplit=1)[0]
+    root = name.split(sep=".", maxsplit=1)[0]
     return (f"dynamic {root};",)
 
 
