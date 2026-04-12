@@ -299,6 +299,7 @@ follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
+project_excludes = [ "tests/integration/cases/call_*/" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false

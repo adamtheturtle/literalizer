@@ -222,7 +222,7 @@ repos:
       - id: pyrefly
         name: pyrefly
         stages: [pre-push]
-        entry: uv run --extra=dev pyrefly check --project-excludes "tests/integration/cases/call_*/"
+        entry: uv run --extra=dev pyrefly check
         language: python
         types_or: [python, toml]
         pass_filenames: false
