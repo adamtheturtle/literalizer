@@ -981,6 +981,12 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
         combined_wrap=_wrap_fortran_combined,
         wrap_variable_name="my_data",
     ),
+    literalizer.languages.Tcl.__name__: _LanguageConfig(
+        lang_cls=literalizer.languages.Tcl,
+        wrap=_wrap_noop,
+        combined_wrap=_newline_combined(wrap=_wrap_noop),
+        wrap_variable_name="my_data",
+    ),
     literalizer.languages.Wren.__name__: _LanguageConfig(
         lang_cls=literalizer.languages.Wren,
         wrap=_wrap_noop,

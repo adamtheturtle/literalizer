@@ -82,13 +82,6 @@ def _make_format_c_entry(
     return _format_c_entry
 
 
-_format_c_entry = _make_format_c_entry(
-    int_field="i",
-    float_field="f",
-    string_field="s",
-)
-
-
 @beartype
 class C(metaclass=LanguageCls):
     """C language specification."""
@@ -188,9 +181,7 @@ class C(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=lambda name, value, data: (
-                f"CVal {name} = {_format_c_entry(data, value)};"
-            ),
+            formatter=lambda name, value, _data: f"CVal {name} = {value};",
             supports_redefinition=True,
         )
 
