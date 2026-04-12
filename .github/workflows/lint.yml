@@ -738,6 +738,23 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 luac -p < /tmp/files-to-lint
 
+  lint-tcl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.tcl
+      - name: Install Tcl
+        if: steps.find-files.outputs.found == 'true'
+        run: sudo apt-get update && sudo apt-get install -y tcl
+      - name: Check Tcl syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-to-lint
+
   lint-php:
     runs-on: ubuntu-latest
     steps:
@@ -1276,6 +1293,7 @@ jobs:
       - lint-julia
       - lint-perl
       - lint-lua
+      - lint-tcl
       - lint-php
       - lint-r
       - lint-d
