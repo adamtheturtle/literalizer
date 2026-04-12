@@ -1,4 +1,6 @@
-set my_data [list
-    "a"  # note a
-    "b"  # note b
+# note a
+# note b
+set my_data [list \
+    "a" \
+    "b" \
 ]

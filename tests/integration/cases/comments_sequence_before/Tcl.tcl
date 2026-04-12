@@ -1,6 +1,6 @@
-set my_data [list
-    # first
-    "a"
-    # second
-    "b"
+# first
+# second
+set my_data [list \
+    "a" \
+    "b" \
 ]

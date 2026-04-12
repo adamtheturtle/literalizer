@@ -1,8 +1,8 @@
-set my_data [list
-    "a"
-    # trailing
+# trailing
+set my_data [list \
+    "a" \
 ]
-set my_data [list
-    "a"
-    # trailing
+# trailing
+set my_data [list \
+    "a" \
 ]

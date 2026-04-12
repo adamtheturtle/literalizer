@@ -1,12 +1,14 @@
-set my_data [dict create
-    # before apple
-    "apple" 1
-    "banana" 1  # banana inline
-    # trailing
+# before apple
+# banana inline
+# trailing
+set my_data [dict create \
+    "apple" 1 \
+    "banana" 1 \
 ]
-set my_data [dict create
-    # before apple
-    "apple" 1
-    "banana" 1  # banana inline
-    # trailing
+# before apple
+# banana inline
+# trailing
+set my_data [dict create \
+    "apple" 1 \
+    "banana" 1 \
 ]

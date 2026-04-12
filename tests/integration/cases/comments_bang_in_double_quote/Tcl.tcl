@@ -1,3 +1,4 @@
-set my_data [dict create
-    "key" "\"bang!\""  # real
+# real
+set my_data [dict create \
+    "key" "\"bang!\"" \
 ]

@@ -19,7 +19,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
-    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -51,8 +50,37 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _add_tcl_continuation(value: str) -> str:
+    r"""Add ``\`` line-continuation to non-last lines.
+
+    Inside Tcl ``[...]`` command substitution, newlines act as command
+    separators.  A trailing backslash on each physical line (except the
+    last) tells the interpreter to treat the next line as part of the
+    same command.
+    """
+    lines = value.splitlines()
+    if len(lines) <= 1:
+        return value
+    result: list[str] = []
+    for i, line in enumerate(iterable=lines):
+        is_last = i == len(lines) - 1
+        if is_last:
+            result.append(line)
+        else:
+            result.append(line + " \\")
+    return "\n".join(result)
+
+
+@beartype
+def _format_tcl_declaration(name: str, value: str, _data: Value) -> str:
+    """Format a Tcl ``set`` variable declaration with continuation."""
+    continued = _add_tcl_continuation(value=value)
+    return f"set {name} {continued}"
+
+
+@beartype
 def _format_tcl_set_entry(_original: Value, item: str) -> str:
-    """Format a Tcl set entry as a dict key with a ``1`` value.
+    """Format a set entry as a dict key with a ``1`` value.
 
     Sets are represented as dicts mapping elements to ``1``.
 
@@ -63,7 +91,7 @@ def _format_tcl_set_entry(_original: Value, item: str) -> str:
 
 @beartype
 def _format_tcl_dict_entry(key: str, _val: Value, value: str) -> str:
-    """Format a Tcl dict entry as ``key value``."""
+    """Format a dict entry as ``key value``."""
     return f"{key} {value}"
 
 
@@ -81,7 +109,7 @@ class Tcl(metaclass=LanguageCls):
     supports_non_printable_ascii_dict_keys = True
 
     class DateFormats(enum.Enum):
-        """Date format options for Tcl."""
+        """Date format options."""
 
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
@@ -90,7 +118,7 @@ class Tcl(metaclass=LanguageCls):
             return self.value.formatter(date_value)
 
     class DatetimeFormats(enum.Enum):
-        """Datetime format options for Tcl."""
+        """Datetime format options."""
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -112,10 +140,10 @@ class Tcl(metaclass=LanguageCls):
             return self.value(value=data)
 
     class SequenceFormats(enum.Enum):
-        """Sequence type options for Tcl."""
+        """Sequence type options."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="[list"),
+            sequence_open=fixed_sequence_open(open_str="[list "),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -137,10 +165,10 @@ class Tcl(metaclass=LanguageCls):
             return self.value.supports_heterogeneity
 
     class SetFormats(enum.Enum):
-        """Set type options for Tcl."""
+        """Set type options."""
 
         DICT = SetFormatConfig(
-            set_open=fixed_set_open(open_str="[dict create"),
+            set_open=fixed_set_open(open_str="[dict create "),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -160,7 +188,7 @@ class Tcl(metaclass=LanguageCls):
         """Declaration style options."""
 
         SET = DeclarationStyleConfig(
-            formatter=variable_formatter(template="set {name} {value}"),
+            formatter=_format_tcl_declaration,
             supports_redefinition=True,
         )
 
@@ -182,9 +210,9 @@ class Tcl(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="Inf",
-        negative_infinity="-Inf",
-        nan="NaN",
+        positive_infinity='"Inf"',
+        negative_infinity='"-Inf"',
+        nan='"NaN"',
     ):
         """Float format options."""
 
@@ -276,7 +304,7 @@ class Tcl(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
     ) -> None:
-        """Initialize Tcl language specification."""
+        """Initialize language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         fmt = sequence_format.value
@@ -288,7 +316,7 @@ class Tcl(metaclass=LanguageCls):
         self.false_literal = "0"
         self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="[dict create"),
+            dict_open=fixed_dict_open(open_str="[dict create "),
             close="]",
             format_entry=_format_tcl_dict_entry,
             empty_dict=None,
@@ -324,7 +352,7 @@ class Tcl(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="[dict create",
+                open_str="[dict create ",
                 close="]",
                 preamble_lines=(),
             )
@@ -336,14 +364,14 @@ class Tcl(metaclass=LanguageCls):
         self.indent_closing_delimiter = False
         self.element_separator = " "
         self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
-        self.supports_scalar_inline_comments = True
+        self.supports_collection_comments = False
+        self.supports_scalar_before_comments = False
+        self.supports_scalar_inline_comments = False
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="set {name} {value}")
+            declaration_style.value.formatter
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

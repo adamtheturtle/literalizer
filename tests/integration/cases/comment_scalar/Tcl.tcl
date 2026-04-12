@@ -1,2 +1,2 @@
-set my_data # note
-42
+# note
+set my_data 42

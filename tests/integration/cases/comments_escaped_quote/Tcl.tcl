@@ -1,3 +1,4 @@
-set my_data [dict create
-    "key" "value \" # not a comment"  # real
+# real
+set my_data [dict create \
+    "key" "value \" # not a comment" \
 ]

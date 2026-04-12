@@ -1,2 +1,4 @@
-set my_data "hello # world"  # note
-set my_data "hello # world"  # note
+# note
+set my_data "hello # world"
+# note
+set my_data "hello # world"
