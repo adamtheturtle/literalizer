@@ -1,5 +1,6 @@
 """C language specification."""
 
+import collections.abc
 import datetime
 import enum
 from typing import TYPE_CHECKING
@@ -56,35 +57,39 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_c_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate ``CVal`` union
-    literal.
+def _make_format_c_entry(
+    *,
+    int_field: str,
+    float_field: str,
+    string_field: str,
+) -> collections.abc.Callable[[Value, str], str]:
+    """Return a formatter that wraps values in the appropriate
+    ``CVal`` union literal using the given field names.
     """
-    match original:
-        case str() | bytes() | datetime.date():
-            return f"((CVal){{.s = {formatted}}})"
-        case bool():
-            return formatted
-        case int():
-            return f"((CVal){{.i = {formatted}}})"
-        case float():
-            return f"((CVal){{.f = {formatted}}})"
-        case _:
-            return formatted
+
+    @beartype
+    def _format_c_entry(original: Value, formatted: str) -> str:
+        """Wrap a formatted entry in the appropriate union literal."""
+        match original:
+            case str() | bytes() | datetime.date():
+                return f"((CVal){{.{string_field} = {formatted}}})"
+            case bool():
+                return formatted
+            case int():
+                return f"((CVal){{.{int_field} = {formatted}}})"
+            case float():
+                return f"((CVal){{.{float_field} = {formatted}}})"
+            case _:
+                return formatted
+
+    return _format_c_entry
 
 
-@beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
-    """Format a C variable declaration."""
-    wrapped = _format_c_entry(original=data, formatted=value)
-    return f"CVal {name} = {wrapped};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format a C variable assignment."""
-    wrapped = _format_c_entry(original=data, formatted=value)
-    return f"{name} = {wrapped};"
+_format_c_entry = _make_format_c_entry(
+    int_field="i",
+    float_field="f",
+    string_field="s",
+)
 
 
 def _c_call_stub(name: str, /) -> tuple[str, ...]:
@@ -197,7 +202,9 @@ class C(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
+            formatter=lambda name, value, data: (
+                f"CVal {name} = {_format_c_entry(data, value)};"
+            ),
             supports_redefinition=True,
         )
 
@@ -316,23 +323,68 @@ class C(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        bool_field: str = "b",
+        int_field: str = "i",
+        float_field: str = "f",
+        string_field: str = "s",
+        array_field: str = "a",
+        map_field: str = "m",
+        key_field: str = "k",
+        value_field: str = "v",
     ) -> None:
         """Initialize C language specification."""
+        format_entry = _make_format_c_entry(
+            int_field=int_field,
+            float_field=float_field,
+            string_field=string_field,
+        )
+        seq_open = f"((CVal){{.{array_field} = (CVal[]){{"
+        map_open = f"((CVal){{.{map_field} = (CKV[]){{"
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "((CVal){.s = NULL})"
-        self.true_literal = "((CVal){.b = true})"
-        self.false_literal = "((CVal){.b = false})"
+        self.null_literal: str = f"((CVal){{.{string_field} = NULL}})"
+        self.true_literal: str = f"((CVal){{.{bool_field} = true}})"
+        self.false_literal: str = f"((CVal){{.{bool_field} = false}})"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.sequence_format_config: SequenceFormatConfig = (
+            SequenceFormatConfig(
+                sequence_open=fixed_sequence_open(open_str=seq_open),
+                close="}})",
+                supports_heterogeneity=fmt.supports_heterogeneity,
+                single_element_trailing_comma=(
+                    fmt.single_element_trailing_comma
+                ),
+                supports_trailing_comma=fmt.supports_trailing_comma,
+                empty_sequence=fmt.empty_sequence,
+                preamble_lines=fmt.preamble_lines,
+                format_entry=fmt.format_entry,
+                typed_opener_fallback=fmt.typed_opener_fallback,
+                uses_typed_literal_for_scalars=(
+                    fmt.uses_typed_literal_for_scalars
+                ),
+                requires_uniform_record_shapes=(
+                    fmt.requires_uniform_record_shapes
+                ),
+                declared_type=fmt.declared_type,
+            )
+        )
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
+            set_open=fixed_set_open(open_str=seq_open),
+            close="}})",
+            empty_set=set_format.value.empty_set,
+            preamble_lines=set_format.value.preamble_lines,
+            set_opener_template=set_format.value.set_opener_template,
+            coerce_mixed_to_str=set_format.value.coerce_mixed_to_str,
+        )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            self.sequence_format_config.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="((CVal){.m = (CKV[]){"),
+            dict_open=fixed_dict_open(open_str=map_open),
             close="}})",
             format_entry=braced_dict_entry(
-                format_value=_format_c_entry,
+                format_value=format_entry,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -352,10 +404,8 @@ class C(metaclass=LanguageCls):
             if suffix_is_auto
             else integer_format
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            _format_c_entry
-        )
-        self.format_set_entry: Callable[[Value, str], str] = _format_c_entry
+        self.format_sequence_entry: Callable[[Value, str], str] = format_entry
+        self.format_set_entry: Callable[[Value, str], str] = format_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
@@ -370,13 +420,13 @@ class C(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="((CVal){.m = (CKV[]){",
+                open_str=map_open,
                 close="}})",
                 preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            braced_dict_entry(format_value=_format_c_entry)
+            braced_dict_entry(format_value=format_entry)
         )
         self.indent = indent
         self.indent_closing_delimiter = False
@@ -385,11 +435,24 @@ class C(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
+
+        @beartype
+        def _format_decl(name: str, value: str, data: Value) -> str:
+            """Format a C variable declaration."""
+            wrapped = format_entry(data, value)
+            return f"CVal {name} = {wrapped};"
+
+        @beartype
+        def _format_assign(name: str, value: str, data: Value) -> str:
+            """Format a C variable assignment."""
+            wrapped = format_entry(data, value)
+            return f"{name} = {wrapped};"
+
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _format_decl
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _format_assign
         )
         self.static_preamble: Sequence[str] = (
             "#include <stdbool.h>",
@@ -398,15 +461,15 @@ class C(metaclass=LanguageCls):
             "typedef struct CKV CKV;",
             "struct CVal {",
             "    union {",
-            "        _Bool b;",
-            "        long long i;",
-            "        double f;",
-            "        const char *s;",
-            "        const CVal *a;",
-            "        const CKV *m;",
+            f"        _Bool {bool_field};",
+            f"        long long {int_field};",
+            f"        double {float_field};",
+            f"        const char *{string_field};",
+            f"        const CVal *{array_field};",
+            f"        const CKV *{map_field};",
             "    };",
             "};",
-            "struct CKV { const char *k; CVal v; };",
+            f"struct CKV {{ const char *{key_field}; CVal {value_field}; }};",
         )
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
