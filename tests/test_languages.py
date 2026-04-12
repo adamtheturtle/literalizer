@@ -12,6 +12,7 @@ from literalizer import (
     InputFormat,
     Language,
     literalize,
+    literalize_call,
 )
 from literalizer._language import LanguageCls
 from literalizer.exceptions import NullInCollectionError
@@ -790,6 +791,33 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
     )
     assert result.code == "my_data: dict[str, str] = {}"
     assert "Any" not in "".join(result.preamble)
+
+
+def test_literalize_call_per_element_false() -> None:
+    """Literalize_call with per_element=False passes the whole value."""
+    result = literalize_call(
+        source="[1, 2, 3]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        call_function="process",
+        call_params=["data"],
+        per_element=False,
+    )
+    assert "process(" in result.code
+    assert "1," in result.code
+
+
+def test_literalize_call_per_element_non_list_raises() -> None:
+    """Literalize_call raises TypeError for non-list with per_element."""
+    with pytest.raises(expected_exception=TypeError, match="top-level list"):
+        literalize_call(
+            source='"hello"',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            call_function="process",
+            call_params=["value"],
+            per_element=True,
+        )
 
 
 def test_cobol_bump_levels_rejects_non_level_line() -> None:
