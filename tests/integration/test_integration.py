@@ -1948,6 +1948,34 @@ def _build_type_name_variants() -> Iterable[_Variant]:
     return variants
 
 
+@beartype
+@beartype
+def _build_c_field_name_variants() -> Iterable[_Variant]:
+    """Build field-name variants for the C language.
+
+    The C generator uses single-letter union field names by default.
+    The field name parameters let users customize those names.
+    """
+    lang_config = _LANGUAGES["C"]
+    return [
+        _Variant(
+            name="C_field_names_custom",
+            spec=lang_config.lang_cls(
+                bool_field="bl",
+                int_field="integer",
+                float_field="fp",
+                string_field="str",
+                array_field="arr",
+                map_field="dict",
+                key_field="key",
+                value_field="val",
+            ),
+            wrap=lang_config.wrap,
+            wrap_variable_name=lang_config.wrap_variable_name,
+        ),
+    ]
+
+
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
@@ -2035,6 +2063,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_line_ending_variants(), "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
         (_build_type_name_variants(), "simple_dict", ""),
+        (_build_c_field_name_variants(), "simple_dict", ""),
+        (_build_c_field_name_variants(), "simple_sequence", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
