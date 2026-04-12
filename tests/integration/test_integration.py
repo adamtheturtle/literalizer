@@ -1949,7 +1949,6 @@ def _build_type_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
-@beartype
 def _build_c_field_name_variants() -> Iterable[_Variant]:
     """Build field-name variants for the C language.
 
