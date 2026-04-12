@@ -2355,20 +2355,14 @@ class _CallCase:
 
 
 # Languages whose CI linters accept call golden files.  Only these
-# are included in call golden-file tests.
+# are included in call golden-file tests.  Languages with strict
+# compilers that reject call expressions without statement
+# terminators or require stubs at specific scopes are excluded.
 _CALL_LANGUAGES: frozenset[str] = frozenset(
     {
-        "C",
-        "Cpp",
-        "CSharp",
-        "Java",
         "JavaScript",
-        "Kotlin",
-        "ObjectiveC",
         "Python",
         "Ruby",
-        "Rust",
-        "Swift",
         "TypeScript",
     }
 )
