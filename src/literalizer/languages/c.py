@@ -104,6 +104,7 @@ def _c_call_stub(name: str, /) -> tuple[str, ...]:
     )
 
 
+@beartype
 class C(metaclass=LanguageCls):
     """C language specification."""
 
@@ -202,9 +203,7 @@ class C(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=lambda name, value, data: (
-                f"CVal {name} = {_format_c_entry(data, value)};"
-            ),
+            formatter=lambda name, value, _data: f"CVal {name} = {value};",
             supports_redefinition=True,
         )
 
