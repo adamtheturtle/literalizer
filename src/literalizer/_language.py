@@ -740,12 +740,12 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
 
 
 def _no_call_stub(_name: str, /) -> tuple[str, ...]:
-    """Return no stub lines.
-
-    Used by languages whose linters only check syntax, not name
-    resolution.
-    """
+    """Return no stub lines."""
     return ()
+
+
+no_call_stub: Callable[[str], tuple[str, ...]] = _no_call_stub
+"""Shared callable for languages that need no call stubs."""
 
 
 def _no_type_hint_preamble(
