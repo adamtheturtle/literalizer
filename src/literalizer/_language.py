@@ -257,6 +257,7 @@ class LanguageCls(type):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a code snippet in a complete, valid file."""
+        raise NotImplementedError
 
     @staticmethod
     def wrap_combined_in_file(
@@ -266,6 +267,7 @@ class LanguageCls(type):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
+        raise NotImplementedError
 
 
 @runtime_checkable
