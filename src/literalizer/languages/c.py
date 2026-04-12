@@ -333,9 +333,9 @@ class C(metaclass=LanguageCls):
         map_open = f"((CVal){{.{map_field} = (CKV[]){{"
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = f"((CVal){{.{string_field} = NULL}})"
-        self.true_literal = f"((CVal){{.{bool_field} = true}})"
-        self.false_literal = f"((CVal){{.{bool_field} = false}})"
+        self.null_literal: str = f"((CVal){{.{string_field} = NULL}})"
+        self.true_literal: str = f"((CVal){{.{bool_field} = true}})"
+        self.false_literal: str = f"((CVal){{.{bool_field} = false}})"
         fmt = sequence_format.value
         self.sequence_format_config: SequenceFormatConfig = (
             SequenceFormatConfig(
