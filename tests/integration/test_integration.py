@@ -1918,6 +1918,35 @@ def test_golden_file_combined_variable_forms(
 
 
 @beartype
+def _build_constructor_name_variants() -> Iterable[_Variant]:
+    """Build constructor-name variants for Fortran.
+
+    Fortran emits constructor function calls (``fint``, ``fstr``, etc.)
+    in its output.  The constructor name parameters let users customise
+    those names.
+    """
+    lang_config = _LANGUAGES["Fortran"]
+    return [
+        _Variant(
+            name="Fortran_constructor_names_j",
+            spec=lang_config.lang_cls(
+                null_name="jnull",
+                bool_name="jbool",
+                int_name="jint",
+                real_name="jreal",
+                str_name="jstr",
+                list_name="jlist",
+                map_name="jmap",
+                set_name="jset",
+                entry_name="jentry",
+            ),
+            wrap=lang_config.wrap,
+            wrap_variable_name=lang_config.wrap_variable_name,
+        ),
+    ]
+
+
+@beartype
 @beartype
 def _build_type_name_variants() -> Iterable[_Variant]:
     """Build type-name variants for languages that generate a named type.
@@ -2035,6 +2064,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_line_ending_variants(), "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
         (_build_type_name_variants(), "simple_dict", ""),
+        (_build_constructor_name_variants(), "simple_dict", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
