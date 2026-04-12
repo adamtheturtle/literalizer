@@ -375,7 +375,7 @@ def _wrap_c(
     variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
-    """Wrap a C CVal declaration in a function."""
+    """Wrap a C ``CVal`` declaration in a function."""
     content = _with_body_preamble(content=content, body_preamble=body_preamble)
     return f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
 
