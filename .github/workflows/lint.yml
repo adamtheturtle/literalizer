@@ -1241,6 +1241,26 @@ jobs:
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy --checks='-*,bugprone-reserved-identifier'
           --warnings-as-errors='*' < /tmp/files-to-lint
 
+  lint-wren:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.wren
+      - name: Install Wren CLI
+        if: steps.find-files.outputs.found == 'true'
+        run: |
+          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren_cli-linux-0.4.0.zip -o /tmp/wren.zip
+          unzip -o /tmp/wren.zip -d /tmp/wren
+          sudo install /tmp/wren/wren_cli /usr/local/bin/wren_cli
+      - name: Run Wren files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-to-lint
+
   completion-lint:
     needs:
       - pre-commit
@@ -1293,6 +1313,7 @@ jobs:
       - lint-scheme
       - lint-zig
       - lint-toml
+      - lint-wren
       - lint-yaml
       - lint-powershell
       - lint-systemverilog
