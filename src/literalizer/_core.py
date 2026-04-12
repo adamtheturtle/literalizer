@@ -1743,7 +1743,7 @@ def _format_call_args(
 ) -> str:
     """Format argument values for a single function call.
 
-    Returns the parenthesised argument list including the surrounding
+    Returns the parenthesized argument list including the surrounding
     ``(`` and ``)``.
     """
     style = language.call_style_config
