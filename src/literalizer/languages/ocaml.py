@@ -88,6 +88,7 @@ def _format_ocaml_entry(original: Value, formatted: str) -> str:
 def _build_ocaml_declaration(
     *,
     sequence_declared_type: str,
+    scalar_declared_type: str,
 ) -> Callable[[str, str, Value], str]:
     """Build an OCaml variable declaration formatter."""
 
@@ -95,7 +96,9 @@ def _build_ocaml_declaration(
     def _format(name: str, value: str, data: Value) -> str:
         """Format a variable declaration."""
         decl_type = (
-            sequence_declared_type if isinstance(data, list) else "val_t"
+            sequence_declared_type
+            if isinstance(data, list)
+            else scalar_declared_type
         )
         wrapped = _format_ocaml_entry(original=data, formatted=value)
         return f"let {name} : {decl_type} = {wrapped}"
@@ -121,6 +124,9 @@ class OCaml(metaclass=LanguageCls):
               e.g. ``((2024, 1, 15), (12, 30, 0))``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        type_name: Name of the generated custom type.  Defaults to
+            ``"val_t"``.
     """
 
     extension = ".ml"
@@ -384,6 +390,7 @@ class OCaml(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        type_name: str = "val_t",
     ) -> None:
         """Initialize OCaml language specification."""
         self.variable_type_hints = variable_type_hints
@@ -450,10 +457,15 @@ class OCaml(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
+        _raw_declared = sequence_format.value.declared_type
+        _sequence_declared_type = (
+            _raw_declared.replace("val_t", type_name)
+            if _raw_declared is not None
+            else type_name
+        )
         _ocaml_decl = _build_ocaml_declaration(
-            sequence_declared_type=(
-                sequence_format.value.declared_type or "val_t"
-            ),
+            sequence_declared_type=_sequence_declared_type,
+            scalar_declared_type=type_name,
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _ocaml_decl
@@ -468,7 +480,7 @@ class OCaml(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        _h = "type val_t ="
+        _h = f"type {type_name} ="
         _date_constructor = (
             "  | OStr of string"
             if date_format.value.type_produced is str
@@ -491,10 +503,10 @@ class OCaml(metaclass=LanguageCls):
             bytes: (_h, "  | OStr of string"),
             datetime.date: (_h, _date_constructor),
             datetime.datetime: (_h, _datetime_constructor),
-            list: (_h, "  | OList of val_t list"),
-            dict: (_h, "  | OMap of (string * val_t) list"),
-            ordereddict: (_h, "  | OMap of (string * val_t) list"),
-            set: (_h, "  | OSet of val_t list"),
+            list: (_h, f"  | OList of {type_name} list"),
+            dict: (_h, f"  | OMap of (string * {type_name}) list"),
+            ordereddict: (_h, f"  | OMap of (string * {type_name}) list"),
+            set: (_h, f"  | OSet of {type_name} list"),
         }
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]

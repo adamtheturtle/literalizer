@@ -1918,6 +1918,36 @@ def test_golden_file_combined_variable_forms(
 
 
 @beartype
+@beartype
+def _build_type_name_variants() -> Iterable[_Variant]:
+    """Build type-name variants for languages that generate a named type.
+
+    These languages emit a custom algebraic data type in their body
+    preamble (e.g. ``data Val = …`` in Haskell).  The ``type_name``
+    constructor parameter lets users customize that name.
+    """
+    custom_names: dict[str, str] = {
+        "Elm": "JsonVal",
+        "FSharp": "JsonVal",
+        "Gleam": "JsonVal",
+        "Haskell": "JsonVal",
+        "OCaml": "json_t",
+        "PureScript": "JsonVal",
+    }
+    variants: list[_Variant] = []
+    for lang_name, custom_name in custom_names.items():
+        lang_config = _LANGUAGES[lang_name]
+        variants.append(
+            _Variant(
+                name=f"{lang_name}_type_name_{custom_name}",
+                spec=lang_config.lang_cls(type_name=custom_name),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+        )
+    return variants
+
+
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     cases: list[_VariantCase] = []
@@ -2004,6 +2034,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_line_ending_variants(), "simple_sequence", ""),
         (_build_line_ending_variants(), "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
+        (_build_type_name_variants(), "simple_dict", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(

@@ -145,14 +145,15 @@ def _purescript_dict_entry(key: str, _val: Value, value: str) -> str:
 
 
 @beartype
-def _build_purescript_body_preamble() -> Callable[
-    [frozenset[type], Value], tuple[str, ...]
-]:
+def _build_purescript_body_preamble(
+    *,
+    type_name: str,
+) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for PureScript.
 
     The callable receives the set of types present in the data and returns
-    the ``data Val`` declaration with only the constructors that are
-    actually needed, plus any necessary imports.
+    the type declaration with only the constructors that are actually
+    needed, plus any necessary imports.
     """
 
     def _needs_prelude(val: Value) -> bool:
@@ -197,12 +198,12 @@ def _build_purescript_body_preamble() -> Callable[
                     ),
                     "PStr String",
                 ),
-                (frozenset({list}), "PList (Array Val)"),
+                (frozenset({list}), f"PList (Array {type_name})"),
                 (
                     frozenset({dict, ordereddict}),
-                    "PDict (Array (Tuple String Val))",
+                    f"PDict (Array (Tuple String {type_name}))",
                 ),
-                (frozenset({set}), "PSet (Array Val)"),
+                (frozenset({set}), f"PSet (Array {type_name})"),
             )
             if types & type_set
         ]
@@ -210,7 +211,7 @@ def _build_purescript_body_preamble() -> Callable[
         lines: list[str] = ["import Prelude"] if needs_prelude else []
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")
-        first_line = f"data Val\n    = {constructors[0]}"
+        first_line = f"data {type_name}\n    = {constructors[0]}"
         rest_lines = [f"    | {c}" for c in constructors[1:]]
         lines.append("\n".join([first_line, *rest_lines]))
         return tuple(lines)
@@ -256,6 +257,9 @@ class PureScript(metaclass=LanguageCls):
 
             * ``datetime_formats.ISO`` — ISO 8601 string,
               e.g. ``PStr "2024-01-15T12:30:00"``.
+
+        type_name: Name of the generated custom type.  Defaults to
+            ``"Val"``.
     """
 
     extension = ".purs"
@@ -471,6 +475,7 @@ class PureScript(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        type_name: str = "Val",
     ) -> None:
         """Initialize PureScript language specification."""
         self.variable_type_hints = variable_type_hints
@@ -536,7 +541,12 @@ class PureScript(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
         _base_declaration = declaration_style.value.formatter
-        _sequence_declared_type = sequence_format.value.declared_type
+        _raw_declared = sequence_format.value.declared_type
+        _sequence_declared_type = (
+            _raw_declared.replace("Val", type_name)
+            if _raw_declared is not None
+            else None
+        )
 
         @beartype
         def _purescript_declaration(
@@ -547,7 +557,9 @@ class PureScript(metaclass=LanguageCls):
             """Format a variable declaration with type annotation."""
             base = _base_declaration(name, value, data)
             decl_type = (
-                _sequence_declared_type if isinstance(data, list) else "Val"
+                _sequence_declared_type
+                if isinstance(data, list)
+                else type_name
             )
             return f"{name} :: {decl_type}\n{base}"
 
@@ -563,6 +575,6 @@ class PureScript(metaclass=LanguageCls):
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
-        ] = _build_purescript_body_preamble()
+        ] = _build_purescript_body_preamble(type_name=type_name)
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
