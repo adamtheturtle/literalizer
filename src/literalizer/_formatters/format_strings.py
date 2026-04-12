@@ -145,6 +145,20 @@ result in double quotes.
 Example: ``Issue #{42}`` -> ``"Issue \#{42}"``.
 """
 
+format_string_backslash_tcl = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[("$", "\\$"), ("[", "\\["), ("]", "\\]")],
+)
+r"""Format a string for Tcl double-quoted strings.
+
+Escapes backslashes, double quotes, newlines, tabs, dollar signs,
+and square brackets with a backslash prefix, then wraps the result
+in double quotes.  This prevents Tcl from interpreting ``$`` as
+variable substitution or ``[…]`` as command substitution.
+
+Example: ``price $10`` -> ``"price \$10"``.
+"""
+
 format_string_backslash_dollar_single = _build_backslash_formatter(
     quote_char="'",
     extra_replacements=[("$", "\\$")],
