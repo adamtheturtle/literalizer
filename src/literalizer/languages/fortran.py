@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -45,25 +46,36 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
 
 @beartype
-def _format_fortran_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate ``fval_t``
+def _build_format_fortran_entry(
+    *,
+    int_name: str,
+    real_name: str,
+    str_name: str,
+) -> Callable[[Value, str], str]:
+    """Build a formatter that wraps values in the appropriate
     constructor.
     """
-    match original:
-        case bool():
-            return formatted
-        case int():
-            return f"fint({formatted})"
-        case float():
-            return f"freal({formatted})"
-        case str() | bytes() | datetime.date():
-            return f"fstr({formatted})"
-        case _:
-            return formatted
+
+    @beartype
+    def _format_fortran_entry(original: Value, formatted: str) -> str:
+        """Wrap a formatted entry in its constructor call."""
+        match original:
+            case bool():
+                return formatted
+            case int():
+                return f"{int_name}({formatted})"
+            case float():
+                return f"{real_name}({formatted})"
+            case str() | bytes() | datetime.date():
+                return f"{str_name}({formatted})"
+            case _:
+                return formatted
+
+    return _format_fortran_entry
 
 
 @beartype
@@ -120,27 +132,39 @@ def _add_continuation(value: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
-    r"""Format a Fortran variable declaration and initialisation.
+def _build_format_variable_declaration(
+    *,
+    format_entry: Callable[[Value, str], str],
+) -> Callable[[str, str, Value], str]:
+    """Build a variable declaration formatter."""
 
-    Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
-    ``"type(fval_t) :: x\nx = flist([fval_t :: fint(1)])"``
-    """
-    fval = _format_fortran_entry(original=data, formatted=value)
-    continued = _add_continuation(value=fval)
-    return f"type(fval_t) :: {name}\n{name} = {continued}"
+    @beartype
+    def _format_variable_declaration(
+        name: str, value: str, data: Value
+    ) -> str:
+        """Format a variable declaration and initialisation."""
+        fval = format_entry(data, value)
+        continued = _add_continuation(value=fval)
+        return f"type(fval_t) :: {name}\n{name} = {continued}"
+
+    return _format_variable_declaration
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format a Fortran assignment to an existing ``fval_t`` variable.
+def _build_format_variable_assignment(
+    *,
+    format_entry: Callable[[Value, str], str],
+) -> Callable[[str, str, Value], str]:
+    """Build a variable assignment formatter."""
 
-    Example: ``"x"`` and ``"flist([fval_t :: fint(1)])"`` →
-    ``"x = flist([fval_t :: fint(1)])"``
-    """
-    fval = _format_fortran_entry(original=data, formatted=value)
-    continued = _add_continuation(value=fval)
-    return f"{name} = {continued}"
+    @beartype
+    def _format_variable_assignment(name: str, value: str, data: Value) -> str:
+        """Format an assignment to an existing variable."""
+        fval = format_entry(data, value)
+        continued = _add_continuation(value=fval)
+        return f"{name} = {continued}"
+
+    return _format_variable_assignment
 
 
 @beartype
@@ -236,7 +260,13 @@ class Fortran(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
+            formatter=_build_format_variable_declaration(
+                format_entry=_build_format_fortran_entry(
+                    int_name="fint",
+                    real_name="freal",
+                    str_name="fstr",
+                ),
+            ),
             supports_redefinition=True,
         )
 
@@ -347,24 +377,74 @@ class Fortran(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
+        null_name: str = "fnull",
+        bool_name: str = "fbool",
+        int_name: str = "fint",
+        real_name: str = "freal",
+        str_name: str = "fstr",
+        list_name: str = "flist",
+        map_name: str = "fmap",
+        set_name: str = "fset",
+        entry_name: str = "fentry",
     ) -> None:
         """Initialize Fortran language specification."""
+        format_entry = _build_format_fortran_entry(
+            int_name=int_name,
+            real_name=real_name,
+            str_name=str_name,
+        )
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "fnull()"
-        self.true_literal = "fbool(.true.)"
-        self.false_literal = "fbool(.false.)"
+        self.null_literal: str = f"{null_name}()"
+        self.true_literal: str = f"{bool_name}(.true.)"
+        self.false_literal: str = f"{bool_name}(.false.)"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        self.sequence_format_config: SequenceFormatConfig = (
+            SequenceFormatConfig(
+                sequence_open=fixed_sequence_open(
+                    open_str=f"{list_name}([fval_t :: ",
+                ),
+                close="])",
+                supports_heterogeneity=fmt.supports_heterogeneity,
+                single_element_trailing_comma=(
+                    fmt.single_element_trailing_comma
+                ),
+                supports_trailing_comma=fmt.supports_trailing_comma,
+                empty_sequence=fmt.empty_sequence,
+                preamble_lines=fmt.preamble_lines,
+                format_entry=fmt.format_entry,
+                typed_opener_fallback=fmt.typed_opener_fallback,
+                uses_typed_literal_for_scalars=(
+                    fmt.uses_typed_literal_for_scalars
+                ),
+                requires_uniform_record_shapes=(
+                    fmt.requires_uniform_record_shapes
+                ),
+                declared_type=fmt.declared_type,
+            )
+        )
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.set_format_config: SetFormatConfig = SetFormatConfig(
+            set_open=fixed_set_open(
+                open_str=f"{set_name}([fval_t :: ",
+            ),
+            close="])",
+            empty_set=set_format.value.empty_set,
+            preamble_lines=set_format.value.preamble_lines,
+            set_opener_template=set_format.value.set_opener_template,
+            coerce_mixed_to_str=set_format.value.coerce_mixed_to_str,
+        )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            self.sequence_format_config.sequence_open
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="fmap([fval_t :: "),
+            dict_open=fixed_dict_open(
+                open_str=f"{map_name}([fval_t :: ",
+            ),
             close="])",
             format_entry=dict_entry_with_template(
-                template="fentry({key}, {value})",
-                format_value=_format_fortran_entry,
+                template=f"{entry_name}({{key}}, {{value}})",
+                format_value=format_entry,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -387,12 +467,8 @@ class Fortran(metaclass=LanguageCls):
         )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            _format_fortran_entry
-        )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            _format_fortran_entry
-        )
+        self.format_sequence_entry: Callable[[Value, str], str] = format_entry
+        self.format_set_entry: Callable[[Value, str], str] = format_entry
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
@@ -407,15 +483,15 @@ class Fortran(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="fmap([fval_t :: ",
+                open_str=f"{map_name}([fval_t :: ",
                 close="])",
                 preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
             dict_entry_with_template(
-                template="fentry({key}, {value})",
-                format_value=_format_fortran_entry,
+                template=f"{entry_name}({{key}}, {{value}})",
+                format_value=format_entry,
             )
         )
         self.indent = indent
@@ -426,10 +502,10 @@ class Fortran(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _build_format_variable_declaration(format_entry=format_entry)
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
+            _build_format_variable_assignment(format_entry=format_entry)
         )
         self.static_preamble: Sequence[str] = ("module fval_m",)
         self.static_body_preamble: Sequence[str] = (
@@ -438,29 +514,30 @@ class Fortran(metaclass=LanguageCls):
             "    integer :: t = 0",
             "  end type fval_t",
             "contains",
-            "  function fnull() result(v); type(fval_t) :: v; end function",
-            "  function fbool(b) result(v)"
+            f"  function {null_name}() result(v)"
+            "; type(fval_t) :: v; end function",
+            f"  function {bool_name}(b) result(v)"
             "; logical, intent(in) :: b"
             "; type(fval_t) :: v; end function",
-            "  function fint(n) result(v)"
+            f"  function {int_name}(n) result(v)"
             "; integer, intent(in) :: n"
             "; type(fval_t) :: v; end function",
-            "  function freal(x) result(v)"
+            f"  function {real_name}(x) result(v)"
             "; real, intent(in) :: x"
             "; type(fval_t) :: v; end function",
-            "  function fstr(s) result(v)"
+            f"  function {str_name}(s) result(v)"
             "; character(len=*), intent(in) :: s"
             "; type(fval_t) :: v; end function",
-            "  function flist(a) result(v)"
+            f"  function {list_name}(a) result(v)"
             "; type(fval_t), intent(in) :: a(:)"
             "; type(fval_t) :: v; end function",
-            "  function fmap(a) result(v)"
+            f"  function {map_name}(a) result(v)"
             "; type(fval_t), intent(in) :: a(:)"
             "; type(fval_t) :: v; end function",
-            "  function fset(a) result(v)"
+            f"  function {set_name}(a) result(v)"
             "; type(fval_t), intent(in) :: a(:)"
             "; type(fval_t) :: v; end function",
-            "  function fentry(k, u) result(v)"
+            f"  function {entry_name}(k, u) result(v)"
             "; character(len=*), intent(in) :: k"
             "; type(fval_t), intent(in) :: u"
             "; type(fval_t) :: v; end function",
