@@ -1990,6 +1990,38 @@ def _build_type_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_constructor_prefix_variants() -> Iterable[_Variant]:
+    """Build constructor-prefix variants for languages with custom ADTs.
+
+    These languages use a single-letter prefix for constructors
+    (e.g. ``ENull``, ``HBool``).  The ``constructor_prefix`` parameter
+    lets users customize that prefix.
+    """
+    custom_prefixes: dict[str, str] = {
+        "Elm": "J",
+        "FSharp": "J",
+        "Gleam": "J",
+        "Haskell": "J",
+        "OCaml": "J",
+        "PureScript": "J",
+    }
+    variants: list[_Variant] = []
+    for lang_name, custom_prefix in custom_prefixes.items():
+        lang_config = _LANGUAGES[lang_name]
+        variants.append(
+            _Variant(
+                name=f"{lang_name}_prefix_{custom_prefix}",
+                spec=lang_config.lang_cls(
+                    constructor_prefix=custom_prefix,
+                ),
+                wrap=lang_config.wrap,
+                wrap_variable_name=lang_config.wrap_variable_name,
+            )
+        )
+    return variants
+
+
+@beartype
 def _build_c_field_name_variants() -> Iterable[_Variant]:
     """Build field-name variants for the C language.
 
@@ -2103,6 +2135,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_line_ending_variants(), "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
         (_build_type_name_variants(), "simple_dict", ""),
+        (_build_constructor_prefix_variants(), "simple_dict", ""),
+        (_build_constructor_prefix_variants(), "float_special_values", "_v"),
+        (_build_constructor_prefix_variants(), "float_list", "_float"),
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
