@@ -2473,7 +2473,7 @@ def _extract_call_names(
             pattern=r"(\w[\w.]*)\s*\(",
             string=call_wrapper,
         )
-        if wrapper_match:
+        if wrapper_match:  # pragma: no branch
             names.append(wrapper_match.group(1))
     return names
 

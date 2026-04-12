@@ -847,6 +847,36 @@ def test_literalize_call_per_element_non_list_raises() -> None:
         )
 
 
+def test_literalize_call_positional_style() -> None:
+    """Cover the POSITIONAL branch of _format_call_args."""
+    result = literalize_call(
+        source="- [1, 2]",
+        input_format=InputFormat.YAML,
+        language=Java(),
+        call_function="process",
+        call_params=["a", "b"],
+    )
+    assert result.code == "process(1, 2)"
+
+
+def test_literalize_call_body_preamble() -> None:
+    """Cover the computed.body branch in literalize_call."""
+    result = literalize_call(
+        source="- [hello, 1]",
+        input_format=InputFormat.YAML,
+        language=Cpp(),
+        call_function="f",
+        call_params=["a", "b"],
+    )
+    assert "struct" in "\n".join(result.preamble)
+
+
+def test_js_call_stub_console() -> None:
+    """Cover the console branch of _js_call_stub."""
+    spec = JavaScript()
+    assert spec.format_call_stub("console.log") == ()
+
+
 def test_cobol_bump_levels_rejects_non_level_line() -> None:
     """_bump_levels raises ValueError for lines without a level number."""
     with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):
