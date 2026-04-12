@@ -413,7 +413,7 @@ def _wrap_mojo(
     # Consume the variable so ``--Werror`` does not flag the
     # "assignment was never used" warning.
     content = content + f"\n_ = {variable_name}"
-    indented = "\n".join(f"    {line}" for line in content.splitlines())
+    indented = textwrap.indent(text=content, prefix="    ")
     return f"def main():\n{indented}"
 
 
