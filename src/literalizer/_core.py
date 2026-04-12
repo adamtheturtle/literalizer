@@ -19,10 +19,10 @@ from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
 
 from literalizer._coercions import (
-    _all_scalars_heterogeneous,
-    _apply_coercions,
-    _coerce_scalar_to_str,
-    _scalar_type_bucket,
+    _all_scalars_heterogeneous,  # pyright: ignore[reportPrivateUsage]
+    _apply_coercions,  # pyright: ignore[reportPrivateUsage]
+    _coerce_scalar_to_str,  # pyright: ignore[reportPrivateUsage]
+    _scalar_type_bucket,  # pyright: ignore[reportPrivateUsage]
 )
 from literalizer._comments import (
     CollectionComments,
