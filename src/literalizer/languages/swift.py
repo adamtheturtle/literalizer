@@ -98,9 +98,16 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
+def _swift_param(name: str, /) -> str:
+    """Format a single Swift parameter for a stub signature."""
+    if name.startswith("_"):
+        return f"_ {name}: Any = 0"
+    return f"{name}: Any = 0"
+
+
 def _swift_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
-    param_list = ", ".join(f"{p}: Any = 0" for p in params)
+    param_list = ", ".join(_swift_param(p) for p in params)
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"func {parts[0]}({param_list}) -> Any {{ 0 }}",)
