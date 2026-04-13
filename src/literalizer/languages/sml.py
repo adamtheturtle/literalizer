@@ -96,7 +96,7 @@ def _sml_scientific(value: float) -> str:
 
     SML uses ``E`` (not ``e``) and ``~`` for negative exponents.
     """
-    result = format_float_scientific(value)
+    result = format_float_scientific(value=value)
     if result.startswith("-"):
         result = "~" + result[1:]
     # Convert Python's 'e' to SML's 'E', with ~ for negative exponents.
@@ -356,21 +356,25 @@ class Sml(metaclass=LanguageCls):
     ):
         """Float format options."""
 
-        REPR = enum.member(value=_sml_negate_float(format_float_repr))
+        REPR = enum.member(
+            value=_sml_negate_float(formatter=format_float_repr),
+        )
         SCIENTIFIC = enum.member(value=_sml_scientific)
-        FIXED = enum.member(value=_sml_negate_float(format_float_fixed))
+        FIXED = enum.member(
+            value=_sml_negate_float(formatter=format_float_fixed),
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
         DECIMAL = MappingProxyType(
             mapping={
-                "NONE": _sml_negate_int(str),
+                "NONE": _sml_negate_int(formatter=str),
             }
         )
         HEX = MappingProxyType(
             mapping={
-                "NONE": _sml_negate_int(format_integer_hex),
+                "NONE": _sml_negate_int(formatter=format_integer_hex),
             }
         )
 
