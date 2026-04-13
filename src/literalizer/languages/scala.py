@@ -41,6 +41,8 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -54,6 +56,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -127,6 +130,20 @@ class _ScalaDictSpec:
     opener_template: str
     fallback: str
     preamble_lines: tuple[str, ...]
+
+
+def _scala_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Scala stub declarations for a call name."""
+    param_list = ", ".join(f"{p}: Any = null" for p in params)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}({param_list}): Any = null",)
+    root, method = parts[0], parts[1]
+    cls = f"_{root.capitalize()}Type"
+    return (
+        f"class {cls} {{ def {method}({param_list}): Any = null }}",
+        f"val {root} = new {cls}",
+    )
 
 
 @beartype
@@ -602,3 +619,10 @@ class Scala(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator=" = ",
+        )
+        self.statement_terminator = ""
+        self.format_call_stub = _scala_call_stub
+        self.format_call_preamble_stub = no_call_stub

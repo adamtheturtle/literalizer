@@ -3,9 +3,8 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -46,6 +45,8 @@ from literalizer._formatters.type_inference import (
     ListType,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -59,13 +60,11 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 @beartype
@@ -231,6 +230,20 @@ def _format_variable_declaration(
 ) -> str:
     """Format a C++ variable declaration."""
     return f"Any {name} = {value};"
+
+
+def _cpp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return C++ stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"auto {parts[0]}(auto...) {{ return 0; }}",)
+    root, method = parts[0], parts[1]
+    type_name = f"{root}Type_"
+    return (
+        f"struct {type_name} {{"
+        f" auto {method}(auto...) const {{ return 0; }} }};",
+        f"const {type_name} {root};",
+    )
 
 
 @beartype
@@ -692,3 +705,9 @@ class Cpp(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ("#include <cmath>",)
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = _cpp_call_stub

@@ -41,6 +41,8 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash_hash
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -53,6 +55,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -353,13 +356,9 @@ class Elixir(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="    ")
+        use_line = f"\n    _ = {variable_name}" if variable_name else ""
         return (
-            f"defmodule Check do\n"
-            f"  def x do\n"
-            f"{indented}\n"
-            f"    _ = {variable_name}\n"
-            f"  end\n"
-            f"end"
+            f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
 
     @staticmethod
@@ -488,3 +487,10 @@ class Elixir(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator=": ",
+        )
+        self.statement_terminator = ""
+        self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = no_call_stub

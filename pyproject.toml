@@ -299,6 +299,7 @@ follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
+project_excludes = []
 
 [tool.pyright]
 enableTypeIgnoreComments = false
@@ -314,6 +315,7 @@ executionEnvironments = [
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
+overrides = []
 
 [tool.pytest]
 ini_options.xfail_strict = true

@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -33,6 +33,8 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import format_integer_underscore
 from literalizer._formatters.format_strings import format_string_backslash_hash
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -45,15 +47,30 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
+
+
+@beartype
+def _crystal_call_stub(
+    name: str, _params: Sequence[str], /
+) -> tuple[str, ...]:
+    """Return Crystal stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}(*a, **kw); 0; end",)
+    root, method = parts[0], parts[1]
+    cls = root.capitalize() + "Type_"
+    return (
+        f"class {cls}; def {method}(*a, **kw); 0; end; end",
+        f"{root} = {cls}.new",
+    )
 
 
 @beartype
@@ -447,3 +464,10 @@ class Crystal(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator=": ",
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = _crystal_call_stub
+        self.format_call_preamble_stub = no_call_stub

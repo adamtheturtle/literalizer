@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -49,6 +49,8 @@ from literalizer._formatters.format_strings import (
     format_string_verbatim_csharp,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -62,14 +64,13 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
 
 
@@ -78,6 +79,15 @@ class _CSharpDictSpec:
     """Per-format dict config pieces resolved at init time."""
 
     opener_template: str
+
+
+def _csharp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return C# stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"dynamic {parts[0]}(dynamic a) => null;",)
+    root = parts[0]
+    return (f"dynamic {root} = new System.Dynamic.ExpandoObject();",)
 
 
 @beartype
@@ -582,3 +592,9 @@ class CSharp(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = _csharp_call_stub
+        self.format_call_preamble_stub = no_call_stub

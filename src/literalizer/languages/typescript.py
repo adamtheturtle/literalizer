@@ -2,11 +2,14 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+import functools
+from collections import OrderedDict
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import assert_never
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
@@ -44,6 +47,8 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -56,13 +61,117 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+
+def _ts_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return TypeScript stub declarations for a call name."""
+    root = name.split(sep=".", maxsplit=1)[0]
+    return (f"declare const {root}: any;",)
+
+
+@beartype
+def _ts_element_union(*, types: list[str]) -> str:
+    """Remove duplicate types and join into a TypeScript union."""
+    unique: list[str] = list(dict.fromkeys(types))
+    if len(unique) == 1:
+        return unique[0]
+    return " | ".join(unique)
+
+
+@beartype
+def _ts_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_hint_template: str,
+    sequence_is_tuple: bool,
+) -> str:
+    """Derive a TypeScript type annotation from *data*."""
+    recurse = functools.partial(
+        _ts_type_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        dict_hint_template=dict_hint_template,
+        sequence_is_tuple=sequence_is_tuple,
+    )
+    match data:
+        case bool():
+            return "boolean"
+        case int():
+            return "number"
+        case float():
+            return "number"
+        case str():
+            return "string"
+        case bytes():
+            return "string"
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "null"
+        case dict():
+            template = (
+                "Record<string, {val}>"
+                if isinstance(data, (ordereddict, OrderedDict))
+                else dict_hint_template
+            )
+            # The MAP opener always uses ``unknown`` as the value
+            # type, so the annotation must match.
+            if not data or "Map<" in template:
+                return template.format(val="unknown")
+            val_types = [recurse(data=v) for v in data.values()]  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
+            val_union = _ts_element_union(types=val_types)
+            return template.format(val=val_union)
+        case set():
+            if not data:
+                return "Set<unknown>"
+            elem_types = sorted(recurse(data=e) for e in data)
+            elem_union = _ts_element_union(types=elem_types)
+            return f"Set<{elem_union}>"
+        case list():
+            if not data:
+                return "readonly []" if sequence_is_tuple else "unknown[]"
+            if sequence_is_tuple:
+                elem_types = [recurse(data=e) for e in data]
+                return f"readonly [{', '.join(elem_types)}]"
+            elem_types = [recurse(data=e) for e in data]
+            elem_union = _ts_element_union(types=elem_types)
+            if " | " in elem_union:
+                return f"({elem_union})[]"
+            return f"{elem_union}[]"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _format_ts_typed_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    keyword: str,
+    date_hint: str,
+    datetime_hint: str,
+    dict_hint_template: str,
+    sequence_is_tuple: bool,
+) -> str:
+    """Format a TypeScript variable declaration with an explicit type."""
+    hint = _ts_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        dict_hint_template=dict_hint_template,
+        sequence_is_tuple=sequence_is_tuple,
+    )
+    return f"{keyword} {name}: {hint} = {value};"
 
 
 @beartype
@@ -366,6 +475,29 @@ class TypeScript(metaclass=LanguageCls):
         """Variable type hint options."""
 
         AUTO = enum.auto()
+        ALWAYS = enum.auto()
+
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[[str, str, Value], str],
+            keyword: str,
+            date_hint: str,
+            datetime_hint: str,
+            dict_hint_template: str,
+            sequence_is_tuple: bool,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter."""
+            if self is type(self).AUTO:
+                return auto_formatter
+            return functools.partial(
+                _format_ts_typed_declaration,
+                keyword=keyword,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_hint_template=dict_hint_template,
+                sequence_is_tuple=sequence_is_tuple,
+            )
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -496,8 +628,23 @@ class TypeScript(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        _base_decl: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+        _base_decl = variable_type_hints.formatter(
+            auto_formatter=declaration_style.value.formatter,
+            keyword=declaration_style.name.lower(),
+            date_hint=(
+                "string" if date_format.value.type_produced is str else "Date"
+            ),
+            datetime_hint=(
+                "string"
+                if datetime_format.value.type_produced is str
+                else "Date"
+            ),
+            dict_hint_template=(
+                "Map<string, {val}>"
+                if dict_format.name == "MAP"
+                else "Record<string, {val}>"
+            ),
+            sequence_is_tuple=(sequence_format.name == "TUPLE"),
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             line_ending.wrap_formatter(formatter=_base_decl)
@@ -519,3 +666,10 @@ class TypeScript(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.OBJECT,
+            keyword_separator=": ",
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = _ts_call_stub
+        self.format_call_preamble_stub = no_call_stub

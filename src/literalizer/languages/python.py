@@ -46,6 +46,8 @@ from literalizer._formatters.format_strings import (
     format_string_raw_python,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -59,6 +61,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -384,6 +387,24 @@ def _build_type_hint_preamble(
         return ()
 
     return _preamble
+
+
+def _python_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Python stub declarations for a call name."""
+    root = name.split(sep=".", maxsplit=1)[0]
+    if root == "print":
+        return ()
+    parts = name.split(sep=".")
+    param_str = ", ".join(f"{p}: object" for p in params)
+    if len(parts) == 1:
+        return (f"def {name}(*, {param_str}) -> object: ...",)
+    root, method = parts[0], parts[1]
+    cls = f"_{root.capitalize()}Type"
+    return (
+        f"class {cls}:",
+        f"    def {method}(self, *, {param_str}) -> object: ...",
+        f"{root} = {cls}()",
+    )
 
 
 @beartype
@@ -949,3 +970,10 @@ class Python(metaclass=LanguageCls):
             default_dict_key_type=default_dict_key_type,
         )
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator="=",
+        )
+        self.statement_terminator = ""
+        self.format_call_stub = _python_call_stub
+        self.format_call_preamble_stub = no_call_stub

@@ -2,9 +2,8 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -36,6 +35,8 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -48,13 +49,25 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+
+@beartype
+def _d_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return D stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"int {parts[0]}(T...)(T args) {{ return 0; }}",)
+    root, method = parts[0], parts[1]
+    type_name = f"{root.title()}Type_"
+    return (
+        f"struct {type_name} {{ int {method}(T...)(T args) {{ return 0; }} }}",
+        f"{type_name} {root};",
+    )
 
 
 @beartype
@@ -435,3 +448,9 @@ class D(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = _d_call_stub
+        self.format_call_preamble_stub = no_call_stub
