@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -36,7 +37,9 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_hex,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_control,
+)
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -190,9 +193,9 @@ def _build_sml_body_preamble(
                         result.append(line)
         # SML: first variant after 'datatype' line must not have '|'.
         # All constructor lines start with '  | ' by construction, so
-        # index 1 is always the first constructor.
-        if len(result) > 1:
-            result[1] = "    " + result[1][4:]
+        # index 1 is always the first constructor.  The caller always
+        # passes at least one type, so result has >= 2 elements.
+        result[1] = "    " + result[1][4:]
         return tuple(result)
 
     return _compute
@@ -550,7 +553,10 @@ class Sml(metaclass=LanguageCls):
                     f"({{hour}}, {{minute}}, {{second}}))"
                 ),
             )
-        self.format_string: Callable[[str], str] = format_string_backslash
+        self.format_string: Callable[[str], str] = functools.partial(
+            format_string_backslash_control,
+            control_char_fmt="\\{:03d}",
+        )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
             integer_format.get_formatter(

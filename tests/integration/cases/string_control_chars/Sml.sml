@@ -6,7 +6,7 @@ datatype val_t =
 val my_data : val_t = SList [
     SStr "line1\r\nline2",
     SStr "line1\rline2",
-    SStr ""
+    SStr "\001"
 ]
 
 end
