@@ -221,6 +221,8 @@ def _kotlin_type_hint(  # noqa: C901, PLR0911, PLR0912
             return f"{set_outer}<{elem_type}>"
         case list():
             if not data:
+                if sequence_format_name == "ARRAY":
+                    return "Array<Any?>"
                 return "List<Any?>"
             if sequence_format_name == "TUPLE":
                 elem_types = [recurse(data=e) for e in data]
@@ -820,7 +822,7 @@ class Kotlin(metaclass=LanguageCls):
                 "HashMap" if dict_format.name == "HASH_MAP" else "Map"
             )
             _kt_set_outer = (
-                "SortedSet" if set_format.name == "SORTED_SET" else "Set"
+                "TreeSet" if set_format.name == "SORTED_SET" else "Set"
             )
             _kt_decl = functools.partial(
                 _format_kotlin_typed_declaration,

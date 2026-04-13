@@ -149,11 +149,7 @@ def _swift_type_hint(  # noqa: C901, PLR0911, PLR0912
             )
             return f"[String: {val_type}]"
         case set():
-            if not data:
-                return f"Set<{default_set_element_type}>"
-            elem_types = sorted({recurse(data=e) for e in data})
-            elem_type = elem_types[0] if len(elem_types) == 1 else "Any"
-            return f"Set<{elem_type}>"
+            return f"Set<{default_set_element_type}>"
         case list():
             if not data:
                 if sequence_is_tuple:

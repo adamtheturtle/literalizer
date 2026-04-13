@@ -117,7 +117,9 @@ def _ts_type_hint(  # noqa: C901, PLR0911, PLR0912
                 if isinstance(data, (ordereddict, OrderedDict))
                 else dict_hint_template
             )
-            if not data:
+            # The MAP opener always uses ``unknown`` as the value
+            # type, so the annotation must match.
+            if not data or "Map<" in template:
                 return template.format(val="unknown")
             val_types = [recurse(data=v) for v in data.values()]  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
             val_union = _ts_element_union(types=val_types)
