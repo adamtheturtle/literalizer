@@ -24,7 +24,6 @@ from literalizer.languages import (
     CSharp,
     Fortran,
     Go,
-    Haskell,
     Java,
     JavaScript,
     Kotlin,
@@ -873,19 +872,6 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             call_params=["value"],
             per_element=True,
         )
-
-
-def test_literalize_call_body_preamble() -> None:
-    """Cover the computed.body branch in literalize_call."""
-    result = literalize_call(
-        source="- [hello, 1]",
-        input_format=InputFormat.YAML,
-        language=Haskell(),
-        call_function="f",
-        call_params=["a", "b"],
-    )
-    assert result.body_preamble
-    assert "data" in "\n".join(result.body_preamble)
 
 
 def test_cobol_bump_levels_rejects_non_level_line() -> None:

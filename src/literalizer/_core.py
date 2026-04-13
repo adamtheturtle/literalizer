@@ -1129,13 +1129,17 @@ def _format_call_args(
 
     Returns the parenthesized argument list including the surrounding
     ``(`` and ``)``.
+
+    Uses ``", "`` as the argument separator — function call arguments
+    are comma-separated in all supported languages, unlike collection
+    literals which may use ``"; "`` (F#) or other separators.
     """
     style = language.call_style_config
     formatted = [
         _format_value(value=v, spec=language, dict_open_override=None)
         for v in values
     ]
-    sep = language.element_separator
+    sep = ", "
 
     match style.kind:
         case CallStyleKind.POSITIONAL:
