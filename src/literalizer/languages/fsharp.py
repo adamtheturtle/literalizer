@@ -1,5 +1,6 @@
 """F# language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -58,28 +59,44 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-@beartype
-def _format_fsharp_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate F# ``Val``
-    constructor.
-    """
-    match original:
-        case bool():
-            return formatted
-        case int():
-            negative = formatted.startswith("-")
-            return f"FInt({formatted}L)" if negative else f"FInt {formatted}L"
-        case float():
-            negative = formatted.startswith("-")
-            return (
-                f"FFloat({formatted})" if negative else f"FFloat {formatted}"
-            )
-        case str() | bytes() | datetime.date():
-            if formatted.startswith("System."):
-                return f"FStr (string ({formatted}))"
-            return f"FStr {formatted}"
-        case _:
-            return formatted
+def _build_fsharp_entry_formatter(
+    prefix: str,
+) -> Callable[[Value, str], str]:
+    """Build an entry formatter that wraps values in F# constructors."""
+
+    @beartype
+    def _format(original: Value, formatted: str) -> str:
+        """Wrap a formatted entry in the appropriate F# ``Val``
+        constructor.
+        """
+        match original:
+            case bool():
+                return formatted
+            case int():
+                negative = formatted.startswith("-")
+                return (
+                    f"{prefix}Int({formatted}L)"
+                    if negative
+                    else f"{prefix}Int {formatted}L"
+                )
+            case float():
+                negative = formatted.startswith("-")
+                return (
+                    f"{prefix}Float({formatted})"
+                    if negative
+                    else f"{prefix}Float {formatted}"
+                )
+            case str() | bytes() | datetime.date():
+                if formatted.startswith("System."):
+                    return f"{prefix}Str (string ({formatted}))"
+                return f"{prefix}Str {formatted}"
+            case _:
+                return formatted
+
+    return _format
+
+
+_format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
 
 
 @beartype
@@ -88,6 +105,7 @@ def _build_fsharp_declaration(
     template: str,
     sequence_declared_type: str,
     scalar_declared_type: str,
+    entry_formatter: Callable[[Value, str], str],
 ) -> Callable[[str, str, Value], str]:
     """Build an F# variable declaration/assignment formatter."""
 
@@ -99,7 +117,7 @@ def _build_fsharp_declaration(
             if isinstance(data, list)
             else scalar_declared_type
         )
-        wrapped = _format_fsharp_entry(original=data, formatted=value)
+        wrapped = entry_formatter(data, value)
         return template.format(
             name=name,
             declared_type=decl_type,
@@ -126,6 +144,10 @@ class FSharp(metaclass=LanguageCls):
 
         type_name: Name of the generated custom type.  Defaults to
             ``"Val"``.
+
+        constructor_prefix: Prefix for generated constructor names.
+            Defaults to ``"F"``, producing constructors like ``FNull``,
+            ``FBool``, ``FInt``, etc.
     """
 
     extension = ".fs"
@@ -374,23 +396,46 @@ class FSharp(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
         type_name: str = "Val",
+        constructor_prefix: str = "F",
     ) -> None:
         """Initialize FSharp language specification."""
+        _entry_formatter = _build_fsharp_entry_formatter(
+            prefix=constructor_prefix,
+        )
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "FNull"
-        self.true_literal = "FBool true"
-        self.false_literal = "FBool false"
+        self.null_literal: str = f"{constructor_prefix}Null"
+        self.true_literal: str = f"{constructor_prefix}Bool true"
+        self.false_literal: str = f"{constructor_prefix}Bool false"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        if sequence_format.name == "ARRAY":
+            self.sequence_format_config: SequenceFormatConfig = fmt
+            self.sequence_open: Callable[[list[Value]], str] = (
+                fmt.sequence_open
+            )
+        else:
+            _seq_open = fixed_sequence_open(
+                open_str=f"{constructor_prefix}List [",
+            )
+            self.sequence_format_config = dataclasses.replace(
+                fmt,
+                sequence_open=_seq_open,
+            )
+            self.sequence_open = _seq_open
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=fixed_set_open(
+                open_str=f"{constructor_prefix}Set [",
+            ),
+        )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="FMap ["),
+            dict_open=fixed_dict_open(
+                open_str=f"{constructor_prefix}Map [",
+            ),
             close="]",
             format_entry=tuple_dict_entry(
-                format_value=_format_fsharp_entry,
+                format_value=_entry_formatter,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -405,9 +450,7 @@ class FSharp(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = integer_format
-        self.format_set_entry: Callable[[Value, str], str] = (
-            _format_fsharp_entry
-        )
+        self.format_set_entry: Callable[[Value, str], str] = _entry_formatter
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
@@ -422,13 +465,13 @@ class FSharp(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="FMap [",
+                open_str=f"{constructor_prefix}Map [",
                 close="]",
                 preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            tuple_dict_entry(format_value=_format_fsharp_entry)
+            tuple_dict_entry(format_value=_entry_formatter)
         )
         self.indent = indent
         self.indent_closing_delimiter = False
@@ -454,6 +497,7 @@ class FSharp(metaclass=LanguageCls):
                 ),
                 sequence_declared_type=_sequence_declared_type,
                 scalar_declared_type=type_name,
+                entry_formatter=_entry_formatter,
             )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
@@ -461,43 +505,45 @@ class FSharp(metaclass=LanguageCls):
                 template="let {name}: {declared_type} = {wrapped}",
                 sequence_declared_type=_sequence_declared_type,
                 scalar_declared_type=type_name,
+                entry_formatter=_entry_formatter,
             )
         )
         self.element_separator = "; "
         self.format_sequence_entry: Callable[[Value, str], str] = (
-            _format_fsharp_entry
+            _entry_formatter
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        p = constructor_prefix
         _header = f"type {type_name} ="
-        _f_str = "    | FStr of string"
+        _f_str = f"    | {p}Str of string"
         self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
         ] = {
-            type(None): (_header, "    | FNull"),
-            bool: (_header, "    | FBool of bool"),
-            int: (_header, "    | FInt of int64"),
-            float: (_header, "    | FFloat of float"),
+            type(None): (_header, f"    | {p}Null"),
+            bool: (_header, f"    | {p}Bool of bool"),
+            int: (_header, f"    | {p}Int of int64"),
+            float: (_header, f"    | {p}Float of float"),
             str: (_header, _f_str),
             bytes: (_header, _f_str),
-            list: (_header, f"    | FList of {type_name} list"),
-            dict: (_header, f"    | FMap of (string * {type_name}) list"),
+            list: (_header, f"    | {p}List of {type_name} list"),
+            dict: (_header, f"    | {p}Map of (string * {type_name}) list"),
             ordereddict: (
                 _header,
-                f"    | FMap of (string * {type_name}) list",
+                f"    | {p}Map of (string * {type_name}) list",
             ),
-            set: (_header, f"    | FSet of {type_name} list"),
+            set: (_header, f"    | {p}Set of {type_name} list"),
             datetime.date: (
                 _header,
                 _f_str,
-                "    | FDate of System.DateTime",
+                f"    | {p}Date of System.DateTime",
             ),
             datetime.datetime: (
                 _header,
                 _f_str,
-                "    | FDatetime of System.DateTime",
+                f"    | {p}Datetime of System.DateTime",
             ),
         }
         self.compute_body_preamble: Callable[
