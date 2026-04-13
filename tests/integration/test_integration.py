@@ -14,7 +14,6 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-import re
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -408,7 +407,8 @@ class _CallCaseConfig:
     case_dir_name: str
     call_function: str
     call_params: list[str]
-    call_wrapper: str | None
+    call_wrapper: Callable[[str], str] | None
+    wrapper_stub_names: list[str]
     per_element: bool
 
 
@@ -417,7 +417,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         case_dir_name="call_keyword_args",
         call_function="throttler.check",
         call_params=["user_id", "ts"],
-        call_wrapper="print($0)",
+        call_wrapper=lambda c: f"print({c})",
+        wrapper_stub_names=["print"],
         per_element=True,
     ),
     _CallCaseConfig(
@@ -425,6 +426,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_function="process",
         call_params=["value"],
         call_wrapper=None,
+        wrapper_stub_names=[],
         per_element=True,
     ),
 ]
@@ -1244,29 +1246,6 @@ def _discover_call_cases() -> list[_CallCase]:
 _CALL_CASES = _discover_call_cases()
 
 
-@beartype
-def _extract_call_names(
-    *,
-    call_function: str,
-    call_wrapper: str | None,
-) -> list[str]:
-    """Extract names needing stubs from call config.
-
-    Returns dotted names (e.g. ``"throttler.check"``) and simple names
-    (e.g. ``"print"``).
-    """
-    names: list[str] = [call_function]
-    if call_wrapper is not None:
-        # Extract the function name from wrapper like "print($0)".
-        wrapper_match = re.match(
-            pattern=r"(\w[\w.]*)\s*\(",
-            string=call_wrapper,
-        )
-        if wrapper_match:  # pragma: no branch
-            names.append(wrapper_match.group(1))
-    return names
-
-
 @pytest.mark.parametrize(
     argnames="call_case",
     argvalues=_CALL_CASES,
@@ -1295,22 +1274,24 @@ def test_call_golden_file(
         per_element=config.per_element,
     )
     # Build stub declarations for undefined names.
-    call_names = _extract_call_names(
-        call_function=config.call_function,
-        call_wrapper=config.call_wrapper,
-    )
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    for i, name in enumerate(iterable=call_names):
-        # The first name is call_function — use call_params.
-        # Subsequent names are from call_wrapper — they take
-        # a single argument (the result of the inner call).
-        params = config.call_params if i == 0 else ["_arg"]
+    # Stubs for the call function (with full params).
+    body_stubs.extend(
+        spec.format_call_stub(config.call_function, config.call_params),
+    )
+    preamble_stubs.extend(
+        spec.format_call_preamble_stub(
+            config.call_function, config.call_params
+        ),
+    )
+    # Stubs for wrapper function names (single-arg).
+    for wrapper_name in config.wrapper_stub_names:
         body_stubs.extend(
-            spec.format_call_stub(name, params),
+            spec.format_call_stub(wrapper_name, ["_arg"]),
         )
         preamble_stubs.extend(
-            spec.format_call_preamble_stub(name, params),
+            spec.format_call_preamble_stub(wrapper_name, ["_arg"]),
         )
     call_body_preamble = result.body_preamble + tuple(body_stubs)
 

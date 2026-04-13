@@ -5,7 +5,7 @@ import datetime
 import enum
 import json
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
 
@@ -1168,13 +1168,13 @@ def _assemble_call(
     *,
     call_function: str,
     args_str: str,
-    call_wrapper: str | None,
+    call_wrapper: Callable[[str], str] | None,
     statement_terminator: str,
 ) -> str:
     """Build one complete call statement, optionally wrapped."""
     call_expr = f"{call_function}{args_str}"
     if call_wrapper is not None:
-        call_expr = call_wrapper.replace("$0", call_expr)
+        call_expr = call_wrapper(call_expr)
     return f"{call_expr}{statement_terminator}"
 
 
@@ -1186,7 +1186,7 @@ def literalize_call(
     language: Language,
     call_function: str,
     call_params: Sequence[str],
-    call_wrapper: str | None = None,
+    call_wrapper: Callable[[str], str] | None = None,
     per_element: bool = True,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
@@ -1206,9 +1206,9 @@ def literalize_call(
             element in each row.  For :attr:`CallStyleKind.POSITIONAL`
             languages these are unused in the output but still
             determine how many values to expect per row.
-        call_wrapper: Optional template wrapping each call, where
-            ``$0`` is replaced by the call expression
-            (e.g. ``"print($0)"``).
+        call_wrapper: Optional callable wrapping each call expression.
+            Receives the bare call string and returns the wrapped
+            version (e.g. ``lambda c: f"print({c})"``).
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
