@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import json
 from collections.abc import Sequence
-from typing import Protocol
+from typing import Protocol, cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -565,7 +565,7 @@ def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
                     )
                     for v in new_list
                 ]
-            return new_list  # pyright: ignore[reportUnknownVariableType]
+            return cast("Value", new_list)
         case _:
             return data
 
