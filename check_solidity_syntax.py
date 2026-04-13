@@ -15,8 +15,8 @@ import tempfile
 from pathlib import Path
 
 # Patterns that indicate the file cannot be valid Solidity.
-_DICT_LITERAL = re.compile(r"= \{")
-_CONTROL_CHAR = re.compile(r"[\x00-\x08\x0e-\x1f]")
+_DICT_LITERAL = re.compile(pattern=r"= \{")
+_CONTROL_CHAR = re.compile(pattern=r"[\x00-\x08\x0e-\x1f]")
 
 
 def main() -> None:
