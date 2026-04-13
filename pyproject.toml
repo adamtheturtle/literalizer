@@ -413,6 +413,7 @@ ignore_names = [
     "MAP",
     "MAP_OF_ENTRIES",
     "MAP_SET",
+    "MUT",
     "EPOCH",
     "FIXED",
     "FROZENSET",
