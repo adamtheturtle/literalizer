@@ -46,14 +46,43 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
-    wrap_combined_in_file_noop,
-    wrap_in_file_noop,
+    prepend_body_preamble,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from literalizer._types import Value
+
+
+@beartype
+def _format_float_string_repr(value: float) -> str:
+    """Format a float as a quoted string using repr style.
+
+    Solidity has no floating-point type, so floats are represented
+    as string literals.
+    """
+    return f'"{format_float_repr(value)}"'
+
+
+@beartype
+def _format_float_string_scientific(value: float) -> str:
+    """Format a float as a quoted string using scientific notation.
+
+    Solidity has no floating-point type, so floats are represented
+    as string literals.
+    """
+    return f'"{format_float_scientific(value)}"'
+
+
+@beartype
+def _format_float_string_fixed(value: float) -> str:
+    """Format a float as a quoted string using fixed notation.
+
+    Solidity has no floating-point type, so floats are represented
+    as string literals.
+    """
+    return f'"{format_float_fixed(value)}"'
 
 
 @beartype
@@ -153,11 +182,11 @@ class Solidity(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        CONSTANT = DeclarationStyleConfig(
+        ABI_ENCODE = DeclarationStyleConfig(
             formatter=variable_formatter(
-                template="constant {name} = {value};",
+                template="bytes memory {name} = abi.encode({value});",
             ),
-            supports_redefinition=False,
+            supports_redefinition=True,
         )
 
     class DictEntryStyles(enum.Enum):
@@ -182,11 +211,15 @@ class Solidity(metaclass=LanguageCls):
         negative_infinity='"-Infinity"',
         nan='"NaN"',
     ):
-        """Float format options."""
+        """Float format options.
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        Solidity has no floating-point type, so all floats are
+        represented as string literals.
+        """
+
+        REPR = enum.member(value=_format_float_string_repr)
+        SCIENTIFIC = enum.member(value=_format_float_string_scientific)
+        FIXED = enum.member(value=_format_float_string_fixed)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -259,11 +292,21 @@ class Solidity(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
+        """Wrap code in a Solidity contract."""
+        del variable_name
+        content = prepend_body_preamble(
             content=content,
-            variable_name=variable_name,
             body_preamble=body_preamble,
+        )
+        return (
+            "// SPDX-License-Identifier: MIT\n"
+            "pragma solidity >=0.8.0;\n"
+            "\n"
+            "contract Generated {\n"
+            "    function run() internal pure {\n"
+            f"{content}\n"
+            "    }\n"
+            "}"
         )
 
     @staticmethod
@@ -273,10 +316,9 @@ class Solidity(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
+        """Wrap declaration and assignment in a Solidity contract."""
+        return Solidity.wrap_in_file(
+            content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
@@ -291,7 +333,7 @@ class Solidity(metaclass=LanguageCls):
         set_format: SetFormats = SetFormats.SET,
         variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
         comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.CONSTANT,
+        declaration_style: DeclarationStyles = DeclarationStyles.ABI_ENCODE,
         dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
         dict_format: DictFormats = DictFormats.DEFAULT,
         float_format: FloatFormats = FloatFormats.REPR,
@@ -378,7 +420,9 @@ class Solidity(metaclass=LanguageCls):
             declaration_style.value.formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
+            variable_formatter(
+                template="{name} = abi.encode({value});",
+            )
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
