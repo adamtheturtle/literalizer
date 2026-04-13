@@ -1553,10 +1553,12 @@ _CALL_LANGUAGES: frozenset[str] = frozenset(
     {
         "Cpp",
         "CSharp",
+        "Java",
         "JavaScript",
         "Kotlin",
         "Python",
         "Ruby",
+        "Rust",
         "Scala",
         "Swift",
         "TypeScript",
@@ -1642,14 +1644,12 @@ def test_call_golden_file(
         preamble_stubs.extend(
             spec.format_call_preamble_stub(name, config.call_params),
         )
-    stub_prefix = "\n".join(body_stubs) + "\n" if body_stubs else ""
-    code = stub_prefix + result.bare_code
+    call_body_preamble = result.body_preamble + tuple(body_stubs)
 
-    variable_name = lang_config.wrap_variable_name or ""
     wrapped = lang_config.lang_cls.wrap_in_file(
-        content=code,
-        variable_name=variable_name,
-        body_preamble=result.body_preamble,
+        content=result.bare_code,
+        variable_name="",
+        body_preamble=call_body_preamble,
     )
     all_preamble = result.preamble + tuple(preamble_stubs)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)

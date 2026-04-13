@@ -490,7 +490,8 @@ class Rust(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="    ")
-        return f"fn main() {{\n{indented}\n    let _ = {variable_name};\n}}"
+        use_line = f"\n    let _ = {variable_name};" if variable_name else ""
+        return f"fn main() {{\n{indented}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
