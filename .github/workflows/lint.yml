@@ -902,7 +902,10 @@ jobs:
           lang_patterns: tests/integration/cases/**/Matlab*.m
       - name: Install Octave
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq octave
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: octave
+          version: 1.0
       # Octave is a practical CI substitute, but it does not support
       # every MATLAB builtin.  Skip files that use features Octave lacks:
       #  - datetime(): not yet implemented in Octave
