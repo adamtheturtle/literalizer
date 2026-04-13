@@ -183,7 +183,7 @@ def _java_type_hint(  # noqa: C901, PLR0911, PLR0912
             return "Object"
         case dict():
             val_type = _java_common_element_type(
-                list(data.values()),
+                elements=list(data.values()),
                 boxed=True,
                 int_type=int_type,
                 date_hint=date_hint,
@@ -200,7 +200,7 @@ def _java_type_hint(  # noqa: C901, PLR0911, PLR0912
             return f"{outer}<String, {val_type}>"
         case set():
             elem_type = _java_common_element_type(
-                list(data),
+                elements=list(data),
                 boxed=True,
                 int_type=int_type,
                 date_hint=date_hint,
@@ -213,7 +213,7 @@ def _java_type_hint(  # noqa: C901, PLR0911, PLR0912
         case list():
             if seq_is_array:
                 elem_type = _java_common_element_type(
-                    data,
+                    elements=data,
                     boxed=False,
                     int_type=int_type,
                     date_hint=date_hint,
@@ -224,7 +224,7 @@ def _java_type_hint(  # noqa: C901, PLR0911, PLR0912
                 )
                 return f"{elem_type}[]"
             elem_type = _java_common_element_type(
-                data,
+                elements=data,
                 boxed=True,
                 int_type=int_type,
                 date_hint=date_hint,
