@@ -6,6 +6,7 @@ Checks: >
   -bugprone-narrowing-conversions,
   -clang-analyzer-deadcode.DeadStores,
   -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-missing-std-forward,
   -cppcoreguidelines-narrowing-conversions,
   -fuchsia-default-arguments-calls,
   -google-explicit-constructor,
