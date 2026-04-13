@@ -96,25 +96,6 @@ def _list_of_open(items: list[Any]) -> str:
     return "List.of("
 
 
-def _java_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
-    """Return Java stub declarations for a call name.
-
-    Stubs go into preamble (before the ``class Check`` wrapper),
-    so they need their own class.  ``Check`` inherits from
-    ``Stubs_`` to access them.
-    """
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"static Object {parts[0]}(Object... a) {{ return null; }}",)
-    root, method = parts[0], parts[1]
-    cls = f"{root.title()}Type_"
-    return (
-        f"static class {cls} {{ Object {method}"
-        f"(Object... a) {{ return null; }} }}",
-        f"static {cls} {root} = new {cls}();",
-    )
-
-
 @beartype
 class Java(metaclass=LanguageCls):
     """Java language specification.
@@ -639,4 +620,4 @@ class Java(metaclass=LanguageCls):
         )
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = _java_call_stub
+        self.format_call_preamble_stub = no_call_stub
