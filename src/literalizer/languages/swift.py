@@ -473,6 +473,32 @@ class Swift(metaclass=LanguageCls):
         AUTO = enum.auto()
         ALWAYS = enum.auto()
 
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[[str, str, Value], str],
+            keyword: str,
+            date_hint: str,
+            datetime_hint: str,
+            default_set_element_type: str,
+            default_sequence_element_type: str,
+            default_dict_value_type: str,
+            sequence_is_tuple: bool,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter."""
+            if self is type(self).AUTO:
+                return auto_formatter
+            return functools.partial(
+                _format_swift_typed_declaration,
+                keyword=keyword,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                default_set_element_type=default_set_element_type,
+                default_sequence_element_type=(default_sequence_element_type),
+                default_dict_value_type=default_dict_value_type,
+                sequence_is_tuple=sequence_is_tuple,
+            )
+
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
@@ -620,30 +646,25 @@ class Swift(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
-        _swift_decl: Callable[[str, str, Value], str]
-        if variable_type_hints.name == "ALWAYS":
-            _swift_date_hint = (
-                "String" if date_format.value.type_produced is str else "Date"
-            )
-            _swift_dt_hint = (
-                "String"
-                if datetime_format.value.type_produced is str
-                else "Date"
-            )
-            _swift_decl = functools.partial(
-                _format_swift_typed_declaration,
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            variable_type_hints.formatter(
+                auto_formatter=declaration_style.value.formatter,
                 keyword=declaration_style.name.lower(),
-                date_hint=_swift_date_hint,
-                datetime_hint=_swift_dt_hint,
+                date_hint=(
+                    "String"
+                    if date_format.value.type_produced is str
+                    else "Date"
+                ),
+                datetime_hint=(
+                    "String"
+                    if datetime_format.value.type_produced is str
+                    else "Date"
+                ),
                 default_set_element_type=default_set_element_type,
                 default_sequence_element_type=(default_sequence_element_type),
                 default_dict_value_type=default_dict_value_type,
                 sequence_is_tuple=(sequence_format.name == "TUPLE"),
             )
-        else:
-            _swift_decl = declaration_style.value.formatter
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _swift_decl
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")

@@ -477,6 +477,28 @@ class TypeScript(metaclass=LanguageCls):
         AUTO = enum.auto()
         ALWAYS = enum.auto()
 
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[[str, str, Value], str],
+            keyword: str,
+            date_hint: str,
+            datetime_hint: str,
+            dict_hint_template: str,
+            sequence_is_tuple: bool,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter."""
+            if self is type(self).AUTO:
+                return auto_formatter
+            return functools.partial(
+                _format_ts_typed_declaration,
+                keyword=keyword,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_hint_template=dict_hint_template,
+                sequence_is_tuple=sequence_is_tuple,
+            )
+
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
@@ -606,31 +628,24 @@ class TypeScript(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        _base_decl: Callable[[str, str, Value], str]
-        if variable_type_hints.name == "ALWAYS":
-            _ts_date_hint = (
+        _base_decl = variable_type_hints.formatter(
+            auto_formatter=declaration_style.value.formatter,
+            keyword=declaration_style.name.lower(),
+            date_hint=(
                 "string" if date_format.value.type_produced is str else "Date"
-            )
-            _ts_datetime_hint = (
+            ),
+            datetime_hint=(
                 "string"
                 if datetime_format.value.type_produced is str
                 else "Date"
-            )
-            _ts_dict_template = (
+            ),
+            dict_hint_template=(
                 "Map<string, {val}>"
                 if dict_format.name == "MAP"
                 else "Record<string, {val}>"
-            )
-            _base_decl = functools.partial(
-                _format_ts_typed_declaration,
-                keyword=declaration_style.name.lower(),
-                date_hint=_ts_date_hint,
-                datetime_hint=_ts_datetime_hint,
-                dict_hint_template=_ts_dict_template,
-                sequence_is_tuple=(sequence_format.name == "TUPLE"),
-            )
-        else:
-            _base_decl = declaration_style.value.formatter
+            ),
+            sequence_is_tuple=(sequence_format.name == "TUPLE"),
+        )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             line_ending.wrap_formatter(formatter=_base_decl)
         )

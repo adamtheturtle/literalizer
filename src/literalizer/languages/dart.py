@@ -3,7 +3,8 @@
 import datetime
 import enum
 import functools
-from typing import TYPE_CHECKING, assert_never
+from collections.abc import Callable, Sequence
+from typing import assert_never
 
 from beartype import beartype
 
@@ -59,9 +60,6 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -411,6 +409,32 @@ class Dart(metaclass=LanguageCls):
         AUTO = enum.auto()
         ALWAYS = enum.auto()
 
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[[str, str, Value], str],
+            keyword: str,
+            date_hint: str,
+            datetime_hint: str,
+            default_set_element_type: str,
+            default_dict_key_type: str,
+            default_dict_value_type: str,
+            sequence_is_tuple: bool,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter."""
+            if self is type(self).AUTO:
+                return auto_formatter
+            return functools.partial(
+                _format_dart_typed_declaration,
+                keyword=keyword,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                default_set_element_type=default_set_element_type,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+                sequence_is_tuple=sequence_is_tuple,
+            )
+
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
@@ -580,36 +604,29 @@ class Dart(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        _dart_decl: Callable[[str, str, Value], str]
-        if variable_type_hints.name == "ALWAYS":
-            _dart_date_hint = (
-                "String"
-                if date_format.value.type_produced is str
-                else "DateTime"
-            )
-            _dart_dt_hint = (
-                "String"
-                if datetime_format.value.type_produced is str
-                else "DateTime"
-            )
-            # In Dart, `var` is replaced by the type; `final`/`const`
-            # precede the type with a space.
-            _dart_kw = declaration_style.name.lower()
-            _dart_keyword = "" if _dart_kw == "var" else f"{_dart_kw} "
-            _dart_decl = functools.partial(
-                _format_dart_typed_declaration,
+        # In Dart, ``var`` is replaced by the type; ``final``/``const``
+        # precede the type with a space.
+        _dart_kw = declaration_style.name.lower()
+        _dart_keyword = "" if _dart_kw == "var" else f"{_dart_kw} "
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            variable_type_hints.formatter(
+                auto_formatter=declaration_style.value.formatter,
                 keyword=_dart_keyword,
-                date_hint=_dart_date_hint,
-                datetime_hint=_dart_dt_hint,
+                date_hint=(
+                    "String"
+                    if date_format.value.type_produced is str
+                    else "DateTime"
+                ),
+                datetime_hint=(
+                    "String"
+                    if datetime_format.value.type_produced is str
+                    else "DateTime"
+                ),
                 default_set_element_type=default_set_element_type,
                 default_dict_key_type=default_dict_key_type,
                 default_dict_value_type=default_dict_value_type,
                 sequence_is_tuple=(sequence_format.name == "TUPLE"),
             )
-        else:
-            _dart_decl = declaration_style.value.formatter
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _dart_decl
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")

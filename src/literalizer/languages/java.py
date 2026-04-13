@@ -600,6 +600,30 @@ class Java(metaclass=LanguageCls):
         AUTO = enum.auto()
         ALWAYS = enum.auto()
 
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[[str, str, Value], str],
+            int_type: str,
+            date_hint: str,
+            datetime_hint: str,
+            seq_is_array: bool,
+            dict_outer: str,
+            set_outer: str,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter."""
+            if self is type(self).AUTO:
+                return auto_formatter
+            return functools.partial(
+                _format_java_typed_declaration,
+                int_type=int_type,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                seq_is_array=seq_is_array,
+                dict_outer=dict_outer,
+                set_outer=set_outer,
+            )
+
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
@@ -765,40 +789,31 @@ class Java(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
-        _java_decl: Callable[[str, str, Value], str]
-        if variable_type_hints.name == "ALWAYS":
-            _java_int_type = "long" if suffix_is_auto else "int"
-            _java_date_hint: str
-            if date_format.value.type_produced is str:
-                _java_date_hint = "String"
-            else:
-                _java_date_hint = "LocalDate"
-            _java_dt_hint: str
-            if datetime_format.value.type_produced is str:
-                _java_dt_hint = "String"
-            elif datetime_format.name == "ZONED":
-                _java_dt_hint = "ZonedDateTime"
-            else:
-                _java_dt_hint = "Instant"
-            _java_dict_outer = (
-                "HashMap" if dict_format.name == "HASH_MAP" else "Map"
-            )
-            _java_set_outer = (
-                "TreeSet" if set_format.name == "TREE_SET" else "Set"
-            )
-            _java_decl = functools.partial(
-                _format_java_typed_declaration,
-                int_type=_java_int_type,
-                date_hint=_java_date_hint,
+        _java_dt_hint: str
+        if datetime_format.value.type_produced is str:
+            _java_dt_hint = "String"
+        elif datetime_format.name == "ZONED":
+            _java_dt_hint = "ZonedDateTime"
+        else:
+            _java_dt_hint = "Instant"
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            variable_type_hints.formatter(
+                auto_formatter=declaration_style.value.formatter,
+                int_type="long" if suffix_is_auto else "int",
+                date_hint=(
+                    "String"
+                    if date_format.value.type_produced is str
+                    else "LocalDate"
+                ),
                 datetime_hint=_java_dt_hint,
                 seq_is_array=(sequence_format.name == "ARRAY"),
-                dict_outer=_java_dict_outer,
-                set_outer=_java_set_outer,
+                dict_outer=(
+                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
+                ),
+                set_outer=(
+                    "TreeSet" if set_format.name == "TREE_SET" else "Set"
+                ),
             )
-        else:
-            _java_decl = declaration_style.value.formatter
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _java_decl
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
