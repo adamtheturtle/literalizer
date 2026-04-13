@@ -823,7 +823,7 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         error_on_coercion=False,
     )
     assert result.code == "my_data: dict[str, str] = {}"
-    assert result.preamble == ()
+    assert not result.preamble
 
 
 def test_cobol_bump_levels_rejects_non_level_line() -> None:
