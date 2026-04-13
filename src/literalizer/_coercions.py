@@ -94,7 +94,7 @@ def _map_mapping_values(
     data: ordereddict | dict[str, Value],
     fn: Callable[[Value], Value],
 ) -> ordereddict | dict[str, Value]:
-    """Apply *fn* to every value of a dict or ordereddict,
+    """Apply a function to every value of a dict or ordereddict,
     preserving the container type.
     """
     if isinstance(data, ordereddict):
