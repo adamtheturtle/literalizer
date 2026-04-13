@@ -46,7 +46,8 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
-    prepend_body_preamble,
+    wrap_combined_in_file_noop,
+    wrap_in_file_noop,
 )
 
 if TYPE_CHECKING:
@@ -154,7 +155,7 @@ class Solidity(metaclass=LanguageCls):
 
         CONSTANT = DeclarationStyleConfig(
             formatter=variable_formatter(
-                template="string constant {name} = {value};",
+                template="constant {name} = {value};",
             ),
             supports_redefinition=False,
         )
@@ -258,19 +259,11 @@ class Solidity(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a Solidity contract."""
-        del variable_name
-        content = prepend_body_preamble(
+        """Wrap code in a valid file (no-op)."""
+        return wrap_in_file_noop(
             content=content,
+            variable_name=variable_name,
             body_preamble=body_preamble,
-        )
-        return (
-            "// SPDX-License-Identifier: MIT\n"
-            "pragma solidity >=0.8.0;\n"
-            "\n"
-            "contract Generated {\n"
-            f"{content}\n"
-            "}"
         )
 
     @staticmethod
@@ -280,9 +273,10 @@ class Solidity(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a Solidity contract."""
-        return Solidity.wrap_in_file(
-            content=declaration + "\n" + assignment,
+        """Wrap declaration and assignment in a valid file (no-op)."""
+        return wrap_combined_in_file_noop(
+            declaration=declaration,
+            assignment=assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
@@ -307,7 +301,7 @@ class Solidity(metaclass=LanguageCls):
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
         string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.YES,
+        trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
     ) -> None:

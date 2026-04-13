@@ -1,11 +1,6 @@
-// SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
-
-contract Generated {
-string constant my_data = {
+constant my_data = {
     // Configuration
     "name": "app",
     // Port setting
-    "port": 3000,
+    "port": 3000
 };
-}
