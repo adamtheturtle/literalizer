@@ -59,14 +59,18 @@ def _format_float_forth(value: float) -> str:
     """Format a float as a Forth floating-point literal.
 
     Forth requires the ``e`` exponent marker to distinguish floats
-    from integers.
+    from integers.  Uses scientific notation so every value includes
+    the marker.
 
     Example: ``1.5`` -> ``1.5e0``.
     """
-    s = repr(value)
-    if "e" in s or "E" in s:
-        return s.lower()
-    return f"{s}e0"
+    raw = f"{value:e}"
+    mantissa, exponent_part = raw.split(sep="e")
+    mantissa = mantissa.rstrip("0")
+    if mantissa.endswith("."):
+        mantissa += "0"
+    exponent_value = int(exponent_part)
+    return f"{mantissa}e{exponent_value}"
 
 
 @beartype
