@@ -1,4 +1,5 @@
 using System;
 dynamic throttler = new System.Dynamic.ExpandoObject();
-print(throttler.check("user_1", 1000.0));
-print(throttler.check("user_2", 2000.5));
+dynamic emit(dynamic a) => null;
+emit(throttler.check("user_1", 1000.0));
+emit(throttler.check("user_2", 2000.5));

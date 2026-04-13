@@ -417,8 +417,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         case_dir_name="call_keyword_args",
         call_function="throttler.check",
         call_params=["user_id", "ts"],
-        call_wrapper=lambda c: f"print({c})",
-        wrapper_stub_names=[],
+        call_wrapper=lambda c: f"emit({c})",
+        wrapper_stub_names=["emit"],
         per_element=True,
     ),
     _CallCaseConfig(
