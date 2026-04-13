@@ -62,7 +62,7 @@ def _format_float_string_repr(value: float) -> str:
     Solidity has no floating-point type, so floats are represented
     as string literals.
     """
-    return f'"{format_float_repr(value)}"'
+    return f'"{format_float_repr(value=value)}"'
 
 
 @beartype
@@ -72,7 +72,7 @@ def _format_float_string_scientific(value: float) -> str:
     Solidity has no floating-point type, so floats are represented
     as string literals.
     """
-    return f'"{format_float_scientific(value)}"'
+    return f'"{format_float_scientific(value=value)}"'
 
 
 @beartype
@@ -82,7 +82,7 @@ def _format_float_string_fixed(value: float) -> str:
     Solidity has no floating-point type, so floats are represented
     as string literals.
     """
-    return f'"{format_float_fixed(value)}"'
+    return f'"{format_float_fixed(value=value)}"'
 
 
 @beartype
