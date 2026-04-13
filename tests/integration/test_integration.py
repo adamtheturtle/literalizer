@@ -400,6 +400,40 @@ def _cases_with_non_trivial_dict_keys(
     return frozenset(result)
 
 
+@dataclasses.dataclass
+class _CallCaseConfig:
+    """Configuration for a ``literalize_call`` golden-file test case."""
+
+    case_dir_name: str
+    call_function: str
+    call_params: list[str]
+    call_wrapper: Callable[[str], str] | None
+    wrapper_stub_names: list[str]
+    per_element: bool
+
+
+_CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
+    _CallCaseConfig(
+        case_dir_name="call_keyword_args",
+        call_function="throttler.check",
+        call_params=["user_id", "ts"],
+        call_wrapper=lambda c: f"print({c})",
+        wrapper_stub_names=["print"],
+        per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_scalar_args",
+        call_function="process",
+        call_params=["value"],
+        call_wrapper=None,
+        wrapper_stub_names=[],
+        per_element=True,
+    ),
+]
+
+_CALL_CASE_DIRS = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
+
+
 _CASES_DIR = Path(__file__).parent / "cases"
 _NON_TRIVIAL_KEY_CASES = _cases_with_non_trivial_dict_keys(
     cases_dir=_CASES_DIR,
@@ -411,6 +445,8 @@ def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
     """Return ``(case_name, lang_cls)`` tuples."""
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
+        if case_dir.name in _CALL_CASE_DIRS:
+            continue
         non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
         for lang_cls in _SORTED_LANGUAGES:
             if (
@@ -489,6 +525,8 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     """
     cases: list[_CombinedCase] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
+        if case_dir.name in _CALL_CASE_DIRS:
+            continue
         non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
         for lang_cls in _SORTED_LANGUAGES:
             lang_name = lang_cls.__name__
@@ -1209,6 +1247,13 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             / (line_ending_case.name + line_ending_spec.extension)
         )
 
+    for call_case in _CALL_CASES:
+        ext = call_case.lang_cls.extension
+        golden_name = f"{call_case.lang_cls.__name__}_call"
+        expected.add(
+            cases_dir / call_case.config.case_dir_name / (golden_name + ext)
+        )
+
     actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
         path.relative_to(cases_dir) for path in actual - expected
@@ -1254,3 +1299,117 @@ def test_format_enumeration_properties(
     assert len(spec.trailing_commas) >= 1
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
+
+
+# --- literalize_call golden-file tests ---
+
+
+@dataclasses.dataclass
+class _CallCase:
+    """A parameterized call-style golden-file test case."""
+
+    config: _CallCaseConfig
+    lang_cls: literalizer.LanguageCls
+
+
+# Languages whose CI lint checks accept call golden files.  Only
+# these are included in call golden-file tests.  Languages with strict
+# compilers that reject call expressions without statement
+# terminators or require stubs at specific scopes are excluded.
+_CALL_LANGUAGES: frozenset[str] = frozenset(
+    {
+        "Cpp",
+        "CSharp",
+        "FSharp",
+        "JavaScript",
+        "Kotlin",
+        "Python",
+        "Ruby",
+        "Rust",
+        "Scala",
+        "Swift",
+        "TypeScript",
+    }
+)
+
+
+@beartype
+def _discover_call_cases() -> list[_CallCase]:
+    """Return call test cases for all languages."""
+    cases: list[_CallCase] = []
+    for config in _CALL_CASE_CONFIGS:
+        cases.extend(
+            _CallCase(config=config, lang_cls=lang_cls)
+            for lang_cls in _SORTED_LANGUAGES
+            if lang_cls.__name__ in _CALL_LANGUAGES
+        )
+    return cases
+
+
+_CALL_CASES = _discover_call_cases()
+
+
+@pytest.mark.parametrize(
+    argnames="call_case",
+    argvalues=_CALL_CASES,
+    ids=[
+        f"{c.config.case_dir_name}/{c.lang_cls.__name__}" for c in _CALL_CASES
+    ],
+)
+def test_call_golden_file(
+    call_case: _CallCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test that literalize_call output matches expected golden file."""
+    config = call_case.config
+    lang_cls = call_case.lang_cls
+    spec = lang_cls()
+    input_path = cases_dir / config.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    result = literalizer.literalize_call(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=spec,
+        call_function=config.call_function,
+        call_params=config.call_params,
+        call_wrapper=config.call_wrapper,
+        per_element=config.per_element,
+    )
+    # Build stub declarations for undefined names.
+    body_stubs: list[str] = []
+    preamble_stubs: list[str] = []
+    # Stubs for the call function (with full parameter names).
+    body_stubs.extend(
+        spec.format_call_stub(config.call_function, config.call_params),
+    )
+    preamble_stubs.extend(
+        spec.format_call_preamble_stub(
+            config.call_function, config.call_params
+        ),
+    )
+    # Stubs for wrapper function names (single argument).
+    for wrapper_name in config.wrapper_stub_names:
+        body_stubs.extend(
+            spec.format_call_stub(wrapper_name, ["_arg"]),
+        )
+        preamble_stubs.extend(
+            spec.format_call_preamble_stub(wrapper_name, ["_arg"]),
+        )
+    call_body_preamble = result.body_preamble + tuple(body_stubs)
+
+    wrapped = lang_cls.wrap_in_file(
+        content=result.bare_code,
+        variable_name="",
+        body_preamble=call_body_preamble,
+    )
+    all_preamble = result.preamble + tuple(preamble_stubs)
+    wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
+    lang_name = lang_cls.__name__
+    golden_name = f"{lang_name}_call"
+    file_regression.check(
+        contents=wrapped + "\n",
+        extension=lang_cls.extension,
+        newline="",
+        fullpath=input_path.parent / (golden_name + lang_cls.extension),
+    )

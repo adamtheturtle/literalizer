@@ -4,9 +4,9 @@ import datetime
 import enum
 import functools
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING, assert_never
+from typing import assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -47,6 +47,8 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -59,13 +61,17 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+
+def _ts_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return TypeScript stub declarations for a call name."""
+    root = name.split(sep=".", maxsplit=1)[0]
+    return (f"declare const {root}: any;",)
 
 
 @beartype
@@ -645,3 +651,10 @@ class TypeScript(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.OBJECT,
+            keyword_separator=": ",
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = _ts_call_stub
+        self.format_call_preamble_stub = no_call_stub

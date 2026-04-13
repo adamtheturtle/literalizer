@@ -1089,7 +1089,9 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.sml
       - name: Install MLton
         if: steps.find-files.outputs.found == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq mlton
+        run: |
+          curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
+          echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
       - name: Check SML syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 mlton -stop tc < /tmp/files-to-lint

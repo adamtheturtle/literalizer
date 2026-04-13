@@ -40,6 +40,8 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_dollar_single,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -52,6 +54,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -441,3 +444,9 @@ class V(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ("import math",)
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = no_call_stub

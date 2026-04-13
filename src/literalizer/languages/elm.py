@@ -36,6 +36,8 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -47,6 +49,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
+    no_call_stub,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -727,3 +730,9 @@ class Elm(metaclass=LanguageCls):
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
+        self.statement_terminator = ""
+        self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = no_call_stub

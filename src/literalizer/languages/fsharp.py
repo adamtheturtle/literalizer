@@ -4,8 +4,7 @@ import dataclasses
 import datetime
 import enum
 import textwrap
-from collections.abc import Callable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -40,6 +39,8 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -52,13 +53,11 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 def _build_fsharp_entry_formatter(
@@ -127,6 +126,22 @@ def _build_fsharp_declaration(
         )
 
     return _format
+
+
+def _fsharp_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return F# stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        param_list = ", ".join(f"_{p}: obj" for p in params)
+        return (f"let {parts[0]} ({param_list}) : obj = null",)
+    root, method = parts[0], parts[1]
+    param_list = ", ".join(f"_{p}: obj" for p in params)
+    cls = f"{root.title()}Type_"
+    return (
+        f"type {cls}() =",
+        f"    member _.{method}({param_list}) : obj = null",
+        f"let {root} = {cls}()",
+    )
 
 
 @beartype
@@ -595,3 +610,9 @@ class FSharp(metaclass=LanguageCls):
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
+        self.statement_terminator = ""
+        self.format_call_stub = _fsharp_call_stub
+        self.format_call_preamble_stub = no_call_stub
