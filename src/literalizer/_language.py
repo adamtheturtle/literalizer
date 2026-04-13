@@ -744,7 +744,7 @@ def wrap_in_file_noop(
     variable_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
-    """Default ``wrap_in_file`` that only prepends body preamble."""
+    """Default ``wrap_in_file`` that only adds body preamble."""
     del variable_name  # unused
     return prepend_body_preamble(content=content, body_preamble=body_preamble)
 

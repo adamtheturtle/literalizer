@@ -84,7 +84,7 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
             "my_data" if lang_cls.supports_variable_names else None
         ),
     )
-    for lang_cls in ALL_LANGUAGES
+    for lang_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
 }
 
 _COVERED_LANGUAGES = frozenset(cfg.lang_cls for cfg in _LANGUAGES.values())
