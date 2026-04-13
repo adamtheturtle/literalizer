@@ -1551,10 +1551,14 @@ class _CallCase:
 # terminators or require stubs at specific scopes are excluded.
 _CALL_LANGUAGES: frozenset[str] = frozenset(
     {
+        "Cpp",
+        "CSharp",
+        "Java",
         "JavaScript",
         "Kotlin",
         "Python",
         "Ruby",
+        "Rust",
         "Scala",
         "Swift",
         "TypeScript",

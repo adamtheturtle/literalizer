@@ -884,7 +884,7 @@ def test_literalize_call_positional_style() -> None:
         call_function="process",
         call_params=["a", "b"],
     )
-    assert result.code == "process(1, 2)"
+    assert result.code == "process(1, 2);"
 
 
 def test_literalize_call_body_preamble() -> None:

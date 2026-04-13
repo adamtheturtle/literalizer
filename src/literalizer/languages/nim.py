@@ -568,5 +568,6 @@ class Nim(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=" = ",
         )
+        self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

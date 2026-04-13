@@ -1,0 +1,5 @@
+using System;
+static dynamic throttler = new System.Dynamic.ExpandoObject();
+static dynamic print(params dynamic[] a) => null;
+print(throttler.check("user_1", 1000.0));
+print(throttler.check("user_2", 2000.5));

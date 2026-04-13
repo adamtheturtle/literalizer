@@ -746,6 +746,14 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     See :class:`CallStyleConfig` for details.
     """
 
+    statement_terminator: str
+    """String appended to each call expression to form a complete
+    statement.
+
+    Most C-family languages use ``";"``.  Python, Ruby, and other
+    languages where a bare expression is a valid statement use ``""``.
+    """
+
     format_call_stub: Callable[[str, Sequence[str]], tuple[str, ...]]
     """Return stub declaration lines for a name used in a call
     expression.

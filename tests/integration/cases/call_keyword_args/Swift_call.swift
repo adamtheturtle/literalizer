@@ -1,5 +1,5 @@
 class _throttlerType { func check(user_id: Any = 0, ts: Any = 0) -> Any { 0 } }
 let throttler = _throttlerType()
 func print(user_id: Any = 0, ts: Any = 0) -> Any { 0 }
-print(throttler.check(user_id: "user_1", ts: 1000.0))
-print(throttler.check(user_id: "user_2", ts: 2000.5))
+print(throttler.check(user_id: "user_1", ts: 1000.0));
+print(throttler.check(user_id: "user_2", ts: 2000.5));

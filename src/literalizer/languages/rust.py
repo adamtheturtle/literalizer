@@ -3,7 +3,7 @@
 import datetime
 import enum
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -63,8 +63,6 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
 
 
@@ -93,6 +91,22 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
             f"{value.hour}, {value.minute}, {value.second}).unwrap()"
         )
     return f"NaiveDateTime::new({date}, {time_call})"
+
+
+def _rust_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Rust stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        param_list = ", ".join(f"_{p}: &dyn std::any::Any" for p in params)
+        return (f"fn {parts[0]}({param_list}) {{}}",)
+    root, method = parts[0], parts[1]
+    param_list = ", ".join(f"_{p}: &dyn std::any::Any" for p in params)
+    type_name = f"_{root.title()}Type"
+    return (
+        f"struct {type_name};",
+        f"impl {type_name} {{ fn {method}(&self, {param_list}) {{}} }}",
+        f"let {root} = {type_name};",
+    )
 
 
 @beartype
@@ -604,5 +618,6 @@ class Rust(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
-        self.format_call_stub = no_call_stub
+        self.statement_terminator = ";"
+        self.format_call_stub = _rust_call_stub
         self.format_call_preamble_stub = no_call_stub

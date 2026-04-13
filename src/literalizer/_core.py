@@ -1169,12 +1169,13 @@ def _assemble_call(
     call_function: str,
     args_str: str,
     call_wrapper: str | None,
+    statement_terminator: str,
 ) -> str:
-    """Build one complete call expression, optionally wrapped."""
+    """Build one complete call statement, optionally wrapped."""
     call_expr = f"{call_function}{args_str}"
     if call_wrapper is not None:
         call_expr = call_wrapper.replace("$0", call_expr)
-    return call_expr
+    return f"{call_expr}{statement_terminator}"
 
 
 @beartype
@@ -1236,6 +1237,7 @@ def literalize_call(
                     call_function=call_function,
                     args_str=args_str,
                     call_wrapper=call_wrapper,
+                    statement_terminator=language.statement_terminator,
                 )
             )
         result = "\n".join(lines)
@@ -1252,6 +1254,7 @@ def literalize_call(
             call_function=call_function,
             args_str=args_str,
             call_wrapper=call_wrapper,
+            statement_terminator=language.statement_terminator,
         )
 
     computed = _compute_preamble(

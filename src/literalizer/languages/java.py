@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
@@ -65,8 +65,6 @@ from literalizer._language import (
 from literalizer.exceptions import NullInCollectionError
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
 
 
@@ -96,6 +94,22 @@ def _list_of_open(items: list[Any]) -> str:
         )
         raise NullInCollectionError(msg)
     return "List.of("
+
+
+def _java_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Java stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (
+            f"    static Object {parts[0]}(Object... a) {{ return null; }}",
+        )
+    root, method = parts[0], parts[1]
+    cls = f"_{root}Type"
+    return (
+        f"    static class {cls} {{ Object {method}"
+        f"(Object... a) {{ return null; }} }}",
+        f"    static {cls} {root} = new {cls}();",
+    )
 
 
 @beartype
@@ -620,5 +634,6 @@ class Java(metaclass=LanguageCls):
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.POSITIONAL,
         )
+        self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = no_call_stub
+        self.format_call_preamble_stub = _java_call_stub
