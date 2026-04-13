@@ -95,16 +95,25 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
 
 def _rust_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     """Return Rust stub declarations for a call name."""
+    # Use generic type parameters so any argument type is accepted.
+    type_vars = [chr(ord("A") + i) for i in range(len(params))]
+    generic_decl = ", ".join(type_vars)
     parts = name.split(sep=".")
     if len(parts) == 1:
-        param_list = ", ".join(f"_{p}: &dyn std::any::Any" for p in params)
-        return (f"fn {parts[0]}({param_list}) {{}}",)
+        param_list = ", ".join(
+            f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
+        )
+        return (f"fn {parts[0]}<{generic_decl}>({param_list}) {{}}",)
     root, method = parts[0], parts[1]
-    param_list = ", ".join(f"_{p}: &dyn std::any::Any" for p in params)
-    type_name = f"_{root.title()}Type"
+    param_list = ", ".join(
+        f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
+    )
+    type_name = f"{root.title()}Type_"
     return (
         f"struct {type_name};",
-        f"impl {type_name} {{ fn {method}(&self, {param_list}) {{}} }}",
+        f"impl {type_name} {{"
+        f" fn {method}<{generic_decl}>"
+        f"(&self, {param_list}) {{}} }}",
         f"let {root} = {type_name};",
     )
 

@@ -1553,12 +1553,10 @@ _CALL_LANGUAGES: frozenset[str] = frozenset(
     {
         "Cpp",
         "CSharp",
-        "Java",
         "JavaScript",
         "Kotlin",
         "Python",
         "Ruby",
-        "Rust",
         "Scala",
         "Swift",
         "TypeScript",

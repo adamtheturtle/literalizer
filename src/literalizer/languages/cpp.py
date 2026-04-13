@@ -238,10 +238,10 @@ def _cpp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     if len(parts) == 1:
         return (f"auto {parts[0]}(auto...) {{ return 0; }}",)
     root, method = parts[0], parts[1]
-    type_name = f"_{root}Type"
+    type_name = f"{root}Type_"
     return (
         f"struct {type_name} {{ auto {method}(auto...) {{ return 0; }} }};",
-        f"{type_name} {root};",
+        f"const {type_name} {root};",
     )
 
 

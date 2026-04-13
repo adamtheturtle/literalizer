@@ -100,15 +100,12 @@ def _java_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return Java stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (
-            f"    static Object {parts[0]}(Object... a) {{ return null; }}",
-        )
+        return (f"Object {parts[0]}(Object... a) {{ return null; }}",)
     root, method = parts[0], parts[1]
-    cls = f"_{root}Type"
+    cls = f"{root.title()}Type_"
     return (
-        f"    static class {cls} {{ Object {method}"
-        f"(Object... a) {{ return null; }} }}",
-        f"    static {cls} {root} = new {cls}();",
+        f"class {cls} {{ Object {method}(Object... a) {{ return null; }} }}",
+        f"{cls} {root} = new {cls}();",
     )
 
 

@@ -85,9 +85,9 @@ def _csharp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return C# stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"static dynamic {parts[0]}(params dynamic[] a) => null;",)
+        return (f"dynamic {parts[0]}(params dynamic[] a) => null;",)
     root = parts[0]
-    return (f"static dynamic {root} = new System.Dynamic.ExpandoObject();",)
+    return (f"dynamic {root} = new System.Dynamic.ExpandoObject();",)
 
 
 @beartype
