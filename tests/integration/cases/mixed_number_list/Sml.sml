@@ -1,0 +1,13 @@
+structure Check = struct
+
+datatype val_t =
+    SInt of int
+  | SReal of real
+  | SList of val_t list
+val my_data : val_t = SList [
+    SInt 1,
+    SReal 2.5,
+    SInt 3
+]
+
+end

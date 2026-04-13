@@ -17,6 +17,7 @@ from .dhall import Dhall
 from .elixir import Elixir
 from .elm import Elm
 from .erlang import Erlang
+from .forth import Forth
 from .fortran import Fortran
 from .fsharp import FSharp
 from .gleam import Gleam
@@ -51,6 +52,7 @@ from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
 from .scheme import Scheme
+from .sml import Sml
 from .solidity import Solidity
 from .swift import Swift
 from .systemverilog import SystemVerilog
@@ -80,6 +82,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Elixir,
         Elm,
         Erlang,
+        Forth,
         Fortran,
         FSharp,
         Gleam,
@@ -114,6 +117,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Rust,
         Scala,
         Scheme,
+        Sml,
         Solidity,
         Swift,
         Tcl,
@@ -146,6 +150,7 @@ __all__ = [
     "Elm",
     "Erlang",
     "FSharp",
+    "Forth",
     "Fortran",
     "Gleam",
     "Go",
@@ -179,6 +184,7 @@ __all__ = [
     "Rust",
     "Scala",
     "Scheme",
+    "Sml",
     "Solidity",
     "Swift",
     "SystemVerilog",

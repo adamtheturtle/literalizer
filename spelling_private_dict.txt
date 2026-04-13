@@ -87,6 +87,18 @@ Php
 PureScript
 Pygments
 Raku
+SBool
+SDate
+SDatetime
+SInt
+SList
+SML's
+SMap
+SNull
+SReal
+SSet
+SStr
+Sml
 SystemVerilog
 Tcl
 Toml
@@ -185,6 +197,7 @@ ruamel
 scala
 scalac
 sigil
+sml
 solc
 stdin
 str
