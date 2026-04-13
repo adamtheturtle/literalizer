@@ -56,6 +56,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -144,6 +145,7 @@ class Go(metaclass=LanguageCls):
     supports_default_dict_key_type = True
     supports_default_ordered_map_value_type = True
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""
@@ -369,6 +371,33 @@ class Go(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a Go declaration in ``func main()``."""
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Go declaration + assignment in ``func main()``."""
+        return Go.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,

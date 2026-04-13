@@ -63,6 +63,8 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_type_hint_preamble,
+    wrap_combined_in_file_noop,
+    wrap_in_file_noop,
 )
 from literalizer._types import Value
 
@@ -191,6 +193,7 @@ class Kotlin(metaclass=LanguageCls):
     supports_default_dict_key_type = True
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -478,6 +481,34 @@ class Kotlin(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap code in a valid file (no-op)."""
+        return wrap_in_file_noop(
+            content=content,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap declaration and assignment in a valid file (no-op)."""
+        return wrap_combined_in_file_noop(
+            declaration=declaration,
+            assignment=assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,
