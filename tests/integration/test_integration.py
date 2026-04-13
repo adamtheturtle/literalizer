@@ -700,6 +700,85 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
     ]
 
 
+@beartype
+def _build_type_hints_cross_variants() -> list[_Variant]:
+    """Build cross-product variants: each non-default type-hint format
+    combined with each non-default value of another format axis.
+
+    These cover code paths where the type annotation depends on the
+    chosen sequence / date / datetime / dict / set format.
+    """
+    axes: list[
+        tuple[
+            str,
+            Callable[[literalizer.Language], object],
+            Callable[[literalizer.Language], type[enum.Enum]],
+            str,
+        ]
+    ] = [
+        (
+            "seq",
+            lambda s: s.sequence_format,
+            lambda s: s.sequence_formats,
+            "sequence_format",
+        ),
+        (
+            "date",
+            lambda s: s.format_date,
+            lambda s: s.date_formats,
+            "date_format",
+        ),
+        (
+            "dt",
+            lambda s: s.format_datetime,
+            lambda s: s.datetime_formats,
+            "datetime_format",
+        ),
+        (
+            "dict",
+            lambda s: s.dict_format,
+            lambda s: s.dict_formats,
+            "dict_format",
+        ),
+        (
+            "set",
+            lambda s: s.set_format,
+            lambda s: s.set_formats,
+            "set_format",
+        ),
+    ]
+    variants: list[_Variant] = []
+    for lang_cls in _SORTED_LANGUAGES:
+        spec = lang_cls()
+        default_th = spec.variable_type_hints
+        lang_name = lang_cls.__name__
+        for th_fmt in spec.variable_type_hints_formats:
+            if th_fmt is default_th:
+                continue
+            th_tag = th_fmt.name.lower()
+            for axis_name, get_default, get_formats, kwarg in axes:
+                default = get_default(spec)
+                for fmt in get_formats(spec):
+                    if fmt is default:
+                        continue
+                    variants.append(
+                        _Variant(
+                            name=(
+                                f"{lang_name}"
+                                f"_type_hints_{th_tag}"
+                                f"_{axis_name}"
+                                f"_{fmt.name.lower()}"
+                            ),
+                            spec=lang_cls(
+                                variable_type_hints=th_fmt,
+                                **{kwarg: fmt},
+                            ),
+                            lang_cls=lang_cls,
+                        ),
+                    )
+    return variants
+
+
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     nv = _build_non_default_variants
@@ -806,6 +885,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         make_spec=lambda cls, fmt: cls(line_ending=fmt),
     )
 
+    type_hints_cross = _build_type_hints_cross_variants()
+
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
         (date, "scalar_date", ""),
@@ -897,6 +978,14 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
+        (type_hints_cross, "int_list", ""),
+        (type_hints_cross, "int_list_large", ""),
+        (type_hints_cross, "pair_sequence", ""),
+        (type_hints_cross, "empty_list", ""),
+        (type_hints_cross, "scalar_date", ""),
+        (type_hints_cross, "scalar_datetime", ""),
+        (type_hints_cross, "simple_dict", ""),
+        (type_hints_cross, "int_set", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(

@@ -1077,6 +1077,23 @@ jobs:
             odin check "$f" -file || exit 1
           done < /tmp/files-to-lint
 
+  lint-sml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.sml
+      - name: Install MLton
+        if: steps.find-files.outputs.found == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq mlton
+      - name: Check SML syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 mlton -stop tc < /tmp/files-to-lint
+
   lint-scheme:
     runs-on: ubuntu-latest
     steps:
@@ -1222,6 +1239,26 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_vb_syntax.py
           < /tmp/files-to-lint
 
+  lint-forth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.fth
+      - name: Install Gforth
+        if: steps.find-files.outputs.found == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gforth
+      - name: Check Forth syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            gforth "$f" -e bye || exit 1
+          done < /tmp/files-to-lint
+
   lint-fortran:
     runs-on: ubuntu-latest
     steps:
@@ -1357,6 +1394,7 @@ jobs:
       - lint-odin
       - lint-raku
       - lint-scheme
+      - lint-sml
       - lint-zig
       - lint-toml
       - lint-v
@@ -1365,6 +1403,7 @@ jobs:
       - lint-powershell
       - lint-systemverilog
       - lint-visualbasic
+      - lint-forth
       - lint-fortran
       - lint-objectivec
     runs-on: ubuntu-latest
