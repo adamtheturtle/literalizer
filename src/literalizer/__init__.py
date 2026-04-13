@@ -4,6 +4,7 @@ from literalizer._core import (
     InputFormat,
     LiteralizeResult,
     literalize,
+    literalize_call,
 )
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
@@ -11,6 +12,8 @@ from literalizer._formatters.collection_openers import (
     fixed_set_open,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -24,6 +27,8 @@ from literalizer._language import (
 )
 
 __all__ = [
+    "CallStyleConfig",
+    "CallStyleKind",
     "CommentConfig",
     "DateFormatConfig",
     "DatetimeFormatConfig",
@@ -40,4 +45,5 @@ __all__ = [
     "fixed_sequence_open",
     "fixed_set_open",
     "literalize",
+    "literalize_call",
 ]

@@ -3,7 +3,7 @@
 import datetime
 import enum
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -42,6 +42,8 @@ from literalizer._formatters.format_strings import (
     format_string_raw_rust,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -55,13 +57,12 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
 
 
@@ -90,6 +91,31 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
             f"{value.hour}, {value.minute}, {value.second}).unwrap()"
         )
     return f"NaiveDateTime::new({date}, {time_call})"
+
+
+def _rust_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Rust stub declarations for a call name."""
+    # Use generic type parameters so any argument type is accepted.
+    type_vars = [chr(ord("A") + i) for i in range(len(params))]
+    generic_decl = ", ".join(type_vars)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        param_list = ", ".join(
+            f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
+        )
+        return (f"fn {parts[0]}<{generic_decl}>({param_list}) {{}}",)
+    root, method = parts[0], parts[1]
+    param_list = ", ".join(
+        f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
+    )
+    type_name = f"{root.title()}Type_"
+    return (
+        f"struct {type_name};",
+        f"impl {type_name} {{"
+        f" fn {method}<{generic_decl}>"
+        f"(&self, {param_list}) {{}} }}",
+        f"let {root} = {type_name};",
+    )
 
 
 @beartype
@@ -464,7 +490,8 @@ class Rust(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="    ")
-        return f"fn main() {{\n{indented}\n    let _ = {variable_name};\n}}"
+        use_line = f"\n    let _ = {variable_name};" if variable_name else ""
+        return f"fn main() {{\n{indented}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -598,3 +625,9 @@ class Rust(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
+        self.statement_terminator = ";"
+        self.format_call_stub = _rust_call_stub
+        self.format_call_preamble_stub = no_call_stub

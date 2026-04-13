@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -44,6 +44,8 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single_minimal,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -57,15 +59,27 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
+
+
+def _ruby_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Ruby stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}(*a); end",)
+    root, method = parts[0], parts[1]
+    cls = root.capitalize() + "Type"
+    return (
+        f"class {cls}; def {method}(*a, **kw); end; end",
+        f"{root} = {cls}.new",
+    )
 
 
 @beartype
@@ -486,3 +500,10 @@ class Ruby(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator=": ",
+        )
+        self.statement_terminator = ""
+        self.format_call_stub = _ruby_call_stub
+        self.format_call_preamble_stub = no_call_stub

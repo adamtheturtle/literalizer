@@ -46,6 +46,8 @@ from literalizer._formatters.format_strings import (
     format_string_raw_python,
 )
 from literalizer._language import (
+    CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -59,6 +61,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    no_call_stub,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -949,3 +952,10 @@ class Python(metaclass=LanguageCls):
             default_dict_key_type=default_dict_key_type,
         )
         self.special_float_preamble: tuple[str, ...] = ()
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator="=",
+        )
+        self.statement_terminator = ""
+        self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = no_call_stub

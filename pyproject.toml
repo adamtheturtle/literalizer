@@ -293,12 +293,14 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
+    "tests/integration/cases/call_",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
+project_excludes = [ "tests/integration/cases/call_*/" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
@@ -308,12 +310,13 @@ exclude = [
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 executionEnvironments = [
-    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
+    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false, reportUnknownMemberType = false, reportUnknownArgumentType = false },
 ]
 
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
+overrides = [ { include = [ "tests/integration/cases/call_*/*.py" ], rules.unresolved-reference = "ignore" } ]
 
 [tool.pytest]
 ini_options.xfail_strict = true

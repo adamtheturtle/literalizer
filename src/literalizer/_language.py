@@ -166,6 +166,36 @@ class DeclarationStyleConfig:
     supports_redefinition: bool
 
 
+class CallStyleKind(enum.Enum):
+    """How a language passes arguments in function calls."""
+
+    KEYWORD = "keyword"
+    """Named arguments: ``func(name=value)``."""
+
+    POSITIONAL = "positional"
+    """Positional arguments only: ``func(value1, value2)``."""
+
+    OBJECT = "object"
+    """Arguments wrapped in an object literal:
+    ``func({ name: value })``.
+    """
+
+
+@dataclasses.dataclass(frozen=True)
+class CallStyleConfig:
+    """Describes how a language formats function call arguments.
+
+    *kind* indicates the calling convention.  *keyword_separator* is the
+    string placed between the parameter name and its value for
+    :attr:`CallStyleKind.KEYWORD` and :attr:`CallStyleKind.OBJECT`
+    styles (e.g. ``"="`` for Python, ``": "`` for Ruby).  It is
+    ``None`` for :attr:`CallStyleKind.POSITIONAL` languages.
+    """
+
+    kind: CallStyleKind
+    keyword_separator: str | None = None
+
+
 class SequenceFormat(Protocol):
     """Protocol for sequence format Enum members."""
 
@@ -723,6 +753,59 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     needs ``import "math"``) populate this field so the import is only
     emitted when actually needed.
     """
+
+    call_style_config: CallStyleConfig
+    """Describes how this language passes arguments in function calls.
+
+    See :class:`CallStyleConfig` for details.
+    """
+
+    statement_terminator: str
+    """String appended to each call expression to form a complete
+    statement.
+
+    Most C-family languages use ``";"``.  Python, Ruby, and other
+    languages where a bare expression is a valid statement use ``""``.
+    """
+
+    format_call_stub: Callable[[str, Sequence[str]], tuple[str, ...]]
+    """Return stub declaration lines for a name used in a call
+    expression.
+
+    *name* is either a simple identifier (``"process"``) for a
+    function call, or a dotted path (``"throttler.check"``) for a
+    method call on an object.  *params* is the list of parameter
+    names (e.g. ``["user_id", "ts"]``) so that keyword-style
+    languages can generate stubs with matching named parameters.
+
+    Stub lines are placed **inside** the language wrapper (e.g.
+    inside ``func main()`` for Go, inside ``class Check`` for Java).
+    Languages that need stubs at file/package scope should use
+    :attr:`format_call_preamble_stub` instead.
+
+    Returns an empty tuple when no stub is needed (e.g. for
+    builtins, or in languages whose lint checks only verify
+    syntax).
+    """
+
+    format_call_preamble_stub: Callable[[str, Sequence[str]], tuple[str, ...]]
+    """Like :attr:`format_call_stub` but the lines are placed
+    **before** the language wrapper — at file, package, or module
+    scope.
+
+    Most languages return an empty tuple here and put all stubs in
+    :attr:`format_call_stub`.  Languages like Go that cannot declare
+    types inside function bodies use this instead.
+    """
+
+
+def _no_call_stub(_name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return no stub lines."""
+    return ()
+
+
+no_call_stub: Callable[[str, Sequence[str]], tuple[str, ...]] = _no_call_stub
+"""Shared callable for languages that need no call stubs."""
 
 
 def _no_type_hint_preamble(
