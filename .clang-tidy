@@ -4,6 +4,7 @@ Checks: >
   -altera-struct-pack-align,
   -bugprone-forwarding-reference-overload,
   -bugprone-narrowing-conversions,
+  -cert-dcl58-cpp,
   -clang-analyzer-*,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-missing-std-forward,

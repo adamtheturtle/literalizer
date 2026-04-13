@@ -293,7 +293,7 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |
           clang++ -std=c++20 -x c++-header \
-            tests/integration/cases/cpp_pch.h \
+            tests/integration/cpp_pch.h \
             -o /tmp/cpp_pch.h.pch
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
@@ -301,7 +301,8 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 \
             clang-tidy \
             --extra-arg=-std=c++20 \
-            --extra-arg=-include-pch=/tmp/cpp_pch.h.pch \
+            --extra-arg=-include-pch \
+            --extra-arg=/tmp/cpp_pch.h.pch \
             < /tmp/files-to-lint
 
   lint-kotlin:
