@@ -693,8 +693,15 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert "'it''s here'" in result.code
-    assert "&  !" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        type(fval_t) :: cfg
+        cfg = fmap([fval_t :: &
+            fentry('host', fstr('it''s here')), &  ! a comment
+            fentry('port', fint(80)) &  ! another
+        ])""",
+    )
+    assert result.code == expected
 
 
 def test_java_list_format() -> None:
@@ -819,7 +826,7 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         error_on_coercion=False,
     )
     assert result.code == "my_data: dict[str, str] = {}"
-    assert "Any" not in "".join(result.preamble)
+    assert not result.preamble
 
 
 def test_literalize_call_per_element_false() -> None:
