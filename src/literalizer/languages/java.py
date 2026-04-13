@@ -153,7 +153,7 @@ def _java_common_element_type(
 
 
 @beartype
-def _java_type_hint(  # noqa: C901, PLR0911, PLR0912
+def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
     data: Value,
     *,
     int_type: str,

@@ -99,7 +99,7 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
 
 
 @beartype
-def _swift_type_hint(  # noqa: C901, PLR0911, PLR0912
+def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
     data: Value,
     *,
     date_hint: str,

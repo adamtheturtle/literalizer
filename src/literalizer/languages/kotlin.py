@@ -152,7 +152,7 @@ def _kotlin_type_to_opener(
 
 
 @beartype
-def _kotlin_type_hint(  # noqa: C901, PLR0911, PLR0912
+def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
     data: Value,
     *,
     date_hint: str,

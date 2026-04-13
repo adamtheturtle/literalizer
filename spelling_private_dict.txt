@@ -115,6 +115,7 @@ chrono
 coercions
 commonjs
 config
+const
 dataclass
 dataclasses
 datetime
