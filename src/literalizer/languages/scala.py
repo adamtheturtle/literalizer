@@ -139,7 +139,11 @@ def _scala_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     if len(parts) == 1:
         return (f"def {parts[0]}({param_list}): Any = null",)
     root, method = parts[0], parts[1]
-    return (f"val {root} = new {{ def {method}({param_list}): Any = null }}",)
+    cls = f"_{root.capitalize()}Type"
+    return (
+        f"class {cls} {{ def {method}({param_list}): Any = null }}",
+        f"val {root} = new {cls}",
+    )
 
 
 @beartype

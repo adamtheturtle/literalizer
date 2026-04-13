@@ -161,8 +161,10 @@ def _kotlin_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     if len(parts) == 1:
         return (f"fun {parts[0]}({param_list}): Any? = null",)
     root, method = parts[0], parts[1]
+    cls = f"_{root.title()}Type"
     return (
-        f"val {root} = object {{ fun {method}({param_list}): Any? = null }}",
+        f"class {cls} {{ fun {method}({param_list}): Any? = null }}",
+        f"val {root} = {cls}()",
     )
 
 
