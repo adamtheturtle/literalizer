@@ -293,7 +293,6 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
-    "tests/integration/cases",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
@@ -310,7 +309,7 @@ exclude = [
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 executionEnvironments = [
-    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false, reportCallIssue = false },
+    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
 ]
 
 [tool.ty]

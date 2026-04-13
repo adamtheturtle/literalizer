@@ -389,17 +389,19 @@ def _build_type_hint_preamble(
     return _preamble
 
 
-def _python_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+_VARIADIC = "*_args: object, **_kwargs: object"
+
+
+def _python_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return Python stub declarations for a call name."""
     parts = name.split(sep=".")
-    param_str = ", ".join(f"{p}: object" for p in params)
     if len(parts) == 1:
-        return (f"def {name}(*, {param_str}) -> object: ...",)
+        return (f"def {name}({_VARIADIC}) -> object: ...",)
     root, method = parts[0], parts[1]
     cls = f"_{root.capitalize()}Type"
     return (
         f"class {cls}:",
-        f"    def {method}(self, *, {param_str}) -> object: ...",
+        f"    def {method}(self, {_VARIADIC}) -> object: ...",
         f"{root} = {cls}()",
     )
 
