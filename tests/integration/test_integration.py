@@ -1325,6 +1325,7 @@ _CALL_LANGUAGES: frozenset[str] = frozenset(
         "FSharp",
         "Go",
         "Groovy",
+        "Java",
         "JavaScript",
         "Julia",
         "Kotlin",
