@@ -21,6 +21,8 @@ _CONTROL_CHAR = re.compile(pattern=r"[\x00-\x08\x0e-\x1f]")
 _KNOWN_LIMITATION_PATTERNS: tuple[str, ...] = (
     # Dict/mapping literals — no map literal syntax.
     "Expected primary expression",
+    # Dict keys — string keys are not valid Solidity identifiers.
+    "Expected identifier but got",
     # Heterogeneous arrays — all elements must share a type.
     "Unable to deduce common type for array elements",
     # Empty inline arrays — solc cannot infer element type.
