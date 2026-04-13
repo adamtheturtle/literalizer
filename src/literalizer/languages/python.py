@@ -391,9 +391,6 @@ def _build_type_hint_preamble(
 
 def _python_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     """Return Python stub declarations for a call name."""
-    root = name.split(sep=".", maxsplit=1)[0]
-    if root == "print":
-        return ()
     parts = name.split(sep=".")
     param_str = ", ".join(f"{p}: object" for p in params)
     if len(parts) == 1:

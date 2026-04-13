@@ -7,7 +7,6 @@ struct Any {
 };
 struct throttlerType_ { auto check(auto...) const { return 0; } };
 const throttlerType_ throttler;
-auto print(auto...) { return 0; }
 void check_() {
 print(throttler.check("user_1", 1000.0));
 print(throttler.check("user_2", 2000.5));

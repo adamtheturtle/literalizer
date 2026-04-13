@@ -418,7 +418,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_function="throttler.check",
         call_params=["user_id", "ts"],
         call_wrapper=lambda c: f"print({c})",
-        wrapper_stub_names=["print"],
+        wrapper_stub_names=[],
         per_element=True,
     ),
     _CallCaseConfig(
