@@ -2,9 +2,8 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -63,8 +62,22 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+
+@beartype
+def _go_call_preamble_stub(
+    name: str, _params: Sequence[str], /
+) -> tuple[str, ...]:
+    """Return Go stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"func {parts[0]}(args ...any) any {{ return nil }}",)
+    root, method = parts[0], parts[1]
+    type_name = f"{root}Type_"
+    return (
+        f"type {type_name} struct{{}}",
+        f"func ({type_name}) {method}(args ...any) any {{ return nil }}",
+        f"var {root} {type_name}",
+    )
 
 
 @beartype
@@ -386,7 +399,8 @@ class Go(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"\nfunc main() {{\n{content}\n_ = {variable_name}\n}}"
+        use_line = f"\n_ = {variable_name}" if variable_name else ""
+        return f"\nfunc main() {{\n{content}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -583,4 +597,4 @@ class Go(metaclass=LanguageCls):
         )
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = no_call_stub
+        self.format_call_preamble_stub = _go_call_preamble_stub
