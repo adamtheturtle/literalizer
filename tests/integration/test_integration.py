@@ -25,7 +25,17 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer.exceptions import NullInCollectionError
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import (
+    ALL_LANGUAGES,
+    C,
+    Elm,
+    Fortran,
+    FSharp,
+    Gleam,
+    Haskell,
+    OCaml,
+    PureScript,
+)
 
 
 @pytest.fixture(name="cases_dir")
@@ -69,23 +79,20 @@ class _Variant:
     wrap_variable_name: str | None
 
 
-@dataclasses.dataclass
-class _LanguageConfig:
-    """Language configuration for integration tests."""
-
-    lang_cls: literalizer.LanguageCls
-    wrap_variable_name: str | None
+def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
+    """Return the wrap variable name for a language class."""
+    return "my_data" if lang_cls.supports_variable_names else None
 
 
-_LANGUAGES: dict[str, _LanguageConfig] = {
-    lang_cls.__name__: _LanguageConfig(
-        lang_cls=lang_cls,
-        wrap_variable_name=(
-            "my_data" if lang_cls.supports_variable_names else None
-        ),
-    )
-    for lang_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
-}
+def _lang_cls_name(cls: literalizer.LanguageCls) -> str:
+    """Return the class name for sorting."""
+    return cls.__name__
+
+
+_SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
+    ALL_LANGUAGES,
+    key=_lang_cls_name,
+)
 
 
 @dataclasses.dataclass
@@ -106,8 +113,9 @@ def _build_date_variants() -> Iterable[_Variant]:
     using ``wrap``.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.format_date
         for fmt in list(spec.date_formats):
             if fmt is default_format:
@@ -119,9 +127,9 @@ def _build_date_variants() -> Iterable[_Variant]:
             variants.append(
                 _Variant(
                     name=f"{lang_name}_date_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(date_format=fmt),
-                    lang_cls=lang_config.lang_cls,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+                    spec=lang_cls(date_format=fmt),
+                    lang_cls=lang_cls,
+                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -135,8 +143,9 @@ def _build_datetime_variants() -> Iterable[_Variant]:
     using ``wrap``.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.format_datetime
         for fmt in list(spec.datetime_formats):
             if fmt is default_format:
@@ -145,9 +154,9 @@ def _build_datetime_variants() -> Iterable[_Variant]:
             variants.append(
                 _Variant(
                     name=f"{lang_name}_datetime_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(datetime_format=fmt),
-                    lang_cls=lang_config.lang_cls,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+                    spec=lang_cls(datetime_format=fmt),
+                    lang_cls=lang_cls,
+                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -162,8 +171,9 @@ def _build_sequence_variants() -> Iterable[_Variant]:
     for every non-default format.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format: Any = spec.sequence_format
         for fmt in list(spec.sequence_formats):
             if fmt is default_format:
@@ -171,9 +181,9 @@ def _build_sequence_variants() -> Iterable[_Variant]:
             variants.append(
                 _Variant(
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(sequence_format=fmt),
-                    lang_cls=lang_config.lang_cls,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+                    spec=lang_cls(sequence_format=fmt),
+                    lang_cls=lang_cls,
+                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -187,8 +197,9 @@ def _build_sequence_varname_variants() -> Iterable[_Variant]:
     ``_format_variable_declaration`` for each non-default sequence format.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format: Any = spec.sequence_format
         for fmt in list(spec.sequence_formats):
             if fmt is default_format:
@@ -196,9 +207,9 @@ def _build_sequence_varname_variants() -> Iterable[_Variant]:
             variants.append(
                 _Variant(
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(sequence_format=fmt),
-                    lang_cls=lang_config.lang_cls,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+                    spec=lang_cls(sequence_format=fmt),
+                    lang_cls=lang_cls,
+                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -212,8 +223,9 @@ def _build_set_variants() -> Iterable[_Variant]:
     for every non-default set format.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.set_format
         for fmt in list(spec.set_formats):
             if fmt is default_format:
@@ -221,9 +233,9 @@ def _build_set_variants() -> Iterable[_Variant]:
             variants.append(
                 _Variant(
                     name=f"{lang_name}_set_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(set_format=fmt),
-                    lang_cls=lang_config.lang_cls,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+                    spec=lang_cls(set_format=fmt),
+                    lang_cls=lang_cls,
+                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -256,11 +268,12 @@ def _build_default_set_element_type_variants(
         "Rust": "i32",
     }
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        if not lang_config.lang_cls.supports_default_set_element_type:
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        if not lang_cls.supports_default_set_element_type:
             continue
         string_type = type_overrides.get(lang_name, "String")
-        spec = lang_config.lang_cls(
+        spec = lang_cls(
             default_set_element_type=string_type,
         )
         if (
@@ -272,8 +285,8 @@ def _build_default_set_element_type_variants(
             _Variant(
                 name=f"{lang_name}_default_set_element_type_string",
                 spec=spec,
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -294,18 +307,19 @@ def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
         "Python": "int",
     }
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        if not lang_config.lang_cls.supports_default_sequence_element_type:
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        if not lang_cls.supports_default_sequence_element_type:
             continue
         string_type = type_overrides.get(lang_name, "String")
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_sequence_element_type_string",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     default_sequence_element_type=string_type,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -329,16 +343,17 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
         "Rust": "i32",
     }
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        if not lang_config.lang_cls.supports_default_dict_value_type:
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        if not lang_cls.supports_default_dict_value_type:
             continue
         string_type = type_overrides.get(lang_name, "String")
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_dict_value_type_string",
-                spec=lang_config.lang_cls(default_dict_value_type=string_type),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                spec=lang_cls(default_dict_value_type=string_type),
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -363,16 +378,17 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
         "VisualBasic": "Object",
     }
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        if not lang_config.lang_cls.supports_default_dict_key_type:
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        if not lang_cls.supports_default_dict_key_type:
             continue
         key_type = type_overrides.get(lang_name, "String")
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_dict_key_type",
-                spec=lang_config.lang_cls(default_dict_key_type=key_type),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                spec=lang_cls(default_dict_key_type=key_type),
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -391,18 +407,19 @@ def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
         "Go": "interface{}",
     }
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        if not lang_config.lang_cls.supports_default_ordered_map_value_type:
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        if not lang_cls.supports_default_ordered_map_value_type:
             continue
         value_type = type_overrides.get(lang_name, "String")
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_ordered_map_value_type",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     default_ordered_map_value_type=value_type,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -417,8 +434,9 @@ def _build_comment_variants() -> Iterable[_Variant]:
     for every non-default format.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.comment_format
         for fmt in list(spec.comment_formats):
             if fmt is default_format:
@@ -426,9 +444,9 @@ def _build_comment_variants() -> Iterable[_Variant]:
             variants.append(
                 _Variant(
                     name=f"{lang_name}_comment_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(comment_format=fmt),
-                    lang_cls=lang_config.lang_cls,
-                    wrap_variable_name=lang_config.wrap_variable_name,
+                    spec=lang_cls(comment_format=fmt),
+                    lang_cls=lang_cls,
+                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -443,8 +461,9 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
     create a variant for every non-default type-hint style.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.variable_type_hints
         for fmt in list(spec.variable_type_hints_formats):
             if fmt is default_format:
@@ -452,8 +471,8 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
             variants.append(
                 _Variant(
                     name=f"{lang_name}_type_hints_{fmt.name.lower()}",
-                    spec=lang_config.lang_cls(variable_type_hints=fmt),
-                    lang_cls=lang_config.lang_cls,
+                    spec=lang_cls(variable_type_hints=fmt),
+                    lang_cls=lang_cls,
                     wrap_variable_name="my_data",
                 )
             )
@@ -466,8 +485,9 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
     styles.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.declaration_style
         non_defaults = [
             fmt for fmt in spec.declaration_styles if fmt is not default_format
@@ -475,11 +495,11 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_declaration_style_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     declaration_style=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -492,8 +512,9 @@ def _build_dict_format_variants() -> Iterable[_Variant]:
     formats.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.dict_format
         non_defaults = [
             fmt for fmt in spec.dict_formats if fmt is not default_format
@@ -501,11 +522,11 @@ def _build_dict_format_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_dict_format_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     dict_format=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -518,8 +539,9 @@ def _build_dict_entry_style_variants() -> Iterable[_Variant]:
     styles.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_style = spec.dict_entry_style
         non_defaults = [
             fmt for fmt in spec.dict_entry_styles if fmt is not default_style
@@ -527,11 +549,11 @@ def _build_dict_entry_style_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_dict_entry_style_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     dict_entry_style=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -544,8 +566,9 @@ def _build_integer_format_variants() -> Iterable[_Variant]:
     formats.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.integer_format
         non_defaults = [
             fmt for fmt in spec.integer_formats if fmt is not default_format
@@ -553,11 +576,11 @@ def _build_integer_format_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_integer_format_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     integer_format=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -570,8 +593,9 @@ def _build_numeric_literal_suffix_variants() -> Iterable[_Variant]:
     multiple options.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.numeric_literal_suffix
         non_defaults = [
             fmt
@@ -581,11 +605,11 @@ def _build_numeric_literal_suffix_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_numeric_literal_suffix_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     numeric_literal_suffix=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -598,8 +622,9 @@ def _build_numeric_separator_variants() -> Iterable[_Variant]:
     options.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.numeric_separator
         non_defaults = [
             fmt for fmt in spec.numeric_separators if fmt is not default_format
@@ -607,11 +632,11 @@ def _build_numeric_separator_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_numeric_separator_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     numeric_separator=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -624,8 +649,9 @@ def _build_float_format_variants() -> Iterable[_Variant]:
     formats.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.float_format
         non_defaults = [
             fmt for fmt in spec.float_formats if fmt is not default_format
@@ -633,11 +659,11 @@ def _build_float_format_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_float_format_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     float_format=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -650,8 +676,9 @@ def _build_string_format_variants() -> Iterable[_Variant]:
     formats.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.string_format
         non_defaults = [
             fmt for fmt in spec.string_formats if fmt is not default_format
@@ -659,11 +686,11 @@ def _build_string_format_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_string_format_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     string_format=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -676,8 +703,9 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
     formats.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.format_bytes
         non_defaults = [
             fmt for fmt in spec.bytes_formats if fmt is not default_format
@@ -685,11 +713,11 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_bytes_format_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     bytes_format=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -702,8 +730,9 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
     options.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.trailing_comma
         non_defaults = [
             fmt for fmt in spec.trailing_commas if fmt is not default_format
@@ -711,11 +740,11 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_trailing_comma_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     trailing_comma=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -728,8 +757,9 @@ def _build_line_ending_variants() -> Iterable[_Variant]:
     options.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_format = spec.line_ending
         non_defaults = [
             fmt for fmt in spec.line_endings if fmt is not default_format
@@ -737,11 +767,11 @@ def _build_line_ending_variants() -> Iterable[_Variant]:
         variants.extend(
             _Variant(
                 name=f"{lang_name}_line_ending_{fmt.name.lower()}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     line_ending=fmt,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -757,8 +787,9 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     line ending paired with every non-default declaration style.
     """
     variants: list[_Variant] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         default_line_ending = spec.line_ending
         default_declaration_style = spec.declaration_style
         non_default_line_endings = [
@@ -777,12 +808,12 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
                     f"{lang_name}_line_ending_{line_ending.name.lower()}"
                     f"_decl_{declaration_style.name.lower()}"
                 ),
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     line_ending=line_ending,
                     declaration_style=declaration_style,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for line_ending in non_default_line_endings
             for declaration_style in non_default_declaration_styles
@@ -837,16 +868,18 @@ _NON_TRIVIAL_KEY_CASES = _cases_with_non_trivial_dict_keys(
 
 
 @beartype
-def _discover_cases() -> list[tuple[str, str]]:
-    """Return ``(case_name, language)`` tuples."""
-    cases: list[tuple[str, str]] = []
+def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
+    """Return ``(case_name, lang_cls)`` tuples."""
+    cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
         non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
-        for lang_name, lang_config in _LANGUAGES.items():
-            cls = lang_config.lang_cls
-            if non_trivial and not cls.supports_non_printable_ascii_dict_keys:
+        for lang_cls in _SORTED_LANGUAGES:
+            if (
+                non_trivial
+                and not lang_cls.supports_non_printable_ascii_dict_keys
+            ):
                 continue
-            cases.append((case_dir.name, lang_name))
+            cases.append((case_dir.name, lang_cls))
     return cases
 
 
@@ -854,32 +887,32 @@ _CASES = _discover_cases()
 
 
 @pytest.mark.parametrize(
-    argnames=("_case_name", "language"),
+    argnames=("_case_name", "lang_cls"),
     argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1]}" for c in _CASES],
+    ids=[f"{c[0]}/{c[1].__name__}" for c in _CASES],
 )
 def test_golden_file(
     _case_name: str,
-    language: str,
+    lang_cls: literalizer.LanguageCls,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
     input_path = cases_dir / _case_name / "input.yaml"
-    lang_config = _LANGUAGES[language]
+    lang_name = lang_cls.__name__
     yaml_string = input_path.read_text()
     result = literalizer.literalize(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
-        language=lang_config.lang_cls(),
+        language=lang_cls(),
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=lang_config.wrap_variable_name,
+        variable_name=_wrap_variable_name(lang_cls=lang_cls),
         new_variable=True,
         error_on_coercion=False,
     )
-    variable_name = lang_config.wrap_variable_name or ""
-    wrapped = lang_config.lang_cls.wrap_in_file(
+    variable_name = _wrap_variable_name(lang_cls=lang_cls) or ""
+    wrapped = lang_cls.wrap_in_file(
         content=result.bare_code,
         variable_name=variable_name,
         body_preamble=result.body_preamble,
@@ -891,10 +924,9 @@ def test_golden_file(
     # CR bytes (e.g. CommonLisp string_control_chars).
     file_regression.check(
         contents=wrapped + "\n",
-        extension=lang_config.lang_cls.extension,
+        extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent
-        / (language + lang_config.lang_cls.extension),
+        fullpath=input_path.parent / (lang_name + lang_cls.extension),
     )
 
 
@@ -906,7 +938,7 @@ class _CombinedCase:
 
     case_name: str
     lang_name: str
-    lang_config: _LanguageConfig
+    lang_cls: literalizer.LanguageCls
     declaration_style: enum.Enum
     golden_file_name: str
 
@@ -919,11 +951,14 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     cases: list[_CombinedCase] = []
     for case_dir in sorted(_CASES_DIR.iterdir()):
         non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
-        for lang_name, lang_config in _LANGUAGES.items():
-            cls = lang_config.lang_cls
-            if non_trivial and not cls.supports_non_printable_ascii_dict_keys:
+        for lang_cls in _SORTED_LANGUAGES:
+            lang_name = lang_cls.__name__
+            if (
+                non_trivial
+                and not lang_cls.supports_non_printable_ascii_dict_keys
+            ):
                 continue
-            spec = cls()
+            spec = lang_cls()
             redef_styles = _find_redefinition_styles(spec=spec)
             for style in redef_styles:
                 if style is redef_styles[0]:
@@ -938,7 +973,7 @@ def _discover_combined_cases() -> list[_CombinedCase]:
                     _CombinedCase(
                         case_name=case_dir.name,
                         lang_name=lang_name,
-                        lang_config=lang_config,
+                        lang_cls=lang_cls,
                         declaration_style=style,
                         golden_file_name=golden_name,
                     )
@@ -964,8 +999,8 @@ def test_golden_file_combined_variable_forms(
     golden output, combined in one file to show the difference in syntax.
     """
     input_path = cases_dir / combined_case.case_name / "input.yaml"
-    lang_config = combined_case.lang_config
-    spec = lang_config.lang_cls(
+    lang_cls = combined_case.lang_cls
+    spec = lang_cls(
         declaration_style=combined_case.declaration_style,
     )
     yaml_string = input_path.read_text()
@@ -989,12 +1024,12 @@ def test_golden_file_combined_variable_forms(
         new_variable=False,
         error_on_coercion=False,
     )
-    variable_name = lang_config.wrap_variable_name or ""
+    variable_name = _wrap_variable_name(lang_cls=lang_cls) or ""
     decl_preamble = (
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = lang_config.lang_cls.wrap_combined_in_file(
+    combined = lang_cls.wrap_combined_in_file(
         declaration=declaration.declaration_code,
         assignment=assignment.bare_code,
         variable_name=variable_name,
@@ -1005,10 +1040,10 @@ def test_golden_file_combined_variable_forms(
     )
     file_regression.check(
         contents=combined + "\n",
-        extension=lang_config.lang_cls.extension,
+        extension=lang_cls.extension,
         newline="",
         fullpath=input_path.parent
-        / (combined_case.golden_file_name + lang_config.lang_cls.extension),
+        / (combined_case.golden_file_name + lang_cls.extension),
     )
 
 
@@ -1020,11 +1055,11 @@ def _build_constructor_name_variants() -> Iterable[_Variant]:
     output.  The constructor name parameters let users customize those
     names.
     """
-    lang_config = _LANGUAGES["Fortran"]
+    lang_cls = Fortran
     return [
         _Variant(
             name="Fortran_constructor_names_j",
-            spec=lang_config.lang_cls(
+            spec=lang_cls(
                 null_name="jnull",
                 bool_name="jbool",
                 int_name="jint",
@@ -1035,8 +1070,8 @@ def _build_constructor_name_variants() -> Iterable[_Variant]:
                 set_name="jset",
                 entry_name="jentry",
             ),
-            lang_cls=lang_config.lang_cls,
-            wrap_variable_name=lang_config.wrap_variable_name,
+            lang_cls=lang_cls,
+            wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
         ),
     ]
 
@@ -1050,23 +1085,23 @@ def _build_type_name_variants() -> Iterable[_Variant]:
     preamble (e.g. ``data Val = …`` in Haskell).  The ``type_name``
     constructor parameter lets users customize that name.
     """
-    custom_names: dict[str, str] = {
-        "Elm": "JsonVal",
-        "FSharp": "JsonVal",
-        "Gleam": "JsonVal",
-        "Haskell": "JsonVal",
-        "OCaml": "json_t",
-        "PureScript": "JsonVal",
+    custom_names: dict[literalizer.LanguageCls, str] = {
+        Elm: "JsonVal",
+        FSharp: "JsonVal",
+        Gleam: "JsonVal",
+        Haskell: "JsonVal",
+        OCaml: "json_t",
+        PureScript: "JsonVal",
     }
     variants: list[_Variant] = []
-    for lang_name, custom_name in custom_names.items():
-        lang_config = _LANGUAGES[lang_name]
+    for lang_cls, custom_name in custom_names.items():
+        lang_name = lang_cls.__name__
         variants.append(
             _Variant(
                 name=f"{lang_name}_type_name_{custom_name}",
-                spec=lang_config.lang_cls(type_name=custom_name),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                spec=lang_cls(type_name=custom_name),
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -1080,25 +1115,25 @@ def _build_constructor_prefix_variants() -> Iterable[_Variant]:
     (e.g. ``ENull``, ``HBool``).  The ``constructor_prefix`` parameter
     lets users customize that prefix.
     """
-    custom_prefixes: dict[str, str] = {
-        "Elm": "J",
-        "FSharp": "J",
-        "Gleam": "J",
-        "Haskell": "J",
-        "OCaml": "J",
-        "PureScript": "J",
+    custom_prefixes: dict[literalizer.LanguageCls, str] = {
+        Elm: "J",
+        FSharp: "J",
+        Gleam: "J",
+        Haskell: "J",
+        OCaml: "J",
+        PureScript: "J",
     }
     variants: list[_Variant] = []
-    for lang_name, custom_prefix in custom_prefixes.items():
-        lang_config = _LANGUAGES[lang_name]
+    for lang_cls, custom_prefix in custom_prefixes.items():
+        lang_name = lang_cls.__name__
         variants.append(
             _Variant(
                 name=f"{lang_name}_prefix_{custom_prefix}",
-                spec=lang_config.lang_cls(
+                spec=lang_cls(
                     constructor_prefix=custom_prefix,
                 ),
-                lang_cls=lang_config.lang_cls,
-                wrap_variable_name=lang_config.wrap_variable_name,
+                lang_cls=lang_cls,
+                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -1111,11 +1146,11 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
     The C generator uses single-letter union field names by default.
     The field name parameters let users customize those names.
     """
-    lang_config = _LANGUAGES["C"]
+    lang_cls = C
     return [
         _Variant(
             name="C_field_names_custom",
-            spec=lang_config.lang_cls(
+            spec=lang_cls(
                 bool_field="bl",
                 int_field="integer",
                 float_field="fp",
@@ -1125,8 +1160,8 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
                 key_field="key",
                 value_field="val",
             ),
-            lang_cls=lang_config.lang_cls,
-            wrap_variable_name=lang_config.wrap_variable_name,
+            lang_cls=lang_cls,
+            wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
         ),
     ]
 
@@ -1292,7 +1327,7 @@ class _LineEndingCombinedCase:
     """
 
     name: str
-    lang_config: _LanguageConfig
+    lang_cls: literalizer.LanguageCls
     line_ending: enum.Enum
     case_dir_name: str
 
@@ -1303,8 +1338,9 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
     non-default line endings.
     """
     cases: list[_LineEndingCombinedCase] = []
-    for lang_name, lang_config in _LANGUAGES.items():
-        spec = lang_config.lang_cls()
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
         if not _find_redefinition_styles(spec=spec):
             continue
         default_line_ending = spec.line_ending
@@ -1319,7 +1355,7 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
                 cases.append(
                     _LineEndingCombinedCase(
                         name=name,
-                        lang_config=lang_config,
+                        lang_cls=lang_cls,
                         line_ending=line_ending,
                         case_dir_name=case_dir_name,
                     )
@@ -1345,10 +1381,10 @@ def test_line_ending_combined_variable_forms(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    base_spec = case.lang_config.lang_cls()
+    base_spec = case.lang_cls()
     redef_styles = _find_redefinition_styles(spec=base_spec)
     assert redef_styles
-    spec = case.lang_config.lang_cls(
+    spec = case.lang_cls(
         line_ending=case.line_ending,
         declaration_style=redef_styles[0],
     )
@@ -1376,10 +1412,10 @@ def test_line_ending_combined_variable_forms(
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = case.lang_config.lang_cls.wrap_combined_in_file(
+    combined = case.lang_cls.wrap_combined_in_file(
         declaration=declaration.declaration_code,
         assignment=assignment.bare_code,
-        variable_name=case.lang_config.wrap_variable_name or "",
+        variable_name=_wrap_variable_name(lang_cls=case.lang_cls) or "",
         body_preamble=decl_preamble,
     )
     combined = _prepend_preamble(
@@ -1402,13 +1438,12 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
     for case_dir in sorted(cases_dir.iterdir()):
         expected.add(case_dir / "input.yaml")
 
-    for case_name, lang_name in _CASES:
-        lang_config = _LANGUAGES[lang_name]
-        ext = lang_config.lang_cls.extension
-        expected.add(cases_dir / case_name / (lang_name + ext))
+    for case_name, lang_cls in _CASES:
+        ext = lang_cls.extension
+        expected.add(cases_dir / case_name / (lang_cls.__name__ + ext))
 
     for combined_case in _COMBINED_CASES:
-        ext = combined_case.lang_config.lang_cls.extension
+        ext = combined_case.lang_cls.extension
         expected.add(
             cases_dir
             / combined_case.case_name
@@ -1424,7 +1459,7 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
         )
 
     for line_ending_case in _LINE_ENDING_COMBINED_CASES:
-        line_ending_spec = line_ending_case.lang_config.lang_cls(
+        line_ending_spec = line_ending_case.lang_cls(
             line_ending=line_ending_case.line_ending,
         )
         expected.add(
@@ -1438,17 +1473,6 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
         path.relative_to(cases_dir) for path in actual - expected
     )
     assert not dead_files
-
-
-def _lang_cls_name(cls: literalizer.LanguageCls) -> str:
-    """Return the class name for sorting."""
-    return cls.__name__
-
-
-_SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
-    ALL_LANGUAGES,
-    key=_lang_cls_name,
-)
 
 
 @pytest.mark.parametrize(
