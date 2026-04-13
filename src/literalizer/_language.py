@@ -611,6 +611,16 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def date_format(self) -> enum.Enum:
+        """The date format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def datetime_format(self) -> enum.Enum:
+        """The datetime format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def declaration_style(self) -> enum.Enum:
         """The declaration style chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis

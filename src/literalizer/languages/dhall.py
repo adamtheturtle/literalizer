@@ -373,7 +373,7 @@ class Dhall(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(
+    def __init__(  # noqa: PLR0915
         self,
         *,
         date_format: DateFormats = DateFormats.ISO,
@@ -434,6 +434,8 @@ class Dhall(metaclass=LanguageCls):
             passthrough_set_entry
         )
         self.comment_format = comment_format
+        self.date_format = date_format
+        self.datetime_format = datetime_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format

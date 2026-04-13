@@ -511,6 +511,8 @@ class OCaml(metaclass=LanguageCls):
         )
         self.format_set_entry: Callable[[Value, str], str] = _entry_formatter
         self.comment_format = comment_format
+        self.date_format = date_format
+        self.datetime_format = datetime_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format

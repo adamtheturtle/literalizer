@@ -351,6 +351,8 @@ class Occam(metaclass=LanguageCls):
             _format_occam_entry
         )
         self.comment_format = comment_format
+        self.date_format = date_format
+        self.datetime_format = datetime_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format

@@ -705,13 +705,13 @@ def _build_variant_cases() -> list[_VariantCase]:
     nv = _build_non_default_variants
     date = nv(
         category="date",
-        get_default=lambda s: s.format_date,
+        get_default=lambda s: s.date_format,
         get_formats=lambda s: s.date_formats,
         make_spec=lambda cls, fmt: cls(date_format=fmt),
     )
     datetime_ = nv(
         category="datetime",
-        get_default=lambda s: s.format_datetime,
+        get_default=lambda s: s.datetime_format,
         get_formats=lambda s: s.datetime_formats,
         make_spec=lambda cls, fmt: cls(datetime_format=fmt),
     )
