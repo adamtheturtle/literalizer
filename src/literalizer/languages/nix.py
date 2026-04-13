@@ -20,7 +20,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
-    passthrough_set_entry,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -405,7 +404,7 @@ class Nix(metaclass=LanguageCls):
             _format_nix_sequence_entry
         )
         self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
+            _format_nix_sequence_entry
         )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
