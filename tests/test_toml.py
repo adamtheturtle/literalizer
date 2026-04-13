@@ -247,9 +247,14 @@ def test_datetime_python() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert '"updated": datetime.datetime(' in result.code
-    assert "year=2024" in result.code
-    assert "minute=30" in result.code
+    expected = (
+        "{\n"
+        '    "updated": datetime.datetime('
+        "year=2024, month=1, day=15, "
+        "hour=10, minute=30, second=0),\n"
+        "}"
+    )
+    assert result.code == expected
 
 
 def test_time_coerced_to_string() -> None:
@@ -457,8 +462,19 @@ def test_body_preamble() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert result.body_preamble
-    assert result.body_preamble[0] in result.code
+    expected_preamble = "import Data.String (IsString(fromString))"
+    assert result.body_preamble[0] == expected_preamble
+    expected = textwrap.dedent(
+        text="""\
+        import Data.String (IsString(fromString))
+        data Val = HStr String | HMap [(String, Val)]
+        instance IsString Val where
+            fromString = HStr
+        HMap [
+            ("name", "alice")
+            ]""",
+    )
+    assert result.code == expected
 
 
 def test_inline_comment_preserved() -> None:
@@ -666,8 +682,15 @@ def test_comments_language_without_collection_comments() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert "' header" in result.code
-    assert "' inline" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        ' header
+        ' inline
+        Dim config = New Dictionary(Of String, Object) From {
+            {"host", "localhost"}
+        }""",
+    )
+    assert result.code == expected
 
 
 def test_extract_toml_comments_non_document() -> None:

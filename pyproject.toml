@@ -420,6 +420,7 @@ ignore_names = [
     "ERLANG",
     "NO",
     "OBJECT",
+    "PAREN",
     "OCTAL",
     "OCTAL_C_STYLE",
     "RAW",

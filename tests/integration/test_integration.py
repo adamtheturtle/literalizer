@@ -992,6 +992,14 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
+        (type_hints_cross, "int_list", ""),
+        (type_hints_cross, "int_list_large", ""),
+        (type_hints_cross, "pair_sequence", ""),
+        (type_hints_cross, "empty_list", ""),
+        (type_hints_cross, "scalar_date", ""),
+        (type_hints_cross, "scalar_datetime", ""),
+        (type_hints_cross, "simple_dict", ""),
+        (type_hints_cross, "int_set", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
