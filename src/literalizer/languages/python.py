@@ -959,6 +959,7 @@ class Python(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.type_hint_collection_preamble_lines: Callable[
