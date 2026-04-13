@@ -15,6 +15,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
 )
+from literalizer._formatters.format_floats import format_float_scientific
 from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
@@ -64,13 +65,10 @@ def _format_float_forth(value: float) -> str:
 
     Example: ``1.5`` -> ``1.5e0``.
     """
-    raw = f"{value:e}"
-    mantissa, exponent_part = raw.split(sep="e")
-    mantissa = mantissa.rstrip("0")
-    if mantissa.endswith("."):
-        mantissa += "0"
-    exponent_value = int(exponent_part)
-    return f"{mantissa}e{exponent_value}"
+    result = format_float_scientific(value=value)
+    if "e" not in result:
+        return f"{result}e0"
+    return result
 
 
 @beartype
@@ -235,7 +233,7 @@ class Forth(metaclass=LanguageCls):
         )
         PAREN = CommentConfig(
             prefix="(",
-            suffix=")",
+            suffix=" )",
         )
 
     class DeclarationStyles(enum.Enum):
