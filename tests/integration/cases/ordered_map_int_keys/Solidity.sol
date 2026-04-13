@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
+
+contract Generated {
+string constant my_data = {
+    "1": "one",
+    "2": "two",
+    "42": "answer",
+};
+}

@@ -1077,6 +1077,26 @@ jobs:
             odin check "$f" -file || exit 1
           done < /tmp/files-to-lint
 
+  lint-solidity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.sol
+      - name: Install solc
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          sudo add-apt-repository -y ppa:ethereum/ethereum
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq solc
+      - name: Check Solidity syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 solc --no-color < /tmp/files-to-lint
+
   lint-scheme:
     runs-on: ubuntu-latest
     steps:
@@ -1357,6 +1377,7 @@ jobs:
       - lint-odin
       - lint-raku
       - lint-scheme
+      - lint-solidity
       - lint-zig
       - lint-toml
       - lint-v
