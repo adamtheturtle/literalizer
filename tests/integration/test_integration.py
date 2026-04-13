@@ -762,13 +762,27 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
         ),
         (
             "date",
-            lambda s: s.format_date,
+            lambda s: next(
+                (
+                    m
+                    for m in s.date_formats
+                    if m.value.formatter is s.format_date
+                ),
+                None,
+            ),
             lambda s: s.date_formats,
             "date_format",
         ),
         (
             "dt",
-            lambda s: s.format_datetime,
+            lambda s: next(
+                (
+                    m
+                    for m in s.datetime_formats
+                    if m.value.formatter is s.format_datetime
+                ),
+                None,
+            ),
             lambda s: s.datetime_formats,
             "datetime_format",
         ),
@@ -822,13 +836,23 @@ def _build_variant_cases() -> list[_VariantCase]:
     nv = _build_non_default_variants
     date = nv(
         category="date",
-        get_default=lambda s: s.format_date,
+        get_default=lambda s: next(
+            (m for m in s.date_formats if m.value.formatter is s.format_date),
+            None,
+        ),
         get_formats=lambda s: s.date_formats,
         make_spec=lambda cls, fmt: cls(date_format=fmt),
     )
     datetime_ = nv(
         category="datetime",
-        get_default=lambda s: s.format_datetime,
+        get_default=lambda s: next(
+            (
+                m
+                for m in s.datetime_formats
+                if m.value.formatter is s.format_datetime
+            ),
+            None,
+        ),
         get_formats=lambda s: s.datetime_formats,
         make_spec=lambda cls, fmt: cls(datetime_format=fmt),
     )
