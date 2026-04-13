@@ -1102,7 +1102,7 @@ def _build_constructor_prefix_variants() -> Iterable[_Variant]:
                 spec=lang_config.lang_cls(
                     constructor_prefix=custom_prefix,
                 ),
-                wrap=lang_config.wrap,
+                lang_cls=lang_config.lang_cls,
                 wrap_variable_name=lang_config.wrap_variable_name,
             )
         )
