@@ -483,6 +483,7 @@ class Dhall(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.special_float_preamble: tuple[str, ...] = ()
