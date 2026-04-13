@@ -60,6 +60,7 @@ from literalizer._language import (
     date_scalar_preamble,
     no_call_stub,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer.exceptions import NullInCollectionError
 
@@ -96,18 +97,21 @@ def _list_of_open(items: list[Any]) -> str:
 
 
 def _java_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
-    """Return Java stub declarations for a call name."""
+    """Return Java stub declarations for a call name.
+
+    Stubs go into preamble (before the ``class Check`` wrapper),
+    so they need their own class.  ``Check`` inherits from
+    ``Stubs_`` to access them.
+    """
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (
-            f"    static Object {parts[0]}(Object... a) {{ return null; }}",
-        )
+        return (f"static Object {parts[0]}(Object... a) {{ return null; }}",)
     root, method = parts[0], parts[1]
     cls = f"{root.title()}Type_"
     return (
-        f"    static class {cls} {{ Object {method}"
+        f"static class {cls} {{ Object {method}"
         f"(Object... a) {{ return null; }} }}",
-        f"    static {cls} {root} = new {cls}();",
+        f"static {cls} {root} = new {cls}();",
     )
 
 
@@ -469,11 +473,12 @@ class Java(metaclass=LanguageCls):
     ) -> str:
         """Wrap a Java declaration in a static method."""
         del variable_name
-        bp = "\n".join(body_preamble)
-        bp_block = f"{bp}\n" if bp else ""
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
         return (
             "class Check {\n"
-            f"{bp_block}"
             "    public static void check() {\n"
             f"{content}\n"
             "    }\n"
@@ -633,5 +638,5 @@ class Java(metaclass=LanguageCls):
             kind=CallStyleKind.POSITIONAL,
         )
         self.statement_terminator = ";"
-        self.format_call_stub = _java_call_stub
-        self.format_call_preamble_stub = no_call_stub
+        self.format_call_stub = no_call_stub
+        self.format_call_preamble_stub = _java_call_stub

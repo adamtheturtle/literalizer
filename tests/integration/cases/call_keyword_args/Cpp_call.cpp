@@ -5,7 +5,7 @@ struct Any {
     template<class T> Any(T&&) noexcept {}
     Any(std::initializer_list<Any>) noexcept {}
 };
-struct throttlerType_ { auto check(auto...) { return 0; } };
+struct throttlerType_ { auto check(auto...) const { return 0; } };
 const throttlerType_ throttler;
 auto print(auto...) { return 0; }
 void check_() {

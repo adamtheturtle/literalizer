@@ -1217,7 +1217,6 @@ _CALL_LANGUAGES: frozenset[str] = frozenset(
     {
         "Cpp",
         "CSharp",
-        "Java",
         "JavaScript",
         "Kotlin",
         "Python",
@@ -1276,7 +1275,7 @@ def test_call_golden_file(
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    # Stubs for the call function (with full params).
+    # Stubs for the call function (with full parameter names).
     body_stubs.extend(
         spec.format_call_stub(config.call_function, config.call_params),
     )
@@ -1285,7 +1284,7 @@ def test_call_golden_file(
             config.call_function, config.call_params
         ),
     )
-    # Stubs for wrapper function names (single-arg).
+    # Stubs for wrapper function names (single argument).
     for wrapper_name in config.wrapper_stub_names:
         body_stubs.extend(
             spec.format_call_stub(wrapper_name, ["_arg"]),
