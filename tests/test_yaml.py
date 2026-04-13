@@ -175,8 +175,13 @@ def test_cpp_array_binary_typed() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert '"48656c6c6f"' in result.code
-    assert "std::array<std::string, 1>" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        std::array<std::string, 1>{
+            "48656c6c6f",
+        }""",
+    )
+    assert result.code == expected
 
 
 def test_cpp_array_null_list_fallback() -> None:
@@ -195,8 +200,14 @@ def test_cpp_array_null_list_fallback() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert "nullptr" in result.code
-    assert result.code.startswith("{")
+    expected = textwrap.dedent(
+        text="""\
+        {
+            nullptr,
+            nullptr,
+        }""",
+    )
+    assert result.code == expected
 
 
 def test_yaml_set_inline_in_sequence() -> None:

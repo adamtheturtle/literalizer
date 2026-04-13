@@ -578,7 +578,7 @@ def test_python_always_type_hints_empty_list() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert "tuple[Any, ...]" in result.code
+    assert result.code == "my_var: tuple[Any, ...] = ()"
 
 
 def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
@@ -602,4 +602,11 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert "tuple[OrderedDict[str, str | bool], ...]" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        my_var: tuple[OrderedDict[str, str | bool], ...] = (
+            OrderedDict([("name", "Alice"), ("draft", True)]),
+            OrderedDict([("name", "Bob")]),
+        )""",
+    )
+    assert result.code == expected
