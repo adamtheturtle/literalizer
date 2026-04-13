@@ -145,9 +145,6 @@ def _build_sml_entry_formatter(
     return _format
 
 
-_format_sml_entry = _build_sml_entry_formatter(prefix="S")
-
-
 @beartype
 def _build_sml_declaration(
     *,
