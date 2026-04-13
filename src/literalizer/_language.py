@@ -379,6 +379,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def numeric_literal_suffixes(self) -> type[enum.Enum]:
+        """Enum class whose members list the numeric literal suffix
+        options this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def numeric_separators(self) -> type[enum.Enum]:
         """Enum class whose members list the numeric separator options
         this language supports.
@@ -626,6 +633,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def integer_format(self) -> enum.Enum:
         """The integer format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def numeric_literal_suffix(self) -> enum.Enum:
+        """The numeric literal suffix chosen for this language
+        instance.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
