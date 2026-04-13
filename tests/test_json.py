@@ -656,8 +656,14 @@ def test_cpp_array_null_list_fallback_json() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    assert "nullptr" in result.code
-    assert result.code.startswith("{")
+    expected = textwrap.dedent(
+        text="""\
+        {
+            nullptr,
+            nullptr,
+        }""",
+    )
+    assert result.code == expected
 
 
 def test_coerce_mixed_dict_values_none_with_list_json() -> None:
