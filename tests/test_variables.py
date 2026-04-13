@@ -626,16 +626,17 @@ DART_ALWAYS = Dart(
 
 
 @pytest.mark.parametrize(
-    ("language", "expected"),
-    [
-        pytest.param(TS_ALWAYS, "const my_var: number = 1.5;", id="ts"),
-        pytest.param(JAVA_ALWAYS, "double my_var = 1.5;", id="java"),
-        pytest.param(SWIFT_ALWAYS, "let my_var: Double = 1.5", id="swift"),
-        pytest.param(KOTLIN_ALWAYS, "val my_var: Double = 1.5", id="kotlin"),
-        pytest.param(DART_ALWAYS, "final double my_var = 1.5;", id="dart"),
+    argnames=("language", "expected"),
+    argvalues=[
+        (TS_ALWAYS, "const my_var: number = 1.5;"),
+        (JAVA_ALWAYS, "double my_var = 1.5;"),
+        (SWIFT_ALWAYS, "let my_var: Double = 1.5"),
+        (KOTLIN_ALWAYS, "val my_var: Double = 1.5"),
+        (DART_ALWAYS, "final double my_var = 1.5;"),
     ],
+    ids=["ts", "java", "swift", "kotlin", "dart"],
 )
-def test_always_type_hints_float(language: Language, expected: str) -> None:
+def test_always_type_hints_float(*, language: Language, expected: str) -> None:
     """ALWAYS type hints produce the correct annotation for floats."""
     result = literalize(
         source="1.5",
@@ -651,17 +652,18 @@ def test_always_type_hints_float(language: Language, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("language", "expected_fragment"),
-    [
-        pytest.param(TS_ALWAYS, "const my_var: number[]", id="ts"),
-        pytest.param(JAVA_ALWAYS, "int[] my_var", id="java"),
-        pytest.param(SWIFT_ALWAYS, "let my_var: [Int]", id="swift"),
-        pytest.param(KOTLIN_ALWAYS, "val my_var: IntArray", id="kotlin"),
-        pytest.param(DART_ALWAYS, "final List<int> my_var", id="dart"),
+    argnames=("language", "expected_fragment"),
+    argvalues=[
+        (TS_ALWAYS, "const my_var: number[]"),
+        (JAVA_ALWAYS, "int[] my_var"),
+        (SWIFT_ALWAYS, "let my_var: [Int]"),
+        (KOTLIN_ALWAYS, "val my_var: IntArray"),
+        (DART_ALWAYS, "final List<int> my_var"),
     ],
+    ids=["ts", "java", "swift", "kotlin", "dart"],
 )
 def test_always_type_hints_list(
-    language: Language, expected_fragment: str
+    *, language: Language, expected_fragment: str
 ) -> None:
     """ALWAYS type hints annotate list/array declarations."""
     result = literalize(
@@ -678,17 +680,18 @@ def test_always_type_hints_list(
 
 
 @pytest.mark.parametrize(
-    ("language", "expected_fragment"),
-    [
-        pytest.param(TS_ALWAYS, "const my_var: unknown[]", id="ts"),
-        pytest.param(JAVA_ALWAYS, "Object[] my_var", id="java"),
-        pytest.param(SWIFT_ALWAYS, "let my_var: [Any]", id="swift"),
-        pytest.param(KOTLIN_ALWAYS, "val my_var: List<Any?>", id="kotlin"),
-        pytest.param(DART_ALWAYS, "final List<dynamic> my_var", id="dart"),
+    argnames=("language", "expected_fragment"),
+    argvalues=[
+        (TS_ALWAYS, "const my_var: unknown[]"),
+        (JAVA_ALWAYS, "Object[] my_var"),
+        (SWIFT_ALWAYS, "let my_var: [Any]"),
+        (KOTLIN_ALWAYS, "val my_var: List<Any?>"),
+        (DART_ALWAYS, "final List<dynamic> my_var"),
     ],
+    ids=["ts", "java", "swift", "kotlin", "dart"],
 )
 def test_always_type_hints_empty_list(
-    language: Language, expected_fragment: str
+    *, language: Language, expected_fragment: str
 ) -> None:
     """ALWAYS type hints annotate empty list declarations."""
     result = literalize(
@@ -705,17 +708,18 @@ def test_always_type_hints_empty_list(
 
 
 @pytest.mark.parametrize(
-    ("language", "expected_fragment"),
-    [
-        pytest.param(TS_ALWAYS, "Set<number>", id="ts"),
-        pytest.param(JAVA_ALWAYS, "Set<Integer>", id="java"),
-        pytest.param(SWIFT_ALWAYS, "Set<Int>", id="swift"),
-        pytest.param(KOTLIN_ALWAYS, "Set<Int>", id="kotlin"),
-        pytest.param(DART_ALWAYS, "Set<int>", id="dart"),
+    argnames=("language", "expected_fragment"),
+    argvalues=[
+        (TS_ALWAYS, "Set<number>"),
+        (JAVA_ALWAYS, "Set<Integer>"),
+        (SWIFT_ALWAYS, "Set<Int>"),
+        (KOTLIN_ALWAYS, "Set<Int>"),
+        (DART_ALWAYS, "Set<int>"),
     ],
+    ids=["ts", "java", "swift", "kotlin", "dart"],
 )
 def test_always_type_hints_set(
-    language: Language, expected_fragment: str
+    *, language: Language, expected_fragment: str
 ) -> None:
     """ALWAYS type hints annotate set declarations."""
     result = literalize(
@@ -732,16 +736,17 @@ def test_always_type_hints_set(
 
 
 @pytest.mark.parametrize(
-    ("language", "expected_fragment"),
-    [
-        pytest.param(TS_ALWAYS, "Set<unknown>", id="ts"),
-        pytest.param(SWIFT_ALWAYS, "Set<AnyHashable>", id="swift"),
-        pytest.param(KOTLIN_ALWAYS, "Set<Any?>", id="kotlin"),
-        pytest.param(DART_ALWAYS, "Set<dynamic>", id="dart"),
+    argnames=("language", "expected_fragment"),
+    argvalues=[
+        (TS_ALWAYS, "Set<unknown>"),
+        (SWIFT_ALWAYS, "Set<AnyHashable>"),
+        (KOTLIN_ALWAYS, "Set<Any?>"),
+        (DART_ALWAYS, "Set<dynamic>"),
     ],
+    ids=["ts", "swift", "kotlin", "dart"],
 )
 def test_always_type_hints_empty_set(
-    language: Language, expected_fragment: str
+    *, language: Language, expected_fragment: str
 ) -> None:
     """ALWAYS type hints annotate empty set declarations."""
     result = literalize(
@@ -772,15 +777,16 @@ DART_ALWAYS_TUPLE = Dart(
 
 
 @pytest.mark.parametrize(
-    ("language", "expected_fragment"),
-    [
-        pytest.param(TS_ALWAYS_TUPLE, "readonly [number, number]", id="ts"),
-        pytest.param(SWIFT_ALWAYS_TUPLE, "let my_var: (Int, Int)", id="swift"),
-        pytest.param(DART_ALWAYS_TUPLE, "final (int, int,) my_var", id="dart"),
+    argnames=("language", "expected_fragment"),
+    argvalues=[
+        (TS_ALWAYS_TUPLE, "readonly [number, number]"),
+        (SWIFT_ALWAYS_TUPLE, "let my_var: (Int, Int)"),
+        (DART_ALWAYS_TUPLE, "final (int, int,) my_var"),
     ],
+    ids=["ts", "swift", "dart"],
 )
 def test_always_type_hints_tuple(
-    language: Language, expected_fragment: str
+    *, language: Language, expected_fragment: str
 ) -> None:
     """ALWAYS type hints annotate tuple declarations."""
     result = literalize(
@@ -797,15 +803,16 @@ def test_always_type_hints_tuple(
 
 
 @pytest.mark.parametrize(
-    ("language", "expected_fragment"),
-    [
-        pytest.param(TS_ALWAYS_TUPLE, "readonly []", id="ts"),
-        pytest.param(SWIFT_ALWAYS_TUPLE, "()", id="swift"),
-        pytest.param(DART_ALWAYS_TUPLE, "()", id="dart"),
+    argnames=("language", "expected_fragment"),
+    argvalues=[
+        (TS_ALWAYS_TUPLE, "readonly []"),
+        (SWIFT_ALWAYS_TUPLE, "()"),
+        (DART_ALWAYS_TUPLE, "()"),
     ],
+    ids=["ts", "swift", "dart"],
 )
 def test_always_type_hints_empty_tuple(
-    language: Language, expected_fragment: str
+    *, language: Language, expected_fragment: str
 ) -> None:
     """ALWAYS type hints annotate empty tuple declarations."""
     result = literalize(
