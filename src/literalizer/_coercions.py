@@ -90,6 +90,7 @@ def all_scalars_heterogeneous(
 
 @beartype
 def _map_mapping_values(
+    *,
     data: ordereddict | dict[str, Value],
     fn: Callable[[Value], Value],
 ) -> ordereddict | dict[str, Value]:
@@ -115,8 +116,8 @@ def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
     match data:
         case dict() | ordereddict():
             return _map_mapping_values(
-                data,
-                lambda v: _coerce_heterogeneous_sibling_lists(data=v),
+                data=data,
+                fn=lambda v: _coerce_heterogeneous_sibling_lists(data=v),
             )
         case list():
             new_list = [
@@ -348,14 +349,14 @@ def _coerce_heterogeneous_mapping(
 ) -> ordereddict | dict[str, Value]:
     """Coerce a dict or ordereddict with heterogeneous scalar values."""
     new_mapping = _map_mapping_values(
-        data,
-        lambda v: _coerce_heterogeneous_scalars(data=v),
+        data=data,
+        fn=lambda v: _coerce_heterogeneous_scalars(data=v),
     )
     values: list[Value] = list(new_mapping.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
     if all_scalars_heterogeneous(values=values):
         new_mapping = _map_mapping_values(
-            new_mapping,
-            lambda v: coerce_scalar_to_str(value=v),
+            data=new_mapping,
+            fn=lambda v: coerce_scalar_to_str(value=v),
         )
     return new_mapping
 
@@ -468,12 +469,12 @@ def _coerce_mixed_dict_values(*, data: Value) -> Value:
             values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
             if _dict_values_mixed_types(values=values):
                 return _map_mapping_values(
-                    data,
-                    lambda v: _coerce_value_to_str(value=v),
+                    data=data,
+                    fn=lambda v: _coerce_value_to_str(value=v),
                 )
             return _map_mapping_values(
-                data,
-                lambda v: _coerce_mixed_dict_values(data=v),
+                data=data,
+                fn=lambda v: _coerce_mixed_dict_values(data=v),
             )
         case list():
             return [_coerce_mixed_dict_values(data=v) for v in data]
@@ -492,8 +493,8 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
     match data:
         case ordereddict() | dict():
             return _map_mapping_values(
-                data,
-                lambda v: _coerce_mixed_list_values(data=v),
+                data=data,
+                fn=lambda v: _coerce_mixed_list_values(data=v),
             )
         case list():
             if _dict_values_mixed_types(values=data):
@@ -514,8 +515,8 @@ def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
     match data:
         case ordereddict() | dict():
             return _map_mapping_values(
-                data,
-                lambda v: _coerce_mixed_dict_shapes(data=v),
+                data=data,
+                fn=lambda v: _coerce_mixed_dict_shapes(data=v),
             )
         case list():
             new_list = [_coerce_mixed_dict_shapes(data=v) for v in data]
