@@ -389,20 +389,19 @@ def _build_type_hint_preamble(
     return _preamble
 
 
-def _python_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+_VARIADIC = "*_args: object, **_kwargs: object"
+
+
+def _python_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return Python stub declarations for a call name."""
-    root = name.split(sep=".", maxsplit=1)[0]
-    if root == "print":
-        return ()
     parts = name.split(sep=".")
-    param_str = ", ".join(f"{p}: object" for p in params)
     if len(parts) == 1:
-        return (f"def {name}(*, {param_str}) -> object: ...",)
+        return (f"def {name}({_VARIADIC}) -> object: ...",)
     root, method = parts[0], parts[1]
     cls = f"_{root.capitalize()}Type"
     return (
         f"class {cls}:",
-        f"    def {method}(self, *, {param_str}) -> object: ...",
+        f"    def {method}(self, {_VARIADIC}) -> object: ...",
         f"{root} = {cls}()",
     )
 
@@ -482,6 +481,7 @@ class Python(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
+    supports_call = True
 
     class DateFormats(enum.Enum):
         """Date formatting options for Python."""
@@ -959,6 +959,7 @@ class Python(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.type_hint_collection_preamble_lines: Callable[

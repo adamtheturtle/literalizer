@@ -98,9 +98,16 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
+def _swift_param(name: str, /) -> str:
+    """Format a single Swift parameter for a stub signature."""
+    if name.startswith("_"):
+        return f"_ {name}: Any = 0"
+    return f"{name}: Any = 0"
+
+
 def _swift_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
-    param_list = ", ".join(f"{p}: Any = 0" for p in params)
+    param_list = ", ".join(_swift_param(p) for p in params)
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"func {parts[0]}({param_list}) -> Any {{ 0 }}",)
@@ -225,6 +232,7 @@ class Swift(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
+    supports_call = True
 
     class DateFormats(enum.Enum):
         """Date format options for Swift."""
@@ -682,6 +690,7 @@ class Swift(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble

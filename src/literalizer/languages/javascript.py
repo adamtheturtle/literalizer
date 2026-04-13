@@ -68,9 +68,9 @@ from literalizer._types import Value
 def _js_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
     root = name.split(sep=".", maxsplit=1)[0]
-    if root in {"print", "process"}:
-        return (f"function {root}() {{}}",)
-    return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
+    if "." in name:
+        return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
+    return (f"function {root}() {{}}",)
 
 
 @beartype
@@ -102,6 +102,7 @@ class JavaScript(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
+    supports_call = True
 
     class DateFormats(enum.Enum):
         """Date formatting options for JavaScript."""
@@ -499,6 +500,7 @@ class JavaScript(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble

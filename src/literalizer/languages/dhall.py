@@ -180,6 +180,7 @@ class Dhall(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = False
     supports_variable_names = True
+    supports_call = False
 
     class DateFormats(enum.Enum):
         """Date format options for Dhall."""
@@ -486,6 +487,7 @@ class Dhall(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.special_float_preamble: tuple[str, ...] = ()

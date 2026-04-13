@@ -172,29 +172,17 @@ def _build_sml_declaration(
     return _format
 
 
-def _build_sml_body_preamble(
-    scalar_body_preamble: dict[type, tuple[str, ...]],
-) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-    """Build a ``compute_body_preamble`` for SML.
+def _format_sml_preamble_lines(lines: list[str]) -> tuple[str, ...]:
+    """Format de-duplicated preamble lines with SML ``datatype`` syntax.
 
-    Delegates to :func:`body_preamble_from_scalars` for de-duplication,
-    then fixes the first constructor line to omit the leading ``|``
-    required by SML's ``datatype`` syntax.
+    The first constructor is indented; subsequent constructors are
+    prefixed with ``|``.
     """
-    _base = body_preamble_from_scalars(
-        scalar_body_preamble=scalar_body_preamble,
+    return (
+        lines[0],
+        "    " + lines[1],
+        *(f"  | {line}" for line in lines[2:]),
     )
-
-    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
-        """Return unique body-preamble lines for *types*."""
-        lines = _base(types, data)
-        # SML: first variant after 'datatype' line must not have '|'.
-        # All constructor lines start with '  | ' by construction, so
-        # index 1 is always the first constructor.  The caller always
-        # passes at least one type, so lines has >= 2 elements.
-        return (lines[0], "    " + lines[1][4:], *lines[2:])
-
-    return _compute
 
 
 @beartype
@@ -233,6 +221,7 @@ class Sml(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
+    supports_call = False
 
     class DateFormats(enum.Enum):
         """Date format options for Standard ML."""
@@ -615,36 +604,37 @@ class Sml(metaclass=LanguageCls):
         p = constructor_prefix
         _h = f"datatype {type_name} ="
         _date_constructor = (
-            f"  | {p}Str of string"
+            f"{p}Str of string"
             if date_format.value.type_produced is str
-            else f"  | {p}Date of (int * int * int)"
+            else f"{p}Date of (int * int * int)"
         )
         _datetime_constructor = (
-            f"  | {p}Str of string"
+            f"{p}Str of string"
             if datetime_format.value.type_produced is str
-            else f"  | {p}Datetime of ((int * int * int) * (int * int * int))"
+            else f"{p}Datetime of ((int * int * int) * (int * int * int))"
         )
         self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
         ] = {
-            type(None): (_h, f"  | {p}Null"),
-            bool: (_h, f"  | {p}Bool of bool"),
-            int: (_h, f"  | {p}Int of int"),
-            float: (_h, f"  | {p}Real of real"),
-            str: (_h, f"  | {p}Str of string"),
-            bytes: (_h, f"  | {p}Str of string"),
+            type(None): (_h, f"{p}Null"),
+            bool: (_h, f"{p}Bool of bool"),
+            int: (_h, f"{p}Int of int"),
+            float: (_h, f"{p}Real of real"),
+            str: (_h, f"{p}Str of string"),
+            bytes: (_h, f"{p}Str of string"),
             datetime.date: (_h, _date_constructor),
             datetime.datetime: (_h, _datetime_constructor),
-            list: (_h, f"  | {p}List of {type_name} list"),
-            dict: (_h, f"  | {p}Map of (string * {type_name}) list"),
-            ordereddict: (_h, f"  | {p}Map of (string * {type_name}) list"),
-            set: (_h, f"  | {p}Set of {type_name} list"),
+            list: (_h, f"{p}List of {type_name} list"),
+            dict: (_h, f"{p}Map of (string * {type_name}) list"),
+            ordereddict: (_h, f"{p}Map of (string * {type_name}) list"),
+            set: (_h, f"{p}Set of {type_name} list"),
         }
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
-        ] = _build_sml_body_preamble(
+        ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=_format_sml_preamble_lines,
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()

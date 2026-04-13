@@ -280,6 +280,7 @@ class LanguageCls(type):
     supports_default_ordered_map_value_type: bool
     supports_non_printable_ascii_dict_keys: bool
     supports_variable_names: bool
+    supports_call: bool
 
     @staticmethod
     def wrap_in_file(
@@ -585,6 +586,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     declaration rather than being appended after the value.
     """
 
+    supports_call: bool
+    """Whether the language supports function call rendering via
+    :func:`literalize_call`.
+    """
+
     @property
     def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
         """Callable that formats a new variable declaration.
@@ -866,9 +872,15 @@ def wrap_combined_in_file_noop(
 def body_preamble_from_scalars(
     *,
     scalar_body_preamble: dict[type, tuple[str, ...]],
+    format_lines: Callable[[list[str]], tuple[str, ...]],
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a ``compute_body_preamble`` from a scalar-body-preamble
     dict.
+
+    Args:
+        scalar_body_preamble: Mapping from type to preamble lines.
+        format_lines: Post-processing for the de-duplicated lines
+            (e.g. adding language-specific prefixes).
     """
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
@@ -882,6 +894,6 @@ def body_preamble_from_scalars(
                     if line not in seen:
                         seen.add(line)
                         result.append(line)
-        return tuple(result)
+        return format_lines(result)
 
     return _compute

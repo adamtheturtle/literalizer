@@ -101,6 +101,7 @@ class Json5(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = False
+    supports_call = False
 
     class DateFormats(enum.Enum):
         """Date format options for Json5."""
@@ -402,6 +403,7 @@ class Json5(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
