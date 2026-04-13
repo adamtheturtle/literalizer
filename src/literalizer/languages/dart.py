@@ -578,7 +578,7 @@ class Dart(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
         _dart_decl: Callable[[str, str, Value], str]
-        if variable_type_hints is self.VariableTypeHints.ALWAYS:
+        if variable_type_hints.name == "ALWAYS":
             _dart_date_hint = (
                 "String"
                 if date_format.value.type_produced is str
@@ -601,9 +601,7 @@ class Dart(metaclass=LanguageCls):
                 default_set_element_type=default_set_element_type,
                 default_dict_key_type=default_dict_key_type,
                 default_dict_value_type=default_dict_value_type,
-                sequence_is_tuple=(
-                    sequence_format is self.SequenceFormats.TUPLE
-                ),
+                sequence_is_tuple=(sequence_format.name == "TUPLE"),
             )
         else:
             _dart_decl = declaration_style.value.formatter

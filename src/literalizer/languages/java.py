@@ -762,7 +762,7 @@ class Java(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
         _java_decl: Callable[[str, str, Value], str]
-        if variable_type_hints is self.VariableTypeHints.ALWAYS:
+        if variable_type_hints.name == "ALWAYS":
             _java_int_type = "long" if suffix_is_auto else "int"
             _java_date_hint: str
             if date_format.value.type_produced is str:
@@ -772,24 +772,22 @@ class Java(metaclass=LanguageCls):
             _java_dt_hint: str
             if datetime_format.value.type_produced is str:
                 _java_dt_hint = "String"
-            elif datetime_format is self.DatetimeFormats.ZONED:
+            elif datetime_format.name == "ZONED":
                 _java_dt_hint = "ZonedDateTime"
             else:
                 _java_dt_hint = "Instant"
             _java_dict_outer = (
-                "HashMap"
-                if dict_format is self.DictFormats.HASH_MAP
-                else "Map"
+                "HashMap" if dict_format.name == "HASH_MAP" else "Map"
             )
             _java_set_outer = (
-                "TreeSet" if set_format is self.SetFormats.TREE_SET else "Set"
+                "TreeSet" if set_format.name == "TREE_SET" else "Set"
             )
             _java_decl = functools.partial(
                 _format_java_typed_declaration,
                 int_type=_java_int_type,
                 date_hint=_java_date_hint,
                 datetime_hint=_java_dt_hint,
-                seq_is_array=(sequence_format is self.SequenceFormats.ARRAY),
+                seq_is_array=(sequence_format.name == "ARRAY"),
                 dict_outer=_java_dict_outer,
                 set_outer=_java_set_outer,
             )

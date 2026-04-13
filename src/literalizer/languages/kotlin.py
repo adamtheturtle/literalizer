@@ -789,7 +789,7 @@ class Kotlin(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
         _kt_decl: Callable[[str, str, Value], str]
-        if variable_type_hints is self.VariableTypeHints.ALWAYS:
+        if variable_type_hints.name == "ALWAYS":
             _kt_date_hint = (
                 "String"
                 if date_format.value.type_produced is str
@@ -801,14 +801,10 @@ class Kotlin(metaclass=LanguageCls):
                 else "LocalDateTime"
             )
             _kt_dict_outer = (
-                "HashMap"
-                if dict_format is self.DictFormats.HASH_MAP
-                else "Map"
+                "HashMap" if dict_format.name == "HASH_MAP" else "Map"
             )
             _kt_set_outer = (
-                "SortedSet"
-                if set_format is self.SetFormats.SORTED_SET
-                else "Set"
+                "SortedSet" if set_format.name == "SORTED_SET" else "Set"
             )
             _kt_decl = functools.partial(
                 _format_kotlin_typed_declaration,
@@ -820,9 +816,7 @@ class Kotlin(metaclass=LanguageCls):
                 default_dict_value_type=default_dict_value_type,
                 dict_outer=_kt_dict_outer,
                 set_outer=_kt_set_outer,
-                sequence_is_tuple=(
-                    sequence_format is self.SequenceFormats.TUPLE
-                ),
+                sequence_is_tuple=(sequence_format.name == "TUPLE"),
             )
         else:
             _kt_decl = declaration_style.value.formatter

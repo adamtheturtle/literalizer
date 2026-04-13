@@ -119,7 +119,7 @@ def _ts_type_hint(  # noqa: C901, PLR0911, PLR0912
             )
             if not data:
                 return template.format(val="unknown")
-            val_types = [recurse(data=v) for v in data.values()]
+            val_types = [recurse(data=v) for v in data.values()]  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
             val_union = _ts_element_union(types=val_types)
             return template.format(val=val_union)
         case set():
@@ -599,7 +599,7 @@ class TypeScript(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
         _base_decl: Callable[[str, str, Value], str]
-        if variable_type_hints is self.VariableTypeHints.ALWAYS:
+        if variable_type_hints.name == "ALWAYS":
             _ts_date_hint = (
                 "string" if date_format.value.type_produced is str else "Date"
             )
@@ -610,7 +610,7 @@ class TypeScript(metaclass=LanguageCls):
             )
             _ts_dict_template = (
                 "Map<string, {val}>"
-                if dict_format is self.DictFormats.MAP
+                if dict_format.name == "MAP"
                 else "Record<string, {val}>"
             )
             _base_decl = functools.partial(
@@ -619,9 +619,7 @@ class TypeScript(metaclass=LanguageCls):
                 date_hint=_ts_date_hint,
                 datetime_hint=_ts_datetime_hint,
                 dict_hint_template=_ts_dict_template,
-                sequence_is_tuple=(
-                    sequence_format is self.SequenceFormats.TUPLE
-                ),
+                sequence_is_tuple=(sequence_format.name == "TUPLE"),
             )
         else:
             _base_decl = declaration_style.value.formatter

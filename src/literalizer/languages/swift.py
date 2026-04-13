@@ -601,7 +601,7 @@ class Swift(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
         _swift_decl: Callable[[str, str, Value], str]
-        if variable_type_hints is self.VariableTypeHints.ALWAYS:
+        if variable_type_hints.name == "ALWAYS":
             _swift_date_hint = (
                 "String" if date_format.value.type_produced is str else "Date"
             )
@@ -618,9 +618,7 @@ class Swift(metaclass=LanguageCls):
                 default_set_element_type=default_set_element_type,
                 default_sequence_element_type=(default_sequence_element_type),
                 default_dict_value_type=default_dict_value_type,
-                sequence_is_tuple=(
-                    sequence_format is self.SequenceFormats.TUPLE
-                ),
+                sequence_is_tuple=(sequence_format.name == "TUPLE"),
             )
         else:
             _swift_decl = declaration_style.value.formatter
