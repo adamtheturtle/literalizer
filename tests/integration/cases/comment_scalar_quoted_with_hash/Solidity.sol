@@ -1,1 +1,2 @@
-constant my_data = "hello # world"  // note;
+// note
+constant my_data = "hello # world";

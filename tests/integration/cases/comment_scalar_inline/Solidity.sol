@@ -1,1 +1,2 @@
-constant my_data = 42  // note;
+// note
+constant my_data = 42;
