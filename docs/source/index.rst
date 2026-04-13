@@ -81,6 +81,7 @@ Reference
    :maxdepth: 3
 
    json-api-use-case
+   function-call-use-case
    api-reference
    languages
    release-process
