@@ -1634,12 +1634,16 @@ def test_call_golden_file(
     )
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    for name in call_names:
+    for i, name in enumerate(iterable=call_names):
+        # The first name is call_function — use call_params.
+        # Subsequent names are from call_wrapper — they take
+        # a single argument (the result of the inner call).
+        params = config.call_params if i == 0 else ["_arg"]
         body_stubs.extend(
-            spec.format_call_stub(name, config.call_params),
+            spec.format_call_stub(name, params),
         )
         preamble_stubs.extend(
-            spec.format_call_preamble_stub(name, config.call_params),
+            spec.format_call_preamble_stub(name, params),
         )
     call_body_preamble = result.body_preamble + tuple(body_stubs)
 

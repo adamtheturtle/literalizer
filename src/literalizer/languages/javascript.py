@@ -65,7 +65,6 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
-@beartype
 def _js_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
     root = name.split(sep=".", maxsplit=1)[0]
@@ -76,6 +75,7 @@ def _js_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
 
 
+@beartype
 class JavaScript(metaclass=LanguageCls):
     """JavaScript language specification.
 

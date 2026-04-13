@@ -69,7 +69,6 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
-@beartype
 def _ruby_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return Ruby stub declarations for a call name."""
     parts = name.split(sep=".")
@@ -83,6 +82,7 @@ def _ruby_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     )
 
 
+@beartype
 class Ruby(metaclass=LanguageCls):
     """Ruby language specification.
 
