@@ -76,7 +76,6 @@ class _Variant:
     name: str
     spec: literalizer.Language
     lang_cls: literalizer.LanguageCls
-    wrap_variable_name: str | None
 
 
 def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
@@ -129,7 +128,6 @@ def _build_date_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_date_{fmt.name.lower()}",
                     spec=lang_cls(date_format=fmt),
                     lang_cls=lang_cls,
-                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -156,7 +154,6 @@ def _build_datetime_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_datetime_{fmt.name.lower()}",
                     spec=lang_cls(datetime_format=fmt),
                     lang_cls=lang_cls,
-                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -183,7 +180,6 @@ def _build_sequence_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_cls(sequence_format=fmt),
                     lang_cls=lang_cls,
-                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -209,7 +205,6 @@ def _build_sequence_varname_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_sequence_{fmt.name.lower()}",
                     spec=lang_cls(sequence_format=fmt),
                     lang_cls=lang_cls,
-                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -235,7 +230,6 @@ def _build_set_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_set_{fmt.name.lower()}",
                     spec=lang_cls(set_format=fmt),
                     lang_cls=lang_cls,
-                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -286,7 +280,6 @@ def _build_default_set_element_type_variants(
                 name=f"{lang_name}_default_set_element_type_string",
                 spec=spec,
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -319,7 +312,6 @@ def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
                     default_sequence_element_type=string_type,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -353,7 +345,6 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
                 name=f"{lang_name}_default_dict_value_type_string",
                 spec=lang_cls(default_dict_value_type=string_type),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -388,7 +379,6 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
                 name=f"{lang_name}_default_dict_key_type",
                 spec=lang_cls(default_dict_key_type=key_type),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -419,7 +409,6 @@ def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
                     default_ordered_map_value_type=value_type,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -446,7 +435,6 @@ def _build_comment_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_comment_{fmt.name.lower()}",
                     spec=lang_cls(comment_format=fmt),
                     lang_cls=lang_cls,
-                    wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
                 )
             )
     return variants
@@ -473,7 +461,6 @@ def _build_type_hint_variants() -> Iterable[_Variant]:
                     name=f"{lang_name}_type_hints_{fmt.name.lower()}",
                     spec=lang_cls(variable_type_hints=fmt),
                     lang_cls=lang_cls,
-                    wrap_variable_name="my_data",
                 )
             )
     return variants
@@ -499,7 +486,6 @@ def _build_declaration_style_variants() -> Iterable[_Variant]:
                     declaration_style=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -526,7 +512,6 @@ def _build_dict_format_variants() -> Iterable[_Variant]:
                     dict_format=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -553,7 +538,6 @@ def _build_dict_entry_style_variants() -> Iterable[_Variant]:
                     dict_entry_style=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -580,7 +564,6 @@ def _build_integer_format_variants() -> Iterable[_Variant]:
                     integer_format=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -609,7 +592,6 @@ def _build_numeric_literal_suffix_variants() -> Iterable[_Variant]:
                     numeric_literal_suffix=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -636,7 +618,6 @@ def _build_numeric_separator_variants() -> Iterable[_Variant]:
                     numeric_separator=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -663,7 +644,6 @@ def _build_float_format_variants() -> Iterable[_Variant]:
                     float_format=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -690,7 +670,6 @@ def _build_string_format_variants() -> Iterable[_Variant]:
                     string_format=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -717,7 +696,6 @@ def _build_bytes_format_variants() -> Iterable[_Variant]:
                     bytes_format=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -744,7 +722,6 @@ def _build_trailing_comma_variants() -> Iterable[_Variant]:
                     trailing_comma=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -771,7 +748,6 @@ def _build_line_ending_variants() -> Iterable[_Variant]:
                     line_ending=fmt,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for fmt in non_defaults
         )
@@ -813,7 +789,6 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
                     declaration_style=declaration_style,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
             for line_ending in non_default_line_endings
             for declaration_style in non_default_declaration_styles
@@ -1071,7 +1046,6 @@ def _build_constructor_name_variants() -> Iterable[_Variant]:
                 entry_name="jentry",
             ),
             lang_cls=lang_cls,
-            wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
         ),
     ]
 
@@ -1101,7 +1075,6 @@ def _build_type_name_variants() -> Iterable[_Variant]:
                 name=f"{lang_name}_type_name_{custom_name}",
                 spec=lang_cls(type_name=custom_name),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -1133,7 +1106,6 @@ def _build_constructor_prefix_variants() -> Iterable[_Variant]:
                     constructor_prefix=custom_prefix,
                 ),
                 lang_cls=lang_cls,
-                wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
             )
         )
     return variants
@@ -1161,7 +1133,6 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
                 value_field="val",
             ),
             lang_cls=lang_cls,
-            wrap_variable_name=_wrap_variable_name(lang_cls=lang_cls),
         ),
     ]
 
@@ -1266,7 +1237,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=f"{variant.name}{suffix}",
                 variant=variant,
                 case_dir_name=case_dir_name,
-                variable_name=variant.wrap_variable_name,
+                variable_name=_wrap_variable_name(lang_cls=variant.lang_cls),
             )
             for variant in variants
         )
@@ -1305,7 +1276,7 @@ def test_format_variant_golden_file(
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
-    variable_name = variant.wrap_variable_name or ""
+    variable_name = _wrap_variable_name(lang_cls=variant.lang_cls) or ""
     wrapped = variant.lang_cls.wrap_in_file(
         content=result.bare_code,
         variable_name=variable_name,
