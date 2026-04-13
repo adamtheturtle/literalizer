@@ -280,6 +280,7 @@ class LanguageCls(type):
     supports_default_ordered_map_value_type: bool
     supports_non_printable_ascii_dict_keys: bool
     supports_variable_names: bool
+    supports_call: bool
 
     @staticmethod
     def wrap_in_file(
@@ -583,6 +584,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     When ``False``, YAML inline comments on scalar values are emitted
     as standalone comment lines immediately before the variable
     declaration rather than being appended after the value.
+    """
+
+    supports_call: bool
+    """Whether the language supports function call rendering via
+    :func:`literalize_call`.
     """
 
     @property

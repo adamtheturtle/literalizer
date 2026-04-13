@@ -221,6 +221,7 @@ class Sml(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
+    supports_call = False
 
     class DateFormats(enum.Enum):
         """Date format options for Standard ML."""

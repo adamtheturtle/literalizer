@@ -33,6 +33,7 @@ from literalizer.languages import (
     Rust,
     Toml,
     TypeScript,
+    Yaml,
 )
 from literalizer.languages.cobol import (
     _bump_levels,  # pyright: ignore[reportPrivateUsage]
@@ -878,6 +879,23 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             call_function="process",
             call_params=["value"],
             per_element=True,
+        )
+
+
+def test_literalize_call_unsupported_language_raises() -> None:
+    """Literalize_call raises ValueError for a language without call
+    support.
+    """
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="does not support",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Yaml(),
+            call_function="f",
+            call_params=["a", "b"],
         )
 
 
