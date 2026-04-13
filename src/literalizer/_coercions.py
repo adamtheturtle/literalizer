@@ -543,7 +543,7 @@ def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
             dicts_in_list = [
                 v for v in new_list if isinstance(v, (dict, ordereddict))
             ]
-            key_sets = {frozenset(d.keys()) for d in dicts_in_list}
+            key_sets = {frozenset(d.keys()) for d in dicts_in_list}  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
             needs_padding = (
                 not all(ks == next(iter(key_sets)) for ks in key_sets)
                 if key_sets
@@ -553,19 +553,19 @@ def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
                 all_keys: list[str] = []
                 seen: set[str] = set()
                 for d in dicts_in_list:
-                    for k in d:
+                    for k in d:  # pyright: ignore[reportUnknownVariableType]
                         if k not in seen:
-                            all_keys.append(k)
-                            seen.add(k)
-                new_list = [
+                            all_keys.append(k)  # pyright: ignore[reportUnknownArgumentType]
+                            seen.add(k)  # pyright: ignore[reportUnknownArgumentType]
+                new_list = [  # pyright: ignore[reportUnknownVariableType]
                     (
-                        {k: v.get(k) for k in all_keys}
+                        {k: v.get(k) for k in all_keys}  # pyright: ignore[reportUnknownMemberType]
                         if isinstance(v, (dict, ordereddict))
                         else v
                     )
                     for v in new_list
                 ]
-            return new_list
+            return new_list  # pyright: ignore[reportUnknownVariableType]
         case _:
             return data
 
@@ -585,7 +585,7 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
             dicts_in_list = [
                 v for v in data if isinstance(v, (dict, ordereddict))
             ]
-            key_sets = {frozenset(d.keys()) for d in dicts_in_list}
+            key_sets = {frozenset(d.keys()) for d in dicts_in_list}  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
             has_mixed = (
                 not all(ks == next(iter(key_sets)) for ks in key_sets)
                 if key_sets
