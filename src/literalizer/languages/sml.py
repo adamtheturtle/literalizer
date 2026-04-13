@@ -52,6 +52,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     TrailingCommaConfig,
+    body_preamble_from_scalars,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -173,27 +174,22 @@ def _build_sml_body_preamble(
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a ``compute_body_preamble`` for SML.
 
-    SML's ``datatype`` syntax requires the first constructor after ``=``
-    to have no leading ``|``, while subsequent constructors do.
+    Delegates to :func:`body_preamble_from_scalars` for deduplication,
+    then fixes the first constructor line to omit the leading ``|``
+    required by SML's ``datatype`` syntax.
     """
+    _base = body_preamble_from_scalars(
+        scalar_body_preamble=scalar_body_preamble,
+    )
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return unique body-preamble lines for *types*."""
-        del data
-        seen: set[str] = set()
-        result: list[str] = []
-        for scalar_type, lines in scalar_body_preamble.items():
-            if scalar_type in types:
-                for line in lines:
-                    if line not in seen:
-                        seen.add(line)
-                        result.append(line)
+        lines = _base(types, data)
         # SML: first variant after 'datatype' line must not have '|'.
         # All constructor lines start with '  | ' by construction, so
         # index 1 is always the first constructor.  The caller always
-        # passes at least one type, so result has >= 2 elements.
-        result[1] = "    " + result[1][4:]
-        return tuple(result)
+        # passes at least one type, so lines has >= 2 elements.
+        return (lines[0], "    " + lines[1][4:], *lines[2:])
 
     return _compute
 
