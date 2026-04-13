@@ -75,7 +75,7 @@ _NIX_KEYWORDS: frozenset[str] = frozenset(
 
 @beartype
 def _format_nix_sequence_entry(original: Value, item: str) -> str:
-    """Format a Nix list element, parenthesising compound expressions.
+    """Format a Nix list element, parenthesizing compound expressions.
 
     Nix list elements must be simple expressions.  Negative literals
     (``-2``) and arithmetic expressions (``1.0e308 * 10.0``) need

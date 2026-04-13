@@ -24,6 +24,7 @@ from literalizer.languages import (
     Go,
     JavaScript,
     Mojo,
+    Nix,
     Python,
     R,
     Ruby,
@@ -1134,6 +1135,29 @@ def test_dhall_control_char_key_error_json() -> None:
             source=json.dumps(obj={"\x01": "value"}),
             input_format=InputFormat.JSON,
             language=Dhall(),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+
+
+def test_nix_control_char_key_error_json() -> None:
+    """Nix rejects control characters in dict keys."""
+    expected_msg = re.escape(
+        pattern='Nix does not support the dict key "\x01". '
+        "Attribute names must be non-empty and must not contain "
+        "control characters."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=json.dumps(obj={"\x01": "value"}),
+            input_format=InputFormat.JSON,
+            language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,
