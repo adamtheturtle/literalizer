@@ -3,10 +3,14 @@
 import dataclasses
 import datetime
 import enum
+import functools
+from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
+from typing import assert_never
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
@@ -145,6 +149,141 @@ def _kotlin_type_to_opener(
         datetime.datetime: "arrayOf(",
     }
     return scalar_openers.get(element_type)
+
+
+@beartype
+def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+    dict_outer: str,
+    set_outer: str,
+    sequence_format_name: str,
+) -> str:
+    """Derive a Kotlin type annotation from *data*."""
+    recurse = functools.partial(
+        _kotlin_type_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
+        dict_outer=dict_outer,
+        set_outer=set_outer,
+        sequence_format_name=sequence_format_name,
+    )
+    match data:
+        case bool():
+            return "Boolean"
+        case int():
+            return "Int"
+        case float():
+            return "Double"
+        case str():
+            return "String"
+        case bytes():
+            return "String"
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "Nothing?"
+        case dict():
+            if not data:
+                outer = (
+                    dict_outer
+                    if not isinstance(data, (ordereddict, OrderedDict))
+                    else "LinkedHashMap"
+                )
+                return (
+                    f"{outer}<{default_dict_key_type}"
+                    f", {default_dict_value_type}>"
+                )
+            val_types = [recurse(data=v) for v in data.values()]
+            unique = list(dict.fromkeys(val_types))
+            val_type = unique[0] if len(unique) == 1 else "Any?"
+            outer = (
+                dict_outer
+                if not isinstance(data, (ordereddict, OrderedDict))
+                else "LinkedHashMap"
+            )
+            return f"{outer}<{default_dict_key_type}, {val_type}>"
+        case set():
+            if not data:
+                return f"{set_outer}<{default_set_element_type}>"
+            elem_types = sorted({recurse(data=e) for e in data})
+            elem_type = elem_types[0] if len(elem_types) == 1 else "Any?"
+            return f"{set_outer}<{elem_type}>"
+        case list():
+            if not data:
+                if sequence_format_name == "ARRAY":
+                    return "Array<Any?>"
+                return "List<Any?>"
+            if sequence_format_name == "TUPLE":
+                elem_types = [recurse(data=e) for e in data]
+                if len(data) == 2:  # noqa: PLR2004
+                    return f"Pair<{', '.join(elem_types)}>"
+                if len(data) == 3:  # noqa: PLR2004
+                    return f"Triple<{', '.join(elem_types)}>"
+                return "List<Any?>"
+            if sequence_format_name == "ARRAY":
+                return "Array<Any?>"
+            # LIST format — use typed arrays matching the opener
+            elem_types = [recurse(data=e) for e in data]
+            unique = list(dict.fromkeys(elem_types))
+            if len(unique) != 1:
+                return "List<Any?>"
+            elem_type = unique[0]
+            kotlin_prim = {
+                "Boolean": "BooleanArray",
+                "Int": "IntArray",
+                "Double": "DoubleArray",
+            }
+            if elem_type in kotlin_prim:
+                return kotlin_prim[elem_type]
+            # Generic element types (e.g. Map<…>) use listOf, not
+            # arrayOf, so the container type is List, not Array.
+            if "<" in elem_type:
+                return f"List<{elem_type}>"
+            return f"Array<{elem_type}>"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _format_kotlin_typed_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    keyword: str,
+    date_hint: str,
+    datetime_hint: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+    dict_outer: str,
+    set_outer: str,
+    sequence_format_name: str,
+) -> str:
+    """Format a Kotlin variable declaration with an explicit type."""
+    hint = _kotlin_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
+        dict_outer=dict_outer,
+        set_outer=set_outer,
+        sequence_format_name=sequence_format_name,
+    )
+    return f"{keyword} {name}: {hint} = {value}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -475,6 +614,37 @@ class Kotlin(metaclass=LanguageCls):
         """Variable type hint options."""
 
         AUTO = enum.auto()
+        ALWAYS = enum.auto()
+
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[[str, str, Value], str],
+            keyword: str,
+            date_hint: str,
+            datetime_hint: str,
+            default_set_element_type: str,
+            default_dict_key_type: str,
+            default_dict_value_type: str,
+            dict_outer: str,
+            set_outer: str,
+            sequence_format_name: str,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter."""
+            if self is type(self).AUTO:
+                return auto_formatter
+            return functools.partial(
+                _format_kotlin_typed_declaration,
+                keyword=keyword,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                default_set_element_type=default_set_element_type,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+                dict_outer=dict_outer,
+                set_outer=set_outer,
+                sequence_format_name=sequence_format_name,
+            )
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -681,7 +851,30 @@ class Kotlin(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            variable_type_hints.formatter(
+                auto_formatter=declaration_style.value.formatter,
+                keyword=declaration_style.name.lower(),
+                date_hint=(
+                    "String"
+                    if date_format.value.type_produced is str
+                    else "LocalDate"
+                ),
+                datetime_hint=(
+                    "String"
+                    if datetime_format.value.type_produced is str
+                    else "LocalDateTime"
+                ),
+                default_set_element_type=default_set_element_type,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+                dict_outer=(
+                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
+                ),
+                set_outer=(
+                    "MutableSet" if set_format.name == "SORTED_SET" else "Set"
+                ),
+                sequence_format_name=sequence_format.name,
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")

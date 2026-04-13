@@ -2,11 +2,14 @@
 
 import datetime
 import enum
+import functools
+from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any
+from typing import Any, assert_never
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
@@ -62,10 +65,8 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
 
 @beartype
@@ -94,6 +95,177 @@ def _list_of_open(items: list[Any]) -> str:
         )
         raise NullInCollectionError(msg)
     return "List.of("
+
+
+_JAVA_BOXED: dict[str, str] = {
+    "boolean": "Boolean",
+    "int": "Integer",
+    "long": "Long",
+    "double": "Double",
+}
+
+
+@beartype
+def _java_box(type_name: str) -> str:
+    """Return the boxed wrapper type for a Java primitive, or the type
+    itself for reference types.
+    """
+    return _JAVA_BOXED.get(type_name, type_name)
+
+
+@beartype
+def _java_common_element_type(
+    elements: list[Value],
+    *,
+    boxed: bool,
+    int_type: str,
+    date_hint: str,
+    datetime_hint: str,
+    seq_is_array: bool,
+    dict_outer: str,
+    set_outer: str,
+) -> str:
+    """Find the common Java type for a collection's elements.
+
+    Returns ``"Object"`` when elements are empty or have mixed types.
+    """
+    if not elements:
+        return "Object"
+    recurse = functools.partial(
+        _java_type_hint,
+        int_type=int_type,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        seq_is_array=seq_is_array,
+        dict_outer=dict_outer,
+        set_outer=set_outer,
+    )
+    types: list[str] = [recurse(data=e) for e in elements]
+    unique = set(types)
+    if len(unique) == 1:
+        result = unique.pop()
+        return _java_box(type_name=result) if boxed else result
+    # int + double → double (widening)
+    double_t = "double"
+    if unique == {int_type, double_t}:
+        return "Double" if boxed else "double"
+    return "Object"
+
+
+@beartype
+def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+    data: Value,
+    *,
+    int_type: str,
+    date_hint: str,
+    datetime_hint: str,
+    seq_is_array: bool,
+    dict_outer: str,
+    set_outer: str,
+) -> str:
+    """Derive a Java type from *data*."""
+    match data:
+        case bool():
+            return "boolean"
+        case int():
+            return int_type
+        case float():
+            return "double"
+        case str():
+            return "String"
+        case bytes():
+            return "String"
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "Object"
+        case dict():
+            val_type = _java_common_element_type(
+                elements=list(data.values()),
+                boxed=True,
+                int_type=int_type,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                seq_is_array=seq_is_array,
+                dict_outer=dict_outer,
+                set_outer=set_outer,
+            )
+            outer = (
+                dict_outer
+                if not isinstance(data, (ordereddict, OrderedDict))
+                else "Map"
+            )
+            return f"{outer}<String, {val_type}>"
+        case set():
+            elem_type = _java_common_element_type(
+                elements=list(data),
+                boxed=True,
+                int_type=int_type,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                seq_is_array=seq_is_array,
+                dict_outer=dict_outer,
+                set_outer=set_outer,
+            )
+            return f"{set_outer}<{elem_type}>"
+        case list():
+            if seq_is_array:
+                elem_type = _java_common_element_type(
+                    elements=data,
+                    boxed=False,
+                    int_type=int_type,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    seq_is_array=seq_is_array,
+                    dict_outer=dict_outer,
+                    set_outer=set_outer,
+                )
+                # Java cannot create arrays of generic types, so fall
+                # back to Object[] when the element type is generic.
+                if "<" in elem_type:
+                    elem_type = "Object"
+                return f"{elem_type}[]"
+            elem_type = _java_common_element_type(
+                elements=data,
+                boxed=True,
+                int_type=int_type,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                seq_is_array=seq_is_array,
+                dict_outer=dict_outer,
+                set_outer=set_outer,
+            )
+            return f"List<{elem_type}>"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _format_java_typed_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    int_type: str,
+    date_hint: str,
+    datetime_hint: str,
+    seq_is_array: bool,
+    dict_outer: str,
+    set_outer: str,
+) -> str:
+    """Format a Java variable declaration with an explicit type."""
+    hint = _java_type_hint(
+        data=data,
+        int_type=int_type,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        seq_is_array=seq_is_array,
+        dict_outer=dict_outer,
+        set_outer=set_outer,
+    )
+    return f"{hint} {name} = {value};"
 
 
 @beartype
@@ -426,6 +598,31 @@ class Java(metaclass=LanguageCls):
         """Variable type hint options."""
 
         AUTO = enum.auto()
+        ALWAYS = enum.auto()
+
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[[str, str, Value], str],
+            int_type: str,
+            date_hint: str,
+            datetime_hint: str,
+            seq_is_array: bool,
+            dict_outer: str,
+            set_outer: str,
+        ) -> Callable[[str, str, Value], str]:
+            """Return the variable declaration formatter."""
+            if self is type(self).AUTO:
+                return auto_formatter
+            return functools.partial(
+                _format_java_typed_declaration,
+                int_type=int_type,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                seq_is_array=seq_is_array,
+                dict_outer=dict_outer,
+                set_outer=set_outer,
+            )
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -592,8 +789,31 @@ class Java(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
+        _java_dt_hint: str
+        if datetime_format.value.type_produced is str:
+            _java_dt_hint = "String"
+        elif datetime_format.name == "ZONED":
+            _java_dt_hint = "ZonedDateTime"
+        else:
+            _java_dt_hint = "Instant"
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            variable_type_hints.formatter(
+                auto_formatter=declaration_style.value.formatter,
+                int_type="long" if suffix_is_auto else "int",
+                date_hint=(
+                    "String"
+                    if date_format.value.type_produced is str
+                    else "LocalDate"
+                ),
+                datetime_hint=_java_dt_hint,
+                seq_is_array=(sequence_format.name == "ARRAY"),
+                dict_outer=(
+                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
+                ),
+                set_outer=(
+                    "TreeSet" if set_format.name == "TREE_SET" else "Set"
+                ),
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
