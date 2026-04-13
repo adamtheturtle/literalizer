@@ -1,0 +1,12 @@
+structure Check = struct
+
+datatype val_t =
+    SReal of real
+  | SList of val_t list
+val my_data : val_t = SList [
+    SReal ((1.0 / 0.0)),
+    SReal ((~1.0 / 0.0)),
+    SReal ((0.0 / 0.0))
+]
+
+end
