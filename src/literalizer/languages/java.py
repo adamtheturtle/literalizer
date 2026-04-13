@@ -69,6 +69,22 @@ from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
 
+def _java_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Java stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (
+            f"static Object {parts[0]}(Object... args) {{ return null; }}",
+        )
+    root, method = parts[0], parts[1]
+    type_name = f"{root.title()}Type_"
+    return (
+        f"static class {type_name} {{"
+        f" Object {method}(Object... args) {{ return null; }} }}",
+        f"static {type_name} {root} = new {type_name}();",
+    )
+
+
 @beartype
 def _format_datetime_java_zoned(value: datetime.datetime) -> str:
     """Format a datetime as a Java ``ZonedDateTime.of(...)`` call."""
@@ -651,12 +667,22 @@ class Java(metaclass=LanguageCls):
     ) -> str:
         """Wrap a Java declaration in a static method."""
         del variable_name
+        # Lines starting with "static " are class-level declarations
+        # (call stubs); everything else goes inside the method body.
+        class_lines = [
+            line for line in body_preamble if line.startswith("static ")
+        ]
+        method_lines = tuple(
+            line for line in body_preamble if not line.startswith("static ")
+        )
         content = prepend_body_preamble(
             content=content,
-            body_preamble=body_preamble,
+            body_preamble=method_lines,
         )
+        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
         return (
             "class Check {\n"
+            f"{class_block}"
             "    public static void check() {\n"
             f"{content}\n"
             "    }\n"
@@ -840,5 +866,5 @@ class Java(metaclass=LanguageCls):
             kind=CallStyleKind.POSITIONAL,
         )
         self.statement_terminator = ";"
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _java_call_stub
         self.format_call_preamble_stub = no_call_stub
