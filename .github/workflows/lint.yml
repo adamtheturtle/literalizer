@@ -1303,7 +1303,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -n1 uv run --no-project python check_v_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_v_syntax.py
+          < /tmp/files-to-lint
 
   completion-lint:
     needs:
