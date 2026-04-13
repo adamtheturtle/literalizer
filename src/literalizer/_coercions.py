@@ -540,7 +540,9 @@ def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
             }
         case list():
             new_list = [_coerce_mixed_dict_shapes(data=v) for v in data]
-            dicts_in_list = [v for v in new_list if isinstance(v, dict)]
+            dicts_in_list = [
+                v for v in new_list if isinstance(v, (dict, ordereddict))
+            ]
             key_sets = {frozenset(d.keys()) for d in dicts_in_list}
             needs_padding = (
                 not all(ks == next(iter(key_sets)) for ks in key_sets)
@@ -558,7 +560,7 @@ def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
                 new_list = [
                     (
                         {k: v.get(k) for k in all_keys}
-                        if isinstance(v, dict)
+                        if isinstance(v, (dict, ordereddict))
                         else v
                     )
                     for v in new_list
@@ -580,7 +582,9 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
                 for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
             )
         case list():
-            dicts_in_list = [v for v in data if isinstance(v, dict)]
+            dicts_in_list = [
+                v for v in data if isinstance(v, (dict, ordereddict))
+            ]
             key_sets = {frozenset(d.keys()) for d in dicts_in_list}
             has_mixed = (
                 not all(ks == next(iter(key_sets)) for ks in key_sets)
