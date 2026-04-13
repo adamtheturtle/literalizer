@@ -1,2 +1,4 @@
-: my_data 42  \ note ;
-: my_data 42  \ note ;
+\ note
+: my_data 42 ;
+\ note
+: my_data 42 ;
