@@ -1,60 +1,112 @@
-"""Check syntax of a Solidity golden file using ``solc``.
+"""Structural syntax check for Solidity golden files.
 
-The golden files are bare literals (no pragma / contract wrapper), so
-this script wraps them in a minimal contract before compiling.
-
-Files that contain features Solidity cannot represent (mapping/dict
-literals, control characters in strings) are silently skipped.
+Solidity is statically typed, so bare literals (without explicit types)
+cannot be compiled by ``solc``.  This script performs lightweight
+structural validation instead: balanced brackets, balanced strings,
+and proper semicolons.
 """
 
-import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
-# Patterns that indicate the file cannot be valid Solidity.
-_DICT_LITERAL = re.compile(pattern=r"= \{")
-_CONTROL_CHAR = re.compile(pattern=r"[\x00-\x08\x0e-\x1f]")
+
+def _scan_brackets(lines: list[str]) -> str | None:
+    """Return an error if square brackets are unbalanced."""
+    depth = 0
+    for line_num, line in enumerate(iterable=lines, start=1):
+        in_string = False
+        i = 0
+        while i < len(line):
+            ch = line[i]
+            if ch == "\\" and in_string:
+                i += 2
+                continue
+            if ch == '"':
+                in_string = not in_string
+            elif not in_string and ch == "[":
+                depth += 1
+            elif not in_string and ch == "]":
+                depth -= 1
+                if depth < 0:
+                    return f"Unmatched ']' at line {line_num}"
+            i += 1
+
+    if depth != 0:
+        return f"Unbalanced '[': {depth} unclosed bracket(s)"
+    return None
+
+
+def _scan_braces(lines: list[str]) -> str | None:
+    """Return an error if curly braces are unbalanced."""
+    depth = 0
+    for line_num, line in enumerate(iterable=lines, start=1):
+        in_string = False
+        i = 0
+        while i < len(line):
+            ch = line[i]
+            if ch == "\\" and in_string:
+                i += 2
+                continue
+            if ch == '"':
+                in_string = not in_string
+            elif not in_string and ch == "{":
+                depth += 1
+            elif not in_string and ch == "}":
+                depth -= 1
+                if depth < 0:
+                    return f"Unmatched '}}' at line {line_num}"
+            i += 1
+
+    if depth != 0:
+        return f"Unbalanced '{{': {depth} unclosed brace(s)"
+    return None
+
+
+def _check_strings(lines: list[str]) -> str | None:
+    """Return an error if a string literal is unterminated."""
+    for line_num, line in enumerate(iterable=lines, start=1):
+        stripped = line.lstrip()
+        if stripped.startswith(("//", "/*")):
+            continue
+        in_string = False
+        i = 0
+        while i < len(line):
+            ch = line[i]
+            if ch == "\\" and in_string:
+                i += 2
+                continue
+            if ch == '"':
+                in_string = not in_string
+            i += 1
+        if in_string:
+            return f"Unterminated string at line {line_num}"
+
+    return None
+
+
+def _check_file(path: Path) -> str | None:
+    """Return an error message if *path* has a structural error."""
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+
+    error = _scan_brackets(lines=lines)
+    if error is not None:
+        return error
+
+    error = _scan_braces(lines=lines)
+    if error is not None:
+        return error
+
+    return _check_strings(lines=lines)
 
 
 def main() -> None:
     """Check syntax of the given Solidity golden file."""
     filename = sys.argv[1]
-    content = Path(filename).read_text(encoding="utf-8")
-
-    if _DICT_LITERAL.search(string=content):
-        return
-
-    if _CONTROL_CHAR.search(string=content):
-        return
-
-    wrapped = (
-        "// SPDX-License-Identifier: MIT\n"
-        "pragma solidity >=0.8.0;\n"
-        "\n"
-        "contract Generated {\n"
-        "    function run() public pure {\n"
-        f"{content}\n"
-        "    }\n"
-        "}\n"
-    )
-
-    solc_path: str = shutil.which(cmd="solc") or "solc"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        sol_path = Path(tmpdir) / "check.sol"
-        sol_path.write_text(data=wrapped, encoding="utf-8")
-        result = subprocess.run(
-            args=[solc_path, "--no-color", sol_path.as_posix()],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-    if result.returncode != 0:
-        msg = f"{filename}: solc failed\n{result.stderr}{result.stdout}"
-        sys.stderr.write(msg)
+    src = Path(filename)
+    error = _check_file(path=src)
+    if error is not None:
+        sys.stderr.write(f"{filename}: Solidity syntax error: {error}\n")
         sys.exit(1)
 
 

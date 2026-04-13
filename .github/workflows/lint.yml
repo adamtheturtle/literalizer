@@ -1088,12 +1088,6 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.sol
           extra_config_patterns: check_solidity_syntax.py
-      - name: Install solc
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          sudo add-apt-repository -y ppa:ethereum/ethereum
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq solc
       - name: Install uv
         if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
