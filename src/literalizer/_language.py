@@ -746,13 +746,15 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     See :class:`CallStyleConfig` for details.
     """
 
-    format_call_stub: Callable[[str], tuple[str, ...]]
+    format_call_stub: Callable[[str, Sequence[str]], tuple[str, ...]]
     """Return stub declaration lines for a name used in a call
     expression.
 
     *name* is either a simple identifier (``"process"``) for a
     function call, or a dotted path (``"throttler.check"``) for a
-    method call on an object.
+    method call on an object.  *params* is the list of parameter
+    names (e.g. ``["user_id", "ts"]``) so that keyword-style
+    languages can generate stubs with matching named parameters.
 
     Stub lines are placed **inside** the language wrapper (e.g.
     inside ``func main()`` for Go, inside ``class Check`` for Java).
@@ -764,7 +766,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     syntax).
     """
 
-    format_call_preamble_stub: Callable[[str], tuple[str, ...]]
+    format_call_preamble_stub: Callable[[str, Sequence[str]], tuple[str, ...]]
     """Like :attr:`format_call_stub` but the lines are placed
     **before** the language wrapper — at file, package, or module
     scope.
@@ -775,12 +777,12 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """
 
 
-def _no_call_stub(_name: str, /) -> tuple[str, ...]:
+def _no_call_stub(_name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return no stub lines."""
     return ()
 
 
-no_call_stub: Callable[[str], tuple[str, ...]] = _no_call_stub
+no_call_stub: Callable[[str, Sequence[str]], tuple[str, ...]] = _no_call_stub
 """Shared callable for languages that need no call stubs."""
 
 

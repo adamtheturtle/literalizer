@@ -132,6 +132,16 @@ class _ScalaDictSpec:
     preamble_lines: tuple[str, ...]
 
 
+def _scala_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Scala stub declarations for a call name."""
+    param_list = ", ".join(f"{p}: Any = null" for p in params)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}({param_list}): Any = null",)
+    root, method = parts[0], parts[1]
+    return (f"val {root} = new {{ def {method}({param_list}): Any = null }}",)
+
+
 @beartype
 class Scala(metaclass=LanguageCls):
     """Scala language specification."""
@@ -609,5 +619,5 @@ class Scala(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=" = ",
         )
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _scala_call_stub
         self.format_call_preamble_stub = no_call_stub

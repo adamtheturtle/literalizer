@@ -2,9 +2,8 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -64,11 +63,8 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
-
-def _ts_call_stub(name: str, /) -> tuple[str, ...]:
+def _ts_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return TypeScript stub declarations for a call name."""
     root = name.split(sep=".", maxsplit=1)[0]
     return (f"declare const {root}: any;",)

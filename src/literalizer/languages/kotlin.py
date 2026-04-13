@@ -3,9 +3,8 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -70,9 +69,6 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 @beartype
@@ -156,6 +152,18 @@ class _KotlinDictSpec:
     """Per-format dict config pieces resolved at init time."""
 
     opener_template: str
+
+
+def _kotlin_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Kotlin stub declarations for a call name."""
+    param_list = ", ".join(f"{p}: Any? = null" for p in params)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"fun {parts[0]}({param_list}): Any? = null",)
+    root, method = parts[0], parts[1]
+    return (
+        f"val {root} = object {{ fun {method}({param_list}): Any? = null }}",
+    )
 
 
 @beartype
@@ -697,5 +705,5 @@ class Kotlin(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=" = ",
         )
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _kotlin_call_stub
         self.format_call_preamble_stub = no_call_stub

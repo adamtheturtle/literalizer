@@ -1557,8 +1557,11 @@ class _CallCase:
 _CALL_LANGUAGES: frozenset[str] = frozenset(
     {
         "JavaScript",
+        "Kotlin",
         "Python",
         "Ruby",
+        "Scala",
+        "Swift",
         "TypeScript",
     }
 )
@@ -1636,8 +1639,12 @@ def test_call_golden_file(
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
     for name in call_names:
-        body_stubs.extend(spec.format_call_stub(name))
-        preamble_stubs.extend(spec.format_call_preamble_stub(name))
+        body_stubs.extend(
+            spec.format_call_stub(name, config.call_params),
+        )
+        preamble_stubs.extend(
+            spec.format_call_preamble_stub(name, config.call_params),
+        )
     stub_prefix = "\n".join(body_stubs) + "\n" if body_stubs else ""
     code = stub_prefix + result.bare_code
 

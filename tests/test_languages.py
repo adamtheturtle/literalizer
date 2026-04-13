@@ -903,7 +903,7 @@ def test_literalize_call_body_preamble() -> None:
 def test_js_call_stub_console() -> None:
     """Cover the console branch of _js_call_stub."""
     spec = JavaScript()
-    assert not spec.format_call_stub("console.log")
+    assert not spec.format_call_stub("console.log", [])
 
 
 def test_cobol_bump_levels_rejects_non_level_line() -> None:

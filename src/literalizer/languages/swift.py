@@ -3,9 +3,8 @@
 import datetime
 import enum
 import functools
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -63,9 +62,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
 
 @beartype
 def _format_date_swift(value: datetime.date) -> str:
@@ -99,6 +95,20 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     if original is None:
         return "nil as Any?"
     return entry
+
+
+def _swift_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+    """Return Swift stub declarations for a call name."""
+    param_list = ", ".join(f"{p}: Any = 0" for p in params)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"func {parts[0]}({param_list}) -> Any {{ 0 }}",)
+    root, method = parts[0], parts[1]
+    cls = f"_{root}Type"
+    return (
+        f"class {cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}",
+        f"let {root} = {cls}()",
+    )
 
 
 @beartype
@@ -535,5 +545,5 @@ class Swift(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=": ",
         )
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _swift_call_stub
         self.format_call_preamble_stub = no_call_stub

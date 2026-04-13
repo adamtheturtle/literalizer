@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -66,13 +66,11 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
 
 
 @beartype
-def _ruby_call_stub(name: str, /) -> tuple[str, ...]:
+def _ruby_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return Ruby stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:
