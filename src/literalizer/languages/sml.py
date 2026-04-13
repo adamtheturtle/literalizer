@@ -174,7 +174,7 @@ def _build_sml_body_preamble(
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a ``compute_body_preamble`` for SML.
 
-    Delegates to :func:`body_preamble_from_scalars` for deduplication,
+    Delegates to :func:`body_preamble_from_scalars` for de-duplication,
     then fixes the first constructor line to omit the leading ``|``
     required by SML's ``datatype`` syntax.
     """
