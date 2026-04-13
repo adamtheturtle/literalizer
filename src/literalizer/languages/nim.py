@@ -123,6 +123,7 @@ def _make_variable_assignment(
     return _format
 
 
+@beartype
 class Nim(metaclass=LanguageCls):
     """Nim language specification.
 

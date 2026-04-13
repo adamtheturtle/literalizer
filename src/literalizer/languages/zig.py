@@ -124,6 +124,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     return f"{name} = {wrapped};"
 
 
+@beartype
 class Zig(metaclass=LanguageCls):
     """Zig language specification."""
 

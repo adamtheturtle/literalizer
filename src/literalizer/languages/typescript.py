@@ -6,6 +6,8 @@ from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
+from beartype import beartype
+
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
@@ -71,6 +73,7 @@ def _ts_call_stub(name: str, /) -> tuple[str, ...]:
     return (f"declare const {root}: any;",)
 
 
+@beartype
 class TypeScript(metaclass=LanguageCls):
     """TypeScript language specification.
 

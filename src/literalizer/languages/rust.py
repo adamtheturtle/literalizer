@@ -93,6 +93,7 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
     return f"NaiveDateTime::new({date}, {time_call})"
 
 
+@beartype
 class Rust(metaclass=LanguageCls):
     """Rust language specification.
 

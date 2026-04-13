@@ -63,6 +63,7 @@ def _format_mojo_ordered_map_entry(key: str, _val: Value, value: str) -> str:
     return f"Tuple({key}, {value})"
 
 
+@beartype
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
 

@@ -97,6 +97,7 @@ def _list_of_open(items: list[Any]) -> str:
     return "List.of("
 
 
+@beartype
 class Java(metaclass=LanguageCls):
     """Java language specification.
 

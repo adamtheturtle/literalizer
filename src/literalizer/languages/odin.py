@@ -71,6 +71,7 @@ def _format_set_entry(_original: Value, item: str) -> str:
     return f"{item} = {{}}"
 
 
+@beartype
 class Odin(metaclass=LanguageCls):
     """Odin language specification."""
 

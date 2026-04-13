@@ -117,6 +117,7 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
     return f"{item}: struct{{}}{{}}"
 
 
+@beartype
 class Go(metaclass=LanguageCls):
     """Go language specification.
 

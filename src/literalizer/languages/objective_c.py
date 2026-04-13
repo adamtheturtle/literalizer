@@ -105,6 +105,7 @@ def _format_objc_bytes_base64(value: bytes) -> str:
     return f'@"{encoded.decode(encoding="ascii")}"'
 
 
+@beartype
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 

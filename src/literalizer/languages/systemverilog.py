@@ -106,6 +106,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     return f"{name} = {wrapped};"
 
 
+@beartype
 class SystemVerilog(metaclass=LanguageCls):
     """SystemVerilog language specification."""
 

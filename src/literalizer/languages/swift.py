@@ -99,6 +99,7 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
+@beartype
 class Swift(metaclass=LanguageCls):
     """Swift language specification."""
 

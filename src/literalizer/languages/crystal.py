@@ -6,6 +6,8 @@ from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
+from beartype import beartype
+
 from literalizer._formatters.collection_openers import fixed_sequence_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -55,6 +57,7 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+@beartype
 class Crystal(metaclass=LanguageCls):
     """Crystal language specification.
 

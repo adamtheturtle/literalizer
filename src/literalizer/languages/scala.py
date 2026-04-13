@@ -131,6 +131,7 @@ class _ScalaDictSpec:
     preamble_lines: tuple[str, ...]
 
 
+@beartype
 class Scala(metaclass=LanguageCls):
     """Scala language specification."""
 

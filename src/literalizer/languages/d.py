@@ -81,6 +81,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     return f"{name} = {wrapped};"
 
 
+@beartype
 class D(metaclass=LanguageCls):
     """D language specification."""
 

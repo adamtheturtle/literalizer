@@ -235,6 +235,7 @@ def _format_variable_declaration(
     return f"Any {name} = {value};"
 
 
+@beartype
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
 

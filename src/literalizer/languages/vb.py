@@ -124,6 +124,7 @@ def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
     return f"Dim {name} = {value}"
 
 
+@beartype
 class VisualBasic(metaclass=LanguageCls):
     """Visual Basic (.NET) language specification.
 

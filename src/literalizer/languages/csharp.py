@@ -7,6 +7,8 @@ from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
+from beartype import beartype
+
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     make_type_to_opener,
@@ -79,6 +81,7 @@ class _CSharpDictSpec:
     opener_template: str
 
 
+@beartype
 class CSharp(metaclass=LanguageCls):
     """C# language specification.
 

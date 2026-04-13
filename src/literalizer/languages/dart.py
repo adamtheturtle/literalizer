@@ -4,6 +4,8 @@ import datetime
 import enum
 from typing import TYPE_CHECKING
 
+from beartype import beartype
+
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_sequence_open,
@@ -60,6 +62,7 @@ if TYPE_CHECKING:
     from literalizer._types import Value
 
 
+@beartype
 class Dart(metaclass=LanguageCls):
     """Dart language specification.
 

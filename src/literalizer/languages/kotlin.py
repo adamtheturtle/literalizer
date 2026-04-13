@@ -156,6 +156,7 @@ class _KotlinDictSpec:
     opener_template: str
 
 
+@beartype
 class Kotlin(metaclass=LanguageCls):
     """Kotlin language specification.
 
