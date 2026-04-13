@@ -1476,8 +1476,8 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
         )
 
     for call_case in _CALL_CASES:
-        ext = _LANGUAGES[call_case.lang_name].lang_cls.extension
-        golden_name = f"{call_case.lang_name}_call"
+        ext = call_case.lang_cls.extension
+        golden_name = f"{call_case.lang_cls.__name__}_call"
         expected.add(
             cases_dir / call_case.config.case_dir_name / (golden_name + ext)
         )
@@ -1537,7 +1537,7 @@ class _CallCase:
     """A parameterized call-style golden-file test case."""
 
     config: _CallCaseConfig
-    lang_name: str
+    lang_cls: literalizer.LanguageCls
 
 
 # Languages whose CI lint checks accept call golden files.  Only
@@ -1567,9 +1567,9 @@ def _discover_call_cases() -> list[_CallCase]:
     cases: list[_CallCase] = []
     for config in _CALL_CASE_CONFIGS:
         cases.extend(
-            _CallCase(config=config, lang_name=lang_name)
-            for lang_name in _LANGUAGES
-            if lang_name in _CALL_LANGUAGES
+            _CallCase(config=config, lang_cls=lang_cls)
+            for lang_cls in _SORTED_LANGUAGES
+            if lang_cls.__name__ in _CALL_LANGUAGES
         )
     return cases
 
@@ -1603,7 +1603,9 @@ def _extract_call_names(
 @pytest.mark.parametrize(
     argnames="call_case",
     argvalues=_CALL_CASES,
-    ids=[f"{c.config.case_dir_name}/{c.lang_name}" for c in _CALL_CASES],
+    ids=[
+        f"{c.config.case_dir_name}/{c.lang_cls.__name__}" for c in _CALL_CASES
+    ],
 )
 def test_call_golden_file(
     call_case: _CallCase,
@@ -1612,8 +1614,8 @@ def test_call_golden_file(
 ) -> None:
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
-    lang_config = _LANGUAGES[call_case.lang_name]
-    spec = lang_config.lang_cls()
+    lang_cls = call_case.lang_cls
+    spec = lang_cls()
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     result = literalizer.literalize_call(
@@ -1641,18 +1643,18 @@ def test_call_golden_file(
         )
     call_body_preamble = result.body_preamble + tuple(body_stubs)
 
-    wrapped = lang_config.lang_cls.wrap_in_file(
+    wrapped = lang_cls.wrap_in_file(
         content=result.bare_code,
         variable_name="",
         body_preamble=call_body_preamble,
     )
     all_preamble = result.preamble + tuple(preamble_stubs)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
-    golden_name = f"{call_case.lang_name}_call"
+    lang_name = lang_cls.__name__
+    golden_name = f"{lang_name}_call"
     file_regression.check(
         contents=wrapped + "\n",
-        extension=lang_config.lang_cls.extension,
+        extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent
-        / (golden_name + lang_config.lang_cls.extension),
+        fullpath=input_path.parent / (golden_name + lang_cls.extension),
     )
