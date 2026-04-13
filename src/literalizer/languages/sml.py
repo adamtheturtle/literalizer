@@ -241,10 +241,6 @@ class Sml(metaclass=LanguageCls):
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)
-
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Standard ML."""
 
@@ -258,10 +254,6 @@ class Sml(metaclass=LanguageCls):
             formatter=format_datetime_iso,
             type_produced=str,
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -528,9 +520,11 @@ class Sml(metaclass=LanguageCls):
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
+        self.format_date: Callable[[datetime.date], str] = (
+            date_format.value.formatter
+        )
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+            datetime_format.value.formatter
         )
         if date_format.name == "SML":
             self.format_date = date_ymd_formatter(
@@ -558,6 +552,8 @@ class Sml(metaclass=LanguageCls):
         )
         self.format_set_entry: Callable[[Value, str], str] = _entry_formatter
         self.comment_format = comment_format
+        self.date_format = date_format
+        self.datetime_format = datetime_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
         self.dict_format = dict_format
