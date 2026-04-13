@@ -68,7 +68,9 @@ from literalizer._types import Value
 def _js_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
     root = name.split(sep=".", maxsplit=1)[0]
-    return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
+    if "." in name:
+        return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
+    return (f"function {root}() {{}}",)
 
 
 @beartype

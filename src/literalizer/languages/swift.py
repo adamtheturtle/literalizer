@@ -100,10 +100,11 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
 
 def _swift_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
-    param_list = ", ".join(f"{p}: Any = 0" for p in params)
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"func {parts[0]}({param_list}) -> Any {{ 0 }}",)
+        positional = ", ".join(f"_ {p}: Any = 0" for p in params)
+        return (f"func {parts[0]}({positional}) -> Any {{ 0 }}",)
+    param_list = ", ".join(f"{p}: Any = 0" for p in params)
     root, method = parts[0], parts[1]
     cls = f"_{root}Type"
     return (
