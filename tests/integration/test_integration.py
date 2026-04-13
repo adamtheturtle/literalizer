@@ -1312,33 +1312,10 @@ class _CallCase:
     lang_cls: literalizer.LanguageCls
 
 
-# Languages whose CI lint checks accept call golden files.  Only
-# these are included in call golden-file tests.  Languages with strict
-# compilers that reject call expressions without statement
-# terminators or require stubs at specific scopes are excluded.
 _CALL_LANGUAGES: frozenset[str] = frozenset(
-    {
-        "Cpp",
-        "Crystal",
-        "CSharp",
-        "D",
-        "FSharp",
-        "Go",
-        "Groovy",
-        "JavaScript",
-        "Julia",
-        "Kotlin",
-        "Lua",
-        "Perl",
-        "Php",
-        "Python",
-        "R",
-        "Ruby",
-        "Rust",
-        "Scala",
-        "Swift",
-        "TypeScript",
-    }
+    lang_cls.__name__
+    for lang_cls in _SORTED_LANGUAGES
+    if lang_cls.supports_call
 )
 
 
