@@ -14,9 +14,8 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any
 
 import pytest
 from beartype import beartype
@@ -105,130 +104,35 @@ class _VariantCase:
 
 
 @beartype
-def _build_date_variants() -> Iterable[_Variant]:
-    """Build date-format variants for scalar dates.
+def _build_non_default_variants(
+    *,
+    category: str,
+    get_default: Callable[[literalizer.Language], object],
+    get_formats: Callable[[literalizer.Language], type[enum.Enum]],
+    make_spec: Callable[
+        [literalizer.LanguageCls, enum.Enum],
+        literalizer.Language,
+    ],
+) -> list[_Variant]:
+    """Build variants for every non-default value of a format enum.
 
-    For each language, create a variant for every non-default date format,
-    using ``wrap``.
+    This is the generic version of the many per-format builder functions
+    that all follow the same pattern: iterate all languages, find the
+    non-default members of a format enum, and create a ``_Variant`` for
+    each one.
     """
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
         lang_name = lang_cls.__name__
         spec = lang_cls()
-        default_format = spec.format_date
-        for fmt in list(spec.date_formats):
-            if fmt is default_format:
-                continue
-            # Date and datetime formats can share enum member names
-            # within the same language (e.g. Python has both
-            # DateFormats.ISO and DatetimeFormats.ISO), so we include
-            # a "_date_" infix to keep keys unique.
-            variants.append(
-                _Variant(
-                    name=f"{lang_name}_date_{fmt.name.lower()}",
-                    spec=lang_cls(date_format=fmt),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
-@beartype
-def _build_datetime_variants() -> Iterable[_Variant]:
-    """Build datetime-format variants for scalar datetimes.
-
-    For each language, create a variant for every non-default datetime format,
-    using ``wrap``.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.format_datetime
-        for fmt in list(spec.datetime_formats):
-            if fmt is default_format:
-                continue
-            # See _build_date_variants for why "_datetime_" is needed.
-            variants.append(
-                _Variant(
-                    name=f"{lang_name}_datetime_{fmt.name.lower()}",
-                    spec=lang_cls(datetime_format=fmt),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
-@beartype
-def _build_sequence_variants() -> Iterable[_Variant]:
-    """Build sequence-format variants for all languages with multiple
-    formats.
-
-    For each language that has more than one sequence format, create a variant
-    for every non-default format.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format: Any = spec.sequence_format
-        for fmt in list(spec.sequence_formats):
+        default_format = get_default(spec)
+        for fmt in get_formats(spec):
             if fmt is default_format:
                 continue
             variants.append(
                 _Variant(
-                    name=f"{lang_name}_sequence_{fmt.name.lower()}",
-                    spec=lang_cls(sequence_format=fmt),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
-@beartype
-def _build_sequence_varname_variants() -> Iterable[_Variant]:
-    """Build sequence-format variants with variable declarations.
-
-    Like :func:`_build_sequence_variants` but exercises
-    ``_format_variable_declaration`` for each non-default sequence format.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format: Any = spec.sequence_format
-        for fmt in list(spec.sequence_formats):
-            if fmt is default_format:
-                continue
-            variants.append(
-                _Variant(
-                    name=f"{lang_name}_sequence_{fmt.name.lower()}",
-                    spec=lang_cls(sequence_format=fmt),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
-@beartype
-def _build_set_variants() -> Iterable[_Variant]:
-    """Build set-format variants for all languages with multiple formats.
-
-    For each language that has more than one set format, create a variant
-    for every non-default set format.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.set_format
-        for fmt in list(spec.set_formats):
-            if fmt is default_format:
-                continue
-            variants.append(
-                _Variant(
-                    name=f"{lang_name}_set_{fmt.name.lower()}",
-                    spec=lang_cls(set_format=fmt),
+                    name=f"{lang_name}_{category}_{fmt.name.lower()}",
+                    spec=make_spec(lang_cls, fmt),
                     lang_cls=lang_cls,
                 )
             )
@@ -410,346 +314,6 @@ def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
                 ),
                 lang_cls=lang_cls,
             )
-        )
-    return variants
-
-
-@beartype
-def _build_comment_variants() -> Iterable[_Variant]:
-    """Build comment-format variants for all languages with multiple
-    formats.
-
-    For each language that has more than one comment format, create a variant
-    for every non-default format.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.comment_format
-        for fmt in list(spec.comment_formats):
-            if fmt is default_format:
-                continue
-            variants.append(
-                _Variant(
-                    name=f"{lang_name}_comment_{fmt.name.lower()}",
-                    spec=lang_cls(comment_format=fmt),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
-@beartype
-def _build_type_hint_variants() -> Iterable[_Variant]:
-    """Build variable-type-hint variants for all languages with multiple
-    formats.
-
-    For each language that has more than one variable type-hint format,
-    create a variant for every non-default type-hint style.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.variable_type_hints
-        for fmt in list(spec.variable_type_hints_formats):
-            if fmt is default_format:
-                continue
-            variants.append(
-                _Variant(
-                    name=f"{lang_name}_type_hints_{fmt.name.lower()}",
-                    spec=lang_cls(variable_type_hints=fmt),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
-@beartype
-def _build_declaration_style_variants() -> Iterable[_Variant]:
-    """Build declaration-style variants for all languages with multiple
-    styles.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.declaration_style
-        non_defaults = [
-            fmt for fmt in spec.declaration_styles if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_declaration_style_{fmt.name.lower()}",
-                spec=lang_cls(
-                    declaration_style=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_dict_format_variants() -> Iterable[_Variant]:
-    """Build dict/map-format variants for all languages with multiple
-    formats.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.dict_format
-        non_defaults = [
-            fmt for fmt in spec.dict_formats if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_dict_format_{fmt.name.lower()}",
-                spec=lang_cls(
-                    dict_format=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_dict_entry_style_variants() -> Iterable[_Variant]:
-    """Build dict-entry-style variants for all languages with multiple
-    styles.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_style = spec.dict_entry_style
-        non_defaults = [
-            fmt for fmt in spec.dict_entry_styles if fmt is not default_style
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_dict_entry_style_{fmt.name.lower()}",
-                spec=lang_cls(
-                    dict_entry_style=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_integer_format_variants() -> Iterable[_Variant]:
-    """Build integer-format variants for all languages with multiple
-    formats.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.integer_format
-        non_defaults = [
-            fmt for fmt in spec.integer_formats if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_integer_format_{fmt.name.lower()}",
-                spec=lang_cls(
-                    integer_format=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_numeric_literal_suffix_variants() -> Iterable[_Variant]:
-    """Build numeric-literal-suffix variants for all languages with
-    multiple options.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.numeric_literal_suffix
-        non_defaults = [
-            fmt
-            for fmt in spec.numeric_literal_suffixes
-            if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_numeric_literal_suffix_{fmt.name.lower()}",
-                spec=lang_cls(
-                    numeric_literal_suffix=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_numeric_separator_variants() -> Iterable[_Variant]:
-    """Build numeric-separator variants for all languages with multiple
-    options.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.numeric_separator
-        non_defaults = [
-            fmt for fmt in spec.numeric_separators if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_numeric_separator_{fmt.name.lower()}",
-                spec=lang_cls(
-                    numeric_separator=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_float_format_variants() -> Iterable[_Variant]:
-    """Build float-format variants for all languages with multiple
-    formats.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.float_format
-        non_defaults = [
-            fmt for fmt in spec.float_formats if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_float_format_{fmt.name.lower()}",
-                spec=lang_cls(
-                    float_format=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_string_format_variants() -> Iterable[_Variant]:
-    """Build string-format variants for all languages with multiple
-    formats.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.string_format
-        non_defaults = [
-            fmt for fmt in spec.string_formats if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_string_format_{fmt.name.lower()}",
-                spec=lang_cls(
-                    string_format=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_bytes_format_variants() -> Iterable[_Variant]:
-    """Build bytes-format variants for all languages with multiple
-    formats.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.format_bytes
-        non_defaults = [
-            fmt for fmt in spec.bytes_formats if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_bytes_format_{fmt.name.lower()}",
-                spec=lang_cls(
-                    bytes_format=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_trailing_comma_variants() -> Iterable[_Variant]:
-    """Build trailing-comma variants for all languages with multiple
-    options.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.trailing_comma
-        non_defaults = [
-            fmt for fmt in spec.trailing_commas if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_trailing_comma_{fmt.name.lower()}",
-                spec=lang_cls(
-                    trailing_comma=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
-        )
-    return variants
-
-
-@beartype
-def _build_line_ending_variants() -> Iterable[_Variant]:
-    """Build line-ending variants for all languages with multiple
-    options.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_format = spec.line_ending
-        non_defaults = [
-            fmt for fmt in spec.line_endings if fmt is not default_format
-        ]
-        variants.extend(
-            _Variant(
-                name=f"{lang_name}_line_ending_{fmt.name.lower()}",
-                spec=lang_cls(
-                    line_ending=fmt,
-                ),
-                lang_cls=lang_cls,
-            )
-            for fmt in non_defaults
         )
     return variants
 
@@ -1051,7 +615,6 @@ def _build_constructor_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
-@beartype
 def _build_type_name_variants() -> Iterable[_Variant]:
     """Build type-name variants for languages that generate a named type.
 
@@ -1139,19 +702,123 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
 
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
+    nv = _build_non_default_variants
+    date = nv(
+        category="date",
+        get_default=lambda s: s.format_date,
+        get_formats=lambda s: s.date_formats,
+        make_spec=lambda cls, fmt: cls(date_format=fmt),
+    )
+    datetime_ = nv(
+        category="datetime",
+        get_default=lambda s: s.format_datetime,
+        get_formats=lambda s: s.datetime_formats,
+        make_spec=lambda cls, fmt: cls(datetime_format=fmt),
+    )
+    sequence = nv(
+        category="sequence",
+        get_default=lambda s: s.sequence_format,
+        get_formats=lambda s: s.sequence_formats,
+        make_spec=lambda cls, fmt: cls(sequence_format=fmt),
+    )
+    set_ = nv(
+        category="set",
+        get_default=lambda s: s.set_format,
+        get_formats=lambda s: s.set_formats,
+        make_spec=lambda cls, fmt: cls(set_format=fmt),
+    )
+    comment = nv(
+        category="comment",
+        get_default=lambda s: s.comment_format,
+        get_formats=lambda s: s.comment_formats,
+        make_spec=lambda cls, fmt: cls(comment_format=fmt),
+    )
+    type_hints = nv(
+        category="type_hints",
+        get_default=lambda s: s.variable_type_hints,
+        get_formats=lambda s: s.variable_type_hints_formats,
+        make_spec=lambda cls, fmt: cls(variable_type_hints=fmt),
+    )
+    declaration_style = nv(
+        category="declaration_style",
+        get_default=lambda s: s.declaration_style,
+        get_formats=lambda s: s.declaration_styles,
+        make_spec=lambda cls, fmt: cls(declaration_style=fmt),
+    )
+    dict_format = nv(
+        category="dict_format",
+        get_default=lambda s: s.dict_format,
+        get_formats=lambda s: s.dict_formats,
+        make_spec=lambda cls, fmt: cls(dict_format=fmt),
+    )
+    dict_entry_style = nv(
+        category="dict_entry_style",
+        get_default=lambda s: s.dict_entry_style,
+        get_formats=lambda s: s.dict_entry_styles,
+        make_spec=lambda cls, fmt: cls(dict_entry_style=fmt),
+    )
+    integer_format = nv(
+        category="integer_format",
+        get_default=lambda s: s.integer_format,
+        get_formats=lambda s: s.integer_formats,
+        make_spec=lambda cls, fmt: cls(integer_format=fmt),
+    )
+    numeric_literal_suffix = nv(
+        category="numeric_literal_suffix",
+        get_default=lambda s: s.numeric_literal_suffix,
+        get_formats=lambda s: s.numeric_literal_suffixes,
+        make_spec=lambda cls, fmt: cls(numeric_literal_suffix=fmt),
+    )
+    numeric_separator = nv(
+        category="numeric_separator",
+        get_default=lambda s: s.numeric_separator,
+        get_formats=lambda s: s.numeric_separators,
+        make_spec=lambda cls, fmt: cls(numeric_separator=fmt),
+    )
+    float_format = nv(
+        category="float_format",
+        get_default=lambda s: s.float_format,
+        get_formats=lambda s: s.float_formats,
+        make_spec=lambda cls, fmt: cls(float_format=fmt),
+    )
+    string_format = nv(
+        category="string_format",
+        get_default=lambda s: s.string_format,
+        get_formats=lambda s: s.string_formats,
+        make_spec=lambda cls, fmt: cls(string_format=fmt),
+    )
+    bytes_format = nv(
+        category="bytes_format",
+        get_default=lambda s: s.format_bytes,
+        get_formats=lambda s: s.bytes_formats,
+        make_spec=lambda cls, fmt: cls(bytes_format=fmt),
+    )
+    trailing_comma = nv(
+        category="trailing_comma",
+        get_default=lambda s: s.trailing_comma,
+        get_formats=lambda s: s.trailing_commas,
+        make_spec=lambda cls, fmt: cls(trailing_comma=fmt),
+    )
+    line_ending = nv(
+        category="line_ending",
+        get_default=lambda s: s.line_ending,
+        get_formats=lambda s: s.line_endings,
+        make_spec=lambda cls, fmt: cls(line_ending=fmt),
+    )
+
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
-        (_build_date_variants(), "scalar_date", ""),
-        (_build_date_variants(), "date_list", ""),
-        (_build_date_variants(), "date_set", ""),
-        (_build_datetime_variants(), "scalar_datetime", ""),
-        (_build_datetime_variants(), "scalar_datetime_naive", "_naive"),
-        (_build_datetime_variants(), "scalar_datetime_non_utc", "_non_utc"),
-        (_build_sequence_variants(), "simple_sequence", ""),
-        (_build_sequence_variants(), "pair_sequence", "_pair"),
-        (_build_sequence_variants(), "triple_sequence", "_triple"),
-        (_build_sequence_varname_variants(), "simple_sequence", "_varname"),
-        (_build_set_variants(), "set", ""),
+        (date, "scalar_date", ""),
+        (date, "date_list", ""),
+        (date, "date_set", ""),
+        (datetime_, "scalar_datetime", ""),
+        (datetime_, "scalar_datetime_naive", "_naive"),
+        (datetime_, "scalar_datetime_non_utc", "_non_utc"),
+        (sequence, "simple_sequence", ""),
+        (sequence, "pair_sequence", "_pair"),
+        (sequence, "triple_sequence", "_triple"),
+        (sequence, "simple_sequence", "_varname"),
+        (set_, "set", ""),
         (_build_default_set_element_type_variants(), "empty_set", ""),
         (_build_default_set_element_type_variants(), "set", ""),
         (
@@ -1180,48 +847,48 @@ def _build_variant_cases() -> list[_VariantCase]:
             "ordered_map",
             "",
         ),
-        (_build_comment_variants(), "comments", ""),
-        (_build_type_hint_variants(), "type_hints", ""),
-        (_build_type_hint_variants(), "scalar_date", ""),
-        (_build_type_hint_variants(), "scalar_datetime", ""),
-        (_build_type_hint_variants(), "binary", ""),
-        (_build_type_hint_variants(), "mixed_type_dicts_in_sequence", ""),
-        (_build_type_hint_variants(), "empty_dicts_in_sequence", ""),
-        (_build_declaration_style_variants(), "simple_sequence", ""),
-        (_build_declaration_style_variants(), "simple_dict", ""),
-        (_build_declaration_style_variants(), "empty_list", ""),
-        (_build_dict_format_variants(), "simple_dict", ""),
-        (_build_dict_format_variants(), "dict_with_list_value", "_list_val"),
-        (_build_dict_entry_style_variants(), "simple_dict", ""),
+        (comment, "comments", ""),
+        (type_hints, "type_hints", ""),
+        (type_hints, "scalar_date", ""),
+        (type_hints, "scalar_datetime", ""),
+        (type_hints, "binary", ""),
+        (type_hints, "mixed_type_dicts_in_sequence", ""),
+        (type_hints, "empty_dicts_in_sequence", ""),
+        (declaration_style, "simple_sequence", ""),
+        (declaration_style, "simple_dict", ""),
+        (declaration_style, "empty_list", ""),
+        (dict_format, "simple_dict", ""),
+        (dict_format, "dict_with_list_value", "_list_val"),
+        (dict_entry_style, "simple_dict", ""),
         (
-            _build_dict_entry_style_variants(),
+            dict_entry_style,
             "dict_with_list_value",
             "_list_val",
         ),
-        (_build_sequence_variants(), "float_list", "_float"),
-        (_build_float_format_variants(), "float_list", ""),
-        (_build_float_format_variants(), "float_scientific_notation", "_s"),
-        (_build_float_format_variants(), "float_special_values", "_v"),
-        (_build_float_format_variants(), "nested_float_list", "_n"),
-        (_build_integer_format_variants(), "int_list", ""),
-        (_build_integer_format_variants(), "int_list_large", "_large"),
-        (_build_integer_format_variants(), "int_list_with_zero", "_zero"),
-        (_build_numeric_literal_suffix_variants(), "int_list", ""),
-        (_build_numeric_literal_suffix_variants(), "int_list_large", "_large"),
+        (sequence, "float_list", "_float"),
+        (float_format, "float_list", ""),
+        (float_format, "float_scientific_notation", "_s"),
+        (float_format, "float_special_values", "_v"),
+        (float_format, "nested_float_list", "_n"),
+        (integer_format, "int_list", ""),
+        (integer_format, "int_list_large", "_large"),
+        (integer_format, "int_list_with_zero", "_zero"),
+        (numeric_literal_suffix, "int_list", ""),
+        (numeric_literal_suffix, "int_list_large", "_large"),
         (
-            _build_numeric_literal_suffix_variants(),
+            numeric_literal_suffix,
             "int_list_with_zero",
             "_zero",
         ),
-        (_build_numeric_separator_variants(), "int_list", ""),
-        (_build_numeric_separator_variants(), "int_list_large", "_large"),
-        (_build_numeric_separator_variants(), "int_list_with_zero", "_zero"),
-        (_build_string_format_variants(), "string_list", ""),
-        (_build_string_format_variants(), "string_with_backslash", ""),
-        (_build_bytes_format_variants(), "binary", ""),
-        (_build_trailing_comma_variants(), "simple_sequence", ""),
-        (_build_line_ending_variants(), "simple_sequence", ""),
-        (_build_line_ending_variants(), "simple_dict", "_dict"),
+        (numeric_separator, "int_list", ""),
+        (numeric_separator, "int_list_large", "_large"),
+        (numeric_separator, "int_list_with_zero", "_zero"),
+        (string_format, "string_list", ""),
+        (string_format, "string_with_backslash", ""),
+        (bytes_format, "binary", ""),
+        (trailing_comma, "simple_sequence", ""),
+        (line_ending, "simple_sequence", ""),
+        (line_ending, "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
         (_build_type_name_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "simple_dict", ""),
