@@ -389,7 +389,7 @@ class Ada(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style_config: CallStyleConfig = CallStyleConfig(
             kind=CallStyleKind.KEYWORD,
-            keyword_separator="=>",
+            keyword_separator=" => ",
         )
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
