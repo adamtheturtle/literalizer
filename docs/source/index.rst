@@ -67,6 +67,7 @@ Use cases
 
 * Generate test fixtures from JSON, JSON5, YAML, or TOML samples.
 * Convert API responses to language-native data structures for documentation.
+* Generate multi-language function call examples from data — see :doc:`function-call-use-case`.
 * Create type-safe literal data from JSON, JSON5, YAML, or TOML config files.
 
 CLI
