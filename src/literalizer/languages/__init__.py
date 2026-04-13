@@ -51,6 +51,7 @@ from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
 from .scheme import Scheme
+from .sml import Sml
 from .swift import Swift
 from .systemverilog import SystemVerilog
 from .tcl import Tcl
@@ -113,6 +114,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Rust,
         Scala,
         Scheme,
+        Sml,
         Swift,
         Tcl,
         Toml,
@@ -177,6 +179,7 @@ __all__ = [
     "Rust",
     "Scala",
     "Scheme",
+    "Sml",
     "Swift",
     "SystemVerilog",
     "Tcl",
