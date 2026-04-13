@@ -22,6 +22,7 @@ from literalizer.languages import (
     Go,
     JavaScript,
     Mojo,
+    Nix,
     Python,
     R,
 )
@@ -1114,6 +1115,30 @@ def test_dhall_control_char_key_error() -> None:
             source=yaml_string,
             input_format=InputFormat.YAML,
             language=Dhall(),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_name=None,
+            new_variable=True,
+            error_on_coercion=False,
+        )
+
+
+def test_nix_control_char_key_error() -> None:
+    """Nix rejects control characters in dict keys."""
+    yaml_string = '{"\\x01": "value"}\n'
+    expected_msg = re.escape(
+        pattern='Nix does not support the dict key "\x01". '
+        "Attribute names must be non-empty and must not contain "
+        "control characters."
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
             variable_name=None,

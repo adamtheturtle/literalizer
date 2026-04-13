@@ -35,6 +35,7 @@ from .lua import Lua
 from .matlab import Matlab
 from .mojo import Mojo
 from .nim import Nim
+from .nix import Nix
 from .norg import Norg
 from .objective_c import ObjectiveC
 from .ocaml import OCaml
@@ -99,6 +100,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Matlab,
         Mojo,
         Nim,
+        Nix,
         Norg,
         ObjectiveC,
         OCaml,
@@ -165,6 +167,7 @@ __all__ = [
     "Matlab",
     "Mojo",
     "Nim",
+    "Nix",
     "Norg",
     "OCaml",
     "ObjectiveC",

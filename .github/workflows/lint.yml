@@ -986,6 +986,24 @@ jobs:
             nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
 
+  lint-nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.nix
+      - name: Install Nix
+        if: steps.find-files.outputs.found == 'true'
+        uses: cachix/install-nix-action@v31
+      - name: Check Nix syntax
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-to-lint
+          > /dev/null
+
   lint-norg:
     runs-on: ubuntu-latest
     steps:
@@ -1390,6 +1408,7 @@ jobs:
       - lint-matlab
       - lint-mojo
       - lint-nim
+      - lint-nix
       - lint-norg
       - lint-purescript
       - lint-racket
