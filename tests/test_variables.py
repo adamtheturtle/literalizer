@@ -609,19 +609,19 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
 
 
 TS_ALWAYS = TypeScript(
-    variable_type_hints=TypeScript.VariableTypeHints.ALWAYS,
+    variable_type_hints=TypeScript.variable_type_hints_formats.ALWAYS,
 )
 JAVA_ALWAYS = Java(
-    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+    variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
 )
 SWIFT_ALWAYS = Swift(
-    variable_type_hints=Swift.VariableTypeHints.ALWAYS,
+    variable_type_hints=Swift.variable_type_hints_formats.ALWAYS,
 )
 KOTLIN_ALWAYS = Kotlin(
-    variable_type_hints=Kotlin.VariableTypeHints.ALWAYS,
+    variable_type_hints=Kotlin.variable_type_hints_formats.ALWAYS,
 )
 DART_ALWAYS = Dart(
-    variable_type_hints=Dart.VariableTypeHints.ALWAYS,
+    variable_type_hints=Dart.variable_type_hints_formats.ALWAYS,
 )
 
 
@@ -763,16 +763,16 @@ def test_always_type_hints_empty_set(
 
 
 TS_ALWAYS_TUPLE = TypeScript(
-    sequence_format=TypeScript.SequenceFormats.TUPLE,
-    variable_type_hints=TypeScript.VariableTypeHints.ALWAYS,
+    sequence_format=TypeScript.sequence_formats.TUPLE,
+    variable_type_hints=TypeScript.variable_type_hints_formats.ALWAYS,
 )
 SWIFT_ALWAYS_TUPLE = Swift(
-    sequence_format=Swift.SequenceFormats.TUPLE,
-    variable_type_hints=Swift.VariableTypeHints.ALWAYS,
+    sequence_format=Swift.sequence_formats.TUPLE,
+    variable_type_hints=Swift.variable_type_hints_formats.ALWAYS,
 )
 DART_ALWAYS_TUPLE = Dart(
-    sequence_format=Dart.SequenceFormats.TUPLE,
-    variable_type_hints=Dart.VariableTypeHints.ALWAYS,
+    sequence_format=Dart.sequence_formats.TUPLE,
+    variable_type_hints=Dart.variable_type_hints_formats.ALWAYS,
 )
 
 
@@ -829,29 +829,29 @@ def test_always_type_hints_empty_tuple(
 
 
 JAVA_ALWAYS_LIST = Java(
-    sequence_format=Java.SequenceFormats.LIST,
-    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+    sequence_format=Java.sequence_formats.LIST,
+    variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
 )
 JAVA_ALWAYS_ISO = Java(
-    date_format=Java.DateFormats.ISO,
-    datetime_format=Java.DatetimeFormats.ISO,
-    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+    date_format=Java.date_formats.ISO,
+    datetime_format=Java.datetime_formats.ISO,
+    variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
 )
 JAVA_ALWAYS_ZONED = Java(
-    datetime_format=Java.DatetimeFormats.ZONED,
-    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+    datetime_format=Java.datetime_formats.ZONED,
+    variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
 )
 JAVA_ALWAYS_HASH_MAP = Java(
-    dict_format=Java.DictFormats.HASH_MAP,
-    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+    dict_format=Java.dict_formats.HASH_MAP,
+    variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
 )
 JAVA_ALWAYS_TREE_SET = Java(
-    set_format=Java.SetFormats.TREE_SET,
-    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+    set_format=Java.set_formats.TREE_SET,
+    variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
 )
 KOTLIN_ALWAYS_ARRAY = Kotlin(
-    sequence_format=Kotlin.SequenceFormats.ARRAY,
-    variable_type_hints=Kotlin.VariableTypeHints.ALWAYS,
+    sequence_format=Kotlin.sequence_formats.ARRAY,
+    variable_type_hints=Kotlin.variable_type_hints_formats.ALWAYS,
 )
 
 
@@ -946,8 +946,8 @@ def test_always_type_hints_java_int_double_widening() -> None:
 
 
 KOTLIN_ALWAYS_TUPLE = Kotlin(
-    sequence_format=Kotlin.SequenceFormats.TUPLE,
-    variable_type_hints=Kotlin.VariableTypeHints.ALWAYS,
+    sequence_format=Kotlin.sequence_formats.TUPLE,
+    variable_type_hints=Kotlin.variable_type_hints_formats.ALWAYS,
 )
 
 
