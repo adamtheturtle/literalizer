@@ -1,5 +1,6 @@
 """OCaml language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable
@@ -56,6 +57,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     no_call_stub,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -63,28 +65,46 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-@beartype
-def _format_ocaml_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate OCaml ``val_t``
-    constructor.
+def _build_ocaml_entry_formatter(
+    prefix: str,
+) -> Callable[[Value, str], str]:
+    """Build an entry formatter that wraps values in OCaml ``val_t``
+    constructors using the given *prefix*.
     """
-    match original:
-        case bool():
-            return formatted
-        case int():
-            negative = formatted.startswith("-")
-            return f"OInt ({formatted})" if negative else f"OInt {formatted}"
-        case float():
-            negative = formatted.startswith("-")
-            return (
-                f"OFloat ({formatted})" if negative else f"OFloat {formatted}"
-            )
-        case str() | bytes():
-            return f"OStr {formatted}"
-        case datetime.date() if formatted.startswith('"'):
-            return f"OStr {formatted}"
-        case _:
-            return formatted
+
+    @beartype
+    def _format(original: Value, formatted: str) -> str:
+        """Wrap a formatted entry in the appropriate OCaml ``val_t``
+        constructor.
+        """
+        match original:
+            case bool():
+                return formatted
+            case int():
+                negative = formatted.startswith("-")
+                return (
+                    f"{prefix}Int ({formatted})"
+                    if negative
+                    else f"{prefix}Int {formatted}"
+                )
+            case float():
+                negative = formatted.startswith("-")
+                return (
+                    f"{prefix}Float ({formatted})"
+                    if negative
+                    else f"{prefix}Float {formatted}"
+                )
+            case str() | bytes():
+                return f"{prefix}Str {formatted}"
+            case datetime.date() if formatted.startswith('"'):
+                return f"{prefix}Str {formatted}"
+            case _:
+                return formatted
+
+    return _format
+
+
+_format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
 
 
 @beartype
@@ -92,6 +112,7 @@ def _build_ocaml_declaration(
     *,
     sequence_declared_type: str,
     scalar_declared_type: str,
+    entry_formatter: Callable[[Value, str], str],
 ) -> Callable[[str, str, Value], str]:
     """Build an OCaml variable declaration formatter."""
 
@@ -103,7 +124,7 @@ def _build_ocaml_declaration(
             if isinstance(data, list)
             else scalar_declared_type
         )
-        wrapped = _format_ocaml_entry(original=data, formatted=value)
+        wrapped = entry_formatter(data, value)
         return f"let {name} : {decl_type} = {wrapped}"
 
     return _format
@@ -130,6 +151,10 @@ class OCaml(metaclass=LanguageCls):
 
         type_name: Name of the generated custom type.  Defaults to
             ``"val_t"``.
+
+        constructor_prefix: Prefix for generated constructor names.
+            Defaults to ``"O"``, producing constructors like ``ONull``,
+            ``OBool``, ``OInt``, etc.
     """
 
     extension = ".ml"
@@ -140,6 +165,7 @@ class OCaml(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     class DateFormats(enum.Enum):
         """Date format options for OCaml."""
@@ -370,6 +396,34 @@ class OCaml(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap an OCaml let declaration in a module."""
+        del variable_name
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return "module Check = struct\n\n" + content + "\n\nend"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap OCaml declaration + assignment in a module."""
+        return OCaml.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
+
     def __init__(  # noqa: PLR0915
         self,
         *,
@@ -394,23 +448,44 @@ class OCaml(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",
         type_name: str = "val_t",
+        constructor_prefix: str = "O",
     ) -> None:
         """Initialize OCaml language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "ONull"
-        self.true_literal = "OBool true"
-        self.false_literal = "OBool false"
+        self.null_literal: str = f"{constructor_prefix}Null"
+        self.true_literal: str = f"{constructor_prefix}Bool true"
+        self.false_literal: str = f"{constructor_prefix}Bool false"
+        _entry_formatter = _build_ocaml_entry_formatter(
+            prefix=constructor_prefix,
+        )
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        if sequence_format.name == "LIST":
+            _seq_open = fixed_sequence_open(
+                open_str=f"{constructor_prefix}List [",
+            )
+            self.sequence_format_config: SequenceFormatConfig = (
+                dataclasses.replace(fmt, sequence_open=_seq_open)
+            )
+            self.sequence_open: Callable[[list[Value]], str] = _seq_open
+        else:
+            self.sequence_format_config = fmt
+            self.sequence_open = fmt.sequence_open
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=fixed_set_open(
+                open_str=f"{constructor_prefix}Set [",
+            ),
+        )
+
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="OMap ["),
+            dict_open=fixed_dict_open(
+                open_str=f"{constructor_prefix}Map [",
+            ),
             close="]",
             format_entry=tuple_dict_entry(
-                format_value=_format_ocaml_entry,
+                format_value=_entry_formatter,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -422,6 +497,20 @@ class OCaml(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        if date_format.name == "OCAML":
+            self.format_date = date_ymd_formatter(
+                template=(
+                    f"{constructor_prefix}Date ({{year}}, {{month}}, {{day}})"
+                ),
+            )
+        if datetime_format.name == "OCAML":
+            self.format_datetime = datetime_ymdhms_formatter(
+                template=(
+                    f"{constructor_prefix}Datetime "
+                    f"(({{year}}, {{month}}, {{day}}), "
+                    f"({{hour}}, {{minute}}, {{second}}))"
+                ),
+            )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
@@ -429,9 +518,7 @@ class OCaml(metaclass=LanguageCls):
                 numeric_separator=numeric_separator,
             )
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            _format_ocaml_entry
-        )
+        self.format_set_entry: Callable[[Value, str], str] = _entry_formatter
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
@@ -446,13 +533,13 @@ class OCaml(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="OMap [",
+                open_str=f"{constructor_prefix}Map [",
                 close="]",
                 preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            tuple_dict_entry(format_value=_format_ocaml_entry)
+            tuple_dict_entry(format_value=_entry_formatter)
         )
         self.indent = indent
         self.indent_closing_delimiter = False
@@ -469,6 +556,7 @@ class OCaml(metaclass=LanguageCls):
         _ocaml_decl = _build_ocaml_declaration(
             sequence_declared_type=_sequence_declared_type,
             scalar_declared_type=type_name,
+            entry_formatter=_entry_formatter,
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             _ocaml_decl
@@ -478,38 +566,39 @@ class OCaml(metaclass=LanguageCls):
         )
         self.element_separator = "; "
         self.format_sequence_entry: Callable[[Value, str], str] = (
-            _format_ocaml_entry
+            _entry_formatter
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        p = constructor_prefix
         _h = f"type {type_name} ="
         _date_constructor = (
-            "  | OStr of string"
+            f"  | {p}Str of string"
             if date_format.value.type_produced is str
-            else "  | ODate of (int * int * int)"
+            else f"  | {p}Date of (int * int * int)"
         )
         _datetime_constructor = (
-            "  | OStr of string"
+            f"  | {p}Str of string"
             if datetime_format.value.type_produced is str
-            else "  | ODatetime of ((int * int * int) * (int * int * int))"
+            else f"  | {p}Datetime of ((int * int * int) * (int * int * int))"
         )
         self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
         ] = {
-            type(None): (_h, "  | ONull"),
-            bool: (_h, "  | OBool of bool"),
-            int: (_h, "  | OInt of int"),
-            float: (_h, "  | OFloat of float"),
-            str: (_h, "  | OStr of string"),
-            bytes: (_h, "  | OStr of string"),
+            type(None): (_h, f"  | {p}Null"),
+            bool: (_h, f"  | {p}Bool of bool"),
+            int: (_h, f"  | {p}Int of int"),
+            float: (_h, f"  | {p}Float of float"),
+            str: (_h, f"  | {p}Str of string"),
+            bytes: (_h, f"  | {p}Str of string"),
             datetime.date: (_h, _date_constructor),
             datetime.datetime: (_h, _datetime_constructor),
-            list: (_h, f"  | OList of {type_name} list"),
-            dict: (_h, f"  | OMap of (string * {type_name}) list"),
-            ordereddict: (_h, f"  | OMap of (string * {type_name}) list"),
-            set: (_h, f"  | OSet of {type_name} list"),
+            list: (_h, f"  | {p}List of {type_name} list"),
+            dict: (_h, f"  | {p}Map of (string * {type_name}) list"),
+            ordereddict: (_h, f"  | {p}Map of (string * {type_name}) list"),
+            set: (_h, f"  | {p}Set of {type_name} list"),
         }
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]

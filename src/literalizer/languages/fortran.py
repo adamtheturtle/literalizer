@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import textwrap
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -45,6 +46,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     no_call_stub,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -182,6 +184,7 @@ class Fortran(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     class DateFormats(enum.Enum):
         """Date format options for Fortran."""
@@ -356,6 +359,63 @@ class Fortran(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a Fortran variable declaration in a program."""
+        del variable_name
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        indented = textwrap.indent(text=content, prefix="  ")
+        return (
+            "program check\n"
+            "  use fval_m\n"
+            "  implicit none\n"
+            f"{indented}\n"
+            "end program check"
+        )
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Fortran declaration + assignment in separate
+        subroutines.
+        """
+        declaration = prepend_body_preamble(
+            content=declaration,
+            body_preamble=body_preamble,
+        )
+        decl_indented = textwrap.indent(text=declaration, prefix="  ")
+        assign_indented = textwrap.indent(text=assignment, prefix="  ")
+        return (
+            "subroutine check_declaration()\n"
+            "  use fval_m\n"
+            "  implicit none\n"
+            f"{decl_indented}\n"
+            "end subroutine check_declaration\n"
+            "\n"
+            "subroutine check_assignment()\n"
+            "  use fval_m\n"
+            "  implicit none\n"
+            f"  type(fval_t) :: {variable_name}\n"
+            f"{assign_indented}\n"
+            "end subroutine check_assignment\n"
+            "\n"
+            "program main\n"
+            "  call check_declaration()\n"
+            "  call check_assignment()\n"
+            "end program main"
+        )
 
     def __init__(  # noqa: PLR0915
         self,
