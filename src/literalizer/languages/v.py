@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import textwrap
 from collections.abc import Callable
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -52,6 +53,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 
 if TYPE_CHECKING:
@@ -81,6 +83,7 @@ class V(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     class DateFormats(enum.Enum):
         """Date format options for V."""
@@ -292,6 +295,34 @@ class V(metaclass=LanguageCls):
         NEWLINE = "newline"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a V declaration in ``fn main()``."""
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        indented = textwrap.indent(text=content, prefix="\t")
+        return f"\nfn main() {{\n{indented}\n\t_ = {variable_name}\n}}"
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap V declaration + assignment in ``fn main()``."""
+        return V.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,

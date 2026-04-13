@@ -249,6 +249,26 @@ class LanguageCls(type):
     supports_default_dict_key_type: bool
     supports_default_ordered_map_value_type: bool
     supports_non_printable_ascii_dict_keys: bool
+    supports_variable_names: bool
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a code snippet in a complete, valid file."""
+        raise NotImplementedError  # pragma: no cover
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a declaration and assignment in a complete, valid file."""
+        raise NotImplementedError  # pragma: no cover
 
 
 @runtime_checkable
@@ -705,6 +725,45 @@ no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
     _no_type_hint_preamble
 )
 """Shared callable for languages that need no type-hint preamble."""
+
+
+@beartype
+def prepend_body_preamble(
+    content: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Prepend *body_preamble* lines to *content*."""
+    if not body_preamble:
+        return content
+    return "\n".join(body_preamble) + "\n" + content
+
+
+@beartype
+def wrap_in_file_noop(
+    content: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Default ``wrap_in_file`` that only adds body preamble."""
+    del variable_name  # unused
+    return prepend_body_preamble(content=content, body_preamble=body_preamble)
+
+
+@beartype
+def wrap_combined_in_file_noop(
+    declaration: str,
+    assignment: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Default ``wrap_combined_in_file``: join with newline, prepend
+    preamble.
+    """
+    return wrap_in_file_noop(
+        content=declaration + "\n" + assignment,
+        variable_name=variable_name,
+        body_preamble=body_preamble,
+    )
 
 
 def body_preamble_from_scalars(

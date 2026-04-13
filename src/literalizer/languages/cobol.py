@@ -41,6 +41,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -238,6 +239,7 @@ class Cobol(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     class DateFormats(enum.Enum):
         """Date format options for Cobol."""
@@ -406,6 +408,49 @@ class Cobol(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    _PROGRAM_PREFIX: str = (
+        "IDENTIFICATION DIVISION.\n"
+        "PROGRAM-ID. CHECK.\n"
+        "DATA DIVISION.\n"
+        "WORKING-STORAGE SECTION.\n"
+    )
+    _PROGRAM_SUFFIX: str = "PROCEDURE DIVISION.\n    STOP RUN."
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a COBOL variable declaration in a complete program."""
+        del variable_name
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        return Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap COBOL declaration and assignment in a complete program."""
+        del variable_name
+        declaration = prepend_body_preamble(
+            content=declaration,
+            body_preamble=body_preamble,
+        )
+        return (
+            Cobol._PROGRAM_PREFIX
+            + f"{declaration}\n"
+            + "PROCEDURE DIVISION.\n"
+            + f"    {assignment}\n"
+            + "    STOP RUN."
+        )
 
     def __init__(  # noqa: PLR0915
         self,

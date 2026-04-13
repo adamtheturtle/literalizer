@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import textwrap
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -46,6 +47,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_type_hint_preamble,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -119,6 +121,7 @@ class Erlang(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
+    supports_variable_names = True
 
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
@@ -310,6 +313,41 @@ class Erlang(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
 
     line_endings = LineEndings
+
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap an Erlang variable binding in a module function."""
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        erlang_varname = variable_name[0].upper() + variable_name[1:]
+        indented = textwrap.indent(text=content, prefix="    ")
+        return (
+            f"-module(check).\n"
+            f"-export([x/0]).\n"
+            f"x() ->\n"
+            f"{indented},\n"
+            f"    {erlang_varname}."
+        )
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Erlang declaration + assignment in a module function."""
+        return Erlang.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            variable_name=variable_name,
+            body_preamble=body_preamble,
+        )
 
     def __init__(  # noqa: PLR0915
         self,
