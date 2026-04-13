@@ -289,9 +289,20 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
           extra_config_patterns: .clang-tidy
+      - name: Create precompiled header
+        if: steps.find-files.outputs.found == 'true'
+        run: |
+          clang++ -std=c++20 -x c++-header \
+            tests/integration/cases/cpp_pch.h \
+            -o /tmp/cpp_pch.h.pch
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
+        run: |
+          xargs -0 -P "$(nproc)" -n1 \
+            clang-tidy \
+            --extra-arg=-std=c++20 \
+            --extra-arg=-include-pch=/tmp/cpp_pch.h.pch \
+            < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
