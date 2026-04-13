@@ -188,11 +188,11 @@ def _build_sml_body_preamble(
                     if line not in seen:
                         seen.add(line)
                         result.append(line)
-        # SML: first variant after 'datatype' line must not have '|'
-        for i in range(1, len(result)):
-            if result[i].startswith("  | "):
-                result[i] = "    " + result[i][4:]
-                break
+        # SML: first variant after 'datatype' line must not have '|'.
+        # All constructor lines start with '  | ' by construction, so
+        # index 1 is always the first constructor.
+        if len(result) > 1:
+            result[1] = "    " + result[1][4:]
         return tuple(result)
 
     return _compute
