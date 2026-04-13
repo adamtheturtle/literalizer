@@ -702,8 +702,8 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_type_hints_cross_variants() -> list[_Variant]:
-    """Build cross-product variants: ALWAYS type hints combined with a
-    second non-default format option.
+    """Build cross-product variants: each non-default type-hint format
+    combined with each non-default value of another format axis.
 
     These cover code paths where the type annotation depends on the
     chosen sequence / date / datetime / dict / set format.
@@ -750,33 +750,32 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
         spec = lang_cls()
-        always_members = [
-            fmt
-            for fmt in spec.variable_type_hints_formats
-            if fmt.name == "ALWAYS"
-        ]
-        if not always_members:
-            continue
-        always = always_members[0]
+        default_th = spec.variable_type_hints
         lang_name = lang_cls.__name__
-        for axis_name, get_default, get_formats, kwarg in axes:
-            default = get_default(spec)
-            for fmt in get_formats(spec):
-                if fmt is default:
-                    continue
-                variants.append(
-                    _Variant(
-                        name=(
-                            f"{lang_name}_type_hints_always"
-                            f"_{axis_name}_{fmt.name.lower()}"
+        for th_fmt in spec.variable_type_hints_formats:
+            if th_fmt is default_th:
+                continue
+            th_tag = th_fmt.name.lower()
+            for axis_name, get_default, get_formats, kwarg in axes:
+                default = get_default(spec)
+                for fmt in get_formats(spec):
+                    if fmt is default:
+                        continue
+                    variants.append(
+                        _Variant(
+                            name=(
+                                f"{lang_name}"
+                                f"_type_hints_{th_tag}"
+                                f"_{axis_name}"
+                                f"_{fmt.name.lower()}"
+                            ),
+                            spec=lang_cls(
+                                variable_type_hints=th_fmt,
+                                **{kwarg: fmt},
+                            ),
+                            lang_cls=lang_cls,
                         ),
-                        spec=lang_cls(
-                            variable_type_hints=always,
-                            **{kwarg: fmt},
-                        ),
-                        lang_cls=lang_cls,
-                    ),
-                )
+                    )
     return variants
 
 
