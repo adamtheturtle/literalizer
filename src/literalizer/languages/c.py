@@ -293,9 +293,8 @@ class C(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return (
-            f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
-        )
+        use_line = f"\n    (void){variable_name};" if variable_name else ""
+        return f"void check_(void) {{\n{content}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -489,6 +488,7 @@ class C(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble

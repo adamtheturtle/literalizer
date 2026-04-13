@@ -407,8 +407,8 @@ class _CallCaseConfig:
     case_dir_name: str
     call_function: str
     call_params: list[str]
-    call_wrapper: Callable[[str], str] | None
-    wrapper_stub_names: list[str]
+    call_transform: Callable[[str], str] | None
+    transform_stub_names: list[str]
     per_element: bool
 
 
@@ -417,16 +417,16 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         case_dir_name="call_keyword_args",
         call_function="throttler.check",
         call_params=["user_id", "ts"],
-        call_wrapper=lambda c: f"emit({c})",
-        wrapper_stub_names=["emit"],
+        call_transform=lambda c: f"emit({c})",
+        transform_stub_names=["emit"],
         per_element=True,
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
         call_function="process",
         call_params=["value"],
-        call_wrapper=None,
-        wrapper_stub_names=[],
+        call_transform=None,
+        transform_stub_names=[],
         per_element=True,
     ),
 ]
@@ -1319,11 +1319,21 @@ class _CallCase:
 _CALL_LANGUAGES: frozenset[str] = frozenset(
     {
         "Cpp",
+        "Crystal",
         "CSharp",
+        "D",
         "FSharp",
+        "Go",
+        "Groovy",
+        "Java",
         "JavaScript",
+        "Julia",
         "Kotlin",
+        "Lua",
+        "Perl",
+        "Php",
         "Python",
+        "R",
         "Ruby",
         "Rust",
         "Scala",
@@ -1373,7 +1383,7 @@ def test_call_golden_file(
         language=spec,
         call_function=config.call_function,
         call_params=config.call_params,
-        call_wrapper=config.call_wrapper,
+        call_transform=config.call_transform,
         per_element=config.per_element,
     )
     # Build stub declarations for undefined names.
@@ -1388,8 +1398,8 @@ def test_call_golden_file(
             config.call_function, config.call_params
         ),
     )
-    # Stubs for wrapper function names (single argument).
-    for wrapper_name in config.wrapper_stub_names:
+    # Stubs for transform function names (single argument).
+    for wrapper_name in config.transform_stub_names:
         body_stubs.extend(
             spec.format_call_stub(wrapper_name, ["_arg"]),
         )

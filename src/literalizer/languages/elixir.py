@@ -356,13 +356,9 @@ class Elixir(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="    ")
+        use_line = f"\n    _ = {variable_name}" if variable_name else ""
         return (
-            f"defmodule Check do\n"
-            f"  def x do\n"
-            f"{indented}\n"
-            f"    _ = {variable_name}\n"
-            f"  end\n"
-            f"end"
+            f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
 
     @staticmethod
@@ -487,6 +483,7 @@ class Elixir(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
