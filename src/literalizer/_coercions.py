@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Protocol
 
 from beartype import beartype
@@ -89,6 +89,22 @@ def all_scalars_heterogeneous(
 
 
 @beartype
+def _map_mapping_values(
+    data: ordereddict | dict[str, Value],
+    fn: Callable[[Value], Value],
+) -> ordereddict | dict[str, Value]:
+    """Apply *fn* to every value of a dict or ordereddict,
+    preserving the container type.
+    """
+    if isinstance(data, ordereddict):
+        result: ordereddict = ordereddict()
+        for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            result[k] = fn(v)  # pyright: ignore[reportUnknownArgumentType]
+        return result
+    return {k: fn(v) for k, v in data.items()}
+
+
+@beartype
 def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
     """Recursively coerce sibling lists with heterogeneous scalar
     element types so that every inner element becomes a string.
@@ -98,11 +114,9 @@ def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
     """
     match data:
         case dict() | ordereddict():
-            return type(data)(
-                {
-                    k: _coerce_heterogeneous_sibling_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                    for k, v in data.items()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                }
+            return _map_mapping_values(
+                data,
+                lambda v: _coerce_heterogeneous_sibling_lists(data=v),
             )
         case list():
             new_list = [
@@ -328,39 +342,22 @@ def _check_mixed_list_values(*, data: Value) -> None:
 
 
 @beartype
-def _coerce_heterogeneous_ordereddict(
+def _coerce_heterogeneous_mapping(
     *,
-    data: ordereddict,
-) -> ordereddict:
-    """Coerce an ordered dict with heterogeneous scalar values."""
-    new_ordered_map: ordereddict = ordereddict()
-    for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-        new_ordered_map[k] = _coerce_heterogeneous_scalars(data=v)  # pyright: ignore[reportUnknownArgumentType]
-    ordered_map_vals: list[Value] = list(new_ordered_map.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-    if all_scalars_heterogeneous(values=ordered_map_vals):
-        for k in new_ordered_map:  # pyright: ignore[reportUnknownVariableType]
-            new_ordered_map[k] = coerce_scalar_to_str(
-                value=new_ordered_map[k],  # pyright: ignore[reportUnknownArgumentType]
-            )
-    return new_ordered_map
-
-
-@beartype
-def _coerce_heterogeneous_dict(
-    *,
-    data: dict[str, Value],
-) -> dict[str, Value]:
-    """Coerce a dict with heterogeneous scalar values."""
-    new_dict: dict[str, Value] = {
-        k: _coerce_heterogeneous_scalars(data=v) for k, v in data.items()
-    }
-    if all_scalars_heterogeneous(
-        values=list(new_dict.values()),
-    ):
-        new_dict = {
-            k: coerce_scalar_to_str(value=v) for k, v in new_dict.items()
-        }
-    return new_dict
+    data: ordereddict | dict[str, Value],
+) -> ordereddict | dict[str, Value]:
+    """Coerce a dict or ordereddict with heterogeneous scalar values."""
+    new_mapping = _map_mapping_values(
+        data,
+        lambda v: _coerce_heterogeneous_scalars(data=v),
+    )
+    values: list[Value] = list(new_mapping.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+    if all_scalars_heterogeneous(values=values):
+        new_mapping = _map_mapping_values(
+            new_mapping,
+            lambda v: coerce_scalar_to_str(value=v),
+        )
+    return new_mapping
 
 
 @beartype
@@ -396,10 +393,8 @@ def _coerce_heterogeneous_scalars(
     strings.
     """
     match data:
-        case ordereddict():
-            return _coerce_heterogeneous_ordereddict(data=data)
-        case dict():
-            return _coerce_heterogeneous_dict(data=data)
+        case ordereddict() | dict():
+            return _coerce_heterogeneous_mapping(data=data)
         case set():
             return _coerce_heterogeneous_set(data=data)
         case list():
@@ -469,25 +464,17 @@ def _coerce_mixed_dict_values(*, data: Value) -> Value:
     all values are converted to strings so the dict becomes homogeneous.
     """
     match data:
-        case ordereddict():
-            ordered_map_vals: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            if _dict_values_mixed_types(values=ordered_map_vals):
-                new_ordered_map: ordereddict = ordereddict()
-                for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                    new_ordered_map[k] = _coerce_value_to_str(value=v)  # pyright: ignore[reportUnknownArgumentType]
-                return new_ordered_map
-            new_ordered_map_recursed: ordereddict = ordereddict()
-            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                new_ordered_map_recursed[k] = _coerce_mixed_dict_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            return new_ordered_map_recursed
-        case dict():
-            if _dict_values_mixed_types(values=list(data.values())):
-                return {
-                    k: _coerce_value_to_str(value=v) for k, v in data.items()
-                }
-            return {
-                k: _coerce_mixed_dict_values(data=v) for k, v in data.items()
-            }
+        case ordereddict() | dict():
+            values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            if _dict_values_mixed_types(values=values):
+                return _map_mapping_values(
+                    data,
+                    lambda v: _coerce_value_to_str(value=v),
+                )
+            return _map_mapping_values(
+                data,
+                lambda v: _coerce_mixed_dict_values(data=v),
+            )
         case list():
             return [_coerce_mixed_dict_values(data=v) for v in data]
         case _:
@@ -503,15 +490,11 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
     becomes homogeneous.
     """
     match data:
-        case ordereddict():
-            new_ordered_map: ordereddict = ordereddict()
-            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                new_ordered_map[k] = _coerce_mixed_list_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            return new_ordered_map
-        case dict():
-            return {
-                k: _coerce_mixed_list_values(data=v) for k, v in data.items()
-            }
+        case ordereddict() | dict():
+            return _map_mapping_values(
+                data,
+                lambda v: _coerce_mixed_list_values(data=v),
+            )
         case list():
             if _dict_values_mixed_types(values=data):
                 return [_coerce_value_to_str(value=v) for v in data]
@@ -529,15 +512,11 @@ def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
     structurally uniform.
     """
     match data:
-        case ordereddict():
-            new_ordered_map: ordereddict = ordereddict()
-            for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                new_ordered_map[k] = _coerce_mixed_dict_shapes(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            return new_ordered_map
-        case dict():
-            return {
-                k: _coerce_mixed_dict_shapes(data=v) for k, v in data.items()
-            }
+        case ordereddict() | dict():
+            return _map_mapping_values(
+                data,
+                lambda v: _coerce_mixed_dict_shapes(data=v),
+            )
         case list():
             new_list = [_coerce_mixed_dict_shapes(data=v) for v in data]
             dicts_in_list = [v for v in new_list if isinstance(v, dict)]
