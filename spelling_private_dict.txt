@@ -185,6 +185,7 @@ ruamel
 scala
 scalac
 sigil
+solc
 stdin
 str
 struct
