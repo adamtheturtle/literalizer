@@ -1,5 +1,5 @@
 import Foundation
-let my_data: [String: Any] = [
+let my_data: [String: Any?] = [
     "name": "Alice",
     "age": 30,
     "active": true,

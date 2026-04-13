@@ -135,13 +135,18 @@ def _swift_type_hint(  # noqa: C901, PLR0911, PLR0912
         case datetime.date():
             return date_hint
         case None:
-            return "Any"
+            return "Any?"
         case dict():
             if not data:
                 return f"[String: {default_dict_value_type}]"
             val_types = [recurse(data=v) for v in data.values()]
             unique = list(dict.fromkeys(val_types))
-            val_type = unique[0] if len(unique) == 1 else "Any"
+            has_nil = "Any?" in unique
+            val_type = (
+                unique[0]
+                if len(unique) == 1
+                else ("Any?" if has_nil else "Any")
+            )
             return f"[String: {val_type}]"
         case set():
             if not data:
@@ -159,7 +164,12 @@ def _swift_type_hint(  # noqa: C901, PLR0911, PLR0912
                 return f"({', '.join(elem_types)})"
             elem_types = [recurse(data=e) for e in data]
             unique = list(dict.fromkeys(elem_types))
-            elem_type = unique[0] if len(unique) == 1 else "Any"
+            has_nil = "Any?" in unique
+            elem_type = (
+                unique[0]
+                if len(unique) == 1
+                else ("Any?" if has_nil else "Any")
+            )
             return f"[{elem_type}]"
         case _ as unreachable:
             assert_never(unreachable)

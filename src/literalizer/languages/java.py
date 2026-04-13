@@ -222,6 +222,10 @@ def _java_type_hint(  # noqa: C901, PLR0911, PLR0912
                     dict_outer=dict_outer,
                     set_outer=set_outer,
                 )
+                # Java cannot create arrays of generic types, so fall
+                # back to Object[] when the element type is generic.
+                if "<" in elem_type:
+                    elem_type = "Object"
                 return f"{elem_type}[]"
             elem_type = _java_common_element_type(
                 elements=data,

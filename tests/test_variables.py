@@ -603,3 +603,402 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         error_on_coercion=False,
     )
     assert "tuple[OrderedDict[str, str | bool], ...]" in result.code
+
+
+# -- ALWAYS type-hint tests for non-Python languages -----------------
+
+
+TS_ALWAYS = TypeScript(
+    variable_type_hints=TypeScript.VariableTypeHints.ALWAYS,
+)
+JAVA_ALWAYS = Java(
+    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+)
+SWIFT_ALWAYS = Swift(
+    variable_type_hints=Swift.VariableTypeHints.ALWAYS,
+)
+KOTLIN_ALWAYS = Kotlin(
+    variable_type_hints=Kotlin.VariableTypeHints.ALWAYS,
+)
+DART_ALWAYS = Dart(
+    variable_type_hints=Dart.VariableTypeHints.ALWAYS,
+)
+
+
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        pytest.param(TS_ALWAYS, "const my_var: number = 1.5;", id="ts"),
+        pytest.param(JAVA_ALWAYS, "double my_var = 1.5;", id="java"),
+        pytest.param(SWIFT_ALWAYS, "let my_var: Double = 1.5", id="swift"),
+        pytest.param(KOTLIN_ALWAYS, "val my_var: Double = 1.5", id="kotlin"),
+        pytest.param(DART_ALWAYS, "final double my_var = 1.5;", id="dart"),
+    ],
+)
+def test_always_type_hints_float(language: Language, expected: str) -> None:
+    """ALWAYS type hints produce the correct annotation for floats."""
+    result = literalize(
+        source="1.5",
+        input_format=InputFormat.JSON,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert result.code == expected
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_fragment"),
+    [
+        pytest.param(TS_ALWAYS, "const my_var: number[]", id="ts"),
+        pytest.param(JAVA_ALWAYS, "int[] my_var", id="java"),
+        pytest.param(SWIFT_ALWAYS, "let my_var: [Int]", id="swift"),
+        pytest.param(KOTLIN_ALWAYS, "val my_var: IntArray", id="kotlin"),
+        pytest.param(DART_ALWAYS, "final List<int> my_var", id="dart"),
+    ],
+)
+def test_always_type_hints_list(
+    language: Language, expected_fragment: str
+) -> None:
+    """ALWAYS type hints annotate list/array declarations."""
+    result = literalize(
+        source="[1, 2]",
+        input_format=InputFormat.JSON,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert expected_fragment in result.code
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_fragment"),
+    [
+        pytest.param(TS_ALWAYS, "const my_var: unknown[]", id="ts"),
+        pytest.param(JAVA_ALWAYS, "Object[] my_var", id="java"),
+        pytest.param(SWIFT_ALWAYS, "let my_var: [Any]", id="swift"),
+        pytest.param(KOTLIN_ALWAYS, "val my_var: List<Any?>", id="kotlin"),
+        pytest.param(DART_ALWAYS, "final List<dynamic> my_var", id="dart"),
+    ],
+)
+def test_always_type_hints_empty_list(
+    language: Language, expected_fragment: str
+) -> None:
+    """ALWAYS type hints annotate empty list declarations."""
+    result = literalize(
+        source="[]",
+        input_format=InputFormat.JSON,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert expected_fragment in result.code
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_fragment"),
+    [
+        pytest.param(TS_ALWAYS, "Set<number>", id="ts"),
+        pytest.param(JAVA_ALWAYS, "Set<Integer>", id="java"),
+        pytest.param(SWIFT_ALWAYS, "Set<Int>", id="swift"),
+        pytest.param(KOTLIN_ALWAYS, "Set<Int>", id="kotlin"),
+        pytest.param(DART_ALWAYS, "Set<int>", id="dart"),
+    ],
+)
+def test_always_type_hints_set(
+    language: Language, expected_fragment: str
+) -> None:
+    """ALWAYS type hints annotate set declarations."""
+    result = literalize(
+        source="!!set\n? 1\n? 2\n? 3\n",
+        input_format=InputFormat.YAML,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert expected_fragment in result.code
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_fragment"),
+    [
+        pytest.param(TS_ALWAYS, "Set<unknown>", id="ts"),
+        pytest.param(SWIFT_ALWAYS, "Set<AnyHashable>", id="swift"),
+        pytest.param(KOTLIN_ALWAYS, "Set<Any?>", id="kotlin"),
+        pytest.param(DART_ALWAYS, "Set<dynamic>", id="dart"),
+    ],
+)
+def test_always_type_hints_empty_set(
+    language: Language, expected_fragment: str
+) -> None:
+    """ALWAYS type hints annotate empty set declarations."""
+    result = literalize(
+        source="!!set {}",
+        input_format=InputFormat.YAML,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert expected_fragment in result.code
+
+
+TS_ALWAYS_TUPLE = TypeScript(
+    sequence_format=TypeScript.SequenceFormats.TUPLE,
+    variable_type_hints=TypeScript.VariableTypeHints.ALWAYS,
+)
+SWIFT_ALWAYS_TUPLE = Swift(
+    sequence_format=Swift.SequenceFormats.TUPLE,
+    variable_type_hints=Swift.VariableTypeHints.ALWAYS,
+)
+DART_ALWAYS_TUPLE = Dart(
+    sequence_format=Dart.SequenceFormats.TUPLE,
+    variable_type_hints=Dart.VariableTypeHints.ALWAYS,
+)
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_fragment"),
+    [
+        pytest.param(TS_ALWAYS_TUPLE, "readonly [number, number]", id="ts"),
+        pytest.param(SWIFT_ALWAYS_TUPLE, "let my_var: (Int, Int)", id="swift"),
+        pytest.param(DART_ALWAYS_TUPLE, "final (int, int,) my_var", id="dart"),
+    ],
+)
+def test_always_type_hints_tuple(
+    language: Language, expected_fragment: str
+) -> None:
+    """ALWAYS type hints annotate tuple declarations."""
+    result = literalize(
+        source="[1, 2]",
+        input_format=InputFormat.JSON,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert expected_fragment in result.code
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_fragment"),
+    [
+        pytest.param(TS_ALWAYS_TUPLE, "readonly []", id="ts"),
+        pytest.param(SWIFT_ALWAYS_TUPLE, "()", id="swift"),
+        pytest.param(DART_ALWAYS_TUPLE, "()", id="dart"),
+    ],
+)
+def test_always_type_hints_empty_tuple(
+    language: Language, expected_fragment: str
+) -> None:
+    """ALWAYS type hints annotate empty tuple declarations."""
+    result = literalize(
+        source="[]",
+        input_format=InputFormat.JSON,
+        language=language,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert expected_fragment in result.code
+
+
+JAVA_ALWAYS_LIST = Java(
+    sequence_format=Java.SequenceFormats.LIST,
+    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+)
+JAVA_ALWAYS_ISO = Java(
+    date_format=Java.DateFormats.ISO,
+    datetime_format=Java.DatetimeFormats.ISO,
+    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+)
+JAVA_ALWAYS_ZONED = Java(
+    datetime_format=Java.DatetimeFormats.ZONED,
+    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+)
+JAVA_ALWAYS_HASH_MAP = Java(
+    dict_format=Java.DictFormats.HASH_MAP,
+    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+)
+JAVA_ALWAYS_TREE_SET = Java(
+    set_format=Java.SetFormats.TREE_SET,
+    variable_type_hints=Java.VariableTypeHints.ALWAYS,
+)
+KOTLIN_ALWAYS_ARRAY = Kotlin(
+    sequence_format=Kotlin.SequenceFormats.ARRAY,
+    variable_type_hints=Kotlin.VariableTypeHints.ALWAYS,
+)
+
+
+def test_always_type_hints_java_list_format() -> None:
+    """Java ALWAYS hints with LIST format produce List<Type>."""
+    result = literalize(
+        source="[1, 2]",
+        input_format=InputFormat.JSON,
+        language=JAVA_ALWAYS_LIST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "List<Integer> my_var" in result.code
+
+
+def test_always_type_hints_java_iso_dates() -> None:
+    """Java ALWAYS hints with ISO date format use String."""
+    result = literalize(
+        source='"2024-01-15"',
+        input_format=InputFormat.JSON,
+        language=JAVA_ALWAYS_ISO,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "String my_var" in result.code
+
+
+def test_always_type_hints_java_zoned_datetime() -> None:
+    """Java ALWAYS hints with ZONED datetime use ZonedDateTime."""
+    result = literalize(
+        source="2024-01-15T12:30:00+00:00",
+        input_format=InputFormat.YAML,
+        language=JAVA_ALWAYS_ZONED,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "ZonedDateTime my_var" in result.code
+
+
+def test_always_type_hints_java_hash_map() -> None:
+    """Java ALWAYS hints with HASH_MAP produce HashMap type."""
+    result = literalize(
+        source='{"a": 1}',
+        input_format=InputFormat.JSON,
+        language=JAVA_ALWAYS_HASH_MAP,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "HashMap<String, Integer> my_var" in result.code
+
+
+def test_always_type_hints_java_tree_set() -> None:
+    """Java ALWAYS hints with TREE_SET produce TreeSet type."""
+    result = literalize(
+        source="!!set\n? 1\n? 2\n",
+        input_format=InputFormat.YAML,
+        language=JAVA_ALWAYS_TREE_SET,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "TreeSet<Integer> my_var" in result.code
+
+
+def test_always_type_hints_java_int_double_widening() -> None:
+    """Java ALWAYS hints widen int+double to double[]."""
+    result = literalize(
+        source="[1, 1.5]",
+        input_format=InputFormat.JSON,
+        language=JAVA_ALWAYS,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "double[] my_var" in result.code
+
+
+KOTLIN_ALWAYS_TUPLE = Kotlin(
+    sequence_format=Kotlin.SequenceFormats.TUPLE,
+    variable_type_hints=Kotlin.VariableTypeHints.ALWAYS,
+)
+
+
+def test_always_type_hints_kotlin_tuple_pair() -> None:
+    """Kotlin ALWAYS hints with TUPLE format produce Pair<>."""
+    result = literalize(
+        source="[1, 2]",
+        input_format=InputFormat.JSON,
+        language=KOTLIN_ALWAYS_TUPLE,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "val my_var: Pair<Int, Int>" in result.code
+
+
+def test_always_type_hints_kotlin_tuple_triple() -> None:
+    """Kotlin ALWAYS hints with TUPLE format produce Triple<>."""
+    result = literalize(
+        source="[1, 2, 3]",
+        input_format=InputFormat.JSON,
+        language=KOTLIN_ALWAYS_TUPLE,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "val my_var: Triple<Int, Int, Int>" in result.code
+
+
+def test_always_type_hints_kotlin_tuple_fallback() -> None:
+    """Kotlin ALWAYS hints with TUPLE and >3 elements use List<Any?>."""
+    result = literalize(
+        source="[1, 2, 3, 4]",
+        input_format=InputFormat.JSON,
+        language=KOTLIN_ALWAYS_TUPLE,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "val my_var: List<Any?>" in result.code
+
+
+def test_always_type_hints_kotlin_array_format() -> None:
+    """Kotlin ALWAYS hints with ARRAY format produce Array<Any?>."""
+    result = literalize(
+        source="[1, 2]",
+        input_format=InputFormat.JSON,
+        language=KOTLIN_ALWAYS_ARRAY,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name="my_var",
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    assert "val my_var: Array<Any?>" in result.code

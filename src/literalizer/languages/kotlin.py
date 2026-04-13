@@ -162,7 +162,7 @@ def _kotlin_type_hint(  # noqa: C901, PLR0911, PLR0912
     default_dict_value_type: str,
     dict_outer: str,
     set_outer: str,
-    sequence_is_tuple: bool,
+    sequence_format_name: str,
 ) -> str:
     """Derive a Kotlin type annotation from *data*."""
     recurse = functools.partial(
@@ -174,7 +174,7 @@ def _kotlin_type_hint(  # noqa: C901, PLR0911, PLR0912
         default_dict_value_type=default_dict_value_type,
         dict_outer=dict_outer,
         set_outer=set_outer,
-        sequence_is_tuple=sequence_is_tuple,
+        sequence_format_name=sequence_format_name,
     )
     match data:
         case bool():
@@ -222,17 +222,33 @@ def _kotlin_type_hint(  # noqa: C901, PLR0911, PLR0912
         case list():
             if not data:
                 return "List<Any?>"
-            if sequence_is_tuple:
+            if sequence_format_name == "TUPLE":
                 elem_types = [recurse(data=e) for e in data]
                 if len(data) == 2:  # noqa: PLR2004
                     return f"Pair<{', '.join(elem_types)}>"
                 if len(data) == 3:  # noqa: PLR2004
                     return f"Triple<{', '.join(elem_types)}>"
                 return "List<Any?>"
+            if sequence_format_name == "ARRAY":
+                return "Array<Any?>"
+            # LIST format — use typed arrays matching the opener
             elem_types = [recurse(data=e) for e in data]
             unique = list(dict.fromkeys(elem_types))
-            elem_type = unique[0] if len(unique) == 1 else "Any?"
-            return f"List<{elem_type}>"
+            if len(unique) != 1:
+                return "List<Any?>"
+            elem_type = unique[0]
+            kotlin_prim = {
+                "Boolean": "BooleanArray",
+                "Int": "IntArray",
+                "Double": "DoubleArray",
+            }
+            if elem_type in kotlin_prim:
+                return kotlin_prim[elem_type]
+            # Generic element types (e.g. Map<…>) use listOf, not
+            # arrayOf, so the container type is List, not Array.
+            if "<" in elem_type:
+                return f"List<{elem_type}>"
+            return f"Array<{elem_type}>"
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -251,7 +267,7 @@ def _format_kotlin_typed_declaration(
     default_dict_value_type: str,
     dict_outer: str,
     set_outer: str,
-    sequence_is_tuple: bool,
+    sequence_format_name: str,
 ) -> str:
     """Format a Kotlin variable declaration with an explicit type."""
     hint = _kotlin_type_hint(
@@ -263,7 +279,7 @@ def _format_kotlin_typed_declaration(
         default_dict_value_type=default_dict_value_type,
         dict_outer=dict_outer,
         set_outer=set_outer,
-        sequence_is_tuple=sequence_is_tuple,
+        sequence_format_name=sequence_format_name,
     )
     return f"{keyword} {name}: {hint} = {value}"
 
@@ -816,7 +832,7 @@ class Kotlin(metaclass=LanguageCls):
                 default_dict_value_type=default_dict_value_type,
                 dict_outer=_kt_dict_outer,
                 set_outer=_kt_set_outer,
-                sequence_is_tuple=(sequence_format.name == "TUPLE"),
+                sequence_format_name=sequence_format.name,
             )
         else:
             _kt_decl = declaration_style.value.formatter
