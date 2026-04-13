@@ -88,11 +88,6 @@ _LANGUAGES: dict[str, _LanguageConfig] = {
     for lang_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
 }
 
-_COVERED_LANGUAGES = frozenset(cfg.lang_cls for cfg in _LANGUAGES.values())
-assert _COVERED_LANGUAGES == ALL_LANGUAGES, (
-    f"Missing from integration tests: {ALL_LANGUAGES - _COVERED_LANGUAGES}"
-)
-
 
 @dataclasses.dataclass
 class _VariantCase:
