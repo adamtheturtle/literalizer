@@ -3,5 +3,5 @@ let my_data = [
   3.14
   true
   false
-  "hello \"world\""
+  ("hello \"world\"")
 ]; in my_data

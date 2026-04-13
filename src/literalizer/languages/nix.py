@@ -75,6 +75,20 @@ _NIX_KEYWORDS: frozenset[str] = frozenset(
 
 
 @beartype
+def _format_nix_sequence_entry(original: Value, item: str) -> str:
+    """Format a Nix list element, parenthesising compound expressions.
+
+    Nix list elements must be simple expressions.  Negative literals
+    (``-2``) and arithmetic expressions (``1.0e308 * 10.0``) need
+    wrapping in parentheses to parse correctly inside ``[ … ]``.
+    """
+    del original
+    if item.startswith("-") or " " in item:
+        return f"({item})"
+    return item
+
+
+@beartype
 def _format_nix_string(value: str) -> str:
     r"""Format a string for Nix using double-quote escaping.
 
@@ -388,7 +402,7 @@ class Nix(metaclass=LanguageCls):
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
         self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
+            _format_nix_sequence_entry
         )
         self.format_set_entry: Callable[[Value, str], str] = (
             passthrough_set_entry
