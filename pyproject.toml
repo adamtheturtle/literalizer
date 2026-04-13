@@ -274,6 +274,7 @@ ignore = [
     "check_csharp_syntax.py",
     ".clj-kondo",
     ".clj-kondo/**",
+    ".clang-tidy",
 ]
 
 [tool.deptry]

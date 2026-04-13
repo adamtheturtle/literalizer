@@ -1,7 +1,9 @@
 """Gleam language specification."""
 
+import dataclasses
 import datetime
 import enum
+import math
 import textwrap
 from collections.abc import Callable
 from types import MappingProxyType
@@ -78,82 +80,174 @@ def _gleam_nonneg_only(
     return _format
 
 
-@beartype
-def _format_gleam_date_iso(value: datetime.date) -> str:
-    """Format a date as a Gleam ``GStr`` constructor via ISO 8601."""
-    return f"GStr({format_date_iso(value=value)})"
+def _build_gleam_date_iso(
+    prefix: str,
+) -> Callable[[datetime.date], str]:
+    """Build a date formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    @beartype
+    def _format(value: datetime.date) -> str:
+        """Format a date as a Gleam string via ISO 8601."""
+        return f"{prefix}Str({format_date_iso(value=value)})"
+
+    return _format
 
 
-@beartype
-def _format_gleam_datetime_iso(value: datetime.datetime) -> str:
-    """Format a datetime as a Gleam ``GStr`` constructor via ISO 8601."""
-    return f"GStr({format_datetime_iso(value=value)})"
+def _build_gleam_datetime_iso(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    @beartype
+    def _format(value: datetime.datetime) -> str:
+        """Format a datetime as a Gleam string via ISO 8601."""
+        return f"{prefix}Str({format_datetime_iso(value=value)})"
+
+    return _format
 
 
-@beartype
-def _format_gleam_bytes_hex(value: bytes) -> str:
-    """Format bytes as a Gleam ``GStr`` hex constructor."""
-    return f"GStr({format_bytes_hex(value=value)})"
+def _build_gleam_bytes_hex(
+    prefix: str,
+) -> Callable[[bytes], str]:
+    """Build a bytes formatter that produces ``{prefix}Str`` hex
+    constructors.
+    """
+
+    @beartype
+    def _format(value: bytes) -> str:
+        """Format bytes as a Gleam hex string."""
+        return f"{prefix}Str({format_bytes_hex(value=value)})"
+
+    return _format
 
 
-@beartype
-def _format_gleam_bytes_base64(value: bytes) -> str:
-    """Format bytes as a Gleam ``GStr`` base64 constructor."""
-    return f"GStr({format_bytes_base64(value=value)})"
+def _build_gleam_bytes_base64(
+    prefix: str,
+) -> Callable[[bytes], str]:
+    """Build a bytes formatter that produces ``{prefix}Str`` base64
+    constructors.
+    """
+
+    @beartype
+    def _format(value: bytes) -> str:
+        """Format bytes as a Gleam base64 string."""
+        return f"{prefix}Str({format_bytes_base64(value=value)})"
+
+    return _format
 
 
-@beartype
-def _format_gleam_string(value: str) -> str:
-    """Format a string as a Gleam ``GStr`` constructor."""
-    escaped = format_string_backslash(value)
-    return f"GStr({escaped})"
+def _build_gleam_str_formatter(
+    prefix: str,
+) -> Callable[[str], str]:
+    """Build a string formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    @beartype
+    def _format(value: str) -> str:
+        """Format a string with a constructor prefix."""
+        escaped = format_string_backslash(value)
+        return f"{prefix}Str({escaped})"
+
+    return _format
 
 
-@beartype
-def _format_gleam_integer_decimal(value: int) -> str:
-    """Format an integer as a Gleam ``GInt`` constructor."""
-    return f"GInt({value})"
-
-
-def _gleam_integer_wrapper(
+def _build_gleam_integer_wrapper(
+    prefix: str,
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
-    """Wrap a base integer formatter to produce ``GInt`` constructors.
-
-    Gleam does not support negative hex/octal/binary literals, so the
-    *base* formatter handles negatives by falling back to decimal.
+    """Build an integer formatter that produces ``{prefix}Int``
+    constructors.
     """
 
     @beartype
     def _format(value: int) -> str:
-        """Format an integer with a ``GInt`` constructor."""
-        return f"GInt({base(value)})"
+        """Format an integer with a ``{prefix}Int`` constructor."""
+        return f"{prefix}Int({base(value)})"
 
     return _format
 
 
-def _gleam_float_wrapper(
+def _build_gleam_float_wrapper(
+    prefix: str,
     inner: Callable[[float], str],
 ) -> Callable[[float], str]:
-    """Wrap a float formatter to produce ``GFloat`` constructors."""
+    """Build a float formatter that produces ``{prefix}Float``
+    constructors.
+    """
 
     @beartype
     def _format(value: float) -> str:
-        """Format a float with a ``GFloat`` constructor."""
-        return f"GFloat({inner(value)})"
+        """Format a float with a ``{prefix}Float`` constructor."""
+        return f"{prefix}Float({inner(value)})"
 
     return _format
 
 
-@beartype
-def _gleam_dict_entry(key: str, _val: Value, value: str) -> str:
-    """Format a dict entry as a hash tuple with a plain-string key.
-
-    Dict keys are ``String``, not ``GVal``, so the ``GStr(...)``
-    constructor must be stripped from the formatted key.
+def _build_gleam_dict_entry(
+    prefix: str,
+) -> Callable[[str, Value, str], str]:
+    """Build a dict-entry formatter that strips the ``{prefix}Str`` prefix
+    from keys.
     """
-    key = key.removeprefix("GStr(").removesuffix(")")
-    return f"#({key}, {value})"
+    _str_prefix = f"{prefix}Str("
+
+    @beartype
+    def _format(key: str, _val: Value, value: str) -> str:
+        """Format a dict entry as a hash tuple with a plain-string key.
+
+        Dict keys are ``String``, not ``GVal``, so the ``{prefix}Str(...)``
+        constructor must be stripped from the formatted key.
+        """
+        key = key.removeprefix(_str_prefix).removesuffix(")")
+        return f"#({key}, {value})"
+
+    return _format
+
+
+# Backward-compatible module-level aliases used by the Enum members.
+_format_gleam_date_iso = _build_gleam_date_iso(prefix="G")
+_format_gleam_datetime_iso = _build_gleam_datetime_iso(prefix="G")
+_format_gleam_bytes_hex = _build_gleam_bytes_hex(prefix="G")
+_format_gleam_bytes_base64 = _build_gleam_bytes_base64(prefix="G")
+_format_gleam_string = _build_gleam_str_formatter(prefix="G")
+_format_gleam_integer_decimal = _build_gleam_integer_wrapper(
+    prefix="G",
+    base=str,
+)
+_gleam_integer_wrapper = _build_gleam_integer_wrapper
+_gleam_float_wrapper = _build_gleam_float_wrapper
+_gleam_dict_entry = _build_gleam_dict_entry(prefix="G")
+
+
+_GLEAM_INT_BASE: dict[tuple[str, str], Callable[[int], str]] = {
+    ("DECIMAL", "NONE"): str,
+    ("DECIMAL", "UNDERSCORE"): format_integer_underscore,
+    ("HEX", "NONE"): _gleam_nonneg_only(base=format_integer_hex),
+    ("HEX", "UNDERSCORE"): _gleam_nonneg_only(base=format_integer_hex),
+    ("OCTAL", "NONE"): _gleam_nonneg_only(base=format_integer_octal),
+    ("OCTAL", "UNDERSCORE"): _gleam_nonneg_only(base=format_integer_octal),
+    ("BINARY", "NONE"): _gleam_nonneg_only(base=format_integer_binary),
+    ("BINARY", "UNDERSCORE"): _gleam_nonneg_only(base=format_integer_binary),
+}
+
+_GLEAM_FLOAT_BASE: dict[str, Callable[[float], str]] = {
+    "REPR": format_float_repr,
+    "SCIENTIFIC": format_float_scientific,
+    "FIXED": format_float_fixed,
+}
+
+_GLEAM_BYTES_FORMATTERS: dict[
+    str,
+    Callable[[str], Callable[[bytes], str]],
+] = {
+    "HEX": _build_gleam_bytes_hex,
+    "BASE64": _build_gleam_bytes_base64,
+}
 
 
 @beartype
@@ -201,6 +295,10 @@ class Gleam(metaclass=LanguageCls):
 
         type_name: Name of the generated custom type.  Defaults to
             ``"GVal"``.
+
+        constructor_prefix: Prefix for generated constructor names.
+            Defaults to ``"G"``, producing constructors like ``GNull``,
+            ``GBool``, ``GInt``, etc.
     """
 
     extension = ".gleam"
@@ -245,7 +343,7 @@ class Gleam(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Gleam."""
@@ -338,12 +436,23 @@ class Gleam(metaclass=LanguageCls):
     ):
         """Float format options."""
 
-        REPR = enum.member(value=_gleam_float_wrapper(inner=format_float_repr))
+        REPR = enum.member(
+            value=_build_gleam_float_wrapper(
+                prefix="G",
+                inner=format_float_repr,
+            )
+        )
         SCIENTIFIC = enum.member(
-            value=_gleam_float_wrapper(inner=format_float_scientific)
+            value=_build_gleam_float_wrapper(
+                prefix="G",
+                inner=format_float_scientific,
+            )
         )
         FIXED = enum.member(
-            value=_gleam_float_wrapper(inner=format_float_fixed)
+            value=_build_gleam_float_wrapper(
+                prefix="G",
+                inner=format_float_fixed,
+            )
         )
 
     class IntegerFormats(enum.Enum):
@@ -352,37 +461,44 @@ class Gleam(metaclass=LanguageCls):
         DECIMAL = MappingProxyType(
             mapping={
                 "NONE": _format_gleam_integer_decimal,
-                "UNDERSCORE": _gleam_integer_wrapper(
+                "UNDERSCORE": _build_gleam_integer_wrapper(
+                    prefix="G",
                     base=format_integer_underscore,
                 ),
             }
         )
         HEX = MappingProxyType(
             mapping={
-                "NONE": _gleam_integer_wrapper(
+                "NONE": _build_gleam_integer_wrapper(
+                    prefix="G",
                     base=_gleam_nonneg_only(base=format_integer_hex),
                 ),
-                "UNDERSCORE": _gleam_integer_wrapper(
+                "UNDERSCORE": _build_gleam_integer_wrapper(
+                    prefix="G",
                     base=_gleam_nonneg_only(base=format_integer_hex),
                 ),
             }
         )
         OCTAL = MappingProxyType(
             mapping={
-                "NONE": _gleam_integer_wrapper(
+                "NONE": _build_gleam_integer_wrapper(
+                    prefix="G",
                     base=_gleam_nonneg_only(base=format_integer_octal),
                 ),
-                "UNDERSCORE": _gleam_integer_wrapper(
+                "UNDERSCORE": _build_gleam_integer_wrapper(
+                    prefix="G",
                     base=_gleam_nonneg_only(base=format_integer_octal),
                 ),
             }
         )
         BINARY = MappingProxyType(
             mapping={
-                "NONE": _gleam_integer_wrapper(
+                "NONE": _build_gleam_integer_wrapper(
+                    prefix="G",
                     base=_gleam_nonneg_only(base=format_integer_binary),
                 ),
-                "UNDERSCORE": _gleam_integer_wrapper(
+                "UNDERSCORE": _build_gleam_integer_wrapper(
+                    prefix="G",
                     base=_gleam_nonneg_only(base=format_integer_binary),
                 ),
             }
@@ -503,39 +619,97 @@ class Gleam(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.NONE,
         indent: str = "  ",
         type_name: str = "GVal",
+        constructor_prefix: str = "G",
     ) -> None:
         """Initialize Gleam language specification."""
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal = "GNull"
-        self.true_literal = "GBool(True)"
-        self.false_literal = "GBool(False)"
+        self.null_literal: str = f"{constructor_prefix}Null"
+        self.true_literal: str = f"{constructor_prefix}Bool(True)"
+        self.false_literal: str = f"{constructor_prefix}Bool(False)"
         fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
+        if sequence_format.name == "LIST":
+            _seq_open = fixed_sequence_open(
+                open_str=f"{constructor_prefix}List([",
+            )
+            self.sequence_format_config: SequenceFormatConfig = (
+                dataclasses.replace(fmt, sequence_open=_seq_open)
+            )
+            self.sequence_open: Callable[[list[Value]], str] = _seq_open
+        else:
+            self.sequence_format_config = fmt
+            self.sequence_open = fmt.sequence_open
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=fixed_set_open(
+                open_str=f"{constructor_prefix}Set([",
+            ),
+        )
+
+        _dict_entry = _build_gleam_dict_entry(prefix=constructor_prefix)
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="GDict(["),
+            dict_open=fixed_dict_open(
+                open_str=f"{constructor_prefix}Dict([",
+            ),
             close="])",
-            format_entry=_gleam_dict_entry,
+            format_entry=_dict_entry,
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
-        )
-        self.format_string: Callable[[str], str] = _format_gleam_string
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+        if constructor_prefix == "G":
+            self.format_bytes: Callable[[bytes], str] = bytes_format
+            self.format_date: Callable[[datetime.date], str] = date_format
+            self.format_datetime: Callable[[datetime.datetime], str] = (
+                datetime_format
             )
-        )
+            self.format_string: Callable[[str], str] = _format_gleam_string
+            self.format_integer: Callable[[int], str] = (
+                integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                )
+            )
+            self.format_float: Callable[[float], str] = float_format
+        else:
+            self.format_bytes = _GLEAM_BYTES_FORMATTERS[bytes_format.name](
+                constructor_prefix
+            )
+            self.format_date = _build_gleam_date_iso(prefix=constructor_prefix)
+            self.format_datetime = _build_gleam_datetime_iso(
+                prefix=constructor_prefix
+            )
+            self.format_string = _build_gleam_str_formatter(
+                prefix=constructor_prefix
+            )
+
+            _int_base = _GLEAM_INT_BASE[
+                (integer_format.name, numeric_separator.name)
+            ]
+            self.format_integer = _build_gleam_integer_wrapper(
+                prefix=constructor_prefix,
+                base=_int_base,
+            )
+
+            _pos_inf = f"{constructor_prefix}Float(todo)"
+            _neg_inf = f"{constructor_prefix}Float(todo)"
+            _nan_val = f"{constructor_prefix}Float(todo)"
+            _float_finite = _build_gleam_float_wrapper(
+                prefix=constructor_prefix,
+                inner=_GLEAM_FLOAT_BASE[float_format.name],
+            )
+
+            @beartype
+            def _format_float_with_specials(value: float) -> str:
+                """Format a float, handling inf and nan."""
+                if math.isinf(value):
+                    return _neg_inf if value < 0 else _pos_inf
+                if math.isnan(value):
+                    return _nan_val
+                return _float_finite(value)
+
+            self.format_float = _format_float_with_specials
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
@@ -556,13 +730,13 @@ class Gleam(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="GDict([",
+                open_str=f"{constructor_prefix}Dict([",
                 close="])",
                 preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _gleam_dict_entry
+            _dict_entry
         )
         self.indent = indent
         self.indent_closing_delimiter = False
@@ -579,6 +753,7 @@ class Gleam(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
+        p = constructor_prefix
         self.scalar_preamble: dict[type, tuple[str, ...]] = dict.fromkeys(
             (
                 type(None),
@@ -595,14 +770,14 @@ class Gleam(metaclass=LanguageCls):
             ),
             (
                 f"pub type {type_name} {{\n"
-                "  GNull\n"
-                "  GBool(Bool)\n"
-                "  GInt(Int)\n"
-                "  GFloat(Float)\n"
-                "  GStr(String)\n"
-                f"  GList(List({type_name}))\n"
-                f"  GDict(List(#(String, {type_name})))\n"
-                f"  GSet(List({type_name}))\n"
+                f"  {p}Null\n"
+                f"  {p}Bool(Bool)\n"
+                f"  {p}Int(Int)\n"
+                f"  {p}Float(Float)\n"
+                f"  {p}Str(String)\n"
+                f"  {p}List(List({type_name}))\n"
+                f"  {p}Dict(List(#(String, {type_name})))\n"
+                f"  {p}Set(List({type_name}))\n"
                 "}",
             ),
         )
