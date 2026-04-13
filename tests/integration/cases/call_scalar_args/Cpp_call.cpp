@@ -7,7 +7,6 @@ struct Any {
 };
 auto process(auto...) { return 0; }
 void check_() {
-auto process(auto...) { return 0; }
 process("hello");
 process(42);
 process(true);
