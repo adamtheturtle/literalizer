@@ -48,6 +48,7 @@ def _find_redefinition_styles(
     ]
 
 
+@beartype
 def _prepend_preamble(
     wrapped: str,
     preamble: tuple[str, ...],
