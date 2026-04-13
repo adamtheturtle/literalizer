@@ -822,7 +822,7 @@ class Kotlin(metaclass=LanguageCls):
                 "HashMap" if dict_format.name == "HASH_MAP" else "Map"
             )
             _kt_set_outer = (
-                "TreeSet" if set_format.name == "SORTED_SET" else "Set"
+                "MutableSet" if set_format.name == "SORTED_SET" else "Set"
             )
             _kt_decl = functools.partial(
                 _format_kotlin_typed_declaration,
