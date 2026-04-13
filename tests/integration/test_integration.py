@@ -1317,7 +1317,6 @@ _CALL_LANGUAGES: frozenset[str] = frozenset(
         "Lua",
         "Perl",
         "Php",
-        "PowerShell",
         "Python",
         "R",
         "Ruby",
