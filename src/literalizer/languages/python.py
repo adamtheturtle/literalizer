@@ -394,12 +394,12 @@ def _python_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     param_str = ", ".join(f"{p}: object" for p in params)
     if len(parts) == 1:
-        return (f"def {name}(*, {param_str}) -> object: ...",)
+        return (f"def {name}({param_str}) -> object: ...",)
     root, method = parts[0], parts[1]
     cls = f"_{root.capitalize()}Type"
     return (
         f"class {cls}:",
-        f"    def {method}(self, *, {param_str}) -> object: ...",
+        f"    def {method}(self, {param_str}) -> object: ...",
         f"{root} = {cls}()",
     )
 
