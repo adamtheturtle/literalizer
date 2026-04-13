@@ -1,7 +1,7 @@
 """C# language specification."""
 
 import dataclasses
-import datetime
+import datetime  # noqa: TC003
 import enum
 from collections.abc import Callable
 from types import MappingProxyType
@@ -138,10 +138,6 @@ class CSharp(metaclass=LanguageCls):
         )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)
-
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C#."""
 
@@ -156,10 +152,6 @@ class CSharp(metaclass=LanguageCls):
             formatter=format_datetime_iso,
             type_produced=str,
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -506,9 +498,11 @@ class CSharp(metaclass=LanguageCls):
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
+        self.format_date: Callable[[datetime.date], str] = (
+            date_format.value.formatter
+        )
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+            datetime_format.value.formatter
         )
 
         self.format_string: Callable[[str], str] = string_format

@@ -364,10 +364,6 @@ class Haskell(metaclass=LanguageCls):
             type_produced=str,
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)
-
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Haskell."""
 
@@ -377,10 +373,6 @@ class Haskell(metaclass=LanguageCls):
             preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
             type_produced=str,
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -656,7 +648,7 @@ class Haskell(metaclass=LanguageCls):
                 )
             )
         else:
-            self.format_date = date_format
+            self.format_date = date_format.value.formatter
         if datetime_format.name == "HASKELL":
             self.format_datetime: Callable[[datetime.datetime], str] = (
                 _build_haskell_datetime_formatter(
@@ -664,7 +656,7 @@ class Haskell(metaclass=LanguageCls):
                 )
             )
         else:
-            self.format_datetime = datetime_format
+            self.format_datetime = datetime_format.value.formatter
         self.format_string: Callable[[str], str] = functools.partial(
             format_string_backslash_control,
             control_char_fmt="\\x{:02x}",

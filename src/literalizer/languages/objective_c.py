@@ -1,7 +1,7 @@
 """Objective-C language specification."""
 
 import base64
-import datetime
+import datetime  # noqa: TC003
 import enum
 from typing import TYPE_CHECKING
 
@@ -128,10 +128,6 @@ class ObjectiveC(metaclass=LanguageCls):
             type_produced=str,
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)
-
     class DatetimeFormats(enum.Enum):
         """Datetime format options for ObjectiveC."""
 
@@ -142,10 +138,6 @@ class ObjectiveC(metaclass=LanguageCls):
             formatter=datetime_iso_formatter(template='@"{iso}"'),
             type_produced=str,
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -383,9 +375,11 @@ class ObjectiveC(metaclass=LanguageCls):
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
+        self.format_date: Callable[[datetime.date], str] = (
+            date_format.value.formatter
+        )
         self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+            datetime_format.value.formatter
         )
         self.format_string: Callable[[str], str] = _format_objc_string
         self.format_float: Callable[[float], str] = float_format
