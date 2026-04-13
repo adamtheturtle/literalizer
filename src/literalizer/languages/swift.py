@@ -5,7 +5,7 @@ import enum
 import functools
 from collections.abc import Callable
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 
 from beartype import beartype
 
@@ -96,6 +96,100 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     if original is None:
         return "nil as Any?"
     return entry
+
+
+@beartype
+def _swift_type_hint(  # noqa: C901, PLR0911, PLR0912
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    default_set_element_type: str,
+    default_sequence_element_type: str,
+    default_dict_value_type: str,
+    sequence_is_tuple: bool,
+) -> str:
+    """Derive a Swift type annotation from *data*."""
+    recurse = functools.partial(
+        _swift_type_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        default_set_element_type=default_set_element_type,
+        default_sequence_element_type=default_sequence_element_type,
+        default_dict_value_type=default_dict_value_type,
+        sequence_is_tuple=sequence_is_tuple,
+    )
+    match data:
+        case bool():
+            return "Bool"
+        case int():
+            return "Int"
+        case float():
+            return "Double"
+        case str():
+            return "String"
+        case bytes():
+            return "String"
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "Any"
+        case dict():
+            if not data:
+                return f"[String: {default_dict_value_type}]"
+            val_types = [recurse(data=v) for v in data.values()]
+            unique = list(dict.fromkeys(val_types))
+            val_type = unique[0] if len(unique) == 1 else "Any"
+            return f"[String: {val_type}]"
+        case set():
+            if not data:
+                return f"Set<{default_set_element_type}>"
+            elem_types = sorted({recurse(data=e) for e in data})
+            elem_type = elem_types[0] if len(elem_types) == 1 else "Any"
+            return f"Set<{elem_type}>"
+        case list():
+            if not data:
+                if sequence_is_tuple:
+                    return "()"
+                return f"[{default_sequence_element_type}]"
+            if sequence_is_tuple:
+                elem_types = [recurse(data=e) for e in data]
+                return f"({', '.join(elem_types)})"
+            elem_types = [recurse(data=e) for e in data]
+            unique = list(dict.fromkeys(elem_types))
+            elem_type = unique[0] if len(unique) == 1 else "Any"
+            return f"[{elem_type}]"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _format_swift_typed_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    keyword: str,
+    date_hint: str,
+    datetime_hint: str,
+    default_set_element_type: str,
+    default_sequence_element_type: str,
+    default_dict_value_type: str,
+    sequence_is_tuple: bool,
+) -> str:
+    """Format a Swift variable declaration with a specific type."""
+    hint = _swift_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        default_set_element_type=default_set_element_type,
+        default_sequence_element_type=default_sequence_element_type,
+        default_dict_value_type=default_dict_value_type,
+        sequence_is_tuple=sequence_is_tuple,
+    )
+    return f"{keyword} {name}: {hint} = {value}"
 
 
 @beartype
@@ -357,6 +451,7 @@ class Swift(metaclass=LanguageCls):
         """Variable type hint options."""
 
         AUTO = enum.auto()
+        ALWAYS = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -505,8 +600,32 @@ class Swift(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
+        _swift_decl: Callable[[str, str, Value], str]
+        if variable_type_hints is self.VariableTypeHints.ALWAYS:
+            _swift_date_hint = (
+                "String" if date_format.value.type_produced is str else "Date"
+            )
+            _swift_dt_hint = (
+                "String"
+                if datetime_format.value.type_produced is str
+                else "Date"
+            )
+            _swift_decl = functools.partial(
+                _format_swift_typed_declaration,
+                keyword=declaration_style.name.lower(),
+                date_hint=_swift_date_hint,
+                datetime_hint=_swift_dt_hint,
+                default_set_element_type=default_set_element_type,
+                default_sequence_element_type=(default_sequence_element_type),
+                default_dict_value_type=default_dict_value_type,
+                sequence_is_tuple=(
+                    sequence_format is self.SequenceFormats.TUPLE
+                ),
+            )
+        else:
+            _swift_decl = declaration_style.value.formatter
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _swift_decl
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")

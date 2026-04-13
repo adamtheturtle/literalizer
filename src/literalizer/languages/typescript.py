@@ -2,11 +2,14 @@
 
 import datetime
 import enum
+import functools
+from collections import OrderedDict
 from collections.abc import Callable
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
@@ -63,6 +66,104 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+@beartype
+def _ts_element_union(*, types: list[str]) -> str:
+    """Remove duplicate types and join into a TypeScript union."""
+    unique: list[str] = list(dict.fromkeys(types))
+    if len(unique) == 1:
+        return unique[0]
+    return " | ".join(unique)
+
+
+@beartype
+def _ts_type_hint(  # noqa: C901, PLR0911, PLR0912
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_hint_template: str,
+    sequence_is_tuple: bool,
+) -> str:
+    """Derive a TypeScript type annotation from *data*."""
+    recurse = functools.partial(
+        _ts_type_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        dict_hint_template=dict_hint_template,
+        sequence_is_tuple=sequence_is_tuple,
+    )
+    match data:
+        case bool():
+            return "boolean"
+        case int():
+            return "number"
+        case float():
+            return "number"
+        case str():
+            return "string"
+        case bytes():
+            return "string"
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "null"
+        case dict():
+            template = (
+                "Record<string, {val}>"
+                if isinstance(data, (ordereddict, OrderedDict))
+                else dict_hint_template
+            )
+            if not data:
+                return template.format(val="unknown")
+            val_types = [recurse(data=v) for v in data.values()]
+            val_union = _ts_element_union(types=val_types)
+            return template.format(val=val_union)
+        case set():
+            if not data:
+                return "Set<unknown>"
+            elem_types = sorted(recurse(data=e) for e in data)
+            elem_union = _ts_element_union(types=elem_types)
+            return f"Set<{elem_union}>"
+        case list():
+            if not data:
+                return "readonly []" if sequence_is_tuple else "unknown[]"
+            if sequence_is_tuple:
+                elem_types = [recurse(data=e) for e in data]
+                return f"readonly [{', '.join(elem_types)}]"
+            elem_types = [recurse(data=e) for e in data]
+            elem_union = _ts_element_union(types=elem_types)
+            if " | " in elem_union:
+                return f"({elem_union})[]"
+            return f"{elem_union}[]"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _format_ts_typed_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    keyword: str,
+    date_hint: str,
+    datetime_hint: str,
+    dict_hint_template: str,
+    sequence_is_tuple: bool,
+) -> str:
+    """Format a TypeScript variable declaration with an explicit type."""
+    hint = _ts_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        dict_hint_template=dict_hint_template,
+        sequence_is_tuple=sequence_is_tuple,
+    )
+    return f"{keyword} {name}: {hint} = {value};"
 
 
 @beartype
@@ -366,6 +467,7 @@ class TypeScript(metaclass=LanguageCls):
         """Variable type hint options."""
 
         AUTO = enum.auto()
+        ALWAYS = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -496,9 +598,33 @@ class TypeScript(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        _base_decl: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
+        _base_decl: Callable[[str, str, Value], str]
+        if variable_type_hints is self.VariableTypeHints.ALWAYS:
+            _ts_date_hint = (
+                "string" if date_format.value.type_produced is str else "Date"
+            )
+            _ts_datetime_hint = (
+                "string"
+                if datetime_format.value.type_produced is str
+                else "Date"
+            )
+            _ts_dict_template = (
+                "Map<string, {val}>"
+                if dict_format is self.DictFormats.MAP
+                else "Record<string, {val}>"
+            )
+            _base_decl = functools.partial(
+                _format_ts_typed_declaration,
+                keyword=declaration_style.name.lower(),
+                date_hint=_ts_date_hint,
+                datetime_hint=_ts_datetime_hint,
+                dict_hint_template=_ts_dict_template,
+                sequence_is_tuple=(
+                    sequence_format is self.SequenceFormats.TUPLE
+                ),
+            )
+        else:
+            _base_decl = declaration_style.value.formatter
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             line_ending.wrap_formatter(formatter=_base_decl)
         )
