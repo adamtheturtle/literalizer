@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -54,9 +54,23 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
+
+
+@beartype
+def _crystal_call_stub(
+    name: str, _params: Sequence[str], /
+) -> tuple[str, ...]:
+    """Return Crystal stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}(*a, **kw); 0; end",)
+    root, method = parts[0], parts[1]
+    cls = root.capitalize() + "Type_"
+    return (
+        f"class {cls}; def {method}(*a, **kw); 0; end; end",
+        f"{root} = {cls}.new",
+    )
 
 
 @beartype
@@ -455,5 +469,5 @@ class Crystal(metaclass=LanguageCls):
             keyword_separator=": ",
         )
         self.statement_terminator = ";"
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _crystal_call_stub
         self.format_call_preamble_stub = no_call_stub
