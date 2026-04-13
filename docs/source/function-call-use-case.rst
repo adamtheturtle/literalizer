@@ -45,7 +45,7 @@ parameters (``user_id`` and ``ts``) and wrap each call in ``print()``:
        ),
        call_function="throttler.check",
        call_params=["user_id", "ts"],
-       call_wrapper=lambda c: f"print({c})",
+       call_transform=lambda c: f"print({c})",
    )
 
    assert result.code == textwrap.dedent(

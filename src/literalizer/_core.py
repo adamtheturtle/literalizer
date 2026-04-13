@@ -1172,13 +1172,13 @@ def _assemble_call(
     *,
     call_function: str,
     args_str: str,
-    call_wrapper: Callable[[str], str] | None,
+    call_transform: Callable[[str], str] | None,
     statement_terminator: str,
 ) -> str:
-    """Build one complete call statement, optionally wrapped."""
+    """Build one complete call statement, optionally transformed."""
     call_expr = f"{call_function}{args_str}"
-    if call_wrapper is not None:
-        call_expr = call_wrapper(call_expr)
+    if call_transform is not None:
+        call_expr = call_transform(call_expr)
     return f"{call_expr}{statement_terminator}"
 
 
@@ -1190,7 +1190,7 @@ def literalize_call(
     language: Language,
     call_function: str,
     call_params: Sequence[str],
-    call_wrapper: Callable[[str], str] | None = None,
+    call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
@@ -1210,8 +1210,8 @@ def literalize_call(
             element in each row.  For :attr:`CallStyleKind.POSITIONAL`
             languages these are unused in the output but still
             determine how many values to expect per row.
-        call_wrapper: Optional callable wrapping each call expression.
-            Receives the bare call string and returns the wrapped
+        call_transform: Optional callable transforming each call expression.
+            Receives the bare call string and returns the transformed
             version (e.g. ``lambda c: f"print({c})"``).
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
@@ -1247,7 +1247,7 @@ def literalize_call(
                 _assemble_call(
                     call_function=call_function,
                     args_str=args_str,
-                    call_wrapper=call_wrapper,
+                    call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
                 )
             )
@@ -1264,7 +1264,7 @@ def literalize_call(
         result = _assemble_call(
             call_function=call_function,
             args_str=args_str,
-            call_wrapper=call_wrapper,
+            call_transform=call_transform,
             statement_terminator=language.statement_terminator,
         )
 
