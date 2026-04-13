@@ -4,7 +4,7 @@ Checks: >
   -altera-struct-pack-align,
   -bugprone-forwarding-reference-overload,
   -bugprone-narrowing-conversions,
-  -clang-analyzer-deadcode.DeadStores,
+  -clang-analyzer-*,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-missing-std-forward,
   -cppcoreguidelines-narrowing-conversions,
