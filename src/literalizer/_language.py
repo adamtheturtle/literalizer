@@ -275,6 +275,7 @@ class LanguageCls(type):
     IntegerFormats: type[enum.Enum]
     NumericLiteralSuffixes: type[enum.Enum]
     NumericSeparators: type[enum.Enum]
+    NumericStyles: type[enum.Enum]
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
     LineEndings: type[enum.Enum]
