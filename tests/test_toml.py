@@ -474,6 +474,39 @@ def test_body_preamble() -> None:
     assert result.code == expected
 
 
+def test_body_preamble_double_iso() -> None:
+    """DOUBLE string format with ISO dates uses IsString for bare literals."""
+    haskell = Haskell(
+        string_format=Haskell.string_formats.DOUBLE,
+        date_format=Haskell.date_formats.ISO,
+        datetime_format=Haskell.datetime_formats.ISO,
+        bytes_format=Haskell.bytes_formats.HEX,
+        sequence_format=Haskell.sequence_formats.LIST,
+    )
+    toml_string = 'name = "alice"\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=haskell,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        import Data.String (IsString(fromString))
+        data Val = HStr String | HMap [(String, Val)]
+        instance IsString Val where
+            fromString = HStr
+        HMap [
+            ("name", "alice")
+            ]""",
+    )
+    assert result.code == expected
+
+
 def test_inline_comment_preserved() -> None:
     """Inline TOML comments appear in the output."""
     toml_string = 'host = "localhost"  # default host\nport = 8080\n'
