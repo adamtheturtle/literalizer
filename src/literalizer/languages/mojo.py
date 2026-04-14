@@ -48,6 +48,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
@@ -462,3 +463,4 @@ class Mojo(metaclass=LanguageCls):
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target

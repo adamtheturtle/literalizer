@@ -823,6 +823,16 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     types inside function bodies use this instead.
     """
 
+    format_call_target: Callable[[str], str]
+    """Transform a dotted call target before assembling the call
+    expression.
+
+    Most languages return the target unchanged
+    (:func:`identity_call_target`).  Haskell uses this to convert
+    ``app.client.fetch`` into ``(fetch (client app))`` when using
+    plain record selectors instead of ``OverloadedRecordDot``.
+    """
+
 
 def _no_call_stub(
     _name: str,
@@ -838,6 +848,17 @@ no_call_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]] = (
     _no_call_stub
 )
 """Shared callable for languages that need no call stubs."""
+
+
+def _identity_call_target(target: str, /) -> str:
+    """Return *target* unchanged."""
+    return target
+
+
+identity_call_target: Callable[[str], str] = _identity_call_target
+"""Shared callable for languages that do not transform dotted call
+targets.
+"""
 
 
 def _no_type_hint_preamble(

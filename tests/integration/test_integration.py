@@ -412,6 +412,10 @@ class _CallCaseConfig:
     transform_stub_names: list[str]
     per_element: bool
     call_style_kind: literalizer.CallStyleKind | None = None
+    language_overrides: dict[str, object] = dataclasses.field(
+        default_factory=dict,
+    )
+    language_filter: Callable[[literalizer.LanguageCls], bool] | None = None
 
 
 _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
@@ -454,6 +458,30 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_dotted_method_record_selectors",
+        target_function="app.client.fetch",
+        parameter_names=["payload"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        language_overrides={
+            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
+        },
+        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_deep_dotted_record_selectors",
+        target_function="obj.api.client.post",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        language_overrides={
+            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
+        },
+        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
     ),
     _CallCaseConfig(
         case_dir_name="call_positional_args",
@@ -1370,6 +1398,11 @@ def _discover_call_cases() -> list[_CallCase]:
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
+            if (
+                config.language_filter is not None
+                and not config.language_filter(lang_cls)
+            ):
+                continue
             if config.call_style_kind is not None:
                 # Only include languages that have this as a
                 # non-default style.
@@ -1404,15 +1437,15 @@ def test_call_golden_file(
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
     lang_cls = call_case.lang_cls
+    kwargs: dict[str, object] = dict(config.language_overrides)
     if config.call_style_kind is not None:
         style = next(
             s
             for s in lang_cls.CallStyles
             if s.value.kind == config.call_style_kind
         )
-        spec = lang_cls(call_style=style)
-    else:
-        spec = lang_cls()
+        kwargs["call_style"] = style
+    spec = lang_cls(**kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     result = literalizer.literalize_call(

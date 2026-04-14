@@ -62,6 +62,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
@@ -906,3 +907,4 @@ class Java(metaclass=LanguageCls):
         self.statement_terminator = ";"
         self.format_call_stub = _java_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target
