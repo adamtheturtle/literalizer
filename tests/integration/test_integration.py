@@ -431,6 +431,22 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
     ),
     _CallCaseConfig(
+        case_dir_name="call_dotted_method",
+        target_function="app.client.fetch",
+        parameter_names=["payload"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_deep_dotted_method",
+        target_function="obj.api.client.post",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
+    _CallCaseConfig(
         case_dir_name="call_positional_args",
         target_function="throttler.check",
         parameter_names=["user_id", "ts"],

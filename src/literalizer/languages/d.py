@@ -62,12 +62,30 @@ def _d_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"int {parts[0]}(T...)(T args) {{ return 0; }}",)
-    root, method = parts[0], parts[1]
-    type_name = f"{root.title()}Type_"
-    return (
-        f"struct {type_name} {{ int {method}(T...)(T args) {{ return 0; }} }}",
-        f"{type_name} {root};",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        type_name = f"{root.title()}Type_"
+        return (
+            f"struct {type_name} {{"
+            f" int {method}(T...)(T args) {{ return 0; }} }}",
+            f"{type_name} {root};",
+        )
+    lines: list[str] = []
+    inner_type = f"{fields[-1].title()}Type_"
+    lines.append(
+        f"struct {inner_type} {{ int {method}(T...)(T args) {{ return 0; }} }}"
     )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        lines.append(f"struct {curr_type} {{ {prev_type} {fields[i + 1]}; }}")
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    lines.append(f"struct {root_type} {{ {prev_type} {fields[0]}; }}")
+    lines.append(f"{root_type} {root};")
+    return tuple(lines)
 
 
 @beartype

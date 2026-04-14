@@ -71,13 +71,32 @@ def _go_call_preamble_stub(
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"func {parts[0]}(args ...any) any {{ return nil }}",)
-    root, method = parts[0], parts[1]
-    type_name = f"{root}Type_"
-    return (
-        f"type {type_name} struct{{}}",
-        f"func ({type_name}) {method}(args ...any) any {{ return nil }}",
-        f"var {root} {type_name}",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        type_name = f"{root}Type_"
+        return (
+            f"type {type_name} struct{{}}",
+            f"func ({type_name}) {method}(args ...any) any {{ return nil }}",
+            f"var {root} {type_name}",
+        )
+    lines: list[str] = []
+    inner_type = f"{fields[-1]}Type_"
+    lines.append(f"type {inner_type} struct{{}}")
+    lines.append(
+        f"func ({inner_type}) {method}(args ...any) any {{ return nil }}"
     )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i]}Type_"
+        field = fields[i + 1]
+        lines.append(f"type {curr_type} struct{{ {field} {prev_type} }}")
+        prev_type = curr_type
+    root_type = f"{root}Type_"
+    lines.append(f"type {root_type} struct{{ {fields[0]} {prev_type} }}")
+    lines.append(f"var {root} {root_type}")
+    return tuple(lines)
 
 
 @beartype

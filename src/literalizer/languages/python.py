@@ -397,13 +397,31 @@ def _python_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {name}({_VARIADIC}) -> object: ...",)
-    root, method = parts[0], parts[1]
-    cls = f"_{root.capitalize()}Type"
-    return (
-        f"class {cls}:",
-        f"    def {method}(self, {_VARIADIC}) -> object: ...",
-        f"{root} = {cls}()",
-    )
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = f"_{root.capitalize()}Type"
+        return (
+            f"class {cls}:",
+            f"    def {method}(self, {_VARIADIC}) -> object: ...",
+            f"{root} = {cls}()",
+        )
+    lines: list[str] = []
+    inner_cls = f"_{fields[-1].capitalize()}Type"
+    lines.append(f"class {inner_cls}:")
+    lines.append(f"    def {method}(self, {_VARIADIC}) -> object: ...")
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = f"_{fields[i].capitalize()}Type"
+        lines.append(f"class {cls}:")
+        lines.append(f"    {fields[i + 1]} = {prev_cls}()")
+        prev_cls = cls
+    root_cls = f"_{root.capitalize()}Type"
+    lines.append(f"class {root_cls}:")
+    lines.append(f"    {fields[0]} = {prev_cls}()")
+    lines.append(f"{root} = {root_cls}()")
+    return tuple(lines)
 
 
 @beartype

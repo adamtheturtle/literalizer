@@ -111,12 +111,29 @@ def _swift_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"func {parts[0]}({param_list}) -> Any {{ 0 }}",)
-    root, method = parts[0], parts[1]
-    cls = f"_{root}Type"
-    return (
-        f"class {cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}",
-        f"let {root} = {cls}()",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = f"_{root}Type"
+        return (
+            f"class {cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}",
+            f"let {root} = {cls}()",
+        )
+    lines: list[str] = []
+    inner_cls = f"_{fields[-1]}Type"
+    lines.append(
+        f"class {inner_cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}"
     )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = f"_{fields[i]}Type"
+        lines.append(f"class {cls} {{ var {fields[i + 1]} = {prev_cls}() }}")
+        prev_cls = cls
+    root_cls = f"_{root}Type"
+    lines.append(f"class {root_cls} {{ var {fields[0]} = {prev_cls}() }}")
+    lines.append(f"let {root} = {root_cls}()")
+    return tuple(lines)
 
 
 @beartype

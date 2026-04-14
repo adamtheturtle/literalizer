@@ -138,12 +138,29 @@ def _scala_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}({param_list}): Any = null",)
-    root, method = parts[0], parts[1]
-    cls = f"_{root.capitalize()}Type"
-    return (
-        f"class {cls} {{ def {method}({param_list}): Any = null }}",
-        f"val {root} = new {cls}",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = f"_{root.capitalize()}Type"
+        return (
+            f"class {cls} {{ def {method}({param_list}): Any = null }}",
+            f"val {root} = new {cls}",
+        )
+    lines: list[str] = []
+    inner_cls = f"_{fields[-1].capitalize()}Type"
+    lines.append(
+        f"class {inner_cls} {{ def {method}({param_list}): Any = null }}"
     )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = f"_{fields[i].capitalize()}Type"
+        lines.append(f"class {cls} {{ val {fields[i + 1]} = new {prev_cls} }}")
+        prev_cls = cls
+    root_cls = f"_{root.capitalize()}Type"
+    lines.append(f"class {root_cls} {{ val {fields[0]} = new {prev_cls} }}")
+    lines.append(f"val {root} = new {root_cls}")
+    return tuple(lines)
 
 
 @beartype

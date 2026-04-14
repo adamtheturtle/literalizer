@@ -104,18 +104,43 @@ def _rust_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
             f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
         )
         return (f"fn {parts[0]}<{generic_decl}>({param_list}) {{}}",)
-    root, method = parts[0], parts[1]
+    root = parts[0]
+    method = parts[-1]
     param_list = ", ".join(
         f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
     )
-    type_name = f"{root.title()}Type_"
-    return (
-        f"struct {type_name};",
-        f"impl {type_name} {{"
+    fields = parts[1:-1]
+    if not fields:
+        type_name = f"{root.title()}Type_"
+        return (
+            f"struct {type_name};",
+            f"impl {type_name} {{"
+            f" fn {method}<{generic_decl}>"
+            f"(&self, {param_list}) {{}} }}",
+            f"let {root} = {type_name};",
+        )
+    lines: list[str] = []
+    inner_type = f"{fields[-1].title()}Type_"
+    lines.append(f"struct {inner_type};")
+    lines.append(
+        f"impl {inner_type} {{"
         f" fn {method}<{generic_decl}>"
-        f"(&self, {param_list}) {{}} }}",
-        f"let {root} = {type_name};",
+        f"(&self, {param_list}) {{}} }}"
     )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        lines.append(f"struct {curr_type} {{ {fields[i + 1]}: {prev_type} }}")
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    lines.append(f"struct {root_type} {{ {fields[0]}: {prev_type} }}")
+    construction = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        construction = f"{curr_type} {{ {fields[i + 1]}: {construction} }}"
+    construction = f"{root_type} {{ {fields[0]}: {construction} }}"
+    lines.append(f"let {root} = {construction};")
+    return tuple(lines)
 
 
 @beartype

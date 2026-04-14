@@ -65,12 +65,31 @@ def _crystal_call_stub(
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}(*a, **kw); 0; end",)
-    root, method = parts[0], parts[1]
-    cls = root.capitalize() + "Type_"
-    return (
-        f"class {cls}; def {method}(*a, **kw); 0; end; end",
-        f"{root} = {cls}.new",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = root.capitalize() + "Type_"
+        return (
+            f"class {cls}; def {method}(*a, **kw); 0; end; end",
+            f"{root} = {cls}.new",
+        )
+    lines: list[str] = []
+    inner_cls = fields[-1].capitalize() + "Type_"
+    lines.append(f"class {inner_cls}; def {method}(*a, **kw); 0; end; end")
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type_"
+        lines.append(
+            f"class {cls}; def {fields[i + 1]}; {prev_cls}.new; end; end"
+        )
+        prev_cls = cls
+    root_cls = root.capitalize() + "Type_"
+    lines.append(
+        f"class {root_cls}; def {fields[0]}; {prev_cls}.new; end; end"
     )
+    lines.append(f"{root} = {root_cls}.new")
+    return tuple(lines)
 
 
 @beartype

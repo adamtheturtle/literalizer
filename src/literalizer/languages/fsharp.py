@@ -134,14 +134,32 @@ def _fsharp_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     if len(parts) == 1:
         param_list = ", ".join(f"_{p}: obj" for p in params)
         return (f"let {parts[0]} ({param_list}) : obj = null",)
-    root, method = parts[0], parts[1]
+    root = parts[0]
+    method = parts[-1]
     param_list = ", ".join(f"_{p}: obj" for p in params)
-    cls = f"{root.title()}Type_"
-    return (
-        f"type {cls}() =",
-        f"    member _.{method}({param_list}) : obj = null",
-        f"let {root} = {cls}()",
-    )
+    fields = parts[1:-1]
+    if not fields:
+        cls = f"{root.title()}Type_"
+        return (
+            f"type {cls}() =",
+            f"    member _.{method}({param_list}) : obj = null",
+            f"let {root} = {cls}()",
+        )
+    lines: list[str] = []
+    inner_cls = f"{fields[-1].title()}Type_"
+    lines.append(f"type {inner_cls}() =")
+    lines.append(f"    member _.{method}({param_list}) : obj = null")
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = f"{fields[i].title()}Type_"
+        lines.append(f"type {cls}() =")
+        lines.append(f"    member _.{fields[i + 1]} = {prev_cls}()")
+        prev_cls = cls
+    root_cls = f"{root.title()}Type_"
+    lines.append(f"type {root_cls}() =")
+    lines.append(f"    member _.{fields[0]} = {prev_cls}()")
+    lines.append(f"let {root} = {root_cls}()")
+    return tuple(lines)
 
 
 @beartype

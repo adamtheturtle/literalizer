@@ -74,12 +74,30 @@ def _ruby_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}(*a); end",)
-    root, method = parts[0], parts[1]
-    cls = root.capitalize() + "Type"
-    return (
-        f"class {cls}; def {method}(*a, **kw); end; end",
-        f"{root} = {cls}.new",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = root.capitalize() + "Type"
+        return (
+            f"class {cls}; def {method}(*a, **kw); end; end",
+            f"{root} = {cls}.new",
+        )
+    lines: list[str] = []
+    inner_cls = fields[-1].capitalize() + "Type"
+    lines.append(f"class {inner_cls}; def {method}(*a, **kw); end; end")
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type"
+        field = fields[i + 1]
+        lines.append(f"class {cls}; def {field}; {prev_cls}.new; end; end")
+        prev_cls = cls
+    root_cls = root.capitalize() + "Type"
+    lines.append(
+        f"class {root_cls}; def {fields[0]}; {prev_cls}.new; end; end"
     )
+    lines.append(f"{root} = {root_cls}.new")
+    return tuple(lines)
 
 
 @beartype

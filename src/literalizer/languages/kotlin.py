@@ -299,12 +299,29 @@ def _kotlin_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"fun {parts[0]}({param_list}): Any? = null",)
-    root, method = parts[0], parts[1]
-    cls = f"_{root.title()}Type"
-    return (
-        f"class {cls} {{ fun {method}({param_list}): Any? = null }}",
-        f"val {root} = {cls}()",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = f"_{root.title()}Type"
+        return (
+            f"class {cls} {{ fun {method}({param_list}): Any? = null }}",
+            f"val {root} = {cls}()",
+        )
+    lines: list[str] = []
+    inner_cls = f"_{fields[-1].title()}Type"
+    lines.append(
+        f"class {inner_cls} {{ fun {method}({param_list}): Any? = null }}"
     )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = f"_{fields[i].title()}Type"
+        lines.append(f"class {cls} {{ val {fields[i + 1]} = {prev_cls}() }}")
+        prev_cls = cls
+    root_cls = f"_{root.title()}Type"
+    lines.append(f"class {root_cls} {{ val {fields[0]} = {prev_cls}() }}")
+    lines.append(f"val {root} = {root_cls}()")
+    return tuple(lines)
 
 
 @beartype
