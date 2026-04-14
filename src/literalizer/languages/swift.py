@@ -53,6 +53,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -105,7 +106,12 @@ def _swift_param(name: str, /) -> str:
     return f"{name}: Any = 0"
 
 
-def _swift_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+def _swift_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
     param_list = ", ".join(_swift_param(p) for p in params)
     parts = name.split(sep=".")

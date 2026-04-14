@@ -51,6 +51,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
@@ -128,7 +129,12 @@ def _build_fsharp_declaration(
     return _format
 
 
-def _fsharp_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+def _fsharp_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return F# stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:

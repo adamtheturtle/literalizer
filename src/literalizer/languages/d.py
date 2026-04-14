@@ -47,6 +47,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
@@ -57,7 +58,12 @@ from literalizer._types import Value
 
 
 @beartype
-def _d_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+def _d_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return D stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:

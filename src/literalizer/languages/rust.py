@@ -54,6 +54,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -93,7 +94,12 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
     return f"NaiveDateTime::new({date}, {time_call})"
 
 
-def _rust_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+def _rust_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return Rust stub declarations for a call name."""
     # Use generic type parameters so any argument type is accepted.
     type_vars = [chr(ord("A") + i) for i in range(len(params))]

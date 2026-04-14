@@ -55,6 +55,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
@@ -65,7 +66,12 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
-def _js_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+def _js_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
     root = name.split(sep=".", maxsplit=1)[0]
     if "." in name:

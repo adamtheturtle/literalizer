@@ -244,6 +244,13 @@ class FloatSpecialsMixin:
         return formatter(value)
 
 
+class StubReturn(enum.Enum):
+    """Whether a call stub should return a value or void."""
+
+    VOID = "void"
+    VALUE = "value"
+
+
 class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
@@ -774,7 +781,9 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     languages where a bare expression is a valid statement use ``""``.
     """
 
-    format_call_stub: Callable[[str, Sequence[str]], tuple[str, ...]]
+    format_call_stub: Callable[
+        [str, Sequence[str], StubReturn], tuple[str, ...]
+    ]
     """Return stub declaration lines for a name used in a call
     expression.
 
@@ -783,6 +792,10 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     method call on an object.  *params* is the list of parameter
     names (e.g. ``["user_id", "ts"]``) so that keyword-style
     languages can generate stubs with matching named parameters.
+    *stub_return* controls the return type of the generated stub:
+    :attr:`StubReturn.VALUE` when the call expression's return
+    value is consumed (e.g. passed as an argument to a transform
+    wrapper), :attr:`StubReturn.VOID` otherwise.
 
     Stub lines are placed **inside** the language wrapper (e.g.
     inside ``func main()`` for Go, inside ``class Check`` for Java).
@@ -794,7 +807,9 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     syntax).
     """
 
-    format_call_preamble_stub: Callable[[str, Sequence[str]], tuple[str, ...]]
+    format_call_preamble_stub: Callable[
+        [str, Sequence[str], StubReturn], tuple[str, ...]
+    ]
     """Like :attr:`format_call_stub` but the lines are placed
     **before** the language wrapper — at file, package, or module
     scope.
@@ -805,12 +820,19 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """
 
 
-def _no_call_stub(_name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+def _no_call_stub(
+    _name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return no stub lines."""
     return ()
 
 
-no_call_stub: Callable[[str, Sequence[str]], tuple[str, ...]] = _no_call_stub
+no_call_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]] = (
+    _no_call_stub
+)
 """Shared callable for languages that need no call stubs."""
 
 
