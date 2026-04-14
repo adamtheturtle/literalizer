@@ -18,20 +18,12 @@ def strip_key_quotes(key: str) -> str:
 
         strip_key_quotes('"name"')  # => 'name'
 
-    Raises ``ValueError`` for unquoted keys.  All current input
-    formats produce quoted string keys; this guard exists so that
-    adding a new input format with non-string keys surfaces
-    immediately rather than silently slicing the wrong characters.
+    All current input formats produce quoted string keys, so *key*
+    is always surrounded by matching quotes.
     """
-    min_quoted_length = 2
-    if (
-        len(key) >= min_quoted_length
-        and key[0] in {'"', "'"}
-        and key[-1] == key[0]
-    ):
-        return key[1:-1]
-    msg = f"Expected a quoted key, got {key!r}"  # pragma: no cover
-    raise ValueError(msg)  # pragma: no cover
+    # All current input formats produce quoted string keys.
+    # If a new format introduces unquoted keys, this will need updating.
+    return key[1:-1]
 
 
 @beartype
