@@ -183,7 +183,11 @@ class R(metaclass=LanguageCls):
             /,
         ) -> str:
             """Format a dict entry."""
-            return self.value(key, raw_value, formatted_value)
+            return self.value(
+                key=key,
+                _raw_value=raw_value,
+                formatted_value=formatted_value,
+            )
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
