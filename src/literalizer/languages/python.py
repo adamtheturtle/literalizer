@@ -984,7 +984,7 @@ class Python(metaclass=LanguageCls):
         )
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style = call_style
-        self.call_style_config: CallStyleConfig = call_style.value
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
         self.format_call_stub = _python_call_stub
         self.format_call_preamble_stub = no_call_stub

@@ -768,9 +768,10 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     emitted when actually needed.
     """
 
-    call_style_config: CallStyleConfig
+    call_style_config: CallStyleConfig | None
     """Describes how this language passes arguments in function calls.
 
+    ``None`` for languages where :attr:`supports_call` is ``False``.
     See :class:`CallStyleConfig` for details.
     """
 

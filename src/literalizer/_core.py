@@ -1135,6 +1135,9 @@ def _format_call_args(
     literals which may use ``"; "`` (F#) or other separators.
     """
     style = language.call_style_config
+    if style is None:  # pragma: no cover
+        msg = "call_style_config must not be None"
+        raise TypeError(msg)
     formatted = [
         _format_value(value=v, spec=language, dict_open_override=None)
         for v in values

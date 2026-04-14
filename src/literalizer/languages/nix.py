@@ -32,7 +32,6 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
-    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -464,9 +463,7 @@ class Nix(metaclass=LanguageCls):
         )
 
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style_config: CallStyleConfig | None = None
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
