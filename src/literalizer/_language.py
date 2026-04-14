@@ -288,6 +288,7 @@ class LanguageCls(type):
     supports_default_ordered_map_value_type: bool
     supports_non_printable_ascii_dict_keys: bool
     supports_variable_names: bool
+    supports_dotted_calls: bool
 
     @staticmethod
     def wrap_in_file(
