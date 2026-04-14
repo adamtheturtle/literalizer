@@ -168,7 +168,11 @@ def _key_to_cobol_name(key_str: str) -> str:
 
 
 @beartype
-def _format_cobol_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_cobol_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a COBOL DATA DIVISION entry for a dict key-value pair.
 
     The key string is converted to a valid COBOL data name.  Scalar
@@ -176,14 +180,14 @@ def _format_cobol_dict_entry(key: str, _val: Value, value: str) -> str:
     items with bumped level numbers.
     """
     name = _key_to_cobol_name(key_str=key)
-    if "\n" in value:
-        bumped = _bump_levels(content=value)
+    if "\n" in formatted_value:
+        bumped = _bump_levels(content=formatted_value)
         return f"05 {name}.\n{bumped}"
-    if _is_data_entry(s=value.strip()):
-        bumped = _bump_levels(content=value.strip())
+    if _is_data_entry(s=formatted_value.strip()):
+        bumped = _bump_levels(content=formatted_value.strip())
         return f"05 {name}.\n{bumped}"
-    picture_clause = _pic_from_value(value=value)
-    return f"05 {name} {picture_clause} VALUE {value}."
+    picture_clause = _pic_from_value(value=formatted_value)
+    return f"05 {name} {picture_clause} VALUE {formatted_value}."
 
 
 @beartype

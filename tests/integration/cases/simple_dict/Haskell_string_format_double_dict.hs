@@ -1,5 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Check where
+import Data.String (IsString(fromString))
 data Val = HNull | HBool Bool | HInt Integer | HStr String | HMap [(String, Val)]
+instance IsString Val where
+    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -10,7 +14,7 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("name", HStr "Alice"),
+    ("name", "Alice"),
     ("age", 30),
     ("active", HBool True),
     ("score", HNull)

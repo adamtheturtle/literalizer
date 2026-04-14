@@ -200,14 +200,14 @@ def _build_gleam_dict_entry(
     _str_prefix = f"{prefix}Str("
 
     @beartype
-    def _format(key: str, _val: Value, value: str) -> str:
+    def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry as a hash tuple with a plain-string key.
 
         Dict keys are ``String``, not ``GVal``, so the ``{prefix}Str(...)``
         constructor must be stripped from the formatted key.
         """
         key = key.removeprefix(_str_prefix).removesuffix(")")
-        return f"#({key}, {value})"
+        return f"#({key}, {formatted_value})"
 
     return _format
 

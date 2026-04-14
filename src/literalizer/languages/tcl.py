@@ -95,9 +95,13 @@ def _format_tcl_set_entry(_original: Value, item: str) -> str:
 
 
 @beartype
-def _format_tcl_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_tcl_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a dict entry as ``key value``."""
-    return f"{key} {value}"
+    return f"{key} {formatted_value}"
 
 
 @beartype

@@ -104,7 +104,11 @@ def _matlab_char_key(s: str) -> str:
 
 
 @beartype
-def _format_matlab_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_matlab_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a MATLAB ``struct`` field as a ``'key', value`` pair.
 
     MATLAB ``struct`` accepts alternating character-vector keys and values.
@@ -120,9 +124,9 @@ def _format_matlab_dict_entry(key: str, _val: Value, value: str) -> str:
     """
     inner = _decode_matlab_string_expr(expr=key)
     key_expr = _matlab_char_key(s=inner)
-    if value.startswith("{") and value.endswith("}"):
-        value = f"{{{value}}}"
-    return f"{key_expr}, {value}"
+    if formatted_value.startswith("{") and formatted_value.endswith("}"):
+        formatted_value = f"{{{formatted_value}}}"
+    return f"{key_expr}, {formatted_value}"
 
 
 @beartype
@@ -146,11 +150,15 @@ def _containers_map_open(data: dict[str, Value]) -> str:
 
 
 @beartype
-def _format_containers_map_entry(_key: str, _val: Value, value: str) -> str:
+def _format_containers_map_entry(
+    _key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a ``containers.Map`` value entry (key already in opener)."""
-    if value.startswith("{") and value.endswith("}"):
-        value = f"{{{value}}}"
-    return value
+    if formatted_value.startswith("{") and formatted_value.endswith("}"):
+        formatted_value = f"{{{formatted_value}}}"
+    return formatted_value
 
 
 @beartype

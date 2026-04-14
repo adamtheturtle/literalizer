@@ -62,7 +62,11 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_jsonnet_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_jsonnet_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a Jsonnet dict entry as ``key: value``.
 
     If the key is a double-quoted string that is also a valid Jsonnet
@@ -73,8 +77,8 @@ def _format_jsonnet_dict_entry(key: str, _val: Value, value: str) -> str:
     inner = key[1:-1]
     identifier_pattern = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
     if identifier_pattern.match(string=inner):
-        return f"{inner}: {value}"
-    return f"{key}: {value}"
+        return f"{inner}: {formatted_value}"
+    return f"{key}: {formatted_value}"
 
 
 def _jsonnet_call_stub(

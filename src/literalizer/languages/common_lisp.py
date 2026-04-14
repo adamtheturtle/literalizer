@@ -55,9 +55,13 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_cons_entry(key: str, _val: Value, value: str) -> str:
+def _format_cons_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a Common Lisp association-list entry as a ``cons`` pair."""
-    return f"(cons {key} {value})"
+    return f"(cons {key} {formatted_value})"
 
 
 _CL_INF = "sb-ext:double-float-positive-infinity"

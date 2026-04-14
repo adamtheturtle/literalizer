@@ -60,9 +60,13 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_mojo_ordered_map_entry(key: str, _val: Value, value: str) -> str:
+def _format_mojo_ordered_map_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format one Mojo ordered-map entry as a ``Tuple(key, value)``."""
-    return f"Tuple({key}, {value})"
+    return f"Tuple({key}, {formatted_value})"
 
 
 @beartype

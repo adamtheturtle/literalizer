@@ -134,12 +134,16 @@ def _format_forth_declaration(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
-def _format_forth_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_forth_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     r"""Format a dict entry as ``key value``.
 
     Example: ``s\" name" s\" Alice"``.
     """
-    return f"{key} {value}"
+    return f"{key} {formatted_value}"
 
 
 @beartype

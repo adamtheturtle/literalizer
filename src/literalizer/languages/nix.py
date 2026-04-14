@@ -101,7 +101,11 @@ def _format_nix_string(value: str) -> str:
 
 
 @beartype
-def _format_nix_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_nix_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a Nix attribute set entry as ``key = value;``.
 
     If the key is a valid Nix identifier and not a keyword, the quotes
@@ -110,7 +114,7 @@ def _format_nix_dict_entry(key: str, _val: Value, value: str) -> str:
     """
     inner = key[1:-1]
     if _IDENTIFIER_RE.match(string=inner) and inner not in _NIX_KEYWORDS:
-        return f"{inner} = {value};"
+        return f"{inner} = {formatted_value};"
     if not inner or any(ord(ch) < _CONTROL_CHAR_UPPER_BOUND for ch in inner):
         msg = (
             f"Nix does not support the dict key {key}. "
@@ -118,7 +122,7 @@ def _format_nix_dict_entry(key: str, _val: Value, value: str) -> str:
             "control characters."
         )
         raise InvalidDictKeyError(msg)
-    return f"{key} = {value};"
+    return f"{key} = {formatted_value};"
 
 
 @beartype
