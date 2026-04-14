@@ -191,7 +191,7 @@ def extract_toml_comments(
     pending_before: list[str] = []
     elements: list[ElementComments] = []
 
-    for key, item in toml_doc.body:
+    for _key, item in toml_doc.body:
         if isinstance(item, (Whitespace, Comment)):
             if isinstance(item, Comment):
                 raw: str = item.trivia.comment
@@ -201,8 +201,6 @@ def extract_toml_comments(
                     if line.strip().startswith("#")
                 )
             continue
-        if key is None:
-            continue  # pragma: no cover
         inline = ""
         if not isinstance(item, Table):
             raw_inline: str = item.trivia.comment
