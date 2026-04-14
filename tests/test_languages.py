@@ -819,6 +819,36 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
     assert not result.preamble
 
 
+def test_literalize_call_wrap_in_file() -> None:
+    """Literalize_call with wrap_in_file returns a complete file."""
+    # Go has a static preamble ("package main") — covers the preamble
+    # prepend branch.
+    result = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Go(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        wrap_in_file=True,
+    )
+    assert "package main" in result.code
+    assert "func main()" in result.code
+    assert "process(" in result.code
+    assert not result.preamble
+    assert not result.body_preamble
+    # Python has no static preamble — covers the no-preamble branch.
+    result_no_preamble = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        wrap_in_file=True,
+    )
+    assert "process(" in result_no_preamble.code
+    assert not result_no_preamble.preamble
+
+
 def test_literalize_call_per_element_false() -> None:
     """Literalize_call with per_element=False passes the whole value."""
     result = literalize_call(

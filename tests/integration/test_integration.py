@@ -563,20 +563,13 @@ def test_golden_file(
         variable_name=_wrap_variable_name(lang_cls=lang_cls),
         new_variable=True,
         error_on_coercion=False,
+        wrap_in_file=True,
     )
-    variable_name = _wrap_variable_name(lang_cls=lang_cls) or ""
-    wrapped = lang_cls.wrap_in_file(
-        content=result.bare_code,
-        variable_name=variable_name,
-        body_preamble=result.body_preamble,
-    )
-
-    wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     # newline="" prevents Python text-mode from converting \r\n to \n
     # on Windows, which would corrupt golden files containing literal
     # CR bytes (e.g. CommonLisp string_control_chars).
     file_regression.check(
-        contents=wrapped + "\n",
+        contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
         fullpath=input_path.parent / (lang_name + lang_cls.extension),
@@ -684,7 +677,7 @@ def test_golden_file_combined_variable_forms(
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = lang_cls.wrap_combined_in_file(
+    combined = spec.wrap_combined_in_file(
         declaration=declaration.declaration_code,
         assignment=assignment.bare_code,
         variable_name=variable_name,
@@ -1173,18 +1166,12 @@ def test_format_variant_golden_file(
             variable_name=variant_case.variable_name,
             new_variable=True,
             error_on_coercion=False,
+            wrap_in_file=True,
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
-    variable_name = _wrap_variable_name(lang_cls=variant.lang_cls) or ""
-    wrapped = variant.lang_cls.wrap_in_file(
-        content=result.bare_code,
-        variable_name=variable_name,
-        body_preamble=result.body_preamble,
-    )
-    wrapped = _prepend_preamble(wrapped=wrapped, preamble=result.preamble)
     file_regression.check(
-        contents=wrapped + "\n",
+        contents=result.code + "\n",
         extension=variant.spec.extension,
         fullpath=case_dir
         / (variant_case.variant_name + variant.spec.extension),
@@ -1283,7 +1270,7 @@ def test_line_ending_combined_variable_forms(
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
-    combined = case.lang_cls.wrap_combined_in_file(
+    combined = spec.wrap_combined_in_file(
         declaration=declaration.declaration_code,
         assignment=assignment.bare_code,
         variable_name=_wrap_variable_name(lang_cls=case.lang_cls) or "",
@@ -1518,7 +1505,7 @@ def test_call_golden_file(
         )
     call_body_preamble = result.body_preamble + tuple(body_stubs)
 
-    wrapped = lang_cls.wrap_in_file(
+    wrapped = spec.wrap_in_file(
         content=result.bare_code,
         variable_name="",
         body_preamble=call_body_preamble,

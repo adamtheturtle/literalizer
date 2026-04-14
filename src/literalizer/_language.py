@@ -848,6 +848,25 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     plain record selectors instead of ``OverloadedRecordDot``.
     """
 
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a code snippet in a complete, valid file."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a declaration and assignment in a complete, valid file."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 def _no_call_stub(
     _name: str,
