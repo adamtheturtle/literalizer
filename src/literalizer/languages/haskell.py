@@ -6,7 +6,7 @@ import enum
 import functools
 import textwrap
 from collections.abc import Callable, Sequence
-from typing import cast
+from typing import Protocol
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -459,6 +459,32 @@ def _build_sequence_setup(
     )
 
 
+class _DateFormatEnum(Protocol):
+    """Protocol for a date-format enum member."""
+
+    @property
+    def name(self) -> str:
+        """Return the enum member name."""
+        ...
+
+    def __call__(self, date_value: datetime.date, /) -> str:
+        """Format a date value."""
+        ...
+
+
+class _DatetimeFormatEnum(Protocol):
+    """Protocol for a datetime-format enum member."""
+
+    @property
+    def name(self) -> str:
+        """Return the enum member name."""
+        ...
+
+    def __call__(self, dt_value: datetime.datetime, /) -> str:
+        """Format a datetime value."""
+        ...
+
+
 @dataclasses.dataclass(frozen=True)
 class _DateFormatters:
     """Date and datetime formatters."""
@@ -470,8 +496,8 @@ class _DateFormatters:
 @beartype
 def _build_date_formatters(
     *,
-    date_format: enum.Enum,
-    datetime_format: enum.Enum,
+    date_format: _DateFormatEnum,
+    datetime_format: _DatetimeFormatEnum,
     constructor_prefix: str,
 ) -> _DateFormatters:
     """Build date/datetime formatters with the constructor prefix."""
@@ -484,7 +510,7 @@ def _build_date_formatters(
             ),
         )
     else:
-        fmt_date = cast("Callable[[datetime.date], str]", date_format)
+        fmt_date = date_format
 
     fmt_datetime: Callable[[datetime.datetime], str]
     if datetime_format.name == "HASKELL":
@@ -492,9 +518,7 @@ def _build_date_formatters(
             prefix=constructor_prefix,
         )
     else:
-        fmt_datetime = cast(
-            "Callable[[datetime.datetime], str]", datetime_format
-        )
+        fmt_datetime = datetime_format
 
     return _DateFormatters(
         format_date=fmt_date,
