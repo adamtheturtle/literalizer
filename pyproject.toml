@@ -422,6 +422,7 @@ ignore_names = [
     "FIXED",
     "FROZENSET",
     "ERLANG",
+    "EXPLICIT",
     "NO",
     "OBJECT",
     "PAREN",

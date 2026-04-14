@@ -698,7 +698,7 @@ class Haskell(metaclass=LanguageCls):
             ),
         )
 
-        _explicit = string_format == self.StringFormats.EXPLICIT
+        _explicit = string_format.name == "EXPLICIT"
         _base_format_string: Callable[[str], str] = functools.partial(
             format_string_backslash_control,
             control_char_fmt="\\x{:02x}",
