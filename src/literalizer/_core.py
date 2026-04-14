@@ -342,14 +342,14 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
     ):
         value = {coerce_scalar_to_str(value=v) for v in value}
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
-    items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [
         spec.format_set_entry(v, item)
         for v, item in zip(sorted_items, formatted, strict=True)
     ]
     joined = spec.element_separator.join(entries)
-    return set_cfg.set_open(items_as_values) + joined + set_cfg.close
+    open_str = set_cfg.set_open(cast("list[Value]", sorted_items))
+    return open_str + joined + set_cfg.close
 
 
 @beartype
