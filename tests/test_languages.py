@@ -836,8 +836,8 @@ def test_literalize_call_per_element_false() -> None:
         source="[1, 2, 3]",
         input_format=InputFormat.JSON,
         language=Python(),
-        call_function="process",
-        call_params=["data"],
+        callee="process",
+        parameter_names=["data"],
         per_element=False,
     )
     assert "process(" in result.code
@@ -864,8 +864,8 @@ def test_literalize_call_missing_keyword_separator_raises() -> None:
             source="- [1]",
             input_format=InputFormat.YAML,
             language=lang,
-            call_function="f",
-            call_params=["x"],
+            callee="f",
+            parameter_names=["x"],
         )
 
 
@@ -876,8 +876,8 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             source='"hello"',
             input_format=InputFormat.JSON,
             language=Python(),
-            call_function="process",
-            call_params=["value"],
+            callee="process",
+            parameter_names=["value"],
             per_element=True,
         )
 
@@ -894,8 +894,8 @@ def test_literalize_call_unsupported_language_raises() -> None:
             source="[[1, 2]]",
             input_format=InputFormat.JSON,
             language=Yaml(),
-            call_function="f",
-            call_params=["a", "b"],
+            callee="f",
+            parameter_names=["a", "b"],
         )
 
 

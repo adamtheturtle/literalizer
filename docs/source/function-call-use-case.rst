@@ -43,8 +43,8 @@ parameters (``user_id`` and ``ts``) and wrap each call in ``print()``:
            set_format=Python.set_formats.SET,
            variable_type_hints=Python.variable_type_hints_formats.AUTO,
        ),
-       call_function="throttler.check",
-       call_params=["user_id", "ts"],
+       callee="throttler.check",
+       parameter_names=["user_id", "ts"],
        call_transform=lambda c: f"print({c})",
    )
 
