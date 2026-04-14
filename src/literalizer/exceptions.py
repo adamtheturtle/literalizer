@@ -45,3 +45,10 @@ class NullInCollectionError(Exception):
 
 class UnsupportedCallStyleError(Exception):
     """Raised when a language does not support function call rendering."""
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``UnsupportedCallStyleError``."""
+        super().__init__(
+            f"{language_name} does not support function call rendering"
+        )
+        self.language_name = language_name

@@ -1137,11 +1137,9 @@ def _format_call_args(
     """
     style = language.call_style_config
     if style is None:
-        msg = (
-            f"{type(language).__name__} does not support "
-            "function call rendering"
+        raise UnsupportedCallStyleError(
+            language_name=type(language).__name__,
         )
-        raise UnsupportedCallStyleError(msg)
     formatted = [
         _format_value(value=v, spec=language, dict_open_override=None)
         for v in values
@@ -1254,11 +1252,9 @@ def literalize_call(
         result = "\n".join(lines)
     else:
         if language.call_style_config is None:
-            msg = (
-                f"{type(language).__name__} does not support "
-                "function call rendering"
+            raise UnsupportedCallStyleError(
+                language_name=type(language).__name__,
             )
-            raise UnsupportedCallStyleError(msg)
         lit = _literalize(
             data=data,
             language=language,
