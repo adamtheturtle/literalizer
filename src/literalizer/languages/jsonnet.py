@@ -322,7 +322,7 @@ class Jsonnet(metaclass=LanguageCls):
                 body_preamble=body_preamble,
             )
         preamble_str = "\n".join(body_preamble) + "\n"
-        lines = content.split("\n")
+        lines = content.split(sep="\n")
         elements = [f"    {line}," for line in lines if line]
         return preamble_str + "[\n" + "\n".join(elements) + "\n]"
 
