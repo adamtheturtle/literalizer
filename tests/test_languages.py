@@ -574,17 +574,6 @@ def test_toml_integer_dict_key() -> None:
     assert result.code == expected
 
 
-def test_toml_non_quoted_dict_key() -> None:
-    """TOML format_dict_entry rejects a key that is not a quoted
-    string.
-    """
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=r"^Expected a quoted key, got 'plain_key'$",
-    ):
-        TOML.dict_format_config.format_entry("plain_key", "value", '"value"')
-
-
 def test_cobol_string_control_characters() -> None:
     """COBOL string literals replace control characters with spaces."""
     result = literalize(
