@@ -1223,13 +1223,6 @@ def literalize_call(
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
     """
-    if language.call_style_config is None:
-        msg = (
-            f"{type(language).__name__} does not support "
-            "function call rendering"
-        )
-        raise ValueError(msg)
-
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
 
@@ -1259,6 +1252,12 @@ def literalize_call(
             )
         result = "\n".join(lines)
     else:
+        if language.call_style_config is None:
+            msg = (
+                f"{type(language).__name__} does not support "
+                "function call rendering"
+            )
+            raise ValueError(msg)
         lit = _literalize(
             data=data,
             language=language,
