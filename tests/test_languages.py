@@ -27,7 +27,6 @@ from literalizer.languages import (
     CSharp,
     Fortran,
     Go,
-    Haskell,
     Java,
     JavaScript,
     Kotlin,
@@ -908,20 +907,3 @@ def test_literalize_call_unsupported_language_per_element_false() -> None:
             parameter_names=["data"],
             per_element=False,
         )
-
-
-def test_haskell_record_selectors_non_dotted_target() -> None:
-    """Record selectors mode passes non-dotted targets through
-    unchanged.
-    """
-    lang = Haskell(
-        dot_access_style=Haskell.DotAccessStyles.RECORD_SELECTORS,
-    )
-    result = literalize_call(
-        source="- [42]",
-        input_format=InputFormat.YAML,
-        language=lang,
-        target_function="process",
-        parameter_names=["x"],
-    )
-    assert "process(42)" in result.code

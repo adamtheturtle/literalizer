@@ -484,6 +484,18 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
     ),
     _CallCaseConfig(
+        case_dir_name="call_scalar_record_selectors",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        language_overrides={
+            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
+        },
+        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
+    ),
+    _CallCaseConfig(
         case_dir_name="call_positional_args",
         target_function="throttler.check",
         parameter_names=["user_id", "ts"],
