@@ -275,6 +275,7 @@ class LanguageCls(type):
     IntegerFormats: type[enum.Enum]
     NumericLiteralSuffixes: type[enum.Enum]
     NumericSeparators: type[enum.Enum]
+    NumericStyles: type[enum.Enum]
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
     LineEndings: type[enum.Enum]
@@ -428,6 +429,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     def numeric_separators(self) -> type[enum.Enum]:
         """Enum class whose members list the numeric separator options
         this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def numeric_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the numeric literal style
+        options this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -691,6 +699,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def numeric_separator(self) -> enum.Enum:
         """The numeric separator option chosen for this language
+        instance.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def numeric_style(self) -> enum.Enum:
+        """The numeric literal style chosen for this language
         instance.
         """
         ...  # pylint: disable=unnecessary-ellipsis

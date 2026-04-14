@@ -495,24 +495,18 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         },
         language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
     ),
-    _CallCaseConfig(
-        case_dir_name="call_positional_args",
-        target_function="throttler.check",
-        parameter_names=["user_id", "ts"],
-        call_transform=lambda c: f"emit({c})",
-        transform_stub_names=["emit"],
-        per_element=True,
-        call_style_kind=literalizer.CallStyleKind.POSITIONAL,
-    ),
-    _CallCaseConfig(
-        case_dir_name="call_named_args",
-        target_function="throttler.check",
-        parameter_names=["user_id", "ts"],
-        call_transform=lambda c: f"emit({c})",
-        transform_stub_names=["emit"],
-        per_element=True,
-        call_style_kind=literalizer.CallStyleKind.KEYWORD,
-    ),
+    *[
+        _CallCaseConfig(
+            case_dir_name=f"call_{kind.value}",
+            target_function="throttler.check",
+            parameter_names=["user_id", "ts"],
+            call_transform=lambda c: f"emit({c})",
+            transform_stub_names=["emit"],
+            per_element=True,
+            call_style_kind=kind,
+        )
+        for kind in literalizer.CallStyleKind
+    ],
 ]
 
 _CALL_CASE_DIRS = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
@@ -982,6 +976,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         get_formats=lambda s: s.float_formats,
         make_spec=lambda cls, fmt: cls(float_format=fmt),
     )
+    numeric_style = nv(
+        category="numeric_style",
+        get_default=lambda s: s.numeric_style,
+        get_formats=lambda s: s.numeric_styles,
+        make_spec=lambda cls, fmt: cls(numeric_style=fmt),
+    )
     string_format = nv(
         category="string_format",
         get_default=lambda s: s.string_format,
@@ -1113,6 +1113,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
         (_build_constructor_prefix_variants(), "float_list", "_float"),
+        (numeric_style, "int_list", ""),
+        (numeric_style, "int_list_with_zero", "_zero"),
+        (numeric_style, "float_list", ""),
+        (numeric_style, "float_special_values", ""),
+        (numeric_style, "mixed_number_list", ""),
+        (numeric_style, "scalars", ""),
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
@@ -1379,6 +1385,8 @@ def test_format_enumeration_properties(
     assert len(spec.integer_formats) >= 1
     assert issubclass(spec.numeric_separators, enum.Enum)
     assert len(spec.numeric_separators) >= 1
+    assert issubclass(spec.numeric_styles, enum.Enum)
+    assert len(spec.numeric_styles) >= 1
     assert issubclass(spec.string_formats, enum.Enum)
     assert len(spec.string_formats) >= 1
     assert issubclass(spec.trailing_commas, enum.Enum)

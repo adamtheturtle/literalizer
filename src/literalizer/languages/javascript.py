@@ -282,6 +282,11 @@ class JavaScript(metaclass=LanguageCls):
         NONE = enum.auto()
         UNDERSCORE = enum.auto()
 
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options."""
+
+        OVERLOADED = enum.auto()
+
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
@@ -367,6 +372,7 @@ class JavaScript(metaclass=LanguageCls):
     dict_formats = DictFormats
     empty_dict_keys = EmptyDictKey
     numeric_separators = NumericSeparators
+    numeric_styles = NumericStyles
     float_formats = FloatFormats
     integer_formats = IntegerFormats
     numeric_literal_suffixes = NumericLiteralSuffixes
@@ -432,6 +438,7 @@ class JavaScript(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
@@ -478,6 +485,7 @@ class JavaScript(metaclass=LanguageCls):
         self.integer_format = integer_format
         self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
+        self.numeric_style = numeric_style
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
