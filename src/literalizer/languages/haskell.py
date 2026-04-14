@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import textwrap
 from collections.abc import Callable, Sequence
 from typing import cast
 
@@ -43,6 +44,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -53,12 +55,88 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     date_scalar_preamble,
-    no_call_stub,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _haskell_call_preamble_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Haskell preamble stubs for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) > 1:
+        return ("{-# LANGUAGE OverloadedRecordDot #-}",)
+    return ()
+
+
+def _build_haskell_call_stub(
+    type_name: str,
+) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    """Build a call stub function that uses *type_name* for field
+    types.
+    """
+    ret = "IO ()"
+    body = "return ()"
+
+    @beartype
+    def _haskell_call_stub(
+        name: str,
+        params: Sequence[str],
+        _stub_return: StubReturn,
+        /,
+    ) -> tuple[str, ...]:
+        """Return Haskell stub declarations for a call name."""
+        parts = name.split(sep=".")
+        if len(parts) == 1:
+            return (f"{parts[0]} _ = {body}",)
+        root = parts[0]
+        method = parts[-1]
+        fields = parts[1:-1]
+        if len(params) == 1:
+            arg_type = type_name
+        else:
+            arg_type = "(" + ", ".join(type_name for _ in params) + ")"
+        field_type = f"{arg_type} -> {ret}"
+        if not fields:
+            cls = root.capitalize() + "Type_"
+            return (
+                f"data {cls} = {cls} {{ {method} :: {field_type} }}",
+                f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
+            )
+        lines: list[str] = []
+        inner_cls = fields[-1].capitalize() + "Type_"
+        lines.append(
+            f"data {inner_cls} = {inner_cls} {{ {method} :: {field_type} }}",
+        )
+        prev_cls = inner_cls
+        for i in range(len(fields) - 2, -1, -1):
+            cls = fields[i].capitalize() + "Type_"
+            lines.append(
+                f"data {cls} = {cls} {{ {fields[i + 1]} :: {prev_cls} }}",
+            )
+            prev_cls = cls
+        root_cls = root.capitalize() + "Type_"
+        lines.append(
+            f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
+        )
+        # Build nested construction from inside out.
+        construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
+        for i in range(len(fields) - 2, -1, -1):
+            cls = fields[i].capitalize() + "Type_"
+            construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
+        construction = f"{root_cls} {{ {fields[0]} = {construction} }}"
+        lines.append(f"{root} = {construction}")
+        return tuple(lines)
+
+    return _haskell_call_stub
 
 
 def _build_haskell_datetime_formatter(
@@ -605,7 +683,6 @@ class Haskell(metaclass=LanguageCls):
     static_preamble: Sequence[str] = ()
     static_body_preamble: Sequence[str] = ()
     special_float_preamble: tuple[str, ...] = ()
-    call_style_config: CallStyleConfig | None = None
 
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
@@ -816,6 +893,8 @@ class Haskell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Haskell call style options."""
 
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
     call_styles = CallStyles
 
     @staticmethod
@@ -825,8 +904,18 @@ class Haskell(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
-        del variable_name
         preamble = "\n".join(body_preamble)
+        if not variable_name:
+            # Call mode: bare expressions are not valid at module
+            # top level in Haskell, so wrap them in ``main``.
+            indented = textwrap.indent(text=content, prefix="    ")
+            return (
+                "module Check where\n"
+                + preamble
+                + "\nmain :: IO ()\nmain = do\n"
+                + indented
+                + "\n    pure ()"
+            )
         return "module Check where\n" + preamble + "\n" + content
 
     @staticmethod
@@ -865,6 +954,7 @@ class Haskell(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
         type_name: str = "Val",
         constructor_prefix: str = "H",
@@ -999,5 +1089,10 @@ class Haskell(metaclass=LanguageCls):
             [frozenset[type], Value], tuple[str, ...]
         ] = preamble.compute_body_preamble
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = no_call_stub
+        self.call_style_config: CallStyleConfig | None = call_style.value
+        self.format_call_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = _build_haskell_call_stub(
+            type_name=type_name,
+        )
+        self.format_call_preamble_stub = _haskell_call_preamble_stub
