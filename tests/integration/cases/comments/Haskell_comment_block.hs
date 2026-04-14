@@ -1,9 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HBool Bool | HInt Integer | HStr String | HMap [(String, Val)]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -15,7 +11,7 @@ instance Num Val where
 my_data :: Val
 my_data = HMap [
     {- Server configuration -}
-    ("host", "localhost"),  {- default host -}
+    ("host", HStr "localhost"),  {- default host -}
     ("port", 8080),
     {- Enable debug mode -}
     ("debug", HBool True)

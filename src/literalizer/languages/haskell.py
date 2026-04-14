@@ -343,10 +343,6 @@ class Haskell(metaclass=LanguageCls):
 
     .. code-block:: haskell
 
-       {-# LANGUAGE OverloadedStrings #-}
-
-       import Data.String (IsString(fromString))
-
        data Val
          = HNull
          | HBool Bool
@@ -356,9 +352,6 @@ class Haskell(metaclass=LanguageCls):
          | HList [Val]
          | HMap [(String, Val)]
          | HSet [Val]
-
-       instance IsString Val where
-           fromString = HStr
 
        instance Num Val where
            fromInteger = HInt
@@ -370,9 +363,13 @@ class Haskell(metaclass=LanguageCls):
            fromRational r = HFloat (realToFrac r)
            ...
 
-    ``OverloadedStrings`` lets bare string literals like ``"hi"`` resolve to
-    ``HStr "hi"`` via ``IsString``, and the ``Num`` / ``Fractional`` instances
-    let numeric literals resolve to ``HInt`` / ``HFloat``.
+    The ``Num`` / ``Fractional`` instances let numeric literals resolve to
+    ``HInt`` / ``HFloat``.
+
+    With the default ``EXPLICIT`` string format, strings are wrapped
+    explicitly (e.g. ``HStr "hi"``).  The ``DOUBLE`` format instead uses
+    ``OverloadedStrings`` so bare ``"hi"`` literals resolve to ``HStr "hi"``
+    via an ``IsString`` instance.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
@@ -666,7 +663,7 @@ class Haskell(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        string_format: StringFormats = StringFormats.DOUBLE,
+        string_format: StringFormats = StringFormats.EXPLICIT,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "    ",

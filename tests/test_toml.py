@@ -462,16 +462,13 @@ def test_body_preamble() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected_preamble = "import Data.String (IsString(fromString))"
+    expected_preamble = "data Val = HStr String | HMap [(String, Val)]"
     assert result.body_preamble[0] == expected_preamble
     expected = textwrap.dedent(
         text="""\
-        import Data.String (IsString(fromString))
         data Val = HStr String | HMap [(String, Val)]
-        instance IsString Val where
-            fromString = HStr
         HMap [
-            ("name", "alice")
+            ("name", HStr "alice")
             ]""",
     )
     assert result.code == expected

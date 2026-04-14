@@ -1,10 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
 import Data.Time (Day, fromGregorian, UTCTime(..), secondsToDiffTime)
-import Data.String (IsString(fromString))
 data Val = HNull | HBool Bool | HInt Integer | HStr String | HMap [(String, Val)] | HDate Day | HDatetime UTCTime
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -15,11 +11,11 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("name", "Alice"),
+    ("name", HStr "Alice"),
     ("age", 30),
     ("active", HBool True),
     ("score", HNull),
     ("joined", HDate (fromGregorian 2024 1 15)),
     ("last_login", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000))),
-    ("avatar", "48656c6c6f")
+    ("avatar", HStr "48656c6c6f")
     ]
