@@ -43,6 +43,7 @@ from literalizer.exceptions import (
     JSON5ParseError,
     JSONParseError,
     TOMLParseError,
+    UnsupportedCallStyleError,
     YAMLParseError,
 )
 
@@ -1140,7 +1141,7 @@ def _format_call_args(
             f"{type(language).__name__} does not support "
             "function call rendering"
         )
-        raise ValueError(msg)
+        raise UnsupportedCallStyleError(msg)
     formatted = [
         _format_value(value=v, spec=language, dict_open_override=None)
         for v in values
@@ -1257,7 +1258,7 @@ def literalize_call(
                 f"{type(language).__name__} does not support "
                 "function call rendering"
             )
-            raise ValueError(msg)
+            raise UnsupportedCallStyleError(msg)
         lit = _literalize(
             data=data,
             language=language,

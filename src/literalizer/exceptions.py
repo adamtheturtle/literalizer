@@ -41,3 +41,7 @@ class NullInCollectionError(Exception):
     """Raised when a collection contains null elements and the chosen
     format does not support them (e.g. Java's ``List.of()``).
     """
+
+
+class UnsupportedCallStyleError(Exception):
+    """Raised when a language does not support function call rendering."""

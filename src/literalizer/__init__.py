@@ -25,6 +25,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
 )
+from literalizer.exceptions import UnsupportedCallStyleError
 
 __all__ = [
     "CallStyleConfig",
@@ -41,6 +42,7 @@ __all__ = [
     "SequenceFormatConfig",
     "SetFormatConfig",
     "TrailingCommaConfig",
+    "UnsupportedCallStyleError",
     "fixed_dict_open",
     "fixed_sequence_open",
     "fixed_set_open",
