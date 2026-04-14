@@ -62,6 +62,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    identity_call_target,
     no_call_stub,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
@@ -1020,3 +1021,4 @@ class Python(metaclass=LanguageCls):
         self.statement_terminator = ""
         self.format_call_stub = _python_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target

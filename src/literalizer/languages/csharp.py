@@ -65,6 +65,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
@@ -625,3 +626,4 @@ class CSharp(metaclass=LanguageCls):
         self.statement_terminator = ";"
         self.format_call_stub = _csharp_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target

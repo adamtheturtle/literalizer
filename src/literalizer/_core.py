@@ -1227,6 +1227,7 @@ def literalize_call(
     """
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
+    formatted_target = language.format_call_target(target_function)
 
     if per_element:
         if not isinstance(data, list):
@@ -1246,7 +1247,7 @@ def literalize_call(
             )
             lines.append(
                 _assemble_call(
-                    target_function=target_function,
+                    target_function=formatted_target,
                     args_str=args_str,
                     call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
@@ -1267,7 +1268,7 @@ def literalize_call(
         )
         args_str = f"({lit})"
         result = _assemble_call(
-            target_function=target_function,
+            target_function=formatted_target,
             args_str=args_str,
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,
