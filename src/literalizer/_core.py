@@ -976,6 +976,7 @@ def literalize(
     variable_name: str | None = None,
     new_variable: bool = True,
     error_on_coercion: bool = False,
+    wrap_in_file: bool = False,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
     language literal.
@@ -1009,6 +1010,12 @@ def literalize(
             collections to strings.  Only has an effect when the
             the language's sequence format does not support
             heterogeneity.
+        wrap_in_file: If ``True``, assemble :attr:`code` as a
+            complete, valid source file using the language's
+            ``wrap_in_file`` method and prepend :attr:`preamble`.
+            When set, :attr:`preamble` and :attr:`body_preamble`
+            on the result are empty tuples (their content has been
+            folded into :attr:`code`).
 
     Raises:
         JSONParseError: If *input_format* is ``JSON`` and *source* is
@@ -1111,6 +1118,24 @@ def literalize(
         result = "\n".join(computed.body) + "\n" + result
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
+
+    if wrap_in_file:
+        bare = result
+        if computed.body:
+            bare = result[len("\n".join(computed.body) + "\n") :]
+        wrapped = language.wrap_in_file(
+            content=bare,
+            variable_name=variable_name or "",
+            body_preamble=computed.body,
+        )
+        if preamble:
+            wrapped = "\n".join(preamble) + "\n" + wrapped
+        return LiteralizeResult(
+            code=wrapped,
+            preamble=(),
+            body_preamble=(),
+        )
+
     return LiteralizeResult(
         code=result,
         preamble=preamble,
@@ -1197,6 +1222,7 @@ def literalize_call(
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
+    wrap_in_file: bool = False,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -1221,6 +1247,12 @@ def literalize_call(
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
+        wrap_in_file: If ``True``, assemble :attr:`code` as a
+            complete, valid source file using the language's
+            ``wrap_in_file`` method and prepend :attr:`preamble`.
+            When set, :attr:`preamble` and :attr:`body_preamble`
+            on the result are empty tuples (their content has been
+            folded into :attr:`code`).
     """
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
@@ -1278,6 +1310,23 @@ def literalize_call(
     preamble = tuple(language.static_preamble) + computed.header
     if computed.body:
         result = "\n".join(computed.body) + "\n" + result
+
+    if wrap_in_file:
+        bare = result
+        if computed.body:
+            bare = result[len("\n".join(computed.body) + "\n") :]
+        wrapped = language.wrap_in_file(
+            content=bare,
+            variable_name="",
+            body_preamble=computed.body,
+        )
+        if preamble:
+            wrapped = "\n".join(preamble) + "\n" + wrapped
+        return LiteralizeResult(
+            code=wrapped,
+            preamble=(),
+            body_preamble=(),
+        )
 
     return LiteralizeResult(
         code=result,

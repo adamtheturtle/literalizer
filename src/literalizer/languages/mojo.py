@@ -296,8 +296,8 @@ class Mojo(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -311,8 +311,8 @@ class Mojo(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix="    ")
         return f"def main():\n{indented}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -324,7 +324,7 @@ class Mojo(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use = f"_ = {variable_name}"
-        return Mojo.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + f"\n{use}\n" + assignment,
             variable_name=variable_name,
             body_preamble=(),

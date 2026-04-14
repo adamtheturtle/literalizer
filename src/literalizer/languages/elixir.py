@@ -349,8 +349,8 @@ class Elixir(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -366,15 +366,15 @@ class Elixir(metaclass=LanguageCls):
             f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Elixir declaration + assignment in a module function."""
-        return Elixir.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,

@@ -304,8 +304,8 @@ class Odin(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -317,15 +317,15 @@ class Odin(metaclass=LanguageCls):
         )
         return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Odin declaration + assignment in a main procedure."""
-        return Odin.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,

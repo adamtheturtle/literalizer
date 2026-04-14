@@ -243,8 +243,8 @@ class Clojure(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -256,8 +256,8 @@ class Clojure(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,

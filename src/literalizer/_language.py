@@ -290,8 +290,8 @@ class LanguageCls(type):
     supports_variable_names: bool
     supports_dotted_calls: bool
 
-    @staticmethod
     def wrap_in_file(
+        cls,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -299,8 +299,8 @@ class LanguageCls(type):
         """Wrap a code snippet in a complete, valid file."""
         raise NotImplementedError  # pragma: no cover
 
-    @staticmethod
     def wrap_combined_in_file(
+        cls,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -822,6 +822,25 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     :attr:`format_call_stub`.  Languages like Go that cannot declare
     types inside function bodies use this instead.
     """
+
+    def wrap_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a code snippet in a complete, valid file."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def wrap_combined_in_file(
+        self,
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a declaration and assignment in a complete, valid file."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 def _no_call_stub(

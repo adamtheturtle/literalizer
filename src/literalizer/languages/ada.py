@@ -278,8 +278,8 @@ class Ada(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -293,8 +293,8 @@ class Ada(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix="   ")
         return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
