@@ -1,11 +1,11 @@
 package main
 type clientType_ struct{}
-func (clientType_) send(args ...any) any { return nil }
-type nsType_ struct{ client clientType_ }
-var ns nsType_
+func (clientType_) fetch(args ...any) any { return nil }
+type appType_ struct{ client clientType_ }
+var app appType_
 
 func main() {
-ns.client.send("hello");
-ns.client.send(42);
-ns.client.send(true);
+app.client.fetch("hello");
+app.client.fetch(42);
+app.client.fetch(true);
 }

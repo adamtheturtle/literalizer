@@ -1,4 +1,4 @@
-var ns = new Proxy({}, {get: () => () => {}});
-ns.client.send({ payload: "hello" });
-ns.client.send({ payload: 42 });
-ns.client.send({ payload: true });
+var app = new Proxy({}, {get: function g() { return new Proxy(function(){}, {get: g}); }});
+app.client.fetch({ payload: "hello" });
+app.client.fetch({ payload: 42 });
+app.client.fetch({ payload: true });

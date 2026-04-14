@@ -1,6 +1,6 @@
-class _clientType { func send(payload: Any = 0) -> Any { 0 } }
-class _nsType { var client = _clientType() }
-let ns = _nsType()
-ns.client.send(payload: "hello");
-ns.client.send(payload: 42);
-ns.client.send(payload: true);
+class _clientType { func fetch(payload: Any = 0) -> Any { 0 } }
+class _appType { var client = _clientType() }
+let app = _appType()
+app.client.fetch(payload: "hello");
+app.client.fetch(payload: 42);
+app.client.fetch(payload: true);

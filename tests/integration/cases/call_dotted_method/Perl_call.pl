@@ -1,3 +1,3 @@
-ns.client.send("hello");
-ns.client.send(42);
-ns.client.send(1);
+app.client.fetch("hello");
+app.client.fetch(42);
+app.client.fetch(1);

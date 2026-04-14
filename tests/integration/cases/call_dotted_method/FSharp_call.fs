@@ -6,10 +6,10 @@ type Val =
     | FStr of string
     | FList of Val list
 type ClientType_() =
-    member _.send(_payload: obj) : obj = null
-type NsType_() =
+    member _.fetch(_payload: obj) : obj = null
+type AppType_() =
     member _.client = ClientType_()
-let ns = NsType_()
-ns.client.send("hello")
-ns.client.send(42)
-ns.client.send(FBool true)
+let app = AppType_()
+app.client.fetch("hello")
+app.client.fetch(42)
+app.client.fetch(FBool true)

@@ -5,11 +5,11 @@ struct Any {
     template<class T> Any(T&&) noexcept {}
     Any(std::initializer_list<Any>) noexcept {}
 };
-struct clientType_ { auto send(auto...) const { return 0; } };
-struct nsType_ { clientType_ client; };
-const nsType_ ns;
+struct clientType_ { auto fetch(auto...) const { return 0; } };
+struct appType_ { clientType_ client; };
+const appType_ app;
 void check_() {
-ns.client.send("hello");
-ns.client.send(42);
-ns.client.send(true);
+app.client.fetch("hello");
+app.client.fetch(42);
+app.client.fetch(true);
 }

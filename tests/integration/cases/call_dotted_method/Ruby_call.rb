@@ -1,6 +1,6 @@
-class ClientType; def send(*a, **kw); end; end
-class NsType; def client; ClientType.new; end; end
-ns = NsType.new
-ns.client.send(payload: "hello")
-ns.client.send(payload: 42)
-ns.client.send(payload: true)
+class ClientType; def fetch(*a, **kw); end; end
+class AppType; def client; ClientType.new; end; end
+app = AppType.new
+app.client.fetch(payload: "hello")
+app.client.fetch(payload: 42)
+app.client.fetch(payload: true)

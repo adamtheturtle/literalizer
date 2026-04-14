@@ -1,10 +1,10 @@
 class Check {
-static class ClientType_ { Object send(Object... args) { return null; } }
-static class NsType_ { ClientType_ client = new ClientType_(); }
-static NsType_ ns = new NsType_();
+static class ClientType_ { Object fetch(Object... args) { return null; } }
+static class AppType_ { ClientType_ client = new ClientType_(); }
+static AppType_ app = new AppType_();
     public static void check() {
-ns.client.send("hello");
-ns.client.send(42);
-ns.client.send(true);
+app.client.fetch("hello");
+app.client.fetch(42);
+app.client.fetch(true);
     }
 }

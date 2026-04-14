@@ -1,8 +1,8 @@
 object Check {
-class _ClientType { def send(payload: Any = null): Any = null }
-class _NsType { val client = new _ClientType }
-val ns = new _NsType
-ns.client.send(payload = "hello")
-ns.client.send(payload = 42)
-ns.client.send(payload = true)
+class _ClientType { def fetch(payload: Any = null): Any = null }
+class _AppType { val client = new _ClientType }
+val app = new _AppType
+app.client.fetch(payload = "hello")
+app.client.fetch(payload = 42)
+app.client.fetch(payload = true)
 }

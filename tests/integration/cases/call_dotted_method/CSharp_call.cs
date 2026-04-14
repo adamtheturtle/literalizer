@@ -1,5 +1,5 @@
 using System;
-dynamic ns = new System.Dynamic.ExpandoObject();
-ns.client.send("hello");
-ns.client.send(42);
-ns.client.send(true);
+dynamic app = new System.Dynamic.ExpandoObject();
+app.client.fetch("hello");
+app.client.fetch(42);
+app.client.fetch(true);

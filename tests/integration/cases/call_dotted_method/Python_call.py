@@ -1,8 +1,8 @@
 class _ClientType:
-    def send(self, *_args: object, **_kwargs: object) -> object: ...
-class _NsType:
+    def fetch(self, *_args: object, **_kwargs: object) -> object: ...
+class _AppType:
     client = _ClientType()
-ns = _NsType()
-ns.client.send(payload="hello")
-ns.client.send(payload=42)
-ns.client.send(payload=True)
+app = _AppType()
+app.client.fetch(payload="hello")
+app.client.fetch(payload=42)
+app.client.fetch(payload=True)

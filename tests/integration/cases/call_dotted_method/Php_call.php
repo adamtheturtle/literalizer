@@ -1,4 +1,4 @@
 <?php
-ns.client.send(payload: "hello");
-ns.client.send(payload: 42);
-ns.client.send(payload: true);
+app.client.fetch(payload: "hello");
+app.client.fetch(payload: 42);
+app.client.fetch(payload: true);

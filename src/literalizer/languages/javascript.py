@@ -69,7 +69,9 @@ def _js_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
     root = name.split(sep=".", maxsplit=1)[0]
     if "." in name:
-        return (f"var {root} = new Proxy({{}}, {{get: () => () => {{}}}});",)
+        proxy = "new Proxy(function(){}, {get: g})"
+        handler = f"get: function g() {{ return {proxy}; }}"
+        return (f"var {root} = new Proxy({{}}, {{{handler}}});",)
     return (f"function {root}() {{}}",)
 
 
