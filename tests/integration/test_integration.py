@@ -432,8 +432,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     ),
     _CallCaseConfig(
         case_dir_name="call_positional_args",
-        call_function="throttler.check",
-        call_params=["user_id", "ts"],
+        target_function="throttler.check",
+        parameter_names=["user_id", "ts"],
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
@@ -441,8 +441,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     ),
     _CallCaseConfig(
         case_dir_name="call_named_args",
-        call_function="throttler.check",
-        call_params=["user_id", "ts"],
+        target_function="throttler.check",
+        parameter_names=["user_id", "ts"],
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
