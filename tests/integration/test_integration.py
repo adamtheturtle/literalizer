@@ -1093,6 +1093,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
         (_build_constructor_prefix_variants(), "float_list", "_float"),
         (_build_numeric_style_variants(), "int_list", ""),
+        (_build_numeric_style_variants(), "int_list_with_zero", "_zero"),
         (_build_numeric_style_variants(), "float_list", ""),
         (_build_numeric_style_variants(), "float_special_values", ""),
         (_build_numeric_style_variants(), "mixed_number_list", ""),
