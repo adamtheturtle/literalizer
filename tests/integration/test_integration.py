@@ -1348,20 +1348,13 @@ class _CallCase:
     lang_cls: literalizer.LanguageCls
 
 
-_CALL_LANGUAGES: frozenset[str] = frozenset(
-    lang_cls.__name__
-    for lang_cls in _SORTED_LANGUAGES
-    if len(lang_cls.CallStyles) > 0
-)
-
-
 @beartype
 def _discover_call_cases() -> list[_CallCase]:
     """Return call test cases for all languages."""
     cases: list[_CallCase] = []
     for config in _CALL_CASE_CONFIGS:
         for lang_cls in _SORTED_LANGUAGES:
-            if lang_cls.__name__ not in _CALL_LANGUAGES:
+            if len(lang_cls.CallStyles) == 0:
                 continue
             if config.call_style_name is not None:
                 # Only include languages that have this as a
