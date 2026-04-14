@@ -1,9 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HInt Integer | HStr String | HList [Val]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -15,5 +11,5 @@ instance Num Val where
 my_data :: Val
 my_data = HList [
     HList [1, 2],
-    HList ["a", "b"]
+    HList [HStr "a", HStr "b"]
     ]

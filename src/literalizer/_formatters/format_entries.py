@@ -63,9 +63,9 @@ def tuple_dict_entry(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry as a tuple."""
-        return f"({key}, {format_value(val, value)})"
+        return f"({key}, {format_value(raw_value, formatted_value)})"
 
     return _format
 
@@ -86,9 +86,9 @@ def braced_dict_entry(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry with braces."""
-        return f"{{{key}, {format_value(val, value)}}}"
+        return f"{{{key}, {format_value(raw_value, formatted_value)}}}"
 
     return _format
 
@@ -149,9 +149,9 @@ def dict_entry_with_separator(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry by joining key and value with separator."""
-        return f"{key}{separator}{format_value(val, value)}"
+        return f"{key}{separator}{format_value(raw_value, formatted_value)}"
 
     return _format
 
@@ -175,9 +175,10 @@ def dict_entry_symbol_style(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry in symbol style."""
-        return f"{strip_key_quotes(key=key)}: {format_value(val, value)}"
+        formatted = format_value(raw_value, formatted_value)
+        return f"{strip_key_quotes(key=key)}: {formatted}"
 
     return _format
 
@@ -199,8 +200,9 @@ def dict_entry_with_template(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry using the template."""
-        return template.format(key=key, value=format_value(val, value))
+        formatted = format_value(raw_value, formatted_value)
+        return template.format(key=key, value=formatted)
 
     return _format

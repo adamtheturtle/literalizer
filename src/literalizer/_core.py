@@ -324,10 +324,14 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
 
 @beartype
 def _build_dict_entry(
-    *, key_str: str, val: Value, val_str: str, spec: Language
+    *, key_str: str, raw_value: Value, formatted_value: str, spec: Language
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
-    return spec.dict_format_config.format_entry(key_str, val, val_str)
+    return spec.dict_format_config.format_entry(
+        key_str,
+        raw_value,
+        formatted_value,
+    )
 
 
 @beartype
@@ -410,8 +414,8 @@ def _format_dict_value(
                 spec=spec,
                 dict_open_override=None,
             ),
-            val=v,
-            val_str=_format_value(
+            raw_value=v,
+            formatted_value=_format_value(
                 value=v,
                 spec=spec,
                 dict_open_override=None,
@@ -697,8 +701,8 @@ def _format_collection_lines(
                     if is_ordered_map
                     else _build_dict_entry(
                         key_str=formatted_key,
-                        val=v,
-                        val_str=formatted_val,
+                        raw_value=v,
+                        formatted_value=formatted_val,
                         spec=spec,
                     )
                 )
@@ -803,10 +807,9 @@ def _literalize(
             instead of silently coercing heterogeneous scalar
             collections to strings.
     """
-    spec = language
     data = apply_coercions(
         data=data,
-        spec=spec,
+        spec=language,
         error_on_coercion=error_on_coercion,
     )
 
@@ -823,7 +826,7 @@ def _literalize(
         datetime.date,
     )
     if isinstance(data, scalar_types) or data is None:
-        return f"{line_prefix}{_format_scalar(value=data, spec=spec)}"
+        return f"{line_prefix}{_format_scalar(value=data, spec=language)}"
 
     # Empty collections have no elements to lay out line-by-line, so
     # delegate to _format_value which already returns the correct
@@ -831,7 +834,7 @@ def _literalize(
     if not data and include_delimiters:
         formatted = _format_value(
             value=data,
-            spec=spec,
+            spec=language,
             dict_open_override=None,
         )
         return f"{line_prefix}{formatted}"
@@ -842,16 +845,16 @@ def _literalize(
 
     if (
         isinstance(data, set)
-        and spec.set_format_config.coerce_mixed_to_str
+        and language.set_format_config.coerce_mixed_to_str
         and all_scalars_heterogeneous(values=list(data))
     ):
         data = {coerce_scalar_to_str(value=v) for v in data}
 
     is_ordered_map = isinstance(data, ordereddict)
-    trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
+    trailing_comma = language.trailing_comma_config.multiline_trailing_comma
     lines_or_early = _format_collection_lines(
         data=data,
-        spec=spec,
+        spec=language,
         body_prefix=body_prefix,
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
@@ -870,7 +873,7 @@ def _literalize(
         body=body,
         is_ordered_map=is_ordered_map,
         data=data,
-        spec=spec,
+        spec=language,
         line_prefix=line_prefix,
     )
 

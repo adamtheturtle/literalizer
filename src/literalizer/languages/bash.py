@@ -90,9 +90,13 @@ def _format_bash_sequence_entry(original: Value, item: str) -> str:
 
 
 @beartype
-def _format_bash_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_bash_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a Bash associative-array entry as ``[key]=value``."""
-    return f"[{key}]={_to_bash_value(item=value)}"
+    return f"[{key}]={_to_bash_value(item=formatted_value)}"
 
 
 @beartype

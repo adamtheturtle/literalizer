@@ -60,7 +60,11 @@ if TYPE_CHECKING:
 
 
 @beartype
-def _format_r_dict_entry_positional(key: str, _val: Value, value: str) -> str:
+def _format_r_dict_entry_positional(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format an R named list entry.
 
     R list syntax does not allow zero-length names (``"" = value`` is a
@@ -68,12 +72,16 @@ def _format_r_dict_entry_positional(key: str, _val: Value, value: str) -> str:
     elements.
     """
     if key == '""':
-        return value
-    return f"{key} = {value}"
+        return formatted_value
+    return f"{key} = {formatted_value}"
 
 
 @beartype
-def _format_r_dict_entry_error(key: str, _val: Value, value: str) -> str:
+def _format_r_dict_entry_error(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format an R named list entry, raising on empty-string keys."""
     if key == '""':
         msg = (
@@ -82,7 +90,7 @@ def _format_r_dict_entry_error(key: str, _val: Value, value: str) -> str:
             "as unnamed list elements instead."
         )
         raise InvalidDictKeyError(msg)
-    return f"{key} = {value}"
+    return f"{key} = {formatted_value}"
 
 
 @beartype
@@ -167,9 +175,19 @@ class R(metaclass=LanguageCls):
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
-        def __call__(self, key: str, val: Value, value: str, /) -> str:
+        def __call__(
+            self,
+            key: str,
+            raw_value: Value,
+            formatted_value: str,
+            /,
+        ) -> str:
             """Format a dict entry."""
-            return self.value(key=key, _val=val, value=value)
+            return self.value(
+                key=key,
+                _raw_value=raw_value,
+                formatted_value=formatted_value,
+            )
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
