@@ -857,7 +857,9 @@ class Haskell(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = _build_haskell_call_stub(
+        self.format_call_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = _build_haskell_call_stub(
             type_name=type_name,
         )
         self.format_call_preamble_stub = _haskell_call_preamble_stub
