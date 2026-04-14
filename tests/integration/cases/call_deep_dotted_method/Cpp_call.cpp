@@ -5,7 +5,7 @@ struct Any {
     template<class T> Any(T&&) noexcept {}
     Any(std::initializer_list<Any>) noexcept {}
 };
-struct clientType_ { auto post(auto...) const { return 0; } };  // NOLINT(modernize-use-nodiscard)
+struct clientType_ { void post(auto...) const {} };
 struct apiType_ { clientType_ client; };
 struct objType_ { apiType_ api; };
 const objType_ obj;

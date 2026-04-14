@@ -899,6 +899,24 @@ def test_literalize_call_unsupported_language_raises() -> None:
         )
 
 
+def test_literalize_call_unsupported_language_per_element_false() -> None:
+    """Literalize_call raises ValueError for a non-call language with
+    per_element=False.
+    """
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="does not support",
+    ):
+        literalize_call(
+            source="[1, 2]",
+            input_format=InputFormat.JSON,
+            language=Yaml(),
+            target_function="f",
+            parameter_names=["data"],
+            per_element=False,
+        )
+
+
 def test_cobol_bump_levels_rejects_non_level_line() -> None:
     """_bump_levels raises ValueError for lines without a level number."""
     with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):
