@@ -31,6 +31,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import format_string_backslash_hcl
 from literalizer._language import (
     CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -244,6 +245,8 @@ class Hcl(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Hcl call style options."""
 
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
     call_styles = CallStyles
 
     @staticmethod
@@ -296,6 +299,7 @@ class Hcl(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
     ) -> None:
         """Initialize HCL language specification."""
@@ -386,7 +390,8 @@ class Hcl(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
