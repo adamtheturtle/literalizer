@@ -324,10 +324,14 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
 
 @beartype
 def _build_dict_entry(
-    *, key_str: str, val: Value, val_str: str, spec: Language
+    *, key_str: str, raw_value: Value, formatted_value: str, spec: Language
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
-    return spec.dict_format_config.format_entry(key_str, val, val_str)
+    return spec.dict_format_config.format_entry(
+        key_str,
+        raw_value,
+        formatted_value,
+    )
 
 
 @beartype
@@ -410,8 +414,8 @@ def _format_dict_value(
                 spec=spec,
                 dict_open_override=None,
             ),
-            val=v,
-            val_str=_format_value(
+            raw_value=v,
+            formatted_value=_format_value(
                 value=v,
                 spec=spec,
                 dict_open_override=None,
@@ -697,8 +701,8 @@ def _format_collection_lines(
                     if is_ordered_map
                     else _build_dict_entry(
                         key_str=formatted_key,
-                        val=v,
-                        val_str=formatted_val,
+                        raw_value=v,
+                        formatted_value=formatted_val,
                         spec=spec,
                     )
                 )

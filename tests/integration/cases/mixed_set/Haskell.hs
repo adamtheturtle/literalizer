@@ -1,9 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HBool Bool | HInt Integer | HStr String | HSet [Val]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -16,5 +12,5 @@ my_data :: Val
 my_data = HSet [
     HBool True,
     42,
-    "apple"
+    HStr "apple"
     ]

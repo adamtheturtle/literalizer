@@ -462,8 +462,38 @@ def test_body_preamble() -> None:
         new_variable=True,
         error_on_coercion=False,
     )
-    expected_preamble = "import Data.String (IsString(fromString))"
+    expected_preamble = "data Val = HStr String | HMap [(String, Val)]"
     assert result.body_preamble[0] == expected_preamble
+    expected = textwrap.dedent(
+        text="""\
+        data Val = HStr String | HMap [(String, Val)]
+        HMap [
+            ("name", HStr "alice")
+            ]""",
+    )
+    assert result.code == expected
+
+
+def test_body_preamble_double_iso() -> None:
+    """DOUBLE string format with ISO dates uses IsString for bare literals."""
+    haskell = Haskell(
+        string_format=Haskell.string_formats.DOUBLE,
+        date_format=Haskell.date_formats.ISO,
+        datetime_format=Haskell.datetime_formats.ISO,
+        bytes_format=Haskell.bytes_formats.HEX,
+        sequence_format=Haskell.sequence_formats.LIST,
+    )
+    toml_string = 'name = "alice"\n'
+    result = literalize(
+        source=toml_string,
+        input_format=InputFormat.TOML,
+        language=haskell,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_name=None,
+        new_variable=True,
+        error_on_coercion=False,
+    )
     expected = textwrap.dedent(
         text="""\
         import Data.String (IsString(fromString))
