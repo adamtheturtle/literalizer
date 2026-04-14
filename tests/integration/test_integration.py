@@ -1365,6 +1365,9 @@ def _discover_call_cases() -> list[_CallCase]:
         for lang_cls in _SORTED_LANGUAGES:
             if len(lang_cls.CallStyles) == 0:
                 continue
+            has_dotted_target = "." in config.target_function
+            if has_dotted_target and not lang_cls.supports_dotted_calls:
+                continue
             if config.call_style_kind is not None:
                 # Only include languages that have this as a
                 # non-default style.

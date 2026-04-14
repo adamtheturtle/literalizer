@@ -186,6 +186,7 @@ class Dart(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
+    supports_dotted_calls = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",

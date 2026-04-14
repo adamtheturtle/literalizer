@@ -31,6 +31,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import format_string_backslash_hcl
 from literalizer._language import (
     CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -45,6 +46,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     no_call_stub,
     no_type_hint_preamble,
+    prepend_body_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -68,6 +70,7 @@ class Hcl(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
+    supports_dotted_calls = False
 
     class DateFormats(enum.Enum):
         """Date format options for Hcl."""
@@ -244,6 +247,8 @@ class Hcl(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Hcl call style options."""
 
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
     call_styles = CallStyles
 
     @staticmethod
@@ -252,10 +257,25 @@ class Hcl(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
-            content=content,
-            variable_name=variable_name,
+        """Wrap code in a valid HCL file.
+
+        When *variable_name* is empty (call rendering), each content line
+        is a bare function call which is not valid HCL.  Assign each to a
+        unique local so the file parses.
+        """
+        if variable_name:
+            return wrap_in_file_noop(
+                content=content,
+                variable_name=variable_name,
+                body_preamble=body_preamble,
+            )
+        lines = content.split(sep="\n") if content else []
+        assigned = [
+            f"_{i} = {line}" for i, line in enumerate(iterable=lines) if line
+        ]
+        result = "\n".join(assigned)
+        return prepend_body_preamble(
+            content=result,
             body_preamble=body_preamble,
         )
 
@@ -296,6 +316,7 @@ class Hcl(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
     ) -> None:
         """Initialize HCL language specification."""
@@ -386,7 +407,8 @@ class Hcl(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
