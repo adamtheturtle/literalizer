@@ -83,6 +83,18 @@ def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
     return "my_data" if lang_cls.supports_variable_names else None
 
 
+def _wrap_variable_form(
+    lang_cls: literalizer.LanguageCls,
+) -> literalizer.NewVariable | None:
+    """Return a :class:`NewVariable` form for a language class, or
+    None.
+    """
+    name = _wrap_variable_name(lang_cls=lang_cls)
+    if name is None:
+        return None
+    return literalizer.NewVariable(name=name)
+
+
 def _lang_cls_name(cls: literalizer.LanguageCls) -> str:
     """Return the class name for sorting."""
     return cls.__name__
@@ -101,7 +113,7 @@ class _VariantCase:
     variant_name: str
     variant: _Variant
     case_dir_name: str
-    variable_name: str | None
+    variable_form: literalizer.NewVariable | None
 
 
 @beartype
@@ -560,8 +572,7 @@ def test_golden_file(
         language=lang_cls(),
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=_wrap_variable_name(lang_cls=lang_cls),
-        new_variable=True,
+        variable_form=_wrap_variable_form(lang_cls=lang_cls),
         error_on_coercion=False,
         wrap_in_file=True,
     )
@@ -642,9 +653,8 @@ def test_golden_file_combined_variable_forms(
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
-    """Test that literalize_yaml with new_variable=True (declaration) and
-    new_variable=False (assignment to existing variable) produce expected
-    golden output, combined in one file to show the difference in syntax.
+    """Test that literalize with BothVariableForms produces expected
+    golden output combining declaration and assignment in one file.
     """
     input_path = cases_dir / combined_case.case_name / "input.yaml"
     lang_cls = combined_case.lang_cls
@@ -652,42 +662,18 @@ def test_golden_file_combined_variable_forms(
         declaration_style=combined_case.declaration_style,
     )
     yaml_string = input_path.read_text()
-    declaration = literalizer.literalize(
+    result = literalizer.literalize(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_data",
-        new_variable=True,
+        variable_form=literalizer.BothVariableForms(name="my_data"),
         error_on_coercion=False,
-    )
-    assignment = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_name="my_data",
-        new_variable=False,
-        error_on_coercion=False,
-    )
-    variable_name = _wrap_variable_name(lang_cls=lang_cls) or ""
-    decl_preamble = (
-        *declaration.body_preamble,
-        *declaration.pre_declaration_comments,
-    )
-    combined = spec.wrap_combined_in_file(
-        declaration=declaration.declaration_code,
-        assignment=assignment.bare_code,
-        variable_name=variable_name,
-        body_preamble=decl_preamble,
-    )
-    combined = _prepend_preamble(
-        wrapped=combined, preamble=declaration.preamble
+        wrap_in_file=True,
     )
     file_regression.check(
-        contents=combined + "\n",
+        contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
         fullpath=input_path.parent
@@ -1130,7 +1116,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant_name=f"{variant.name}{suffix}",
                 variant=variant,
                 case_dir_name=case_dir_name,
-                variable_name=_wrap_variable_name(lang_cls=variant.lang_cls),
+                variable_form=_wrap_variable_form(lang_cls=variant.lang_cls),
             )
             for variant in variants
         )
@@ -1163,8 +1149,7 @@ def test_format_variant_golden_file(
             language=variant.spec,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=variant_case.variable_name,
-            new_variable=True,
+            variable_form=variant_case.variable_form,
             error_on_coercion=False,
             wrap_in_file=True,
         )
@@ -1246,41 +1231,18 @@ def test_line_ending_combined_variable_forms(
         line_ending=case.line_ending,
         declaration_style=redef_styles[0],
     )
-    declaration = literalizer.literalize(
+    result = literalizer.literalize(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_data",
-        new_variable=True,
+        variable_form=literalizer.BothVariableForms(name="my_data"),
         error_on_coercion=False,
-    )
-    assignment = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_name="my_data",
-        new_variable=False,
-        error_on_coercion=False,
-    )
-    decl_preamble = (
-        *declaration.body_preamble,
-        *declaration.pre_declaration_comments,
-    )
-    combined = spec.wrap_combined_in_file(
-        declaration=declaration.declaration_code,
-        assignment=assignment.bare_code,
-        variable_name=_wrap_variable_name(lang_cls=case.lang_cls) or "",
-        body_preamble=decl_preamble,
-    )
-    combined = _prepend_preamble(
-        wrapped=combined, preamble=declaration.preamble
+        wrap_in_file=True,
     )
     file_regression.check(
-        contents=combined + "\n",
+        contents=result.code + "\n",
         extension=spec.extension,
         fullpath=input_path.parent / (case.name + spec.extension),
     )

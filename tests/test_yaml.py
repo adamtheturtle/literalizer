@@ -8,6 +8,7 @@ import pytest
 from literalizer import (
     InputFormat,
     Language,
+    NewVariable,
     literalize,
 )
 from literalizer.exceptions import (
@@ -64,8 +65,7 @@ def test_literalize_yaml_sequence() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
@@ -89,8 +89,7 @@ def test_literalize_yaml_indent_override() -> None:
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = '{\n\t"a": 1,\n\t"b": True,\n}'
@@ -106,8 +105,7 @@ def test_literalize_yaml_invalid() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -121,8 +119,7 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -153,8 +150,7 @@ def test_literalize_yaml_scalar(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -172,8 +168,7 @@ def test_cpp_array_binary_typed() -> None:
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -197,8 +192,7 @@ def test_cpp_array_null_list_fallback() -> None:
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -221,8 +215,7 @@ def test_yaml_set_inline_in_sequence() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == '{"a", "b"},'
@@ -236,8 +229,7 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
         language=GO,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == 'map[string]struct{}{"a": struct{}{}},'
@@ -251,8 +243,7 @@ def test_yaml_empty_set_inline() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == "set(),"
@@ -277,8 +268,7 @@ def test_ordered_map_nested_in_sequence() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -305,8 +295,7 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -334,8 +323,7 @@ def test_coerce_heterogeneous_set() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -362,8 +350,7 @@ def test_coerce_heterogeneous_date_in_collection() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -392,8 +379,7 @@ def test_coerce_heterogeneous_datetime_in_collection() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -421,8 +407,7 @@ def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -450,8 +435,7 @@ def test_coerce_mixed_dict_values_none_with_list() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -479,8 +463,7 @@ def test_coerce_mixed_dict_values_set_with_string() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     # Set is converted to a sorted JSON array before string conversion.
@@ -510,8 +493,7 @@ def test_coerce_mixed_dict_values_with_list() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -541,8 +523,7 @@ def test_coerce_mixed_ordered_map_values() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -572,8 +553,7 @@ def test_r_empty_dict_key_positional() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -601,8 +581,7 @@ def test_r_empty_dict_key_positional_is_default() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -639,8 +618,7 @@ def test_r_empty_dict_key_error() -> None:
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -661,8 +639,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -684,8 +661,7 @@ def test_error_on_coercion_raises_for_heterogeneous_list() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -707,8 +683,7 @@ def test_error_on_coercion_raises_for_heterogeneous_dict() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -722,8 +697,7 @@ def test_error_on_coercion_no_raise_for_homogeneous() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=True,
     )
     expected = textwrap.dedent(
@@ -746,8 +720,7 @@ def test_error_on_coercion_no_effect_without_coerce_flag() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=True,
     )
     expected = textwrap.dedent(
@@ -778,8 +751,7 @@ def test_error_on_coercion_raises_for_nested_heterogeneous() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -800,8 +772,7 @@ def test_error_on_coercion_raises_for_heterogeneous_ordered_map() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -822,8 +793,7 @@ def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -842,8 +812,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_dict() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=True,
     )
     expected = textwrap.dedent(
@@ -871,8 +840,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=True,
     )
     expected = textwrap.dedent(
@@ -900,8 +868,7 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=True,
     )
     expected = textwrap.dedent(
@@ -938,8 +905,7 @@ def test_error_on_coercion_raises_for_mixed_dict_values() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -967,8 +933,7 @@ def test_error_on_coercion_raises_for_mixed_list_values() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -999,8 +964,7 @@ def test_error_on_coercion_raises_for_mixed_dict_shapes() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -1023,8 +987,7 @@ def test_error_on_coercion_no_raise_for_uniform_dict_shapes() -> None:
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=True,
     )
 
@@ -1052,8 +1015,7 @@ def test_error_on_coercion_raises_for_mixed_dict_none_list() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -1076,8 +1038,7 @@ def test_dhall_empty_dict_key_error() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -1091,8 +1052,7 @@ def test_dhall_control_char_in_string() -> None:
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_data",
-        new_variable=True,
+        variable_form=NewVariable(name="my_data"),
         error_on_coercion=False,
     )
     expected = 'let my_data = "\\u{0001}" in my_data'
@@ -1117,8 +1077,7 @@ def test_dhall_control_char_key_error() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -1141,8 +1100,7 @@ def test_nix_control_char_key_error() -> None:
             language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -1156,8 +1114,7 @@ def test_dhall_backtick_label_unescaping() -> None:
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_data",
-        new_variable=True,
+        variable_form=NewVariable(name="my_data"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(

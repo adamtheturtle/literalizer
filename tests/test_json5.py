@@ -5,8 +5,10 @@ import textwrap
 import pytest
 
 from literalizer import (
+    ExistingVariable,
     InputFormat,
     Language,
+    NewVariable,
     literalize,
 )
 from literalizer.exceptions import (
@@ -52,8 +54,7 @@ def test_dict_python() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
@@ -69,8 +70,7 @@ def test_dict_include_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -92,8 +92,7 @@ def test_array() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -116,8 +115,7 @@ def test_unquoted_keys() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -139,8 +137,7 @@ def test_single_quoted_strings() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -161,8 +158,7 @@ def test_trailing_commas() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -190,8 +186,7 @@ def test_comments_stripped() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -213,8 +208,7 @@ def test_null() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -235,8 +229,7 @@ def test_booleans() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -258,8 +251,7 @@ def test_nested_objects() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -280,8 +272,7 @@ def test_invalid_json5() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -295,8 +286,7 @@ def test_invalid_json5_is_parse_error() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -310,8 +300,7 @@ def test_variable_declaration() -> None:
         language=JAVASCRIPT,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="config",
-        new_variable=True,
+        variable_form=NewVariable(name="config"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -332,8 +321,7 @@ def test_variable_assignment() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="config",
-        new_variable=False,
+        variable_form=ExistingVariable(name="config"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -354,8 +342,7 @@ def test_go_output() -> None:
         language=GO,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = 'map[string]any{\n\t"name": "test",\n\t"count": 42,\n}'
@@ -380,8 +367,7 @@ def test_error_on_coercion_raises() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=True,
         )
 
@@ -407,8 +393,7 @@ def test_scalar_types(
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -423,8 +408,7 @@ def test_scalar_string() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == '"hello"'
@@ -439,8 +423,7 @@ def test_scalar_number() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == "42"

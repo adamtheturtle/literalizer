@@ -28,7 +28,7 @@ returns this response:
 
    import textwrap
 
-   from literalizer import InputFormat, literalize
+   from literalizer import InputFormat, NewVariable, literalize
    from literalizer.languages import Python
 
    request_json = '{"name": "Alice", "email": "alice@example.com"}'
@@ -50,9 +50,8 @@ returns this response:
            variable_type_hints=Python.variable_type_hints_formats.AUTO,
        ),
        pre_indent_level=0,
-       variable_name="request_body",
+       variable_form=NewVariable(name="request_body"),
        include_delimiters=True,
-       new_variable=True,
    )
    assert request_literal.code == textwrap.dedent(
        text="""\
@@ -75,9 +74,8 @@ returns this response:
            variable_type_hints=Python.variable_type_hints_formats.AUTO,
        ),
        pre_indent_level=0,
-       variable_name="response",
+       variable_form=NewVariable(name="response"),
        include_delimiters=True,
-       new_variable=True,
    )
    assert response_literal.code == textwrap.dedent(
        text="""\

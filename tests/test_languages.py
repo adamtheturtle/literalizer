@@ -9,10 +9,12 @@ from pygments.lexers import find_lexer_class_by_name
 
 import literalizer.languages
 from literalizer import (
+    BothVariableForms,
     CallStyleConfig,
     CallStyleKind,
     InputFormat,
     Language,
+    NewVariable,
     literalize,
     literalize_call,
 )
@@ -144,8 +146,7 @@ def test_language_sequence(*, language: Language, expected: str) -> None:
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -159,8 +160,7 @@ def test_ruby_dict() -> None:
         language=RUBY,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == '{"key" => nil},'
@@ -174,8 +174,7 @@ def test_dict_ruby() -> None:
         language=RUBY,
         pre_indent_level=1,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == '    "user_1" => "team_alpha",'
@@ -191,8 +190,7 @@ def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -214,8 +212,7 @@ def test_java_dict_skips_null_values() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -236,8 +233,7 @@ def test_java_dict_skips_null_values_no_include_delimiters() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = 'Map.entry("b", 1)'
@@ -254,8 +250,7 @@ def test_java_dict_all_null_values_include_delimiters() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == "Map.ofEntries()"
@@ -269,8 +264,7 @@ def test_java_dict_all_null_values_with_pre_indent_level() -> None:
         language=JAVA,
         pre_indent_level=1,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == "    Map.ofEntries()"
@@ -285,8 +279,7 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -316,8 +309,7 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -347,8 +339,7 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -372,8 +363,7 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = "Map.ofEntries()\n    // trailing"
@@ -397,8 +387,7 @@ def test_java_yaml_ordered_map_skips_null_values() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     ordered_map_inline = (
@@ -417,8 +406,7 @@ def test_java_sequence_include_delimiters_uses_braces() -> None:
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -480,8 +468,7 @@ def test_java_typed_array_opener(
         language=JAVA,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -516,8 +503,7 @@ def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
         ),
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -541,8 +527,7 @@ def test_matlab_dict_key_with_quote() -> None:
         ),
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == "'hello \"world\"', 1"
@@ -561,8 +546,7 @@ def test_toml_integer_dict_key() -> None:
         language=TOML,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -582,8 +566,7 @@ def test_cobol_string_control_characters() -> None:
         language=COBOL,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == '"line1 line2"'
@@ -597,8 +580,7 @@ def test_cobol_string_tab_characters() -> None:
         language=COBOL,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     assert result.code == '"col1 col2"'
@@ -628,8 +610,7 @@ def test_cobol_level_number_cap() -> None:
         language=COBOL,
         pre_indent_level=1,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = (
@@ -659,8 +640,7 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         language=COBOL,
         pre_indent_level=1,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     for line in result.code.splitlines():
@@ -678,9 +658,8 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         input_format=InputFormat.YAML,
         language=FORTRAN,
         pre_indent_level=0,
-        variable_name="cfg",
+        variable_form=NewVariable(name="cfg"),
         include_delimiters=True,
-        new_variable=True,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -705,8 +684,7 @@ def test_java_list_format() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -740,8 +718,7 @@ def test_java_list_rejects_null_elements() -> None:
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_name=None,
-            new_variable=True,
+            variable_form=None,
             error_on_coercion=False,
         )
 
@@ -811,8 +788,7 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_data",
-        new_variable=True,
+        variable_form=NewVariable(name="my_data"),
         error_on_coercion=False,
     )
     assert result.code == "my_data: dict[str, str] = {}"
@@ -861,6 +837,17 @@ def test_literalize_call_per_element_false() -> None:
     )
     assert "process(" in result.code
     assert "1," in result.code
+
+
+def test_both_variable_forms_without_wrap_in_file_raises() -> None:
+    """BothVariableForms without wrap_in_file=True raises ValueError."""
+    with pytest.raises(expected_exception=ValueError, match="wrap_in_file"):
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            variable_form=BothVariableForms(name="x"),
+        )
 
 
 def test_literalize_call_missing_keyword_separator_raises() -> None:

@@ -1,8 +1,12 @@
 """Convert data structures to native language literal syntax."""
 
 from literalizer._core import (
+    BothVariableForms,
+    ExistingVariable,
     InputFormat,
     LiteralizeResult,
+    NewVariable,
+    VariableForm,
     literalize,
     literalize_call,
 )
@@ -28,21 +32,25 @@ from literalizer._language import (
 from literalizer.exceptions import UnsupportedCallStyleError
 
 __all__ = [
+    "BothVariableForms",
     "CallStyleConfig",
     "CallStyleKind",
     "CommentConfig",
     "DateFormatConfig",
     "DatetimeFormatConfig",
     "DictFormatConfig",
+    "ExistingVariable",
     "InputFormat",
     "Language",
     "LanguageCls",
     "LiteralizeResult",
+    "NewVariable",
     "OrderedMapFormatConfig",
     "SequenceFormatConfig",
     "SetFormatConfig",
     "TrailingCommaConfig",
     "UnsupportedCallStyleError",
+    "VariableForm",
     "fixed_dict_open",
     "fixed_sequence_open",
     "fixed_set_open",
