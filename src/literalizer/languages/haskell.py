@@ -818,13 +818,14 @@ class Haskell(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
-        if _explicit:
-            _str_extra: dict[type, tuple[str, ...]] = {}
-        else:
-            _str_extra: dict[type, tuple[str, ...]] = {
+        _str_extra: dict[type, tuple[str, ...]] = (
+            {}
+            if _explicit
+            else {
                 str: _overloaded_strings,
                 bytes: _overloaded_strings,
             }
+        )
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
