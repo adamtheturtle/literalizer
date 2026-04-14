@@ -405,8 +405,8 @@ class _CallCaseConfig:
     """Configuration for a ``literalize_call`` golden-file test case."""
 
     case_dir_name: str
-    call_function: str
-    call_params: list[str]
+    target_function: str
+    parameter_names: list[str]
     call_transform: Callable[[str], str] | None
     transform_stub_names: list[str]
     per_element: bool
@@ -416,16 +416,16 @@ class _CallCaseConfig:
 _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     _CallCaseConfig(
         case_dir_name="call_keyword_args",
-        call_function="throttler.check",
-        call_params=["user_id", "ts"],
+        target_function="throttler.check",
+        parameter_names=["user_id", "ts"],
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
-        call_function="process",
-        call_params=["value"],
+        target_function="process",
+        parameter_names=["value"],
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
@@ -1391,8 +1391,8 @@ def test_call_golden_file(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
         language=spec,
-        call_function=config.call_function,
-        call_params=config.call_params,
+        target_function=config.target_function,
+        parameter_names=config.parameter_names,
         call_transform=config.call_transform,
         per_element=config.per_element,
     )
@@ -1401,11 +1401,12 @@ def test_call_golden_file(
     preamble_stubs: list[str] = []
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
-        spec.format_call_stub(config.call_function, config.call_params),
+        spec.format_call_stub(config.target_function, config.parameter_names),
     )
     preamble_stubs.extend(
         spec.format_call_preamble_stub(
-            config.call_function, config.call_params
+            config.target_function,
+            config.parameter_names,
         ),
     )
     # Stubs for transform function names (single argument).
