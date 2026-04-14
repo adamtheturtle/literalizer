@@ -23,6 +23,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML
 
 import literalizer
+from literalizer._language import StubReturn
 from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import (
     ALL_LANGUAGES,
@@ -444,6 +445,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         parameter_names=["data"],
         call_transform=None,
         transform_stub_names=[],
+        per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_deep_dotted_transformed",
+        target_function="app.client.fetch",
+        parameter_names=["payload"],
+        call_transform=lambda c: f"emit({c})",
+        transform_stub_names=["emit"],
         per_element=True,
     ),
     _CallCaseConfig(
@@ -1407,23 +1416,41 @@ def test_call_golden_file(
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
+    stub_return = (
+        StubReturn.VALUE
+        if config.call_transform is not None
+        else StubReturn.VOID
+    )
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
-        spec.format_call_stub(config.target_function, config.parameter_names),
+        spec.format_call_stub(
+            config.target_function,
+            config.parameter_names,
+            stub_return,
+        ),
     )
     preamble_stubs.extend(
         spec.format_call_preamble_stub(
             config.target_function,
             config.parameter_names,
+            stub_return,
         ),
     )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
         body_stubs.extend(
-            spec.format_call_stub(wrapper_name, ["_arg"]),
+            spec.format_call_stub(
+                wrapper_name,
+                ["_arg"],
+                StubReturn.VOID,
+            ),
         )
         preamble_stubs.extend(
-            spec.format_call_preamble_stub(wrapper_name, ["_arg"]),
+            spec.format_call_preamble_stub(
+                wrapper_name,
+                ["_arg"],
+                StubReturn.VOID,
+            ),
         )
     call_body_preamble = result.body_preamble + tuple(body_stubs)
 

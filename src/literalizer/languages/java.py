@@ -58,6 +58,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -69,7 +70,12 @@ from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
 
-def _java_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+def _java_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return Java stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:

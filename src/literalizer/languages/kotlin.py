@@ -64,6 +64,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -293,7 +294,12 @@ class _KotlinDictSpec:
     opener_template: str
 
 
-def _kotlin_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+def _kotlin_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return Kotlin stub declarations for a call name."""
     param_list = ", ".join(f"{p}: Any? = null" for p in params)
     parts = name.split(sep=".")

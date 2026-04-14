@@ -45,6 +45,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
@@ -59,7 +60,7 @@ if TYPE_CHECKING:
 
 @beartype
 def _crystal_call_stub(
-    name: str, _params: Sequence[str], /
+    name: str, _params: Sequence[str], _stub_return: StubReturn, /
 ) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
     parts = name.split(sep=".")

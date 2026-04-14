@@ -61,6 +61,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -81,7 +82,12 @@ class _CSharpDictSpec:
     opener_template: str
 
 
-def _csharp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+def _csharp_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return C# stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:

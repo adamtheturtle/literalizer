@@ -57,6 +57,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -232,7 +233,9 @@ def _format_variable_declaration(
     return f"Any {name} = {value};"
 
 
-def _cpp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+def _cpp_call_stub(
+    name: str, _params: Sequence[str], stub_return: StubReturn, /
+) -> tuple[str, ...]:
     """Return C++ stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:
@@ -249,9 +252,16 @@ def _cpp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
         )
     lines: list[str] = []
     inner_type = f"{fields[-1]}Type_"
-    lines.append(
-        f"struct {inner_type} {{ void {method}(auto...) const {{}} }};"
-    )
+    if stub_return is StubReturn.VALUE:
+        lines.append(
+            f"struct {inner_type} {{"
+            f" [[nodiscard]] auto {method}(auto...) const"
+            f" {{ return 0; }} }};"
+        )
+    else:
+        lines.append(
+            f"struct {inner_type} {{ void {method}(auto...) const {{}} }};"
+        )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
         curr_type = f"{fields[i]}Type_"

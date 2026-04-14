@@ -58,6 +58,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -392,7 +393,12 @@ def _build_type_hint_preamble(
 _VARIADIC = "*_args: object, **_kwargs: object"
 
 
-def _python_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
+def _python_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return Python stub declarations for a call name."""
     parts = name.split(sep=".")
     if len(parts) == 1:

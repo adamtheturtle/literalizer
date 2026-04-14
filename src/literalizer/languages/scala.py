@@ -53,6 +53,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -132,7 +133,12 @@ class _ScalaDictSpec:
     preamble_lines: tuple[str, ...]
 
 
-def _scala_call_stub(name: str, params: Sequence[str], /) -> tuple[str, ...]:
+def _scala_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
     param_list = ", ".join(f"{p}: Any = null" for p in params)
     parts = name.split(sep=".")

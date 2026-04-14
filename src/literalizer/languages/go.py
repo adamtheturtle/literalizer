@@ -53,6 +53,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -65,7 +66,7 @@ from literalizer._types import Value
 
 @beartype
 def _go_call_preamble_stub(
-    name: str, _params: Sequence[str], /
+    name: str, _params: Sequence[str], _stub_return: StubReturn, /
 ) -> tuple[str, ...]:
     """Return Go stub declarations for a call name."""
     parts = name.split(sep=".")
