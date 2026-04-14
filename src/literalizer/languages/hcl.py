@@ -268,8 +268,10 @@ class Hcl(metaclass=LanguageCls):
                 variable_name=variable_name,
                 body_preamble=body_preamble,
             )
-        lines = content.split("\n") if content else []
-        assigned = [f"_{i} = {line}" for i, line in enumerate(lines) if line]
+        lines = content.split(sep="\n") if content else []
+        assigned = [
+            f"_{i} = {line}" for i, line in enumerate(iterable=lines) if line
+        ]
         result = "\n".join(assigned)
         return prepend_body_preamble(
             content=result,
