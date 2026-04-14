@@ -412,6 +412,10 @@ class _CallCaseConfig:
     transform_stub_names: list[str]
     per_element: bool
     call_style_kind: literalizer.CallStyleKind | None = None
+    language_overrides: dict[str, object] = dataclasses.field(
+        default_factory=dict[str, object],
+    )
+    language_filter: Callable[[literalizer.LanguageCls], bool] | None = None
 
 
 _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
@@ -456,23 +460,53 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
     ),
     _CallCaseConfig(
-        case_dir_name="call_positional_args",
-        target_function="throttler.check",
-        parameter_names=["user_id", "ts"],
-        call_transform=lambda c: f"emit({c})",
-        transform_stub_names=["emit"],
+        case_dir_name="call_dotted_method_record_selectors",
+        target_function="app.client.fetch",
+        parameter_names=["payload"],
+        call_transform=None,
+        transform_stub_names=[],
         per_element=True,
-        call_style_kind=literalizer.CallStyleKind.POSITIONAL,
+        language_overrides={
+            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
+        },
+        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
     ),
     _CallCaseConfig(
-        case_dir_name="call_named_args",
-        target_function="throttler.check",
-        parameter_names=["user_id", "ts"],
-        call_transform=lambda c: f"emit({c})",
-        transform_stub_names=["emit"],
+        case_dir_name="call_deep_dotted_record_selectors",
+        target_function="obj.api.client.post",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
         per_element=True,
-        call_style_kind=literalizer.CallStyleKind.KEYWORD,
+        language_overrides={
+            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
+        },
+        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
     ),
+    _CallCaseConfig(
+        case_dir_name="call_scalar_record_selectors",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        language_overrides={
+            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
+        },
+        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
+    ),
+    *[
+        _CallCaseConfig(
+            case_dir_name=f"call_{kind.value}",
+            target_function="throttler.check",
+            parameter_names=["user_id", "ts"],
+            call_transform=lambda c: f"emit({c})",
+            transform_stub_names=["emit"],
+            per_element=True,
+            call_style_kind=kind,
+        )
+        for kind in literalizer.CallStyleKind
+    ],
 ]
 
 _CALL_CASE_DIRS = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
@@ -935,6 +969,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         get_formats=lambda s: s.float_formats,
         make_spec=lambda cls, fmt: cls(float_format=fmt),
     )
+    numeric_style = nv(
+        category="numeric_style",
+        get_default=lambda s: s.numeric_style,
+        get_formats=lambda s: s.numeric_styles,
+        make_spec=lambda cls, fmt: cls(numeric_style=fmt),
+    )
     string_format = nv(
         category="string_format",
         get_default=lambda s: s.string_format,
@@ -1055,6 +1095,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (numeric_separator, "int_list_with_zero", "_zero"),
         (string_format, "string_list", ""),
         (string_format, "string_with_backslash", ""),
+        (string_format, "simple_dict", "_dict"),
+        (string_format, "binary", "_binary"),
         (bytes_format, "binary", ""),
         (trailing_comma, "simple_sequence", ""),
         (line_ending, "simple_sequence", ""),
@@ -1064,6 +1106,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
         (_build_constructor_prefix_variants(), "float_list", "_float"),
+        (numeric_style, "int_list", ""),
+        (numeric_style, "int_list_with_zero", "_zero"),
+        (numeric_style, "float_list", ""),
+        (numeric_style, "float_special_values", ""),
+        (numeric_style, "mixed_number_list", ""),
+        (numeric_style, "scalars", ""),
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
@@ -1324,6 +1372,8 @@ def test_format_enumeration_properties(
     assert len(spec.integer_formats) >= 1
     assert issubclass(spec.numeric_separators, enum.Enum)
     assert len(spec.numeric_separators) >= 1
+    assert issubclass(spec.numeric_styles, enum.Enum)
+    assert len(spec.numeric_styles) >= 1
     assert issubclass(spec.string_formats, enum.Enum)
     assert len(spec.string_formats) >= 1
     assert issubclass(spec.trailing_commas, enum.Enum)
@@ -1354,6 +1404,11 @@ def _discover_call_cases() -> list[_CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
+                continue
+            if (
+                config.language_filter is not None
+                and not config.language_filter(lang_cls)
+            ):
                 continue
             if config.call_style_kind is not None:
                 # Only include languages that have this as a
@@ -1389,15 +1444,15 @@ def test_call_golden_file(
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
     lang_cls = call_case.lang_cls
+    kwargs: dict[str, object] = dict(config.language_overrides)
     if config.call_style_kind is not None:
         style = next(
             s
             for s in lang_cls.CallStyles
             if s.value.kind == config.call_style_kind
         )
-        spec = lang_cls(call_style=style)
-    else:
-        spec = lang_cls()
+        kwargs["call_style"] = style
+    spec = lang_cls(**kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     result = literalizer.literalize_call(

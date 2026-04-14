@@ -1,9 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -22,5 +18,5 @@ my_data = HList [
     3.14,
     HBool True,
     HBool False,
-    "hello \"world\""
+    HStr "hello \"world\""
     ]

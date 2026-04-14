@@ -44,6 +44,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
@@ -100,7 +101,11 @@ def _format_nix_string(value: str) -> str:
 
 
 @beartype
-def _format_nix_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_nix_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a Nix attribute set entry as ``key = value;``.
 
     If the key is a valid Nix identifier and not a keyword, the quotes
@@ -109,7 +114,7 @@ def _format_nix_dict_entry(key: str, _val: Value, value: str) -> str:
     """
     inner = key[1:-1]
     if _IDENTIFIER_RE.match(string=inner) and inner not in _NIX_KEYWORDS:
-        return f"{inner} = {value};"
+        return f"{inner} = {formatted_value};"
     if not inner or any(ord(ch) < _CONTROL_CHAR_UPPER_BOUND for ch in inner):
         msg = (
             f"Nix does not support the dict key {key}. "
@@ -117,7 +122,7 @@ def _format_nix_dict_entry(key: str, _val: Value, value: str) -> str:
             "control characters."
         )
         raise InvalidDictKeyError(msg)
-    return f"{key} = {value};"
+    return f"{key} = {formatted_value};"
 
 
 @beartype
@@ -283,6 +288,11 @@ class Nix(metaclass=LanguageCls):
 
         NONE = enum.auto()
 
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options."""
+
+        OVERLOADED = enum.auto()
+
     class StringFormats(enum.Enum):
         """String format options."""
 
@@ -319,6 +329,7 @@ class Nix(metaclass=LanguageCls):
     integer_formats = IntegerFormats
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
+    numeric_styles = NumericStyles
     string_formats = StringFormats
     trailing_commas = TrailingCommas
     line_endings = LineEndings
@@ -375,6 +386,7 @@ class Nix(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
@@ -422,6 +434,7 @@ class Nix(metaclass=LanguageCls):
         self.integer_format = integer_format
         self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
+        self.numeric_style = numeric_style
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
@@ -467,4 +480,5 @@ class Nix(metaclass=LanguageCls):
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target
         self.type_hint_collection_preamble_lines = no_type_hint_preamble

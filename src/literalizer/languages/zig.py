@@ -53,6 +53,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
@@ -307,6 +308,11 @@ class Zig(metaclass=LanguageCls):
         NONE = enum.auto()
         UNDERSCORE = enum.auto()
 
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options."""
+
+        OVERLOADED = enum.auto()
+
     class StringFormats(enum.Enum):
         """String format options."""
 
@@ -339,6 +345,7 @@ class Zig(metaclass=LanguageCls):
     integer_formats = IntegerFormats
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
+    numeric_styles = NumericStyles
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
@@ -405,6 +412,7 @@ class Zig(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
@@ -460,6 +468,7 @@ class Zig(metaclass=LanguageCls):
         self.integer_format = integer_format
         self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
+        self.numeric_style = numeric_style
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
@@ -521,3 +530,4 @@ class Zig(metaclass=LanguageCls):
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target

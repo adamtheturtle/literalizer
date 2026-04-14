@@ -30,6 +30,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
@@ -133,12 +134,16 @@ def _format_forth_declaration(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
-def _format_forth_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_forth_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     r"""Format a dict entry as ``key value``.
 
     Example: ``s\" name" s\" Alice"``.
     """
-    return f"{key} {value}"
+    return f"{key} {formatted_value}"
 
 
 @beartype
@@ -288,6 +293,11 @@ class Forth(metaclass=LanguageCls):
 
         NONE = enum.auto()
 
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options."""
+
+        OVERLOADED = enum.auto()
+
     class StringFormats(enum.Enum):
         """String format options."""
 
@@ -323,6 +333,7 @@ class Forth(metaclass=LanguageCls):
     integer_formats = IntegerFormats
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
+    numeric_styles = NumericStyles
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
@@ -385,6 +396,7 @@ class Forth(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.ESCAPED,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.NONE,
@@ -432,6 +444,7 @@ class Forth(metaclass=LanguageCls):
         self.integer_format = integer_format
         self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
+        self.numeric_style = numeric_style
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
@@ -476,3 +489,4 @@ class Forth(metaclass=LanguageCls):
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target

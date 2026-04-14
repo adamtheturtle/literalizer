@@ -18,20 +18,12 @@ def strip_key_quotes(key: str) -> str:
 
         strip_key_quotes('"name"')  # => 'name'
 
-    Raises ``ValueError`` for unquoted keys.  All current input
-    formats produce quoted string keys; this guard exists so that
-    adding a new input format with non-string keys surfaces
-    immediately rather than silently slicing the wrong characters.
+    All current input formats produce quoted string keys, so *key*
+    is always surrounded by matching quotes.
     """
-    min_quoted_length = 2
-    if (
-        len(key) >= min_quoted_length
-        and key[0] in {'"', "'"}
-        and key[-1] == key[0]
-    ):
-        return key[1:-1]
-    msg = f"Expected a quoted key, got {key!r}"  # pragma: no cover
-    raise ValueError(msg)  # pragma: no cover
+    # All current input formats produce quoted string keys.
+    # If a new format introduces unquoted keys, this will need updating.
+    return key[1:-1]
 
 
 @beartype
@@ -71,9 +63,9 @@ def tuple_dict_entry(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry as a tuple."""
-        return f"({key}, {format_value(val, value)})"
+        return f"({key}, {format_value(raw_value, formatted_value)})"
 
     return _format
 
@@ -94,9 +86,9 @@ def braced_dict_entry(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry with braces."""
-        return f"{{{key}, {format_value(val, value)}}}"
+        return f"{{{key}, {format_value(raw_value, formatted_value)}}}"
 
     return _format
 
@@ -157,9 +149,9 @@ def dict_entry_with_separator(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry by joining key and value with separator."""
-        return f"{key}{separator}{format_value(val, value)}"
+        return f"{key}{separator}{format_value(raw_value, formatted_value)}"
 
     return _format
 
@@ -183,9 +175,10 @@ def dict_entry_symbol_style(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry in symbol style."""
-        return f"{strip_key_quotes(key=key)}: {format_value(val, value)}"
+        formatted = format_value(raw_value, formatted_value)
+        return f"{strip_key_quotes(key=key)}: {formatted}"
 
     return _format
 
@@ -207,8 +200,9 @@ def dict_entry_with_template(
     """
 
     @beartype
-    def _format(key: str, val: Value, value: str) -> str:
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a dict entry using the template."""
-        return template.format(key=key, value=format_value(val, value))
+        formatted = format_value(raw_value, formatted_value)
+        return template.format(key=key, value=formatted)
 
     return _format

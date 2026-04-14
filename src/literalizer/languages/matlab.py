@@ -44,6 +44,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
@@ -103,7 +104,11 @@ def _matlab_char_key(s: str) -> str:
 
 
 @beartype
-def _format_matlab_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_matlab_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a MATLAB ``struct`` field as a ``'key', value`` pair.
 
     MATLAB ``struct`` accepts alternating character-vector keys and values.
@@ -119,9 +124,9 @@ def _format_matlab_dict_entry(key: str, _val: Value, value: str) -> str:
     """
     inner = _decode_matlab_string_expr(expr=key)
     key_expr = _matlab_char_key(s=inner)
-    if value.startswith("{") and value.endswith("}"):
-        value = f"{{{value}}}"
-    return f"{key_expr}, {value}"
+    if formatted_value.startswith("{") and formatted_value.endswith("}"):
+        formatted_value = f"{{{formatted_value}}}"
+    return f"{key_expr}, {formatted_value}"
 
 
 @beartype
@@ -145,11 +150,15 @@ def _containers_map_open(data: dict[str, Value]) -> str:
 
 
 @beartype
-def _format_containers_map_entry(_key: str, _val: Value, value: str) -> str:
+def _format_containers_map_entry(
+    _key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a ``containers.Map`` value entry (key already in opener)."""
-    if value.startswith("{") and value.endswith("}"):
-        value = f"{{{value}}}"
-    return value
+    if formatted_value.startswith("{") and formatted_value.endswith("}"):
+        formatted_value = f"{{{formatted_value}}}"
+    return formatted_value
 
 
 @beartype
@@ -319,6 +328,11 @@ class Matlab(metaclass=LanguageCls):
 
         NONE = enum.auto()
 
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options."""
+
+        OVERLOADED = enum.auto()
+
     class StringFormats(enum.Enum):
         """String format options."""
 
@@ -350,6 +364,7 @@ class Matlab(metaclass=LanguageCls):
     integer_formats = IntegerFormats
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
+    numeric_styles = NumericStyles
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
@@ -412,6 +427,7 @@ class Matlab(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
@@ -460,6 +476,7 @@ class Matlab(metaclass=LanguageCls):
         self.integer_format = integer_format
         self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
+        self.numeric_style = numeric_style
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
@@ -504,3 +521,4 @@ class Matlab(metaclass=LanguageCls):
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
+        self.format_call_target = identity_call_target
