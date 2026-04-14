@@ -831,8 +831,8 @@ def test_literalize_call_wrap_in_file() -> None:
     )
     assert "fn main()" in result.code
     assert "process(" in result.code
-    assert result.preamble == ()
-    assert result.body_preamble == ()
+    assert not result.preamble
+    assert not result.body_preamble
 
 
 def test_literalize_call_per_element_false() -> None:
