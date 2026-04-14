@@ -64,6 +64,14 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+@dataclasses.dataclass(frozen=True)
+class _DotAccessConfig:
+    """Configuration for a single dot-access style."""
+
+    preamble_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
+    call_target: Callable[[str], str]
+
+
 @beartype
 def _haskell_call_preamble_stub_record_dot(
     name: str,
@@ -960,8 +968,14 @@ class Haskell(metaclass=LanguageCls):
           extension is required.
         """
 
-        OVERLOADED_RECORD_DOT = "overloaded_record_dot"
-        RECORD_SELECTORS = "record_selectors"
+        OVERLOADED_RECORD_DOT = _DotAccessConfig(
+            preamble_stub=_haskell_call_preamble_stub_record_dot,
+            call_target=identity_call_target,
+        )
+        RECORD_SELECTORS = _DotAccessConfig(
+            preamble_stub=no_call_stub,
+            call_target=_haskell_record_selector_target,
+        )
 
     dot_access_styles = DotAccessStyles
 
@@ -1000,7 +1014,7 @@ class Haskell(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(
+    def __init__(  # noqa: PLR0915
         self,
         *,
         date_format: DateFormats = DateFormats.HASKELL,
@@ -1169,16 +1183,9 @@ class Haskell(metaclass=LanguageCls):
         ] = _build_haskell_call_stub(
             type_name=type_name,
         )
-        _use_record_dot = (
-            dot_access_style is self.DotAccessStyles.OVERLOADED_RECORD_DOT
+        self.format_call_preamble_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = dot_access_style.value.preamble_stub
+        self.format_call_target: Callable[[str], str] = (
+            dot_access_style.value.call_target
         )
-        if _use_record_dot:
-            self.format_call_preamble_stub: Callable[
-                [str, Sequence[str], StubReturn], tuple[str, ...]
-            ] = _haskell_call_preamble_stub_record_dot
-            self.format_call_target: Callable[[str], str] = (
-                identity_call_target
-            )
-        else:
-            self.format_call_preamble_stub = no_call_stub
-            self.format_call_target = _haskell_record_selector_target
