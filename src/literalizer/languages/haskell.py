@@ -639,7 +639,7 @@ class Haskell(metaclass=LanguageCls):
         if not variable_name:
             # Call mode: bare expressions are not valid at module
             # top level in Haskell, so wrap them in ``main``.
-            indented = textwrap.indent(content, "    ")
+            indented = textwrap.indent(text=content, prefix="    ")
             return (
                 "module Check where\n"
                 + preamble
