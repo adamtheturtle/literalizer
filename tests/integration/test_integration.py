@@ -1335,7 +1335,7 @@ class _CallCase:
 _CALL_LANGUAGES: frozenset[str] = frozenset(
     lang_cls.__name__
     for lang_cls in _SORTED_LANGUAGES
-    if lang_cls.supports_call
+    if len(lang_cls.CallStyles) > 0
 )
 
 

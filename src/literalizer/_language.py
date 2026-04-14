@@ -281,7 +281,6 @@ class LanguageCls(type):
     supports_default_ordered_map_value_type: bool
     supports_non_printable_ascii_dict_keys: bool
     supports_variable_names: bool
-    supports_call: bool
 
     @staticmethod
     def wrap_in_file(
@@ -594,11 +593,6 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     declaration rather than being appended after the value.
     """
 
-    supports_call: bool
-    """Whether the language supports function call rendering via
-    :func:`literalize_call`.
-    """
-
     @property
     def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
         """Callable that formats a new variable declaration.
@@ -771,7 +765,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     call_style_config: CallStyleConfig | None
     """Describes how this language passes arguments in function calls.
 
-    ``None`` for languages where :attr:`supports_call` is ``False``.
+    ``None`` for languages with an empty :attr:`CallStyles` enum.
     See :class:`CallStyleConfig` for details.
     """
 
