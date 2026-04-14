@@ -533,7 +533,6 @@ class Swift(metaclass=LanguageCls):
             kind=CallStyleKind.KEYWORD,
             keyword_separator=": ",
         )
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
 
     call_styles = CallStyles
 
