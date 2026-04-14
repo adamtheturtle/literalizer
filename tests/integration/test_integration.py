@@ -757,6 +757,25 @@ def _build_constructor_prefix_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_numeric_style_variants() -> Iterable[_Variant]:
+    """Build numeric-style variants for Haskell.
+
+    The ``EXPLICIT`` numeric style wraps integer and float literals
+    with their constructors instead of relying on ``Num`` /
+    ``Fractional`` typeclass instances.
+    """
+    return [
+        _Variant(
+            name="Haskell_numeric_style_explicit",
+            spec=Haskell(
+                numeric_style=Haskell.numeric_styles.EXPLICIT,
+            ),
+            lang_cls=Haskell,
+        ),
+    ]
+
+
+@beartype
 def _build_c_field_name_variants() -> Iterable[_Variant]:
     """Build field-name variants for the C language.
 
@@ -1073,6 +1092,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
         (_build_constructor_prefix_variants(), "float_list", "_float"),
+        (_build_numeric_style_variants(), "int_list", ""),
+        (_build_numeric_style_variants(), "float_list", ""),
+        (_build_numeric_style_variants(), "float_special_values", ""),
+        (_build_numeric_style_variants(), "mixed_number_list", ""),
+        (_build_numeric_style_variants(), "scalars", ""),
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),

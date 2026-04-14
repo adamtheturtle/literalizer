@@ -297,6 +297,7 @@ def _build_scalar_body_preamble(
     type_name: str,
     constructor_prefix: str,
     emit_is_string: bool,
+    emit_num: bool,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
@@ -309,6 +310,9 @@ def _build_scalar_body_preamble(
 
     When *emit_is_string* is ``False``, the ``IsString`` import and
     instance are suppressed (used by the ``EXPLICIT`` string format).
+
+    When *emit_num* is ``False``, the ``Num`` and ``Fractional``
+    instances are suppressed (used by the ``EXPLICIT`` numeric style).
     """
     include_hdate = date_format.value.type_produced is datetime.date
     include_hdatetime = (
@@ -382,7 +386,7 @@ def _build_scalar_body_preamble(
 
         has_float = float in types
         has_int = int in types
-        if has_float or has_int:
+        if emit_num and (has_float or has_int):
             instances.append(
                 _num_instance(
                     has_int=has_int,
@@ -391,7 +395,7 @@ def _build_scalar_body_preamble(
                     constructor_prefix=constructor_prefix,
                 ),
             )
-        if has_float:
+        if emit_num and has_float:
             instances.append(
                 f"instance Fractional {type_name} where\n"
                 f"    fromRational r = {p}Float (realToFrac r)\n"
@@ -472,6 +476,15 @@ class Haskell(metaclass=LanguageCls):
         constructor_prefix: Prefix for generated constructor names.
             Defaults to ``"H"``, producing constructors like ``HNull``,
             ``HBool``, ``HInt``, etc.
+
+        numeric_style: How numeric literals are represented.
+
+            * ``numeric_styles.OVERLOADED`` — emit ``Num`` and
+              ``Fractional`` typeclass instances so that bare literals
+              like ``42`` and ``3.14`` resolve to the custom type.
+            * ``numeric_styles.EXPLICIT`` — wrap every numeric literal
+              with its constructor (``HInt 42``, ``HFloat (3.14)``)
+              and omit the typeclass instances.
     """
 
     extension = ".hs"
@@ -649,6 +662,24 @@ class Haskell(metaclass=LanguageCls):
 
         NONE = enum.auto()
 
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options.
+
+        ``OVERLOADED`` emits ``Num`` and ``Fractional`` typeclass
+        instances so that bare numeric literals (``42``, ``3.14``)
+        resolve to the custom type via ``fromInteger`` /
+        ``fromRational``.
+
+        ``EXPLICIT`` wraps every numeric literal with its constructor
+        (``HInt 42``, ``HFloat 3.14``) and omits the typeclass
+        instances.
+        """
+
+        OVERLOADED = "overloaded"
+        EXPLICIT = "explicit"
+
+    numeric_styles = NumericStyles
+
     class StringFormats(enum.Enum):
         """String format options."""
 
@@ -733,7 +764,7 @@ class Haskell(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
+    def __init__(  # noqa: C901, PLR0915
         self,
         *,
         date_format: DateFormats = DateFormats.HASKELL,
@@ -752,6 +783,7 @@ class Haskell(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
@@ -842,8 +874,32 @@ class Haskell(metaclass=LanguageCls):
             )
         else:
             self.format_datetime = datetime_format
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = integer_format
+        _explicit_numeric = numeric_style.name == "EXPLICIT"
+        if _explicit_numeric:
+            _int_prefix = f"{constructor_prefix}Int "
+            _float_prefix = f"{constructor_prefix}Float "
+            _base_format_float: Callable[[float], str] = float_format
+            _base_format_integer: Callable[[int], str] = integer_format
+
+            @beartype
+            def _wrap_integer(value: int) -> str:
+                """Wrap an integer with the constructor prefix."""
+                formatted = _base_format_integer(value)
+                if value < 0:
+                    return f"{_int_prefix}({formatted})"
+                return f"{_int_prefix}{formatted}"
+
+            @beartype
+            def _wrap_float(value: float) -> str:
+                """Wrap a float with the constructor prefix."""
+                formatted = _base_format_float(value)
+                return f"{_float_prefix}({formatted})"
+
+            self.format_float: Callable[[float], str] = _wrap_float
+            self.format_integer: Callable[[int], str] = _wrap_integer
+        else:
+            self.format_float = float_format
+            self.format_integer = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )
@@ -858,6 +914,7 @@ class Haskell(metaclass=LanguageCls):
         self.integer_format = integer_format
         self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
+        self.numeric_style = numeric_style
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
@@ -936,6 +993,7 @@ class Haskell(metaclass=LanguageCls):
             type_name=type_name,
             constructor_prefix=constructor_prefix,
             emit_is_string=not _explicit,
+            emit_num=not _explicit_numeric,
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
