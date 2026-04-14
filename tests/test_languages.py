@@ -824,12 +824,13 @@ def test_literalize_call_wrap_in_file() -> None:
     result = literalize_call(
         source="[[1, 2]]",
         input_format=InputFormat.JSON,
-        language=Rust(),
+        language=Go(),
         target_function="process",
         parameter_names=["a", "b"],
         wrap_in_file=True,
     )
-    assert "fn main()" in result.code
+    assert "package main" in result.code
+    assert "func main()" in result.code
     assert "process(" in result.code
     assert not result.preamble
     assert not result.body_preamble
