@@ -122,7 +122,11 @@ def _format_dhall_string(value: str) -> str:
 
 
 @beartype
-def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
+def _format_dhall_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
     """Format a Dhall record entry as ``key = value``.
 
     If the key is a valid Dhall simple label (letter or underscore
@@ -133,7 +137,7 @@ def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
     """
     inner = key[1:-1]
     if _IDENTIFIER_RE.match(string=inner):
-        return f"{inner} = {value}"
+        return f"{inner} = {formatted_value}"
     raw = _unescape_dhall_string(value=inner)
     if not raw or not _BACKTICK_LABEL_RE.match(string=raw):
         msg = (
@@ -142,7 +146,7 @@ def _format_dhall_dict_entry(key: str, _val: Value, value: str) -> str:
             "printable ASCII (no backticks or control characters)."
         )
         raise InvalidDictKeyError(msg)
-    return f"`{raw}` = {value}"
+    return f"`{raw}` = {formatted_value}"
 
 
 @beartype

@@ -205,10 +205,14 @@ def _build_explicit_string_formatters(
         return f"{string_constructor}{base_format_bytes(data)}"
 
     @beartype
-    def _format_dict_entry(key: str, _val: Value, value: str) -> str:
+    def _format_dict_entry(
+        key: str,
+        _raw_value: Value,
+        formatted_value: str,
+    ) -> str:
         """Format a dict entry, stripping the constructor from the key."""
         clean_key = key.removeprefix(string_constructor)
-        return f"({clean_key}, {value})"
+        return f"({clean_key}, {formatted_value})"
 
     return _ExplicitStringFormatters(
         format_string=_format_string,
