@@ -5,6 +5,7 @@ import datetime
 import enum
 import functools
 from collections.abc import Callable, Sequence
+from typing import cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -405,7 +406,7 @@ def _build_date_formatters(
             ),
         )
     else:
-        fmt_date = date_format.value.formatter
+        fmt_date = cast("Callable[[datetime.date], str]", date_format)
 
     fmt_datetime: Callable[[datetime.datetime], str]
     if datetime_format.name == "HASKELL":
@@ -413,7 +414,9 @@ def _build_date_formatters(
             prefix=constructor_prefix,
         )
     else:
-        fmt_datetime = datetime_format.value.formatter
+        fmt_datetime = cast(
+            "Callable[[datetime.datetime], str]", datetime_format
+        )
 
     return _DateFormatters(
         format_date=fmt_date,
