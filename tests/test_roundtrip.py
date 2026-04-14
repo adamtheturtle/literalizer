@@ -85,8 +85,7 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
@@ -102,8 +101,7 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
@@ -124,8 +122,7 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
@@ -159,8 +156,7 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     code = result.code.rstrip(",")
@@ -232,8 +228,7 @@ def test_roundtrip_yaml_binary_hex_languages(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     code = result.code.rstrip(",")
@@ -251,8 +246,7 @@ def test_roundtrip_yaml_binary_erlang(data: bytes) -> None:
         language=ERLANG_LANG,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     code = result.code.rstrip(",")

@@ -8,8 +8,10 @@ import textwrap
 import pytest
 
 from literalizer import (
+    ExistingVariable,
     InputFormat,
     Language,
+    NewVariable,
     literalize,
 )
 from literalizer.languages import (
@@ -284,8 +286,7 @@ def test_variable_declaration_json(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -304,8 +305,7 @@ def test_variable_declaration_yaml(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -326,8 +326,7 @@ def test_existing_variable_assignment_json(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name="my_var",
-        new_variable=False,
+        variable_form=ExistingVariable(name="my_var"),
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -348,8 +347,7 @@ def test_existing_variable_assignment_yaml(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name="my_var",
-        new_variable=False,
+        variable_form=ExistingVariable(name="my_var"),
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -378,8 +376,7 @@ def test_python_always_type_hints_scalars(
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     assert result.code == expected
@@ -393,8 +390,7 @@ def test_python_always_type_hints_dict() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -414,8 +410,7 @@ def test_python_always_type_hints_tuple() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -446,8 +441,7 @@ def test_python_always_type_hints_list() -> None:
         language=lang,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -468,8 +462,7 @@ def test_python_always_type_hints_assignment_no_hint() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=False,
-        variable_name="my_var",
-        new_variable=False,
+        variable_form=ExistingVariable(name="my_var"),
         error_on_coercion=False,
     )
     assert result.code == "my_var = 42"
@@ -484,8 +477,7 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -506,8 +498,7 @@ def test_python_always_type_hints_set_of_integers() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -529,8 +520,7 @@ def test_python_always_type_hints_nested_list_in_list() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -553,8 +543,7 @@ def test_python_always_type_hints_dict_with_list_values() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(
@@ -574,8 +563,7 @@ def test_python_always_type_hints_empty_list() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     assert result.code == "my_var: tuple[Any, ...] = ()"
@@ -598,8 +586,7 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         language=PYTHON_ALWAYS_HINTS,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name="my_var",
-        new_variable=True,
+        variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
     expected = textwrap.dedent(

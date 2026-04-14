@@ -123,6 +123,33 @@ class LiteralizeResult:
         return self.code[len(prefix) :]
 
 
+@dataclasses.dataclass(frozen=True)
+class NewVariable:
+    """Wrap output in a new variable declaration."""
+
+    name: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ExistingVariable:
+    """Wrap output in an assignment to an existing variable."""
+
+    name: str
+
+
+@dataclasses.dataclass(frozen=True)
+class BothVariableForms:
+    """Produce both a declaration and an assignment, combined.
+
+    Requires ``wrap_in_file=True`` on :func:`literalize`.
+    """
+
+    name: str
+
+
+VariableForm = NewVariable | ExistingVariable | BothVariableForms
+
+
 @beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
     """Return the set of Python types present in *data*."""
@@ -884,20 +911,19 @@ def _apply_variable_wrapper(
     result: str,
     language: Language,
     data: Value,
-    variable_name: str | None,
-    new_variable: bool,
+    variable_form: NewVariable | ExistingVariable | None,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
     """
-    if variable_name is None:
+    if variable_form is None:
         return result
     formatter = (
         language.format_variable_declaration
-        if new_variable
+        if isinstance(variable_form, NewVariable)
         else language.format_variable_assignment
     )
-    return formatter(variable_name, result, data)
+    return formatter(variable_form.name, result, data)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -976,8 +1002,7 @@ def literalize(
     language: Language,
     pre_indent_level: int = 0,
     include_delimiters: bool = True,
-    variable_name: str | None = None,
-    new_variable: bool = True,
+    variable_form: VariableForm | None = None,
     error_on_coercion: bool = False,
     wrap_in_file: bool = False,
 ) -> LiteralizeResult:
@@ -998,15 +1023,15 @@ def literalize(
             indent produces an 8-space margin.  Defaults to ``0``.
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
-        variable_name: If given, wrap the output in a variable
-            declaration using the language's
-            ``format_variable_declaration`` or
-            ``format_variable_assignment`` callable.
-        new_variable: If ``True`` (the default), use
+        variable_form: Controls how the output is wrapped in a variable.
+            Pass :class:`NewVariable` to use
             ``format_variable_declaration`` (e.g. ``const x =`` in
-            JavaScript).  If ``False``, use
-            ``format_variable_assignment`` (e.g. ``x =``).  Only
-            relevant when *variable_name* is given.
+            JavaScript), :class:`ExistingVariable` to use
+            ``format_variable_assignment`` (e.g. ``x =``),
+            or :class:`BothVariableForms` to produce both a declaration
+            and an assignment combined in one output (requires
+            *wrap_in_file*).  ``None`` (default) means no variable
+            wrapping.
         error_on_coercion: If ``True``, raise
             :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
             instead of silently coercing heterogeneous scalar
@@ -1033,6 +1058,44 @@ def literalize(
             and the data contains heterogeneous scalar collections
             that would be coerced.
     """
+    # --- BothVariableForms: two full literalize() calls ---
+    if isinstance(variable_form, BothVariableForms):
+        declaration = literalize(
+            source=source,
+            input_format=input_format,
+            language=language,
+            pre_indent_level=pre_indent_level,
+            include_delimiters=include_delimiters,
+            variable_form=NewVariable(name=variable_form.name),
+            error_on_coercion=error_on_coercion,
+        )
+        assignment = literalize(
+            source=source,
+            input_format=input_format,
+            language=language,
+            pre_indent_level=pre_indent_level,
+            include_delimiters=include_delimiters,
+            variable_form=ExistingVariable(name=variable_form.name),
+            error_on_coercion=error_on_coercion,
+        )
+        decl_preamble = (
+            *declaration.body_preamble,
+            *declaration.pre_declaration_comments,
+        )
+        wrapped = language.wrap_combined_in_file(
+            declaration=declaration.declaration_code,
+            assignment=assignment.bare_code,
+            variable_name=variable_form.name,
+            body_preamble=decl_preamble,
+        )
+        if declaration.preamble:
+            wrapped = "\n".join(declaration.preamble) + "\n" + wrapped
+        return LiteralizeResult(
+            code=wrapped,
+            preamble=(),
+            body_preamble=(),
+        )
+
     line_prefix = language.indent * pre_indent_level
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
@@ -1092,8 +1155,7 @@ def literalize(
         result=result,
         language=language,
         data=data,
-        variable_name=variable_name,
-        new_variable=new_variable,
+        variable_form=variable_form,
     )
 
     # --- Pending comments ---
@@ -1111,10 +1173,12 @@ def literalize(
         result = "\n".join(resolved.pending_scalar_before) + "\n" + result
 
     # --- Preamble ---
+    variable_name = variable_form.name if variable_form is not None else None
+    is_declaration = isinstance(variable_form, NewVariable)
     computed = _compute_preamble(
         data=data,
         language=language,
-        has_variable_declaration=variable_name is not None and new_variable,
+        has_variable_declaration=variable_name is not None and is_declaration,
     )
     preamble = tuple(language.static_preamble) + computed.header
 

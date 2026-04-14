@@ -53,8 +53,7 @@ def test_yaml_comment_scalar_only_comments() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = "# just a comment\nNone"
@@ -70,8 +69,7 @@ def test_yaml_comment_no_include_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        variable_name=None,
-        new_variable=True,
+        variable_form=None,
         error_on_coercion=False,
     )
     expected = '    # comment\n    "a",\n    "b",'
