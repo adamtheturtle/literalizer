@@ -1062,6 +1062,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (numeric_separator, "int_list_with_zero", "_zero"),
         (string_format, "string_list", ""),
         (string_format, "string_with_backslash", ""),
+        (string_format, "simple_dict", "_dict"),
+        (string_format, "binary", "_binary"),
         (bytes_format, "binary", ""),
         (trailing_comma, "simple_sequence", ""),
         (line_ending, "simple_sequence", ""),
