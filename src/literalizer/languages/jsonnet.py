@@ -4,6 +4,7 @@ import datetime
 import enum
 import functools
 import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -34,6 +35,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -44,6 +46,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
@@ -54,7 +57,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable
 
 
 @beartype
@@ -71,6 +74,26 @@ def _format_jsonnet_dict_entry(key: str, _val: Value, value: str) -> str:
     if identifier_pattern.match(string=inner):
         return f"{inner}: {value}"
     return f"{key}: {value}"
+
+
+def _jsonnet_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Jsonnet ``local`` stub declarations for a call name."""
+    param_list = ", ".join(params)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"local {parts[0]}({param_list}) = null;",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    inner = f"{method}({param_list}):: null"
+    for field in reversed(fields):
+        inner = f"{field}: {{ {inner} }}"
+    return (f"local {root} = {{ {inner} }};",)
 
 
 @beartype
@@ -275,6 +298,11 @@ class Jsonnet(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Jsonnet call style options."""
 
+        KEYWORD = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator="=",
+        )
+
     call_styles = CallStyles
 
     @staticmethod
@@ -283,12 +311,21 @@ class Jsonnet(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
-            content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+        """Wrap code in a valid Jsonnet file.
+
+        When *variable_name* is empty (call mode), wrap the content
+        lines in an array so the file evaluates to a single expression.
+        """
+        if not body_preamble:
+            return wrap_in_file_noop(
+                content=content,
+                variable_name=variable_name,
+                body_preamble=body_preamble,
+            )
+        preamble_str = "\n".join(body_preamble) + "\n"
+        lines = content.split(sep="\n")
+        elements = [f"    {line}," for line in lines if line]
+        return preamble_str + "[\n" + "\n".join(elements) + "\n]"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -327,6 +364,7 @@ class Jsonnet(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.KEYWORD,
         indent: str = "    ",
     ) -> None:
         """Initialize Jsonnet language specification."""
@@ -414,7 +452,8 @@ class Jsonnet(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _jsonnet_call_stub
         self.format_call_preamble_stub = no_call_stub
