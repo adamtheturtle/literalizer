@@ -1319,7 +1319,6 @@ def test_format_enumeration_properties(
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
     assert issubclass(spec.call_styles, enum.Enum)
-    assert len(spec.call_styles) >= 1
 
 
 # --- literalize_call golden-file tests ---

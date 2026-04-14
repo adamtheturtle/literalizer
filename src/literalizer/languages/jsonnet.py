@@ -276,8 +276,6 @@ class Jsonnet(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Jsonnet call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
-
     call_styles = CallStyles
 
     @staticmethod
@@ -330,7 +328,6 @@ class Jsonnet(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
     ) -> None:
         """Initialize Jsonnet language specification."""
@@ -418,8 +415,9 @@ class Jsonnet(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style = call_style
-        self.call_style_config: CallStyleConfig = call_style.value
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

@@ -286,8 +286,6 @@ class C(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """C call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
-
     call_styles = CallStyles
 
     @staticmethod
@@ -340,7 +338,6 @@ class C(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
         bool_field: str = "b",
         int_field: str = "i",
@@ -502,8 +499,9 @@ class C(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ("#include <math.h>",)
-        self.call_style = call_style
-        self.call_style_config: CallStyleConfig = call_style.value
+        self.call_style_config: CallStyleConfig = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+        )
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
