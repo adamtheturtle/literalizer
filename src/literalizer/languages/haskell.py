@@ -99,6 +99,66 @@ _format_datetime_haskell = _build_haskell_datetime_formatter(prefix="H")
 
 
 @dataclasses.dataclass(frozen=True)
+class _DateTimeFormatters:
+    """Resolved date and datetime formatters."""
+
+    format_date: Callable[[datetime.date], str]
+    format_datetime: Callable[[datetime.datetime], str]
+
+
+@beartype
+def _build_date_formatters(
+    *,
+    date_format_name: str,
+    date_formatter: Callable[[datetime.date], str],
+    datetime_format_name: str,
+    datetime_formatter: Callable[[datetime.datetime], str],
+    constructor_prefix: str,
+    is_explicit: bool,
+) -> _DateTimeFormatters:
+    """Build date and datetime formatters based on format settings."""
+    if date_format_name == "HASKELL":
+        fmt_date: Callable[[datetime.date], str] = date_ymd_formatter(
+            template=(
+                f"{constructor_prefix}Date "
+                f"(fromGregorian {{year}} {{month}} {{day}})"
+            ),
+        )
+    elif is_explicit:
+        _str_pfx = f"{constructor_prefix}Str "
+
+        @beartype
+        def _explicit_date(value: datetime.date) -> str:
+            """Wrap an ISO date string with the HStr constructor."""
+            return f"{_str_pfx}{date_formatter(value)}"
+
+        fmt_date = _explicit_date
+    else:
+        fmt_date = date_formatter
+
+    if datetime_format_name == "HASKELL":
+        fmt_datetime: Callable[[datetime.datetime], str] = (
+            _build_haskell_datetime_formatter(prefix=constructor_prefix)
+        )
+    elif is_explicit:
+        _str_pfx_dt = f"{constructor_prefix}Str "
+
+        @beartype
+        def _explicit_datetime(value: datetime.datetime) -> str:
+            """Wrap an ISO datetime string with the HStr constructor."""
+            return f"{_str_pfx_dt}{datetime_formatter(value)}"
+
+        fmt_datetime = _explicit_datetime
+    else:
+        fmt_datetime = datetime_formatter
+
+    return _DateTimeFormatters(
+        format_date=fmt_date,
+        format_datetime=fmt_datetime,
+    )
+
+
+@dataclasses.dataclass(frozen=True)
 class _ExplicitStringFormatters:
     """Formatters for the EXPLICIT string format."""
 
@@ -246,6 +306,12 @@ def _build_scalar_body_preamble(
     datetime_needs_is_string = bool(
         emit_is_string and datetime_format.value.preamble_lines
     )
+    # In EXPLICIT mode, ISO dates/datetimes produce HStr-wrapped strings,
+    # so HStr String must appear in the data type.
+    date_needs_str_explicit = bool(not emit_is_string and not include_hdate)
+    datetime_needs_str_explicit = bool(
+        not emit_is_string and not include_hdatetime
+    )
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
@@ -289,6 +355,8 @@ def _build_scalar_body_preamble(
             bool(types & {str, bytes})
             or (date_needs_is_string and datetime.date in types)
             or (datetime_needs_is_string and datetime.datetime in types)
+            or (date_needs_str_explicit and datetime.date in types)
+            or (datetime_needs_str_explicit and datetime.datetime in types)
         )
         if needs_str_constructor and f"{p}Str String" not in data_val_parts:
             data_val_parts.append(f"{p}Str String")
@@ -733,25 +801,20 @@ class Haskell(metaclass=LanguageCls):
             narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        if date_format.name == "HASKELL":
-            self.format_date: Callable[[datetime.date], str] = (
-                date_ymd_formatter(
-                    template=(
-                        f"{constructor_prefix}Date "
-                        f"(fromGregorian {{year}} {{month}} {{day}})"
-                    ),
-                )
-            )
-        else:
-            self.format_date = date_format
-        if datetime_format.name == "HASKELL":
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                _build_haskell_datetime_formatter(
-                    prefix=constructor_prefix,
-                )
-            )
-        else:
-            self.format_datetime = datetime_format
+        _date_fmts = _build_date_formatters(
+            date_format_name=date_format.name,
+            date_formatter=date_format,
+            datetime_format_name=datetime_format.name,
+            datetime_formatter=datetime_format,
+            constructor_prefix=constructor_prefix,
+            is_explicit=_explicit,
+        )
+        self.format_date: Callable[[datetime.date], str] = (
+            _date_fmts.format_date
+        )
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            _date_fmts.format_datetime
+        )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
@@ -824,13 +887,16 @@ class Haskell(metaclass=LanguageCls):
                 bytes: _overloaded_strings,
             }
         )
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            date_scalar_preamble(
+        if _explicit:
+            # EXPLICIT mode wraps dates/datetimes with HStr, so no
+            # OverloadedStrings pragma is needed for ISO formats.
+            self.scalar_preamble: dict[type, tuple[str, ...]] = {}
+        else:
+            self.scalar_preamble = date_scalar_preamble(
                 date_format=date_format,
                 datetime_format=datetime_format,
                 extra=_str_extra,
             )
-        )
 
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
