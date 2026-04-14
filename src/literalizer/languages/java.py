@@ -76,13 +76,37 @@ def _java_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
         return (
             f"static Object {parts[0]}(Object... args) {{ return null; }}",
         )
-    root, method = parts[0], parts[1]
-    type_name = f"{root.title()}Type_"
-    return (
-        f"static class {type_name} {{"
-        f" Object {method}(Object... args) {{ return null; }} }}",
-        f"static {type_name} {root} = new {type_name}();",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        type_name = f"{root.title()}Type_"
+        return (
+            f"static class {type_name} {{"
+            f" Object {method}(Object... args) {{ return null; }} }}",
+            f"static {type_name} {root} = new {type_name}();",
+        )
+    lines: list[str] = []
+    inner_type = f"{fields[-1].title()}Type_"
+    lines.append(
+        f"static class {inner_type} {{"
+        f" Object {method}(Object... args) {{ return null; }} }}"
     )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        lines.append(
+            f"static class {curr_type} {{"
+            f" {prev_type} {fields[i + 1]} = new {prev_type}(); }}"
+        )
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    lines.append(
+        f"static class {root_type} {{"
+        f" {prev_type} {fields[0]} = new {prev_type}(); }}"
+    )
+    lines.append(f"static {root_type} {root} = new {root_type}();")
+    return tuple(lines)
 
 
 @beartype
