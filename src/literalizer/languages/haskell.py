@@ -83,7 +83,7 @@ def _haskell_call_preamble_stub_record_dot(
 @beartype
 def _haskell_record_selector_target(target: str, /) -> str:
     """Convert ``app.client.fetch`` to ``(fetch (client app))``."""
-    parts = target.split(".")
+    parts = target.split(sep=".")
     if len(parts) == 1:
         return target
     result = parts[0]
