@@ -819,6 +819,22 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
     assert not result.preamble
 
 
+def test_literalize_call_wrap_in_file() -> None:
+    """Literalize_call with wrap_in_file returns a complete file."""
+    result = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Rust(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        wrap_in_file=True,
+    )
+    assert "fn main()" in result.code
+    assert "process(" in result.code
+    assert result.preamble == ()
+    assert result.body_preamble == ()
+
+
 def test_literalize_call_per_element_false() -> None:
     """Literalize_call with per_element=False passes the whole value."""
     result = literalize_call(
