@@ -1170,13 +1170,13 @@ def _format_call_args(
 @beartype
 def _assemble_call(
     *,
-    callee: str,
+    target_function: str,
     args_str: str,
     call_transform: Callable[[str], str] | None,
     statement_terminator: str,
 ) -> str:
     """Build one complete call statement, optionally transformed."""
-    call_expr = f"{callee}{args_str}"
+    call_expr = f"{target_function}{args_str}"
     if call_transform is not None:
         call_expr = call_transform(call_expr)
     return f"{call_expr}{statement_terminator}"
@@ -1188,7 +1188,7 @@ def literalize_call(
     source: str,
     input_format: InputFormat,
     language: Language,
-    callee: str,
+    target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
@@ -1204,7 +1204,7 @@ def literalize_call(
         input_format: The serialization format of *source*.
         language: A :class:`Language` instance describing how to format
             literals.
-        callee: The function expression to call
+        target_function: The function expression to call
             (e.g. ``"throttler.should_send_notification"``).
         parameter_names: Parameter names, positionally mapped to each
             element in each row.  For :attr:`CallStyleKind.POSITIONAL`
@@ -1245,7 +1245,7 @@ def literalize_call(
             )
             lines.append(
                 _assemble_call(
-                    callee=callee,
+                    target_function=target_function,
                     args_str=args_str,
                     call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
@@ -1262,7 +1262,7 @@ def literalize_call(
         )
         args_str = f"({lit})"
         result = _assemble_call(
-            callee=callee,
+            target_function=target_function,
             args_str=args_str,
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,

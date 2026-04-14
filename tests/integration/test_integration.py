@@ -405,7 +405,7 @@ class _CallCaseConfig:
     """Configuration for a ``literalize_call`` golden-file test case."""
 
     case_dir_name: str
-    callee: str
+    target_function: str
     parameter_names: list[str]
     call_transform: Callable[[str], str] | None
     transform_stub_names: list[str]
@@ -415,7 +415,7 @@ class _CallCaseConfig:
 _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     _CallCaseConfig(
         case_dir_name="call_keyword_args",
-        callee="throttler.check",
+        target_function="throttler.check",
         parameter_names=["user_id", "ts"],
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
@@ -423,7 +423,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
-        callee="process",
+        target_function="process",
         parameter_names=["value"],
         call_transform=None,
         transform_stub_names=[],
@@ -1357,7 +1357,7 @@ def test_call_golden_file(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
         language=spec,
-        callee=config.callee,
+        target_function=config.target_function,
         parameter_names=config.parameter_names,
         call_transform=config.call_transform,
         per_element=config.per_element,
@@ -1367,10 +1367,13 @@ def test_call_golden_file(
     preamble_stubs: list[str] = []
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
-        spec.format_call_stub(config.callee, config.parameter_names),
+        spec.format_call_stub(config.target_function, config.parameter_names),
     )
     preamble_stubs.extend(
-        spec.format_call_preamble_stub(config.callee, config.parameter_names),
+        spec.format_call_preamble_stub(
+            config.target_function,
+            config.parameter_names,
+        ),
     )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
