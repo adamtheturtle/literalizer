@@ -278,7 +278,7 @@ class Crystal(metaclass=LanguageCls):
 
         DECIMAL = MappingProxyType(
             mapping={
-                "NONE": lambda value: str(object=value),
+                "NONE": str,
                 "UNDERSCORE": format_integer_underscore,
             }
         )
