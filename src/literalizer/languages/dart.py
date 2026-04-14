@@ -459,8 +459,8 @@ class Dart(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    def wrap_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_in_file(  # pylint: disable=no-self-use
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -472,8 +472,8 @@ class Dart(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def wrap_combined_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_combined_in_file(  # pylint: disable=no-self-use
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,

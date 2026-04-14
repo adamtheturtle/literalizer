@@ -575,8 +575,8 @@ class Gleam(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    def wrap_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_in_file(  # pylint: disable=no-self-use
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -589,8 +589,8 @@ class Gleam(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix="  ")
         return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
 
-    def wrap_combined_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_combined_in_file(  # pylint: disable=no-self-use
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,

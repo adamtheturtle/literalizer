@@ -697,8 +697,8 @@ class Java(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    def wrap_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_in_file(  # pylint: disable=no-self-use
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -727,8 +727,8 @@ class Java(metaclass=LanguageCls):
             "}"
         )
 
-    def wrap_combined_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_combined_in_file(  # pylint: disable=no-self-use
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,

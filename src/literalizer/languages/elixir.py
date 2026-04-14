@@ -349,8 +349,8 @@ class Elixir(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    def wrap_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_in_file(  # pylint: disable=no-self-use
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -366,8 +366,8 @@ class Elixir(metaclass=LanguageCls):
             f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
 
-    def wrap_combined_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_combined_in_file(  # pylint: disable=no-self-use
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,

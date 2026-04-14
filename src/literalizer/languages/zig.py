@@ -354,8 +354,8 @@ class Zig(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    def wrap_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_in_file(  # pylint: disable=no-self-use
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -372,8 +372,8 @@ class Zig(metaclass=LanguageCls):
             use = f"    _ = {variable_name};"
         return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
-    def wrap_combined_in_file(
-        self,  # pylint: disable=no-self-use
+    def wrap_combined_in_file(  # pylint: disable=no-self-use
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
