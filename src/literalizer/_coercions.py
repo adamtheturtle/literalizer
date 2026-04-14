@@ -234,13 +234,13 @@ def _find_first_mixed_values(
     match data:
         case ordereddict() | dict():
             children = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            if container_type is dict and _dict_values_mixed_types(
+            if container_type is dict and _values_mixed_types(
                 values=children,
             ):
                 return children
         case list():
             children = data
-            if container_type is list and _dict_values_mixed_types(
+            if container_type is list and _values_mixed_types(
                 values=children,
             ):
                 return children
@@ -433,8 +433,8 @@ def _value_type_family(*, value: Value) -> str:
 
 
 @beartype
-def _dict_values_mixed_types(*, values: Sequence[Value]) -> bool:
-    """Check whether dict values span more than one type family."""
+def _values_mixed_types(*, values: Sequence[Value]) -> bool:
+    """Check whether values span more than one type family."""
     if len(values) <= 1:
         return False
     families: set[str] = set()
@@ -467,7 +467,7 @@ def _coerce_mixed_dict_values(*, data: Value) -> Value:
     match data:
         case ordereddict() | dict():
             values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            if _dict_values_mixed_types(values=values):
+            if _values_mixed_types(values=values):
                 return _map_mapping_values(
                     data=data,
                     fn=lambda v: _coerce_value_to_str(value=v),
@@ -497,7 +497,7 @@ def _coerce_mixed_list_values(*, data: Value) -> Value:
                 fn=lambda v: _coerce_mixed_list_values(data=v),
             )
         case list():
-            if _dict_values_mixed_types(values=data):
+            if _values_mixed_types(values=data):
                 return [_coerce_value_to_str(value=v) for v in data]
             return [_coerce_mixed_list_values(data=v) for v in data]
         case _:
@@ -582,7 +582,7 @@ def _has_mixed_dict_values(*, data: Value) -> bool:
     match data:
         case ordereddict() | dict():
             values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            if _dict_values_mixed_types(values=values):
+            if _values_mixed_types(values=values):
                 return True
             return any(_has_mixed_dict_values(data=v) for v in values)
         case list():
@@ -603,7 +603,7 @@ def _has_mixed_list_values(*, data: Value) -> bool:
                 for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
             )
         case list():
-            if _dict_values_mixed_types(values=data):
+            if _values_mixed_types(values=data):
                 return True
             return any(_has_mixed_list_values(data=v) for v in data)
         case _:
