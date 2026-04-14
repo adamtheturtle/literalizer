@@ -296,6 +296,11 @@ class R(metaclass=LanguageCls):
 
         NONE = enum.auto()
 
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options."""
+
+        OVERLOADED = enum.auto()
+
     class StringFormats(enum.Enum):
         """String format options."""
 
@@ -328,6 +333,7 @@ class R(metaclass=LanguageCls):
     integer_formats = IntegerFormats
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
+    numeric_styles = NumericStyles
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
@@ -397,6 +403,7 @@ class R(metaclass=LanguageCls):
             NumericLiteralSuffixes.NONE
         ),
         numeric_separator: NumericSeparators = NumericSeparators.NONE,
+        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
@@ -445,6 +452,7 @@ class R(metaclass=LanguageCls):
         self.integer_format = integer_format
         self.numeric_literal_suffix = numeric_literal_suffix
         self.numeric_separator = numeric_separator
+        self.numeric_style = numeric_style
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending

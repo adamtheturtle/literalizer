@@ -432,6 +432,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def numeric_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the numeric literal style
+        options this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def string_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the string format options
         this language supports.
@@ -691,6 +698,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def numeric_separator(self) -> enum.Enum:
         """The numeric separator option chosen for this language
+        instance.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def numeric_style(self) -> enum.Enum:
+        """The numeric literal style chosen for this language
         instance.
         """
         ...  # pylint: disable=unnecessary-ellipsis

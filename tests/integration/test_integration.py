@@ -757,25 +757,6 @@ def _build_constructor_prefix_variants() -> Iterable[_Variant]:
 
 
 @beartype
-def _build_numeric_style_variants() -> Iterable[_Variant]:
-    """Build numeric-style variants for Haskell.
-
-    The ``EXPLICIT`` numeric style wraps integer and float literals
-    with their constructors instead of relying on ``Num`` /
-    ``Fractional`` typeclass instances.
-    """
-    return [
-        _Variant(
-            name="Haskell_numeric_style_explicit",
-            spec=Haskell(
-                numeric_style=Haskell.numeric_styles.EXPLICIT,
-            ),
-            lang_cls=Haskell,
-        ),
-    ]
-
-
-@beartype
 def _build_c_field_name_variants() -> Iterable[_Variant]:
     """Build field-name variants for the C language.
 
@@ -961,6 +942,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         get_formats=lambda s: s.float_formats,
         make_spec=lambda cls, fmt: cls(float_format=fmt),
     )
+    numeric_style = nv(
+        category="numeric_style",
+        get_default=lambda s: s.numeric_style,
+        get_formats=lambda s: s.numeric_styles,
+        make_spec=lambda cls, fmt: cls(numeric_style=fmt),
+    )
     string_format = nv(
         category="string_format",
         get_default=lambda s: s.string_format,
@@ -1092,12 +1079,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
         (_build_constructor_prefix_variants(), "float_list", "_float"),
-        (_build_numeric_style_variants(), "int_list", ""),
-        (_build_numeric_style_variants(), "int_list_with_zero", "_zero"),
-        (_build_numeric_style_variants(), "float_list", ""),
-        (_build_numeric_style_variants(), "float_special_values", ""),
-        (_build_numeric_style_variants(), "mixed_number_list", ""),
-        (_build_numeric_style_variants(), "scalars", ""),
+        (numeric_style, "int_list", ""),
+        (numeric_style, "int_list_with_zero", "_zero"),
+        (numeric_style, "float_list", ""),
+        (numeric_style, "float_special_values", ""),
+        (numeric_style, "mixed_number_list", ""),
+        (numeric_style, "scalars", ""),
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
@@ -1364,6 +1351,8 @@ def test_format_enumeration_properties(
     assert len(spec.integer_formats) >= 1
     assert issubclass(spec.numeric_separators, enum.Enum)
     assert len(spec.numeric_separators) >= 1
+    assert issubclass(spec.numeric_styles, enum.Enum)
+    assert len(spec.numeric_styles) >= 1
     assert issubclass(spec.string_formats, enum.Enum)
     assert len(spec.string_formats) >= 1
     assert issubclass(spec.trailing_commas, enum.Enum)
