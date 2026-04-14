@@ -58,8 +58,7 @@ Usage
        ),
        pre_indent_level=0,
        include_delimiters=True,
-       variable_name=None,
-       new_variable=True,
+       variable_form=None,
    )
    # result:
    # map[string]any{

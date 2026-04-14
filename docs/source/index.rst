@@ -50,8 +50,7 @@ Use :func:`literalizer.literalize` to convert data to native language literals:
        ),
        pre_indent_level=0,
        include_delimiters=True,
-       variable_name=None,
-       new_variable=True,
+       variable_form=None,
    )
    # result.code:
    # map[string]any{
