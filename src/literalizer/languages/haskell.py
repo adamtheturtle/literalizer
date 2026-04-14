@@ -4,8 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections.abc import Callable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -60,9 +59,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
 
 def _build_haskell_datetime_formatter(
     prefix: str,
@@ -99,25 +95,46 @@ _format_datetime_haskell = _build_haskell_datetime_formatter(prefix="H")
 
 
 @dataclasses.dataclass(frozen=True)
-class _ExplicitStringFormatters:
-    """Formatters for the EXPLICIT string format."""
+class _StringFormatters:
+    """String, bytes, and dict-entry formatters."""
 
     format_string: Callable[[str], str]
     format_bytes: Callable[[bytes], str]
     format_dict_entry: Callable[[str, Value, str], str]
+    is_explicit: bool
 
 
 @beartype
-def _build_explicit_string_formatters(
+def _build_string_formatters(
     *,
+    string_format_name: str,
     constructor_prefix: str,
-    base_format_string: Callable[[str], str],
     base_format_bytes: Callable[[bytes], str],
-) -> _ExplicitStringFormatters:
-    """Build formatters that wrap string/bytes values with the constructor.
+) -> _StringFormatters:
+    """Build string/bytes/dict-entry formatters.
 
-    Dict keys are unwrapped since they are ``String``, not ``Val``.
+    For ``EXPLICIT`` format, string and bytes values are wrapped with the
+    constructor prefix (e.g. ``HStr "hello"``), and dict keys are
+    unwrapped since they are ``String``, not ``Val``.
+
+    For ``DOUBLE`` format, values pass through unmodified, and dict
+    entries use tuple formatting.
     """
+    base_format_string: Callable[[str], str] = functools.partial(
+        format_string_backslash_control,
+        control_char_fmt="\\x{:02x}",
+    )
+
+    if string_format_name != "EXPLICIT":
+        return _StringFormatters(
+            format_string=base_format_string,
+            format_bytes=base_format_bytes,
+            format_dict_entry=tuple_dict_entry(
+                format_value=passthrough_sequence_entry,
+            ),
+            is_explicit=False,
+        )
+
     string_constructor = f"{constructor_prefix}Str "
 
     @beartype
@@ -136,10 +153,11 @@ def _build_explicit_string_formatters(
         clean_key = key.removeprefix(string_constructor)
         return f"({clean_key}, {value})"
 
-    return _ExplicitStringFormatters(
+    return _StringFormatters(
         format_string=_format_string,
         format_bytes=_format_bytes,
         format_dict_entry=_format_dict_entry,
+        is_explicit=True,
     )
 
 
@@ -332,6 +350,169 @@ def _build_scalar_body_preamble(
     return _compute
 
 
+@dataclasses.dataclass(frozen=True)
+class _SequenceSetup:
+    """Sequence format configuration and opener."""
+
+    format_config: SequenceFormatConfig
+    sequence_open: Callable[[list[Value]], str]
+
+
+@beartype
+def _build_sequence_setup(
+    *,
+    sequence_format: enum.Enum,
+    constructor_prefix: str,
+) -> _SequenceSetup:
+    """Build sequence format config, customizing the opener for LIST."""
+    fmt: SequenceFormatConfig = sequence_format.value
+    if sequence_format.name == "LIST":
+        seq_open = fixed_sequence_open(
+            open_str=f"{constructor_prefix}List [",
+        )
+        return _SequenceSetup(
+            format_config=dataclasses.replace(fmt, sequence_open=seq_open),
+            sequence_open=seq_open,
+        )
+    return _SequenceSetup(
+        format_config=fmt,
+        sequence_open=fmt.sequence_open,
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class _DateFormatters:
+    """Date and datetime formatters."""
+
+    format_date: Callable[[datetime.date], str]
+    format_datetime: Callable[[datetime.datetime], str]
+
+
+@beartype
+def _build_date_formatters(
+    *,
+    date_format: enum.Enum,
+    datetime_format: enum.Enum,
+    constructor_prefix: str,
+) -> _DateFormatters:
+    """Build date/datetime formatters with the constructor prefix."""
+    fmt_date: Callable[[datetime.date], str]
+    if date_format.name == "HASKELL":
+        fmt_date = date_ymd_formatter(
+            template=(
+                f"{constructor_prefix}Date "
+                f"(fromGregorian {{year}} {{month}} {{day}})"
+            ),
+        )
+    else:
+        fmt_date = date_format  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+
+    fmt_datetime: Callable[[datetime.datetime], str]
+    if datetime_format.name == "HASKELL":
+        fmt_datetime = _build_haskell_datetime_formatter(
+            prefix=constructor_prefix,
+        )
+    else:
+        fmt_datetime = datetime_format  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+
+    return _DateFormatters(
+        format_date=fmt_date,
+        format_datetime=fmt_datetime,
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class _DeclarationFormatters:
+    """Variable declaration and assignment formatters."""
+
+    format_variable_declaration: Callable[[str, str, Value], str]
+    format_variable_assignment: Callable[[str, str, Value], str]
+
+
+@beartype
+def _build_declaration_formatters(
+    *,
+    declaration_style: enum.Enum,
+    sequence_format: enum.Enum,
+    type_name: str,
+) -> _DeclarationFormatters:
+    """Build declaration/assignment formatters with type annotations."""
+    base_declaration: Callable[[str, str, Value], str] = (
+        declaration_style.value.formatter
+    )
+    raw_declared = sequence_format.value.declared_type
+    sequence_declared_type = (
+        raw_declared.replace("Val", type_name)
+        if raw_declared is not None
+        else None
+    )
+
+    @beartype
+    def _haskell_declaration(name: str, value: str, data: Value) -> str:
+        """Format a variable declaration with type annotation."""
+        base = base_declaration(name, value, data)
+        if isinstance(data, list):
+            if sequence_declared_type is None:
+                return base
+            return f"{name} :: {sequence_declared_type}\n{base}"
+        return f"{name} :: {type_name}\n{base}"
+
+    return _DeclarationFormatters(
+        format_variable_declaration=_haskell_declaration,
+        format_variable_assignment=variable_formatter(
+            template="{name} = {value}",
+        ),
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class _PreambleSetup:
+    """Preamble configuration for Haskell output."""
+
+    scalar_preamble: dict[type, tuple[str, ...]]
+    compute_body_preamble: Callable[[frozenset[type], Value], tuple[str, ...]]
+
+
+@beartype
+def _build_preamble_setup(
+    *,
+    date_format: enum.Enum,
+    datetime_format: enum.Enum,
+    is_explicit: bool,
+    type_name: str,
+    constructor_prefix: str,
+) -> _PreambleSetup:
+    """Build scalar preamble and body-preamble computation."""
+    _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
+    str_extra: dict[type, tuple[str, ...]] = (
+        {}
+        if is_explicit
+        else {
+            str: _overloaded_strings,
+            bytes: _overloaded_strings,
+        }
+    )
+    return _PreambleSetup(
+        scalar_preamble=date_scalar_preamble(
+            date_format=date_format,
+            datetime_format=datetime_format,
+            extra=str_extra,
+        ),
+        compute_body_preamble=_build_scalar_body_preamble(
+            date_format=date_format,
+            datetime_format=datetime_format,
+            is_string_import="import Data.String (IsString(fromString))",
+            is_string_instance=(
+                f"instance IsString {type_name} where\n"
+                f"    fromString = {constructor_prefix}Str"
+            ),
+            type_name=type_name,
+            constructor_prefix=constructor_prefix,
+            emit_is_string=not is_explicit,
+        ),
+    )
+
+
 @beartype
 class Haskell(metaclass=LanguageCls):
     """Haskell language specification.
@@ -410,6 +591,18 @@ class Haskell(metaclass=LanguageCls):
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
     supports_dotted_calls = True
+
+    indent_closing_delimiter = True
+    element_separator = ", "
+    skip_null_dict_values = False
+    supports_collection_comments = True
+    supports_scalar_before_comments = False
+    supports_scalar_inline_comments = True
+    statement_terminator = ""
+    static_preamble: Sequence[str] = ()
+    static_body_preamble: Sequence[str] = ()
+    special_float_preamble: tuple[str, ...] = ()
+    call_style_config: CallStyleConfig | None = None
 
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
@@ -647,7 +840,7 @@ class Haskell(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
+    def __init__(
         self,
         *,
         date_format: DateFormats = DateFormats.HASKELL,
@@ -674,95 +867,10 @@ class Haskell(metaclass=LanguageCls):
         constructor_prefix: str = "H",
     ) -> None:
         """Initialize Haskell language specification."""
+        # Enum selections.
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
-        self.null_literal: str = f"{constructor_prefix}Null"
-        self.true_literal: str = f"{constructor_prefix}Bool True"
-        self.false_literal: str = f"{constructor_prefix}Bool False"
-        fmt = sequence_format.value
-        if sequence_format.name == "LIST":
-            _seq_open = fixed_sequence_open(
-                open_str=f"{constructor_prefix}List [",
-            )
-            self.sequence_format_config: SequenceFormatConfig = (
-                dataclasses.replace(fmt, sequence_open=_seq_open)
-            )
-            self.sequence_open: Callable[[list[Value]], str] = _seq_open
-        else:
-            self.sequence_format_config = fmt
-            self.sequence_open = fmt.sequence_open
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            set_open=fixed_set_open(
-                open_str=f"{constructor_prefix}Set [",
-            ),
-        )
-
-        _explicit = string_format.name == "EXPLICIT"
-        _base_format_string: Callable[[str], str] = functools.partial(
-            format_string_backslash_control,
-            control_char_fmt="\\x{:02x}",
-        )
-        if _explicit:
-            _explicit_formatters = _build_explicit_string_formatters(
-                constructor_prefix=constructor_prefix,
-                base_format_string=_base_format_string,
-                base_format_bytes=bytes_format,
-            )
-            self.format_string: Callable[[str], str] = (
-                _explicit_formatters.format_string
-            )
-            self.format_bytes: Callable[[bytes], str] = (
-                _explicit_formatters.format_bytes
-            )
-            _dict_entry: Callable[[str, Value, str], str] = (
-                _explicit_formatters.format_dict_entry
-            )
-        else:
-            self.format_string = _base_format_string
-            self.format_bytes = bytes_format
-            _dict_entry = tuple_dict_entry(
-                format_value=passthrough_sequence_entry,
-            )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
-            dict_open=fixed_dict_open(
-                open_str=f"{constructor_prefix}Map [",
-            ),
-            close="]",
-            format_entry=_dict_entry,
-            empty_dict=None,
-            preamble_lines=(),
-            narrowed_open=None,
-        )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        if date_format.name == "HASKELL":
-            self.format_date: Callable[[datetime.date], str] = (
-                date_ymd_formatter(
-                    template=(
-                        f"{constructor_prefix}Date "
-                        f"(fromGregorian {{year}} {{month}} {{day}})"
-                    ),
-                )
-            )
-        else:
-            self.format_date = date_format
-        if datetime_format.name == "HASKELL":
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                _build_haskell_datetime_formatter(
-                    prefix=constructor_prefix,
-                )
-            )
-        else:
-            self.format_datetime = datetime_format
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = integer_format
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
-        )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
-        )
         self.comment_format = comment_format
         self.declaration_style = declaration_style
         self.dict_entry_style = dict_entry_style
@@ -774,85 +882,119 @@ class Haskell(metaclass=LanguageCls):
         self.string_format = string_format
         self.trailing_comma = trailing_comma
         self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
+
+        # Literals.
+        self.null_literal: str = f"{constructor_prefix}Null"
+        self.true_literal: str = f"{constructor_prefix}Bool True"
+        self.false_literal: str = f"{constructor_prefix}Bool False"
+
+        # Sequence.
+        seq_setup = _build_sequence_setup(
+            sequence_format=sequence_format,
+            constructor_prefix=constructor_prefix,
+        )
+        self.sequence_format_config: SequenceFormatConfig = (
+            seq_setup.format_config
+        )
+        self.sequence_open: Callable[[list[Value]], str] = (
+            seq_setup.sequence_open
+        )
+
+        # Set.
+        self.set_format_config: SetFormatConfig = dataclasses.replace(
+            set_format.value,
+            set_open=fixed_set_open(
+                open_str=f"{constructor_prefix}Set [",
+            ),
+        )
+
+        # String / bytes / dict entry.
+        string_fmts = _build_string_formatters(
+            string_format_name=string_format.name,
+            constructor_prefix=constructor_prefix,
+            base_format_bytes=bytes_format,
+        )
+        self.format_string: Callable[[str], str] = string_fmts.format_string
+        self.format_bytes: Callable[[bytes], str] = string_fmts.format_bytes
+
+        # Dict / ordered map.
+        _map_open = f"{constructor_prefix}Map ["
+        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+            dict_open=fixed_dict_open(open_str=_map_open),
+            close="]",
+            format_entry=string_fmts.format_dict_entry,
+            empty_dict=None,
+            preamble_lines=(),
+            narrowed_open=None,
+        )
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str=f"{constructor_prefix}Map [",
+                open_str=_map_open,
                 close="]",
                 preamble_lines=(),
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _dict_entry
+            string_fmts.format_dict_entry
         )
+
+        # Trailing comma.
+        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
+
+        # Date / datetime.
+        date_fmts = _build_date_formatters(
+            date_format=date_format,
+            datetime_format=datetime_format,
+            constructor_prefix=constructor_prefix,
+        )
+        self.format_date: Callable[[datetime.date], str] = (
+            date_fmts.format_date
+        )
+        self.format_datetime: Callable[[datetime.datetime], str] = (
+            date_fmts.format_datetime
+        )
+
+        # Scalar formatters.
+        self.format_float: Callable[[float], str] = float_format
+        self.format_integer: Callable[[int], str] = integer_format
+        self.format_sequence_entry: Callable[[Value, str], str] = (
+            passthrough_sequence_entry
+        )
+        self.format_set_entry: Callable[[Value, str], str] = (
+            passthrough_set_entry
+        )
+        self.comment_config: CommentConfig = comment_format.value
+
         self.indent = indent
-        self.indent_closing_delimiter = True
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = False
-        self.supports_scalar_inline_comments = True
-        _base_declaration = declaration_style.value.formatter
-        _raw_declared = sequence_format.value.declared_type
-        _sequence_declared_type = (
-            _raw_declared.replace("Val", type_name)
-            if _raw_declared is not None
-            else None
+
+        # Declaration.
+        decl_fmts = _build_declaration_formatters(
+            declaration_style=declaration_style,
+            sequence_format=sequence_format,
+            type_name=type_name,
         )
-
-        @beartype
-        def _haskell_declaration(name: str, value: str, data: Value) -> str:
-            """Format a variable declaration with type annotation."""
-            base = _base_declaration(name, value, data)
-            if isinstance(data, list):
-                if _sequence_declared_type is None:
-                    return base
-                return f"{name} :: {_sequence_declared_type}\n{base}"
-            return f"{name} :: {type_name}\n{base}"
-
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _haskell_declaration
+            decl_fmts.format_variable_declaration
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value}")
-        )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
-        _str_extra: dict[type, tuple[str, ...]] = (
-            {}
-            if _explicit
-            else {
-                str: _overloaded_strings,
-                bytes: _overloaded_strings,
-            }
-        )
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            date_scalar_preamble(
-                date_format=date_format,
-                datetime_format=datetime_format,
-                extra=_str_extra,
-            )
+            decl_fmts.format_variable_assignment
         )
 
+        # Preamble.
+        preamble = _build_preamble_setup(
+            date_format=date_format,
+            datetime_format=datetime_format,
+            is_explicit=string_fmts.is_explicit,
+            type_name=type_name,
+            constructor_prefix=constructor_prefix,
+        )
+        self.scalar_preamble: dict[type, tuple[str, ...]] = (
+            preamble.scalar_preamble
+        )
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
-        ] = _build_scalar_body_preamble(
-            date_format=date_format,
-            datetime_format=datetime_format,
-            is_string_import="import Data.String (IsString(fromString))",
-            is_string_instance=(
-                f"instance IsString {type_name} where\n"
-                f"    fromString = {constructor_prefix}Str"
-            ),
-            type_name=type_name,
-            constructor_prefix=constructor_prefix,
-            emit_is_string=not _explicit,
-        )
+        ] = preamble.compute_body_preamble
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
-        self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
