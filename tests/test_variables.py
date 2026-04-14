@@ -166,7 +166,7 @@ class _VariableSyntax:
 # scalar integer. Both _DECLARATION_PARAMS and _ASSIGNMENT_PARAMS are derived
 # from this single source of truth so that adding a language to one
 # automatically adds it to the other.
-_VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {  # pyrefly: ignore[bad-assignment]
+_VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
     PYTHON: _VariableSyntax(
         declaration="my_var = 42", assignment="my_var = 42"
     ),
