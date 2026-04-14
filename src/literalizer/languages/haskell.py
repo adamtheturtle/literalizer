@@ -4,8 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections.abc import Callable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -43,6 +42,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -53,15 +53,72 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     date_scalar_preamble,
-    no_call_stub,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+
+@beartype
+def _haskell_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Haskell stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"{parts[0]} _ = ()",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = root.capitalize() + "Type_"
+        return (
+            f"data {cls} = {cls} {{ {method} :: () -> () }}",
+            f"{root} = {cls} {{ {method} = const () }}",
+        )
+    lines: list[str] = []
+    inner_cls = fields[-1].capitalize() + "Type_"
+    lines.append(
+        f"data {inner_cls} = {inner_cls} {{ {method} :: () -> () }}",
+    )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type_"
+        lines.append(
+            f"data {cls} = {cls} {{ {fields[i + 1]} :: {prev_cls} }}",
+        )
+        prev_cls = cls
+    root_cls = root.capitalize() + "Type_"
+    lines.append(
+        f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
+    )
+    # Build nested construction from inside out.
+    construction = f"{inner_cls} {{ {method} = const () }}"
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type_"
+        construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
+    construction = f"{root_cls} {{ {fields[0]} = {construction} }}"
+    lines.append(f"{root} = {construction}")
+    return tuple(lines)
+
+
+@beartype
+def _haskell_call_preamble_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Haskell preamble stubs for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) > 1:
+        return ("{-# LANGUAGE OverloadedRecordDot #-}",)
+    return ()
 
 
 def _build_haskell_datetime_formatter(
@@ -560,6 +617,8 @@ class Haskell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Haskell call style options."""
 
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
     call_styles = CallStyles
 
     @staticmethod
@@ -609,6 +668,7 @@ class Haskell(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
         type_name: str = "Val",
         constructor_prefix: str = "H",
@@ -767,7 +827,7 @@ class Haskell(metaclass=LanguageCls):
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = no_call_stub
+        self.format_call_stub = _haskell_call_stub
+        self.format_call_preamble_stub = _haskell_call_preamble_stub
