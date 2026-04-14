@@ -1354,7 +1354,7 @@ def _discover_call_cases() -> list[_CallCase]:
     cases: list[_CallCase] = []
     for config in _CALL_CASE_CONFIGS:
         for lang_cls in _SORTED_LANGUAGES:
-            if not lang_cls.CallStyles:
+            if len(lang_cls.CallStyles) == 0:
                 continue
             if config.call_style_name is not None:
                 # Only include languages that have this as a
