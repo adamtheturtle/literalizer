@@ -1114,17 +1114,12 @@ def literalize(
         has_variable_declaration=variable_name is not None and new_variable,
     )
     preamble = tuple(language.static_preamble) + computed.header
-    if computed.body:
-        result = "\n".join(computed.body) + "\n" + result
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
 
     if wrap_in_file:
-        bare = result
-        if computed.body:
-            bare = result[len("\n".join(computed.body) + "\n") :]
         wrapped = language.wrap_in_file(
-            content=bare,
+            content=result,
             variable_name=variable_name or "",
             body_preamble=computed.body,
         )
@@ -1135,6 +1130,9 @@ def literalize(
             preamble=(),
             body_preamble=(),
         )
+
+    if computed.body:
+        result = "\n".join(computed.body) + "\n" + result
 
     return LiteralizeResult(
         code=result,
@@ -1308,15 +1306,10 @@ def literalize_call(
         has_variable_declaration=False,
     )
     preamble = tuple(language.static_preamble) + computed.header
-    if computed.body:
-        result = "\n".join(computed.body) + "\n" + result
 
     if wrap_in_file:
-        bare = result
-        if computed.body:
-            bare = result[len("\n".join(computed.body) + "\n") :]
         wrapped = language.wrap_in_file(
-            content=bare,
+            content=result,
             variable_name="",
             body_preamble=computed.body,
         )
@@ -1327,6 +1320,9 @@ def literalize_call(
             preamble=(),
             body_preamble=(),
         )
+
+    if computed.body:
+        result = "\n".join(computed.body) + "\n" + result
 
     return LiteralizeResult(
         code=result,
