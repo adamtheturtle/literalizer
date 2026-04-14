@@ -1,10 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HFloat Double | HStr String | HList [Val]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)
     a + b = error "not implemented"
@@ -21,6 +17,6 @@ throttler = ThrottlerType_ { check = \_ -> return () }
 emit _ = return ()
 main :: IO ()
 main = do
-    emit(throttler.check("user_1", 1000.0))
-    emit(throttler.check("user_2", 2000.5))
+    emit(throttler.check(HStr "user_1", 1000.0))
+    emit(throttler.check(HStr "user_2", 2000.5))
     pure ()
