@@ -413,7 +413,7 @@ class _CallCaseConfig:
     per_element: bool
     call_style_kind: literalizer.CallStyleKind | None = None
     language_overrides: dict[str, object] = dataclasses.field(
-        default_factory=dict,
+        default_factory=dict[str, object],
     )
     language_filter: Callable[[literalizer.LanguageCls], bool] | None = None
 
