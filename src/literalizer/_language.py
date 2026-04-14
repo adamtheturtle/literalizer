@@ -271,6 +271,7 @@ class LanguageCls(type):
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
     LineEndings: type[enum.Enum]
+    CallStyles: type[enum.Enum]
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
@@ -440,6 +441,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def line_endings(self) -> type[enum.Enum]:
         """Enum class whose members list the line ending options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def call_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the call style options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis

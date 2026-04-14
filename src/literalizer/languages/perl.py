@@ -337,6 +337,13 @@ class Perl(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """Perl call style options."""
+
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -387,6 +394,7 @@ class Perl(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
     ) -> None:
         """Initialize Perl language specification."""
@@ -486,9 +494,8 @@ class Perl(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig = call_style.value
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

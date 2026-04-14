@@ -30,3 +30,4 @@ def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     assert len(language_cls.NumericSeparators) >= 1
     assert len(language_cls.StringFormats) >= 1
     assert len(language_cls.TrailingCommas) >= 1
+    assert len(language_cls.CallStyles) >= 1

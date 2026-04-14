@@ -334,6 +334,13 @@ class Forth(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """Forth call style options."""
+
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -384,6 +391,7 @@ class Forth(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.ESCAPED,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.NONE,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
     ) -> None:
         """Initialize Forth language specification."""
@@ -468,9 +476,8 @@ class Forth(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig = call_style.value
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

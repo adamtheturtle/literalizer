@@ -350,6 +350,13 @@ class Zig(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """Zig call style options."""
+
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -404,6 +411,7 @@ class Zig(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
     ) -> None:
         """Initialize Zig language specification."""
@@ -513,9 +521,8 @@ class Zig(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = (
             'const std = @import("std");',
         )
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig = call_style.value
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
