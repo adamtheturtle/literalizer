@@ -288,7 +288,10 @@ class Crystal(metaclass=LanguageCls):
             numeric_separator: enum.Enum,
         ) -> Callable[[int], str]:
             """Return the integer formatter for the given separator."""
-            return self.value[numeric_separator.name]
+            formatter: Callable[[int], str] = self.value[
+                numeric_separator.name
+            ]
+            return formatter
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
