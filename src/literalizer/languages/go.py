@@ -181,7 +181,6 @@ class Go(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = True
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
-    supports_call = True
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""
@@ -408,6 +407,13 @@ class Go(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """Go call style options."""
+
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -463,6 +469,7 @@ class Go(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "\t",
     ) -> None:
         """Initialize Go language specification."""
@@ -613,9 +620,8 @@ class Go(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ('import "math"',)
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = _go_call_preamble_stub

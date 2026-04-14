@@ -410,6 +410,7 @@ class _CallCaseConfig:
     call_transform: Callable[[str], str] | None
     transform_stub_names: list[str]
     per_element: bool
+    call_style_name: str | None = None
 
 
 _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
@@ -431,19 +432,37 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     ),
     _CallCaseConfig(
         case_dir_name="call_dotted_method",
-        call_function="app.client.fetch",
-        call_params=["payload"],
+        target_function="app.client.fetch",
+        parameter_names=["payload"],
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
-        call_function="obj.api.client.post",
-        call_params=["data"],
+        target_function="obj.api.client.post",
+        parameter_names=["data"],
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_positional_args",
+        target_function="throttler.check",
+        parameter_names=["user_id", "ts"],
+        call_transform=lambda c: f"emit({c})",
+        transform_stub_names=["emit"],
+        per_element=True,
+        call_style_name="POSITIONAL",
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_named_args",
+        target_function="throttler.check",
+        parameter_names=["user_id", "ts"],
+        call_transform=lambda c: f"emit({c})",
+        transform_stub_names=["emit"],
+        per_element=True,
+        call_style_name="NAMED",
     ),
 ]
 
@@ -1315,6 +1334,7 @@ def test_format_enumeration_properties(
     assert len(spec.trailing_commas) >= 1
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
+    assert issubclass(spec.call_styles, enum.Enum)
 
 
 # --- literalize_call golden-file tests ---
@@ -1331,7 +1351,7 @@ class _CallCase:
 _CALL_LANGUAGES: frozenset[str] = frozenset(
     lang_cls.__name__
     for lang_cls in _SORTED_LANGUAGES
-    if lang_cls.supports_call
+    if len(lang_cls.CallStyles) > 0
 )
 
 
@@ -1340,11 +1360,20 @@ def _discover_call_cases() -> list[_CallCase]:
     """Return call test cases for all languages."""
     cases: list[_CallCase] = []
     for config in _CALL_CASE_CONFIGS:
-        cases.extend(
-            _CallCase(config=config, lang_cls=lang_cls)
-            for lang_cls in _SORTED_LANGUAGES
-            if lang_cls.__name__ in _CALL_LANGUAGES
-        )
+        for lang_cls in _SORTED_LANGUAGES:
+            if lang_cls.__name__ not in _CALL_LANGUAGES:
+                continue
+            if config.call_style_name is not None:
+                # Only include languages that have this as a
+                # non-default style.
+                styles = list(lang_cls.CallStyles)
+                style_names = [m.name for m in styles]
+                if config.call_style_name not in style_names:
+                    continue
+                default_style = styles[0]
+                if default_style.name == config.call_style_name:
+                    continue
+            cases.append(_CallCase(config=config, lang_cls=lang_cls))
     return cases
 
 
@@ -1366,7 +1395,11 @@ def test_call_golden_file(
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
     lang_cls = call_case.lang_cls
-    spec = lang_cls()
+    if config.call_style_name is not None:
+        style = lang_cls.CallStyles[config.call_style_name]
+        spec = lang_cls(call_style=style)
+    else:
+        spec = lang_cls()
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     result = literalizer.literalize_call(

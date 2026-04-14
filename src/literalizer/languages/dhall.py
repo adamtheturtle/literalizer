@@ -33,7 +33,6 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
-    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -180,7 +179,6 @@ class Dhall(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = False
     supports_variable_names = True
-    supports_call = False
 
     class DateFormats(enum.Enum):
         """Date format options for Dhall."""
@@ -357,6 +355,11 @@ class Dhall(metaclass=LanguageCls):
     trailing_commas = TrailingCommas
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """Dhall call style options."""
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -491,9 +494,7 @@ class Dhall(metaclass=LanguageCls):
         )
 
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style_config: CallStyleConfig | None = None
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

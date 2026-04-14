@@ -126,7 +126,6 @@ class R(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
-    supports_call = True
 
     class DateFormats(enum.Enum):
         """Date formatting options for R."""
@@ -320,6 +319,17 @@ class R(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """R call style options."""
+
+        KEYWORD = CallStyleConfig(
+            kind=CallStyleKind.KEYWORD,
+            keyword_separator=" = ",
+        )
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -371,6 +381,7 @@ class R(metaclass=LanguageCls):
         string_format: StringFormats = StringFormats.DOUBLE,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
+        call_style: CallStyles = CallStyles.KEYWORD,
         indent: str = "    ",
     ) -> None:
         """Initialize R language specification."""
@@ -458,10 +469,8 @@ class R(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.KEYWORD,
-            keyword_separator=" = ",
-        )
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

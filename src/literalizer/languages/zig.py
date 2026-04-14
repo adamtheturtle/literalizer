@@ -41,7 +41,6 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
-    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -139,7 +138,6 @@ class Zig(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
-    supports_call = False
 
     class DateFormats(enum.Enum):
         """Date format options for Zig."""
@@ -350,6 +348,11 @@ class Zig(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """Zig call style options."""
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -513,9 +516,7 @@ class Zig(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = (
             'const std = @import("std");',
         )
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style_config: CallStyleConfig | None = None
         self.statement_terminator = ";"
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

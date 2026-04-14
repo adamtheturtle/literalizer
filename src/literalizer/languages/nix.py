@@ -32,7 +32,6 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
-    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -152,7 +151,6 @@ class Nix(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
     supports_non_printable_ascii_dict_keys = False
-    supports_call = False
     supports_variable_names = True
 
     class DateFormats(enum.Enum):
@@ -324,6 +322,11 @@ class Nix(metaclass=LanguageCls):
     trailing_commas = TrailingCommas
     line_endings = LineEndings
 
+    class CallStyles(enum.Enum):
+        """Nix call style options."""
+
+    call_styles = CallStyles
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -459,9 +462,7 @@ class Nix(metaclass=LanguageCls):
         )
 
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig = CallStyleConfig(
-            kind=CallStyleKind.POSITIONAL,
-        )
+        self.call_style_config: CallStyleConfig | None = None
         self.statement_terminator = ""
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub

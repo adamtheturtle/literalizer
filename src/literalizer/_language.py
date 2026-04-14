@@ -271,6 +271,7 @@ class LanguageCls(type):
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
     LineEndings: type[enum.Enum]
+    CallStyles: type[enum.Enum]
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
@@ -280,7 +281,6 @@ class LanguageCls(type):
     supports_default_ordered_map_value_type: bool
     supports_non_printable_ascii_dict_keys: bool
     supports_variable_names: bool
-    supports_call: bool
 
     @staticmethod
     def wrap_in_file(
@@ -444,6 +444,13 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def call_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the call style options
+        this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     extension: str
     """The file extension for this language, including the leading dot."""
 
@@ -584,11 +591,6 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     When ``False``, YAML inline comments on scalar values are emitted
     as standalone comment lines immediately before the variable
     declaration rather than being appended after the value.
-    """
-
-    supports_call: bool
-    """Whether the language supports function call rendering via
-    :func:`literalize_call`.
     """
 
     @property
@@ -760,9 +762,10 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     emitted when actually needed.
     """
 
-    call_style_config: CallStyleConfig
+    call_style_config: CallStyleConfig | None
     """Describes how this language passes arguments in function calls.
 
+    ``None`` for languages with an empty :attr:`CallStyles` enum.
     See :class:`CallStyleConfig` for details.
     """
 
