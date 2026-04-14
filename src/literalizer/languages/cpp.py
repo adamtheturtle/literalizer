@@ -237,13 +237,30 @@ def _cpp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"auto {parts[0]}(auto...) {{ return 0; }}",)
-    root, method = parts[0], parts[1]
-    type_name = f"{root}Type_"
-    return (
-        f"struct {type_name} {{"
-        f" auto {method}(auto...) const {{ return 0; }} }};",
-        f"const {type_name} {root};",
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        type_name = f"{root}Type_"
+        return (
+            f"struct {type_name} {{"
+            f" auto {method}(auto...) const {{ return 0; }} }};",
+            f"const {type_name} {root};",
+        )
+    lines: list[str] = []
+    inner_type = f"{fields[-1]}Type_"
+    lines.append(
+        f"struct {inner_type} {{ void {method}(auto...) const {{}} }};"
     )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i]}Type_"
+        lines.append(f"struct {curr_type} {{ {prev_type} {fields[i + 1]}; }};")
+        prev_type = curr_type
+    root_type = f"{root}Type_"
+    lines.append(f"struct {root_type} {{ {prev_type} {fields[0]}; }};")
+    lines.append(f"const {root_type} {root};")
+    return tuple(lines)
 
 
 @beartype

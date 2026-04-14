@@ -429,6 +429,22 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         transform_stub_names=[],
         per_element=True,
     ),
+    _CallCaseConfig(
+        case_dir_name="call_dotted_method",
+        call_function="app.client.fetch",
+        call_params=["payload"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_deep_dotted_method",
+        call_function="obj.api.client.post",
+        call_params=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
 ]
 
 _CALL_CASE_DIRS = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
