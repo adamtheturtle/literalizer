@@ -821,7 +821,7 @@ class Haskell(metaclass=LanguageCls):
         if _explicit:
             _str_extra: dict[type, tuple[str, ...]] = {}
         else:
-            _str_extra = {
+            _str_extra: dict[type, tuple[str, ...]] = {
                 str: _overloaded_strings,
                 bytes: _overloaded_strings,
             }
