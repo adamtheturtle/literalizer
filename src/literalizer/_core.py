@@ -1170,13 +1170,13 @@ def _format_call_args(
 @beartype
 def _assemble_call(
     *,
-    call_function: str,
+    target_function: str,
     args_str: str,
     call_transform: Callable[[str], str] | None,
     statement_terminator: str,
 ) -> str:
     """Build one complete call statement, optionally transformed."""
-    call_expr = f"{call_function}{args_str}"
+    call_expr = f"{target_function}{args_str}"
     if call_transform is not None:
         call_expr = call_transform(call_expr)
     return f"{call_expr}{statement_terminator}"
@@ -1188,8 +1188,8 @@ def literalize_call(
     source: str,
     input_format: InputFormat,
     language: Language,
-    call_function: str,
-    call_params: Sequence[str],
+    target_function: str,
+    parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
 ) -> LiteralizeResult:
@@ -1204,9 +1204,9 @@ def literalize_call(
         input_format: The serialization format of *source*.
         language: A :class:`Language` instance describing how to format
             literals.
-        call_function: The function expression to call
+        target_function: The function expression to call
             (e.g. ``"throttler.should_send_notification"``).
-        call_params: Parameter names, positionally mapped to each
+        parameter_names: Parameter names, positionally mapped to each
             element in each row.  For :attr:`CallStyleKind.POSITIONAL`
             languages these are unused in the output but still
             determine how many values to expect per row.
@@ -1240,12 +1240,12 @@ def literalize_call(
             arg_values = element if isinstance(element, list) else [element]
             args_str = _format_call_args(
                 values=cast("list[Value]", arg_values),
-                params=call_params,
+                params=parameter_names,
                 language=language,
             )
             lines.append(
                 _assemble_call(
-                    call_function=call_function,
+                    target_function=target_function,
                     args_str=args_str,
                     call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
@@ -1262,7 +1262,7 @@ def literalize_call(
         )
         args_str = f"({lit})"
         result = _assemble_call(
-            call_function=call_function,
+            target_function=target_function,
             args_str=args_str,
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,
