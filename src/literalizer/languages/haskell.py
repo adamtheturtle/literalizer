@@ -993,13 +993,10 @@ class Haskell(metaclass=LanguageCls):
         _use_record_dot = (
             dot_access_style is self.DotAccessStyles.OVERLOADED_RECORD_DOT
         )
-        _preamble_stub_type = Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ]
         if _use_record_dot:
-            self.format_call_preamble_stub: _preamble_stub_type = (
-                _haskell_call_preamble_stub_record_dot
-            )
+            self.format_call_preamble_stub: Callable[
+                [str, Sequence[str], StubReturn], tuple[str, ...]
+            ] = _haskell_call_preamble_stub_record_dot
             self.format_call_target: Callable[[str], str] = (
                 identity_call_target
             )
