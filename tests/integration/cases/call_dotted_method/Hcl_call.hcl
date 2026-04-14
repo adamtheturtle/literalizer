@@ -1,3 +1,3 @@
-app.client.fetch("hello")
-app.client.fetch(42)
-app.client.fetch(true)
+_0 = app.client.fetch("hello")
+_1 = app.client.fetch(42)
+_2 = app.client.fetch(true)

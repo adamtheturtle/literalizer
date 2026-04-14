@@ -46,6 +46,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     no_call_stub,
     no_type_hint_preamble,
+    prepend_body_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -255,10 +256,23 @@ class Hcl(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
-            content=content,
-            variable_name=variable_name,
+        """Wrap code in a valid HCL file.
+
+        When *variable_name* is empty (call rendering), each content line
+        is a bare function call which is not valid HCL.  Assign each to a
+        unique local so the file parses.
+        """
+        if variable_name:
+            return wrap_in_file_noop(
+                content=content,
+                variable_name=variable_name,
+                body_preamble=body_preamble,
+            )
+        lines = content.split("\n") if content else []
+        assigned = [f"_{i} = {line}" for i, line in enumerate(lines) if line]
+        result = "\n".join(assigned)
+        return prepend_body_preamble(
+            content=result,
             body_preamble=body_preamble,
         )
 
