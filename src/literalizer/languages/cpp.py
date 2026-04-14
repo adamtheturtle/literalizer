@@ -250,8 +250,7 @@ def _cpp_call_stub(name: str, _params: Sequence[str], /) -> tuple[str, ...]:
     lines: list[str] = []
     inner_type = f"{fields[-1]}Type_"
     lines.append(
-        f"struct {inner_type} {{"
-        f" auto {method}(auto...) const {{ return 0; }} }};"
+        f"struct {inner_type} {{ void {method}(auto...) const {{}} }};"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
