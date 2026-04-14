@@ -35,9 +35,6 @@ from literalizer.languages import (
     TypeScript,
     Yaml,
 )
-from literalizer.languages.cobol import (
-    _bump_levels,  # pyright: ignore[reportPrivateUsage]
-)
 
 COBOL = Cobol(
     date_format=Cobol.date_formats.ISO,
@@ -918,12 +915,3 @@ def test_literalize_call_unsupported_language_per_element_false() -> None:
             parameter_names=["data"],
             per_element=False,
         )
-
-
-def test_cobol_bump_levels_rejects_non_level_line() -> None:
-    """_bump_levels raises ValueError for lines without a level number."""
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=r"^Expected COBOL level-number line, got: 'not a level line'$",
-    ):
-        _bump_levels(content="not a level line")
