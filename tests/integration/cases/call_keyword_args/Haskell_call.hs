@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fdefer-type-errors #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 module Check where
 import Data.String (IsString(fromString))
@@ -16,8 +17,11 @@ instance Num Val where
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     a / b = error "not implemented"
-data ThrottlerType_ = ThrottlerType_ { check :: () -> () }
-throttler = ThrottlerType_ { check = const () }
-emit _ = ()
-emit(throttler.check("user_1", 1000.0))
-emit(throttler.check("user_2", 2000.5))
+data ThrottlerType_ = ThrottlerType_ { check :: () -> IO () }
+throttler = ThrottlerType_ { check = \_ -> return () }
+emit _ = return ()
+main :: IO ()
+main = do
+    emit(throttler.check("user_1", 1000.0))
+    emit(throttler.check("user_2", 2000.5))
+    pure ()

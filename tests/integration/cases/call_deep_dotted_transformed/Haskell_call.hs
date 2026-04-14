@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fdefer-type-errors #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 module Check where
 import Data.String (IsString(fromString))
@@ -13,10 +14,13 @@ instance Num Val where
     signum a = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-data ClientType_ = ClientType_ { fetch :: () -> () }
+data ClientType_ = ClientType_ { fetch :: () -> IO () }
 data AppType_ = AppType_ { client :: ClientType_ }
-app = AppType_ { client = ClientType_ { fetch = const () } }
-emit _ = ()
-emit(app.client.fetch("hello"))
-emit(app.client.fetch(42))
-emit(app.client.fetch(HBool True))
+app = AppType_ { client = ClientType_ { fetch = \_ -> return () } }
+emit _ = return ()
+main :: IO ()
+main = do
+    emit(app.client.fetch("hello"))
+    emit(app.client.fetch(42))
+    emit(app.client.fetch(HBool True))
+    pure ()

@@ -12,7 +12,10 @@ instance Num Val where
     signum a = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-process _ = ()
-process("hello")
-process(42)
-process(HBool True)
+process _ = return ()
+main :: IO ()
+main = do
+    process("hello")
+    process(42)
+    process(HBool True)
+    pure ()

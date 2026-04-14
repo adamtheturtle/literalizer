@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import textwrap
 from collections.abc import Callable, Sequence
 
 from beartype import beartype
@@ -70,21 +71,24 @@ def _haskell_call_stub(
 ) -> tuple[str, ...]:
     """Return Haskell stub declarations for a call name."""
     parts = name.split(sep=".")
+    ret = "IO ()"
+    body = "return ()"
     if len(parts) == 1:
-        return (f"{parts[0]} _ = ()",)
+        return (f"{parts[0]} _ = {body}",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    field_type = f"() -> {ret}"
     if not fields:
         cls = root.capitalize() + "Type_"
         return (
-            f"data {cls} = {cls} {{ {method} :: () -> () }}",
-            f"{root} = {cls} {{ {method} = const () }}",
+            f"data {cls} = {cls} {{ {method} :: {field_type} }}",
+            f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
         )
     lines: list[str] = []
     inner_cls = fields[-1].capitalize() + "Type_"
     lines.append(
-        f"data {inner_cls} = {inner_cls} {{ {method} :: () -> () }}",
+        f"data {inner_cls} = {inner_cls} {{ {method} :: {field_type} }}",
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
@@ -98,7 +102,7 @@ def _haskell_call_stub(
         f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
     )
     # Build nested construction from inside out.
-    construction = f"{inner_cls} {{ {method} = const () }}"
+    construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
     for i in range(len(fields) - 2, -1, -1):
         cls = fields[i].capitalize() + "Type_"
         construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
@@ -117,7 +121,10 @@ def _haskell_call_preamble_stub(
     """Return Haskell preamble stubs for a call name."""
     parts = name.split(sep=".")
     if len(parts) > 1:
-        return ("{-# LANGUAGE OverloadedRecordDot #-}",)
+        return (
+            "{-# OPTIONS_GHC -fdefer-type-errors #-}",
+            "{-# LANGUAGE OverloadedRecordDot #-}",
+        )
     return ()
 
 
@@ -628,8 +635,18 @@ class Haskell(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
-        del variable_name
         preamble = "\n".join(body_preamble)
+        if not variable_name:
+            # Call mode: bare expressions are not valid at module
+            # top level in Haskell, so wrap them in ``main``.
+            indented = textwrap.indent(content, "    ")
+            return (
+                "module Check where\n"
+                + preamble
+                + "\nmain :: IO ()\nmain = do\n"
+                + indented
+                + "\n    pure ()"
+            )
         return "module Check where\n" + preamble + "\n" + content
 
     @staticmethod
