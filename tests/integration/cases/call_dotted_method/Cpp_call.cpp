@@ -5,7 +5,7 @@ struct Any {
     template<class T> Any(T&&) noexcept {}
     Any(std::initializer_list<Any>) noexcept {}
 };
-struct clientType_ { void fetch(auto...) const {} };
+struct clientType_ { auto fetch(auto...) const { return 0; } };  // NOLINT(modernize-use-nodiscard)
 struct appType_ { clientType_ client; };
 const appType_ app;
 void check_() {
