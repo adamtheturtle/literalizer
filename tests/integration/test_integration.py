@@ -411,7 +411,7 @@ class _CallCaseConfig:
     call_transform: Callable[[str], str] | None
     transform_stub_names: list[str]
     per_element: bool
-    call_style_name: str | None = None
+    call_style_kind: literalizer.CallStyleKind | None = None
 
 
 _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
@@ -462,7 +462,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
-        call_style_name="POSITIONAL",
+        call_style_kind=literalizer.CallStyleKind.POSITIONAL,
     ),
     _CallCaseConfig(
         case_dir_name="call_named_args",
@@ -471,7 +471,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
-        call_style_name="NAMED",
+        call_style_kind=literalizer.CallStyleKind.KEYWORD,
     ),
 ]
 
@@ -1365,15 +1365,17 @@ def _discover_call_cases() -> list[_CallCase]:
         for lang_cls in _SORTED_LANGUAGES:
             if len(lang_cls.CallStyles) == 0:
                 continue
-            if config.call_style_name is not None:
+            if config.call_style_kind is not None:
                 # Only include languages that have this as a
                 # non-default style.
                 styles = list(lang_cls.CallStyles)
-                style_names = [m.name for m in styles]
-                if config.call_style_name not in style_names:
+                matching = [
+                    s for s in styles if s.value.kind == config.call_style_kind
+                ]
+                if not matching:
                     continue
                 default_style = styles[0]
-                if default_style.name == config.call_style_name:
+                if default_style.value.kind == config.call_style_kind:
                     continue
             cases.append(_CallCase(config=config, lang_cls=lang_cls))
     return cases
@@ -1397,8 +1399,12 @@ def test_call_golden_file(
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
     lang_cls = call_case.lang_cls
-    if config.call_style_name is not None:
-        style = lang_cls.CallStyles[config.call_style_name]
+    if config.call_style_kind is not None:
+        style = next(
+            s
+            for s in lang_cls.CallStyles
+            if s.value.kind == config.call_style_kind
+        )
         spec = lang_cls(call_style=style)
     else:
         spec = lang_cls()
