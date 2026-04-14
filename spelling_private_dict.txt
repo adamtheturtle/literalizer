@@ -111,6 +111,7 @@ backticks
 beartype
 bool
 booleans
+callee
 chrono
 coercions
 commonjs
