@@ -1106,6 +1106,8 @@ def literalize(
         HeterogeneousCoercionError: If *error_on_coercion* is ``True``
             and the data contains heterogeneous scalar collections
             that would be coerced.
+        ValueError: If *variable_form* is :class:`BothVariableForms`
+            and *wrap_in_file* is ``False``.
     """
     # --- BothVariableForms: two full literalize() calls ---
     if isinstance(variable_form, BothVariableForms):
