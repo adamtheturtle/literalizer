@@ -17,7 +17,10 @@ from literalizer import (
     literalize_call,
 )
 from literalizer._language import LanguageCls
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    NullInCollectionError,
+    UnsupportedCallStyleError,
+)
 from literalizer.languages import (
     Cobol,
     Cpp,
@@ -34,9 +37,6 @@ from literalizer.languages import (
     Toml,
     TypeScript,
     Yaml,
-)
-from literalizer.languages.cobol import (
-    _bump_levels,  # pyright: ignore[reportPrivateUsage]
 )
 
 COBOL = Cobol(
@@ -886,11 +886,11 @@ def test_literalize_call_per_element_non_list_raises() -> None:
 
 
 def test_literalize_call_unsupported_language_raises() -> None:
-    """Literalize_call raises ValueError for a language without call
-    support.
+    """Literalize_call raises UnsupportedCallStyleError for a language
+    without call support.
     """
     with pytest.raises(
-        expected_exception=ValueError,
+        expected_exception=UnsupportedCallStyleError,
         match=r"^Yaml does not support function call rendering$",
     ):
         literalize_call(
@@ -903,11 +903,11 @@ def test_literalize_call_unsupported_language_raises() -> None:
 
 
 def test_literalize_call_unsupported_language_per_element_false() -> None:
-    """Literalize_call raises ValueError for a non-call language with
-    per_element=False.
+    """Literalize_call raises UnsupportedCallStyleError for a non-call
+    language with per_element=False.
     """
     with pytest.raises(
-        expected_exception=ValueError,
+        expected_exception=UnsupportedCallStyleError,
         match=r"^Yaml does not support function call rendering$",
     ):
         literalize_call(
@@ -918,12 +918,3 @@ def test_literalize_call_unsupported_language_per_element_false() -> None:
             parameter_names=["data"],
             per_element=False,
         )
-
-
-def test_cobol_bump_levels_rejects_non_level_line() -> None:
-    """_bump_levels raises ValueError for lines without a level number."""
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=r"^Expected COBOL level-number line, got: 'not a level line'$",
-    ):
-        _bump_levels(content="not a level line")

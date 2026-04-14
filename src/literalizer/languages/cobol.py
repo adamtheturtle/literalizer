@@ -116,18 +116,20 @@ def _bump_levels(content: str) -> str:
     Only lines whose first non-space token is a two-digit level number
     are modified.
     """
-    lines = content.split(sep="\n")
-    result: list[str] = []
-    for line in lines:
-        m = re.match(pattern=r"^(\s*)(\d{2})(\s)", string=line)
-        if not m:
-            msg = f"Expected COBOL level-number line, got: {line!r}"
-            raise ValueError(msg)
+
+    def _bump(m: re.Match[str]) -> str:
+        """Return the matched level-number prefix with its level
+        incremented by 5.
+        """
         new_level = min(int(m.group(2)) + 5, 49)
-        result.append(
-            f"{m.group(1)}{new_level:02d}{m.group(3)}{line[m.end() :]}"
-        )
-    return "\n".join(result)
+        return f"{m.group(1)}{new_level:02d}{m.group(3)}"
+
+    return re.sub(
+        pattern=r"^(\s*)(\d{2})(\s)",
+        repl=_bump,
+        string=content,
+        flags=re.MULTILINE,
+    )
 
 
 @beartype

@@ -41,3 +41,14 @@ class NullInCollectionError(Exception):
     """Raised when a collection contains null elements and the chosen
     format does not support them (e.g. Java's ``List.of()``).
     """
+
+
+class UnsupportedCallStyleError(Exception):
+    """Raised when a language does not support function call rendering."""
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``UnsupportedCallStyleError``."""
+        super().__init__(
+            f"{language_name} does not support function call rendering"
+        )
+        self.language_name = language_name

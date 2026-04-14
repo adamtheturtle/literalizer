@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -44,6 +45,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
@@ -53,9 +55,47 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable
 
     from literalizer._types import Value
+
+
+def _groovy_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Groovy stub declarations for a call name."""
+    param_list = ", ".join(params)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"def {parts[0]}({param_list}) {{ null }}",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = f"_{root.title()}Type"
+        return (
+            f"class {cls} {{ def {method}({param_list}) {{ null }} }}",
+            f"def {root} = new {cls}()",
+        )
+    lines: list[str] = []
+    inner_cls = f"_{fields[-1].title()}Type"
+    lines.append(
+        f"class {inner_cls} {{ def {method}({param_list}) {{ null }} }}"
+    )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = f"_{fields[i].title()}Type"
+        lines.append(
+            f"class {cls} {{ def {fields[i + 1]} = new {prev_cls}() }}"
+        )
+        prev_cls = cls
+    root_cls = f"_{root.title()}Type"
+    lines.append(f"class {root_cls} {{ def {fields[0]} = new {prev_cls}() }}")
+    lines.append(f"def {root} = new {root_cls}()")
+    return tuple(lines)
 
 
 @beartype
@@ -413,5 +453,5 @@ class Groovy(metaclass=LanguageCls):
         self.call_style = call_style
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _groovy_call_stub
         self.format_call_preamble_stub = no_call_stub

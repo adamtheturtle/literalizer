@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 
@@ -45,6 +45,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
@@ -53,9 +54,6 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
 
 
 @beartype
@@ -94,6 +92,25 @@ def _format_lua_set_entry(_original: Value, item: str) -> str:
     Example: ``'"apple"'`` → ``'["apple"] = true'``.
     """
     return f"[{item}] = true"
+
+
+@beartype
+def _lua_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Lua stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"function {parts[0]}(...) end",)
+    root = parts[0]
+    fields = parts[1:]
+    nested = "function(...) end"
+    for field in reversed(fields):
+        nested = f"{{{field} = {nested}}}"
+    return (f"{root} = {nested}",)
 
 
 @beartype
@@ -446,5 +463,5 @@ class Lua(metaclass=LanguageCls):
         self.call_style = call_style
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _lua_call_stub
         self.format_call_preamble_stub = no_call_stub
