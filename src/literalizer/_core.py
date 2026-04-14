@@ -995,6 +995,55 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
 
 
 @beartype
+def _literalize_both_forms(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    pre_indent_level: int,
+    include_delimiters: bool,
+    variable_form: BothVariableForms,
+    error_on_coercion: bool,
+) -> LiteralizeResult:
+    """Produce combined declaration + assignment output."""
+    declaration = literalize(
+        source=source,
+        input_format=input_format,
+        language=language,
+        pre_indent_level=pre_indent_level,
+        include_delimiters=include_delimiters,
+        variable_form=NewVariable(name=variable_form.name),
+        error_on_coercion=error_on_coercion,
+    )
+    assignment = literalize(
+        source=source,
+        input_format=input_format,
+        language=language,
+        pre_indent_level=pre_indent_level,
+        include_delimiters=include_delimiters,
+        variable_form=ExistingVariable(name=variable_form.name),
+        error_on_coercion=error_on_coercion,
+    )
+    decl_preamble = (
+        *declaration.body_preamble,
+        *declaration.pre_declaration_comments,
+    )
+    wrapped = language.wrap_combined_in_file(
+        declaration=declaration.declaration_code,
+        assignment=assignment.bare_code,
+        variable_name=variable_form.name,
+        body_preamble=decl_preamble,
+    )
+    if declaration.preamble:
+        wrapped = "\n".join(declaration.preamble) + "\n" + wrapped
+    return LiteralizeResult(
+        code=wrapped,
+        preamble=(),
+        body_preamble=(),
+    )
+
+
+@beartype
 def literalize(
     *,
     source: str,
@@ -1060,40 +1109,17 @@ def literalize(
     """
     # --- BothVariableForms: two full literalize() calls ---
     if isinstance(variable_form, BothVariableForms):
-        declaration = literalize(
+        if not wrap_in_file:
+            msg = "BothVariableForms requires wrap_in_file=True"
+            raise ValueError(msg)
+        return _literalize_both_forms(
             source=source,
             input_format=input_format,
             language=language,
             pre_indent_level=pre_indent_level,
             include_delimiters=include_delimiters,
-            variable_form=NewVariable(name=variable_form.name),
+            variable_form=variable_form,
             error_on_coercion=error_on_coercion,
-        )
-        assignment = literalize(
-            source=source,
-            input_format=input_format,
-            language=language,
-            pre_indent_level=pre_indent_level,
-            include_delimiters=include_delimiters,
-            variable_form=ExistingVariable(name=variable_form.name),
-            error_on_coercion=error_on_coercion,
-        )
-        decl_preamble = (
-            *declaration.body_preamble,
-            *declaration.pre_declaration_comments,
-        )
-        wrapped = language.wrap_combined_in_file(
-            declaration=declaration.declaration_code,
-            assignment=assignment.bare_code,
-            variable_name=variable_form.name,
-            body_preamble=decl_preamble,
-        )
-        if declaration.preamble:
-            wrapped = "\n".join(declaration.preamble) + "\n" + wrapped
-        return LiteralizeResult(
-            code=wrapped,
-            preamble=(),
-            body_preamble=(),
         )
 
     line_prefix = language.indent * pre_indent_level

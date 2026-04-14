@@ -9,6 +9,7 @@ from pygments.lexers import find_lexer_class_by_name
 
 import literalizer.languages
 from literalizer import (
+    BothVariableForms,
     CallStyleConfig,
     CallStyleKind,
     InputFormat,
@@ -836,6 +837,17 @@ def test_literalize_call_per_element_false() -> None:
     )
     assert "process(" in result.code
     assert "1," in result.code
+
+
+def test_both_variable_forms_without_wrap_in_file_raises() -> None:
+    """BothVariableForms without wrap_in_file=True raises ValueError."""
+    with pytest.raises(expected_exception=ValueError, match="wrap_in_file"):
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            variable_form=BothVariableForms(name="x"),
+        )
 
 
 def test_literalize_call_missing_keyword_separator_raises() -> None:
