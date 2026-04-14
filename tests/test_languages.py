@@ -580,7 +580,7 @@ def test_toml_non_quoted_dict_key() -> None:
     """
     with pytest.raises(
         expected_exception=ValueError,
-        match="Expected a quoted",
+        match=r"^Expected a quoted key, got 'plain_key'$",
     ):
         TOML.dict_format_config.format_entry("plain_key", "value", '"value"')
 
@@ -858,7 +858,7 @@ def test_literalize_call_missing_keyword_separator_raises() -> None:
     )
     with pytest.raises(
         expected_exception=ValueError,
-        match="keyword_separator",
+        match=r"^keyword_separator must be set for 'keyword' call style$",
     ):
         literalize_call(
             source="- [1]",
@@ -871,7 +871,10 @@ def test_literalize_call_missing_keyword_separator_raises() -> None:
 
 def test_literalize_call_per_element_non_list_raises() -> None:
     """Literalize_call raises TypeError for non-list with per_element."""
-    with pytest.raises(expected_exception=TypeError, match="top-level list"):
+    with pytest.raises(
+        expected_exception=TypeError,
+        match=r"^per_element=True requires a top-level list, got str$",
+    ):
         literalize_call(
             source='"hello"',
             input_format=InputFormat.JSON,
@@ -888,7 +891,7 @@ def test_literalize_call_unsupported_language_raises() -> None:
     """
     with pytest.raises(
         expected_exception=ValueError,
-        match="does not support",
+        match=r"^Yaml does not support function call rendering$",
     ):
         literalize_call(
             source="[[1, 2]]",
@@ -905,7 +908,7 @@ def test_literalize_call_unsupported_language_per_element_false() -> None:
     """
     with pytest.raises(
         expected_exception=ValueError,
-        match="does not support",
+        match=r"^Yaml does not support function call rendering$",
     ):
         literalize_call(
             source="[1, 2]",
@@ -919,5 +922,8 @@ def test_literalize_call_unsupported_language_per_element_false() -> None:
 
 def test_cobol_bump_levels_rejects_non_level_line() -> None:
     """_bump_levels raises ValueError for lines without a level number."""
-    with pytest.raises(expected_exception=ValueError, match="Expected COBOL"):
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=r"^Expected COBOL level-number line, got: 'not a level line'$",
+    ):
         _bump_levels(content="not a level line")
