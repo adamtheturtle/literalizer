@@ -791,14 +791,13 @@ def test_wrap_in_file_methods_callable(
     """Every language's wrap_in_file and wrap_combined_in_file are
     callable.
     """
-    lang = language_cls()
-    wrapped = lang.wrap_in_file(
+    wrapped = language_cls.wrap_in_file(
         content="x = 1",
         variable_name="x",
         body_preamble=(),
     )
     assert isinstance(wrapped, str)
-    combined = lang.wrap_combined_in_file(
+    combined = language_cls.wrap_combined_in_file(
         declaration="x = 1",
         assignment="x = 2",
         variable_name="x",

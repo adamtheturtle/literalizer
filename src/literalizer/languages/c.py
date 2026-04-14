@@ -287,8 +287,8 @@ class C(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    def wrap_in_file(  # pylint: disable=no-self-use
-        self,
+    @staticmethod
+    def wrap_in_file(
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -301,15 +301,15 @@ class C(metaclass=LanguageCls):
         use_line = f"\n    (void){variable_name};" if variable_name else ""
         return f"void check_(void) {{\n{content}{use_line}\n}}"
 
-    def wrap_combined_in_file(  # pylint: disable=no-self-use
-        self,
+    @staticmethod
+    def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap C declaration + assignment in a function."""
-        return self.wrap_in_file(
+        return C.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,

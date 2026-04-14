@@ -339,8 +339,8 @@ class VisualBasic(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    def wrap_in_file(  # pylint: disable=no-self-use
-        self,
+    @staticmethod
+    def wrap_in_file(
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -354,8 +354,8 @@ class VisualBasic(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix="    ")
         return f"Module Check\n{indented}\nEnd Module"
 
-    def wrap_combined_in_file(  # pylint: disable=no-self-use
-        self,
+    @staticmethod
+    def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
