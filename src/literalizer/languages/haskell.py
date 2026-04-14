@@ -98,6 +98,51 @@ def _build_haskell_datetime_formatter(
 _format_datetime_haskell = _build_haskell_datetime_formatter(prefix="H")
 
 
+@dataclasses.dataclass(frozen=True)
+class _ExplicitStringFormatters:
+    """Formatters for the EXPLICIT string format."""
+
+    format_string: Callable[[str], str]
+    format_bytes: Callable[[bytes], str]
+    format_dict_entry: Callable[[str, Value, str], str]
+
+
+@beartype
+def _build_explicit_string_formatters(
+    *,
+    constructor_prefix: str,
+    base_format_string: Callable[[str], str],
+    base_format_bytes: Callable[[bytes], str],
+) -> _ExplicitStringFormatters:
+    """Build formatters that wrap string/bytes values with the constructor.
+
+    Dict keys are unwrapped since they are ``String``, not ``Val``.
+    """
+    string_constructor = f"{constructor_prefix}Str "
+
+    @beartype
+    def _format_string(value: str) -> str:
+        """Wrap a formatted string with the constructor prefix."""
+        return f"{string_constructor}{base_format_string(value)}"
+
+    @beartype
+    def _format_bytes(data: bytes) -> str:
+        """Wrap formatted bytes with the constructor prefix."""
+        return f"{string_constructor}{base_format_bytes(data)}"
+
+    @beartype
+    def _format_dict_entry(key: str, _val: Value, value: str) -> str:
+        """Format a dict entry, stripping the constructor from the key."""
+        clean_key = key.removeprefix(string_constructor)
+        return f"({clean_key}, {value})"
+
+    return _ExplicitStringFormatters(
+        format_string=_format_string,
+        format_bytes=_format_bytes,
+        format_dict_entry=_format_dict_entry,
+    )
+
+
 def _num_instance(
     *,
     has_int: bool,
@@ -177,6 +222,7 @@ def _build_scalar_body_preamble(
     is_string_instance: str,
     type_name: str,
     constructor_prefix: str,
+    emit_is_string: bool,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
@@ -186,13 +232,20 @@ def _build_scalar_body_preamble(
 
     The returned lines are ordered: imports first, then the data type,
     then typeclass instances.
+
+    When *emit_is_string* is ``False``, the ``IsString`` import and
+    instance are suppressed (used by the ``EXPLICIT`` string format).
     """
     include_hdate = date_format.value.type_produced is datetime.date
     include_hdatetime = (
         datetime_format.value.type_produced is datetime.datetime
     )
-    date_needs_is_string = bool(date_format.value.preamble_lines)
-    datetime_needs_is_string = bool(datetime_format.value.preamble_lines)
+    date_needs_is_string = bool(
+        emit_is_string and date_format.value.preamble_lines
+    )
+    datetime_needs_is_string = bool(
+        emit_is_string and datetime_format.value.preamble_lines
+    )
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
@@ -227,12 +280,17 @@ def _build_scalar_body_preamble(
                 ),
             )
 
-        needs_is_string = (
+        needs_is_string = emit_is_string and (
             bool(types & {str, bytes})
             or (date_needs_is_string and datetime.date in types)
             or (datetime_needs_is_string and datetime.datetime in types)
         )
-        if needs_is_string and f"{p}Str String" not in data_val_parts:
+        needs_str_constructor = (
+            bool(types & {str, bytes})
+            or (date_needs_is_string and datetime.date in types)
+            or (datetime_needs_is_string and datetime.datetime in types)
+        )
+        if needs_str_constructor and f"{p}Str String" not in data_val_parts:
             data_val_parts.append(f"{p}Str String")
 
         # Emit imports first, then data declaration, then instances.
@@ -521,6 +579,7 @@ class Haskell(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = "double"
+        EXPLICIT = "explicit"
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -640,20 +699,43 @@ class Haskell(metaclass=LanguageCls):
             ),
         )
 
+        _explicit = string_format.name == "EXPLICIT"
+        _base_format_string: Callable[[str], str] = functools.partial(
+            format_string_backslash_control,
+            control_char_fmt="\\x{:02x}",
+        )
+        if _explicit:
+            _explicit_formatters = _build_explicit_string_formatters(
+                constructor_prefix=constructor_prefix,
+                base_format_string=_base_format_string,
+                base_format_bytes=bytes_format,
+            )
+            self.format_string: Callable[[str], str] = (
+                _explicit_formatters.format_string
+            )
+            self.format_bytes: Callable[[bytes], str] = (
+                _explicit_formatters.format_bytes
+            )
+            _dict_entry: Callable[[str, Value, str], str] = (
+                _explicit_formatters.format_dict_entry
+            )
+        else:
+            self.format_string = _base_format_string
+            self.format_bytes = bytes_format
+            _dict_entry = tuple_dict_entry(
+                format_value=passthrough_sequence_entry,
+            )
         self.dict_format_config: DictFormatConfig = DictFormatConfig(
             dict_open=fixed_dict_open(
                 open_str=f"{constructor_prefix}Map [",
             ),
             close="]",
-            format_entry=tuple_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
+            format_entry=_dict_entry,
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
         if date_format.name == "HASKELL":
             self.format_date: Callable[[datetime.date], str] = (
                 date_ymd_formatter(
@@ -673,10 +755,6 @@ class Haskell(metaclass=LanguageCls):
             )
         else:
             self.format_datetime = datetime_format
-        self.format_string: Callable[[str], str] = functools.partial(
-            format_string_backslash_control,
-            control_char_fmt="\\x{:02x}",
-        )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = integer_format
         self.format_sequence_entry: Callable[[Value, str], str] = (
@@ -705,7 +783,7 @@ class Haskell(metaclass=LanguageCls):
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            tuple_dict_entry(format_value=passthrough_sequence_entry)
+            _dict_entry
         )
         self.indent = indent
         self.indent_closing_delimiter = True
@@ -741,14 +819,19 @@ class Haskell(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
+        _str_extra: dict[type, tuple[str, ...]] = (
+            {}
+            if _explicit
+            else {
+                str: _overloaded_strings,
+                bytes: _overloaded_strings,
+            }
+        )
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
                 datetime_format=datetime_format,
-                extra={
-                    str: _overloaded_strings,
-                    bytes: _overloaded_strings,
-                },
+                extra=_str_extra,
             )
         )
 
@@ -765,6 +848,7 @@ class Haskell(metaclass=LanguageCls):
             ),
             type_name=type_name,
             constructor_prefix=constructor_prefix,
+            emit_is_string=not _explicit,
         )
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
