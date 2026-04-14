@@ -63,55 +63,6 @@ from literalizer._types import Value
 
 
 @beartype
-def _haskell_call_stub(
-    name: str,
-    _params: Sequence[str],
-    _stub_return: StubReturn,
-    /,
-) -> tuple[str, ...]:
-    """Return Haskell stub declarations for a call name."""
-    parts = name.split(sep=".")
-    ret = "IO ()"
-    body = "return ()"
-    if len(parts) == 1:
-        return (f"{parts[0]} _ = {body}",)
-    root = parts[0]
-    method = parts[-1]
-    fields = parts[1:-1]
-    field_type = f"() -> {ret}"
-    if not fields:
-        cls = root.capitalize() + "Type_"
-        return (
-            f"data {cls} = {cls} {{ {method} :: {field_type} }}",
-            f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
-        )
-    lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type_"
-    lines.append(
-        f"data {inner_cls} = {inner_cls} {{ {method} :: {field_type} }}",
-    )
-    prev_cls = inner_cls
-    for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type_"
-        lines.append(
-            f"data {cls} = {cls} {{ {fields[i + 1]} :: {prev_cls} }}",
-        )
-        prev_cls = cls
-    root_cls = root.capitalize() + "Type_"
-    lines.append(
-        f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
-    )
-    # Build nested construction from inside out.
-    construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
-    for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type_"
-        construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
-    construction = f"{root_cls} {{ {fields[0]} = {construction} }}"
-    lines.append(f"{root} = {construction}")
-    return tuple(lines)
-
-
-@beartype
 def _haskell_call_preamble_stub(
     name: str,
     _params: Sequence[str],
@@ -121,11 +72,70 @@ def _haskell_call_preamble_stub(
     """Return Haskell preamble stubs for a call name."""
     parts = name.split(sep=".")
     if len(parts) > 1:
-        return (
-            "{-# OPTIONS_GHC -fdefer-type-errors #-}",
-            "{-# LANGUAGE OverloadedRecordDot #-}",
-        )
+        return ("{-# LANGUAGE OverloadedRecordDot #-}",)
     return ()
+
+
+def _build_haskell_call_stub(
+    type_name: str,
+) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    """Build a call stub function that uses *type_name* for field
+    types.
+    """
+    ret = "IO ()"
+    body = "return ()"
+
+    @beartype
+    def _haskell_call_stub(
+        name: str,
+        params: Sequence[str],
+        _stub_return: StubReturn,
+        /,
+    ) -> tuple[str, ...]:
+        """Return Haskell stub declarations for a call name."""
+        parts = name.split(sep=".")
+        if len(parts) == 1:
+            return (f"{parts[0]} _ = {body}",)
+        root = parts[0]
+        method = parts[-1]
+        fields = parts[1:-1]
+        if len(params) == 1:
+            arg_type = type_name
+        else:
+            arg_type = "(" + ", ".join(type_name for _ in params) + ")"
+        field_type = f"{arg_type} -> {ret}"
+        if not fields:
+            cls = root.capitalize() + "Type_"
+            return (
+                f"data {cls} = {cls} {{ {method} :: {field_type} }}",
+                f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
+            )
+        lines: list[str] = []
+        inner_cls = fields[-1].capitalize() + "Type_"
+        lines.append(
+            f"data {inner_cls} = {inner_cls} {{ {method} :: {field_type} }}",
+        )
+        prev_cls = inner_cls
+        for i in range(len(fields) - 2, -1, -1):
+            cls = fields[i].capitalize() + "Type_"
+            lines.append(
+                f"data {cls} = {cls} {{ {fields[i + 1]} :: {prev_cls} }}",
+            )
+            prev_cls = cls
+        root_cls = root.capitalize() + "Type_"
+        lines.append(
+            f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
+        )
+        # Build nested construction from inside out.
+        construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
+        for i in range(len(fields) - 2, -1, -1):
+            cls = fields[i].capitalize() + "Type_"
+            construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
+        construction = f"{root_cls} {{ {fields[0]} = {construction} }}"
+        lines.append(f"{root} = {construction}")
+        return tuple(lines)
+
+    return _haskell_call_stub
 
 
 def _build_haskell_datetime_formatter(
@@ -847,5 +857,7 @@ class Haskell(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = _haskell_call_stub
+        self.format_call_stub = _build_haskell_call_stub(
+            type_name=type_name,
+        )
         self.format_call_preamble_stub = _haskell_call_preamble_stub
