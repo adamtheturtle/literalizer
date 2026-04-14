@@ -1,9 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -15,7 +11,7 @@ instance Num Val where
 process _ = return ()
 main :: IO ()
 main = do
-    process("hello")
+    process(HStr "hello")
     process(42)
     process(HBool True)
     pure ()

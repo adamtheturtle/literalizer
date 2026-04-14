@@ -1,9 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -18,7 +14,7 @@ data ObjType_ = ObjType_ { api :: ApiType_ }
 obj = ObjType_ { api = ApiType_ { client = ClientType_ { post = \_ -> return () } } }
 main :: IO ()
 main = do
-    (post (client (api obj)))("hello")
+    (post (client (api obj)))(HStr "hello")
     (post (client (api obj)))(42)
     (post (client (api obj)))(HBool True)
     pure ()
