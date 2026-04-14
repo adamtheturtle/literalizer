@@ -165,7 +165,7 @@ def _walk_empty_collections(*, val: Value, result: set[type]) -> None:
                 for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                     _walk_empty_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
         case set():
-            if len(val) == 0:
+            if not val:
                 result.add(set)
         case list():
             if not val:
