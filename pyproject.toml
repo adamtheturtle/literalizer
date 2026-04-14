@@ -299,6 +299,7 @@ follow_untyped_imports = true
 
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
+errors.unused-ignore = "error"
 project_excludes = []
 
 [tool.pyright]
