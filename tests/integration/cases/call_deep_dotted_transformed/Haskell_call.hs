@@ -1,10 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 module Check where
-import Data.String (IsString(fromString))
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
-instance IsString Val where
-    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     a + b = error "not implemented"
@@ -19,7 +15,7 @@ app = AppType_ { client = ClientType_ { fetch = \_ -> return () } }
 emit _ = return ()
 main :: IO ()
 main = do
-    emit(app.client.fetch("hello"))
+    emit(app.client.fetch(HStr "hello"))
     emit(app.client.fetch(42))
     emit(app.client.fetch(HBool True))
     pure ()
