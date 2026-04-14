@@ -405,7 +405,7 @@ def _build_date_formatters(
             ),
         )
     else:
-        fmt_date = date_format  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]  # ty: ignore[invalid-assignment]
+        fmt_date = date_format.value.formatter
 
     fmt_datetime: Callable[[datetime.datetime], str]
     if datetime_format.name == "HASKELL":
@@ -413,7 +413,7 @@ def _build_date_formatters(
             prefix=constructor_prefix,
         )
     else:
-        fmt_datetime = datetime_format  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]  # ty: ignore[invalid-assignment]
+        fmt_datetime = datetime_format.value.formatter
 
     return _DateFormatters(
         format_date=fmt_date,
