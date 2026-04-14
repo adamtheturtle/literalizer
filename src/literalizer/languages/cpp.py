@@ -584,7 +584,7 @@ class Cpp(metaclass=LanguageCls):
     call_styles = CallStyles
 
     def wrap_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -598,7 +598,7 @@ class Cpp(metaclass=LanguageCls):
         return f"void check_() {{\n{content}\n}}"
 
     def wrap_combined_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         declaration: str,
         assignment: str,
         variable_name: str,

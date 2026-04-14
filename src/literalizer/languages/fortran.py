@@ -366,7 +366,7 @@ class Fortran(metaclass=LanguageCls):
     call_styles = CallStyles
 
     def wrap_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -387,7 +387,7 @@ class Fortran(metaclass=LanguageCls):
         )
 
     def wrap_combined_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         declaration: str,
         assignment: str,
         variable_name: str,

@@ -518,7 +518,7 @@ class Rust(metaclass=LanguageCls):
     call_styles = CallStyles
 
     def wrap_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -533,7 +533,7 @@ class Rust(metaclass=LanguageCls):
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
     def wrap_combined_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         declaration: str,
         assignment: str,
         variable_name: str,

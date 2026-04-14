@@ -305,7 +305,7 @@ class Odin(metaclass=LanguageCls):
     call_styles = CallStyles
 
     def wrap_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -318,7 +318,7 @@ class Odin(metaclass=LanguageCls):
         return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
 
     def wrap_combined_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         declaration: str,
         assignment: str,
         variable_name: str,

@@ -417,7 +417,7 @@ class Go(metaclass=LanguageCls):
     call_styles = CallStyles
 
     def wrap_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -431,7 +431,7 @@ class Go(metaclass=LanguageCls):
         return f"\nfunc main() {{\n{content}{use_line}\n}}"
 
     def wrap_combined_in_file(
-        self,
+        self,  # pylint: disable=no-self-use
         declaration: str,
         assignment: str,
         variable_name: str,
