@@ -4,7 +4,7 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from beartype import beartype
 
@@ -288,10 +288,10 @@ class Crystal(metaclass=LanguageCls):
             numeric_separator: enum.Enum,
         ) -> Callable[[int], str]:
             """Return the integer formatter for the given separator."""
-            formatter: Callable[[int], str] = self.value[
-                numeric_separator.name
-            ]
-            return formatter
+            return cast(
+                "Callable[[int], str]",
+                self.value[numeric_separator.name],
+            )
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
