@@ -803,10 +803,9 @@ def _literalize(
             instead of silently coercing heterogeneous scalar
             collections to strings.
     """
-    spec = language
     data = apply_coercions(
         data=data,
-        spec=spec,
+        spec=language,
         error_on_coercion=error_on_coercion,
     )
 
@@ -823,7 +822,7 @@ def _literalize(
         datetime.date,
     )
     if isinstance(data, scalar_types) or data is None:
-        return f"{line_prefix}{_format_scalar(value=data, spec=spec)}"
+        return f"{line_prefix}{_format_scalar(value=data, spec=language)}"
 
     # Empty collections have no elements to lay out line-by-line, so
     # delegate to _format_value which already returns the correct
@@ -831,7 +830,7 @@ def _literalize(
     if not data and include_delimiters:
         formatted = _format_value(
             value=data,
-            spec=spec,
+            spec=language,
             dict_open_override=None,
         )
         return f"{line_prefix}{formatted}"
@@ -842,16 +841,16 @@ def _literalize(
 
     if (
         isinstance(data, set)
-        and spec.set_format_config.coerce_mixed_to_str
+        and language.set_format_config.coerce_mixed_to_str
         and all_scalars_heterogeneous(values=list(data))
     ):
         data = {coerce_scalar_to_str(value=v) for v in data}
 
     is_ordered_map = isinstance(data, ordereddict)
-    trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
+    trailing_comma = language.trailing_comma_config.multiline_trailing_comma
     lines_or_early = _format_collection_lines(
         data=data,
-        spec=spec,
+        spec=language,
         body_prefix=body_prefix,
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
@@ -870,7 +869,7 @@ def _literalize(
         body=body,
         is_ordered_map=is_ordered_map,
         data=data,
-        spec=spec,
+        spec=language,
         line_prefix=line_prefix,
     )
 
