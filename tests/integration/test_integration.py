@@ -455,24 +455,18 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         transform_stub_names=["emit"],
         per_element=True,
     ),
-    _CallCaseConfig(
-        case_dir_name="call_positional_args",
-        target_function="throttler.check",
-        parameter_names=["user_id", "ts"],
-        call_transform=lambda c: f"emit({c})",
-        transform_stub_names=["emit"],
-        per_element=True,
-        call_style_kind=literalizer.CallStyleKind.POSITIONAL,
-    ),
-    _CallCaseConfig(
-        case_dir_name="call_named_args",
-        target_function="throttler.check",
-        parameter_names=["user_id", "ts"],
-        call_transform=lambda c: f"emit({c})",
-        transform_stub_names=["emit"],
-        per_element=True,
-        call_style_kind=literalizer.CallStyleKind.KEYWORD,
-    ),
+    *[
+        _CallCaseConfig(
+            case_dir_name=f"call_{kind.value}",
+            target_function="throttler.check",
+            parameter_names=["user_id", "ts"],
+            call_transform=lambda c: f"emit({c})",
+            transform_stub_names=["emit"],
+            per_element=True,
+            call_style_kind=kind,
+        )
+        for kind in literalizer.CallStyleKind
+    ],
 ]
 
 _CALL_CASE_DIRS = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
