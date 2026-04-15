@@ -128,14 +128,16 @@ def extract_yaml_comments(
 
     # Sequences and sets store after-element tokens at index 0,
     # mappings at index 2.
-    token_idx = 2 if isinstance(ruamel_data, CommentedMap) else 0
-
-    if isinstance(ruamel_data, CommentedSeq):
-        keys: list[object] = list(range(len(ruamel_data)))
-    elif isinstance(ruamel_data, CommentedSet):
-        keys = list(ruamel_data)
-    else:
-        keys = list(ruamel_data.keys())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+    match ruamel_data:
+        case CommentedSeq():
+            token_idx = 0
+            keys: list[object] = list(range(len(ruamel_data)))
+        case CommentedSet():
+            token_idx = 0
+            keys = list(ruamel_data)
+        case _:
+            token_idx = 2
+            keys = list(ruamel_data.keys())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
     # Iterate in insertion order so that pending_before propagation is
     # correct (a "before element N" comment is stored in the after-token
