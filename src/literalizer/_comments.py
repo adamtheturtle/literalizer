@@ -201,6 +201,8 @@ def extract_toml_comments(
                 continue
             case Whitespace():
                 continue
+            case _:
+                pass
         inline = ""
         if not isinstance(item, Table):
             raw_inline: str = item.trivia.comment
