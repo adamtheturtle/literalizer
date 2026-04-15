@@ -49,6 +49,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
     identity_call_target,
+    infix_call_line,
     no_call_stub,
     no_type_hint_preamble,
 )
@@ -749,3 +750,4 @@ class Elm(metaclass=LanguageCls):
         self.format_call_stub = no_call_stub
         self.format_call_preamble_stub = no_call_stub
         self.format_call_target = identity_call_target
+        self.format_call_line = infix_call_line

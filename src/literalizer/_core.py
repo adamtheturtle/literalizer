@@ -1297,32 +1297,18 @@ def _assemble_call(
     args_str: str,
     call_transform: Callable[[str], str] | None,
     statement_terminator: str,
-    format_call_line: (
-        Callable[
-            [str, str, Callable[[str], str] | None, str],
-            str,
-        ]
-        | None
-    ) = None,
+    format_call_line: Callable[
+        [str, str, Callable[[str], str] | None, str],
+        str,
+    ],
 ) -> str:
-    """Build one complete call statement, optionally transformed.
-
-    When *format_call_line* is provided it receives
-    ``(target_function, args_str, call_transform,
-    statement_terminator)`` and returns the assembled line,
-    bypassing the default infix assembly.
-    """
-    if format_call_line is not None:
-        return format_call_line(
-            target_function,
-            args_str,
-            call_transform,
-            statement_terminator,
-        )
-    call_expr = f"{target_function}{args_str}"
-    if call_transform is not None:
-        call_expr = call_transform(call_expr)
-    return f"{call_expr}{statement_terminator}"
+    """Build one complete call statement using *format_call_line*."""
+    return format_call_line(
+        target_function,
+        args_str,
+        call_transform,
+        statement_terminator,
+    )
 
 
 @beartype
@@ -1370,9 +1356,6 @@ def literalize_call(
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
     formatted_target = language.format_call_target(target_function)
-    format_call_line: (
-        Callable[[str, str, Callable[[str], str] | None, str], str] | None
-    ) = getattr(language, "format_call_line", None)
 
     if per_element:
         if not isinstance(data, list):
@@ -1396,7 +1379,7 @@ def literalize_call(
                     args_str=args_str,
                     call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
-                    format_call_line=format_call_line,
+                    format_call_line=language.format_call_line,
                 )
             )
         result = "\n".join(lines)
@@ -1418,7 +1401,7 @@ def literalize_call(
             args_str=args_str,
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,
-            format_call_line=format_call_line,
+            format_call_line=language.format_call_line,
         )
 
     computed = _compute_preamble(

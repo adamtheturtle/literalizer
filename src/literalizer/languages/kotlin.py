@@ -69,6 +69,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     identity_call_target,
+    infix_call_line,
     no_call_stub,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
@@ -948,3 +949,4 @@ class Kotlin(metaclass=LanguageCls):
         self.format_call_stub = _kotlin_call_stub
         self.format_call_preamble_stub = no_call_stub
         self.format_call_target = identity_call_target
+        self.format_call_line = infix_call_line

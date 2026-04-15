@@ -848,6 +848,19 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     plain record selectors instead of ``OverloadedRecordDot``.
     """
 
+    format_call_line: Callable[
+        [str, str, Callable[[str], str] | None, str],
+        str,
+    ]
+    """Assemble a complete call statement from its parts.
+
+    Called as ``format_call_line(target_function, args_str,
+    call_transform, statement_terminator)``.  Most languages use
+    :func:`infix_call_line` which produces ``target(args)``.
+    Stack-based languages like Forth override this to emit postfix
+    notation.
+    """
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -893,6 +906,27 @@ identity_call_target: Callable[[str], str] = _identity_call_target
 """Shared callable for languages that do not transform dotted call
 targets.
 """
+
+
+def _infix_call_line(
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+    statement_terminator: str,
+    /,
+) -> str:
+    """Assemble ``target(args)`` with an optional transform and terminator."""
+    call_expr = f"{target_function}{args_str}"
+    if call_transform is not None:
+        call_expr = call_transform(call_expr)
+    return f"{call_expr}{statement_terminator}"
+
+
+infix_call_line: Callable[
+    [str, str, Callable[[str], str] | None, str],
+    str,
+] = _infix_call_line
+"""Default call-line assembler — produces ``target(args)``."""
 
 
 def _no_type_hint_preamble(

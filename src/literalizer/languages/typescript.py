@@ -63,6 +63,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     identity_call_target,
+    infix_call_line,
     no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
@@ -701,3 +702,4 @@ class TypeScript(metaclass=LanguageCls):
         self.format_call_stub = _ts_call_stub
         self.format_call_preamble_stub = no_call_stub
         self.format_call_target = identity_call_target
+        self.format_call_line = infix_call_line

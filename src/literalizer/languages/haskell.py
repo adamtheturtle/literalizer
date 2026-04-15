@@ -58,6 +58,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     date_scalar_preamble,
     identity_call_target,
+    infix_call_line,
     no_call_stub,
     no_type_hint_preamble,
 )
@@ -1249,3 +1250,4 @@ class Haskell(metaclass=LanguageCls):
         self.format_call_target: Callable[[str], str] = (
             dot_access_style.value.call_target
         )
+        self.format_call_line = infix_call_line
