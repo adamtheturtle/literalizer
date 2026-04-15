@@ -1,5 +1,5 @@
 const my_data = [
-    "a",
-    // trailing
+  "a",
+  // trailing
 ];
 export {};

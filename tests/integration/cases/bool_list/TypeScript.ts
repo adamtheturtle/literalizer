@@ -1,6 +1,6 @@
 const my_data = [
-    true,
-    false,
-    true,
+  true,
+  false,
+  true,
 ];
 export {};

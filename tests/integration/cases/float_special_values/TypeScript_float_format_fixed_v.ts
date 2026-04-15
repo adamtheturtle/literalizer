@@ -1,6 +1,6 @@
 const my_data = [
-    Infinity,
-    -Infinity,
-    NaN,
+  Infinity,
+  -Infinity,
+  NaN,
 ];
 export {};

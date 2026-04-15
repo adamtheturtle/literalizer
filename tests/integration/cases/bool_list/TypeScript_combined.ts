@@ -1,11 +1,11 @@
 let my_data = [
-    true,
-    false,
-    true,
+  true,
+  false,
+  true,
 ];
 my_data = [
-    true,
-    false,
-    true,
+  true,
+  false,
+  true,
 ];
 export {};

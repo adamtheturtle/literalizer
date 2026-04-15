@@ -177,7 +177,7 @@ def test_dict_ruby() -> None:
         variable_form=None,
         error_on_coercion=False,
     )
-    assert result.code == '    "user_1" => "team_alpha",'
+    assert result.code == '  "user_1" => "team_alpha",'
 
 
 def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:

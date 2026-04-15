@@ -589,7 +589,7 @@ class TypeScript(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         call_style: CallStyles = CallStyles.OBJECT,
-        indent: str = "    ",
+        indent: str = "  ",
     ) -> None:
         """Initialize TypeScript language specification."""
         self.variable_type_hints = variable_type_hints

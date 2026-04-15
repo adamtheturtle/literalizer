@@ -1,5 +1,5 @@
 const my_data = [
-    "issue #{42}",
-    "color #red",
+  "issue #{42}",
+  "color #red",
 ];
 export {};

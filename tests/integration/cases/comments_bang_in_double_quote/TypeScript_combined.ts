@@ -1,7 +1,7 @@
 let my_data = {
-    "key": "\"bang!\"",  // real
+  "key": "\"bang!\"",  // real
 };
 my_data = {
-    "key": "\"bang!\"",  // real
+  "key": "\"bang!\"",  // real
 };
 export {};

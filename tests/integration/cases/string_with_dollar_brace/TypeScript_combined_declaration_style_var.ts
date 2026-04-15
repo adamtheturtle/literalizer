@@ -1,9 +1,9 @@
 var my_data = [
-    "prefix ${HOME} suffix",
-    "${interpolated}",
+  "prefix ${HOME} suffix",
+  "${interpolated}",
 ];
 my_data = [
-    "prefix ${HOME} suffix",
-    "${interpolated}",
+  "prefix ${HOME} suffix",
+  "${interpolated}",
 ];
 export {};
