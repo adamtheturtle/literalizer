@@ -133,6 +133,8 @@ def make_element_to_type(
                     element_type=element_type.value_type,
                 )
             inner = resolved if resolved is not None else fallback_value_type
+            if inner is None:
+                return None
             return dict_type_template.format(inner=inner)
         if isinstance(element_type, ListType):
             inner = element_to_type(element_type=element_type.inner)
