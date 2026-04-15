@@ -220,11 +220,13 @@ def _preamble_scalar_type(*, value: Value) -> type | None:
     ``datetime.datetime`` from ``datetime.date`` (they need different
     preamble lines).
     """
-    if isinstance(value, datetime.datetime):
-        return datetime.datetime
-    if isinstance(value, datetime.date):
-        return datetime.date
-    return scalar_type_bucket(value=value)
+    match value:
+        case datetime.datetime():
+            return datetime.datetime
+        case datetime.date():
+            return datetime.date
+        case _:
+            return scalar_type_bucket(value=value)
 
 
 @beartype
