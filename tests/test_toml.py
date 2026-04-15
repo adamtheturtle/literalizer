@@ -300,7 +300,7 @@ def test_variable_declaration() -> None:
     expected = textwrap.dedent(
         text="""\
         const config = {
-            "name": "alice",
+          "name": "alice",
         };"""
     )
     assert result.code == expected
@@ -631,8 +631,8 @@ def test_comments_with_variable_declaration() -> None:
     expected = textwrap.dedent(
         text="""\
         const config = {
-            // config
-            "host": "localhost",  // default
+          // config
+          "host": "localhost",  // default
         };"""
     )
     assert result.code == expected

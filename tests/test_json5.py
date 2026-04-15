@@ -306,7 +306,7 @@ def test_variable_declaration() -> None:
     expected = textwrap.dedent(
         text="""\
         const config = {
-            "name": "alice",
+          "name": "alice",
         };"""
     )
     assert result.code == expected
