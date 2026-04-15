@@ -192,13 +192,15 @@ def extract_toml_comments(
     elements: list[ElementComments] = []
 
     for _key, item in toml_doc.body:
-        if isinstance(item, (Whitespace, Comment)):
-            if isinstance(item, Comment):
+        match item:
+            case Comment():
                 raw: str = item.trivia.comment
                 pending_before.extend(
                     _token_comment_lines(value=raw),
                 )
-            continue
+                continue
+            case Whitespace():
+                continue
         inline = ""
         if not isinstance(item, Table):
             raw_inline: str = item.trivia.comment
