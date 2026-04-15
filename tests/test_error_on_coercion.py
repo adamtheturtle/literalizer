@@ -69,9 +69,8 @@ def _to_source(
         yaml.dump(data=data, stream=stream)
         return stream.getvalue()
     if input_format == InputFormat.TOML:
-        if not isinstance(data, dict):
-            data = {"_": data}
-        return tomlkit.dumps(data)
+        toml_data = data if isinstance(data, dict) else {"_": data}
+        return tomlkit.dumps(toml_data)
     msg = f"Unsupported format: {input_format}"
     raise ValueError(msg)
 
