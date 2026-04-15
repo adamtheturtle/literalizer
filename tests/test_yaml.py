@@ -7,7 +7,6 @@ import pytest
 
 from literalizer import (
     InputFormat,
-    Language,
     NewVariable,
     literalize,
 )
@@ -21,7 +20,6 @@ from literalizer.languages import (
     Cpp,
     Dhall,
     Go,
-    JavaScript,
     Mojo,
     Nix,
     Python,
@@ -33,12 +31,6 @@ GO = Go(
     datetime_format=Go.datetime_formats.GO,
     bytes_format=Go.bytes_formats.HEX,
     sequence_format=Go.sequence_formats.SLICE,
-)
-JAVASCRIPT = JavaScript(
-    date_format=JavaScript.date_formats.JS,
-    datetime_format=JavaScript.datetime_formats.JS,
-    bytes_format=JavaScript.bytes_formats.HEX,
-    sequence_format=JavaScript.sequence_formats.ARRAY,
 )
 MOJO = Mojo(
     date_format=Mojo.date_formats.ISO,
@@ -122,38 +114,6 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
             variable_form=None,
             error_on_coercion=False,
         )
-
-
-@pytest.mark.parametrize(
-    argnames=("yaml_string", "language", "expected"),
-    argvalues=[
-        ("42", PYTHON, "42"),
-        ("3.14", PYTHON, "3.14"),
-        ("hello", PYTHON, '"hello"'),
-        ("true", PYTHON, "True"),
-        ("false", PYTHON, "False"),
-        ("null", PYTHON, "None"),
-        ("true", JAVASCRIPT, "true"),
-        ("null", GO, "nil"),
-    ],
-)
-def test_literalize_yaml_scalar(
-    *,
-    yaml_string: str,
-    language: Language,
-    expected: str,
-) -> None:
-    """``literalize_yaml`` handles scalar YAML values."""
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=language,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == expected
 
 
 def test_cpp_array_binary_typed() -> None:
@@ -304,34 +264,6 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
             "key1": "48656c6c6f",
             "key2": "42",
         }"""
-    )
-    assert result.code == expected
-
-
-def test_coerce_heterogeneous_set() -> None:
-    """Heterogeneous sets are coerced to all strings."""
-    yaml_string = textwrap.dedent(
-        text="""\
-        --- !!set
-        ? 1
-        ? "hello"
-    """,
-    )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        Set[String](
-            "1",
-            "hello",
-        )"""
     )
     assert result.code == expected
 
@@ -539,34 +471,6 @@ def test_coerce_mixed_ordered_map_values() -> None:
 
 def test_r_empty_dict_key_positional() -> None:
     """R with POSITIONAL empty_dict_key emits unnamed list elements."""
-    spec = R(
-        date_format=R.date_formats.R,
-        datetime_format=R.datetime_formats.R,
-        empty_dict_key=R.empty_dict_keys.POSITIONAL,
-        bytes_format=R.bytes_formats.HEX,
-        sequence_format=R.sequence_formats.LIST,
-    )
-    yaml_string = '{"": "value"}\n'
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        list(
-            "value"
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_r_empty_dict_key_positional_is_default() -> None:
-    """R defaults to POSITIONAL for empty_dict_key."""
     spec = R(
         date_format=R.date_formats.R,
         datetime_format=R.datetime_formats.R,

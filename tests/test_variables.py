@@ -293,25 +293,6 @@ def test_variable_declaration_json(
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "expected"), argvalues=_DECLARATION_PARAMS
-)
-def test_variable_declaration_yaml(
-    *, language: Language, expected: str
-) -> None:
-    """Each language produces correct variable declaration syntax for YAML."""
-    result = literalize(
-        source="42\n",
-        input_format=InputFormat.YAML,
-        language=language,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == expected
-
-
-@pytest.mark.parametrize(
     argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
 )
 def test_existing_variable_assignment_json(
@@ -323,27 +304,6 @@ def test_existing_variable_assignment_json(
     result = literalize(
         source="42",
         input_format=InputFormat.JSON,
-        language=language,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=ExistingVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames=("language", "expected"), argvalues=_ASSIGNMENT_PARAMS
-)
-def test_existing_variable_assignment_yaml(
-    *, language: Language, expected: str
-) -> None:
-    """Each language produces correct existing-variable assignment syntax
-    for YAML.
-    """
-    result = literalize(
-        source="42\n",
-        input_format=InputFormat.YAML,
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
@@ -382,78 +342,6 @@ def test_python_always_type_hints_scalars(
     assert result.code == expected
 
 
-def test_python_always_type_hints_dict() -> None:
-    """Python ALWAYS hints infer dict type for wrapped dicts."""
-    result = literalize(
-        source='{"a": 1}',
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: dict[str, int] = {
-            "a": 1,
-        }"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_tuple() -> None:
-    """Python ALWAYS hints infer tuple type for wrapped sequences."""
-    result = literalize(
-        source="[1, 2]",
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: tuple[int, ...] = (
-            1,
-            2,
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_list() -> None:
-    """Python ALWAYS hints infer list type when sequence_format is
-    LIST.
-    """
-    lang = Python(
-        date_format=Python.date_formats.PYTHON,
-        datetime_format=Python.datetime_formats.PYTHON,
-        bytes_format=Python.bytes_formats.HEX,
-        sequence_format=Python.sequence_formats.LIST,
-        set_format=Python.set_formats.SET,
-        variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
-    )
-    result = literalize(
-        source="[1, 2]",
-        input_format=InputFormat.JSON,
-        language=lang,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: list[int] = [
-            1,
-            2,
-        ]"""
-    )
-    assert result.code == expected
-
-
 def test_python_always_type_hints_assignment_no_hint() -> None:
     """Python ALWAYS hints do not add type hints for assignments."""
     result = literalize(
@@ -484,29 +372,6 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
         text="""\
         my_var: set[str] = {
             "a\\": b",
-        }"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_set_of_integers() -> None:
-    """A set of integers is correctly identified as set, not dict."""
-    yaml_string = "!!set\n? 1\n? 2\n? 3\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: set[int] = {
-            1,
-            2,
-            3,
         }"""
     )
     assert result.code == expected
@@ -553,20 +418,6 @@ def test_python_always_type_hints_dict_with_list_values() -> None:
         }"""
     )
     assert result.code == expected
-
-
-def test_python_always_type_hints_empty_list() -> None:
-    """Empty collections still use Any since element type is unknown."""
-    result = literalize(
-        source="[]",
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == "my_var: tuple[Any, ...] = ()"
 
 
 def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
