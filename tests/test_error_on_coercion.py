@@ -70,7 +70,7 @@ def _to_source(
         return stream.getvalue()
     if input_format == InputFormat.TOML:
         toml_data: dict[str, object] = (
-            data if isinstance(data, dict) else {"_": data}
+            dict(data) if isinstance(data, dict) else {"_": data}  # pyright: ignore[reportUnknownArgumentType]
         )
         return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
     msg = f"Unsupported format: {input_format}"
