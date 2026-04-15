@@ -2,7 +2,7 @@
 
 import datetime
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
@@ -54,6 +54,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -65,9 +66,46 @@ from literalizer._language import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from literalizer._types import Value
+
+_VARIADIC = "args...; kwargs..."
+
+
+def _julia_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Julia stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"{parts[0]}({_VARIADIC}) = nothing",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    _anon = f"({_VARIADIC}) -> nothing"
+    if not fields:
+        cls = root.capitalize() + "Type"
+        return (
+            f"struct {cls}; {method}; end",
+            f"{root} = {cls}({_anon})",
+        )
+    lines: list[str] = []
+    inner_cls = fields[-1].capitalize() + "Type"
+    lines.append(f"struct {inner_cls}; {method}; end")
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type"
+        field = fields[i + 1]
+        lines.append(f"struct {cls}; {field}; end")
+    root_cls = root.capitalize() + "Type"
+    lines.append(f"struct {root_cls}; {fields[0]}; end")
+    inner_inst = f"{inner_cls}({_anon})"
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type"
+        inner_inst = f"{cls}({inner_inst})"
+    lines.append(f"{root} = {root_cls}({inner_inst})")
+    return tuple(lines)
 
 
 @beartype
@@ -527,6 +565,6 @@ class Julia(metaclass=LanguageCls):
         self.call_style = call_style
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _julia_call_stub
         self.format_call_preamble_stub = no_call_stub
         self.format_call_target = identity_call_target
