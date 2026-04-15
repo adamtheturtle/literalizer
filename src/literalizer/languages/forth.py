@@ -3,6 +3,7 @@
 import base64
 import datetime
 import enum
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
@@ -18,6 +19,7 @@ from literalizer._formatters.format_entries import (
 from literalizer._formatters.format_floats import format_float_scientific
 from literalizer._language import (
     CallStyleConfig,
+    CallStyleKind,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -28,6 +30,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     identity_call_target,
@@ -39,7 +42,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable
 
 
 @beartype
@@ -144,6 +147,25 @@ def _format_forth_dict_entry(
     Example: ``s\" name" s\" Alice"``.
     """
     return f"{key} {formatted_value}"
+
+
+def _forth_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Forth stub word definitions for a call name.
+
+    For dotted names like ``throttler.check``, stubs are generated for
+    each prefix so that the root and intermediate names are defined.
+    """
+    parts = name.split(sep=".")
+    stubs: list[str] = []
+    for i in range(len(parts)):
+        word = ".".join(parts[: i + 1])
+        stubs.append(f": {word} ;")
+    return tuple(stubs)
 
 
 @beartype
@@ -347,6 +369,8 @@ class Forth(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Forth call style options."""
 
+        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+
     call_styles = CallStyles
 
     @staticmethod
@@ -399,6 +423,7 @@ class Forth(metaclass=LanguageCls):
         numeric_style: NumericStyles = NumericStyles.OVERLOADED,
         string_format: StringFormats = StringFormats.ESCAPED,
         trailing_comma: TrailingCommas = TrailingCommas.NO,
+        call_style: CallStyles = CallStyles.POSITIONAL,
         line_ending: LineEndings = LineEndings.NONE,
         indent: str = "    ",
     ) -> None:
@@ -485,8 +510,9 @@ class Forth(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style = call_style
+        self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
+        self.format_call_stub = _forth_call_stub
         self.format_call_preamble_stub = no_call_stub
         self.format_call_target = identity_call_target
