@@ -1,4 +1,4 @@
 [
-    "prefix ${HOME} suffix",
-    "${interpolated}",
+  "prefix ${HOME} suffix",
+  "${interpolated}",
 ]

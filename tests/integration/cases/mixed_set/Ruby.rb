@@ -1,6 +1,6 @@
 require 'set'
 Set.new([
-    true,
-    42,
-    "apple",
+  true,
+  42,
+  "apple",
 ])

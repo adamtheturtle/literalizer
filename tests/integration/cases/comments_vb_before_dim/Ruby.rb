@@ -1,6 +1,6 @@
 {
-    # Configuration
-    "name" => "app",
-    # Port setting
-    "port" => 3000,
+  # Configuration
+  "name" => "app",
+  # Port setting
+  "port" => 3000,
 }

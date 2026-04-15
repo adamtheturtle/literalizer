@@ -1,6 +1,6 @@
 [
-    # first
-    "a",
-    # second
-    "b",
+  # first
+  "a",
+  # second
+  "b",
 ]

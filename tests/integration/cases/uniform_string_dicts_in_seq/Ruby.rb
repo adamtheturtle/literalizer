@@ -1,4 +1,4 @@
 [
-    {"first" => "Alice", "last" => "Smith"},
-    {"first" => "Bob", "last" => "Jones"},
+  {"first" => "Alice", "last" => "Smith"},
+  {"first" => "Bob", "last" => "Jones"},
 ]

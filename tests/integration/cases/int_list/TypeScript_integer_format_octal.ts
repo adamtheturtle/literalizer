@@ -1,6 +1,6 @@
 const my_data = [
-    0o1,
-    0o2,
-    0o3,
+  0o1,
+  0o2,
+  0o3,
 ];
 export {};

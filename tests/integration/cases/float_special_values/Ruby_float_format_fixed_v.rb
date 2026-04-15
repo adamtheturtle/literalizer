@@ -1,5 +1,5 @@
 [
-    Float::INFINITY,
-    -Float::INFINITY,
-    Float::NAN,
+  Float::INFINITY,
+  -Float::INFINITY,
+  Float::NAN,
 ]

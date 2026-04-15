@@ -1,4 +1,4 @@
 [
-    # # section
-    "a",
+  # # section
+  "a",
 ]

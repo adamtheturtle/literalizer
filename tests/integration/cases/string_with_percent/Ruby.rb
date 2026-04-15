@@ -1,4 +1,4 @@
 [
-    "100% done",
-    "%(name) is here",
+  "100% done",
+  "%(name) is here",
 ]

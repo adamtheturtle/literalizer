@@ -1,3 +1,3 @@
 {
-    "key" => "value \" # not a comment",  # real
+  "key" => "value \" # not a comment",  # real
 }

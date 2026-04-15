@@ -1,11 +1,11 @@
 let my_data = [
-    Infinity,
-    -Infinity,
-    NaN,
+  Infinity,
+  -Infinity,
+  NaN,
 ];
 my_data = [
-    Infinity,
-    -Infinity,
-    NaN,
+  Infinity,
+  -Infinity,
+  NaN,
 ];
 export {};
