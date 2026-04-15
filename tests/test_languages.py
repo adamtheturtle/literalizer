@@ -24,16 +24,12 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Cobol,
-    Cpp,
-    CSharp,
     Fortran,
     Go,
     Java,
-    Kotlin,
     Matlab,
     Python,
     Ruby,
-    Rust,
     Toml,
     Yaml,
 )
@@ -44,29 +40,11 @@ COBOL = Cobol(
     bytes_format=Cobol.bytes_formats.HEX,
     sequence_format=Cobol.sequence_formats.SEQUENCE,
 )
-CPP = Cpp(
-    date_format=Cpp.date_formats.CPP,
-    datetime_format=Cpp.datetime_formats.CPP,
-    bytes_format=Cpp.bytes_formats.HEX,
-    sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
-)
 FORTRAN = Fortran(
     date_format=Fortran.date_formats.ISO,
     datetime_format=Fortran.datetime_formats.ISO,
     bytes_format=Fortran.bytes_formats.HEX,
     sequence_format=Fortran.sequence_formats.LIST,
-)
-CSHARP = CSharp(
-    date_format=CSharp.date_formats.CSHARP,
-    datetime_format=CSharp.datetime_formats.CSHARP,
-    bytes_format=CSharp.bytes_formats.HEX,
-    sequence_format=CSharp.sequence_formats.ARRAY,
-)
-GO = Go(
-    date_format=Go.date_formats.GO,
-    datetime_format=Go.datetime_formats.GO,
-    bytes_format=Go.bytes_formats.HEX,
-    sequence_format=Go.sequence_formats.SLICE,
 )
 JAVA = Java(
     date_format=Java.date_formats.JAVA,
@@ -74,31 +52,11 @@ JAVA = Java(
     bytes_format=Java.bytes_formats.HEX,
     sequence_format=Java.sequence_formats.ARRAY,
 )
-KOTLIN = Kotlin(
-    date_format=Kotlin.date_formats.KOTLIN,
-    datetime_format=Kotlin.datetime_formats.KOTLIN,
-    bytes_format=Kotlin.bytes_formats.HEX,
-    sequence_format=Kotlin.sequence_formats.LIST,
-)
-PYTHON = Python(
-    date_format=Python.date_formats.PYTHON,
-    datetime_format=Python.datetime_formats.PYTHON,
-    bytes_format=Python.bytes_formats.HEX,
-    sequence_format=Python.sequence_formats.TUPLE,
-    set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.AUTO,
-)
 RUBY = Ruby(
     date_format=Ruby.date_formats.RUBY,
     datetime_format=Ruby.datetime_formats.RUBY,
     bytes_format=Ruby.bytes_formats.HEX,
     sequence_format=Ruby.sequence_formats.ARRAY,
-)
-RUST = Rust(
-    date_format=Rust.date_formats.RUST,
-    datetime_format=Rust.datetime_formats.RUST,
-    bytes_format=Rust.bytes_formats.HEX,
-    sequence_format=Rust.sequence_formats.VEC,
 )
 TOML = Toml(
     date_format=Toml.date_formats.TOML,
