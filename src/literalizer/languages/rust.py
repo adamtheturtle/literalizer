@@ -91,7 +91,7 @@ def _rust_scalar_type_hint(  # noqa: PLR0911
             return date_hint
         case None:
             return "Option<()>"
-        case list() | dict() | set():
+        case list() | dict() | set():  # pragma: no cover
             msg = f"Unsupported scalar type: {type(data)}"
             raise TypeError(msg)
 
@@ -124,81 +124,66 @@ def _rust_element_type(
 
 
 @beartype
-def _rust_type_hint(  # noqa: C901, PLR0911, PLR0912
+def _rust_collection_type_hint(
     data: Value,
     *,
     date_hint: str,
     datetime_hint: str,
-    sequence_type: str,
+    sequence_type_fn: Callable[[str, int], str],
     set_type: str,
+    dict_type: str,
     supports_heterogeneity: bool,
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
     default_dict_value_type: str,
 ) -> str:
-    """Derive a Rust type annotation from the original data."""
-    recurse = functools.partial(
-        _rust_type_hint,
-        date_hint=date_hint,
-        datetime_hint=datetime_hint,
-        sequence_type=sequence_type,
-        set_type=set_type,
-        supports_heterogeneity=supports_heterogeneity,
-        default_sequence_element_type=default_sequence_element_type,
-        default_set_element_type=default_set_element_type,
-        default_dict_key_type=default_dict_key_type,
-        default_dict_value_type=default_dict_value_type,
-    )
-
+    """Derive a Rust type annotation for a collection value."""
+    _el_kw = {
+        "date_hint": date_hint,
+        "datetime_hint": datetime_hint,
+    }
     match data:
-        case bool():
-            return "bool"
-        case int():
-            return "i64"
-        case float():
-            return "f64"
-        case str():
-            return "&str"
-        case bytes():
-            return "&str"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Option<()>"
         case dict():
             if data:
-                val_types = [recurse(data=v) for v in data.values()]
+                val_types = [
+                    _rust_scalar_type_hint(data=v, **_el_kw)
+                    if not isinstance(v, (list, dict, set))
+                    else "&str"
+                    for v in data.values()
+                ]
                 unique = list(dict.fromkeys(val_types))
                 val_type = unique[0] if len(unique) == 1 else "&str"
                 key_type = "&str"
             else:
                 val_type = default_dict_value_type
                 key_type = default_dict_key_type
-            return f"HashMap<{key_type}, {val_type}>"
+            return f"{dict_type}<{key_type}, {val_type}>"
         case set():
             el_type = _rust_element_type(
                 elements=list(data),
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
                 default_type=default_set_element_type,
+                **_el_kw,
             )
             return f"{set_type}<{el_type}>"
         case list():
             if supports_heterogeneity:
-                el_types = [recurse(data=e) for e in data]
+                el_types = [
+                    _rust_scalar_type_hint(data=e, **_el_kw)
+                    if not isinstance(e, (list, dict, set))
+                    else "&str"
+                    for e in data
+                ]
                 return f"({', '.join(el_types)})"
             el_type = _rust_element_type(
                 elements=data,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
                 default_type=default_sequence_element_type,
+                **_el_kw,
             )
-            return f"{sequence_type}<{el_type}>"
-    msg = f"Unsupported type: {type(data)}"
-    raise TypeError(msg)
+            return sequence_type_fn(el_type, len(data))
+        case _:  # pragma: no cover
+            msg = f"Expected a collection type, got: {type(data)}"
+            raise TypeError(msg)
 
 
 @beartype
@@ -210,8 +195,9 @@ def _format_typed_declaration(
     keyword: str,
     date_hint: str,
     datetime_hint: str,
-    sequence_type: str,
+    sequence_type_fn: Callable[[str, int], str],
     set_type: str,
+    dict_type: str,
     supports_heterogeneity: bool,
     default_sequence_element_type: str,
     default_set_element_type: str,
@@ -219,18 +205,26 @@ def _format_typed_declaration(
     default_dict_value_type: str,
 ) -> str:
     """Format a const or static declaration with a type annotation."""
-    hint = _rust_type_hint(
-        data=data,
-        date_hint=date_hint,
-        datetime_hint=datetime_hint,
-        sequence_type=sequence_type,
-        set_type=set_type,
-        supports_heterogeneity=supports_heterogeneity,
-        default_sequence_element_type=default_sequence_element_type,
-        default_set_element_type=default_set_element_type,
-        default_dict_key_type=default_dict_key_type,
-        default_dict_value_type=default_dict_value_type,
-    )
+    if isinstance(data, (list, dict, set)):
+        hint = _rust_collection_type_hint(
+            data=data,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            sequence_type_fn=sequence_type_fn,
+            set_type=set_type,
+            dict_type=dict_type,
+            supports_heterogeneity=supports_heterogeneity,
+            default_sequence_element_type=default_sequence_element_type,
+            default_set_element_type=default_set_element_type,
+            default_dict_key_type=default_dict_key_type,
+            default_dict_value_type=default_dict_value_type,
+        )
+    else:
+        hint = _rust_scalar_type_hint(
+            data=data,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+        )
     return f"{keyword} {name}: {hint} = {value};"
 
 
@@ -826,15 +820,19 @@ class Rust(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
         _decl_formatter: Callable[[str, str, Value], str]
-        if declaration_style.name in ("CONST", "STATIC"):
-            _seq_type_names: dict[str, str] = {
-                "VEC": "Vec",
-                "ARRAY": "Vec",
-                "TUPLE": "Vec",
+        if declaration_style.name in {"CONST", "STATIC"}:
+            _seq_type_fns: dict[str, Callable[[str, int], str]] = {
+                "VEC": lambda el, _n: f"Vec<{el}>",
+                "ARRAY": lambda el, n: f"[{el}; {n}]",
+                "TUPLE": lambda el, _n: f"Vec<{el}>",
             }
             _set_type_names: dict[str, str] = {
                 "HASH_SET": "HashSet",
                 "BTREE_SET": "BTreeSet",
+            }
+            _dict_type_names: dict[str, str] = {
+                "HASH_MAP": "HashMap",
+                "BTREE_MAP": "BTreeMap",
             }
             _date_hint = (
                 "&str"
@@ -851,8 +849,9 @@ class Rust(metaclass=LanguageCls):
                 keyword=declaration_style.name.lower(),
                 date_hint=_date_hint,
                 datetime_hint=_datetime_hint,
-                sequence_type=_seq_type_names[sequence_format.name],
+                sequence_type_fn=_seq_type_fns[sequence_format.name],
                 set_type=_set_type_names[set_format.name],
+                dict_type=_dict_type_names[dict_format.name],
                 supports_heterogeneity=(
                     sequence_format.supports_heterogeneity
                 ),
