@@ -823,7 +823,7 @@ class Rust(metaclass=LanguageCls):
             _seq_type_fns: dict[str, Callable[[str, int], str]] = {
                 "VEC": lambda elem, _len: f"Vec<{elem}>",
                 "ARRAY": lambda elem, size: f"[{elem}; {size}]",
-                "TUPLE": lambda elem, _len: f"Vec<{elem}>",
+                "TUPLE": lambda elem, size: f"({', '.join([elem] * size)})",
             }
             _set_type_names: dict[str, str] = {
                 "HASH_SET": "HashSet",
