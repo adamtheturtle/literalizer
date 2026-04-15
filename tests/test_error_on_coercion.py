@@ -66,11 +66,13 @@ def _to_source(
     if input_format == InputFormat.YAML:
         yaml = YAML()
         stream = StringIO()
-        yaml.dump(data=data, stream=stream)
+        yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
         return stream.getvalue()
     if input_format == InputFormat.TOML:
-        toml_data = data if isinstance(data, dict) else {"_": data}
-        return tomlkit.dumps(data=toml_data)
+        toml_data: dict[str, object] = (
+            data if isinstance(data, dict) else {"_": data}
+        )
+        return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
     msg = f"Unsupported format: {input_format}"
     raise ValueError(msg)
 
