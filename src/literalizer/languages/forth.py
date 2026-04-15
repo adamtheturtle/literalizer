@@ -169,6 +169,7 @@ def _forth_call_line(
     args_str: str,
     call_transform: Callable[[str], str] | None,
     statement_terminator: str,
+    /,
 ) -> str:
     """Assemble a Forth call in postfix (stack) order.
 
