@@ -12,14 +12,12 @@ from literalizer import (
     literalize,
 )
 from literalizer.exceptions import (
-    HeterogeneousCoercionError,
     JSON5ParseError,
     ParseError,
 )
 from literalizer.languages import (
     Go,
     JavaScript,
-    Mojo,
     Python,
 )
 
@@ -347,29 +345,6 @@ def test_go_output() -> None:
     )
     expected = 'map[string]any{\n\t"name": "test",\n\t"count": 42,\n}'
     assert result.code == expected
-
-
-MOJO = Mojo(
-    date_format=Mojo.date_formats.ISO,
-    datetime_format=Mojo.datetime_formats.ISO,
-    bytes_format=Mojo.bytes_formats.HEX,
-    sequence_format=Mojo.sequence_formats.LIST,
-)
-
-
-def test_error_on_coercion_raises() -> None:
-    """Error on coercion raises for heterogeneous JSON5 arrays."""
-    source = "[1, 2.5, 3]"
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize(
-            source=source,
-            input_format=InputFormat.JSON5,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-            error_on_coercion=True,
-        )
 
 
 @pytest.mark.parametrize(

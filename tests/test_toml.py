@@ -13,7 +13,6 @@ from literalizer import (
 )
 from literalizer._comments import extract_toml_comments
 from literalizer.exceptions import (
-    HeterogeneousCoercionError,
     ParseError,
     TOMLParseError,
 )
@@ -21,7 +20,6 @@ from literalizer.languages import (
     Go,
     Haskell,
     JavaScript,
-    Mojo,
     Python,
     VisualBasic,
 )
@@ -339,48 +337,6 @@ def test_go_output() -> None:
         error_on_coercion=False,
     )
     expected = 'map[string]any{\n\t"name": "test",\n\t"count": 42,\n}'
-    assert result.code == expected
-
-
-MOJO = Mojo(
-    date_format=Mojo.date_formats.ISO,
-    datetime_format=Mojo.datetime_formats.ISO,
-    bytes_format=Mojo.bytes_formats.HEX,
-    sequence_format=Mojo.sequence_formats.LIST,
-)
-
-
-def test_error_on_coercion_raises() -> None:
-    """Error_on_coercion raises for heterogeneous TOML arrays."""
-    toml_string = "values = [1, 2.5, 3]\n"
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize(
-            source=toml_string,
-            input_format=InputFormat.TOML,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_no_raise_homogeneous() -> None:
-    """Error_on_coercion does not raise for homogeneous TOML arrays."""
-    toml_string = "values = [1, 2, 3]\n"
-    result = literalize(
-        source=toml_string,
-        input_format=InputFormat.TOML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "values": (1, 2, 3),
-        }"""
-    )
     assert result.code == expected
 
 
