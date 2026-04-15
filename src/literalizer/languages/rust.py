@@ -2,10 +2,10 @@
 
 import datetime
 import enum
+import functools
 import textwrap
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -63,9 +63,175 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _rust_scalar_type_hint(  # noqa: PLR0911
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive a Rust type annotation for a scalar value."""
+    match data:
+        case bool():
+            return "bool"
+        case int():
+            return "i64"
+        case float():
+            return "f64"
+        case str():
+            return "&str"
+        case bytes():
+            return "&str"
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "Option<()>"
+        case list() | dict() | set():
+            msg = f"Unsupported scalar type: {type(data)}"
+            raise TypeError(msg)
+
+
+@beartype
+def _rust_element_type(
+    elements: Sequence[Value],
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    default_type: str,
+) -> str:
+    """Determine the element type for a homogeneous Rust collection."""
+    if not elements:
+        return default_type
+    types = [
+        _rust_scalar_type_hint(
+            data=e,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+        )
+        if not isinstance(e, (list, dict, set))
+        else "&str"
+        for e in elements
+    ]
+    unique = list(dict.fromkeys(types))
+    if len(unique) == 1:
+        return unique[0]
+    return "&str"
+
+
+@beartype
+def _rust_type_hint(  # noqa: C901, PLR0911, PLR0912
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    sequence_type: str,
+    set_type: str,
+    supports_heterogeneity: bool,
+    default_sequence_element_type: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+) -> str:
+    """Derive a Rust type annotation from the original data."""
+    recurse = functools.partial(
+        _rust_type_hint,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        sequence_type=sequence_type,
+        set_type=set_type,
+        supports_heterogeneity=supports_heterogeneity,
+        default_sequence_element_type=default_sequence_element_type,
+        default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
+    )
+
+    match data:
+        case bool():
+            return "bool"
+        case int():
+            return "i64"
+        case float():
+            return "f64"
+        case str():
+            return "&str"
+        case bytes():
+            return "&str"
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case None:
+            return "Option<()>"
+        case dict():
+            if data:
+                val_types = [recurse(data=v) for v in data.values()]
+                unique = list(dict.fromkeys(val_types))
+                val_type = unique[0] if len(unique) == 1 else "&str"
+                key_type = "&str"
+            else:
+                val_type = default_dict_value_type
+                key_type = default_dict_key_type
+            return f"HashMap<{key_type}, {val_type}>"
+        case set():
+            el_type = _rust_element_type(
+                elements=list(data),
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                default_type=default_set_element_type,
+            )
+            return f"{set_type}<{el_type}>"
+        case list():
+            if supports_heterogeneity:
+                el_types = [recurse(data=e) for e in data]
+                return f"({', '.join(el_types)})"
+            el_type = _rust_element_type(
+                elements=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                default_type=default_sequence_element_type,
+            )
+            return f"{sequence_type}<{el_type}>"
+    msg = f"Unsupported type: {type(data)}"
+    raise TypeError(msg)
+
+
+@beartype
+def _format_typed_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    keyword: str,
+    date_hint: str,
+    datetime_hint: str,
+    sequence_type: str,
+    set_type: str,
+    supports_heterogeneity: bool,
+    default_sequence_element_type: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+) -> str:
+    """Format a const or static declaration with a type annotation."""
+    hint = _rust_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        sequence_type=sequence_type,
+        set_type=set_type,
+        supports_heterogeneity=supports_heterogeneity,
+        default_sequence_element_type=default_sequence_element_type,
+        default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
+    )
+    return f"{keyword} {name}: {hint} = {value};"
 
 
 @beartype
@@ -659,8 +825,46 @@ class Rust(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
+        _decl_formatter: Callable[[str, str, Value], str]
+        if declaration_style.name in ("CONST", "STATIC"):
+            _seq_type_names: dict[str, str] = {
+                "VEC": "Vec",
+                "ARRAY": "Vec",
+                "TUPLE": "Vec",
+            }
+            _set_type_names: dict[str, str] = {
+                "HASH_SET": "HashSet",
+                "BTREE_SET": "BTreeSet",
+            }
+            _date_hint = (
+                "&str"
+                if date_format.value.type_produced is str
+                else "NaiveDate"
+            )
+            _datetime_hint = (
+                "&str"
+                if datetime_format.value.type_produced is str
+                else "NaiveDateTime"
+            )
+            _decl_formatter = functools.partial(
+                _format_typed_declaration,
+                keyword=declaration_style.name.lower(),
+                date_hint=_date_hint,
+                datetime_hint=_datetime_hint,
+                sequence_type=_seq_type_names[sequence_format.name],
+                set_type=_set_type_names[set_format.name],
+                supports_heterogeneity=(
+                    sequence_format.supports_heterogeneity
+                ),
+                default_sequence_element_type=(default_sequence_element_type),
+                default_set_element_type=default_set_element_type,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+            )
+        else:
+            _decl_formatter = declaration_style.value.formatter
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _decl_formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")

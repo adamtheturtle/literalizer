@@ -1,4 +1,4 @@
 fn main() {
-    static my_data = Vec::<String>::new();
+    static my_data: Vec<String> = Vec::<String>::new();
     let _ = my_data;
 }

@@ -1,5 +1,5 @@
 fn main() {
-    static my_data = vec![
+    static my_data: Vec<&str> = vec![
         "1",
         "hello",
         "True",

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 fn main() {
-    const my_data = HashMap::from([
+    const my_data: HashMap<&str, &str> = HashMap::from([
         ("name", "Alice"),
         ("age", "30"),
         ("active", "True"),
