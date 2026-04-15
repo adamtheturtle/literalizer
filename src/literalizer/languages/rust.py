@@ -109,13 +109,13 @@ def _rust_element_type(
         return default_type
     types = [
         _rust_scalar_type_hint(
-            data=e,
+            data=element,
             date_hint=date_hint,
             datetime_hint=datetime_hint,
         )
-        if not isinstance(e, (list, dict, set))
+        if not isinstance(element, (list, dict, set))
         else "&str"
-        for e in elements
+        for element in elements
     ]
     unique = list(dict.fromkeys(types))
     if len(unique) == 1:
@@ -139,48 +139,48 @@ def _rust_collection_type_hint(
     default_dict_value_type: str,
 ) -> str:
     """Derive a Rust type annotation for a collection value."""
-    _el_kw = {
+    _hint_kwargs = {
         "date_hint": date_hint,
         "datetime_hint": datetime_hint,
     }
     match data:
         case dict():
             if data:
-                val_types = [
-                    _rust_scalar_type_hint(data=v, **_el_kw)
-                    if not isinstance(v, (list, dict, set))
+                value_types = [
+                    _rust_scalar_type_hint(data=value, **_hint_kwargs)
+                    if not isinstance(value, (list, dict, set))
                     else "&str"
-                    for v in data.values()
+                    for value in data.values()
                 ]
-                unique = list(dict.fromkeys(val_types))
-                val_type = unique[0] if len(unique) == 1 else "&str"
+                unique = list(dict.fromkeys(value_types))
+                value_type = unique[0] if len(unique) == 1 else "&str"
                 key_type = "&str"
             else:
-                val_type = default_dict_value_type
+                value_type = default_dict_value_type
                 key_type = default_dict_key_type
-            return f"{dict_type}<{key_type}, {val_type}>"
+            return f"{dict_type}<{key_type}, {value_type}>"
         case set():
-            el_type = _rust_element_type(
+            element_type = _rust_element_type(
                 elements=list(data),
                 default_type=default_set_element_type,
-                **_el_kw,
+                **_hint_kwargs,
             )
-            return f"{set_type}<{el_type}>"
+            return f"{set_type}<{element_type}>"
         case list():
             if supports_heterogeneity:
-                el_types = [
-                    _rust_scalar_type_hint(data=e, **_el_kw)
-                    if not isinstance(e, (list, dict, set))
+                element_types = [
+                    _rust_scalar_type_hint(data=element, **_hint_kwargs)
+                    if not isinstance(element, (list, dict, set))
                     else "&str"
-                    for e in data
+                    for element in data
                 ]
-                return f"({', '.join(el_types)})"
-            el_type = _rust_element_type(
+                return f"({', '.join(element_types)})"
+            element_type = _rust_element_type(
                 elements=data,
                 default_type=default_sequence_element_type,
-                **_el_kw,
+                **_hint_kwargs,
             )
-            return sequence_type_fn(el_type, len(data))
+            return sequence_type_fn(element_type, len(data))
         case _:  # pragma: no cover
             msg = f"Expected a collection type, got: {type(data)}"
             raise TypeError(msg)
