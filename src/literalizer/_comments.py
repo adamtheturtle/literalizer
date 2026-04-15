@@ -196,9 +196,7 @@ def extract_toml_comments(
             if isinstance(item, Comment):
                 raw: str = item.trivia.comment
                 pending_before.extend(
-                    _strip_comment_marker(text=line)
-                    for line in raw.split(sep="\n")
-                    if line.strip().startswith("#")
+                    _token_comment_lines(value=raw),
                 )
             continue
         inline = ""
