@@ -15,12 +15,12 @@ import pytest
 import tomlkit
 from ruamel.yaml import YAML
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
 from literalizer import InputFormat, literalize
 from literalizer.exceptions import HeterogeneousCoercionError
 from literalizer.languages import Dhall, Mojo, Python
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 MOJO = Mojo(
     date_format=Mojo.date_formats.ISO,
@@ -62,25 +62,24 @@ def _to_source(
     requires a top-level table.  The coercion checker works recursively,
     so the wrapping does not affect whether an error is raised.
     """
-    if input_format == InputFormat.JSON:
-        return json.dumps(obj=data)
-    if input_format == InputFormat.JSON5:
-        # Valid JSON is valid JSON5.
-        return json.dumps(obj=data)
-    if input_format == InputFormat.YAML:
-        yaml = YAML()
-        stream = StringIO()
-        yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
-        return stream.getvalue()
-    if input_format == InputFormat.TOML:
-        toml_data: Mapping[str, object] = (
-            cast("Mapping[str, object]", data)
-            if isinstance(data, dict)
-            else {"_": data}
-        )
-        return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
-    msg = f"Unsupported format: {input_format}"
-    raise ValueError(msg)
+    match input_format:
+        case InputFormat.JSON:
+            return json.dumps(obj=data)
+        case InputFormat.JSON5:
+            # Valid JSON is valid JSON5.
+            return json.dumps(obj=data)
+        case InputFormat.YAML:
+            yaml = YAML()
+            stream = StringIO()
+            yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
+            return stream.getvalue()
+        case InputFormat.TOML:
+            toml_data: Mapping[str, object] = (
+                cast("Mapping[str, object]", data)
+                if isinstance(data, dict)
+                else {"_": data}
+            )
+            return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
 
 
 # --- Tests that should raise HeterogeneousCoercionError ---
