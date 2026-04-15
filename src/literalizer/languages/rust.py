@@ -351,6 +351,14 @@ class Rust(metaclass=LanguageCls):
             formatter=variable_formatter(template="let mut {name} = {value};"),
             supports_redefinition=True,
         )
+        CONST = DeclarationStyleConfig(
+            formatter=variable_formatter(template="const {name} = {value};"),
+            supports_redefinition=False,
+        )
+        STATIC = DeclarationStyleConfig(
+            formatter=variable_formatter(template="static {name} = {value};"),
+            supports_redefinition=False,
+        )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
