@@ -384,7 +384,7 @@ def _build_type_hint_preamble(
         /,
     ) -> tuple[str, ...]:
         """Return ``from typing import Any`` if needed."""
-        if _any_types & empty_collection_types:
+        if _any_types.intersection(empty_collection_types):
             return ("from typing import Any",)
         return ()
 
@@ -987,7 +987,9 @@ class Python(metaclass=LanguageCls):
                 default_dict_key_type=default_dict_key_type,
             )
         )
-        self.format_variable_declaration = decl_fmt
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            decl_fmt
+        )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
         )
@@ -1019,6 +1021,10 @@ class Python(metaclass=LanguageCls):
         self.call_style = call_style
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ""
-        self.format_call_stub = _python_call_stub
-        self.format_call_preamble_stub = no_call_stub
-        self.format_call_target = identity_call_target
+        self.format_call_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = _python_call_stub
+        self.format_call_preamble_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = no_call_stub
+        self.format_call_target: Callable[[str], str] = identity_call_target

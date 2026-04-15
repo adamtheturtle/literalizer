@@ -624,6 +624,10 @@ class CSharp(metaclass=LanguageCls):
         self.call_style = call_style
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.statement_terminator = ";"
-        self.format_call_stub = _csharp_call_stub
-        self.format_call_preamble_stub = no_call_stub
-        self.format_call_target = identity_call_target
+        self.format_call_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = _csharp_call_stub
+        self.format_call_preamble_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = no_call_stub
+        self.format_call_target: Callable[[str], str] = identity_call_target

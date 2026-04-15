@@ -43,6 +43,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     identity_call_target,
@@ -417,6 +418,10 @@ class Wren(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style_config: CallStyleConfig | None = None
         self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = no_call_stub
-        self.format_call_target = identity_call_target
+        self.format_call_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = no_call_stub
+        self.format_call_preamble_stub: Callable[
+            [str, Sequence[str], StubReturn], tuple[str, ...]
+        ] = no_call_stub
+        self.format_call_target: Callable[[str], str] = identity_call_target
