@@ -43,6 +43,7 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    infer_element_type,
 )
 from literalizer._language import (
     CallStyleConfig,
@@ -233,14 +234,39 @@ _ANY_STRUCT_LINES: tuple[str, ...] = (
 
 
 @beartype
-def _any_struct_preamble(code: str, /) -> tuple[str, ...]:
-    """Return the ``Any`` helper struct lines when *code* uses it.
+def _needs_any_type(data: Value) -> bool:
+    """Check whether *data* contains heterogeneous collections.
 
-    ``Any`` appears as a variable type for bare brace-init lists
-    (e.g. ``Any my_data = {...}``) or as a container element type
-    (e.g. ``std::map<std::string, Any>``).
+    The ``Any`` helper struct is needed when the C++ type resolver
+    cannot infer a single element type for a collection — i.e. when
+    ``infer_element_type`` returns ``None``.
     """
-    if "Any" in code:
+    match data:
+        case list():
+            if data and infer_element_type(items=data) is None:
+                return True
+            return any(_needs_any_type(data=v) for v in data)
+        case dict():
+            values = list(data.values())
+            if values and infer_element_type(items=values) is None:
+                return True
+            return any(_needs_any_type(data=v) for v in values)
+        case set():
+            items: list[Value] = sorted(
+                data,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            if items and infer_element_type(items=items) is None:
+                return True
+        case _:
+            pass
+    return False
+
+
+@beartype
+def _any_struct_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return the ``Any`` helper struct when *data* needs it."""
+    if _needs_any_type(data=data):
         return _ANY_STRUCT_LINES
     return ()
 
@@ -753,7 +779,7 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
         self.static_body_preamble: Sequence[str] = ()
-        self.code_dependent_preamble = _any_struct_preamble
+        self.data_dependent_preamble = _any_struct_preamble
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
