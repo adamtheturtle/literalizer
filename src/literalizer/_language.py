@@ -194,6 +194,7 @@ class CallStyleConfig:
 
     kind: CallStyleKind
     keyword_separator: str | None = None
+    arg_separator: str = ", "
 
 
 class SequenceFormat(Protocol):

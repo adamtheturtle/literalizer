@@ -1262,7 +1262,7 @@ def _format_call_args(
         _format_value(value=v, spec=language, dict_open_override=None)
         for v in values
     ]
-    sep = ", "
+    sep = style.arg_separator
 
     match style.kind:
         case CallStyleKind.POSITIONAL:

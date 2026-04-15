@@ -178,13 +178,13 @@ def _forth_call_line(
     as well.
     """
     inner = args_str[1:-1] if args_str.startswith("(") else args_str
-    args = inner.replace(", ", " ")
-    call_expr = f"{args} {target_function}" if args else target_function
+    call_expr = f"{inner} {target_function}" if inner else target_function
     if call_transform is not None:
-        wrapped = call_transform(call_expr)
-        idx = wrapped.find(call_expr)
-        if idx > 0:
-            wrapper = wrapped[:idx].rstrip("(").strip()
+        sentinel = "\x00"
+        wrapped = call_transform(sentinel)
+        idx = wrapped.index(sentinel)
+        wrapper = wrapped[:idx].rstrip("(").strip()
+        if wrapper:
             call_expr = f"{call_expr} {wrapper}"
     return f"{call_expr}{statement_terminator}"
 
@@ -390,7 +390,10 @@ class Forth(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Forth call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        POSITIONAL = CallStyleConfig(
+            kind=CallStyleKind.POSITIONAL,
+            arg_separator=" ",
+        )
 
     call_styles = CallStyles
 
