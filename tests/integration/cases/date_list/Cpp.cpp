@@ -1,6 +1,10 @@
 #include <initializer_list>
 #include <chrono>
 #include <vector>
+struct Any {
+    template<class T> Any(T&&) noexcept {}
+    Any(std::initializer_list<Any>) noexcept {}
+};
 void check_() {
 Any my_data = {
     std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}},

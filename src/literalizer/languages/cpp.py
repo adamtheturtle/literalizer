@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from types import MappingProxyType
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_set_open,
@@ -233,34 +234,49 @@ _ANY_STRUCT_LINES: tuple[str, ...] = (
 )
 
 
+_CPP_ELEMENT_TO_TYPE = _make_cpp_element_to_type(int_type="int")
+
+
+@beartype
+def _collection_needs_any(items: list[Value]) -> bool:
+    """Return whether a C++ typed opener would fall back to bare braces.
+
+    This happens when ``infer_element_type`` cannot unify the elements,
+    or when the resolved type has no C++ mapping (e.g. dates).
+    """
+    element_type = infer_element_type(items=items)
+    if element_type is None:
+        return True
+    return _CPP_ELEMENT_TO_TYPE(element_type) is None
+
+
 @beartype
 def _needs_any_type(data: Value) -> bool:
-    """Check whether *data* contains heterogeneous collections.
+    """Check whether *data* would cause the ``Any`` type to appear.
 
-    The ``Any`` helper struct is needed when the C++ type resolver
-    cannot infer a single element type for a collection — i.e. when
-    ``infer_element_type`` returns ``None``.
+    The ``Any`` struct is needed when any collection in the data
+    produces a bare brace-init opener — either because the C++ type
+    resolver cannot map the element type, or because the collection
+    kind (set, ordered map) always uses bare braces.
     """
     match data:
+        case set() | ordereddict():
+            return True
         case list():
-            if data and infer_element_type(items=data) is None:
-                return True
-            return any(_needs_any_type(data=v) for v in data)
+            return (
+                not data
+                or _collection_needs_any(items=data)
+                or any(_needs_any_type(data=v) for v in data)
+            )
         case dict():
             values = list(data.values())
-            if values and infer_element_type(items=values) is None:
-                return True
-            return any(_needs_any_type(data=v) for v in values)
-        case set():
-            items: list[Value] = sorted(
-                data,
-                key=lambda v: (type(v).__name__, repr(v)),
+            return (
+                not values
+                or _collection_needs_any(items=values)
+                or any(_needs_any_type(data=v) for v in values)
             )
-            if items and infer_element_type(items=items) is None:
-                return True
         case _:
-            pass
-    return False
+            return False
 
 
 @beartype
