@@ -9,7 +9,7 @@ their respective test modules.
 import json
 import re
 from io import StringIO
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, assert_never, cast
 
 import pytest
 import tomlkit
@@ -80,6 +80,8 @@ def _to_source(
                 else {"_": data}
             )
             return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 # --- Tests that should raise HeterogeneousCoercionError ---
