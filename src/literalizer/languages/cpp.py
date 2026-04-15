@@ -224,6 +224,27 @@ def _rebuild_dict_opener(
     )
 
 
+_ANY_STRUCT_LINES: tuple[str, ...] = (
+    "struct Any {",
+    "    template<class T> Any(T&&) noexcept {}",
+    "    Any(std::initializer_list<Any>) noexcept {}",
+    "};",
+)
+
+
+@beartype
+def _any_struct_preamble(code: str, /) -> tuple[str, ...]:
+    """Return the ``Any`` helper struct lines when *code* uses it.
+
+    ``Any`` appears as a variable type for bare brace-init lists
+    (e.g. ``Any my_data = {...}``) or as a container element type
+    (e.g. ``std::map<std::string, Any>``).
+    """
+    if "Any" in code:
+        return _ANY_STRUCT_LINES
+    return ()
+
+
 @beartype
 def _format_variable_declaration(
     name: str,
@@ -731,12 +752,8 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
-        self.static_body_preamble: Sequence[str] = (
-            "struct Any {",
-            "    template<class T> Any(T&&) noexcept {}",
-            "    Any(std::initializer_list<Any>) noexcept {}",
-            "};",
-        )
+        self.static_body_preamble: Sequence[str] = ()
+        self.code_dependent_preamble = _any_struct_preamble
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
