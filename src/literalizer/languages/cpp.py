@@ -233,10 +233,17 @@ def _format_variable_declaration(
     """Format a C++ variable declaration.
 
     Uses ``auto`` when the value has an explicit type constructor
-    (e.g. ``std::vector<int>{...}``).  Falls back to ``Any`` for bare
-    brace-init lists where the compiler cannot deduce the type.
+    (e.g. ``std::vector<int>{...}``).  Uses ``const auto*`` for
+    string literals to satisfy ``readability-qualified-auto``.
+    Falls back to ``Any`` for bare brace-init lists where the
+    compiler cannot deduce the type.
     """
-    type_keyword = "Any" if value.startswith("{") else "auto"
+    if value.startswith("{"):
+        type_keyword = "Any"
+    elif value.startswith('"'):
+        type_keyword = "const auto*"
+    else:
+        type_keyword = "auto"
     return f"{type_keyword} {name} = {value};"
 
 
@@ -597,16 +604,6 @@ class Cpp(metaclass=LanguageCls):
     call_styles = CallStyles
 
     @staticmethod
-    def _needs_any_struct(content: str) -> bool:
-        """Check if the content uses the ``Any`` helper struct.
-
-        ``Any`` appears as a variable type for bare brace-init lists
-        (e.g. ``Any my_data = {...}``) or as a container element type
-        (e.g. ``std::map<std::string, Any>``).
-        """
-        return "Any" in content
-
-    @staticmethod
     def wrap_in_file(
         content: str,
         variable_name: str,
@@ -618,15 +615,7 @@ class Cpp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        prefix = ""
-        if Cpp._needs_any_struct(content=content):
-            prefix = (
-                "struct Any {\n"
-                "    template<class T> Any(T&&) noexcept {}\n"
-                "    Any(std::initializer_list<Any>) noexcept {}\n"
-                "};\n"
-            )
-        return f"{prefix}void check_() {{\n{content}\n}}"
+        return f"void check_() {{\n{content}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -742,7 +731,12 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
-        self.static_body_preamble: Sequence[str] = ()
+        self.static_body_preamble: Sequence[str] = (
+            "struct Any {",
+            "    template<class T> Any(T&&) noexcept {}",
+            "    Any(std::initializer_list<Any>) noexcept {}",
+            "};",
+        )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
