@@ -600,7 +600,9 @@ class Cpp(metaclass=LanguageCls):
         brace-init ``= {`` is used (the compiler deduces
         ``std::initializer_list<Any>``).
         """
-        return "Any" in content or bool(re.search(r"= \{", content))
+        return "Any" in content or bool(
+            re.search(pattern=r"= \{", string=content)
+        )
 
     @staticmethod
     def wrap_in_file(
@@ -615,7 +617,7 @@ class Cpp(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         prefix = ""
-        if Cpp._needs_any_struct(content):
+        if Cpp._needs_any_struct(content=content):
             prefix = (
                 "struct Any {\n"
                 "    template<class T> Any(T&&) noexcept {}\n"
