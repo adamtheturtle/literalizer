@@ -135,7 +135,7 @@ def extract_yaml_comments(
         case CommentedSet():
             token_idx = 0
             keys = list(ruamel_data)
-        case CommentedMap():
+        case _:
             token_idx = 2
             keys = list(ruamel_data.keys())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
