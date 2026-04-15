@@ -9,10 +9,14 @@ their respective test modules.
 import json
 import re
 from io import StringIO
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import tomlkit
 from ruamel.yaml import YAML
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 from literalizer import InputFormat, literalize
 from literalizer.exceptions import HeterogeneousCoercionError
@@ -69,11 +73,11 @@ def _to_source(
         yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
         return stream.getvalue()
     if input_format == InputFormat.TOML:
-        toml_data: dict[str, object]
-        if isinstance(data, dict):
-            toml_data = {str(k): v for k, v in data.items()}  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        else:
-            toml_data = {"_": data}
+        toml_data: Mapping[str, object] = (
+            cast("Mapping[str, object]", data)
+            if isinstance(data, dict)
+            else {"_": data}
+        )
         return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
     msg = f"Unsupported format: {input_format}"
     raise ValueError(msg)
