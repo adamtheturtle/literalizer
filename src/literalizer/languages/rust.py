@@ -822,9 +822,9 @@ class Rust(metaclass=LanguageCls):
         _decl_formatter: Callable[[str, str, Value], str]
         if declaration_style.name in {"CONST", "STATIC"}:
             _seq_type_fns: dict[str, Callable[[str, int], str]] = {
-                "VEC": lambda el, _n: f"Vec<{el}>",
-                "ARRAY": lambda el, n: f"[{el}; {n}]",
-                "TUPLE": lambda el, _n: f"Vec<{el}>",
+                "VEC": lambda elem, _len: f"Vec<{elem}>",
+                "ARRAY": lambda elem, size: f"[{elem}; {size}]",
+                "TUPLE": lambda elem, _len: f"Vec<{elem}>",
             }
             _set_type_names: dict[str, str] = {
                 "HASH_SET": "HashSet",
