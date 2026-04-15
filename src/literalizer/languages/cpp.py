@@ -234,7 +234,7 @@ _ANY_STRUCT_LINES: tuple[str, ...] = (
 )
 
 
-_CPP_ELEMENT_TO_TYPE = _make_cpp_element_to_type(int_type="int")
+_cpp_element_to_type = _make_cpp_element_to_type(int_type="int")
 
 
 @beartype
@@ -247,7 +247,7 @@ def _collection_needs_any(items: list[Value]) -> bool:
     element_type = infer_element_type(items=items)
     if element_type is None:
         return True
-    return _CPP_ELEMENT_TO_TYPE(element_type) is None
+    return _cpp_element_to_type(element_type) is None
 
 
 @beartype
