@@ -69,9 +69,11 @@ def _to_source(
         yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
         return stream.getvalue()
     if input_format == InputFormat.TOML:
-        toml_data: dict[str, object] = (
-            dict(data) if isinstance(data, dict) else {"_": data}  # pyright: ignore[reportUnknownArgumentType]
-        )
+        toml_data: dict[str, object]
+        if isinstance(data, dict):
+            toml_data = {str(k): v for k, v in data.items()}  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        else:
+            toml_data = {"_": data}
         return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
     msg = f"Unsupported format: {input_format}"
     raise ValueError(msg)
