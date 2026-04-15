@@ -5,5 +5,5 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-auto my_data = {};
+Any my_data = {};
 }

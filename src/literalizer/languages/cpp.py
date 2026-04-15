@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import re
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
 
@@ -231,8 +230,14 @@ def _format_variable_declaration(
     value: str,
     _data: Value,
 ) -> str:
-    """Format a C++ variable declaration."""
-    return f"auto {name} = {value};"
+    """Format a C++ variable declaration.
+
+    Uses ``auto`` when the value has an explicit type constructor
+    (e.g. ``std::vector<int>{...}``).  Falls back to ``Any`` for bare
+    brace-init lists where the compiler cannot deduce the type.
+    """
+    type_keyword = "Any" if value.startswith("{") else "auto"
+    return f"{type_keyword} {name} = {value};"
 
 
 def _cpp_call_stub(
@@ -595,14 +600,11 @@ class Cpp(metaclass=LanguageCls):
     def _needs_any_struct(content: str) -> bool:
         """Check if the content uses the ``Any`` helper struct.
 
-        ``Any`` is needed when it appears as an explicit type
-        (e.g. ``std::map<std::string, Any>``) or when a bare
-        brace-init ``= {`` is used (the compiler deduces
-        ``std::initializer_list<Any>``).
+        ``Any`` appears as a variable type for bare brace-init lists
+        (e.g. ``Any my_data = {...}``) or as a container element type
+        (e.g. ``std::map<std::string, Any>``).
         """
-        return "Any" in content or bool(
-            re.search(pattern=r"= \{", string=content)
-        )
+        return "Any" in content
 
     @staticmethod
     def wrap_in_file(

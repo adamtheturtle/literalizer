@@ -6,7 +6,7 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-auto my_data = {
+Any my_data = {
     {"name", "Alice"},
     {"tags", {true, 42, "apple"}},
 };
