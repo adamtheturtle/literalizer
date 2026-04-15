@@ -25,7 +25,7 @@ def test_none_fallback_value_type_uses_dict_open_fallback() -> None:
     the string ``"None"`` into the type template.
     """
     source = json.dumps(
-        {
+        obj={
             "group_a": {"x": 1, "y": "hello"},
             "group_b": {"p": True, "q": 42},
         }
@@ -70,7 +70,8 @@ def test_none_fallback_value_type_uses_dict_open_fallback() -> None:
         error_on_coercion=False,
         wrap_in_file=True,
     )
-    expected = textwrap.dedent("""\
+    expected = textwrap.dedent(
+        text="""\
         package main
 
         func main() {
@@ -79,5 +80,6 @@ def test_none_fallback_value_type_uses_dict_open_fallback() -> None:
         \t"group_b": map[string]any{"p": true, "q": 42},
         }
         _ = my_data
-        }""")
+        }"""
+    )
     assert result.code == expected
