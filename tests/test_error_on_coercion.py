@@ -37,19 +37,10 @@ PYTHON = Python(
     variable_type_hints=Python.variable_type_hints_formats.AUTO,
 )
 
-ALL_FORMATS = [
-    InputFormat.JSON,
-    InputFormat.JSON5,
-    InputFormat.YAML,
-    InputFormat.TOML,
-]
+ALL_FORMATS = list(InputFormat)
 
-# Formats that support None/null values.
-FORMATS_WITH_NULL = [
-    InputFormat.JSON,
-    InputFormat.JSON5,
-    InputFormat.YAML,
-]
+# Formats that support None/null values (TOML has no null type).
+FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f != InputFormat.TOML]
 
 
 def _to_source(
