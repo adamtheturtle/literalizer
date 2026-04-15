@@ -6,6 +6,7 @@ import functools
 import textwrap
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
+from typing import assert_never
 
 from beartype import beartype
 
@@ -63,12 +64,12 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
 def _rust_scalar_type_hint(  # noqa: PLR0911
-    data: Value,
+    data: Scalar,
     *,
     date_hint: str,
     datetime_hint: str,
@@ -91,9 +92,8 @@ def _rust_scalar_type_hint(  # noqa: PLR0911
             return date_hint
         case None:
             return "Option<()>"
-        case list() | dict() | set():  # pragma: no cover
-            msg = f"Unsupported scalar type: {type(data)}"
-            raise TypeError(msg)
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -125,7 +125,7 @@ def _rust_element_type(
 
 @beartype
 def _rust_collection_type_hint(
-    data: Value,
+    data: list[Value] | dict[str, Value] | set[Scalar],
     *,
     date_hint: str,
     datetime_hint: str,
@@ -181,9 +181,8 @@ def _rust_collection_type_hint(
                 **_hint_kwargs,
             )
             return sequence_type_fn(element_type, len(data))
-        case _:  # pragma: no cover
-            msg = f"Expected a collection type, got: {type(data)}"
-            raise TypeError(msg)
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
