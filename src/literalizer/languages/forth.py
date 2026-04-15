@@ -3,8 +3,7 @@
 import base64
 import datetime
 import enum
-from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 from beartype import beartype
 
@@ -40,9 +39,6 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 @beartype
@@ -166,6 +162,31 @@ def _forth_call_stub(
         word = ".".join(parts[: i + 1])
         stubs.append(f": {word} ;")
     return tuple(stubs)
+
+
+def _forth_call_line(
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+    statement_terminator: str,
+) -> str:
+    """Assemble a Forth call in postfix (stack) order.
+
+    Converts the C-style ``target(arg1, arg2)`` into
+    ``arg1 arg2 target``.  When *call_transform* wraps the call
+    (e.g. ``emit(inner)``), the wrapper word is appended postfix
+    as well.
+    """
+    inner = args_str[1:-1] if args_str.startswith("(") else args_str
+    args = inner.replace(", ", " ")
+    call_expr = f"{args} {target_function}" if args else target_function
+    if call_transform is not None:
+        wrapped = call_transform(call_expr)
+        idx = wrapped.find(call_expr)
+        if idx > 0:
+            wrapper = wrapped[:idx].rstrip("(").strip()
+            call_expr = f"{call_expr} {wrapper}"
+    return f"{call_expr}{statement_terminator}"
 
 
 @beartype
@@ -516,3 +537,4 @@ class Forth(metaclass=LanguageCls):
         self.format_call_stub = _forth_call_stub
         self.format_call_preamble_stub = no_call_stub
         self.format_call_target = identity_call_target
+        self.format_call_line = _forth_call_line
