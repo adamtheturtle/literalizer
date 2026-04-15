@@ -61,12 +61,12 @@ class InputFormat(enum.Enum):
 class LiteralizeResult:
     """Result of converting data to a native language literal."""
 
-    code: str
-    """The formatted literal text.
+    declaration_code: str
+    """The variable declaration or assignment text, without any
+    :attr:`body_preamble` or :attr:`pre_declaration_comments` lines.
 
-    When a language defines ``scalar_body_preamble`` entries (e.g.
-    Haskell typeclass instances), those lines are prepended to the code
-    so they appear in the correct structural position.
+    Use :attr:`code` for the full formatted text including all prefix
+    lines.
     """
 
     preamble: tuple[str, ...]
@@ -94,33 +94,35 @@ class LiteralizeResult:
     """
 
     @property
-    def bare_code(self) -> str:
-        """The literal text without :attr:`body_preamble` prepended.
+    def code(self) -> str:
+        """The formatted literal text.
 
-        Identical to :attr:`code` when :attr:`body_preamble` is empty.
-        :attr:`pre_declaration_comments` are preserved.
-        """
-        if not self.body_preamble:
-            return self.code
-        prefix = "\n".join(self.body_preamble) + "\n"
-        return self.code[len(prefix) :]
-
-    @property
-    def declaration_code(self) -> str:
-        """The literal text without :attr:`body_preamble` or
-        :attr:`pre_declaration_comments` prepended.
-
-        Use this when you need just the variable declaration or
-        assignment, without any preceding comment lines.
+        When a language defines ``scalar_body_preamble`` entries (e.g.
+        Haskell typeclass instances), those lines are prepended to the
+        code so they appear in the correct structural position.
         """
         all_prefix_lines = (
             *self.body_preamble,
             *self.pre_declaration_comments,
         )
         if not all_prefix_lines:
-            return self.code
-        prefix = "\n".join(all_prefix_lines) + "\n"
-        return self.code[len(prefix) :]
+            return self.declaration_code
+        return "\n".join(all_prefix_lines) + "\n" + self.declaration_code
+
+    @property
+    def bare_code(self) -> str:
+        """The literal text without :attr:`body_preamble` prepended.
+
+        Identical to :attr:`code` when :attr:`body_preamble` is empty.
+        :attr:`pre_declaration_comments` are preserved.
+        """
+        if not self.pre_declaration_comments:
+            return self.declaration_code
+        return (
+            "\n".join(self.pre_declaration_comments)
+            + "\n"
+            + self.declaration_code
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1037,7 +1039,7 @@ def _literalize_both_forms(
     if declaration.preamble:
         wrapped = "\n".join(declaration.preamble) + "\n" + wrapped
     return LiteralizeResult(
-        code=wrapped,
+        declaration_code=wrapped,
         preamble=(),
         body_preamble=(),
     )
@@ -1197,9 +1199,6 @@ def literalize(
             line_prefix=line_prefix,
         )
 
-    if resolved is not None and resolved.pending_scalar_before:
-        result = "\n".join(resolved.pending_scalar_before) + "\n" + result
-
     # --- Preamble ---
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
@@ -1213,24 +1212,24 @@ def literalize(
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
 
     if wrap_in_file:
+        content = result
+        if pre_decl:
+            content = "\n".join(pre_decl) + "\n" + content
         wrapped = language.wrap_in_file(
-            content=result,
+            content=content,
             variable_name=variable_name or "",
             body_preamble=computed.body,
         )
         if preamble:
             wrapped = "\n".join(preamble) + "\n" + wrapped
         return LiteralizeResult(
-            code=wrapped,
+            declaration_code=wrapped,
             preamble=(),
             body_preamble=(),
         )
 
-    if computed.body:
-        result = "\n".join(computed.body) + "\n" + result
-
     return LiteralizeResult(
-        code=result,
+        declaration_code=result,
         preamble=preamble,
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
@@ -1412,16 +1411,13 @@ def literalize_call(
         if preamble:
             wrapped = "\n".join(preamble) + "\n" + wrapped
         return LiteralizeResult(
-            code=wrapped,
+            declaration_code=wrapped,
             preamble=(),
             body_preamble=(),
         )
 
-    if computed.body:
-        result = "\n".join(computed.body) + "\n" + result
-
     return LiteralizeResult(
-        code=result,
+        declaration_code=result,
         preamble=preamble,
         body_preamble=computed.body,
     )
