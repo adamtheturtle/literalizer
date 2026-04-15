@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
 
@@ -591,6 +592,17 @@ class Cpp(metaclass=LanguageCls):
     call_styles = CallStyles
 
     @staticmethod
+    def _needs_any_struct(content: str) -> bool:
+        """Check if the content uses the ``Any`` helper struct.
+
+        ``Any`` is needed when it appears as an explicit type
+        (e.g. ``std::map<std::string, Any>``) or when a bare
+        brace-init ``= {`` is used (the compiler deduces
+        ``std::initializer_list<Any>``).
+        """
+        return "Any" in content or bool(re.search(r"= \{", content))
+
+    @staticmethod
     def wrap_in_file(
         content: str,
         variable_name: str,
@@ -602,7 +614,15 @@ class Cpp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"void check_() {{\n{content}\n}}"
+        prefix = ""
+        if Cpp._needs_any_struct(content):
+            prefix = (
+                "struct Any {\n"
+                "    template<class T> Any(T&&) noexcept {}\n"
+                "    Any(std::initializer_list<Any>) noexcept {}\n"
+                "};\n"
+            )
+        return f"{prefix}void check_() {{\n{content}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -718,12 +738,7 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
-        self.static_body_preamble: Sequence[str] = (
-            "struct Any {",
-            "    template<class T> Any(T&&) noexcept {}",
-            "    Any(std::initializer_list<Any>) noexcept {}",
-            "};",
-        )
+        self.static_body_preamble: Sequence[str] = ()
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
