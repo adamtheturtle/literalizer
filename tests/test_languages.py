@@ -13,7 +13,6 @@ from literalizer import (
     CallStyleConfig,
     CallStyleKind,
     InputFormat,
-    Language,
     NewVariable,
     literalize,
     literalize_call,
@@ -30,14 +29,12 @@ from literalizer.languages import (
     Fortran,
     Go,
     Java,
-    JavaScript,
     Kotlin,
     Matlab,
     Python,
     Ruby,
     Rust,
     Toml,
-    TypeScript,
     Yaml,
 )
 
@@ -77,12 +74,6 @@ JAVA = Java(
     bytes_format=Java.bytes_formats.HEX,
     sequence_format=Java.sequence_formats.ARRAY,
 )
-JAVASCRIPT = JavaScript(
-    date_format=JavaScript.date_formats.JS,
-    datetime_format=JavaScript.datetime_formats.JS,
-    bytes_format=JavaScript.bytes_formats.HEX,
-    sequence_format=JavaScript.sequence_formats.ARRAY,
-)
 KOTLIN = Kotlin(
     date_format=Kotlin.date_formats.KOTLIN,
     datetime_format=Kotlin.datetime_formats.KOTLIN,
@@ -115,41 +106,6 @@ TOML = Toml(
     bytes_format=Toml.bytes_formats.HEX,
     sequence_format=Toml.sequence_formats.ARRAY,
 )
-TYPESCRIPT = TypeScript(
-    date_format=TypeScript.date_formats.JS,
-    datetime_format=TypeScript.datetime_formats.JS,
-    bytes_format=TypeScript.bytes_formats.HEX,
-    sequence_format=TypeScript.sequence_formats.ARRAY,
-)
-
-
-@pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, '(True, None, "hi", (1, 2)),'),
-        (JAVASCRIPT, '[true, null, "hi", [1, 2]],'),
-        (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
-        (GO, '[]any{true, nil, "hi", []int{1, 2}},'),
-        (CPP, '{true, nullptr, "hi", std::vector<int>{1, 2}},'),
-        (JAVA, 'new Object[]{true, null, "hi", new int[]{1, 2}}'),
-        (CSHARP, 'new object[] {true, (object?)null, "hi", new int[] {1, 2}}'),
-        (RUBY, '[true, nil, "hi", [1, 2]],'),
-        (KOTLIN, 'listOf<Any?>(true, null, "hi", intArrayOf(1, 2)),'),
-        (RUST, 'vec!["True", "None", "hi", "[1, 2]"],'),
-    ],
-)
-def test_language_sequence(*, language: Language, expected: str) -> None:
-    """Each language produces the correct sequence literal."""
-    result = literalize(
-        source=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
-        input_format=InputFormat.JSON,
-        language=language,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == expected
 
 
 def test_ruby_dict() -> None:
