@@ -231,7 +231,7 @@ def _format_variable_declaration(
     _data: Value,
 ) -> str:
     """Format a C++ variable declaration."""
-    return f"Any {name} = {value};"
+    return f"auto {name} = {value};"
 
 
 def _cpp_call_stub(

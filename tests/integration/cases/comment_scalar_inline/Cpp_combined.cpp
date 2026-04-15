@@ -5,7 +5,7 @@ struct Any {
 };
 void check_() {
 // note
-Any my_data = 42;
+auto my_data = 42;
 // note
 my_data = 42;
 }

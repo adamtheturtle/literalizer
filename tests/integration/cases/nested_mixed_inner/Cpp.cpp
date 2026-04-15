@@ -6,7 +6,7 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-Any my_data = {
+auto my_data = {
     {1, "a"},
     {2, "b"},
 };

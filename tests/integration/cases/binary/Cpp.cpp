@@ -6,7 +6,7 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-Any my_data = std::vector<std::string>{
+auto my_data = std::vector<std::string>{
     "48656c6c6f",
 };
 }

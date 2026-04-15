@@ -5,7 +5,7 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-Any my_data = std::vector<int>{
+auto my_data = std::vector<int>{
     0xf4240,
     -0x4d2,
     0xff,

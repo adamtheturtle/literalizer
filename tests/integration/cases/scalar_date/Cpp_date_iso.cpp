@@ -5,5 +5,5 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-Any my_data = "2024-01-15";
+auto my_data = "2024-01-15";
 }

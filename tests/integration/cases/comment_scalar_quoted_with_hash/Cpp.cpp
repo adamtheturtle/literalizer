@@ -6,5 +6,5 @@ struct Any {
 };
 void check_() {
 // note
-Any my_data = "hello # world";
+auto my_data = "hello # world";
 }

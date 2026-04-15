@@ -6,7 +6,7 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-Any my_data = std::map<std::string, std::string>{
+auto my_data = std::map<std::string, std::string>{
     {"my-key", "value1"},
     {"another-key", "value2"},
     {"normal_key", "value3"},

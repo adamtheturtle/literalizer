@@ -7,7 +7,7 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-Any my_data = std::array<std::string, 4>{
+auto my_data = std::array<std::string, 4>{
     "1",
     "hello",
     "True",
