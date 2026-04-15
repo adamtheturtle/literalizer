@@ -446,15 +446,19 @@ def _values_mixed_types(*, values: Sequence[Value]) -> bool:
 @beartype
 def _coerce_value_to_str(*, value: Value) -> str:
     """Convert any value (scalar or collection) to a string."""
-    if isinstance(value, str):
-        return value
-    bucket = scalar_type_bucket(value=value)
-    if bucket is not None:
-        return coerce_scalar_to_str(value=value)
-    if isinstance(value, set):
-        sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
-        return json.dumps(obj=sorted_items, default=str)
-    return json.dumps(obj=value, default=str, sort_keys=False)
+    match value:
+        case str():
+            return value
+        case None | bool() | int() | float() | bytes() | datetime.date():
+            return coerce_scalar_to_str(value=value)
+        case set():
+            sorted_items = sorted(
+                value,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            return json.dumps(obj=sorted_items, default=str)
+        case _:
+            return json.dumps(obj=value, default=str, sort_keys=False)
 
 
 @beartype
