@@ -212,6 +212,8 @@ def _rust_type_annotation(
                 datetime_type=datetime_type,
                 default_type=default_sequence_element_type,
             )
+            if sequence_format_name == "VEC":
+                return f"Vec<{element_type}>"
             return f"[{element_type}; {len(data)}]"
         case _:
             return _rust_scalar_type(

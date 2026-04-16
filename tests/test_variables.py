@@ -677,6 +677,27 @@ def test_rust_const_nested_list() -> None:
     assert "const my_var: [&str; 2]" in result.code
 
 
+def test_rust_const_vec_type() -> None:
+    """Rust CONST with VEC format produces Vec<T> type."""
+    rust_vec_const = Rust(
+        date_format=Rust.date_formats.ISO,
+        datetime_format=Rust.datetime_formats.ISO,
+        bytes_format=Rust.bytes_formats.HEX,
+        sequence_format=Rust.sequence_formats.VEC,
+        declaration_style=Rust.declaration_styles.CONST,
+    )
+    result = literalize(
+        source="[1, 2, 3]",
+        input_format=InputFormat.JSON,
+        language=rust_vec_const,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert "const my_var: Vec<i32>" in result.code
+
+
 def test_rust_static_scalar() -> None:
     """Rust STATIC declarations include type annotations."""
     rust_static = Rust(
