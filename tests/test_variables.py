@@ -677,6 +677,16 @@ def test_rust_const_nested_list() -> None:
     assert "const my_var: [&str; 2]" in result.code
 
 
+def test_rust_tuple_format_type_annotation_raises() -> None:
+    """TUPLE.format_type_annotation raises TypeError."""
+    tuple_fmt = next(f for f in Rust().sequence_formats if f.name == "TUPLE")
+    with pytest.raises(expected_exception=TypeError):
+        tuple_fmt.format_type_annotation(
+            element_type="i32",
+            length=2,
+        )
+
+
 def test_rust_const_vec_type() -> None:
     """Rust CONST with VEC format produces Vec<T> type."""
     rust_vec_const = Rust(

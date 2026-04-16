@@ -156,7 +156,8 @@ def _rust_type_annotation(
     *,
     date_type: str,
     datetime_type: str,
-    sequence_format_name: str,
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
     set_type_name: str,
     dict_type_name: str,
     default_sequence_element_type: str,
@@ -196,7 +197,7 @@ def _rust_type_annotation(
             )
             return f"{set_type_name}<{element_type}>"
         case list():
-            if sequence_format_name == "TUPLE":
+            if sequence_supports_heterogeneity:
                 element_types = [
                     _rust_element_type_for_scalar(
                         data=element,
@@ -212,9 +213,7 @@ def _rust_type_annotation(
                 datetime_type=datetime_type,
                 default_type=default_sequence_element_type,
             )
-            if sequence_format_name == "VEC":
-                return f"Vec<{element_type}>"
-            return f"[{element_type}; {len(data)}]"
+            return sequence_format_type_annotation(element_type, len(data))
         case _:
             return _rust_scalar_type(
                 data=data,
@@ -232,7 +231,8 @@ def _format_typed_declaration(
     keyword: str,
     date_type: str,
     datetime_type: str,
-    sequence_format_name: str,
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
     set_type_name: str,
     dict_type_name: str,
     default_sequence_element_type: str,
@@ -247,7 +247,8 @@ def _format_typed_declaration(
         data=data,
         date_type=date_type,
         datetime_type=datetime_type,
-        sequence_format_name=sequence_format_name,
+        sequence_format_type_annotation=(sequence_format_type_annotation),
+        sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         set_type_name=set_type_name,
         dict_type_name=dict_type_name,
         default_sequence_element_type=default_sequence_element_type,
@@ -483,6 +484,21 @@ class Rust(metaclass=LanguageCls):
             """Create a sequence format config for the given type."""
             return self.value(default_type)
 
+        def format_type_annotation(
+            self,
+            element_type: str,
+            length: int,
+        ) -> str:
+            """Return the Rust type annotation for this format."""
+            match self.name:
+                case "TUPLE":
+                    msg = "Use per-element types for tuples"
+                    raise TypeError(msg)
+                case "VEC":
+                    return f"Vec<{element_type}>"
+                case _:
+                    return f"[{element_type}; {length}]"
+
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
@@ -555,7 +571,8 @@ class Rust(metaclass=LanguageCls):
             *,
             date_type: str,
             datetime_type: str,
-            sequence_format_name: str,
+            sequence_format_type_annotation: Callable[[str, int], str],
+            sequence_supports_heterogeneity: bool,
             set_type_name: str,
             dict_type_name: str,
             default_sequence_element_type: str,
@@ -577,7 +594,12 @@ class Rust(metaclass=LanguageCls):
                 keyword=self.name.lower(),
                 date_type=date_type,
                 datetime_type=datetime_type,
-                sequence_format_name=sequence_format_name,
+                sequence_format_type_annotation=(
+                    sequence_format_type_annotation
+                ),
+                sequence_supports_heterogeneity=(
+                    sequence_supports_heterogeneity
+                ),
                 set_type_name=set_type_name,
                 dict_type_name=dict_type_name,
                 default_sequence_element_type=(default_sequence_element_type),
@@ -905,7 +927,12 @@ class Rust(metaclass=LanguageCls):
                     if datetime_format.value.type_produced is str
                     else "NaiveDateTime"
                 ),
-                sequence_format_name=sequence_format.name,
+                sequence_format_type_annotation=(
+                    sequence_format.format_type_annotation
+                ),
+                sequence_supports_heterogeneity=(
+                    sequence_format.supports_heterogeneity
+                ),
                 set_type_name=_set_type_names[set_format.name],
                 dict_type_name=_dict_type_names[dict_format.name],
                 default_sequence_element_type=(default_sequence_element_type),
