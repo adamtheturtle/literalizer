@@ -332,7 +332,7 @@ def _items_need_variant(
 ) -> bool:
     """Check whether a collection's items need ``std::variant``."""
     if not items:
-        return True
+        return False
     element_type = infer_element_type(items=items)
     if element_type is None:
         return True
