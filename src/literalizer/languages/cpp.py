@@ -194,6 +194,14 @@ def _make_array_config(
 
 
 @dataclasses.dataclass(frozen=True)
+class _DictFormatOption:
+    """A dict format bundled with its typed opener template."""
+
+    config: DictFormatConfig
+    opener_template: str
+
+
+@dataclasses.dataclass(frozen=True)
 class _NumericLiteralSuffixConfig:
     """Configuration for a numeric literal suffix option."""
 
@@ -823,25 +831,31 @@ class Cpp(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = DictFormatConfig(
-            dict_open=lambda _items: "{",
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
+        MAP = _DictFormatOption(
+            config=DictFormatConfig(
+                dict_open=lambda _items: "{",
+                close="}",
+                format_entry=braced_dict_entry(
+                    format_value=passthrough_sequence_entry
+                ),
+                empty_dict=None,
+                preamble_lines=("#include <map>",),
+                narrowed_open=None,
             ),
-            empty_dict=None,
-            preamble_lines=("#include <map>",),
-            narrowed_open=None,
+            opener_template="std::map<std::string, {type_name}>{{",
         )
-        UNORDERED_MAP = DictFormatConfig(
-            dict_open=lambda _items: "{",
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
+        UNORDERED_MAP = _DictFormatOption(
+            config=DictFormatConfig(
+                dict_open=lambda _items: "{",
+                close="}",
+                format_entry=braced_dict_entry(
+                    format_value=passthrough_sequence_entry
+                ),
+                empty_dict=None,
+                preamble_lines=("#include <unordered_map>",),
+                narrowed_open=None,
             ),
-            empty_dict=None,
-            preamble_lines=("#include <unordered_map>",),
-            narrowed_open=None,
+            opener_template=("std::unordered_map<std::string, {type_name}>{{"),
         )
 
         def get_config(
@@ -852,19 +866,14 @@ class Cpp(metaclass=LanguageCls):
             datetime_type: str,
         ) -> DictFormatConfig:
             """Return the dict format config with variant opener."""
-            opener_template = (
-                "std::unordered_map<std::string, {type_name}>{{"
-                if self.name == "UNORDERED_MAP"
-                else "std::map<std::string, {type_name}>{{"
-            )
-            base_config: DictFormatConfig = self.value
+            option: _DictFormatOption = self.value
             return dataclasses.replace(
-                base_config,
+                option.config,
                 dict_open=_build_variant_dict_open(
                     int_type=int_type,
                     date_type=date_type,
                     datetime_type=datetime_type,
-                    opener_template=opener_template,
+                    opener_template=option.opener_template,
                 ),
             )
 
