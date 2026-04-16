@@ -235,41 +235,43 @@ def _compute_cpp_type(
     element_to_type: Callable[[type | ListType | DictType], str | None],
 ) -> str:
     """Return the C++ type string for a single value."""
-    if isinstance(item, ordereddict):
-        omap_values = item.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        values: list[Value] = list(omap_values)  # pyright: ignore[reportUnknownArgumentType]
-        value_type = _compute_element_type_for_items(
-            items=values,
-            element_to_type=element_to_type,
-        )
-        return f"std::vector<std::pair<std::string, {value_type}>>"
-    if isinstance(item, dict):
-        values = list(item.values())
-        value_type = _compute_element_type_for_items(
-            items=values,
-            element_to_type=element_to_type,
-        )
-        return f"std::map<std::string, {value_type}>"
-    if isinstance(item, list):
-        inner_type = _compute_element_type_for_items(
-            items=item,
-            element_to_type=element_to_type,
-        )
-        return f"std::vector<{inner_type}>"
-    if isinstance(item, set):
-        sorted_items: list[Value] = sorted(
-            item,
-            key=lambda v: (type(v).__name__, repr(v)),
-        )
-        inner_type = _compute_element_type_for_items(
-            items=sorted_items,
-            element_to_type=element_to_type,
-        )
-        return f"std::initializer_list<{inner_type}>"
-    cpp_type = element_to_type(type(item))
-    if cpp_type is not None:
-        return cpp_type
-    return "std::monostate"
+    match item:
+        case ordereddict():
+            omap_values = item.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            values: list[Value] = list(omap_values)  # pyright: ignore[reportUnknownArgumentType]
+            value_type = _compute_element_type_for_items(
+                items=values,
+                element_to_type=element_to_type,
+            )
+            return f"std::vector<std::pair<std::string, {value_type}>>"
+        case dict():
+            values = list(item.values())
+            value_type = _compute_element_type_for_items(
+                items=values,
+                element_to_type=element_to_type,
+            )
+            return f"std::map<std::string, {value_type}>"
+        case list():
+            inner_type = _compute_element_type_for_items(
+                items=item,
+                element_to_type=element_to_type,
+            )
+            return f"std::vector<{inner_type}>"
+        case set():
+            sorted_items: list[Value] = sorted(
+                item,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            inner_type = _compute_element_type_for_items(
+                items=sorted_items,
+                element_to_type=element_to_type,
+            )
+            return f"std::initializer_list<{inner_type}>"
+        case _:
+            cpp_type = element_to_type(type(item))
+            if cpp_type is not None:
+                return cpp_type
+            return "std::monostate"
 
 
 @beartype
@@ -287,22 +289,24 @@ def _compute_element_type_for_items(
         return "std::monostate"
     element_type = infer_element_type(items=items)
     if element_type is not None:
-        if (
-            isinstance(element_type, DictType)
-            and element_type.value_type is None
-        ):
-            all_values: list[Value] = []
-            for item in items:
-                if isinstance(item, dict):
-                    all_values.extend(item.values())
-            value_type = _compute_element_type_for_items(
-                items=all_values,
-                element_to_type=element_to_type,
-            )
-            return f"std::map<std::string, {value_type}>"
-        cpp_type = element_to_type(element_type)
-        if cpp_type is not None:
-            return cpp_type
+        match element_type:
+            case DictType(value_type=None):
+                all_values: list[Value] = []
+                for item in items:
+                    match item:
+                        case dict():
+                            all_values.extend(item.values())
+                        case _:
+                            pass
+                value_type = _compute_element_type_for_items(
+                    items=all_values,
+                    element_to_type=element_to_type,
+                )
+                return f"std::map<std::string, {value_type}>"
+            case _:
+                cpp_type = element_to_type(element_type)
+                if cpp_type is not None:
+                    return cpp_type
     cpp_types: list[str] = []
     seen: set[str] = set()
     for item in items:
@@ -326,13 +330,14 @@ def _items_need_variant(
     element_type = infer_element_type(items=items)
     if element_type is None:
         return True
-    if isinstance(element_type, DictType):
-        if element_type.value_type is None:
+    match element_type:
+        case DictType(value_type=vt):
+            if vt is None or element_to_type(vt) is None:
+                return True
+        case other if element_to_type(other) is None:
             return True
-        if element_to_type(element_type.value_type) is None:
-            return True
-    elif element_to_type(element_type) is None:
-        return True
+        case _:
+            pass
     return any(
         _needs_variant_type(
             data=v,
