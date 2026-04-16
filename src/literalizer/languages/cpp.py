@@ -279,7 +279,6 @@ def _needs_any_type(data: Value) -> bool:
             return False
 
 
-@beartype
 def _any_struct_preamble(data: Value, /) -> tuple[str, ...]:
     """Return the ``Any`` helper struct when *data* needs it."""
     if _needs_any_type(data=data):
