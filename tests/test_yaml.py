@@ -165,6 +165,24 @@ def test_cpp_array_null_list_fallback() -> None:
     assert result.code == expected
 
 
+def test_cpp_omap_in_heterogeneous_sequence() -> None:
+    """An ordered map inside a mixed-type sequence produces a variant
+    element type including the ordered-map vector type.
+    """
+    yaml_string = "- !!omap\n  - a: 1\n- hello\n"
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
+        language=Cpp(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+        error_on_coercion=False,
+    )
+    assert "std::variant<" in result.code
+    assert "std::vector<std::pair<" in result.code
+
+
 def test_yaml_set_inline_in_sequence() -> None:
     """A !!set nested in a sequence is formatted inline using set
     delimiters.
