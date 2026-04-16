@@ -688,14 +688,8 @@ def _format_collection_lines(
     body_prefix: str,
     trailing_comma: bool,
     is_ordered_map: bool,
-    include_delimiters: bool,
-) -> list[str] | str:
-    """Format collection elements as indented lines.
-
-    Returns a list of formatted lines, or a ``str`` when the caller
-    should return that string immediately (e.g. an all-null dict that
-    collapses to the empty-collection literal).
-    """
+) -> list[str]:
+    """Format collection elements as indented lines."""
     lines: list[str] = []
     match data:
         case dict() as dict_data:
@@ -704,15 +698,6 @@ def _format_collection_lines(
                 for k, v in dict_data.items()
                 if not (spec.skip_null_dict_values and v is None)
             ]
-            if not entries and include_delimiters and dict_data:
-                empty_value: ordereddict | dict[str, Value] = (
-                    ordereddict() if is_ordered_map else {}
-                )
-                return _format_value(
-                    value=empty_value,
-                    spec=spec,
-                    dict_open_override=None,
-                )
             formatted_entries: list[str] = []
             for k, v in entries:
                 formatted_key = _format_value(
@@ -870,6 +855,25 @@ def _literalize(
         )
         return f"{line_prefix}{formatted}"
 
+    # When all dict values are null and the spec skips nulls, the dict
+    # collapses to an empty-collection literal.
+    if (
+        isinstance(data, dict)
+        and include_delimiters
+        and language.skip_null_dict_values
+        and all(v is None for v in data.values())
+    ):
+        is_ordered_map = isinstance(data, ordereddict)
+        empty_value: ordereddict | dict[str, Value] = (
+            ordereddict() if is_ordered_map else {}
+        )
+        formatted = _format_value(
+            value=empty_value,
+            spec=language,
+            dict_open_override=None,
+        )
+        return f"{line_prefix}{formatted}"
+
     body_prefix = (
         line_prefix + language.indent if include_delimiters else line_prefix
     )
@@ -883,19 +887,15 @@ def _literalize(
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = language.trailing_comma_config.multiline_trailing_comma
-    lines_or_early = _format_collection_lines(
+    lines = _format_collection_lines(
         data=data,
         spec=language,
         body_prefix=body_prefix,
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
-        include_delimiters=include_delimiters,
     )
 
-    if isinstance(lines_or_early, str):
-        return f"{line_prefix}{lines_or_early}"
-
-    body = "\n".join(lines_or_early)
+    body = "\n".join(lines)
 
     if not include_delimiters or not body:
         return body
