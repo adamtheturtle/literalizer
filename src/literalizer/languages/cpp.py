@@ -5,6 +5,7 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
+from typing import assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -306,6 +307,8 @@ def _format_variable_declaration(
             type_keyword = "const auto*"
         case ValueKind.TYPED_EXPRESSION:
             type_keyword = "auto"
+        case _ as unreachable:
+            assert_never(unreachable)
     return f"{type_keyword} {name} = {value};"
 
 
