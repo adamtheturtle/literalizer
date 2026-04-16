@@ -1204,15 +1204,20 @@ def literalize(
     # --- Preamble ---
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
-    computed = _compute_preamble(
+    coerced_data = apply_coercions(
         data=data,
+        spec=language,
+        error_on_coercion=False,
+    )
+    computed = _compute_preamble(
+        data=coerced_data,
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(data)
+        + language.data_dependent_preamble(coerced_data)
     )
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
@@ -1401,15 +1406,20 @@ def literalize_call(
             statement_terminator=language.statement_terminator,
         )
 
-    computed = _compute_preamble(
+    coerced_data = apply_coercions(
         data=data,
+        spec=language,
+        error_on_coercion=False,
+    )
+    computed = _compute_preamble(
+        data=coerced_data,
         language=language,
         has_variable_declaration=False,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(data)
+        + language.data_dependent_preamble(coerced_data)
     )
 
     if wrap_in_file:

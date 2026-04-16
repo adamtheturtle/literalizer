@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 fn main() {
     let my_data = vec![
         "{\"a\": 1}",
