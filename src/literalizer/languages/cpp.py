@@ -663,6 +663,14 @@ class Cpp(metaclass=LanguageCls):
             type_produced=str,
         )
 
+        @property
+        def cpp_type(self) -> str:
+            """Return the C++ type name for this date format."""
+            cfg: DateFormatConfig = self.value
+            if cfg.type_produced is str:
+                return "std::string"
+            return "std::chrono::year_month_day"
+
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
             return self.value.formatter(date_value)
@@ -679,6 +687,14 @@ class Cpp(metaclass=LanguageCls):
             preamble_lines=("#include <string>",),
             type_produced=str,
         )
+
+        @property
+        def cpp_type(self) -> str:
+            """Return the C++ type name for this datetime format."""
+            cfg: DatetimeFormatConfig = self.value
+            if cfg.type_produced is str:
+                return "std::string"
+            return "std::chrono::system_clock::time_point"
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -735,6 +751,23 @@ class Cpp(metaclass=LanguageCls):
             set_opener_template="",
             coerce_mixed_to_str=False,
         )
+
+        def get_config(
+            self,
+            *,
+            int_type: str,
+            date_type: str,
+            datetime_type: str,
+        ) -> SetFormatConfig:
+            """Return the set format config with variant opener."""
+            return dataclasses.replace(
+                self.value,
+                set_open=_build_variant_set_open(
+                    int_type=int_type,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                ),
+            )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -988,18 +1021,8 @@ class Cpp(metaclass=LanguageCls):
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"
-        date_cfg: DateFormatConfig = date_format.value
-        datetime_cfg: DatetimeFormatConfig = datetime_format.value
-        cpp_date_type: str | None = (
-            "std::string"
-            if date_cfg.type_produced is str
-            else "std::chrono::year_month_day"
-        )
-        cpp_datetime_type: str | None = (
-            "std::string"
-            if datetime_cfg.type_produced is str
-            else "std::chrono::system_clock::time_point"
-        )
+        cpp_date_type = date_format.cpp_type
+        cpp_datetime_type = datetime_format.cpp_type
         int_type = numeric_literal_suffix.int_type
         self.sequence_format_config: SequenceFormatConfig = (
             sequence_format.get_config(
@@ -1009,13 +1032,10 @@ class Cpp(metaclass=LanguageCls):
             )
         )
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            set_open=_build_variant_set_open(
-                int_type=int_type,
-                date_type=cpp_date_type,
-                datetime_type=cpp_datetime_type,
-            ),
+        self.set_format_config: SetFormatConfig = set_format.get_config(
+            int_type=int_type,
+            date_type=cpp_date_type,
+            datetime_type=cpp_datetime_type,
         )
         self.sequence_open: Callable[[list[Value]], str] = (
             self.sequence_format_config.sequence_open
