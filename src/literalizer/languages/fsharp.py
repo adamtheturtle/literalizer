@@ -60,7 +60,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 
 def _build_fsharp_entry_formatter(
@@ -110,11 +110,11 @@ def _build_fsharp_declaration(
     sequence_declared_type: str,
     scalar_declared_type: str,
     entry_formatter: Callable[[Value, str], str],
-) -> Callable[[str, str, Value, ValueKind], str]:
+) -> Callable[[str, str, Value], str]:
     """Build an F# variable declaration/assignment formatter."""
 
     @beartype
-    def _format(name: str, value: str, data: Value, _kind: ValueKind) -> str:
+    def _format(name: str, value: str, data: Value) -> str:
         """Format a variable declaration or assignment."""
         decl_type = (
             sequence_declared_type
@@ -590,21 +590,23 @@ class FSharp(metaclass=LanguageCls):
             if declaration_style.value.supports_redefinition
             else "let"
         )
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = _build_fsharp_declaration(
-            template=(f"{_keyword} {{name}}: {{declared_type}} = {{wrapped}}"),
-            sequence_declared_type=_sequence_declared_type,
-            scalar_declared_type=type_name,
-            entry_formatter=_entry_formatter,
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            _build_fsharp_declaration(
+                template=(
+                    f"{_keyword} {{name}}: {{declared_type}} = {{wrapped}}"
+                ),
+                sequence_declared_type=_sequence_declared_type,
+                scalar_declared_type=type_name,
+                entry_formatter=_entry_formatter,
+            )
         )
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = _build_fsharp_declaration(
-            template="let {name}: {declared_type} = {wrapped}",
-            sequence_declared_type=_sequence_declared_type,
-            scalar_declared_type=type_name,
-            entry_formatter=_entry_formatter,
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            _build_fsharp_declaration(
+                template="let {name}: {declared_type} = {wrapped}",
+                sequence_declared_type=_sequence_declared_type,
+                scalar_declared_type=type_name,
+                entry_formatter=_entry_formatter,
+            )
         )
         self.element_separator = "; "
         self.format_sequence_entry: Callable[[Value, str], str] = (

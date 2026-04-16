@@ -68,7 +68,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 
 def _ts_call_stub(
@@ -164,7 +164,6 @@ def _format_ts_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _kind: ValueKind,
     *,
     keyword: str,
     date_hint: str,
@@ -332,17 +331,15 @@ class TypeScript(metaclass=LanguageCls):
 
         def wrap_formatter(
             self,
-            formatter: Callable[[str, str, Value, ValueKind], str],
-        ) -> Callable[[str, str, Value, ValueKind], str]:
+            formatter: Callable[[str, str, Value], str],
+        ) -> Callable[[str, str, Value], str]:
             """Wrap a formatter to match this line ending style."""
             if self.value != "none":
                 return formatter
 
-            def without_semicolon(
-                name: str, value: str, data: Value, kind: ValueKind
-            ) -> str:
+            def without_semicolon(name: str, value: str, data: Value) -> str:
                 """Format without a trailing semicolon."""
-                return formatter(name, value, data, kind).removesuffix(";")
+                return formatter(name, value, data).removesuffix(";")
 
             return without_semicolon
 
@@ -497,13 +494,13 @@ class TypeScript(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value, ValueKind], str],
+            auto_formatter: Callable[[str, str, Value], str],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
             dict_hint_template: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value, ValueKind], str]:
+        ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -678,13 +675,13 @@ class TypeScript(metaclass=LanguageCls):
             ),
             sequence_is_tuple=(sequence_format.name == "TUPLE"),
         )
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = line_ending.wrap_formatter(formatter=_base_decl)
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = line_ending.wrap_formatter(
-            formatter=variable_formatter(template="{name} = {value};"),
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            line_ending.wrap_formatter(formatter=_base_decl)
+        )
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            line_ending.wrap_formatter(
+                formatter=variable_formatter(template="{name} = {value};"),
+            )
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

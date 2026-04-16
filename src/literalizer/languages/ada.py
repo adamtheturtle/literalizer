@@ -49,7 +49,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -72,9 +72,7 @@ def _format_ada_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(
-    name: str, value: str, data: Value, _kind: ValueKind
-) -> str:
+def _format_variable_declaration(name: str, value: str, data: Value) -> str:
     """Format an Ada object declaration.
 
     Example: ``"x"`` and ``"AList'(AInt (1))"`` →
@@ -85,9 +83,7 @@ def _format_variable_declaration(
 
 
 @beartype
-def _format_variable_assignment(
-    name: str, value: str, data: Value, _kind: ValueKind
-) -> str:
+def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format an Ada assignment statement to an existing variable.
 
     Example: ``"x"`` and ``"AList'(AInt (1))"`` →
@@ -439,12 +435,12 @@ class Ada(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = declaration_style.value.formatter
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = _format_variable_assignment
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            declaration_style.value.formatter
+        )
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            _format_variable_assignment
+        )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble

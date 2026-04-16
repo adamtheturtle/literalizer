@@ -62,7 +62,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -563,8 +563,8 @@ def _build_sequence_setup(
 class _DeclarationFormatters:
     """Variable declaration and assignment formatters."""
 
-    format_variable_declaration: Callable[[str, str, Value, ValueKind], str]
-    format_variable_assignment: Callable[[str, str, Value, ValueKind], str]
+    format_variable_declaration: Callable[[str, str, Value], str]
+    format_variable_assignment: Callable[[str, str, Value], str]
 
 
 @beartype
@@ -575,7 +575,7 @@ def _build_declaration_formatters(
     type_name: str,
 ) -> _DeclarationFormatters:
     """Build declaration/assignment formatters with type annotations."""
-    base_declaration: Callable[[str, str, Value, ValueKind], str] = (
+    base_declaration: Callable[[str, str, Value], str] = (
         declaration_style.value.formatter
     )
     raw_declared = sequence_format.value.declared_type
@@ -586,11 +586,9 @@ def _build_declaration_formatters(
     )
 
     @beartype
-    def _haskell_declaration(
-        name: str, value: str, data: Value, _kind: ValueKind
-    ) -> str:
+    def _haskell_declaration(name: str, value: str, data: Value) -> str:
         """Format a variable declaration with type annotation."""
-        base = base_declaration(name, value, data, _kind)
+        base = base_declaration(name, value, data)
         if isinstance(data, list):
             if sequence_declared_type is None:
                 return base
@@ -1216,12 +1214,12 @@ class Haskell(metaclass=LanguageCls):
             sequence_format=sequence_format,
             type_name=type_name,
         )
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = decl_fmts.format_variable_declaration
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = decl_fmts.format_variable_assignment
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            decl_fmts.format_variable_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            decl_fmts.format_variable_assignment
+        )
 
         # Preamble.
         preamble = _build_preamble_setup(

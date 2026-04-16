@@ -50,7 +50,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -142,12 +142,12 @@ def _add_continuation(value: str) -> str:
 def _build_format_variable_declaration(
     *,
     format_entry: Callable[[Value, str], str],
-) -> Callable[[str, str, Value, ValueKind], str]:
+) -> Callable[[str, str, Value], str]:
     """Build a variable declaration formatter."""
 
     @beartype
     def _format_variable_declaration(
-        name: str, value: str, data: Value, _kind: ValueKind
+        name: str, value: str, data: Value
     ) -> str:
         """Format a variable declaration and initialisation."""
         fval = format_entry(data, value)
@@ -161,13 +161,11 @@ def _build_format_variable_declaration(
 def _build_format_variable_assignment(
     *,
     format_entry: Callable[[Value, str], str],
-) -> Callable[[str, str, Value, ValueKind], str]:
+) -> Callable[[str, str, Value], str]:
     """Build a variable assignment formatter."""
 
     @beartype
-    def _format_variable_assignment(
-        name: str, value: str, data: Value, _kind: ValueKind
-    ) -> str:
+    def _format_variable_assignment(name: str, value: str, data: Value) -> str:
         """Format an assignment to an existing variable."""
         fval = format_entry(data, value)
         continued = _add_continuation(value=fval)
@@ -582,12 +580,12 @@ class Fortran(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = _build_format_variable_declaration(format_entry=format_entry)
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = _build_format_variable_assignment(format_entry=format_entry)
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            _build_format_variable_declaration(format_entry=format_entry)
+        )
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            _build_format_variable_assignment(format_entry=format_entry)
+        )
         self.static_preamble: Sequence[str] = ("module fval_m",)
         self.static_body_preamble: Sequence[str] = (
             "  implicit none",

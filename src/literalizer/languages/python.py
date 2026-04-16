@@ -68,7 +68,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 
 @beartype
@@ -129,7 +129,6 @@ def _format_variable_declaration(
     name: str,
     value: str,
     data: Value,
-    _kind: ValueKind,
     *,
     bytes_hint: str,
     date_hint: str,
@@ -151,7 +150,6 @@ def _format_variable_declaration(
             name=name,
             value=value,
             data=data,
-            _kind=_kind,
             bytes_hint=bytes_hint,
             date_hint=date_hint,
             datetime_hint=datetime_hint,
@@ -170,7 +168,6 @@ def _format_inline_type_hint_declaration(
     name: str,
     value: str,
     data: Value,
-    _kind: ValueKind,
     *,
     bytes_hint: str,
     date_hint: str,
@@ -660,7 +657,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             default_dict_key_type: str,
-        ) -> Callable[[str, str, Value, ValueKind], str]:
+        ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter for this hint
             style.
             """
@@ -978,7 +975,7 @@ class Python(metaclass=LanguageCls):
         datetime_hint = datetime_format.type_hint
         sequence_hint = sequence_format.type_hint
         set_hint = set_format.type_hint
-        decl_fmt: Callable[[str, str, Value, ValueKind], str] = (
+        decl_fmt: Callable[[str, str, Value], str] = (
             variable_type_hints.formatter(
                 bytes_hint=bytes_hint,
                 date_hint=date_hint,
@@ -991,12 +988,12 @@ class Python(metaclass=LanguageCls):
                 default_dict_key_type=default_dict_key_type,
             )
         )
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = decl_fmt
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = variable_formatter(template="{name} = {value}")
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            decl_fmt
+        )
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            variable_formatter(template="{name} = {value}")
+        )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble

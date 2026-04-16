@@ -68,7 +68,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
 
@@ -295,7 +295,6 @@ def _format_java_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _kind: ValueKind,
     *,
     int_type: str,
     date_hint: str,
@@ -658,14 +657,14 @@ class Java(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value, ValueKind], str],
+            auto_formatter: Callable[[str, str, Value], str],
             int_type: str,
             date_hint: str,
             datetime_hint: str,
             seq_is_array: bool,
             dict_outer: str,
             set_outer: str,
-        ) -> Callable[[str, str, Value, ValueKind], str]:
+        ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -872,26 +871,28 @@ class Java(metaclass=LanguageCls):
             _java_dt_hint = "ZonedDateTime"
         else:
             _java_dt_hint = "Instant"
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = variable_type_hints.formatter(
-            auto_formatter=declaration_style.value.formatter,
-            int_type="long" if suffix_is_auto else "int",
-            date_hint=(
-                "String"
-                if date_format.value.type_produced is str
-                else "LocalDate"
-            ),
-            datetime_hint=_java_dt_hint,
-            seq_is_array=(sequence_format.name == "ARRAY"),
-            dict_outer=(
-                "HashMap" if dict_format.name == "HASH_MAP" else "Map"
-            ),
-            set_outer=("TreeSet" if set_format.name == "TREE_SET" else "Set"),
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            variable_type_hints.formatter(
+                auto_formatter=declaration_style.value.formatter,
+                int_type="long" if suffix_is_auto else "int",
+                date_hint=(
+                    "String"
+                    if date_format.value.type_produced is str
+                    else "LocalDate"
+                ),
+                datetime_hint=_java_dt_hint,
+                seq_is_array=(sequence_format.name == "ARRAY"),
+                dict_outer=(
+                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
+                ),
+                set_outer=(
+                    "TreeSet" if set_format.name == "TREE_SET" else "Set"
+                ),
+            )
         )
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = variable_formatter(template="{name} = {value};")
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            variable_formatter(template="{name} = {value};")
+        )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble

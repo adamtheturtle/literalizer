@@ -75,7 +75,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 
 @beartype
@@ -263,7 +263,6 @@ def _format_kotlin_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _kind: ValueKind,
     *,
     keyword: str,
     date_hint: str,
@@ -651,7 +650,7 @@ class Kotlin(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value, ValueKind], str],
+            auto_formatter: Callable[[str, str, Value], str],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
@@ -661,7 +660,7 @@ class Kotlin(metaclass=LanguageCls):
             dict_outer: str,
             set_outer: str,
             sequence_format_name: str,
-        ) -> Callable[[str, str, Value, ValueKind], str]:
+        ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -897,35 +896,35 @@ class Kotlin(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = variable_type_hints.formatter(
-            auto_formatter=declaration_style.value.formatter,
-            keyword=declaration_style.name.lower(),
-            date_hint=(
-                "String"
-                if date_format.value.type_produced is str
-                else "LocalDate"
-            ),
-            datetime_hint=(
-                "String"
-                if datetime_format.value.type_produced is str
-                else "LocalDateTime"
-            ),
-            default_set_element_type=default_set_element_type,
-            default_dict_key_type=default_dict_key_type,
-            default_dict_value_type=default_dict_value_type,
-            dict_outer=(
-                "HashMap" if dict_format.name == "HASH_MAP" else "Map"
-            ),
-            set_outer=(
-                "MutableSet" if set_format.name == "SORTED_SET" else "Set"
-            ),
-            sequence_format_name=sequence_format.name,
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            variable_type_hints.formatter(
+                auto_formatter=declaration_style.value.formatter,
+                keyword=declaration_style.name.lower(),
+                date_hint=(
+                    "String"
+                    if date_format.value.type_produced is str
+                    else "LocalDate"
+                ),
+                datetime_hint=(
+                    "String"
+                    if datetime_format.value.type_produced is str
+                    else "LocalDateTime"
+                ),
+                default_set_element_type=default_set_element_type,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+                dict_outer=(
+                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
+                ),
+                set_outer=(
+                    "MutableSet" if set_format.name == "SORTED_SET" else "Set"
+                ),
+                sequence_format_name=sequence_format.name,
+            )
         )
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = variable_formatter(template="{name} = {value}")
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            variable_formatter(template="{name} = {value}")
+        )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble

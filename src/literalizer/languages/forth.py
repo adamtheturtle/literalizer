@@ -38,7 +38,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -115,9 +115,7 @@ def _format_bytes_base64_forth(value: bytes) -> str:
 
 
 @beartype
-def _format_forth_declaration(
-    name: str, value: str, _data: Value, _kind: ValueKind
-) -> str:
+def _format_forth_declaration(name: str, value: str, _data: Value) -> str:
     r"""Format a Forth colon definition.
 
     Example (single line): ``: my_data 42 ;``
@@ -470,12 +468,12 @@ class Forth(metaclass=LanguageCls):
         self.supports_collection_comments = False
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = declaration_style.value.formatter
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = declaration_style.value.formatter
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            declaration_style.value.formatter
+        )
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            declaration_style.value.formatter
+        )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble

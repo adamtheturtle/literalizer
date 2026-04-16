@@ -38,7 +38,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
 )
 from literalizer._language import CallStyleKind, Language
-from literalizer._types import Scalar, Value, ValueKind
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     JSON5ParseError,
     JSONParseError,
@@ -910,20 +910,6 @@ def _literalize(
 
 
 @beartype
-def _infer_value_kind(result: str) -> ValueKind:
-    """Classify a formatted value string.
-
-    Centralises the mapping from formatted output to
-    :class:`ValueKind` so that individual language formatters receive
-    a typed enum instead of inspecting the string themselves.
-    """
-    if result.startswith("{"):
-        return ValueKind.BARE_BRACE_INIT
-    if result.startswith('"'):
-        return ValueKind.STRING_LITERAL
-    return ValueKind.TYPED_EXPRESSION
-
-
 @beartype
 def _apply_variable_wrapper(
     *,
@@ -942,8 +928,7 @@ def _apply_variable_wrapper(
         if isinstance(variable_form, NewVariable)
         else language.format_variable_assignment
     )
-    kind = _infer_value_kind(result=result)
-    return formatter(variable_form.name, result, data, kind)
+    return formatter(variable_form.name, result, data)
 
 
 @dataclasses.dataclass(frozen=True)

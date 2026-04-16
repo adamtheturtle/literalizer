@@ -54,7 +54,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -718,10 +718,9 @@ class Elm(metaclass=LanguageCls):
             name: str,
             value: str,
             data: Value,
-            _kind: ValueKind,
         ) -> str:
             """Format a variable declaration with type annotation."""
-            base = _base_declaration(name, value, data, _kind)
+            base = _base_declaration(name, value, data)
             decl_type = (
                 _sequence_declared_type
                 if isinstance(data, list)
@@ -729,12 +728,12 @@ class Elm(metaclass=LanguageCls):
             )
             return f"{name} : {decl_type}\n{base}"
 
-        self.format_variable_declaration: Callable[
-            [str, str, Value, ValueKind], str
-        ] = _elm_declaration
-        self.format_variable_assignment: Callable[
-            [str, str, Value, ValueKind], str
-        ] = variable_formatter(template="{name} = {value}")
+        self.format_variable_declaration: Callable[[str, str, Value], str] = (
+            _elm_declaration
+        )
+        self.format_variable_assignment: Callable[[str, str, Value], str] = (
+            variable_formatter(template="{name} = {value}")
+        )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble
