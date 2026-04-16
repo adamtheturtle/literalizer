@@ -461,14 +461,13 @@ class Rust(metaclass=LanguageCls):
             length: int,
         ) -> str:
             """Return the Rust type annotation for this format."""
-            match self.name:
-                case "TUPLE":
-                    msg = "Use per-element types for tuples"
-                    raise IncompatibleFormatsError(msg)
-                case "VEC":
-                    return f"Vec<{element_type}>"
-                case _:
-                    return f"[{element_type}; {length}]"
+            cls = type(self)
+            if self is cls.TUPLE:
+                msg = "Use per-element types for tuples"
+                raise IncompatibleFormatsError(msg)
+            if self is cls.VEC:
+                return f"Vec<{element_type}>"
+            return f"[{element_type}; {length}]"
 
         @property
         def supports_heterogeneity(self) -> bool:
@@ -558,7 +557,8 @@ class Rust(metaclass=LanguageCls):
             type-annotated formatter is built from the language
             configuration.
             """
-            if self.name not in {"CONST", "STATIC"}:
+            cls = type(self)
+            if self not in {cls.CONST, cls.STATIC}:
                 return self.value.formatter
             return functools.partial(
                 _format_typed_declaration,
@@ -811,9 +811,11 @@ class Rust(metaclass=LanguageCls):
         indent: str = "    ",
     ) -> None:
         """Initialize Rust language specification."""
+        _decl_cls = type(declaration_style)
+        _seq_cls = type(sequence_format)
         if (
-            declaration_style.name in {"CONST", "STATIC"}
-            and sequence_format.name == "VEC"
+            declaration_style in {_decl_cls.CONST, _decl_cls.STATIC}
+            and sequence_format is _seq_cls.VEC
         ):
             msg = (
                 f"Rust {declaration_style.name} requires a "
@@ -890,13 +892,15 @@ class Rust(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
+        _set_cls = type(set_format)
         _set_type_names = {
-            "HASH_SET": "HashSet",
-            "BTREE_SET": "BTreeSet",
+            _set_cls.HASH_SET: "HashSet",
+            _set_cls.BTREE_SET: "BTreeSet",
         }
+        _dict_cls = type(dict_format)
         _dict_type_names = {
-            "HASH_MAP": "HashMap",
-            "BTREE_MAP": "BTreeMap",
+            _dict_cls.HASH_MAP: "HashMap",
+            _dict_cls.BTREE_MAP: "BTreeMap",
         }
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.build_formatter(
@@ -916,8 +920,8 @@ class Rust(metaclass=LanguageCls):
                 sequence_supports_heterogeneity=(
                     sequence_format.supports_heterogeneity
                 ),
-                set_type_name=_set_type_names[set_format.name],
-                dict_type_name=_dict_type_names[dict_format.name],
+                set_type_name=_set_type_names[set_format],
+                dict_type_name=_dict_type_names[dict_format],
                 default_sequence_element_type=(default_sequence_element_type),
                 default_set_element_type=default_set_element_type,
                 default_dict_key_type=default_dict_key_type,
