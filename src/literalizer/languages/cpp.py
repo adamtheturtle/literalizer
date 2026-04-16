@@ -794,7 +794,9 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
         self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = _any_struct_preamble
+        self.data_dependent_preamble: Callable[[Value], tuple[str, ...]] = (
+            _any_struct_preamble
+        )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
         )
