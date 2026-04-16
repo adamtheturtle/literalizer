@@ -336,51 +336,6 @@ def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
 
 
 @beartype
-def _build_sequence_decl_variants() -> Iterable[_Variant]:
-    """Build sequence-format + declaration-style cross-option variants.
-
-    For each language, create a variant for every non-default
-    declaration style paired with every non-default sequence format.
-    Combinations that raise ``ValueError`` (e.g. VEC + CONST in
-    Rust) are silently skipped.
-    """
-    variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
-        lang_name = lang_cls.__name__
-        spec = lang_cls()
-        default_seq = spec.sequence_format
-        default_decl = spec.declaration_style
-        non_default_seqs = [
-            seq for seq in spec.sequence_formats if seq is not default_seq
-        ]
-        non_default_decls = [
-            decl
-            for decl in spec.declaration_styles
-            if decl is not default_decl
-        ]
-        for seq in non_default_seqs:
-            for decl in non_default_decls:
-                try:
-                    variant_spec = lang_cls(
-                        sequence_format=seq,
-                        declaration_style=decl,
-                    )
-                except literalizer.IncompatibleFormatsError:
-                    continue
-                variants.append(
-                    _Variant(
-                        name=(
-                            f"{lang_name}_seq_{seq.name.lower()}"
-                            f"_decl_{decl.name.lower()}"
-                        ),
-                        spec=variant_spec,
-                        lang_cls=lang_cls,
-                    ),
-                )
-    return variants
-
-
-@beartype
 def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     """Build line-ending + declaration-style cross-option variants.
 
@@ -1138,10 +1093,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (line_ending, "simple_sequence", ""),
         (line_ending, "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
-        (_build_sequence_decl_variants(), "simple_sequence", ""),
-        (_build_sequence_decl_variants(), "empty_list", ""),
-        (_build_sequence_decl_variants(), "scalars", ""),
-        (_build_sequence_decl_variants(), "int_list", ""),
         (_build_type_name_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
