@@ -174,7 +174,11 @@ def _rust_type_annotation(
             return f"{set_type_name}<{element_type}>"
         case list():
             if sequence_supports_heterogeneity:
-                return f"({', '.join(recurse(e) for e in data)})"
+                element_types = [recurse(e) for e in data]
+                inner = ", ".join(element_types)
+                if len(element_types) == 1:
+                    inner += ","
+                return f"({inner})"
             element_type = _rust_homogeneous_element_type(
                 elements=data,
                 infer=recurse,
