@@ -291,11 +291,18 @@ def _format_variable_declaration(
 ) -> str:
     """Format a C++ variable declaration.
 
-    Uses ``auto`` when the value has an explicit type constructor
-    (e.g. ``std::vector<int>{...}``).  Uses ``const auto*`` for
-    string literals to satisfy ``readability-qualified-auto``.
-    Falls back to ``Any`` for bare brace-init lists where the
-    compiler cannot deduce the type.
+    The type keyword is chosen by inspecting the formatted *value*
+    string rather than *_data* because format variants (e.g.
+    ``coerce_mixed_to_str``, date ISO vs chrono) can change the
+    opener independently of the input data, and this function does
+    not have access to the language configuration.
+
+    * ``Any`` — bare brace-init (``{...}``) where the compiler
+      cannot deduce the type.
+    * ``const auto*`` — string literal (``"..."``), required by
+      ``readability-qualified-auto``.
+    * ``auto`` — explicit type constructor
+      (e.g. ``std::vector<int>{...}``).
     """
     if value.startswith("{"):
         type_keyword = "Any"
