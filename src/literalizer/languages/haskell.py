@@ -759,9 +759,6 @@ class Haskell(metaclass=LanguageCls):
     statement_terminator = ""
     static_preamble: Sequence[str] = ()
     static_body_preamble: Sequence[str] = ()
-    data_dependent_preamble: Callable[[Value], tuple[str, ...]] = staticmethod(
-        no_data_preamble
-    )
     special_float_preamble: tuple[str, ...] = ()
 
     class DateFormats(enum.Enum):
@@ -1240,6 +1237,7 @@ class Haskell(metaclass=LanguageCls):
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
         ] = preamble.compute_body_preamble
+        self.data_dependent_preamble = no_data_preamble
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.format_call_stub: Callable[
