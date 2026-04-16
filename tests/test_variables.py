@@ -603,7 +603,7 @@ def test_rust_const_set() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: [&str; 2]" in result.code
+    assert "const my_var: HashSet<&str>" in result.code
 
 
 def test_rust_const_empty_set() -> None:
@@ -618,11 +618,11 @@ def test_rust_const_empty_set() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: [String; 0]" in result.code
+    assert "const my_var: HashSet<String>" in result.code
 
 
 def test_rust_const_dict() -> None:
-    """Rust CONST with dict uses array-of-tuples type."""
+    """Rust CONST with dict uses HashMap type."""
     result = literalize(
         source='{"a": "b"}',
         input_format=InputFormat.JSON,
@@ -632,7 +632,7 @@ def test_rust_const_dict() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: [(&str, &str); 1]" in result.code
+    assert "const my_var: HashMap<&str, &str>" in result.code
 
 
 def test_rust_const_empty_dict() -> None:
@@ -646,7 +646,7 @@ def test_rust_const_empty_dict() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: [(String, String); 0]" in result.code
+    assert "const my_var: HashMap<String, String>" in result.code
 
 
 def test_rust_const_dict_mixed_values() -> None:
@@ -660,7 +660,21 @@ def test_rust_const_dict_mixed_values() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: [(&str, &str); 2]" in result.code
+    assert "const my_var: HashMap<&str, &str>" in result.code
+
+
+def test_rust_const_nested_list() -> None:
+    """Rust CONST with nested list coerces to &str elements."""
+    result = literalize(
+        source="[[1, 2], [3, 4]]",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert "const my_var: [&str; 2]" in result.code
 
 
 def test_rust_static_scalar() -> None:

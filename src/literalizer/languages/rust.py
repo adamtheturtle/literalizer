@@ -97,6 +97,29 @@ def _rust_scalar_type(  # noqa: PLR0911
 
 
 @beartype
+def _rust_element_type_for_scalar(
+    data: Value,
+    *,
+    date_type: str,
+    datetime_type: str,
+) -> str:
+    """Return the Rust type for a single element.
+
+    Collections are treated as ``"&str"`` because the formatter
+    coerces them to strings.
+    """
+    match data:
+        case list() | dict() | set():
+            return "&str"
+        case _:
+            return _rust_scalar_type(
+                data=data,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+
+
+@beartype
 def _rust_homogeneous_element_type(
     elements: Sequence[Value],
     *,
@@ -112,13 +135,11 @@ def _rust_homogeneous_element_type(
     if not elements:
         return default_type
     types = [
-        _rust_scalar_type(
+        _rust_element_type_for_scalar(
             data=element,
             date_type=date_type,
             datetime_type=datetime_type,
         )
-        if not isinstance(element, (list, dict, set))
-        else "&str"
         for element in elements
     ]
     unique = list(dict.fromkeys(types))
@@ -134,53 +155,23 @@ def _rust_type_annotation(
     date_type: str,
     datetime_type: str,
     sequence_format_name: str,
+    set_type_name: str,
+    dict_type_name: str,
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
     default_dict_value_type: str,
 ) -> str:
     """Derive a Rust type annotation string from a ``Value``."""
-    _scalar_kwargs = {
-        "date_type": date_type,
-        "datetime_type": datetime_type,
-    }
-    if isinstance(data, (list, dict, set)):
-        return _rust_collection_type(
-            data=data,
-            sequence_format_name=sequence_format_name,
-            default_sequence_element_type=default_sequence_element_type,
-            default_set_element_type=default_set_element_type,
-            default_dict_key_type=default_dict_key_type,
-            default_dict_value_type=default_dict_value_type,
-            **_scalar_kwargs,
-        )
-    return _rust_scalar_type(data=data, **_scalar_kwargs)
-
-
-@beartype
-def _rust_collection_type(
-    data: list[Value] | dict[str, Value] | set[Scalar],
-    *,
-    date_type: str,
-    datetime_type: str,
-    sequence_format_name: str,
-    default_sequence_element_type: str,
-    default_set_element_type: str,
-    default_dict_key_type: str,
-    default_dict_value_type: str,
-) -> str:
-    """Return the Rust type annotation for a collection value."""
-    _scalar_kwargs = {
-        "date_type": date_type,
-        "datetime_type": datetime_type,
-    }
     match data:
         case dict():
             if data:
                 value_types = [
-                    _rust_scalar_type(data=value, **_scalar_kwargs)
-                    if not isinstance(value, (list, dict, set))
-                    else "&str"
+                    _rust_element_type_for_scalar(
+                        data=value,
+                        date_type=date_type,
+                        datetime_type=datetime_type,
+                    )
                     for value in data.values()
                 ]
                 unique = list(dict.fromkeys(value_types))
@@ -189,31 +180,39 @@ def _rust_collection_type(
             else:
                 value_type = default_dict_value_type
                 key_type = default_dict_key_type
-            return f"[({key_type}, {value_type}); {len(data)}]"
+            return f"{dict_type_name}<{key_type}, {value_type}>"
         case set():
             element_type = _rust_homogeneous_element_type(
                 elements=list(data),
+                date_type=date_type,
+                datetime_type=datetime_type,
                 default_type=default_set_element_type,
-                **_scalar_kwargs,
             )
-            return f"[{element_type}; {len(data)}]"
+            return f"{set_type_name}<{element_type}>"
         case list():
             if sequence_format_name == "TUPLE":
                 element_types = [
-                    _rust_scalar_type(data=element, **_scalar_kwargs)
-                    if not isinstance(element, (list, dict, set))
-                    else "&str"
+                    _rust_element_type_for_scalar(
+                        data=element,
+                        date_type=date_type,
+                        datetime_type=datetime_type,
+                    )
                     for element in data
                 ]
                 return f"({', '.join(element_types)})"
             element_type = _rust_homogeneous_element_type(
                 elements=data,
+                date_type=date_type,
+                datetime_type=datetime_type,
                 default_type=default_sequence_element_type,
-                **_scalar_kwargs,
             )
             return f"[{element_type}; {len(data)}]"
-        case _ as unreachable:
-            assert_never(unreachable)
+        case _:
+            return _rust_scalar_type(
+                data=data,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
 
 
 @beartype
@@ -226,6 +225,8 @@ def _format_typed_declaration(
     date_type: str,
     datetime_type: str,
     sequence_format_name: str,
+    set_type_name: str,
+    dict_type_name: str,
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
@@ -239,6 +240,8 @@ def _format_typed_declaration(
         date_type=date_type,
         datetime_type=datetime_type,
         sequence_format_name=sequence_format_name,
+        set_type_name=set_type_name,
+        dict_type_name=dict_type_name,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
         default_dict_key_type=default_dict_key_type,
@@ -838,6 +841,14 @@ class Rust(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
+        _set_type_names = {
+            "HASH_SET": "HashSet",
+            "BTREE_SET": "BTreeSet",
+        }
+        _dict_type_names = {
+            "HASH_MAP": "HashMap",
+            "BTREE_MAP": "BTreeMap",
+        }
         if declaration_style.name in {"CONST", "STATIC"}:
             _date_type = (
                 "&str"
@@ -856,6 +867,8 @@ class Rust(metaclass=LanguageCls):
                     date_type=_date_type,
                     datetime_type=_datetime_type,
                     sequence_format_name=sequence_format.name,
+                    set_type_name=_set_type_names[set_format.name],
+                    dict_type_name=_dict_type_names[dict_format.name],
                     default_sequence_element_type=(
                         default_sequence_element_type
                     ),
