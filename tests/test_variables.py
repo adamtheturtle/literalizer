@@ -9,12 +9,12 @@ import pytest
 
 from literalizer import (
     ExistingVariable,
-    IncompatibleFormatsError,
     InputFormat,
     Language,
     NewVariable,
     literalize,
 )
+from literalizer.exceptions import IncompatibleFormatsError
 from literalizer.languages import (
     Clojure,
     Cpp,
