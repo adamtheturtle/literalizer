@@ -7,7 +7,7 @@ struct Any {
     Any(std::initializer_list<Any>) noexcept {}
 };
 void check_() {
-Any my_data = std::vector<std::map<std::string, Any>>{
+auto my_data = std::vector<std::map<std::string, Any>>{
     {{"key", "hello   world"}, {"value", 1}},
 };
 }

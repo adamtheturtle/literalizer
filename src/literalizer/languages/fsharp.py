@@ -56,6 +56,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     identity_call_target,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -613,6 +614,7 @@ class FSharp(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
+        self.data_dependent_preamble = no_data_preamble
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         p = constructor_prefix
         _header = f"type {type_name} ="

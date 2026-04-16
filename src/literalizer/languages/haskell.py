@@ -59,6 +59,7 @@ from literalizer._language import (
     date_scalar_preamble,
     identity_call_target,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
@@ -1236,6 +1237,7 @@ class Haskell(metaclass=LanguageCls):
         self.compute_body_preamble: Callable[
             [frozenset[type], Value], tuple[str, ...]
         ] = preamble.compute_body_preamble
+        self.data_dependent_preamble = no_data_preamble
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.call_style_config: CallStyleConfig | None = call_style.value
         self.format_call_stub: Callable[

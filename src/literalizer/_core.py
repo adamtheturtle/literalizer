@@ -910,6 +910,7 @@ def _literalize(
 
 
 @beartype
+@beartype
 def _apply_variable_wrapper(
     *,
     result: str,
@@ -1209,7 +1210,11 @@ def literalize(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
-    preamble = tuple(language.static_preamble) + computed.header
+    preamble = (
+        tuple(language.static_preamble)
+        + computed.header
+        + language.data_dependent_preamble(data)
+    )
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
 
@@ -1402,7 +1407,11 @@ def literalize_call(
         language=language,
         has_variable_declaration=False,
     )
-    preamble = tuple(language.static_preamble) + computed.header
+    preamble = (
+        tuple(language.static_preamble)
+        + computed.header
+        + language.data_dependent_preamble(data)
+    )
 
     if wrap_in_file:
         wrapped = language.wrap_in_file(

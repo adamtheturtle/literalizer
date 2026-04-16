@@ -1,11 +1,7 @@
 #include <initializer_list>
 #include <vector>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
 void check_() {
-Any my_data = std::vector<int>{
+auto my_data = std::vector<int>{
     0x1,
     0x2,
     0x3,

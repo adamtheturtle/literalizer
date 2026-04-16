@@ -59,6 +59,7 @@ from literalizer._language import (
     date_scalar_preamble,
     identity_call_target,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
@@ -722,6 +723,7 @@ class Swift(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
+        self.data_dependent_preamble = no_data_preamble
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
