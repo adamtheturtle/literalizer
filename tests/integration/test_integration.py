@@ -914,9 +914,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         make_spec=lambda cls, fmt: cls(variable_type_hints=fmt),
     )
 
-    # Rust CONST and STATIC require const-evaluable initialisers,
-    # so override the sequence format to ARRAY (the default VEC
-    # format produces vec![…] which is not const-evaluable).
+    # Rust CONST and STATIC need constant-expression initializers,
+    # so override the sequence format to ARRAY (the default format
+    # produces ``vec![…]`` which is not a constant expression).
     def _declaration_style_make_spec(
         cls: literalizer.LanguageCls,
         fmt: enum.Enum,
@@ -1133,9 +1133,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "simple_dict", ""),
         (type_hints_cross, "int_set", ""),
     ]
-    # Rust CONST/STATIC require const-evaluable initialisers.
+    # Rust CONST/STATIC need constant-expression initializers.
     # Dict test cases produce HashMap::from([…]) which is not
-    # const-evaluable, so skip those combinations.
+    # a constant expression, so skip those combinations.
     _const_static_suffixes = ("_const", "_static")
 
     for variants, case_dir_name, suffix in variant_sources:
