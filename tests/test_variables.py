@@ -477,11 +477,18 @@ def test_rust_const_tuple() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: (i32, i32)" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: (i32, i32) = (
+            1,
+            2,
+        );"""
+    )
+    assert result.code == expected
 
 
 def test_rust_const_set() -> None:
-    """Rust CONST with set uses [T; N] type."""
+    """Rust CONST with set produces ``HashSet`` type annotation."""
     yaml_input = "!!set\n? a\n? b\n"
     result = literalize(
         source=yaml_input,
@@ -492,7 +499,14 @@ def test_rust_const_set() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: HashSet<&str>" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: HashSet<&str> = HashSet::from([
+            "a",
+            "b",
+        ]);"""
+    )
+    assert result.code == expected
 
 
 def test_rust_const_empty_set() -> None:
@@ -507,11 +521,13 @@ def test_rust_const_empty_set() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: HashSet<String>" in result.code
+    assert result.code == (
+        "const my_var: HashSet<String> = HashSet::<String>::new();"
+    )
 
 
 def test_rust_const_dict() -> None:
-    """Rust CONST with dict uses HashMap type."""
+    """Rust CONST with dict produces ``HashMap`` type annotation."""
     result = literalize(
         source='{"a": "b"}',
         input_format=InputFormat.JSON,
@@ -521,7 +537,13 @@ def test_rust_const_dict() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: HashMap<&str, &str>" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: HashMap<&str, &str> = HashMap::from([
+            ("a", "b"),
+        ]);"""
+    )
+    assert result.code == expected
 
 
 def test_rust_const_empty_dict() -> None:
@@ -535,11 +557,14 @@ def test_rust_const_empty_dict() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: HashMap<String, String>" in result.code
+    assert result.code == (
+        "const my_var: HashMap<String, String>"
+        " = HashMap::<String, String>::from([]);"
+    )
 
 
 def test_rust_const_dict_mixed_values() -> None:
-    """Rust CONST with mixed dict values falls back to &str."""
+    """Rust CONST with mixed dict values falls back to ``&str``."""
     result = literalize(
         source='{"a": 1, "b": "x"}',
         input_format=InputFormat.JSON,
@@ -549,21 +574,14 @@ def test_rust_const_dict_mixed_values() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: HashMap<&str, &str>" in result.code
-
-
-def test_rust_const_nested_list() -> None:
-    """Rust CONST with nested list coerces to &str elements."""
-    result = literalize(
-        source="[[1, 2], [3, 4]]",
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: HashMap<&str, &str> = HashMap::from([
+            ("a", "1"),
+            ("b", "x"),
+        ]);"""
     )
-    assert "const my_var: [&str; 2]" in result.code
+    assert result.code == expected
 
 
 def test_rust_tuple_format_type_annotation_raises() -> None:
@@ -594,4 +612,12 @@ def test_rust_const_vec_type() -> None:
         variable_form=NewVariable(name="my_var"),
         error_on_coercion=False,
     )
-    assert "const my_var: Vec<i32>" in result.code
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: Vec<i32> = vec![
+            1,
+            2,
+            3,
+        ];"""
+    )
+    assert result.code == expected

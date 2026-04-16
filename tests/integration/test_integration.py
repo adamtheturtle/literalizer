@@ -1092,6 +1092,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (rust_const_static, "scalar_date", ""),
         (rust_const_static, "scalar_datetime", ""),
         (rust_const_static, "int_list", ""),
+        (rust_const_static, "nested_sequences", ""),
         (dict_format, "simple_dict", ""),
         (dict_format, "dict_with_list_value", "_list_val"),
         (dict_entry_style, "simple_dict", ""),
