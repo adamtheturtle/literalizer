@@ -227,11 +227,11 @@ def _rebuild_dict_opener(
     )
 
 
-_cpp_element_to_type = _make_cpp_element_to_type(int_type="int")
-
-
 @beartype
-def _collection_needs_any(items: list[Value]) -> bool:
+def _collection_needs_any(
+    items: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> bool:
     """Return whether a C++ typed opener would fall back to bare braces.
 
     This happens when ``infer_element_type`` cannot unify the elements,
@@ -240,11 +240,14 @@ def _collection_needs_any(items: list[Value]) -> bool:
     element_type = infer_element_type(items=items)
     if element_type is None:
         return True
-    return _cpp_element_to_type(element_type) is None
+    return element_to_type(element_type) is None
 
 
 @beartype
-def _needs_any_type(data: Value) -> bool:
+def _needs_any_type(
+    data: Value,
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> bool:
     """Check whether *data* would cause the ``Any`` type to appear.
 
     The ``Any`` struct is needed when any collection in the data
@@ -258,30 +261,58 @@ def _needs_any_type(data: Value) -> bool:
         case list():
             return (
                 not data
-                or _collection_needs_any(items=data)
-                or any(_needs_any_type(data=v) for v in data)
+                or _collection_needs_any(
+                    items=data,
+                    element_to_type=element_to_type,
+                )
+                or any(
+                    _needs_any_type(
+                        data=v,
+                        element_to_type=element_to_type,
+                    )
+                    for v in data
+                )
             )
         case dict():
             values = list(data.values())
             return (
                 not values
-                or _collection_needs_any(items=values)
-                or any(_needs_any_type(data=v) for v in values)
+                or _collection_needs_any(
+                    items=values,
+                    element_to_type=element_to_type,
+                )
+                or any(
+                    _needs_any_type(
+                        data=v,
+                        element_to_type=element_to_type,
+                    )
+                    for v in values
+                )
             )
         case _:
             return False
 
 
-def _any_struct_preamble(data: Value, /) -> tuple[str, ...]:
-    """Return the ``Any`` helper struct when *data* needs it."""
-    if _needs_any_type(data=data):
-        return (
-            "struct Any {",
-            "    template<class T> Any(T&&) noexcept {}",
-            "    Any(std::initializer_list<Any>) noexcept {}",
-            "};",
-        )
-    return ()
+@beartype
+def _build_any_struct_preamble(
+    *,
+    int_type: str,
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build a ``data_dependent_preamble`` for the ``Any`` struct."""
+    element_to_type = _make_cpp_element_to_type(int_type=int_type)
+
+    def _any_struct_preamble(data: Value, /) -> tuple[str, ...]:
+        """Return the ``Any`` helper struct when *data* needs it."""
+        if _needs_any_type(data=data, element_to_type=element_to_type):
+            return (
+                "struct Any {",
+                "    template<class T> Any(T&&) noexcept {}",
+                "    Any(std::initializer_list<Any>) noexcept {}",
+                "};",
+            )
+        return ()
+
+    return _any_struct_preamble
 
 
 @beartype
@@ -813,7 +844,9 @@ class Cpp(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble: Callable[[Value], tuple[str, ...]] = (
-            _any_struct_preamble
+            _build_any_struct_preamble(
+                int_type=numeric_literal_suffix.int_type,
+            )
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter
