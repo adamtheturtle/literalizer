@@ -204,32 +204,6 @@ def _identity_wrapper(
 
 
 @beartype
-def _rebuild_dict_opener(
-    *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
-    dict_format: enum.Enum,
-) -> DictFormatConfig:
-    """Rebuild the dict opener for the given int type."""
-    dict_opener_template = (
-        "std::unordered_map<std::string, {type_name}>{{"
-        if dict_format.name == "UNORDERED_MAP"
-        else "std::map<std::string, {type_name}>{{"
-    )
-    base_config: DictFormatConfig = dict_format.value
-    return dataclasses.replace(
-        base_config,
-        dict_open=_build_variant_dict_open(
-            int_type=int_type,
-            date_type=date_type,
-            datetime_type=datetime_type,
-            opener_template=dict_opener_template,
-        ),
-    )
-
-
-@beartype
 def _compute_cpp_type(
     item: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
@@ -548,6 +522,29 @@ def _build_variant_ordered_map_open(
 
 
 @beartype
+def _build_ordered_map_config(
+    *,
+    int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> OrderedMapFormatConfig:
+    """Build an ``OrderedMapFormatConfig`` with a variant opener."""
+    return OrderedMapFormatConfig(
+        open_str="{",
+        close="}",
+        preamble_lines=(
+            "#include <utility>",
+            "#include <vector>",
+        ),
+        open_fn=_build_variant_ordered_map_open(
+            int_type=int_type,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        ),
+    )
+
+
+@beartype
 def _format_variable_declaration(
     name: str,
     value: str,
@@ -818,6 +815,30 @@ class Cpp(metaclass=LanguageCls):
             narrowed_open=None,
         )
 
+        def get_config(
+            self,
+            *,
+            int_type: str,
+            date_type: str,
+            datetime_type: str,
+        ) -> DictFormatConfig:
+            """Return the dict format config with variant opener."""
+            opener_template = (
+                "std::unordered_map<std::string, {type_name}>{{"
+                if self.name == "UNORDERED_MAP"
+                else "std::map<std::string, {type_name}>{{"
+            )
+            base_config: DictFormatConfig = self.value
+            return dataclasses.replace(
+                base_config,
+                dict_open=_build_variant_dict_open(
+                    int_type=int_type,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                    opener_template=opener_template,
+                ),
+            )
+
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
 
@@ -1057,11 +1078,10 @@ class Cpp(metaclass=LanguageCls):
                 base=base_int_formatter,
             )
         )
-        self.dict_format_config: DictFormatConfig = _rebuild_dict_opener(
+        self.dict_format_config: DictFormatConfig = dict_format.get_config(
             int_type=int_type,
             date_type=cpp_date_type,
             datetime_type=cpp_datetime_type,
-            dict_format=dict_format,
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
@@ -1083,18 +1103,10 @@ class Cpp(metaclass=LanguageCls):
         self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                open_str="{",
-                close="}",
-                preamble_lines=(
-                    "#include <utility>",
-                    "#include <vector>",
-                ),
-                open_fn=_build_variant_ordered_map_open(
-                    int_type=int_type,
-                    date_type=cpp_date_type,
-                    datetime_type=cpp_datetime_type,
-                ),
+            _build_ordered_map_config(
+                int_type=int_type,
+                date_type=cpp_date_type,
+                datetime_type=cpp_datetime_type,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
