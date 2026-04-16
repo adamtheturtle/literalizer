@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <variant>
 void check_() {
-auto my_data = std::unordered_map<std::string, std::variant<std::string, int, bool, std::monostate>>{
+auto my_data = std::unordered_map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
     {"name", "Alice"},
     {"age", 30},
     {"active", true},

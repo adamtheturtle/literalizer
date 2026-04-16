@@ -4,12 +4,12 @@
 #include <map>
 #include <variant>
 void check_() {
-auto my_data = std::map<std::string, std::variant<std::string, std::monostate, int>>{
+auto my_data = std::map<std::string, std::variant<std::string, std::nullptr_t, int>>{
     {"name", "Alice"},
     {"score", nullptr},
     {"age", 30},
 };
-my_data = std::map<std::string, std::variant<std::string, std::monostate, int>>{
+my_data = std::map<std::string, std::variant<std::string, std::nullptr_t, int>>{
     {"name", "Alice"},
     {"score", nullptr},
     {"age", 30},

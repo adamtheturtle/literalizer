@@ -4,8 +4,8 @@
 #include <vector>
 #include <variant>
 void check_() {
-auto my_data = std::vector<std::map<std::string, std::monostate>>{
-    std::map<std::string, std::monostate>{},
-    std::map<std::string, std::monostate>{},
+auto my_data = std::vector<std::map<std::string, std::nullptr_t>>{
+    std::map<std::string, std::nullptr_t>{},
+    std::map<std::string, std::nullptr_t>{},
 };
 }

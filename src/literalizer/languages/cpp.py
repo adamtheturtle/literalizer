@@ -249,7 +249,7 @@ def _compute_cpp_type(
             cpp_type = element_to_type(type(item))
             if cpp_type is not None:
                 return cpp_type
-            return "std::monostate"
+            return "std::nullptr_t"
 
 
 @beartype
@@ -293,10 +293,10 @@ def _compute_element_type_for_items(
 
     Returns a single type name when all items have the same C++ type,
     or ``std::variant<T1, T2, ...>`` for mixed types.  Returns
-    ``std::monostate`` for empty collections.
+    ``std::nullptr_t`` for empty collections.
     """
     if not items:
-        return "std::monostate"
+        return "std::nullptr_t"
     element_type = infer_element_type(items=items)
     if element_type is not None:
         match element_type:
@@ -354,7 +354,7 @@ def _needs_variant_type(
     element_to_type: Callable[[type | ListType | DictType], str | None],
 ) -> bool:
     """Check whether *data* would produce ``std::variant`` or
-    ``std::monostate`` types in the generated C++ code.
+    ``std::nullptr_t`` types in the generated C++ code.
 
     Used to determine whether ``#include <variant>`` is needed.
     """
