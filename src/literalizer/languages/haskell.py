@@ -759,7 +759,9 @@ class Haskell(metaclass=LanguageCls):
     statement_terminator = ""
     static_preamble: Sequence[str] = ()
     static_body_preamble: Sequence[str] = ()
-    data_dependent_preamble = staticmethod(no_data_preamble)
+    data_dependent_preamble: Callable[[Value], tuple[str, ...]] = staticmethod(
+        no_data_preamble
+    )
     special_float_preamble: tuple[str, ...] = ()
 
     class DateFormats(enum.Enum):
