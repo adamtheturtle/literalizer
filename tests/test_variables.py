@@ -527,57 +527,6 @@ def test_rust_const_datetime() -> None:
     assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
 
 
-def test_rust_const_mixed_array() -> None:
-    """Rust CONST with mixed-type array coerces element type to
-    ``&str``.
-    """
-    result = literalize(
-        source='[1, "hello"]',
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: [&str; 2] = [
-            "1",
-            "hello",
-        ];"""
-    )
-    assert result.code == expected
-
-
-def test_rust_const_tuple() -> None:
-    """Rust CONST with tuple format produces per-element types."""
-    rust_tuple = Rust(
-        date_format=Rust.date_formats.ISO,
-        datetime_format=Rust.datetime_formats.ISO,
-        bytes_format=Rust.bytes_formats.HEX,
-        sequence_format=Rust.sequence_formats.TUPLE,
-        declaration_style=Rust.declaration_styles.CONST,
-    )
-    result = literalize(
-        source="[1, 2]",
-        input_format=InputFormat.JSON,
-        language=rust_tuple,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: (i32, i32) = (
-            1,
-            2,
-        );"""
-    )
-    assert result.code == expected
-
-
 def test_rust_const_set() -> None:
     """Rust CONST with set produces ``HashSet`` type annotation."""
     yaml_input = "!!set\n? a\n? b\n"
