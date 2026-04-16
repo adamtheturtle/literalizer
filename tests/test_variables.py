@@ -606,3 +606,32 @@ def test_rust_const_type_hint_homogeneous_list() -> None:
         error_on_coercion=False,
     )
     assert "const my_var: Vec<i64>" in result.code
+
+
+def test_rust_const_type_hint_empty_set() -> None:
+    """Rust CONST with empty set uses default element type."""
+    yaml_input = "!!set {}"
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert "const my_var: HashSet<String>" in result.code
+
+
+def test_rust_const_type_hint_mixed_type_list() -> None:
+    """Rust CONST with mixed-type list falls back to &str."""
+    result = literalize(
+        source='[1, "hello"]',
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert "const my_var: Vec<&str>" in result.code
