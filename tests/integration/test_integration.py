@@ -922,6 +922,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         fmt: enum.Enum,
     ) -> literalizer.Language:
         """Build spec, using ARRAY for Rust const/static styles."""
+        result: literalizer.Language
         if cls.__name__ == "Rust" and fmt.name in {
             "CONST",
             "STATIC",
@@ -930,11 +931,13 @@ def _build_variant_cases() -> list[_VariantCase]:
             array_fmt = next(
                 f for f in spec.sequence_formats if f.name == "ARRAY"
             )
-            return cls(  # type: ignore[no-any-return]
+            result = cls(
                 declaration_style=fmt,
                 sequence_format=array_fmt,
             )
-        return cls(declaration_style=fmt)  # type: ignore[no-any-return]
+        else:
+            result = cls(declaration_style=fmt)
+        return result
 
     declaration_style = nv(
         category="declaration_style",
