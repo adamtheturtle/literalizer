@@ -540,8 +540,8 @@ class Rust(metaclass=LanguageCls):
             supports_redefinition=True,
         )
         # The CONST/STATIC formatters below are overridden in __init__
-        # with type-annotated versions via functools.partial.  The
-        # templates here satisfy the DeclarationStyleConfig signature.
+        # with type-annotated versions.  The templates here satisfy
+        # the DeclarationStyleConfig signature.
         CONST = DeclarationStyleConfig(
             formatter=variable_formatter(template="const {name} = {value};"),
             supports_redefinition=False,
