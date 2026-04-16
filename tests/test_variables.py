@@ -459,103 +459,6 @@ RUST_CONST = Rust(
 )
 
 
-@pytest.mark.parametrize(
-    argnames=("json_input", "expected"),
-    argvalues=[
-        ("42", "const my_var: i32 = 42;"),
-        ("3.14", "const my_var: f64 = 3.14;"),
-        ("true", "const my_var: bool = true;"),
-        ('"hello"', 'const my_var: &str = "hello";'),
-        ("null", "const my_var: Option<()> = None::<()>;"),
-    ],
-)
-def test_rust_const_scalars(*, json_input: str, expected: str) -> None:
-    """Rust CONST declarations include type annotations for scalars."""
-    result = literalize(
-        source=json_input,
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == expected
-
-
-def test_rust_const_bytes() -> None:
-    """Rust CONST with bytes uses &str type."""
-    yaml_input = "!!binary |\n  SGVsbG8="
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert "const my_var: &str" in result.code
-
-
-def test_rust_const_date() -> None:
-    """Rust CONST with ISO dates uses &str type."""
-    yaml_input = "2024-01-15"
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15";'
-
-
-def test_rust_const_datetime() -> None:
-    """Rust CONST with ISO datetimes uses &str type."""
-    yaml_input = "2024-01-15T12:30:00"
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
-
-
-def test_rust_const_array() -> None:
-    """Rust CONST with array format uses [T; N] type."""
-    result = literalize(
-        source="[1, 2, 3]",
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert "const my_var: [i32; 3]" in result.code
-
-
-def test_rust_const_mixed_array() -> None:
-    """Rust CONST with mixed-type array coerces to &str."""
-    result = literalize(
-        source='[1, "hello"]',
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert "const my_var: [&str; 2]" in result.code
-
-
 def test_rust_const_tuple() -> None:
     """Rust CONST with tuple format produces per-element types."""
     rust_tuple = Rust(
@@ -575,20 +478,6 @@ def test_rust_const_tuple() -> None:
         error_on_coercion=False,
     )
     assert "const my_var: (i32, i32)" in result.code
-
-
-def test_rust_const_empty_array() -> None:
-    """Rust CONST with empty array uses default element type."""
-    result = literalize(
-        source="[]",
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert "const my_var: [String; 0]" in result.code
 
 
 def test_rust_const_set() -> None:
@@ -706,24 +595,3 @@ def test_rust_const_vec_type() -> None:
         error_on_coercion=False,
     )
     assert "const my_var: Vec<i32>" in result.code
-
-
-def test_rust_static_scalar() -> None:
-    """Rust STATIC declarations include type annotations."""
-    rust_static = Rust(
-        date_format=Rust.date_formats.ISO,
-        datetime_format=Rust.datetime_formats.ISO,
-        bytes_format=Rust.bytes_formats.HEX,
-        sequence_format=Rust.sequence_formats.ARRAY,
-        declaration_style=Rust.declaration_styles.STATIC,
-    )
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=rust_static,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == "static my_var: i32 = 42;"

@@ -945,6 +945,14 @@ def _build_variant_cases() -> list[_VariantCase]:
         get_formats=lambda s: s.declaration_styles,
         make_spec=_declaration_style_make_spec,
     )
+    # Rust CONST/STATIC variants need extra test cases beyond
+    # simple_sequence / empty_list to cover more scalar types.
+    rust_const_static = [
+        v
+        for v in declaration_style
+        if v.lang_cls.__name__ == "Rust"
+        and v.name.endswith(("_const", "_static"))
+    ]
     dict_format = nv(
         category="dict_format",
         get_default=lambda s: s.dict_format,
@@ -1079,6 +1087,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         (declaration_style, "simple_sequence", ""),
         (declaration_style, "simple_dict", ""),
         (declaration_style, "empty_list", ""),
+        (rust_const_static, "scalars", ""),
+        (rust_const_static, "binary", ""),
+        (rust_const_static, "scalar_date", ""),
+        (rust_const_static, "scalar_datetime", ""),
+        (rust_const_static, "int_list", ""),
         (dict_format, "simple_dict", ""),
         (dict_format, "dict_with_list_value", "_list_val"),
         (dict_entry_style, "simple_dict", ""),
@@ -1137,9 +1150,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "int_set", ""),
     ]
     # Rust CONST/STATIC need constant-expression initializers.
-    # Dict test cases produce HashMap::from([…]) which is not
-    # a constant expression, so skip those combinations.
+    # Dict and set test cases produce HashMap::from([…]) /
+    # HashSet::from([…]) which are not constant expressions,
+    # so skip those combinations.
     _const_static_suffixes = ("_const", "_static")
+    _non_const_case_fragments = ("dict", "set")
 
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
@@ -1153,7 +1168,10 @@ def _build_variant_cases() -> list[_VariantCase]:
             if not (
                 variant.lang_cls.__name__ == "Rust"
                 and variant.name.endswith(_const_static_suffixes)
-                and "dict" in case_dir_name
+                and any(
+                    fragment in case_dir_name
+                    for fragment in _non_const_case_fragments
+                )
             )
         )
     return cases
