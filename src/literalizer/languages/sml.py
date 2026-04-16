@@ -61,7 +61,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -157,11 +157,11 @@ def _build_sml_declaration(
     sequence_declared_type: str,
     scalar_declared_type: str,
     entry_formatter: Callable[[Value, str], str],
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, ValueKind], str]:
     """Build an SML variable declaration formatter."""
 
     @beartype
-    def _format(name: str, value: str, data: Value) -> str:
+    def _format(name: str, value: str, data: Value, _kind: ValueKind) -> str:
         """Format a variable declaration."""
         decl_type = (
             sequence_declared_type
@@ -603,12 +603,12 @@ class Sml(metaclass=LanguageCls):
             scalar_declared_type=type_name,
             entry_formatter=_entry_formatter,
         )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _sml_decl
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _sml_decl
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _sml_decl
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _sml_decl
         self.element_separator = ", "
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _entry_formatter

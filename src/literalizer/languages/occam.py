@@ -50,7 +50,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -407,12 +407,12 @@ class Occam(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} := {value}")
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = declaration_style.value.formatter
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = variable_formatter(template="{name} := {value}")
         self.static_preamble: Sequence[str] = (
             "MOBILE DATA TYPE LIT IS\n"
             "  CASE\n"

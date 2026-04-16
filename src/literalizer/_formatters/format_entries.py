@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 from beartype import beartype
 
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 
 @beartype
@@ -27,7 +27,9 @@ def strip_key_quotes(key: str) -> str:
 
 
 @beartype
-def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
+def variable_formatter(
+    *, template: str
+) -> Callable[[str, str, Value, ValueKind], str]:
     """Return a ``format_variable_declaration`` or
     ``format_variable_assignment`` callable from a template string.
 
@@ -36,11 +38,11 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
     Example::
 
         assign = variable_formatter(template="{name} = {value};")
-        assign("x", "42", None)  # => "x = 42;"
+        assign("x", "42", None, ValueKind.TYPED_EXPRESSION)  # => "x = 42;"
     """
 
     @beartype
-    def _format(name: str, value: str, _data: Value) -> str:
+    def _format(name: str, value: str, _data: Value, _kind: ValueKind) -> str:
         """Format a variable declaration or assignment."""
         return template.format(name=name, value=value)
 

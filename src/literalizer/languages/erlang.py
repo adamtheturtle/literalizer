@@ -54,7 +54,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -68,7 +68,9 @@ def _format_bytes(value: bytes) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(
+    name: str, value: str, _data: Value, _kind: ValueKind
+) -> str:
     """Format an Erlang variable declaration."""
     erlang_name = name[0].upper() + name[1:]
     return f"{erlang_name} = {value}"
@@ -458,12 +460,12 @@ class Erlang(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = declaration_style.value.formatter
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _format_variable_declaration
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble

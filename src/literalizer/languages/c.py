@@ -21,6 +21,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -53,7 +54,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -189,7 +190,9 @@ class C(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=lambda name, value, _data: f"CVal {name} = {value};",
+            formatter=variable_formatter(
+                template="CVal {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -463,23 +466,27 @@ class C(metaclass=LanguageCls):
         self.supports_scalar_inline_comments = False
 
         @beartype
-        def _format_decl(name: str, value: str, data: Value) -> str:
+        def _format_decl(
+            name: str, value: str, data: Value, _kind: ValueKind
+        ) -> str:
             """Format a C variable declaration."""
             wrapped = format_entry(data, value)
             return f"CVal {name} = {wrapped};"
 
         @beartype
-        def _format_assign(name: str, value: str, data: Value) -> str:
+        def _format_assign(
+            name: str, value: str, data: Value, _kind: ValueKind
+        ) -> str:
             """Format a C variable assignment."""
             wrapped = format_entry(data, value)
             return f"{name} = {wrapped};"
 
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _format_decl
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_assign
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _format_decl
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _format_assign
         self.static_preamble: Sequence[str] = (
             "#include <stdbool.h>",
             "#include <stddef.h>",

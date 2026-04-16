@@ -56,7 +56,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 
 @beartype
@@ -105,14 +105,18 @@ def _format_d_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
+def _format_variable_declaration(
+    name: str, value: str, data: Value, _kind: ValueKind
+) -> str:
     """Format a D ``auto`` variable declaration using ``JSONValue``."""
     wrapped = _format_d_entry(original=data, formatted=value)
     return f"auto {name} = {wrapped};"
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
+def _format_variable_assignment(
+    name: str, value: str, data: Value, _kind: ValueKind
+) -> str:
     """Format a D assignment to an existing variable."""
     wrapped = _format_d_entry(original=data, formatted=value)
     return f"{name} = {wrapped};"
@@ -473,12 +477,12 @@ class D(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = declaration_style.value.formatter
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _format_variable_assignment
         self.static_preamble: Sequence[str] = ("import std.json;",)
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble = no_data_preamble

@@ -65,7 +65,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 
 def _js_call_stub(
@@ -212,15 +212,17 @@ class JavaScript(metaclass=LanguageCls):
 
         def wrap_formatter(
             self,
-            formatter: Callable[[str, str, Value], str],
-        ) -> Callable[[str, str, Value], str]:
+            formatter: Callable[[str, str, Value, ValueKind], str],
+        ) -> Callable[[str, str, Value, ValueKind], str]:
             """Wrap a formatter to match this line ending style."""
             if self.value != "none":
                 return formatter
 
-            def without_semicolon(name: str, value: str, data: Value) -> str:
+            def without_semicolon(
+                name: str, value: str, data: Value, kind: ValueKind
+            ) -> str:
                 """Format without a trailing semicolon."""
-                return formatter(name, value, data).removesuffix(";")
+                return formatter(name, value, data, kind).removesuffix(";")
 
             return without_semicolon
 
@@ -511,16 +513,16 @@ class JavaScript(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        _base_decl: Callable[[str, str, Value], str] = (
+        _base_decl: Callable[[str, str, Value, ValueKind], str] = (
             declaration_style.value.formatter
         )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(formatter=_base_decl)
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(
-                formatter=variable_formatter(template="{name} = {value};"),
-            )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = line_ending.wrap_formatter(formatter=_base_decl)
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = line_ending.wrap_formatter(
+            formatter=variable_formatter(template="{name} = {value};"),
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

@@ -48,7 +48,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -90,7 +90,9 @@ def _format_sv_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
+def _format_variable_declaration(
+    name: str, value: str, data: Value, _kind: ValueKind
+) -> str:
     """Format a SystemVerilog variable declaration."""
     if isinstance(data, (list, set)):
         return f"static _VVal {name}[] = {value};"
@@ -101,7 +103,9 @@ def _format_variable_declaration(name: str, value: str, data: Value) -> str:
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
+def _format_variable_assignment(
+    name: str, value: str, data: Value, _kind: ValueKind
+) -> str:
     """Format a SystemVerilog variable assignment."""
     if isinstance(data, (list, set, dict)):
         return f"{name} = {value};"
@@ -432,12 +436,12 @@ class SystemVerilog(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_assignment
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = declaration_style.value.formatter
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _format_variable_assignment
         self.static_preamble: Sequence[str] = (
             "typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;",
             "typedef struct {",

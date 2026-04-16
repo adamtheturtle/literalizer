@@ -68,7 +68,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 
 @beartype
@@ -288,28 +288,24 @@ def _format_variable_declaration(
     name: str,
     value: str,
     _data: Value,
+    kind: ValueKind,
 ) -> str:
     """Format a C++ variable declaration.
 
-    The type keyword is chosen by inspecting the formatted *value*
-    string rather than *_data* because format variants (e.g.
-    ``coerce_mixed_to_str``, date ISO vs chrono) can change the
-    opener independently of the input data, and this function does
-    not have access to the language configuration.
-
-    * ``Any`` — bare brace-init (``{...}``) where the compiler
-      cannot deduce the type.
-    * ``const auto*`` — string literal (``"..."``), required by
+    * ``Any`` — bare brace-init where the compiler cannot deduce
+      the type.
+    * ``const auto*`` — string literal, required by
       ``readability-qualified-auto``.
     * ``auto`` — explicit type constructor
       (e.g. ``std::vector<int>{...}``).
     """
-    if value.startswith("{"):
-        type_keyword = "Any"
-    elif value.startswith('"'):
-        type_keyword = "const auto*"
-    else:
-        type_keyword = "auto"
+    match kind:
+        case ValueKind.BARE_BRACE_INIT:
+            type_keyword = "Any"
+        case ValueKind.STRING_LITERAL:
+            type_keyword = "const auto*"
+        case ValueKind.TYPED_EXPRESSION:
+            type_keyword = "auto"
     return f"{type_keyword} {name} = {value};"
 
 
@@ -801,12 +797,12 @@ class Cpp(metaclass=LanguageCls):
         self.data_dependent_preamble: Callable[[Value], tuple[str, ...]] = (
             _any_struct_preamble
         )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = declaration_style.value.formatter
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = variable_formatter(template="{name} = {value};")
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

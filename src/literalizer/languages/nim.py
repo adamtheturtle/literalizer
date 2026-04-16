@@ -60,7 +60,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 
 @beartype
@@ -69,11 +69,11 @@ def _make_variable_declaration(
     uses_typed_literal_for_scalars: bool,
     keyword: str,
     force_sequence: bool,
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, ValueKind], str]:
     """Create a Nim variable declaration formatter."""
 
     @beartype
-    def _format(name: str, value: str, _data: Value) -> str:
+    def _format(name: str, value: str, _data: Value, _kind: ValueKind) -> str:
         """Format a declaration, using ``@`` for flat sequences of
         simple scalars.
         """
@@ -104,11 +104,11 @@ def _make_variable_declaration(
 def _make_variable_assignment(
     *,
     uses_typed_literal_for_scalars: bool,
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, ValueKind], str]:
     """Create a Nim variable assignment formatter."""
 
     @beartype
-    def _format(name: str, value: str, _data: Value) -> str:
+    def _format(name: str, value: str, _data: Value, _kind: ValueKind) -> str:
         """Format an assignment, using ``@`` for flat sequences of
         simple scalars.
         """
@@ -546,17 +546,17 @@ class Nim(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
         _is_const = declaration_style is self.declaration_styles.CONST
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _make_variable_declaration(
-                uses_typed_literal_for_scalars=fmt.uses_typed_literal_for_scalars,
-                keyword=declaration_style.name.lower(),
-                force_sequence=_is_const,
-            )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _make_variable_declaration(
+            uses_typed_literal_for_scalars=fmt.uses_typed_literal_for_scalars,
+            keyword=declaration_style.name.lower(),
+            force_sequence=_is_const,
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _make_variable_assignment(
-                uses_typed_literal_for_scalars=fmt.uses_typed_literal_for_scalars
-            )
+        self.format_variable_assignment: Callable[
+            [str, str, Value, ValueKind], str
+        ] = _make_variable_assignment(
+            uses_typed_literal_for_scalars=fmt.uses_typed_literal_for_scalars
         )
         _json = ("import json",)
         self.static_preamble: Sequence[str] = ()

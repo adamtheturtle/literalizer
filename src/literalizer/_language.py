@@ -11,7 +11,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 
 @dataclasses.dataclass(frozen=True)
@@ -162,7 +162,7 @@ class TrailingCommaConfig:
 class DeclarationStyleConfig:
     """Configuration for a single declaration style."""
 
-    formatter: Callable[[str, str, Value], str]
+    formatter: Callable[[str, str, Value, ValueKind], str]
     supports_redefinition: bool
 
 
@@ -610,22 +610,28 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     """
 
     @property
-    def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, ValueKind], str]:
         """Callable that formats a new variable declaration.
 
-        Called as ``format_variable_declaration(name, value, data)`` where
-        *name* is the variable name, *value* is the already-formatted literal
-        value, and *data* is the original parsed data structure.
+        Called as ``format_variable_declaration(name, value, data, kind)``
+        where *name* is the variable name, *value* is the
+        already-formatted literal value, *data* is the original parsed
+        data structure, and *kind* classifies the formatted value.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
+    def format_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value, ValueKind], str]:
         """Callable that formats an assignment to an existing variable.
 
-        Called as ``format_variable_assignment(name, value, data)`` where
-        *name* is the variable name, *value* is the already-formatted literal
-        value, and *data* is the original parsed data structure.
+        Called as ``format_variable_assignment(name, value, data, kind)``
+        where *name* is the variable name, *value* is the
+        already-formatted literal value, *data* is the original parsed
+        data structure, and *kind* classifies the formatted value.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
