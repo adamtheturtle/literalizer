@@ -29,7 +29,10 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
 )
-from literalizer.exceptions import UnsupportedCallStyleError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnsupportedCallStyleError,
+)
 
 __all__ = [
     "BothVariableForms",
@@ -40,6 +43,7 @@ __all__ = [
     "DatetimeFormatConfig",
     "DictFormatConfig",
     "ExistingVariable",
+    "IncompatibleFormatsError",
     "InputFormat",
     "Language",
     "LanguageCls",

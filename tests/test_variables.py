@@ -9,6 +9,7 @@ import pytest
 
 from literalizer import (
     ExistingVariable,
+    IncompatibleFormatsError,
     InputFormat,
     Language,
     NewVariable,
@@ -713,8 +714,10 @@ def test_rust_vec_format_type_annotation() -> None:
 
 
 def test_rust_const_vec_raises() -> None:
-    """Rust CONST with VEC format raises ValueError."""
-    with pytest.raises(expected_exception=ValueError, match="VEC"):
+    """Rust CONST with VEC format raises."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError, match="VEC"
+    ):
         Rust(
             declaration_style=Rust.declaration_styles.CONST,
             sequence_format=Rust.sequence_formats.VEC,
@@ -722,8 +725,10 @@ def test_rust_const_vec_raises() -> None:
 
 
 def test_rust_static_vec_raises() -> None:
-    """Rust STATIC with VEC format raises ValueError."""
-    with pytest.raises(expected_exception=ValueError, match="VEC"):
+    """Rust STATIC with VEC format raises."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError, match="VEC"
+    ):
         Rust(
             declaration_style=Rust.declaration_styles.STATIC,
             sequence_format=Rust.sequence_formats.VEC,

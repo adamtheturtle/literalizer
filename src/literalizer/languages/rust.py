@@ -65,6 +65,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
+from literalizer.exceptions import IncompatibleFormatsError
 
 
 @beartype
@@ -816,7 +817,7 @@ class Rust(metaclass=LanguageCls):
                 f"is not a constant expression. "
                 f"Use ARRAY or TUPLE instead."
             )
-            raise ValueError(msg)
+            raise IncompatibleFormatsError(msg)
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "None::<()>"

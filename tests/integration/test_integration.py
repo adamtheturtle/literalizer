@@ -144,7 +144,7 @@ def _build_non_default_variants(
                 continue
             try:
                 variant_spec = make_spec(lang_cls, fmt)
-            except ValueError:
+            except literalizer.IncompatibleFormatsError:
                 continue
             variants.append(
                 _Variant(
@@ -365,7 +365,7 @@ def _build_sequence_decl_variants() -> Iterable[_Variant]:
                         sequence_format=seq,
                         declaration_style=decl,
                     )
-                except ValueError:
+                except literalizer.IncompatibleFormatsError:
                     continue
                 variants.append(
                     _Variant(
