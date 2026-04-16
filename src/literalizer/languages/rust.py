@@ -640,6 +640,7 @@ class Rust(metaclass=LanguageCls):
                 open_str="HashMap::from([",
                 close="])",
                 preamble_lines=("use std::collections::HashMap;",),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

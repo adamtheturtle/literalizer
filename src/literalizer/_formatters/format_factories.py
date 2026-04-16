@@ -220,6 +220,7 @@ def ordered_map_format_factory(
             open_str=open_template.format(**fmt_kwargs),
             close=close,
             preamble_lines=preamble_lines,
+            open_fn=None,
         )
 
     return _build

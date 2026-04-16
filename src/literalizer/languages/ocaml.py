@@ -552,6 +552,7 @@ class OCaml(metaclass=LanguageCls):
                 open_str=f"{constructor_prefix}Map [",
                 close="]",
                 preamble_lines=(),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

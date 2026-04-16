@@ -627,6 +627,7 @@ class Scala(metaclass=LanguageCls):
                 open_str="scala.collection.immutable.ListMap(",
                 close=")",
                 preamble_lines=(),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

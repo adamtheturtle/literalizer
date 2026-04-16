@@ -958,6 +958,7 @@ class Python(metaclass=LanguageCls):
                 open_str="OrderedDict([",
                 close="])",
                 preamble_lines=("from collections import OrderedDict",),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

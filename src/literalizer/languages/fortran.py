@@ -565,6 +565,7 @@ class Fortran(metaclass=LanguageCls):
                 open_str=f"{map_name}([fval_t :: ",
                 close="])",
                 preamble_lines=(),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

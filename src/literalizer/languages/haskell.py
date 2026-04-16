@@ -1146,6 +1146,7 @@ class Haskell(metaclass=LanguageCls):
                 open_str=_map_open,
                 close="]",
                 preamble_lines=(),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

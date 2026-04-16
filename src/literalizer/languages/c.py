@@ -450,6 +450,7 @@ class C(metaclass=LanguageCls):
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
                 open_str=map_open,
+                open_fn=None,
                 close="}})",
                 preamble_lines=(),
             )

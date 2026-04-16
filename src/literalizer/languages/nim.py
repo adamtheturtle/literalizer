@@ -530,6 +530,7 @@ class Nim(metaclass=LanguageCls):
                 open_str="{",
                 close="}",
                 preamble_lines=("import json",),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

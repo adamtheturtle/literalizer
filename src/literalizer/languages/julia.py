@@ -524,6 +524,7 @@ class Julia(metaclass=LanguageCls):
                 open_str="[",
                 close="]",
                 preamble_lines=(),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

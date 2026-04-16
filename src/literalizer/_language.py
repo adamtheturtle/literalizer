@@ -142,7 +142,7 @@ class OrderedMapFormatConfig:
     open_str: str
     close: str
     preamble_lines: tuple[str, ...]
-    open_fn: Callable[[dict[str, Value]], str] | None = None
+    open_fn: Callable[[dict[str, Value]], str] | None
 
 
 @dataclasses.dataclass(frozen=True)
