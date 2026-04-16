@@ -5,6 +5,7 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
+from typing import cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -272,15 +273,11 @@ def _collect_unique_cpp_types(
 
 
 @beartype
-def _collect_dict_values(items: list[Value]) -> list[Value]:
-    """Collect all values from dict items in a list."""
+def _collect_dict_values(dicts: list[dict[str, Value]]) -> list[Value]:
+    """Collect all values from a list of dicts."""
     all_values: list[Value] = []
-    for item in items:
-        match item:
-            case dict():
-                all_values.extend(item.values())
-            case _:
-                pass
+    for mapping in dicts:
+        all_values.extend(mapping.values())
     return all_values
 
 
@@ -302,7 +299,9 @@ def _compute_element_type_for_items(
         match element_type:
             case DictType(value_type=None):
                 value_type = _compute_element_type_for_items(
-                    items=_collect_dict_values(items=items),
+                    items=_collect_dict_values(
+                        dicts=cast("list[dict[str, Value]]", items),
+                    ),
                     element_to_type=element_to_type,
                 )
                 return f"std::map<std::string, {value_type}>"
@@ -584,11 +583,10 @@ def _format_variable_declaration(
     * ``auto`` — typed expression
       (e.g. ``std::vector<int>{...}``).
     """
-    kind = _infer_value_kind(value=value)
-    match kind:
+    match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
             type_keyword = "const auto*"
-        case ValueKind.BARE_BRACE_INIT | ValueKind.TYPED_EXPRESSION:
+        case _:
             type_keyword = "auto"
     return f"{type_keyword} {name} = {value};"
 
