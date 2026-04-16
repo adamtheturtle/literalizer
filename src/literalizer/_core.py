@@ -286,11 +286,6 @@ class _PreambleResult:
     body: tuple[str, ...]
 
 
-def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
-    """Default no-op ``data_dependent_preamble``."""
-    return ()
-
-
 @beartype
 def _compute_preamble(
     *,
@@ -1214,15 +1209,10 @@ def literalize(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
-    data_preamble_fn: Callable[[Value], tuple[str, ...]] = getattr(
-        language,
-        "data_dependent_preamble",
-        _no_data_preamble,
-    )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + data_preamble_fn(data)
+        + language.data_dependent_preamble(data)
     )
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
@@ -1416,15 +1406,10 @@ def literalize_call(
         language=language,
         has_variable_declaration=False,
     )
-    data_preamble_fn = getattr(
-        language,
-        "data_dependent_preamble",
-        _no_data_preamble,
-    )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + data_preamble_fn(data)
+        + language.data_dependent_preamble(data)
     )
 
     if wrap_in_file:

@@ -59,6 +59,7 @@ from literalizer._language import (
     date_scalar_preamble,
     identity_call_target,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -649,6 +650,7 @@ class Scala(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
+        self.data_dependent_preamble = no_data_preamble
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

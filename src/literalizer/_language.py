@@ -765,6 +765,16 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     required).
     """
 
+    data_dependent_preamble: Callable[[Value], tuple[str, ...]]
+    """Callable that receives the original data value and returns
+    extra preamble lines that depend on data content rather than just
+    which scalar types are present.
+
+    Most languages use :func:`no_data_preamble` (returns ``()``);
+    C++ uses this to conditionally emit its ``Any`` helper struct
+    only when the data contains heterogeneous collections.
+    """
+
     type_hint_collection_preamble_lines: Callable[
         [frozenset[type]], tuple[str, ...]
     ]
@@ -909,6 +919,17 @@ no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
     _no_type_hint_preamble
 )
 """Shared callable for languages that need no type-hint preamble."""
+
+
+def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
+    """Return no preamble lines — used by languages that do not need
+    data-dependent preamble.
+    """
+    return ()
+
+
+no_data_preamble: Callable[[Value], tuple[str, ...]] = _no_data_preamble
+"""Shared callable for languages with no data-dependent preamble."""
 
 
 @beartype
