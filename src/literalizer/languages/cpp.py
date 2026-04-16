@@ -281,16 +281,6 @@ def _collect_unique_cpp_types(
 
 
 @beartype
-def _collect_dict_values(items: list[Value]) -> list[Value]:
-    """Collect all values from dict items in a list."""
-    all_values: list[Value] = []
-    for item in items:
-        if isinstance(item, dict):
-            all_values.extend(item.values())
-    return all_values
-
-
-@beartype
 def _compute_element_type_for_items(
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
@@ -307,8 +297,14 @@ def _compute_element_type_for_items(
     if element_type is not None:
         match element_type:
             case DictType(value_type=None):
+                all_dict_values: list[Value] = [
+                    v
+                    for item in items
+                    if isinstance(item, dict)  # pragma: no branch
+                    for v in item.values()
+                ]
                 value_type = _compute_element_type_for_items(
-                    items=_collect_dict_values(items=items),
+                    items=all_dict_values,
                     element_to_type=element_to_type,
                 )
                 return f"std::map<std::string, {value_type}>"
