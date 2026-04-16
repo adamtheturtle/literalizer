@@ -373,6 +373,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     return variants
 
 
+@beartype
 def _build_sequence_decl_variants() -> Iterable[_Variant]:
     """Build sequence format + declaration style cross-option variants.
 
