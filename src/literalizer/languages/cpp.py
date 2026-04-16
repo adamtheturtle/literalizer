@@ -5,7 +5,6 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -281,11 +280,12 @@ def _collect_unique_cpp_types(
 
 
 @beartype
-def _collect_dict_values(dicts: list[dict[str, Value]]) -> list[Value]:
-    """Collect all values from a list of dicts."""
+def _collect_dict_values(items: list[Value]) -> list[Value]:
+    """Collect all values from dict items in a list."""
     all_values: list[Value] = []
-    for mapping in dicts:
-        all_values.extend(mapping.values())
+    for item in items:
+        if isinstance(item, dict):
+            all_values.extend(item.values())
     return all_values
 
 
@@ -307,9 +307,7 @@ def _compute_element_type_for_items(
         match element_type:
             case DictType(value_type=None):
                 value_type = _compute_element_type_for_items(
-                    items=_collect_dict_values(
-                        dicts=cast("list[dict[str, Value]]", items),
-                    ),
+                    items=_collect_dict_values(items=items),
                     element_to_type=element_to_type,
                 )
                 return f"std::map<std::string, {value_type}>"
