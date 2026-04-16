@@ -584,6 +584,27 @@ def test_rust_const_dict_mixed_values() -> None:
     assert result.code == expected
 
 
+def test_rust_const_nested_list() -> None:
+    """Rust CONST with nested list infers ``&str`` element type."""
+    result = literalize(
+        source="[[1, 2], [3, 4]]",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: [&str; 2] = [
+            [1, 2],
+            [3, 4],
+        ];"""
+    )
+    assert result.code == expected
+
+
 def test_rust_tuple_format_type_annotation_raises() -> None:
     """TUPLE.format_type_annotation raises TypeError."""
     tuple_fmt = next(f for f in Rust().sequence_formats if f.name == "TUPLE")
