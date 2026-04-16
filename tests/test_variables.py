@@ -688,7 +688,7 @@ def test_rust_tuple_format_type_annotation_raises() -> None:
 
 
 def test_rust_const_vec_type() -> None:
-    """Rust CONST with VEC format produces Vec<T> type."""
+    """Rust CONST with vector format produces ``Vec<T>`` type."""
     rust_vec_const = Rust(
         date_format=Rust.date_formats.ISO,
         datetime_format=Rust.datetime_formats.ISO,
