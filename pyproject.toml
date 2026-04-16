@@ -441,7 +441,6 @@ ignore_names = [
     "SYMBOL",
     "SORTED_DICTIONARY",
     "SORTED_SET",
-    "STATIC",
     "TREE_SET",
     "TUPLE",
     "UNDERSCORE",
