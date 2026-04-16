@@ -1,17 +1,13 @@
 #include <initializer_list>
 #include <string>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
 void check_() {
-Any my_data = {
+auto my_data = std::initializer_list<std::string>{
     // before apple
     "apple",
     "banana",  // banana inline
     // trailing
 };
-my_data = {
+my_data = std::initializer_list<std::string>{
     // before apple
     "apple",
     "banana",  // banana inline

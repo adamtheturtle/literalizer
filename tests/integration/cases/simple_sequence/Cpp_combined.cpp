@@ -2,18 +2,15 @@
 #include <string>
 #include <cstddef>
 #include <vector>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <variant>
 void check_() {
-Any my_data = {
+auto my_data = std::vector<std::variant<int, std::string, bool, std::monostate>>{
     1,
     "hello",
     true,
     nullptr,
 };
-my_data = {
+my_data = std::vector<std::variant<int, std::string, bool, std::monostate>>{
     1,
     "hello",
     true,

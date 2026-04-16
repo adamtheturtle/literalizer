@@ -1,11 +1,10 @@
 #include <initializer_list>
 #include <string>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <utility>
+#include <vector>
+#include <variant>
 void check_() {
-Any my_data = {
+auto my_data = std::vector<std::pair<std::string, std::variant<std::string, int, bool>>>{
     {"name", "Alice"},
     {"age", 30},
     {"active", true},
