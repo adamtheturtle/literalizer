@@ -1204,15 +1204,20 @@ def literalize(
     # --- Preamble ---
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
-    computed = _compute_preamble(
+    coerced_data = apply_coercions(
         data=data,
+        spec=language,
+        error_on_coercion=False,
+    )
+    computed = _compute_preamble(
+        data=coerced_data,
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(data)
+        + language.data_dependent_preamble(coerced_data)
     )
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
@@ -1355,17 +1360,22 @@ def literalize_call(
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
     formatted_target = language.format_call_target(target_function)
+    coerced_data = apply_coercions(
+        data=data,
+        spec=language,
+        error_on_coercion=False,
+    )
 
     if per_element:
-        if not isinstance(data, list):
+        if not isinstance(coerced_data, list):
             msg = (
                 "per_element=True requires a top-level list, "
-                f"got {type(data).__name__}"
+                f"got {type(coerced_data).__name__}"
             )
             raise TypeError(msg)
 
         lines: list[str] = []
-        for element in data:
+        for element in coerced_data:
             arg_values = element if isinstance(element, list) else [element]
             args_str = _format_call_args(
                 values=cast("list[Value]", arg_values),
@@ -1387,7 +1397,7 @@ def literalize_call(
                 language_name=type(language).__name__,
             )
         lit = _literalize(
-            data=data,
+            data=coerced_data,
             language=language,
             line_prefix="",
             include_delimiters=True,
@@ -1400,16 +1410,15 @@ def literalize_call(
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,
         )
-
     computed = _compute_preamble(
-        data=data,
+        data=coerced_data,
         language=language,
         has_variable_declaration=False,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(data)
+        + language.data_dependent_preamble(coerced_data)
     )
 
     if wrap_in_file:
