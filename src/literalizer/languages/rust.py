@@ -2,10 +2,11 @@
 
 import datetime
 import enum
+import functools
 import textwrap
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import assert_never
 
 from beartype import beartype
 
@@ -63,9 +64,187 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._types import Scalar, Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+@beartype
+def _rust_scalar_type(  # noqa: PLR0911
+    data: Scalar,
+    *,
+    date_type: str,
+    datetime_type: str,
+) -> str:
+    """Return the Rust type annotation for a scalar value."""
+    match data:
+        case bool():
+            return "bool"
+        case int():
+            return "i32"
+        case float():
+            return "f64"
+        case str():
+            return "&str"
+        case bytes():
+            return "&str"
+        case datetime.datetime():
+            return datetime_type
+        case datetime.date():
+            return date_type
+        case None:
+            return "Option<()>"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _rust_homogeneous_element_type(
+    elements: Sequence[Value],
+    *,
+    date_type: str,
+    datetime_type: str,
+    default_type: str,
+) -> str:
+    """Return the element type for a homogeneous Rust collection.
+
+    If elements have mixed types, returns ``"&str"`` because the
+    formatter coerces mixed elements to strings.
+    """
+    if not elements:
+        return default_type
+    types = [
+        _rust_scalar_type(
+            data=element,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+        if not isinstance(element, (list, dict, set))
+        else "&str"
+        for element in elements
+    ]
+    unique = list(dict.fromkeys(types))
+    if len(unique) == 1:
+        return unique[0]
+    return "&str"
+
+
+@beartype
+def _rust_type_annotation(
+    data: Value,
+    *,
+    date_type: str,
+    datetime_type: str,
+    sequence_format_name: str,
+    default_sequence_element_type: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+) -> str:
+    """Derive a Rust type annotation string from a ``Value``."""
+    _scalar_kwargs = {
+        "date_type": date_type,
+        "datetime_type": datetime_type,
+    }
+    if isinstance(data, (list, dict, set)):
+        return _rust_collection_type(
+            data=data,
+            sequence_format_name=sequence_format_name,
+            default_sequence_element_type=default_sequence_element_type,
+            default_set_element_type=default_set_element_type,
+            default_dict_key_type=default_dict_key_type,
+            default_dict_value_type=default_dict_value_type,
+            **_scalar_kwargs,
+        )
+    return _rust_scalar_type(data=data, **_scalar_kwargs)
+
+
+@beartype
+def _rust_collection_type(
+    data: list[Value] | dict[str, Value] | set[Scalar],
+    *,
+    date_type: str,
+    datetime_type: str,
+    sequence_format_name: str,
+    default_sequence_element_type: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+) -> str:
+    """Return the Rust type annotation for a collection value."""
+    _scalar_kwargs = {
+        "date_type": date_type,
+        "datetime_type": datetime_type,
+    }
+    match data:
+        case dict():
+            if data:
+                value_types = [
+                    _rust_scalar_type(data=value, **_scalar_kwargs)
+                    if not isinstance(value, (list, dict, set))
+                    else "&str"
+                    for value in data.values()
+                ]
+                unique = list(dict.fromkeys(value_types))
+                value_type = unique[0] if len(unique) == 1 else "&str"
+                key_type = "&str"
+            else:
+                value_type = default_dict_value_type
+                key_type = default_dict_key_type
+            return f"[({key_type}, {value_type}); {len(data)}]"
+        case set():
+            element_type = _rust_homogeneous_element_type(
+                elements=list(data),
+                default_type=default_set_element_type,
+                **_scalar_kwargs,
+            )
+            return f"[{element_type}; {len(data)}]"
+        case list():
+            if sequence_format_name == "TUPLE":
+                element_types = [
+                    _rust_scalar_type(data=element, **_scalar_kwargs)
+                    if not isinstance(element, (list, dict, set))
+                    else "&str"
+                    for element in data
+                ]
+                return f"({', '.join(element_types)})"
+            element_type = _rust_homogeneous_element_type(
+                elements=data,
+                default_type=default_sequence_element_type,
+                **_scalar_kwargs,
+            )
+            return f"[{element_type}; {len(data)}]"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _format_typed_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    keyword: str,
+    date_type: str,
+    datetime_type: str,
+    sequence_format_name: str,
+    default_sequence_element_type: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+) -> str:
+    """Format a ``const`` or ``static`` declaration with a type
+    annotation.
+    """
+    type_annotation = _rust_type_annotation(
+        data=data,
+        date_type=date_type,
+        datetime_type=datetime_type,
+        sequence_format_name=sequence_format_name,
+        default_sequence_element_type=default_sequence_element_type,
+        default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
+    )
+    return f"{keyword} {name}: {type_annotation} = {value};"
 
 
 @beartype
@@ -350,6 +529,14 @@ class Rust(metaclass=LanguageCls):
         LET_MUT = DeclarationStyleConfig(
             formatter=variable_formatter(template="let mut {name} = {value};"),
             supports_redefinition=True,
+        )
+        CONST = DeclarationStyleConfig(
+            formatter=variable_formatter(template="const {name} = {value};"),
+            supports_redefinition=False,
+        )
+        STATIC = DeclarationStyleConfig(
+            formatter=variable_formatter(template="static {name} = {value};"),
+            supports_redefinition=False,
         )
 
     class DictEntryStyles(enum.Enum):
@@ -651,8 +838,36 @@ class Rust(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
+        if declaration_style.name in {"CONST", "STATIC"}:
+            _date_type = (
+                "&str"
+                if date_format.value.type_produced is str
+                else "NaiveDate"
+            )
+            _datetime_type = (
+                "&str"
+                if datetime_format.value.type_produced is str
+                else "NaiveDateTime"
+            )
+            _decl_formatter: Callable[[str, str, Value], str] = (
+                functools.partial(
+                    _format_typed_declaration,
+                    keyword=declaration_style.name.lower(),
+                    date_type=_date_type,
+                    datetime_type=_datetime_type,
+                    sequence_format_name=sequence_format.name,
+                    default_sequence_element_type=(
+                        default_sequence_element_type
+                    ),
+                    default_set_element_type=default_set_element_type,
+                    default_dict_key_type=default_dict_key_type,
+                    default_dict_value_type=default_dict_value_type,
+                )
+            )
+        else:
+            _decl_formatter = declaration_style.value.formatter
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _decl_formatter
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
