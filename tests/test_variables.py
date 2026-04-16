@@ -459,6 +459,96 @@ RUST_CONST = Rust(
 )
 
 
+@pytest.mark.parametrize(
+    argnames=("json_input", "expected"),
+    argvalues=[
+        ("42", "const my_var: i32 = 42;"),
+        ("3.14", "const my_var: f64 = 3.14;"),
+        ("true", "const my_var: bool = true;"),
+        ('"hello"', 'const my_var: &str = "hello";'),
+        ("null", "const my_var: Option<()> = None::<()>;"),
+    ],
+)
+def test_rust_const_scalars(*, json_input: str, expected: str) -> None:
+    """Rust CONST declarations include type annotations for scalars."""
+    result = literalize(
+        source=json_input,
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == expected
+
+
+def test_rust_const_bytes() -> None:
+    """Rust CONST with bytes uses ``&str`` type."""
+    yaml_input = "!!binary |\n  SGVsbG8="
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "48656c6c6f";'
+
+
+def test_rust_const_date() -> None:
+    """Rust CONST with ISO dates uses ``&str`` type."""
+    result = literalize(
+        source="2024-01-15",
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "2024-01-15";'
+
+
+def test_rust_const_datetime() -> None:
+    """Rust CONST with ISO datetimes uses ``&str`` type."""
+    result = literalize(
+        source="2024-01-15T12:30:00",
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
+
+
+def test_rust_const_mixed_array() -> None:
+    """Rust CONST with mixed-type array coerces element type to
+    ``&str``.
+    """
+    result = literalize(
+        source='[1, "hello"]',
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: [&str; 2] = [
+            "1",
+            "hello",
+        ];"""
+    )
+    assert result.code == expected
+
+
 def test_rust_const_tuple() -> None:
     """Rust CONST with tuple format produces per-element types."""
     rust_tuple = Rust(
@@ -615,30 +705,26 @@ def test_rust_tuple_format_type_annotation_raises() -> None:
         )
 
 
-def test_rust_const_vec_type() -> None:
-    """Rust CONST with vector format produces ``Vec<T>`` type."""
-    rust_vec_const = Rust(
-        date_format=Rust.date_formats.ISO,
-        datetime_format=Rust.datetime_formats.ISO,
-        bytes_format=Rust.bytes_formats.HEX,
-        sequence_format=Rust.sequence_formats.VEC,
-        declaration_style=Rust.declaration_styles.CONST,
-    )
-    result = literalize(
-        source="[1, 2, 3]",
-        input_format=InputFormat.JSON,
-        language=rust_vec_const,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: Vec<i32> = vec![
-            1,
-            2,
-            3,
-        ];"""
-    )
-    assert result.code == expected
+def test_rust_vec_format_type_annotation() -> None:
+    """VEC.format_type_annotation returns ``Vec<T>``."""
+    vec_fmt = next(f for f in Rust().sequence_formats if f.name == "VEC")
+    result = vec_fmt.format_type_annotation(element_type="i32", length=3)
+    assert result == "Vec<i32>"
+
+
+def test_rust_const_vec_raises() -> None:
+    """Rust CONST with VEC format raises ValueError."""
+    with pytest.raises(expected_exception=ValueError, match="VEC"):
+        Rust(
+            declaration_style=Rust.declaration_styles.CONST,
+            sequence_format=Rust.sequence_formats.VEC,
+        )
+
+
+def test_rust_static_vec_raises() -> None:
+    """Rust STATIC with VEC format raises ValueError."""
+    with pytest.raises(expected_exception=ValueError, match="VEC"):
+        Rust(
+            declaration_style=Rust.declaration_styles.STATIC,
+            sequence_format=Rust.sequence_formats.VEC,
+        )

@@ -805,6 +805,18 @@ class Rust(metaclass=LanguageCls):
         indent: str = "    ",
     ) -> None:
         """Initialize Rust language specification."""
+        if (
+            declaration_style.name in {"CONST", "STATIC"}
+            and sequence_format.name == "VEC"
+        ):
+            msg = (
+                f"Rust {declaration_style.name} requires a "
+                f"constant-expression initializer, but the "
+                f"VEC sequence format produces vec![…] which "
+                f"is not a constant expression. "
+                f"Use ARRAY or TUPLE instead."
+            )
+            raise ValueError(msg)
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "None::<()>"
