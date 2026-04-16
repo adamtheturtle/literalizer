@@ -55,6 +55,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     identity_call_target,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
@@ -560,6 +561,7 @@ class Nim(metaclass=LanguageCls):
         _json = ("import json",)
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
+        self.data_dependent_preamble = no_data_preamble
         self.scalar_preamble: dict[type, tuple[str, ...]] = {
             str: _json,
             int: _json,

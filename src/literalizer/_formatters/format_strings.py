@@ -17,6 +17,22 @@ class _StringFormatter(Protocol):
 
 
 @beartype
+def _backslash_escape(value: str, *, quote_char: str) -> str:
+    r"""Apply base backslash escapes to *value*.
+
+    Escapes backslashes, *quote_char*, ``\r``, ``\n``, and ``\t``.
+    Does **not** wrap the result in quotes.
+    """
+    return (
+        value.replace("\\", "\\\\")
+        .replace(quote_char, f"\\{quote_char}")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+
+
+@beartype
 def _build_backslash_formatter(
     *,
     quote_char: str,
@@ -35,13 +51,7 @@ def _build_backslash_formatter(
     @beartype
     def _format(value: str) -> str:
         """Format *value* using backslash escaping."""
-        escaped = (
-            value.replace("\\", "\\\\")
-            .replace(quote_char, f"\\{quote_char}")
-            .replace("\r", "\\r")
-            .replace("\n", "\\n")
-            .replace("\t", "\\t")
-        )
+        escaped = _backslash_escape(value=value, quote_char=quote_char)
         for old, new in extra_replacements:
             escaped = escaped.replace(old, new)
         return f"{quote_char}{escaped}{quote_char}"
@@ -265,13 +275,7 @@ def format_string_backslash_control(
         format_string_backslash_control("\x01hi", control_char_fmt="\\x{:02x}")
         # => '"\\x01hi"'
     """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
+    escaped = _backslash_escape(value=value, quote_char='"')
     escaped = escape_control_chars(value=escaped, fmt=control_char_fmt)
     return f'"{escaped}"'
 

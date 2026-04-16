@@ -51,6 +51,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     identity_call_target,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
@@ -454,6 +455,7 @@ class Jsonnet(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
+        self.data_dependent_preamble = no_data_preamble
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[

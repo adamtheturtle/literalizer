@@ -5,8 +5,10 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
+from typing import assert_never
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_set_open,
@@ -43,6 +45,7 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    infer_element_type,
 )
 from literalizer._language import (
     CallStyleConfig,
@@ -66,7 +69,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Value, ValueKind
 
 
 @beartype
@@ -225,13 +228,134 @@ def _rebuild_dict_opener(
 
 
 @beartype
+def _collection_needs_any(
+    items: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> bool:
+    """Return whether a C++ typed opener would fall back to bare braces.
+
+    This happens when ``infer_element_type`` cannot unify the elements,
+    or when the resolved type has no C++ mapping (e.g. dates).
+    """
+    element_type = infer_element_type(items=items)
+    if element_type is None:
+        return True
+    return element_to_type(element_type) is None
+
+
+@beartype
+def _needs_any_type(
+    data: Value,
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> bool:
+    """Check whether *data* would cause the ``Any`` type to appear.
+
+    The ``Any`` struct is needed when any collection in the data
+    produces a bare brace-init opener — either because the C++ type
+    resolver cannot map the element type, or because the collection
+    kind (set, ordered map) always uses bare braces.
+    """
+    match data:
+        case set() | ordereddict():
+            return True
+        case list():
+            return (
+                not data
+                or _collection_needs_any(
+                    items=data,
+                    element_to_type=element_to_type,
+                )
+                or any(
+                    _needs_any_type(
+                        data=v,
+                        element_to_type=element_to_type,
+                    )
+                    for v in data
+                )
+            )
+        case dict():
+            values = list(data.values())
+            return (
+                not values
+                or _collection_needs_any(
+                    items=values,
+                    element_to_type=element_to_type,
+                )
+                or any(
+                    _needs_any_type(
+                        data=v,
+                        element_to_type=element_to_type,
+                    )
+                    for v in values
+                )
+            )
+        case _:
+            return False
+
+
+@beartype
+def _build_any_struct_preamble(
+    *,
+    int_type: str,
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build a ``data_dependent_preamble`` for the ``Any`` struct."""
+    element_to_type = _make_cpp_element_to_type(int_type=int_type)
+
+    def _any_struct_preamble(data: Value, /) -> tuple[str, ...]:
+        """Return the ``Any`` helper struct when *data* needs it."""
+        if _needs_any_type(data=data, element_to_type=element_to_type):
+            return (
+                "struct Any {",
+                "    template<class T> Any(T&&) noexcept {}",
+                "    Any(std::initializer_list<Any>) noexcept {}",
+                "};",
+            )
+        return ()
+
+    return _any_struct_preamble
+
+
+@beartype
 def _format_variable_declaration(
     name: str,
     value: str,
     _data: Value,
 ) -> str:
-    """Format a C++ variable declaration."""
-    return f"Any {name} = {value};"
+    """Format a C++ variable declaration.
+
+    The type keyword is chosen by inspecting the formatted *value*
+    string rather than *_data* because format variants (e.g.
+    ``coerce_mixed_to_str``, date ISO vs chrono) can change the
+    opener independently of the input data, and this function does
+    not have access to the language configuration.
+
+    * ``Any`` — bare brace-init (``{...}``) where the compiler
+      cannot deduce the type.
+    * ``const auto*`` — string literal (``"..."``), required by
+      ``readability-qualified-auto``.
+    * ``auto`` — explicit type constructor
+      (e.g. ``std::vector<int>{...}``).
+    """
+    kind = _infer_value_kind(value=value)
+    match kind:
+        case ValueKind.BARE_BRACE_INIT:
+            type_keyword = "Any"
+        case ValueKind.STRING_LITERAL:
+            type_keyword = "const auto*"
+        case ValueKind.TYPED_EXPRESSION:
+            type_keyword = "auto"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return f"{type_keyword} {name} = {value};"
+
+
+def _infer_value_kind(*, value: str) -> ValueKind:
+    """Classify a formatted C++ value string."""
+    if value.startswith("{"):
+        return ValueKind.BARE_BRACE_INIT
+    if value.startswith('"'):
+        return ValueKind.STRING_LITERAL
+    return ValueKind.TYPED_EXPRESSION
 
 
 def _cpp_call_stub(
@@ -718,11 +842,11 @@ class Cpp(metaclass=LanguageCls):
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
-        self.static_body_preamble: Sequence[str] = (
-            "struct Any {",
-            "    template<class T> Any(T&&) noexcept {}",
-            "    Any(std::initializer_list<Any>) noexcept {}",
-            "};",
+        self.static_body_preamble: Sequence[str] = ()
+        self.data_dependent_preamble: Callable[[Value], tuple[str, ...]] = (
+            _build_any_struct_preamble(
+                int_type=numeric_literal_suffix.int_type,
+            )
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.value.formatter

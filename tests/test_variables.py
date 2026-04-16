@@ -185,7 +185,7 @@ _VARIABLE_SYNTAX: dict[Language, _VariableSyntax] = {
         declaration="var my_var = 42;", assignment="my_var = 42;"
     ),
     CPP: _VariableSyntax(
-        declaration="Any my_var = 42;", assignment="my_var = 42;"
+        declaration="auto my_var = 42;", assignment="my_var = 42;"
     ),
     JAVA: _VariableSyntax(
         declaration="var my_var = 42;", assignment="my_var = 42;"

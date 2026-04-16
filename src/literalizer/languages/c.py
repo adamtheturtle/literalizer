@@ -21,6 +21,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -49,6 +50,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     identity_call_target,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -188,7 +190,9 @@ class C(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=lambda name, value, _data: f"CVal {name} = {value};",
+            formatter=variable_formatter(
+                template="CVal {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -497,6 +501,7 @@ class C(metaclass=LanguageCls):
             f"struct CKV {{ const char *{key_field}; CVal {value_field}; }};",
         )
         self.static_body_preamble: Sequence[str] = ()
+        self.data_dependent_preamble = no_data_preamble
         self.scalar_preamble: dict[type, tuple[str, ...]] = {}
         self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
         self.compute_body_preamble: Callable[
