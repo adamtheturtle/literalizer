@@ -910,7 +910,6 @@ def _literalize(
 
 
 @beartype
-@beartype
 def _apply_variable_wrapper(
     *,
     result: str,
