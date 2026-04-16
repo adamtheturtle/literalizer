@@ -1,4 +1,3 @@
-from std.collections import Set
 def main():
     var my_data = {
         "name": "Alice",
