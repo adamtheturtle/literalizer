@@ -99,8 +99,8 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 def _make_cpp_element_to_type(
     *,
     int_type: str,
-    date_type: str | None = None,
-    datetime_type: str | None = None,
+    date_type: str | None,
+    datetime_type: str | None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
@@ -121,7 +121,11 @@ def _make_cpp_element_to_type(
 @beartype
 def _cpp_array_open(items: list[Value]) -> str:
     """Infer element type and return a ``std::array<T, N>`` opener."""
-    element_to_type = _make_cpp_element_to_type(int_type="int")
+    element_to_type = _make_cpp_element_to_type(
+        int_type="int",
+        date_type=None,
+        datetime_type=None,
+    )
     type_name = element_to_type(type(items[0])) if items else None
     if type_name is None or not all(
         element_to_type(type(i)) == type_name for i in items
@@ -740,8 +744,8 @@ class Cpp(metaclass=LanguageCls):
             self,
             *,
             int_type: str,
-            date_type: str | None = None,
-            datetime_type: str | None = None,
+            date_type: str | None,
+            datetime_type: str | None,
         ) -> SequenceFormatConfig:
             """Return the sequence format config for the given int
             type.
@@ -758,7 +762,11 @@ class Cpp(metaclass=LanguageCls):
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.get_config(int_type="int").supports_heterogeneity
+            return self.get_config(
+                int_type="int",
+                date_type=None,
+                datetime_type=None,
+            ).supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C++."""
