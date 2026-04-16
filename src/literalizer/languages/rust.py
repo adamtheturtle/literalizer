@@ -464,7 +464,7 @@ class Rust(metaclass=LanguageCls):
             match self.name:
                 case "TUPLE":
                     msg = "Use per-element types for tuples"
-                    raise TypeError(msg)
+                    raise IncompatibleFormatsError(msg)
                 case "VEC":
                     return f"Vec<{element_type}>"
                 case _:

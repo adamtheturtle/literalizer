@@ -673,9 +673,9 @@ def test_rust_const_nested_list() -> None:
 
 
 def test_rust_tuple_format_type_annotation_raises() -> None:
-    """TUPLE.format_type_annotation raises TypeError."""
+    """TUPLE.format_type_annotation raises for incompatible format."""
     tuple_fmt = next(f for f in Rust().sequence_formats if f.name == "TUPLE")
-    with pytest.raises(expected_exception=TypeError):
+    with pytest.raises(expected_exception=IncompatibleFormatsError):
         tuple_fmt.format_type_annotation(
             element_type="i32",
             length=2,
