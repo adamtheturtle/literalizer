@@ -281,16 +281,22 @@ def _compute_element_type_for_items(
                 cpp_type = element_to_type(element_type)
                 if cpp_type is not None:
                     return cpp_type
-    cpp_types: list[str] = []
+    unique_cpp_types: list[str] = []
     seen: set[str] = set()
     for item in items:
-        t = _compute_cpp_type(item=item, element_to_type=element_to_type)
-        if t not in seen:
-            seen.add(t)
-            cpp_types.append(t)
-    if len(cpp_types) == 1:
-        return cpp_types[0]
-    return f"std::variant<{', '.join(cpp_types)}>"
+        item_type = _compute_cpp_type(
+            item=item,
+            element_to_type=element_to_type,
+        )
+        if item_type not in seen:
+            seen.add(item_type)
+            unique_cpp_types.append(item_type)
+    match unique_cpp_types:
+        case [single]:
+            return single
+        case _:
+            joined = ", ".join(unique_cpp_types)
+            return f"std::variant<{joined}>"
 
 
 @beartype
