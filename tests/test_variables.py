@@ -585,7 +585,7 @@ def test_rust_const_dict_mixed_values() -> None:
 
 
 def test_rust_const_nested_list() -> None:
-    """Rust CONST with nested list infers ``&str`` element type."""
+    """Rust CONST with nested list produces recursive type."""
     result = literalize(
         source="[[1, 2], [3, 4]]",
         input_format=InputFormat.JSON,
@@ -597,7 +597,7 @@ def test_rust_const_nested_list() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        const my_var: [&str; 2] = [
+        const my_var: [[i32; 2]; 2] = [
             [1, 2],
             [3, 4],
         ];"""

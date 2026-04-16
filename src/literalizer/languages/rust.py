@@ -97,34 +97,10 @@ def _rust_scalar_type(  # noqa: PLR0911
 
 
 @beartype
-def _rust_element_type_for_scalar(
-    data: Value,
-    *,
-    date_type: str,
-    datetime_type: str,
-) -> str:
-    """Return the Rust type for a single element.
-
-    Collections are treated as ``"&str"`` because the formatter
-    coerces them to strings.
-    """
-    match data:
-        case list() | dict() | set():
-            return "&str"
-        case _:
-            return _rust_scalar_type(
-                data=data,
-                date_type=date_type,
-                datetime_type=datetime_type,
-            )
-
-
-@beartype
 def _rust_homogeneous_element_type(
     elements: Sequence[Value],
     *,
-    date_type: str,
-    datetime_type: str,
+    infer: Callable[[Value], str],
     default_type: str,
 ) -> str:
     """Return the element type for a homogeneous Rust collection.
@@ -134,14 +110,7 @@ def _rust_homogeneous_element_type(
     """
     if not elements:
         return default_type
-    types = [
-        _rust_element_type_for_scalar(
-            data=element,
-            date_type=date_type,
-            datetime_type=datetime_type,
-        )
-        for element in elements
-    ]
+    types = [infer(element) for element in elements]
     unique = list(dict.fromkeys(types))
     match unique:
         case [single]:
@@ -166,17 +135,23 @@ def _rust_type_annotation(
     default_dict_value_type: str,
 ) -> str:
     """Derive a Rust type annotation string from a ``Value``."""
+    recurse = functools.partial(
+        _rust_type_annotation,
+        date_type=date_type,
+        datetime_type=datetime_type,
+        sequence_format_type_annotation=sequence_format_type_annotation,
+        sequence_supports_heterogeneity=sequence_supports_heterogeneity,
+        set_type_name=set_type_name,
+        dict_type_name=dict_type_name,
+        default_sequence_element_type=default_sequence_element_type,
+        default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
+    )
     match data:
         case dict():
             if data:
-                value_types = [
-                    _rust_element_type_for_scalar(
-                        data=value,
-                        date_type=date_type,
-                        datetime_type=datetime_type,
-                    )
-                    for value in data.values()
-                ]
+                value_types = [recurse(v) for v in data.values()]
                 unique = list(dict.fromkeys(value_types))
                 match unique:
                     case [single]:
@@ -191,26 +166,16 @@ def _rust_type_annotation(
         case set():
             element_type = _rust_homogeneous_element_type(
                 elements=list(data),
-                date_type=date_type,
-                datetime_type=datetime_type,
+                infer=recurse,
                 default_type=default_set_element_type,
             )
             return f"{set_type_name}<{element_type}>"
         case list():
             if sequence_supports_heterogeneity:
-                element_types = [
-                    _rust_element_type_for_scalar(
-                        data=element,
-                        date_type=date_type,
-                        datetime_type=datetime_type,
-                    )
-                    for element in data
-                ]
-                return f"({', '.join(element_types)})"
+                return f"({', '.join(recurse(e) for e in data)})"
             element_type = _rust_homogeneous_element_type(
                 elements=data,
-                date_type=date_type,
-                datetime_type=datetime_type,
+                infer=recurse,
                 default_type=default_sequence_element_type,
             )
             return sequence_format_type_annotation(element_type, len(data))
