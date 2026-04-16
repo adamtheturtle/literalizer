@@ -966,8 +966,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         """Build spec, using ARRAY for Rust const/static styles.
 
         Rust CONST and STATIC raise ``IncompatibleFormatsError``
-        with the default sequence format (VEC).  Use ARRAY so
-        the golden files produce valid, compilable Rust.
+        with the default sequence format.  Use ARRAY so the golden
+        files produce valid Rust that the compiler accepts.
         """
         result: literalizer.Language
         if cls.__name__ == "Rust" and fmt.name in {
@@ -1184,6 +1184,10 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "simple_dict", ""),
         (type_hints_cross, "int_set", ""),
     ]
+    # Rust CONST/STATIC with dict cases produce HashMap::from([…])
+    # which is not a constant expression, so skip those.
+    _const_static_suffixes = ("_const", "_static")
+
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
             _VariantCase(
@@ -1193,6 +1197,11 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variable_form=_wrap_variable_form(lang_cls=variant.lang_cls),
             )
             for variant in variants
+            if not (
+                variant.lang_cls.__name__ == "Rust"
+                and variant.name.endswith(_const_static_suffixes)
+                and "dict" in case_dir_name
+            )
         )
     return cases
 
