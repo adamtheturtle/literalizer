@@ -539,9 +539,6 @@ class Rust(metaclass=LanguageCls):
             formatter=variable_formatter(template="let mut {name} = {value};"),
             supports_redefinition=True,
         )
-        # The CONST/STATIC formatters below are overridden in __init__
-        # with type-annotated versions.  The templates here satisfy
-        # the DeclarationStyleConfig signature.
         CONST = DeclarationStyleConfig(
             formatter=variable_formatter(template="const {name} = {value};"),
             supports_redefinition=False,
@@ -550,6 +547,42 @@ class Rust(metaclass=LanguageCls):
             formatter=variable_formatter(template="static {name} = {value};"),
             supports_redefinition=False,
         )
+
+        def build_formatter(
+            self,
+            *,
+            date_type: str,
+            datetime_type: str,
+            sequence_format_name: str,
+            set_type_name: str,
+            dict_type_name: str,
+            default_sequence_element_type: str,
+            default_set_element_type: str,
+            default_dict_key_type: str,
+            default_dict_value_type: str,
+        ) -> Callable[[str, str, Value], str]:
+            """Return a formatter for this declaration style.
+
+            For ``LET`` and ``LET_MUT`` the formatter is used
+            directly.  For ``CONST`` and ``STATIC`` a
+            type-annotated formatter is built from the language
+            configuration.
+            """
+            if self.name not in {"CONST", "STATIC"}:
+                return self.value.formatter
+            return functools.partial(
+                _format_typed_declaration,
+                keyword=self.name.lower(),
+                date_type=date_type,
+                datetime_type=datetime_type,
+                sequence_format_name=sequence_format_name,
+                set_type_name=set_type_name,
+                dict_type_name=dict_type_name,
+                default_sequence_element_type=(default_sequence_element_type),
+                default_set_element_type=default_set_element_type,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+            )
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -858,38 +891,26 @@ class Rust(metaclass=LanguageCls):
             "HASH_MAP": "HashMap",
             "BTREE_MAP": "BTreeMap",
         }
-        if declaration_style.name in {"CONST", "STATIC"}:
-            _date_type = (
-                "&str"
-                if date_format.value.type_produced is str
-                else "NaiveDate"
-            )
-            _datetime_type = (
-                "&str"
-                if datetime_format.value.type_produced is str
-                else "NaiveDateTime"
-            )
-            _decl_formatter: Callable[[str, str, Value], str] = (
-                functools.partial(
-                    _format_typed_declaration,
-                    keyword=declaration_style.name.lower(),
-                    date_type=_date_type,
-                    datetime_type=_datetime_type,
-                    sequence_format_name=sequence_format.name,
-                    set_type_name=_set_type_names[set_format.name],
-                    dict_type_name=_dict_type_names[dict_format.name],
-                    default_sequence_element_type=(
-                        default_sequence_element_type
-                    ),
-                    default_set_element_type=default_set_element_type,
-                    default_dict_key_type=default_dict_key_type,
-                    default_dict_value_type=default_dict_value_type,
-                )
-            )
-        else:
-            _decl_formatter = declaration_style.value.formatter
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _decl_formatter
+            declaration_style.build_formatter(
+                date_type=(
+                    "&str"
+                    if date_format.value.type_produced is str
+                    else "NaiveDate"
+                ),
+                datetime_type=(
+                    "&str"
+                    if datetime_format.value.type_produced is str
+                    else "NaiveDateTime"
+                ),
+                sequence_format_name=sequence_format.name,
+                set_type_name=_set_type_names[set_format.name],
+                dict_type_name=_dict_type_names[dict_format.name],
+                default_sequence_element_type=(default_sequence_element_type),
+                default_set_element_type=default_set_element_type,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
