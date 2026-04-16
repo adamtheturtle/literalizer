@@ -183,7 +183,7 @@ def _make_array_config(
     date_type: str | None,
     datetime_type: str | None,
 ) -> SequenceFormatConfig:
-    """Return the ARRAY sequence config (ignores extra params)."""
+    """Return the ARRAY sequence config."""
     del int_type, date_type, datetime_type
     return _ARRAY_CONFIG
 
@@ -249,6 +249,38 @@ def _compute_cpp_type(
 
 
 @beartype
+def _collect_unique_cpp_types(
+    items: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> list[str]:
+    """Collect unique C++ type names for each item, preserving order."""
+    unique_cpp_types: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        item_type = _compute_cpp_type(
+            item=item,
+            element_to_type=element_to_type,
+        )
+        if item_type not in seen:
+            seen.add(item_type)
+            unique_cpp_types.append(item_type)
+    return unique_cpp_types
+
+
+@beartype
+def _collect_dict_values(items: list[Value]) -> list[Value]:
+    """Collect all values from dict items in a list."""
+    all_values: list[Value] = []
+    for item in items:
+        match item:
+            case dict():
+                all_values.extend(item.values())
+            case _:
+                pass
+    return all_values
+
+
+@beartype
 def _compute_element_type_for_items(
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
@@ -265,15 +297,8 @@ def _compute_element_type_for_items(
     if element_type is not None:
         match element_type:
             case DictType(value_type=None):
-                all_values: list[Value] = []
-                for item in items:
-                    match item:
-                        case dict():
-                            all_values.extend(item.values())
-                        case _:
-                            pass
                 value_type = _compute_element_type_for_items(
-                    items=all_values,
+                    items=_collect_dict_values(items=items),
                     element_to_type=element_to_type,
                 )
                 return f"std::map<std::string, {value_type}>"
@@ -281,22 +306,14 @@ def _compute_element_type_for_items(
                 cpp_type = element_to_type(element_type)
                 if cpp_type is not None:
                     return cpp_type
-    unique_cpp_types: list[str] = []
-    seen: set[str] = set()
-    for item in items:
-        item_type = _compute_cpp_type(
-            item=item,
-            element_to_type=element_to_type,
-        )
-        if item_type not in seen:
-            seen.add(item_type)
-            unique_cpp_types.append(item_type)
-    match unique_cpp_types:
+    match _collect_unique_cpp_types(
+        items=items,
+        element_to_type=element_to_type,
+    ):
         case [single]:
             return single
-        case _:
-            joined = ", ".join(unique_cpp_types)
-            return f"std::variant<{joined}>"
+        case types:
+            return f"std::variant<{', '.join(types)}>"
 
 
 @beartype
