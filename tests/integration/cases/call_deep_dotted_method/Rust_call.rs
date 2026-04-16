@@ -5,6 +5,6 @@ fn main() {
     struct ObjType_ { api: ApiType_ }
     let obj = ObjType_ { api: ApiType_ { client: ClientType_ } };
     obj.api.client.post("hello");
-    obj.api.client.post(42);
-    obj.api.client.post(true);
+    obj.api.client.post("42");
+    obj.api.client.post("True");
 }
