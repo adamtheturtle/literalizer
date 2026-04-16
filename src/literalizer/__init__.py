@@ -29,10 +29,7 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
 )
-from literalizer.exceptions import (
-    IncompatibleFormatsError,
-    UnsupportedCallStyleError,
-)
+from literalizer.exceptions import IncompatibleFormatsError
 
 __all__ = [
     "BothVariableForms",
@@ -53,7 +50,6 @@ __all__ = [
     "SequenceFormatConfig",
     "SetFormatConfig",
     "TrailingCommaConfig",
-    "UnsupportedCallStyleError",
     "VariableForm",
     "fixed_dict_open",
     "fixed_sequence_open",

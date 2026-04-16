@@ -42,6 +42,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     JSON5ParseError,
     JSONParseError,
+    PerElementNotListError,
     TOMLParseError,
     UnsupportedCallStyleError,
     YAMLParseError,
@@ -1372,7 +1373,7 @@ def literalize_call(
                 "per_element=True requires a top-level list, "
                 f"got {type(coerced_data).__name__}"
             )
-            raise TypeError(msg)
+            raise PerElementNotListError(msg)
 
         lines: list[str] = []
         for element in coerced_data:
