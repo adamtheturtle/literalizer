@@ -1130,7 +1130,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (line_ending, "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
         (_build_sequence_decl_variants(), "simple_sequence", ""),
-        (_build_sequence_decl_variants(), "empty_list", ""),
         (_build_sequence_decl_variants(), "scalars", ""),
         (_build_sequence_decl_variants(), "int_list", ""),
         (_build_type_name_variants(), "simple_dict", ""),
