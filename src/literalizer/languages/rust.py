@@ -143,9 +143,11 @@ def _rust_homogeneous_element_type(
         for element in elements
     ]
     unique = list(dict.fromkeys(types))
-    if len(unique) == 1:
-        return unique[0]
-    return "&str"
+    match unique:
+        case [single]:
+            return single
+        case _:
+            return "&str"
 
 
 @beartype
@@ -175,7 +177,11 @@ def _rust_type_annotation(
                     for value in data.values()
                 ]
                 unique = list(dict.fromkeys(value_types))
-                value_type = unique[0] if len(unique) == 1 else "&str"
+                match unique:
+                    case [single]:
+                        value_type = single
+                    case _:
+                        value_type = "&str"
                 key_type = "&str"
             else:
                 value_type = default_dict_value_type
