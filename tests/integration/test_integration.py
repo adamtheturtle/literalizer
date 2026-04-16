@@ -918,11 +918,38 @@ def _build_variant_cases() -> list[_VariantCase]:
         make_spec=lambda cls, fmt: cls(variable_type_hints=fmt),
     )
 
+    def _declaration_style_make_spec(
+        cls: literalizer.LanguageCls,
+        fmt: enum.Enum,
+    ) -> literalizer.Language:
+        """Build spec, using ARRAY for Rust const/static styles.
+
+        Rust CONST and STATIC raise ``IncompatibleFormatsError``
+        with the default sequence format (VEC).  Use ARRAY so
+        the golden files produce valid, compilable Rust.
+        """
+        result: literalizer.Language
+        if cls.__name__ == "Rust" and fmt.name in {
+            "CONST",
+            "STATIC",
+        }:
+            spec = cls()
+            array_fmt = next(
+                f for f in spec.sequence_formats if f.name == "ARRAY"
+            )
+            result = cls(
+                declaration_style=fmt,
+                sequence_format=array_fmt,
+            )
+        else:
+            result = cls(declaration_style=fmt)
+        return result
+
     declaration_style = nv(
         category="declaration_style",
         get_default=lambda s: s.declaration_style,
         get_formats=lambda s: s.declaration_styles,
-        make_spec=lambda cls, fmt: cls(declaration_style=fmt),
+        make_spec=_declaration_style_make_spec,
     )
     dict_format = nv(
         category="dict_format",

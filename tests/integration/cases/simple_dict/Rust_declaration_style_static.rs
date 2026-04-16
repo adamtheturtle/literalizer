@@ -1,0 +1,10 @@
+use std::collections::HashMap;
+fn main() {
+    static my_data: HashMap<&str, &str> = HashMap::from([
+        ("name", "Alice"),
+        ("age", "30"),
+        ("active", "True"),
+        ("score", "None"),
+    ]);
+    let _ = my_data;
+}
