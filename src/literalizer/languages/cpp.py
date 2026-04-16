@@ -226,14 +226,6 @@ def _rebuild_dict_opener(
     )
 
 
-_ANY_STRUCT_LINES: tuple[str, ...] = (
-    "struct Any {",
-    "    template<class T> Any(T&&) noexcept {}",
-    "    Any(std::initializer_list<Any>) noexcept {}",
-    "};",
-)
-
-
 _cpp_element_to_type = _make_cpp_element_to_type(int_type="int")
 
 
@@ -282,7 +274,12 @@ def _needs_any_type(data: Value) -> bool:
 def _any_struct_preamble(data: Value, /) -> tuple[str, ...]:
     """Return the ``Any`` helper struct when *data* needs it."""
     if _needs_any_type(data=data):
-        return _ANY_STRUCT_LINES
+        return (
+            "struct Any {",
+            "    template<class T> Any(T&&) noexcept {}",
+            "    Any(std::initializer_list<Any>) noexcept {}",
+            "};",
+        )
     return ()
 
 
