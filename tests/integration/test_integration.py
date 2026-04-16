@@ -24,10 +24,7 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer.exceptions import (
-    IncompatibleFormatsError,
-    NullInCollectionError,
-)
+from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
@@ -145,14 +142,10 @@ def _build_non_default_variants(
         for fmt in get_formats(spec):
             if fmt is default_format:
                 continue
-            try:
-                variant_spec = make_spec(lang_cls, fmt)
-            except IncompatibleFormatsError:
-                continue
             variants.append(
                 _Variant(
                     name=f"{lang_name}_{category}_{fmt.name.lower()}",
-                    spec=variant_spec,
+                    spec=make_spec(lang_cls, fmt),
                     lang_cls=lang_cls,
                 )
             )

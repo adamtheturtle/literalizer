@@ -464,6 +464,11 @@ RUST_CONST = Rust(
     argnames=("json_input", "expected"),
     argvalues=[
         ("42", "const my_var: i32 = 42;"),
+        ("2147483648", "const my_var: i64 = 2147483648;"),
+        (
+            "9223372036854775808",
+            "const my_var: i128 = 9223372036854775808;",
+        ),
         ("3.14", "const my_var: f64 = 3.14;"),
         ("true", "const my_var: bool = true;"),
         ('"hello"', 'const my_var: &str = "hello";'),

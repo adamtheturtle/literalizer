@@ -68,6 +68,20 @@ from literalizer._language import (
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
 
+_I32_MIN = -(2**31)
+_I32_MAX = 2**31 - 1
+_I64_MIN = -(2**63)
+_I64_MAX = 2**63 - 1
+
+
+def _rust_integer_type(value: int) -> str:
+    """Return the narrowest Rust integer type for *value*."""
+    if _I32_MIN <= value <= _I32_MAX:
+        return "i32"
+    if _I64_MIN <= value <= _I64_MAX:
+        return "i64"
+    return "i128"
+
 
 @beartype
 def _rust_scalar_type(  # noqa: PLR0911
@@ -81,7 +95,7 @@ def _rust_scalar_type(  # noqa: PLR0911
         case bool():
             return "bool"
         case int():
-            return "i32"
+            return _rust_integer_type(value=data)
         case float():
             return "f64"
         case str():
