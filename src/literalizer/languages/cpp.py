@@ -11,12 +11,8 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_set_open,
     make_element_to_type,
     make_type_to_opener,
-    typed_collection_open,
-    typed_dict_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -104,6 +100,8 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 def _make_cpp_element_to_type(
     *,
     int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
@@ -113,18 +111,22 @@ def _make_cpp_element_to_type(
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="std::string",
-        date_type=None,
-        datetime_type=None,
+        date_type=date_type,
+        datetime_type=datetime_type,
         list_template="std::vector<{inner}>",
         dict_type_template="std::map<std::string, {inner}>",
-        fallback_value_type="Any",
+        fallback_value_type=None,
     )
 
 
 @beartype
 def _cpp_array_open(items: list[Value]) -> str:
     """Infer element type and return a ``std::array<T, N>`` opener."""
-    element_to_type = _make_cpp_element_to_type(int_type="int")
+    element_to_type = _make_cpp_element_to_type(
+        int_type="int",
+        date_type=None,
+        datetime_type=None,
+    )
     type_name = element_to_type(type(items[0])) if items else None
     if type_name is None or not all(
         element_to_type(type(i)) == type_name for i in items
@@ -137,18 +139,17 @@ def _cpp_array_open(items: list[Value]) -> str:
 def _make_initializer_list_config(
     *,
     int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
 ) -> SequenceFormatConfig:
     """Build an INITIALIZER_LIST sequence config for the given int
     type.
     """
-    element_to_type = _make_cpp_element_to_type(int_type=int_type)
     return SequenceFormatConfig(
-        sequence_open=typed_collection_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=element_to_type,
-                opener_template="std::vector<{type_name}>{{",
-            ),
-            fallback="{",
+        sequence_open=_build_variant_sequence_open(
+            int_type=int_type,
+            date_type=date_type,
+            datetime_type=datetime_type,
         ),
         close="}",
         supports_heterogeneity=True,
@@ -181,10 +182,23 @@ _ARRAY_CONFIG = SequenceFormatConfig(
 
 
 @beartype
-def _make_array_config(*, int_type: str) -> SequenceFormatConfig:
-    """Return the ARRAY sequence config (ignores int_type)."""
-    del int_type
+def _make_array_config(
+    *,
+    int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> SequenceFormatConfig:
+    """Return the ARRAY sequence config."""
+    del int_type, date_type, datetime_type
     return _ARRAY_CONFIG
+
+
+@dataclasses.dataclass(frozen=True)
+class _DictFormatOption:
+    """A dict format bundled with its typed opener template."""
+
+    config: DictFormatConfig
+    opener_template: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -203,117 +217,384 @@ def _identity_wrapper(
 
 
 @beartype
-def _rebuild_dict_opener(
-    *,
-    int_type: str,
-    dict_format: enum.Enum,
-) -> DictFormatConfig:
-    """Rebuild the dict opener for the given int type."""
-    element_to_type = _make_cpp_element_to_type(int_type=int_type)
-    dict_opener_template = (
-        "std::unordered_map<std::string, {type_name}>{{"
-        if dict_format.name == "UNORDERED_MAP"
-        else "std::map<std::string, {type_name}>{{"
-    )
-    base_config: DictFormatConfig = dict_format.value
-    return dataclasses.replace(
-        base_config,
-        dict_open=typed_dict_open(
-            type_to_opener=make_type_to_opener(
+def _compute_cpp_type(
+    item: Value,
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> str:
+    """Return the C++ type string for a single value."""
+    match item:
+        case ordereddict():
+            omap_values = item.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            values: list[Value] = list(omap_values)  # pyright: ignore[reportUnknownArgumentType]
+            value_type = _compute_element_type_for_items(
+                items=values,
                 element_to_type=element_to_type,
-                opener_template=dict_opener_template,
-            ),
-            fallback="{",
-        ),
-    )
+            )
+            return f"std::vector<std::pair<std::string, {value_type}>>"
+        case dict():
+            values = list(item.values())
+            value_type = _compute_element_type_for_items(
+                items=values,
+                element_to_type=element_to_type,
+            )
+            return f"std::map<std::string, {value_type}>"
+        case list():
+            inner_type = _compute_element_type_for_items(
+                items=item,
+                element_to_type=element_to_type,
+            )
+            return f"std::vector<{inner_type}>"
+        case set():
+            sorted_items: list[Value] = sorted(
+                item,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            inner_type = _compute_element_type_for_items(
+                items=sorted_items,
+                element_to_type=element_to_type,
+            )
+            return f"std::initializer_list<{inner_type}>"
+        case _:
+            cpp_type = element_to_type(type(item))
+            if cpp_type is not None:
+                return cpp_type
+            return "std::nullptr_t"
 
 
 @beartype
-def _collection_needs_any(
+def _collect_unique_cpp_types(
+    items: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> list[str]:
+    """Collect unique C++ type names for each item, preserving order."""
+    unique_cpp_types: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        item_type = _compute_cpp_type(
+            item=item,
+            element_to_type=element_to_type,
+        )
+        if item_type not in seen:
+            seen.add(item_type)
+            unique_cpp_types.append(item_type)
+    return unique_cpp_types
+
+
+@beartype
+def _compute_element_type_for_items(
+    items: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> str:
+    """Return the C++ element type for a collection of items.
+
+    Returns a single type name when all items have the same C++ type,
+    or ``std::variant<T1, T2, ...>`` for mixed types.  Returns
+    ``std::nullptr_t`` for empty collections.
+    """
+    if not items:
+        return "std::nullptr_t"
+    element_type = infer_element_type(items=items)
+    if element_type is not None:
+        match element_type:
+            case DictType(value_type=None):
+                all_dict_values: list[Value] = [
+                    v
+                    for item in items
+                    if isinstance(item, dict)  # pragma: no branch
+                    for v in item.values()
+                ]
+                value_type = _compute_element_type_for_items(
+                    items=all_dict_values,
+                    element_to_type=element_to_type,
+                )
+                return f"std::map<std::string, {value_type}>"
+            case _:
+                cpp_type = element_to_type(element_type)
+                if cpp_type is not None:
+                    return cpp_type
+    match _collect_unique_cpp_types(
+        items=items,
+        element_to_type=element_to_type,
+    ):
+        case [single]:
+            return single
+        case types:
+            return f"std::variant<{', '.join(types)}>"
+
+
+@beartype
+def _items_need_variant(
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
 ) -> bool:
-    """Return whether a C++ typed opener would fall back to bare braces.
-
-    This happens when ``infer_element_type`` cannot unify the elements,
-    or when the resolved type has no C++ mapping (e.g. dates).
-    """
+    """Check whether a collection's items need ``std::variant``."""
+    if not items:
+        return False
     element_type = infer_element_type(items=items)
     if element_type is None:
         return True
-    return element_to_type(element_type) is None
+    match element_type:
+        case DictType(value_type=vt):
+            if vt is None or element_to_type(vt) is None:
+                return True
+        case other if element_to_type(other) is None:
+            return True
+        case _:
+            pass
+    return any(
+        _needs_variant_type(
+            data=v,
+            element_to_type=element_to_type,
+        )
+        for v in items
+    )
 
 
 @beartype
-def _needs_any_type(
+def _needs_variant_type(
     data: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
 ) -> bool:
-    """Check whether *data* would cause the ``Any`` type to appear.
+    """Check whether *data* would produce ``std::variant`` or
+    ``std::nullptr_t`` types in the generated C++ code.
 
-    The ``Any`` struct is needed when any collection in the data
-    produces a bare brace-init opener — either because the C++ type
-    resolver cannot map the element type, or because the collection
-    kind (set, ordered map) always uses bare braces.
+    Used to determine whether ``#include <variant>`` is needed.
     """
     match data:
-        case set() | ordereddict():
-            return True
+        case set():
+            sorted_items: list[Value] = sorted(
+                data,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            return _items_need_variant(
+                items=sorted_items,
+                element_to_type=element_to_type,
+            )
+        case ordereddict():
+            omap_vals = data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            values: list[Value] = list(omap_vals)  # pyright: ignore[reportUnknownArgumentType]
+            return _items_need_variant(
+                items=values,
+                element_to_type=element_to_type,
+            )
         case list():
-            return (
-                not data
-                or _collection_needs_any(
-                    items=data,
-                    element_to_type=element_to_type,
-                )
-                or any(
-                    _needs_any_type(
-                        data=v,
-                        element_to_type=element_to_type,
-                    )
-                    for v in data
-                )
+            return _items_need_variant(
+                items=data,
+                element_to_type=element_to_type,
             )
         case dict():
-            values = list(data.values())
-            return (
-                not values
-                or _collection_needs_any(
-                    items=values,
-                    element_to_type=element_to_type,
-                )
-                or any(
-                    _needs_any_type(
-                        data=v,
-                        element_to_type=element_to_type,
-                    )
-                    for v in values
-                )
+            return _items_need_variant(
+                items=list(data.values()),
+                element_to_type=element_to_type,
             )
         case _:
             return False
 
 
 @beartype
-def _build_any_struct_preamble(
+def _has_empty_collection(data: Value) -> bool:
+    """Check whether *data* contains any empty list/dict/set/omap.
+
+    Empty collections produce ``std::nullptr_t`` placeholders, which
+    require ``#include <cstddef>``.
+    """
+    match data:
+        case list() | set() | dict() | ordereddict() if not data:
+            return True
+        case list():
+            return any(_has_empty_collection(data=v) for v in data)
+        case ordereddict() | dict():
+            mapping_values = data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            return any(
+                _has_empty_collection(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in mapping_values  # pyright: ignore[reportUnknownVariableType]
+            )
+        case _:
+            return False
+
+
+@beartype
+def _build_variant_preamble(
     *,
     int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
 ) -> Callable[[Value], tuple[str, ...]]:
-    """Build a ``data_dependent_preamble`` for the ``Any`` struct."""
-    element_to_type = _make_cpp_element_to_type(int_type=int_type)
+    """Build a ``data_dependent_preamble`` that emits
+    ``#include <variant>`` when the data needs variant types.
+    """
+    element_to_type = _make_cpp_element_to_type(
+        int_type=int_type,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
 
-    def _any_struct_preamble(data: Value, /) -> tuple[str, ...]:
-        """Return the ``Any`` helper struct when *data* needs it."""
-        if _needs_any_type(data=data, element_to_type=element_to_type):
-            return (
-                "struct Any {",
-                "    template<class T> Any(T&&) noexcept {}",
-                "    Any(std::initializer_list<Any>) noexcept {}",
-                "};",
-            )
-        return ()
+    def _variant_preamble(data: Value, /) -> tuple[str, ...]:
+        """Return headers required by variant/nullptr_t usage."""
+        lines: list[str] = []
+        if _has_empty_collection(data=data):
+            lines.append("#include <cstddef>")
+        if _needs_variant_type(data=data, element_to_type=element_to_type):
+            lines.append("#include <variant>")
+        return tuple(lines)
 
-    return _any_struct_preamble
+    return _variant_preamble
+
+
+@beartype
+def _build_variant_sequence_open(
+    *,
+    int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> Callable[[list[Value]], str]:
+    """Build a sequence opener that uses ``std::variant`` for
+    heterogeneous lists.
+    """
+    element_to_type = _make_cpp_element_to_type(
+        int_type=int_type,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+    type_to_opener = make_type_to_opener(
+        element_to_type=element_to_type,
+        opener_template="std::vector<{type_name}>{{",
+    )
+
+    @beartype
+    def _open(items: list[Value]) -> str:
+        """Return a typed ``std::vector`` opener."""
+        element_type = infer_element_type(items=items)
+        if element_type is not None:
+            opener = type_to_opener(element_type)
+            if opener is not None:
+                return opener
+        inner = _compute_element_type_for_items(
+            items=items,
+            element_to_type=element_to_type,
+        )
+        return f"std::vector<{inner}>{{"
+
+    return _open
+
+
+@beartype
+def _build_variant_dict_open(
+    *,
+    int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
+    opener_template: str,
+) -> Callable[[dict[str, Value]], str]:
+    """Build a dict opener that uses ``std::variant`` for
+    heterogeneous dict values.
+    """
+    element_to_type = _make_cpp_element_to_type(
+        int_type=int_type,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+    type_to_opener = make_type_to_opener(
+        element_to_type=element_to_type,
+        opener_template=opener_template,
+    )
+
+    @beartype
+    def _open(items: dict[str, Value]) -> str:
+        """Return a typed ``std::map`` opener."""
+        element_type = infer_element_type(items=list(items.values()))
+        if element_type is not None:
+            opener = type_to_opener(element_type)
+            if opener is not None:
+                return opener
+        value_type = _compute_element_type_for_items(
+            items=list(items.values()),
+            element_to_type=element_to_type,
+        )
+        if "unordered" in opener_template:
+            map_kind = "std::unordered_map"
+        else:
+            map_kind = "std::map"
+        return f"{map_kind}<std::string, {value_type}>{{"
+
+    return _open
+
+
+@beartype
+def _build_variant_set_open(
+    *,
+    int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> Callable[[list[Value]], str]:
+    """Build a set opener that uses typed ``std::initializer_list``."""
+    element_to_type = _make_cpp_element_to_type(
+        int_type=int_type,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+
+    @beartype
+    def _open(items: list[Value]) -> str:
+        """Return a typed ``std::initializer_list`` opener."""
+        inner = _compute_element_type_for_items(
+            items=items,
+            element_to_type=element_to_type,
+        )
+        return f"std::initializer_list<{inner}>{{"
+
+    return _open
+
+
+@beartype
+def _build_variant_ordered_map_open(
+    *,
+    int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> Callable[[dict[str, Value]], str]:
+    """Build an ordered-map opener that uses
+    ``std::vector<std::pair<...>>``.
+    """
+    element_to_type = _make_cpp_element_to_type(
+        int_type=int_type,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+
+    @beartype
+    def _open(data: dict[str, Value]) -> str:
+        """Return a typed ordered-map opener."""
+        values: list[Value] = list(data.values())
+        value_type = _compute_element_type_for_items(
+            items=values,
+            element_to_type=element_to_type,
+        )
+        return f"std::vector<std::pair<std::string, {value_type}>>{{"
+
+    return _open
+
+
+@beartype
+def _build_ordered_map_config(
+    *,
+    int_type: str,
+    date_type: str | None,
+    datetime_type: str | None,
+) -> OrderedMapFormatConfig:
+    """Build an ``OrderedMapFormatConfig`` with a variant opener."""
+    return OrderedMapFormatConfig(
+        ordered_map_open=_build_variant_ordered_map_open(
+            int_type=int_type,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        ),
+        close="}",
+        preamble_lines=(
+            "#include <utility>",
+            "#include <vector>",
+        ),
+    )
 
 
 @beartype
@@ -324,36 +605,23 @@ def _format_variable_declaration(
 ) -> str:
     """Format a C++ variable declaration.
 
-    The type keyword is chosen by inspecting the formatted *value*
-    string rather than *_data* because format variants (e.g.
-    ``coerce_mixed_to_str``, date ISO vs chrono) can change the
-    opener independently of the input data, and this function does
-    not have access to the language configuration.
-
-    * ``Any`` — bare brace-init (``{...}``) where the compiler
-      cannot deduce the type.
     * ``const auto*`` — string literal (``"..."``), required by
       ``readability-qualified-auto``.
-    * ``auto`` — explicit type constructor
+    * ``auto`` — typed expression
       (e.g. ``std::vector<int>{...}``).
     """
-    kind = _infer_value_kind(value=value)
-    match kind:
-        case ValueKind.BARE_BRACE_INIT:
-            type_keyword = "Any"
+    match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
             type_keyword = "const auto*"
         case ValueKind.TYPED_EXPRESSION:
             type_keyword = "auto"
         case _ as unreachable:
-            assert_never(unreachable)
+            assert_never(unreachable)  # pyrefly: ignore[bad-argument-type]
     return f"{type_keyword} {name} = {value};"
 
 
 def _infer_value_kind(*, value: str) -> ValueKind:
     """Classify a formatted C++ value string."""
-    if value.startswith("{"):
-        return ValueKind.BARE_BRACE_INIT
     if value.startswith('"'):
         return ValueKind.STRING_LITERAL
     return ValueKind.TYPED_EXPRESSION
@@ -446,6 +714,14 @@ class Cpp(metaclass=LanguageCls):
             type_produced=str,
         )
 
+        @property
+        def cpp_type(self) -> str:
+            """Return the C++ type name for this date format."""
+            cfg: DateFormatConfig = self.value
+            if cfg.type_produced is str:
+                return "std::string"
+            return "std::chrono::year_month_day"
+
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
             return self.value.formatter(date_value)
@@ -462,6 +738,14 @@ class Cpp(metaclass=LanguageCls):
             preamble_lines=("#include <string>",),
             type_produced=str,
         )
+
+        @property
+        def cpp_type(self) -> str:
+            """Return the C++ type name for this datetime format."""
+            cfg: DatetimeFormatConfig = self.value
+            if cfg.type_produced is str:
+                return "std::string"
+            return "std::chrono::system_clock::time_point"
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -483,31 +767,62 @@ class Cpp(metaclass=LanguageCls):
         INITIALIZER_LIST = enum.member(value=_make_initializer_list_config)
         ARRAY = enum.member(value=_make_array_config)
 
-        def get_config(self, *, int_type: str) -> SequenceFormatConfig:
+        def get_config(
+            self,
+            *,
+            int_type: str,
+            date_type: str | None,
+            datetime_type: str | None,
+        ) -> SequenceFormatConfig:
             """Return the sequence format config for the given int
             type.
             """
             factory: Callable[..., SequenceFormatConfig] = self.value
-            return factory(int_type=int_type)
+            return factory(
+                int_type=int_type,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
 
         @property
         def supports_heterogeneity(self) -> bool:
             """Whether this sequence format supports mixed-type
             elements.
             """
-            return self.get_config(int_type="int").supports_heterogeneity
+            return self.get_config(
+                int_type="int",
+                date_type=None,
+                datetime_type=None,
+            ).supports_heterogeneity
 
     class SetFormats(enum.Enum):
         """Set type options for C++."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="{"),
+            set_open=lambda _items: "{",
             close="}",
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
             coerce_mixed_to_str=False,
         )
+
+        def get_config(
+            self,
+            *,
+            int_type: str,
+            date_type: str,
+            datetime_type: str,
+        ) -> SetFormatConfig:
+            """Return the set format config with variant opener."""
+            return dataclasses.replace(
+                self.value,
+                set_open=_build_variant_set_open(
+                    int_type=int_type,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                ),
+            )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -537,40 +852,51 @@ class Cpp(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = DictFormatConfig(
-            dict_open=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(int_type="int"),
-                    opener_template="std::map<std::string, {type_name}>{{",
+        MAP = _DictFormatOption(
+            config=DictFormatConfig(
+                dict_open=lambda _items: "{",
+                close="}",
+                format_entry=braced_dict_entry(
+                    format_value=passthrough_sequence_entry
                 ),
-                fallback="{",
+                empty_dict=None,
+                preamble_lines=("#include <map>",),
+                narrowed_open=None,
             ),
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict=None,
-            preamble_lines=("#include <map>",),
-            narrowed_open=None,
+            opener_template="std::map<std::string, {type_name}>{{",
         )
-        UNORDERED_MAP = DictFormatConfig(
-            dict_open=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=_make_cpp_element_to_type(int_type="int"),
-                    opener_template=(
-                        "std::unordered_map<std::string, {type_name}>{{"
-                    ),
+        UNORDERED_MAP = _DictFormatOption(
+            config=DictFormatConfig(
+                dict_open=lambda _items: "{",
+                close="}",
+                format_entry=braced_dict_entry(
+                    format_value=passthrough_sequence_entry
                 ),
-                fallback="{",
+                empty_dict=None,
+                preamble_lines=("#include <unordered_map>",),
+                narrowed_open=None,
             ),
-            close="}",
-            format_entry=braced_dict_entry(
-                format_value=passthrough_sequence_entry
-            ),
-            empty_dict=None,
-            preamble_lines=("#include <unordered_map>",),
-            narrowed_open=None,
+            opener_template=("std::unordered_map<std::string, {type_name}>{{"),
         )
+
+        def get_config(
+            self,
+            *,
+            int_type: str,
+            date_type: str,
+            datetime_type: str,
+        ) -> DictFormatConfig:
+            """Return the dict format config with variant opener."""
+            option: _DictFormatOption = self.value
+            return dataclasses.replace(
+                option.config,
+                dict_open=_build_variant_dict_open(
+                    int_type=int_type,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                    opener_template=option.opener_template,
+                ),
+            )
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -775,13 +1101,22 @@ class Cpp(metaclass=LanguageCls):
         self.null_literal = "nullptr"
         self.true_literal = "true"
         self.false_literal = "false"
+        cpp_date_type = date_format.cpp_type
+        cpp_datetime_type = datetime_format.cpp_type
+        int_type = numeric_literal_suffix.int_type
         self.sequence_format_config: SequenceFormatConfig = (
             sequence_format.get_config(
-                int_type=numeric_literal_suffix.int_type,
+                int_type=int_type,
+                date_type=cpp_date_type,
+                datetime_type=cpp_datetime_type,
             )
         )
         self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
+        self.set_format_config: SetFormatConfig = set_format.get_config(
+            int_type=int_type,
+            date_type=cpp_date_type,
+            datetime_type=cpp_datetime_type,
+        )
         self.sequence_open: Callable[[list[Value]], str] = (
             self.sequence_format_config.sequence_open
         )
@@ -802,9 +1137,10 @@ class Cpp(metaclass=LanguageCls):
                 base=base_int_formatter,
             )
         )
-        self.dict_format_config: DictFormatConfig = _rebuild_dict_opener(
-            int_type=numeric_literal_suffix.int_type,
-            dict_format=dict_format,
+        self.dict_format_config: DictFormatConfig = dict_format.get_config(
+            int_type=int_type,
+            date_type=cpp_date_type,
+            datetime_type=cpp_datetime_type,
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
@@ -826,10 +1162,10 @@ class Cpp(metaclass=LanguageCls):
         self.line_ending = line_ending
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(open_str="{"),
-                close="}",
-                preamble_lines=(),
+            _build_ordered_map_config(
+                int_type=int_type,
+                date_type=cpp_date_type,
+                datetime_type=cpp_datetime_type,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
@@ -845,8 +1181,10 @@ class Cpp(metaclass=LanguageCls):
         self.static_preamble: Sequence[str] = ("#include <initializer_list>",)
         self.static_body_preamble: Sequence[str] = ()
         self.data_dependent_preamble: Callable[[Value], tuple[str, ...]] = (
-            _build_any_struct_preamble(
-                int_type=numeric_literal_suffix.int_type,
+            _build_variant_preamble(
+                int_type=int_type,
+                date_type=cpp_date_type,
+                datetime_type=cpp_datetime_type,
             )
         )
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
