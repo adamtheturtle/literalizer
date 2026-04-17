@@ -11,6 +11,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
+    fixed_dict_open,
     fixed_sequence_open,
     fixed_set_open,
     make_type_to_opener,
@@ -624,7 +625,9 @@ class Scala(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="scala.collection.immutable.ListMap(",
+                ordered_map_open=fixed_dict_open(
+                    open_str="scala.collection.immutable.ListMap("
+                ),
                 close=")",
                 preamble_lines=(),
             )

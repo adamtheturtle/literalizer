@@ -419,7 +419,8 @@ def _format_ordered_map_value(
         for k, v in ordered_map_items
     ]
     joined = spec.element_separator.join(pairs)
-    return ordered_map_cfg.open_str + joined + ordered_map_cfg.close
+    opening = ordered_map_cfg.ordered_map_open(value)
+    return opening + joined + ordered_map_cfg.close
 
 
 @beartype
@@ -612,8 +613,9 @@ def _wrap_body(
     close_prefix = f"{line_prefix}{ci}"
     if is_ordered_map:
         ordered_map_cfg = spec.ordered_map_format_config
-
-        opening = f"{line_prefix}{ordered_map_cfg.open_str}"
+        ordered_map_data = cast("dict[str, Value]", data)
+        open_str = ordered_map_cfg.ordered_map_open(ordered_map_data)
+        opening = f"{line_prefix}{open_str}"
         closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
         dict_cfg = spec.dict_format_config

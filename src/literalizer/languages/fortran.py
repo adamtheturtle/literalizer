@@ -562,7 +562,9 @@ class Fortran(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str=f"{map_name}([fval_t :: ",
+                ordered_map_open=fixed_dict_open(
+                    open_str=f"{map_name}([fval_t :: ",
+                ),
                 close="])",
                 preamble_lines=(),
             )
