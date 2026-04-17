@@ -66,15 +66,6 @@ def _format_cons_entry(
     return f"(cons {key} {formatted_value})"
 
 
-_CL_INF = "sb-ext:double-float-positive-infinity"
-_CL_NEG_INF = "sb-ext:double-float-negative-infinity"
-_CL_NAN = (
-    "#.(sb-int:with-float-traps-masked (:invalid)"
-    " (- sb-ext:double-float-positive-infinity"
-    " sb-ext:double-float-positive-infinity))"
-)
-
-
 @beartype
 class CommonLisp(metaclass=LanguageCls):
     """Common Lisp language specification."""
@@ -198,9 +189,13 @@ class CommonLisp(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity=_CL_INF,
-        negative_infinity=_CL_NEG_INF,
-        nan=_CL_NAN,
+        positive_infinity="sb-ext:double-float-positive-infinity",
+        negative_infinity="sb-ext:double-float-negative-infinity",
+        nan=(
+            "#.(sb-int:with-float-traps-masked (:invalid)"
+            " (- sb-ext:double-float-positive-infinity"
+            " sb-ext:double-float-positive-infinity))"
+        ),
     ):
         """Float format options."""
 

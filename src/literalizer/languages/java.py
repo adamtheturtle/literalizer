@@ -145,20 +145,18 @@ def _list_of_open(items: list[Any]) -> str:
     return "List.of("
 
 
-_JAVA_BOXED: dict[str, str] = {
-    "boolean": "Boolean",
-    "int": "Integer",
-    "long": "Long",
-    "double": "Double",
-}
-
-
 @beartype
 def _java_box(type_name: str) -> str:
     """Return the boxed wrapper type for a Java primitive, or the type
     itself for reference types.
     """
-    return _JAVA_BOXED.get(type_name, type_name)
+    boxed: dict[str, str] = {
+        "boolean": "Boolean",
+        "int": "Integer",
+        "long": "Long",
+        "double": "Double",
+    }
+    return boxed.get(type_name, type_name)
 
 
 @beartype
