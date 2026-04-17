@@ -10,6 +10,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
+    fixed_dict_open,
     fixed_sequence_open,
     typed_collection_open,
     typed_dict_open,
@@ -602,10 +603,9 @@ class Dart(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="{",
+                ordered_map_open=fixed_dict_open(open_str="{"),
                 close="}",
                 preamble_lines=(),
-                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

@@ -1143,10 +1143,9 @@ class Haskell(metaclass=LanguageCls):
         )
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str=_map_open,
+                ordered_map_open=fixed_dict_open(open_str=_map_open),
                 close="]",
                 preamble_lines=(),
-                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
