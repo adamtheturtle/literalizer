@@ -92,6 +92,8 @@ def _unify_rust_types(types: Sequence[str]) -> str:
 
     All-integer type lists widen to the largest integer; otherwise,
     mixed types fall back to ``"&str"``.
+
+    Callers must pass a non-empty sequence.
     """
     unique = list(dict.fromkeys(types))
     match unique:
