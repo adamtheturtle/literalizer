@@ -9,6 +9,7 @@ from typing import assert_never
 
 from beartype import beartype
 
+from literalizer._formatters.collection_openers import fixed_dict_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -680,10 +681,9 @@ class Swift(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="[",
+                ordered_map_open=fixed_dict_open(open_str="["),
                 close="]",
                 preamble_lines=(),
-                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

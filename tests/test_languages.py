@@ -20,6 +20,7 @@ from literalizer import (
 from literalizer._language import LanguageCls
 from literalizer.exceptions import (
     NullInCollectionError,
+    PerElementNotListError,
     UnsupportedCallStyleError,
 )
 from literalizer.languages import (
@@ -441,9 +442,9 @@ def test_literalize_call_missing_keyword_separator_raises() -> None:
 
 
 def test_literalize_call_per_element_non_list_raises() -> None:
-    """Literalize_call raises TypeError for non-list with per_element."""
+    """Literalize_call raises PerElementNotListError for non-list."""
     with pytest.raises(
-        expected_exception=TypeError,
+        expected_exception=PerElementNotListError,
         match=r"^per_element=True requires a top-level list, got str$",
     ):
         literalize_call(

@@ -449,8 +449,7 @@ class C(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str=map_open,
-                open_fn=None,
+                ordered_map_open=fixed_dict_open(open_str=map_open),
                 close="}})",
                 preamble_lines=(),
             )

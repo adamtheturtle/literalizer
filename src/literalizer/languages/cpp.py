@@ -584,16 +584,15 @@ def _build_ordered_map_config(
 ) -> OrderedMapFormatConfig:
     """Build an ``OrderedMapFormatConfig`` with a variant opener."""
     return OrderedMapFormatConfig(
-        open_str="{",
+        ordered_map_open=_build_variant_ordered_map_open(
+            int_type=int_type,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        ),
         close="}",
         preamble_lines=(
             "#include <utility>",
             "#include <vector>",
-        ),
-        open_fn=_build_variant_ordered_map_open(
-            int_type=int_type,
-            date_type=date_type,
-            datetime_type=datetime_type,
         ),
     )
 

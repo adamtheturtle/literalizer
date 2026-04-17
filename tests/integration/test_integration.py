@@ -373,6 +373,48 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     return variants
 
 
+@beartype
+def _build_sequence_decl_variants() -> Iterable[_Variant]:
+    """Build sequence format + declaration style cross-option variants.
+
+    For each language with multiple sequence formats *and* multiple
+    declaration styles, create a variant for every non-default
+    sequence format paired with every non-default declaration style.
+    """
+    variants: list[_Variant] = []
+    for lang_cls in _SORTED_LANGUAGES:
+        lang_name = lang_cls.__name__
+        spec = lang_cls()
+        default_sequence_format = spec.sequence_format
+        default_declaration_style = spec.declaration_style
+        non_default_sequence_formats = [
+            sequence_format
+            for sequence_format in spec.sequence_formats
+            if sequence_format is not default_sequence_format
+        ]
+        non_default_declaration_styles = [
+            declaration_style
+            for declaration_style in spec.declaration_styles
+            if declaration_style is not default_declaration_style
+        ]
+        variants.extend(
+            _Variant(
+                name=(
+                    f"{lang_name}_sequence_{sequence_format.name.lower()}"
+                    f"_decl_{declaration_style.name.lower()}"
+                ),
+                spec=lang_cls(
+                    sequence_format=sequence_format,
+                    declaration_style=declaration_style,
+                ),
+                lang_cls=lang_cls,
+            )
+            for sequence_format in non_default_sequence_formats
+            for declaration_style in non_default_declaration_styles
+        )
+    return variants
+
+
 def _has_non_printable_ascii_dict_keys(data: object) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
@@ -1088,6 +1130,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (line_ending, "simple_sequence", ""),
         (line_ending, "simple_dict", "_dict"),
         (_build_line_ending_decl_variants(), "simple_sequence", ""),
+        (_build_sequence_decl_variants(), "int_list", ""),
         (_build_type_name_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),

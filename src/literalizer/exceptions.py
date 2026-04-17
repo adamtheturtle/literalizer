@@ -43,6 +43,12 @@ class NullInCollectionError(Exception):
     """
 
 
+class PerElementNotListError(Exception):
+    """Raised when ``per_element=True`` but the parsed data is not a
+    list.
+    """
+
+
 class UnsupportedCallStyleError(Exception):
     """Raised when a language does not support function call rendering."""
 

@@ -42,6 +42,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     JSON5ParseError,
     JSONParseError,
+    PerElementNotListError,
     TOMLParseError,
     UnsupportedCallStyleError,
     YAMLParseError,
@@ -418,12 +419,8 @@ def _format_ordered_map_value(
         for k, v in ordered_map_items
     ]
     joined = spec.element_separator.join(pairs)
-    opener = (
-        ordered_map_cfg.open_fn(value)
-        if ordered_map_cfg.open_fn is not None
-        else ordered_map_cfg.open_str
-    )
-    return opener + joined + ordered_map_cfg.close
+    opening = ordered_map_cfg.ordered_map_open(value)
+    return opening + joined + ordered_map_cfg.close
 
 
 @beartype
@@ -616,12 +613,8 @@ def _wrap_body(
     close_prefix = f"{line_prefix}{ci}"
     if is_ordered_map and isinstance(data, dict):
         ordered_map_cfg = spec.ordered_map_format_config
-        opener = (
-            ordered_map_cfg.open_fn(data)
-            if ordered_map_cfg.open_fn is not None
-            else ordered_map_cfg.open_str
-        )
-        opening = f"{line_prefix}{opener}"
+        open_str = ordered_map_cfg.ordered_map_open(data)
+        opening = f"{line_prefix}{open_str}"
         closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
         dict_cfg = spec.dict_format_config
@@ -1369,17 +1362,22 @@ def literalize_call(
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
     formatted_target = language.format_call_target(target_function)
+    coerced_data = apply_coercions(
+        data=data,
+        spec=language,
+        error_on_coercion=False,
+    )
 
     if per_element:
-        if not isinstance(data, list):
+        if not isinstance(coerced_data, list):
             msg = (
                 "per_element=True requires a top-level list, "
-                f"got {type(data).__name__}"
+                f"got {type(coerced_data).__name__}"
             )
-            raise TypeError(msg)
+            raise PerElementNotListError(msg)
 
         lines: list[str] = []
-        for element in data:
+        for element in coerced_data:
             arg_values = element if isinstance(element, list) else [element]
             args_str = _format_call_args(
                 values=cast("list[Value]", arg_values),
@@ -1401,7 +1399,7 @@ def literalize_call(
                 language_name=type(language).__name__,
             )
         lit = _literalize(
-            data=data,
+            data=coerced_data,
             language=language,
             line_prefix="",
             include_delimiters=True,
@@ -1414,12 +1412,6 @@ def literalize_call(
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,
         )
-
-    coerced_data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=False,
-    )
     computed = _compute_preamble(
         data=coerced_data,
         language=language,
