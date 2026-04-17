@@ -392,6 +392,28 @@ def _needs_variant_type(
 
 
 @beartype
+def _has_empty_collection(data: Value) -> bool:
+    """Check whether *data* contains any empty list/dict/set/omap.
+
+    Empty collections produce ``std::nullptr_t`` placeholders, which
+    require ``#include <cstddef>``.
+    """
+    match data:
+        case list() | set() | dict() | ordereddict() if not data:
+            return True
+        case list():
+            return any(_has_empty_collection(data=v) for v in data)
+        case ordereddict() | dict():
+            mapping_values = data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            return any(
+                _has_empty_collection(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in mapping_values  # pyright: ignore[reportUnknownVariableType]
+            )
+        case _:
+            return False
+
+
+@beartype
 def _build_variant_preamble(
     *,
     int_type: str,
@@ -408,10 +430,13 @@ def _build_variant_preamble(
     )
 
     def _variant_preamble(data: Value, /) -> tuple[str, ...]:
-        """Return ``#include <variant>`` when *data* needs it."""
+        """Return headers required by variant/nullptr_t usage."""
+        lines: list[str] = []
+        if _has_empty_collection(data=data):
+            lines.append("#include <cstddef>")
         if _needs_variant_type(data=data, element_to_type=element_to_type):
-            return ("#include <variant>",)
-        return ()
+            lines.append("#include <variant>")
+        return tuple(lines)
 
     return _variant_preamble
 
