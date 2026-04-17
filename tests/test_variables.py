@@ -656,6 +656,27 @@ def test_rust_const_dict_mixed_values() -> None:
     assert result.code == expected
 
 
+def test_rust_const_widened_int_array() -> None:
+    """Rust CONST with mixed-size ints widens to the largest type."""
+    result = literalize(
+        source="[1, 2147483648]",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: [i64; 2] = [
+            1,
+            2147483648,
+        ];"""
+    )
+    assert result.code == expected
+
+
 def test_rust_const_nested_list() -> None:
     """Rust CONST with nested list produces recursive type."""
     result = literalize(

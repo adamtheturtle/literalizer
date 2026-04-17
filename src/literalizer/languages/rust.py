@@ -74,6 +74,9 @@ _I64_MIN = -(2**63)
 _I64_MAX = 2**63 - 1
 
 
+_INTEGER_TYPES = ("i32", "i64", "i128")
+
+
 def _rust_integer_type(value: int) -> str:
     """Return the narrowest Rust integer type for *value*."""
     if _I32_MIN <= value <= _I32_MAX:
@@ -81,6 +84,23 @@ def _rust_integer_type(value: int) -> str:
     if _I64_MIN <= value <= _I64_MAX:
         return "i64"
     return "i128"
+
+
+@beartype
+def _unify_rust_types(types: Sequence[str]) -> str:
+    """Return a single Rust type that covers *types*.
+
+    All-integer type lists widen to the largest integer; otherwise,
+    mixed types fall back to ``"&str"``.
+    """
+    unique = list(dict.fromkeys(types))
+    match unique:
+        case [single]:
+            return single
+        case _ if all(t in _INTEGER_TYPES for t in unique):
+            return max(unique, key=_INTEGER_TYPES.index)
+        case _:
+            return "&str"
 
 
 @beartype
@@ -127,12 +147,7 @@ def _rust_homogeneous_element_type(
     if not elements:
         return default_type
     types = [infer(element) for element in elements]
-    unique = list(dict.fromkeys(types))
-    match unique:
-        case [single]:
-            return single
-        case _:
-            return "&str"
+    return _unify_rust_types(types=types)
 
 
 @beartype
@@ -168,12 +183,7 @@ def _rust_type_annotation(
         case dict():
             if data:
                 value_types = [recurse(v) for v in data.values()]
-                unique = list(dict.fromkeys(value_types))
-                match unique:
-                    case [single]:
-                        value_type = single
-                    case _:
-                        value_type = "&str"
+                value_type = _unify_rust_types(types=value_types)
                 key_type = "&str"
             else:
                 value_type = default_dict_value_type
