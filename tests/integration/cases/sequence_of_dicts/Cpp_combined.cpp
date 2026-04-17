@@ -2,17 +2,14 @@
 #include <string>
 #include <map>
 #include <vector>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <variant>
 void check_() {
-auto my_data = std::vector<std::map<std::string, Any>>{
-    {{"name", "Alice"}, {"age", 30}},
-    {{"name", "Bob"}, {"age", 25}},
+auto my_data = std::vector<std::map<std::string, std::variant<std::string, int>>>{
+    std::map<std::string, std::variant<std::string, int>>{{"name", "Alice"}, {"age", 30}},
+    std::map<std::string, std::variant<std::string, int>>{{"name", "Bob"}, {"age", 25}},
 };
-my_data = std::vector<std::map<std::string, Any>>{
-    {{"name", "Alice"}, {"age", 30}},
-    {{"name", "Bob"}, {"age", 25}},
+my_data = std::vector<std::map<std::string, std::variant<std::string, int>>>{
+    std::map<std::string, std::variant<std::string, int>>{{"name", "Alice"}, {"age", 30}},
+    std::map<std::string, std::variant<std::string, int>>{{"name", "Bob"}, {"age", 25}},
 };
 }

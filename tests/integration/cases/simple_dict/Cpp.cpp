@@ -2,12 +2,9 @@
 #include <string>
 #include <cstddef>
 #include <map>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <variant>
 void check_() {
-Any my_data = {
+auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
     {"name", "Alice"},
     {"age", 30},
     {"active", true},

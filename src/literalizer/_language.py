@@ -139,7 +139,7 @@ class DictFormatConfig:
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
 
-    open_str: str
+    ordered_map_open: Callable[[dict[str, Value]], str]
     close: str
     preamble_lines: tuple[str, ...]
 
