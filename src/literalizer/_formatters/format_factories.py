@@ -217,11 +217,10 @@ def ordered_map_format_factory(
         """Build an ``OrderedMapFormatConfig`` with the given default type."""
         fmt_kwargs = {"type": default_type, "key_type": default_key_type}
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
-                open_str=open_template.format(**fmt_kwargs)
-            ),
+            open_str=open_template.format(**fmt_kwargs),
             close=close,
             preamble_lines=preamble_lines,
+            open_fn=None,
         )
 
     return _build

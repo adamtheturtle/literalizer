@@ -446,9 +446,10 @@ class Odin(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(open_str="map[string]any{"),
+                open_str="map[string]any{",
                 close="}",
                 preamble_lines=(),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

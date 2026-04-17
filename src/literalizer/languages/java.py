@@ -849,13 +849,10 @@ class Java(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(
-                    open_str=(
-                        "new java.util.ArrayList<>(java.util.Arrays.asList("
-                    ),
-                ),
+                open_str="new java.util.ArrayList<>(java.util.Arrays.asList(",
                 close="))",
                 preamble_lines=("import java.util.Map;",),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (

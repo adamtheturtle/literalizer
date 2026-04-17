@@ -418,7 +418,11 @@ def _format_ordered_map_value(
         for k, v in ordered_map_items
     ]
     joined = spec.element_separator.join(pairs)
-    opener = ordered_map_cfg.ordered_map_open(value)
+    opener = (
+        ordered_map_cfg.open_fn(value)
+        if ordered_map_cfg.open_fn is not None
+        else ordered_map_cfg.open_str
+    )
     return opener + joined + ordered_map_cfg.close
 
 
@@ -612,7 +616,12 @@ def _wrap_body(
     close_prefix = f"{line_prefix}{ci}"
     if is_ordered_map and isinstance(data, dict):
         ordered_map_cfg = spec.ordered_map_format_config
-        opening = f"{line_prefix}{ordered_map_cfg.ordered_map_open(data)}"
+        opener = (
+            ordered_map_cfg.open_fn(data)
+            if ordered_map_cfg.open_fn is not None
+            else ordered_map_cfg.open_str
+        )
+        opening = f"{line_prefix}{opener}"
         closing = f"{close_prefix}{ordered_map_cfg.close}"
     elif isinstance(data, dict):
         dict_cfg = spec.dict_format_config

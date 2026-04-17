@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
     make_element_to_type,
     make_type_to_opener,
 )
@@ -440,9 +439,10 @@ class Mojo(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(open_str="["),
+                open_str="[",
                 close="]",
                 preamble_lines=(),
+                open_fn=None,
             )
         )
         self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
