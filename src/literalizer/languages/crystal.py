@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import fixed_sequence_open
+from literalizer._formatters.collection_openers import (
+    fixed_dict_open,
+    fixed_sequence_open,
+)
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -471,7 +474,7 @@ class Crystal(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="{",
+                ordered_map_open=fixed_dict_open(open_str="{"),
                 close="}",
                 preamble_lines=(),
             )
