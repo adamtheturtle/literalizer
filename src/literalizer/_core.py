@@ -614,10 +614,10 @@ def _wrap_body(
     """Wrap ``body`` in the language's open/close delimiters."""
     ci = spec.indent if spec.indent_closing_delimiter else ""
     close_prefix = f"{line_prefix}{ci}"
-    if is_ordered_map:
+    if is_ordered_map and isinstance(data, dict):
         ordered_map_cfg = spec.ordered_map_format_config
         opener = (
-            ordered_map_cfg.open_fn(cast("dict[str, Value]", data))
+            ordered_map_cfg.open_fn(data)
             if ordered_map_cfg.open_fn is not None
             else ordered_map_cfg.open_str
         )
