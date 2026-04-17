@@ -657,7 +657,7 @@ def test_rust_const_dict_mixed_values() -> None:
 
 
 def test_rust_const_widened_int_array() -> None:
-    """Rust CONST with mixed-size ints widens to the largest type."""
+    """Rust CONST with mixed-size integers widens to the largest type."""
     result = literalize(
         source="[1, 2147483648]",
         input_format=InputFormat.JSON,
