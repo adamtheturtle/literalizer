@@ -1,9 +1,12 @@
 """Occam-pi language specification."""
 
+import dataclasses
 import datetime
 import enum
 import textwrap
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
+from functools import cached_property
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -52,9 +55,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
 
 @beartype
 def _format_occam_entry(original: Value, formatted: str) -> str:
@@ -75,6 +75,7 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Occam(metaclass=LanguageCls):
     """Occam-pi language specification."""
 
@@ -303,144 +304,190 @@ class Occam(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
-        self,
-        *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.LIST,
-        set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_DASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.VAL,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.DEFAULT,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.NO,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        indent: str = "    ",
-    ) -> None:
-        """Initialize Occam language specification."""
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal = "MOBILE LIT(lit.null)"
-        self.true_literal = "MOBILE LIT(lit.bool; TRUE)"
-        self.false_literal = "MOBILE LIT(lit.bool; FALSE)"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
-        self.set_format = set_format
-        self.set_format_config: SetFormatConfig = set_format.value
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+    date_format: DateFormats = DateFormats.ISO
+    datetime_format: DatetimeFormats = DatetimeFormats.ISO
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.LIST
+    set_format: SetFormats = SetFormats.SET
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_DASH
+    declaration_style: DeclarationStyles = DeclarationStyles.VAL
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DEFAULT
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.NO
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    indent: str = "    "
+
+    null_literal: ClassVar[str] = "MOBILE LIT(lit.null)"
+    true_literal: ClassVar[str] = "MOBILE LIT(lit.bool; TRUE)"
+    false_literal: ClassVar[str] = "MOBILE LIT(lit.bool; FALSE)"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = True
+    statement_terminator: ClassVar[str] = ""
+    static_preamble: ClassVar[Sequence[str]] = (
+        "MOBILE DATA TYPE LIT IS\n"
+        "  CASE\n"
+        "    lit.null\n"
+        "    lit.bool ; BOOL\n"
+        "    lit.int ; INT\n"
+        "    lit.float ; REAL32\n"
+        "    lit.str ; MOBILE []BYTE\n"
+        "    lit.list ; MOBILE []MOBILE LIT\n"
+        "    lit.map ; MOBILE []MOBILE LIT\n"
+        "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
+        "    lit.set ; MOBILE []MOBILE LIT\n"
+        ":",
+    )
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+    call_style_config: ClassVar[CallStyleConfig | None] = None
+    format_string: ClassVar[Callable[[str], str]] = staticmethod(
+        format_string_backslash
+    )
+    format_integer: ClassVar[Callable[[int], str]] = staticmethod(str)
+    format_sequence_entry: ClassVar[Callable[[Value, str], str]] = (
+        staticmethod(_format_occam_entry)
+    )
+    format_set_entry: ClassVar[Callable[[Value, str], str]] = staticmethod(
+        _format_occam_entry
+    )
+    format_variable_assignment: ClassVar[Callable[[str, str, Value], str]] = (
+        staticmethod(variable_formatter(template="{name} := {value}"))
+    )
+    data_dependent_preamble: ClassVar[Callable[[Value], tuple[str, ...]]] = (
+        staticmethod(no_data_preamble)
+    )
+    type_hint_collection_preamble_lines: ClassVar[
+        Callable[[frozenset[type]], tuple[str, ...]]
+    ] = staticmethod(no_type_hint_preamble)
+    format_call_stub: ClassVar[
+        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
+    ] = staticmethod(no_call_stub)
+    format_call_preamble_stub: ClassVar[
+        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
+    ] = staticmethod(no_call_stub)
+    format_call_target: ClassVar[Callable[[str], str]] = staticmethod(
+        identity_call_target
+    )
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format.value
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return self.set_format.value
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        return self.sequence_format.value.sequence_open
+
+    @cached_property
+    def _dict_entry(self) -> Callable[[str, Value, str], str]:
+        """Shared dict-entry formatter used by dict and ordered-map."""
+        return dict_entry_with_template(
+            template="MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {value})",
+            format_value=_format_occam_entry,
+        )
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return DictFormatConfig(
             dict_open=fixed_dict_open(
                 open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
             ),
             close="])",
-            format_entry=dict_entry_with_template(
-                template="MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {value})",
-                format_value=_format_occam_entry,
-            ),
+            format_entry=self._dict_entry,
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(
+                open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
+            ),
+            close="])",
+            preamble_lines=(),
         )
-        self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = str
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            _format_occam_entry
-        )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            _format_occam_entry
-        )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(
-                    open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
-                ),
-                close="])",
-                preamble_lines=(),
-            )
-        )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_template(
-                template="MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {value})",
-                format_value=_format_occam_entry,
-            )
-        )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
-        self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} := {value}")
-        )
-        self.static_preamble: Sequence[str] = (
-            "MOBILE DATA TYPE LIT IS\n"
-            "  CASE\n"
-            "    lit.null\n"
-            "    lit.bool ; BOOL\n"
-            "    lit.int ; INT\n"
-            "    lit.float ; REAL32\n"
-            "    lit.str ; MOBILE []BYTE\n"
-            "    lit.list ; MOBILE []MOBILE LIT\n"
-            "    lit.map ; MOBILE []MOBILE LIT\n"
-            "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
-            "    lit.set ; MOBILE []MOBILE LIT\n"
-            ":",
-        )
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return self._dict_entry
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats a new variable declaration."""
+        return self.declaration_style.value.formatter
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble (Occam needs none)."""
+        return {}
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Occam needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
-
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
-        self.statement_terminator = ""
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

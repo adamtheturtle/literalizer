@@ -1,12 +1,14 @@
 """Rust language specification."""
 
+import dataclasses
 import datetime
 import enum
 import functools
 import textwrap
 from collections.abc import Callable, Sequence
+from functools import cached_property
 from types import MappingProxyType
-from typing import assert_never
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -340,6 +342,7 @@ def _rust_call_stub(
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Rust(metaclass=LanguageCls):
     """Rust language specification.
 
@@ -807,183 +810,229 @@ class Rust(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
-        self,
-        *,
-        date_format: DateFormats = DateFormats.RUST,
-        datetime_format: DatetimeFormats = DatetimeFormats.RUST,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.VEC,
-        set_format: SetFormats = SetFormats.HASH_SET,
-        default_sequence_element_type: str = "String",
-        default_set_element_type: str = "String",
-        default_dict_key_type: str = "String",
-        default_dict_value_type: str = "String",
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.LET,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.HASH_MAP,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.YES,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.POSITIONAL,
-        indent: str = "    ",
-    ) -> None:
-        """Initialize Rust language specification."""
-        _decl_cls = type(declaration_style)
-        _seq_cls = type(sequence_format)
+    date_format: DateFormats = DateFormats.RUST
+    datetime_format: DatetimeFormats = DatetimeFormats.RUST
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.VEC
+    set_format: SetFormats = SetFormats.HASH_SET
+    default_sequence_element_type: str = "String"
+    default_set_element_type: str = "String"
+    default_dict_key_type: str = "String"
+    default_dict_value_type: str = "String"
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.LET
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.HASH_MAP
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.YES
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
+    indent: str = "    "
+
+    null_literal: ClassVar[str] = "None::<()>"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = False
+    statement_terminator: ClassVar[str] = ";"
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+    format_sequence_entry: ClassVar[Callable[[Value, str], str]] = (
+        staticmethod(passthrough_sequence_entry)
+    )
+    format_set_entry: ClassVar[Callable[[Value, str], str]] = staticmethod(
+        passthrough_set_entry
+    )
+    format_variable_assignment: ClassVar[Callable[[str, str, Value], str]] = (
+        staticmethod(variable_formatter(template="{name} = {value};"))
+    )
+    data_dependent_preamble: ClassVar[Callable[[Value], tuple[str, ...]]] = (
+        staticmethod(no_data_preamble)
+    )
+    type_hint_collection_preamble_lines: ClassVar[
+        Callable[[frozenset[type]], tuple[str, ...]]
+    ] = staticmethod(no_type_hint_preamble)
+    format_call_stub: ClassVar[
+        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
+    ] = staticmethod(_rust_call_stub)
+    format_call_preamble_stub: ClassVar[
+        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
+    ] = staticmethod(no_call_stub)
+    format_call_target: ClassVar[Callable[[str], str]] = staticmethod(
+        identity_call_target
+    )
+    scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
+
+    def __post_init__(self) -> None:
+        """Validate that incompatible formats are not combined."""
+        _decl_cls = type(self.declaration_style)
+        _seq_cls = type(self.sequence_format)
         if (
-            declaration_style in {_decl_cls.CONST, _decl_cls.STATIC}
-            and sequence_format is _seq_cls.VEC
+            self.declaration_style in {_decl_cls.CONST, _decl_cls.STATIC}
+            and self.sequence_format is _seq_cls.VEC
         ):
             msg = (
-                f"Rust {declaration_style.name} requires a "
+                f"Rust {self.declaration_style.name} requires a "
                 f"constant-expression initializer, but the "
                 f"VEC sequence format produces vec![…] which "
                 f"is not a constant expression. "
                 f"Use ARRAY or TUPLE instead."
             )
             raise IncompatibleFormatsError(msg)
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal = "None::<()>"
-        self.true_literal = "true"
-        self.false_literal = "false"
-        fmt = sequence_format(default_type=default_sequence_element_type)
-        self.sequence_format_config: SequenceFormatConfig = fmt
-        self.set_format = set_format
 
-        self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_element_type,
-        )
-        self.sequence_open: Callable[[list[Value]], str] = fmt.sequence_open
-        self.dict_format_config: DictFormatConfig = dict_format(
-            default_type=default_dict_value_type,
-            default_key_type=default_dict_key_type,
-        )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format(
+            default_type=self.default_sequence_element_type,
         )
 
-        self.format_string: Callable[[str], str] = string_format
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
-            )
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return self.set_format(default_type=self.default_set_element_type)
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        return self.sequence_format_config.sequence_open
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return self.dict_format(
+            default_type=self.default_dict_value_type,
+            default_key_type=self.default_dict_key_type,
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
+
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Callable that formats a string value as a quoted literal."""
+        return self.string_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        return self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(open_str="HashMap::from(["),
+            close="])",
+            preamble_lines=("use std::collections::HashMap;",),
         )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(open_str="HashMap::from(["),
-                close="])",
-                preamble_lines=("use std::collections::HashMap;",),
-            )
-        )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            tuple_dict_entry(format_value=passthrough_sequence_entry)
-        )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
-        self.supports_scalar_inline_comments = False
-        _set_cls = type(set_format)
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return tuple_dict_entry(format_value=passthrough_sequence_entry)
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats a new variable declaration."""
+        _set_cls = type(self.set_format)
         _set_type_names = {
             _set_cls.HASH_SET: "HashSet",
             _set_cls.BTREE_SET: "BTreeSet",
         }
-        _dict_cls = type(dict_format)
+        _dict_cls = type(self.dict_format)
         _dict_type_names = {
             _dict_cls.HASH_MAP: "HashMap",
             _dict_cls.BTREE_MAP: "BTreeMap",
         }
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.build_formatter(
-                date_type=(
-                    "&str"
-                    if date_format.value.type_produced is str
-                    else "NaiveDate"
-                ),
-                datetime_type=(
-                    "&str"
-                    if datetime_format.value.type_produced is str
-                    else "NaiveDateTime"
-                ),
-                sequence_format_type_annotation=(
-                    sequence_format.format_type_annotation
-                ),
-                sequence_supports_heterogeneity=(
-                    sequence_format.supports_heterogeneity
-                ),
-                set_type_name=_set_type_names[set_format],
-                dict_type_name=_dict_type_names[dict_format],
-                default_sequence_element_type=(default_sequence_element_type),
-                default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-            )
+        return self.declaration_style.build_formatter(
+            date_type=(
+                "&str"
+                if self.date_format.value.type_produced is str
+                else "NaiveDate"
+            ),
+            datetime_type=(
+                "&str"
+                if self.datetime_format.value.type_produced is str
+                else "NaiveDateTime"
+            ),
+            sequence_format_type_annotation=(
+                self.sequence_format.format_type_annotation
+            ),
+            sequence_supports_heterogeneity=(
+                self.sequence_format.supports_heterogeneity
+            ),
+            set_type_name=_set_type_names[self.set_format],
+            dict_type_name=_dict_type_names[self.dict_format],
+            default_sequence_element_type=self.default_sequence_element_type,
+            default_set_element_type=self.default_set_element_type,
+            default_dict_key_type=self.default_dict_key_type,
+            default_dict_value_type=self.default_dict_value_type,
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble computed from date/datetime format."""
+        return date_scalar_preamble(
+            date_format=self.date_format,
+            datetime_format=self.datetime_format,
         )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            date_scalar_preamble(
-                date_format=date_format,
-                datetime_format=datetime_format,
-            )
-        )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
 
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style = call_style
-        self.call_style_config: CallStyleConfig | None = call_style.value
-        self.statement_terminator = ";"
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = _rust_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target
+    @cached_property
+    def call_style_config(self) -> CallStyleConfig | None:
+        """Configuration for the chosen call style."""
+        return self.call_style.value

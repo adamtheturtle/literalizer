@@ -46,19 +46,23 @@ def test_none_fallback_value_type_uses_dict_open_fallback() -> None:
         fallback_value_type=None,
     )
     fallback = "map[string]any{"
-    spec.dict_format_config = DictFormatConfig(
-        dict_open=typed_dict_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=resolver,
-                opener_template="map[string]{type_name}{{",
+    object.__setattr__(
+        spec,
+        "dict_format_config",
+        DictFormatConfig(
+            dict_open=typed_dict_open(
+                type_to_opener=make_type_to_opener(
+                    element_to_type=resolver,
+                    opener_template="map[string]{type_name}{{",
+                ),
+                fallback=fallback,
             ),
-            fallback=fallback,
+            close="}",
+            format_entry=spec.dict_format_config.format_entry,
+            empty_dict=spec.dict_format_config.empty_dict,
+            preamble_lines=spec.dict_format_config.preamble_lines,
+            narrowed_open=spec.dict_format_config.narrowed_open,
         ),
-        close="}",
-        format_entry=spec.dict_format_config.format_entry,
-        empty_dict=spec.dict_format_config.empty_dict,
-        preamble_lines=spec.dict_format_config.preamble_lines,
-        narrowed_open=spec.dict_format_config.narrowed_open,
     )
     result = literalizer.literalize(
         source=source,
