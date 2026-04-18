@@ -399,13 +399,6 @@ class Elm(metaclass=LanguageCls):
             declared_type="Val",
         )
 
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
-
     class SetFormats(enum.Enum):
         """Set type options for Elm."""
 

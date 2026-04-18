@@ -187,13 +187,6 @@ class VisualBasic(metaclass=LanguageCls):
 
         ARRAY = "array"
 
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return True
-
     class SetFormats(enum.Enum):
         """Set type options for Visual Basic."""
 

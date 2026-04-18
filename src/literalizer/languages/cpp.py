@@ -781,17 +781,6 @@ class Cpp(metaclass=LanguageCls):
                 datetime_type=datetime_type,
             )
 
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.get_config(
-                int_type="int",
-                date_type=None,
-                datetime_type=None,
-            ).supports_heterogeneity
-
     class SetFormats(enum.Enum):
         """Set type options for C++."""
 
