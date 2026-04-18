@@ -16,6 +16,9 @@ Next
   recover the previous silent-coercion behavior, pass every relevant
   ``coerce_*`` flag as ``True`` when constructing the language.
 
+2026.04.18
+----------
+
 2026.04.15
 ----------
 
