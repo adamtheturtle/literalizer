@@ -2,6 +2,6 @@
 package main
 
 main :: proc() {
-my_data := nil
+my_data: any = nil
 _ = my_data
 }

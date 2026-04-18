@@ -319,6 +319,27 @@ def _format_java_typed_declaration(
 
 
 @beartype
+def _object_nil_declaration(
+    base_formatter: Callable[[str, str, Value], str],
+) -> Callable[[str, str, Value], str]:
+    """Wrap *base_formatter* so top-level ``null`` gets a typed form.
+
+    Java cannot infer a type from ``null``, so ``var {name} = null;``
+    fails to compile.  Emit ``Object {name} = null;`` when the value is
+    ``None``.
+    """
+
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format a Java variable declaration, guarding top-level ``null``."""
+        if data is None:
+            return f"Object {name} = {value};"
+        return base_formatter(name, value, data)
+
+    return _format
+
+
+@beartype
 class Java(metaclass=LanguageCls):
     """Java language specification.
 
@@ -662,7 +683,7 @@ class Java(metaclass=LanguageCls):
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
-                return auto_formatter
+                return _object_nil_declaration(base_formatter=auto_formatter)
             return functools.partial(
                 _format_java_typed_declaration,
                 int_type=int_type,
