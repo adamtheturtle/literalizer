@@ -1069,10 +1069,28 @@ class Haskell(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    format_sequence_entry = staticmethod(passthrough_sequence_entry)
-    format_set_entry = staticmethod(passthrough_set_entry)
-    data_dependent_preamble = staticmethod(no_data_preamble)
-    type_hint_collection_preamble_lines = staticmethod(no_type_hint_preamble)
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
+        self,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
 
     @cached_property
     def null_literal(self) -> str:

@@ -476,14 +476,52 @@ class Julia(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    format_string = staticmethod(format_string_backslash_dollar)
-    format_sequence_entry = staticmethod(passthrough_sequence_entry)
-    format_set_entry = staticmethod(passthrough_set_entry)
-    data_dependent_preamble = staticmethod(no_data_preamble)
-    type_hint_collection_preamble_lines = staticmethod(no_type_hint_preamble)
-    format_call_stub = staticmethod(_julia_call_stub)
-    format_call_preamble_stub = staticmethod(no_call_stub)
-    format_call_target = staticmethod(identity_call_target)
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Format a string value as a quoted literal."""
+        return format_string_backslash_dollar
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
+        self,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return _julia_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def format_call_target(self) -> Callable[[str], str]:
+        """Transform a dotted call target."""
+        return identity_call_target
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
