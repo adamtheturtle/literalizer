@@ -163,8 +163,10 @@ def make_int64_cast_formatter(
     return _format
 
 
-_I64_MAX = 2**63 - 1
-_I64_MIN = -(2**63)
+I32_MAX = 2**31 - 1
+I32_MIN = -(2**31)
+I64_MAX = 2**63 - 1
+I64_MIN = -(2**63)
 
 
 @beartype
@@ -172,20 +174,21 @@ def make_overflow_fallback_formatter(
     *,
     base: Callable[[int], str],
     fallback: Callable[[int], str],
+    min_value: int = I64_MIN,
+    max_value: int = I64_MAX,
 ) -> Callable[[int], str]:
-    """Wrap a formatter so values outside the signed 64-bit range use
+    """Wrap a formatter so values outside ``[min_value, max_value]`` use
     *fallback* instead of *base*.
 
-    Values in ``[-2**63, 2**63 - 1]`` use *base*; values outside that
-    range use *fallback*.  Used by language backends whose scalar
-    integer code path can't emit a bare decimal literal for values
-    that exceed native fixed-width integer ranges.
+    Defaults to the signed 64-bit range.  Used by language backends
+    whose scalar integer code path can't emit a bare decimal literal
+    for values that exceed native fixed-width integer ranges.
     """
 
     @beartype
     def _format(value: int) -> str:
-        """Format, delegating to *fallback* when out of i64 range."""
-        if _I64_MIN <= value <= _I64_MAX:
+        """Format, delegating to *fallback* when out of range."""
+        if min_value <= value <= max_value:
             return base(value)
         return fallback(value)
 
@@ -230,7 +233,7 @@ def data_has_out_of_range_int(*, data: Value) -> bool:
     if isinstance(data, bool):
         return False
     if isinstance(data, int):
-        return not _I64_MIN <= data <= _I64_MAX
+        return not I64_MIN <= data <= I64_MAX
     if isinstance(data, list):
         return any(data_has_out_of_range_int(data=v) for v in data)
     if isinstance(data, set):

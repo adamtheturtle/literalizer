@@ -37,8 +37,11 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I32_MAX,
+    I32_MIN,
     format_integer_hex,
     format_integer_underscore,
+    make_long_suffix_formatter,
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
@@ -604,11 +607,20 @@ class Scala(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
+        _base_int_formatter = integer_format.get_formatter(
+            numeric_separator=numeric_separator,
+        )
+        _long_suffixed_int_formatter = make_overflow_fallback_formatter(
+            base=_base_int_formatter,
+            fallback=make_long_suffix_formatter(
+                base=_base_int_formatter,
+            ),
+            min_value=I32_MIN,
+            max_value=I32_MAX,
+        )
         self.format_integer: Callable[[int], str] = (
             make_overflow_fallback_formatter(
-                base=integer_format.get_formatter(
-                    numeric_separator=numeric_separator,
-                ),
+                base=_long_suffixed_int_formatter,
                 fallback=_format_scala_bigint_literal,
             )
         )

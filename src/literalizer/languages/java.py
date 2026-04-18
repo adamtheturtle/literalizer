@@ -38,6 +38,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I32_MAX,
+    I32_MIN,
     data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
@@ -840,10 +842,18 @@ class Java(metaclass=LanguageCls):
         base_int_formatter = integer_format.get_formatter(
             numeric_separator=numeric_separator,
         )
+        _long_suffix_formatter = make_long_suffix_formatter(
+            base=base_int_formatter,
+        )
         _suffixed_int_formatter: Callable[[int], str] = (
-            make_long_suffix_formatter(base=base_int_formatter)
+            _long_suffix_formatter
             if suffix_is_auto
-            else base_int_formatter
+            else make_overflow_fallback_formatter(
+                base=base_int_formatter,
+                fallback=_long_suffix_formatter,
+                min_value=I32_MIN,
+                max_value=I32_MAX,
+            )
         )
         self.format_integer: Callable[[int], str] = (
             make_overflow_fallback_formatter(
