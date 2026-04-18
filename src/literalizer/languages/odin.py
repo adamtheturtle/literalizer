@@ -75,6 +75,27 @@ def _format_set_entry(_original: Value, item: str) -> str:
 
 
 @beartype
+def _nil_safe_declaration(
+    base_formatter: Callable[[str, str, Value], str],
+) -> Callable[[str, str, Value], str]:
+    """Wrap *base_formatter* so top-level ``nil`` gets a typed form.
+
+    Odin cannot infer a type from ``nil`` alone, so
+    ``my_data := nil`` fails to compile.  Emit
+    ``{name}: any = nil`` when the value is ``None``.
+    """
+
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format an Odin variable declaration, guarding top-level ``nil``."""
+        if data is None:
+            return f"{name}: any = {value}"
+        return base_formatter(name, value, data)
+
+    return _format
+
+
+@beartype
 class Odin(metaclass=LanguageCls):
     """Odin language specification."""
 
@@ -458,7 +479,9 @@ class Odin(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _nil_safe_declaration(
+                base_formatter=declaration_style.value.formatter,
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
