@@ -1160,6 +1160,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (declaration_style, "simple_dict", ""),
         (declaration_style, "empty_list", ""),
         (declaration_style, "scalar_int", ""),
+        (declaration_style, "scalar_int_large", ""),
         (declaration_style, "scalar_float", ""),
         (declaration_style, "scalar_bool", ""),
         (declaration_style, "scalar_string", ""),

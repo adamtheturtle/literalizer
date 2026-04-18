@@ -43,6 +43,7 @@ from literalizer._formatters.format_integers import (
     format_integer_octal_c_style,
     format_integer_underscore,
     make_long_suffix_formatter,
+    make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -842,7 +843,12 @@ class Java(metaclass=LanguageCls):
         self.format_integer: Callable[[int], str] = (
             make_long_suffix_formatter(base=base_int_formatter)
             if suffix_is_auto
-            else base_int_formatter
+            else make_overflow_suffix_formatter(
+                base=base_int_formatter,
+                min_value=-(2**31),
+                max_value=2**31 - 1,
+                suffix="L",
+            )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
