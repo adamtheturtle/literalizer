@@ -648,6 +648,26 @@ def test_rust_const_widened_int_array() -> None:
     assert result.code == expected
 
 
+def test_rust_const_i128_array() -> None:
+    """Rust CONST with an integer exceeding i64 range uses i128."""
+    result = literalize(
+        source="[9223372036854775808]",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: [i128; 1] = [
+            9223372036854775808,
+        ];"""
+    )
+    assert result.code == expected
+
+
 def test_rust_const_nested_list() -> None:
     """Rust CONST with nested list produces recursive type."""
     result = literalize(
