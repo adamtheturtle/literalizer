@@ -17,7 +17,6 @@ import enum
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import cast
 
 import pytest
 from beartype import beartype
@@ -121,7 +120,7 @@ def _default_spec(
     instance per class cuts thousands of redundant builds during test
     collection.
     """
-    return cast("literalizer.Language", lang_cls())
+    return lang_cls()
 
 
 @dataclasses.dataclass
@@ -403,11 +402,7 @@ def _build_sequence_decl_variants() -> Iterable[_Variant]:
     for lang_cls in _SORTED_LANGUAGES:
         lang_name = lang_cls.__name__
         spec = _default_spec(lang_cls=lang_cls)
-        # spec.sequence_format is typed as the SequenceFormat protocol,
-        # but at runtime it is the Enum member that lives in
-        # spec.sequence_formats; cast so the identity check below
-        # type-checks.
-        default_sequence_format = cast("enum.Enum", spec.sequence_format)
+        default_sequence_format = spec.sequence_format
         default_declaration_style = spec.declaration_style
         non_default_sequence_formats = [
             sequence_format

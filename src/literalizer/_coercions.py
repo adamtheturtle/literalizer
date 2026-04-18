@@ -686,7 +686,7 @@ def apply_coercions(
     """Apply heterogeneous-type coercions controlled by the sequence
     format.
     """
-    if not spec.sequence_format.supports_heterogeneity:
+    if not spec.sequence_format_config.supports_heterogeneity:
         steps = _build_coercion_steps(spec=spec)
         if error_on_coercion:
             for step in steps:
