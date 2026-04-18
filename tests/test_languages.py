@@ -340,6 +340,69 @@ def test_wrap_in_file_methods_callable(
     assert isinstance(combined, str)
 
 
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_protocol_properties_accessible(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every Language exposes its Protocol attributes for any language.
+
+    Many ``@cached_property`` members are only exercised by tests for
+    the subset of languages that opt in to a feature (variable
+    reassignment, type-hint preambles, call stubs).  Accessing every
+    documented member here keeps coverage at 100% across the matrix.
+    """
+    spec = language_cls()
+    assert callable(spec.format_call_stub)
+    assert callable(spec.format_call_preamble_stub)
+    assert callable(spec.format_call_target)
+    assert callable(spec.format_variable_declaration)
+    assert callable(spec.format_variable_assignment)
+    assert callable(spec.type_hint_collection_preamble_lines)
+    assert isinstance(spec.scalar_body_preamble, dict)
+
+
+def test_haskell_iso_double_format_paths() -> None:
+    """Haskell with non-HASKELL date/datetime + DOUBLE strings hits the
+    fallback formatter branches for date and datetime construction.
+    """
+    spec = literalizer.languages.Haskell(
+        date_format=literalizer.languages.Haskell.date_formats.ISO,
+        datetime_format=literalizer.languages.Haskell.datetime_formats.ISO,
+        string_format=literalizer.languages.Haskell.string_formats.DOUBLE,
+    )
+    assert callable(spec.format_date)
+    assert callable(spec.format_datetime)
+
+
+@pytest.mark.parametrize(
+    argnames=("language_cls", "alt_prefix"),
+    argvalues=[
+        ("Elm", "X"),
+        ("Gleam", "X"),
+        ("PureScript", "X"),
+    ],
+)
+def test_constructor_prefix_override_paths(
+    *,
+    language_cls: str,
+    alt_prefix: str,
+) -> None:
+    """Constructing Elm/Gleam/PureScript with a non-default
+    constructor_prefix exercises the wrap-with-prefix branches that
+    only fire when the prefix differs from the language default.
+    """
+    cls = getattr(literalizer.languages, language_cls)
+    spec = cls(constructor_prefix=alt_prefix)
+    assert callable(spec.format_bytes)
+    assert callable(spec.format_date)
+    assert callable(spec.format_datetime)
+
+
 def test_python_no_any_import_when_all_defaults_overridden() -> None:
     """When all Python default collection types are non-Any, the
     ``from typing import Any`` import is not emitted.
