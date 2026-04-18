@@ -77,24 +77,40 @@ _U64_MAX = 2**64 - 1
 
 
 @beartype
-def _format_rust_i64_literal(value: int) -> str:
-    """Format a value that exceeds ``i32`` but fits ``i64`` as an
-    ``i64``-suffixed Rust literal.
+def _make_rust_i64_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap *base* so its output gets an ``i64`` suffix.
+
+    Used for values that exceed ``i32`` but fit ``i64``.
     """
-    return f"{value}i64"
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format with ``i64`` suffix."""
+        return f"{base(value)}i64"
+
+    return _format
 
 
 @beartype
-def _format_rust_wide_int_literal(value: int) -> str:
-    """Format a value that exceeds i64 range as a Rust typed literal.
+def _make_rust_wide_int_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap *base* so its output gets a ``u64`` or ``i128`` suffix.
 
     Uses ``u64`` for non-negative values that fit in ``u64``; ``i128``
     for everything else (larger positives and negatives below
     ``i64::MIN``).
     """
-    if 0 <= value <= _U64_MAX:
-        return f"{value}u64"
-    return f"{value}i128"
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format with ``u64`` or ``i128`` suffix."""
+        suffix = "u64" if 0 <= value <= _U64_MAX else "i128"
+        return f"{base(value)}{suffix}"
+
+    return _format
 
 
 @beartype
@@ -637,14 +653,16 @@ class Rust(metaclass=LanguageCls):
         )
         _i64_suffixed_int_formatter = make_overflow_fallback_formatter(
             base=_base_int_formatter,
-            fallback=_format_rust_i64_literal,
+            fallback=_make_rust_i64_formatter(base=_base_int_formatter),
             min_value=I32_MIN,
             max_value=I32_MAX,
         )
         self.format_integer: Callable[[int], str] = (
             make_overflow_fallback_formatter(
                 base=_i64_suffixed_int_formatter,
-                fallback=_format_rust_wide_int_literal,
+                fallback=_make_rust_wide_int_formatter(
+                    base=_base_int_formatter,
+                ),
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
