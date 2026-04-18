@@ -258,7 +258,7 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         type(fval_t) :: cfg
         cfg = fmap([fval_t :: &
             fentry('host', fstr('it''s here')), &  ! a comment
-            fentry('port', fint(80)) &  ! another
+            fentry('port', fint(80_int64)) &  ! another
         ])""",
     )
     assert result.code == expected
