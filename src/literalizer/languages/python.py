@@ -392,9 +392,6 @@ def _build_type_hint_preamble(
     return _preamble
 
 
-_VARIADIC = "*_args: object, **_kwargs: object"
-
-
 def _python_call_stub(
     name: str,
     _params: Sequence[str],
@@ -402,9 +399,10 @@ def _python_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Python stub declarations for a call name."""
+    variadic = "*_args: object, **_kwargs: object"
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"def {name}({_VARIADIC}) -> object: ...",)
+        return (f"def {name}({variadic}) -> object: ...",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -412,13 +410,13 @@ def _python_call_stub(
         cls = f"_{root.capitalize()}Type"
         return (
             f"class {cls}:",
-            f"    def {method}(self, {_VARIADIC}) -> object: ...",
+            f"    def {method}(self, {variadic}) -> object: ...",
             f"{root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1].capitalize()}Type"
     lines.append(f"class {inner_cls}:")
-    lines.append(f"    def {method}(self, {_VARIADIC}) -> object: ...")
+    lines.append(f"    def {method}(self, {variadic}) -> object: ...")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
         cls = f"_{fields[i].capitalize()}Type"

@@ -165,22 +165,6 @@ def _make_initializer_list_config(
     )
 
 
-_ARRAY_CONFIG = SequenceFormatConfig(
-    sequence_open=_cpp_array_open,
-    close="}",
-    supports_heterogeneity=False,
-    single_element_trailing_comma=False,
-    supports_trailing_comma=True,
-    empty_sequence=None,
-    preamble_lines=("#include <array>",),
-    format_entry=passthrough_sequence_entry,
-    typed_opener_fallback=None,
-    uses_typed_literal_for_scalars=False,
-    requires_uniform_record_shapes=False,
-    declared_type=None,
-)
-
-
 @beartype
 def _make_array_config(
     *,
@@ -190,7 +174,20 @@ def _make_array_config(
 ) -> SequenceFormatConfig:
     """Return the ARRAY sequence config."""
     del int_type, date_type, datetime_type
-    return _ARRAY_CONFIG
+    return SequenceFormatConfig(
+        sequence_open=_cpp_array_open,
+        close="}",
+        supports_heterogeneity=False,
+        single_element_trailing_comma=False,
+        supports_trailing_comma=True,
+        empty_sequence=None,
+        preamble_lines=("#include <array>",),
+        format_entry=passthrough_sequence_entry,
+        typed_opener_fallback=None,
+        uses_typed_literal_for_scalars=False,
+        requires_uniform_record_shapes=False,
+        declared_type=None,
+    )
 
 
 @dataclasses.dataclass(frozen=True)
