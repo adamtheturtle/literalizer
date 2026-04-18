@@ -16,9 +16,6 @@ class ValueKind(enum.Enum):
     correct type keyword without inspecting the formatted string.
     """
 
-    BARE_BRACE_INIT = "bare_brace_init"
-    """Bare brace-init list (``{...}``) with no type prefix."""
-
     STRING_LITERAL = "string_literal"
     """C-style string literal (``"..."``).  Relevant for C++ where
     ``readability-qualified-auto`` requires ``const auto*``.

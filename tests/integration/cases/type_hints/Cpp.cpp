@@ -3,12 +3,9 @@
 #include <cstddef>
 #include <chrono>
 #include <map>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <variant>
 void check_() {
-Any my_data = {
+auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t, std::chrono::year_month_day, std::chrono::system_clock::time_point>>{
     {"name", "Alice"},
     {"age", 30},
     {"active", true},

@@ -53,15 +53,14 @@ from literalizer._types import Value
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-_SV_INT_BITS = 64
-
 
 @beartype
 def _format_integer_hex_sv(value: int) -> str:
     """Format an integer as a SystemVerilog hexadecimal literal."""
+    bits = 64
     if value < 0:
-        return f"-{_SV_INT_BITS}'h{abs(value):x}"
-    return f"{_SV_INT_BITS}'h{value:x}"
+        return f"-{bits}'h{abs(value):x}"
+    return f"{bits}'h{value:x}"
 
 
 @beartype
@@ -417,7 +416,7 @@ class SystemVerilog(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="'{",
+                ordered_map_open=fixed_dict_open(open_str="'{"),
                 close="}",
                 preamble_lines=(),
             )

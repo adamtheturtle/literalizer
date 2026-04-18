@@ -69,8 +69,6 @@ from literalizer._language import (
 if TYPE_CHECKING:
     from literalizer._types import Value
 
-_VARIADIC = "args...; kwargs..."
-
 
 def _julia_call_stub(
     name: str,
@@ -79,13 +77,14 @@ def _julia_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Julia stub declarations for a call name."""
+    variadic = "args...; kwargs..."
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"{parts[0]}({_VARIADIC}) = nothing",)
+        return (f"{parts[0]}({variadic}) = nothing",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    _anon = f"({_VARIADIC}) -> nothing"
+    _anon = f"({variadic}) -> nothing"
     if not fields:
         cls = root.capitalize() + "Type"
         return (
@@ -521,7 +520,7 @@ class Julia(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="[",
+                ordered_map_open=fixed_dict_open(open_str="["),
                 close="]",
                 preamble_lines=(),
             )

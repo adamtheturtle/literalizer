@@ -883,6 +883,12 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
             lambda s: s.set_formats,
             "set_format",
         ),
+        (
+            "nls",
+            lambda s: s.numeric_literal_suffix,
+            lambda s: s.numeric_literal_suffixes,
+            "numeric_literal_suffix",
+        ),
     ]
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
@@ -1187,6 +1193,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "scalar_datetime", ""),
         (type_hints_cross, "simple_dict", ""),
         (type_hints_cross, "int_set", ""),
+        (type_hints_cross, "bool_list", ""),
+        (type_hints_cross, "float_list", ""),
     ]
     # Rust CONST/STATIC with dict cases produce HashMap::from([…])
     # which is not a constant expression, so skip those.

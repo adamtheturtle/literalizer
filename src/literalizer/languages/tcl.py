@@ -406,7 +406,7 @@ class Tcl(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="[dict create ",
+                ordered_map_open=fixed_dict_open(open_str="[dict create "),
                 close="]",
                 preamble_lines=(),
             )

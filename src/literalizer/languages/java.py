@@ -145,20 +145,22 @@ def _list_of_open(items: list[Any]) -> str:
     return "List.of("
 
 
-_JAVA_BOXED: dict[str, str] = {
-    "boolean": "Boolean",
-    "int": "Integer",
-    "long": "Long",
-    "double": "Double",
-}
-
-
 @beartype
 def _java_box(type_name: str) -> str:
     """Return the boxed wrapper type for a Java primitive, or the type
     itself for reference types.
     """
-    return _JAVA_BOXED.get(type_name, type_name)
+    match type_name:
+        case "boolean":
+            return "Boolean"
+        case "int":
+            return "Integer"
+        case "long":
+            return "Long"
+        case "double":
+            return "Double"
+        case _:
+            return type_name
 
 
 @beartype
@@ -849,7 +851,11 @@ class Java(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="new java.util.ArrayList<>(java.util.Arrays.asList(",
+                ordered_map_open=fixed_dict_open(
+                    open_str=(
+                        "new java.util.ArrayList<>(java.util.Arrays.asList("
+                    ),
+                ),
                 close="))",
                 preamble_lines=("import java.util.Map;",),
             )

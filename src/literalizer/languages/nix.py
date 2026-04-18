@@ -60,8 +60,6 @@ if TYPE_CHECKING:
 
 _IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_'-]*$")
 
-_CONTROL_CHAR_UPPER_BOUND = 0x20
-
 _NIX_KEYWORDS: frozenset[str] = frozenset(
     {
         "assert",
@@ -117,7 +115,8 @@ def _format_nix_dict_entry(
     inner = key[1:-1]
     if _IDENTIFIER_RE.match(string=inner) and inner not in _NIX_KEYWORDS:
         return f"{inner} = {formatted_value};"
-    if not inner or any(ord(ch) < _CONTROL_CHAR_UPPER_BOUND for ch in inner):
+    control_char_upper_bound = 0x20
+    if not inner or any(ord(ch) < control_char_upper_bound for ch in inner):
         msg = (
             f"Nix does not support the dict key {key}. "
             "Attribute names must be non-empty and must not contain "
@@ -443,7 +442,7 @@ class Nix(metaclass=LanguageCls):
         self.comment_config: CommentConfig = comment_format.value
         self.ordered_map_format_config: OrderedMapFormatConfig = (
             OrderedMapFormatConfig(
-                open_str="{",
+                ordered_map_open=fixed_dict_open(open_str="{"),
                 close="}",
                 preamble_lines=(),
             )
