@@ -1245,7 +1245,7 @@ class Cpp(metaclass=LanguageCls):
     def data_dependent_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
-        """Build data-dependent preamble lines (variant/nullptr
+        """Build data-dependent preamble lines (variant and ``nullptr``
         headers).
         """
         return _build_variant_preamble(

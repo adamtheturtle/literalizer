@@ -426,13 +426,13 @@ class Cobol(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    _PROGRAM_PREFIX: str = (
+    _PROGRAM_PREFIX: ClassVar[str] = (
         "IDENTIFICATION DIVISION.\n"
         "PROGRAM-ID. CHECK.\n"
         "DATA DIVISION.\n"
         "WORKING-STORAGE SECTION.\n"
     )
-    _PROGRAM_SUFFIX: str = "PROCEDURE DIVISION.\n    STOP RUN."
+    _PROGRAM_SUFFIX: ClassVar[str] = "PROCEDURE DIVISION.\n    STOP RUN."
 
     @staticmethod
     def wrap_in_file(
