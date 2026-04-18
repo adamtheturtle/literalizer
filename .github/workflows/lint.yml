@@ -693,7 +693,7 @@ jobs:
           lang_patterns: tests/integration/cases/**/*.jl
       - name: Install Julia
         if: steps.find-files.outputs.found == 'true'
-        uses: julia-actions/setup-julia@v2
+        uses: julia-actions/setup-julia@v3
       - name: Check Julia syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 julia --startup-file=no -e 'Meta.parseall(read(ARGS[1],
