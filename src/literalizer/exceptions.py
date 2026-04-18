@@ -58,3 +58,12 @@ class UnsupportedCallStyleError(Exception):
             f"{language_name} does not support function call rendering"
         )
         self.language_name = language_name
+
+
+class IncompatibleFormatsError(Exception):
+    """Raised when a combination of format options produces invalid code.
+
+    For example, Rust ``CONST`` and ``STATIC`` declaration styles
+    require constant-expression initializers, but the ``VEC`` sequence
+    format produces ``vec![…]`` which is not a constant expression.
+    """

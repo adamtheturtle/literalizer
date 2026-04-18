@@ -14,6 +14,7 @@ from literalizer import (
     NewVariable,
     literalize,
 )
+from literalizer.exceptions import IncompatibleFormatsError
 from literalizer.languages import (
     Clojure,
     Cpp,
@@ -448,3 +449,281 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         )""",
     )
     assert result.code == expected
+
+
+RUST_CONST = Rust(
+    date_format=Rust.date_formats.ISO,
+    datetime_format=Rust.datetime_formats.ISO,
+    bytes_format=Rust.bytes_formats.HEX,
+    sequence_format=Rust.sequence_formats.ARRAY,
+    declaration_style=Rust.declaration_styles.CONST,
+)
+
+
+def test_rust_const_bytes() -> None:
+    """Rust CONST with bytes uses ``&str`` type."""
+    yaml_input = "!!binary |\n  SGVsbG8="
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "48656c6c6f";'
+
+
+def test_rust_const_date() -> None:
+    """Rust CONST with ISO dates uses ``&str`` type."""
+    result = literalize(
+        source="2024-01-15",
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "2024-01-15";'
+
+
+def test_rust_const_datetime() -> None:
+    """Rust CONST with ISO datetimes uses ``&str`` type."""
+    result = literalize(
+        source="2024-01-15T12:30:00",
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
+
+
+def test_rust_const_single_element_tuple() -> None:
+    """Rust CONST single-element tuple has trailing comma in type."""
+    rust_tuple = Rust(
+        date_format=Rust.date_formats.ISO,
+        datetime_format=Rust.datetime_formats.ISO,
+        bytes_format=Rust.bytes_formats.HEX,
+        sequence_format=Rust.sequence_formats.TUPLE,
+        declaration_style=Rust.declaration_styles.CONST,
+    )
+    result = literalize(
+        source="[42]",
+        input_format=InputFormat.JSON,
+        language=rust_tuple,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: (i32,) = (
+            42,
+        );"""
+    )
+    assert result.code == expected
+
+
+def test_rust_const_set() -> None:
+    """Rust CONST with set produces ``HashSet`` type annotation."""
+    yaml_input = "!!set\n? a\n? b\n"
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: HashSet<&str> = HashSet::from([
+            "a",
+            "b",
+        ]);"""
+    )
+    assert result.code == expected
+
+
+def test_rust_const_empty_set() -> None:
+    """Rust CONST with empty set uses default element type."""
+    yaml_input = "!!set {}"
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == (
+        "const my_var: HashSet<String> = HashSet::<String>::new();"
+    )
+
+
+def test_rust_const_dict() -> None:
+    """Rust CONST with dict produces ``HashMap`` type annotation."""
+    result = literalize(
+        source='{"a": "b"}',
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: HashMap<&str, &str> = HashMap::from([
+            ("a", "b"),
+        ]);"""
+    )
+    assert result.code == expected
+
+
+def test_rust_const_empty_dict() -> None:
+    """Rust CONST with empty dict uses default key/value types."""
+    result = literalize(
+        source="{}",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == (
+        "const my_var: HashMap<String, String>"
+        " = HashMap::<String, String>::from([]);"
+    )
+
+
+def test_rust_const_dict_mixed_values() -> None:
+    """Rust CONST with mixed dict values falls back to ``&str``."""
+    result = literalize(
+        source='{"a": 1, "b": "x"}',
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: HashMap<&str, &str> = HashMap::from([
+            ("a", "1"),
+            ("b", "x"),
+        ]);"""
+    )
+    assert result.code == expected
+
+
+def test_rust_const_widened_int_array() -> None:
+    """Rust CONST with mixed-size integers widens to the largest type."""
+    result = literalize(
+        source="[1, 2147483648]",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: [i64; 2] = [
+            1,
+            2147483648,
+        ];"""
+    )
+    assert result.code == expected
+
+
+def test_rust_const_i128_array() -> None:
+    """Rust CONST with an integer exceeding i64 range uses i128."""
+    result = literalize(
+        source="[9223372036854775808]",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: [i128; 1] = [
+            9223372036854775808,
+        ];"""
+    )
+    assert result.code == expected
+
+
+def test_rust_const_nested_list() -> None:
+    """Rust CONST with nested list produces recursive type."""
+    result = literalize(
+        source="[[1, 2], [3, 4]]",
+        input_format=InputFormat.JSON,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: [[i32; 2]; 2] = [
+            [1, 2],
+            [3, 4],
+        ];"""
+    )
+    assert result.code == expected
+
+
+def test_rust_tuple_format_type_annotation_raises() -> None:
+    """TUPLE.format_type_annotation raises for incompatible format."""
+    with pytest.raises(expected_exception=IncompatibleFormatsError):
+        Rust.sequence_formats.TUPLE.format_type_annotation(
+            element_type="i32",
+            length=2,
+        )
+
+
+def test_rust_vec_format_type_annotation() -> None:
+    """``format_type_annotation`` returns ``Vec<T>`` for vector format."""
+    result = Rust.sequence_formats.VEC.format_type_annotation(
+        element_type="i32",
+        length=3,
+    )
+    assert result == "Vec<i32>"
+
+
+def test_rust_const_vec_raises() -> None:
+    """Rust CONST with vector format raises."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError, match="VEC"
+    ):
+        Rust(
+            declaration_style=Rust.declaration_styles.CONST,
+            sequence_format=Rust.sequence_formats.VEC,
+        )
+
+
+def test_rust_static_vec_raises() -> None:
+    """Rust STATIC with vector format raises."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError, match="VEC"
+    ):
+        Rust(
+            declaration_style=Rust.declaration_styles.STATIC,
+            sequence_format=Rust.sequence_formats.VEC,
+        )

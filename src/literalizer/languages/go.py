@@ -155,6 +155,29 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
 
 
 @beartype
+def _nil_safe_declaration(
+    base_formatter: Callable[[str, str, Value], str],
+) -> Callable[[str, str, Value], str]:
+    """Wrap *base_formatter* so top-level ``nil`` gets a typed form.
+
+    Go cannot infer a type from ``nil`` alone, so
+    ``my_data := nil`` and ``var my_data = nil`` both fail to compile.
+    Emit ``var {name} any = nil`` when the value is ``None``.
+    """
+
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format a Go variable declaration, guarding top-level
+        ``nil``.
+        """
+        if data is None:
+            return f"var {name} any = {value}"
+        return base_formatter(name, value, data)
+
+    return _format
+
+
+@beartype
 class Go(metaclass=LanguageCls):
     """Go language specification.
 
@@ -605,7 +628,9 @@ class Go(metaclass=LanguageCls):
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+            _nil_safe_declaration(
+                base_formatter=declaration_style.value.formatter,
+            )
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
