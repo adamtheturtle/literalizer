@@ -977,11 +977,39 @@ def _build_variant_cases() -> list[_VariantCase]:
         get_formats=lambda s: s.variable_type_hints_formats,
         make_spec=lambda cls, fmt: cls(variable_type_hints=fmt),
     )
+
+    def _declaration_style_make_spec(
+        cls: literalizer.LanguageCls,
+        fmt: enum.Enum,
+    ) -> literalizer.Language:
+        """Build spec, using ARRAY for Rust const/static styles.
+
+        Rust CONST and STATIC raise ``IncompatibleFormatsError``
+        with the default sequence format.  Use ARRAY so the golden
+        files produce valid Rust that the compiler accepts.
+        """
+        result: literalizer.Language
+        if cls.__name__ == "Rust" and fmt.name in {
+            "CONST",
+            "STATIC",
+        }:
+            spec = cls()
+            array_fmt = next(
+                f for f in spec.sequence_formats if f.name == "ARRAY"
+            )
+            result = cls(
+                declaration_style=fmt,
+                sequence_format=array_fmt,
+            )
+        else:
+            result = cls(declaration_style=fmt)
+        return result
+
     declaration_style = nv(
         category="declaration_style",
         get_default=lambda s: s.declaration_style,
         get_formats=lambda s: s.declaration_styles,
-        make_spec=lambda cls, fmt: cls(declaration_style=fmt),
+        make_spec=_declaration_style_make_spec,
     )
     dict_format = nv(
         category="dict_format",
@@ -1117,6 +1145,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         (declaration_style, "simple_sequence", ""),
         (declaration_style, "simple_dict", ""),
         (declaration_style, "empty_list", ""),
+        (declaration_style, "scalar_int", ""),
+        (declaration_style, "scalar_float", ""),
+        (declaration_style, "scalar_bool", ""),
+        (declaration_style, "scalar_string", ""),
+        (declaration_style, "scalar_null", ""),
         (dict_format, "simple_dict", ""),
         (dict_format, "dict_with_list_value", "_list_val"),
         (dict_entry_style, "simple_dict", ""),
@@ -1177,6 +1210,10 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "bool_list", ""),
         (type_hints_cross, "float_list", ""),
     ]
+    # Rust CONST/STATIC with dict cases produce HashMap::from([…])
+    # which is not a constant expression, so skip those.
+    _const_static_suffixes = ("_const", "_static")
+
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
             _VariantCase(
@@ -1186,6 +1223,11 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variable_form=_wrap_variable_form(lang_cls=variant.lang_cls),
             )
             for variant in variants
+            if not (
+                variant.lang_cls.__name__ == "Rust"
+                and variant.name.endswith(_const_static_suffixes)
+                and "dict" in case_dir_name
+            )
         )
     return cases
 
