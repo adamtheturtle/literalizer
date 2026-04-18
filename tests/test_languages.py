@@ -425,8 +425,10 @@ def test_literalize_call_missing_keyword_separator_raises() -> None:
         """Python variant with missing keyword_separator."""
 
     lang = BadLang()
-    lang.call_style_config = CallStyleConfig(
-        kind=CallStyleKind.KEYWORD,
+    object.__setattr__(
+        lang,
+        "call_style_config",
+        CallStyleConfig(kind=CallStyleKind.KEYWORD),
     )
     with pytest.raises(
         expected_exception=ValueError,
