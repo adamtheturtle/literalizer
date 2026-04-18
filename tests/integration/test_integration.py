@@ -811,6 +811,37 @@ def _build_type_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_haskell_iso_double_variants() -> Iterable[_Variant]:
+    """Build Haskell variants with non-HASKELL date/datetime + DOUBLE
+    strings.
+
+    The combination ``string_format=DOUBLE`` (so ``is_explicit=False``)
+    with ``date_format != HASKELL`` and ``datetime_format != HASKELL``
+    is the only one that exercises the "plain ISO formatter" fallback
+    branches inside ``_build_date_time_formatters``.  No single-axis
+    variant generator covers it because both axes must change together.
+    """
+    spec = Haskell()
+    return [
+        _Variant(
+            name="Haskell_string_double_date_iso_dt_iso",
+            spec=Haskell(
+                string_format=next(
+                    f for f in spec.string_formats if f.name == "DOUBLE"
+                ),
+                date_format=next(
+                    f for f in spec.date_formats if f.name == "ISO"
+                ),
+                datetime_format=next(
+                    f for f in spec.datetime_formats if f.name == "ISO"
+                ),
+            ),
+            lang_cls=Haskell,
+        ),
+    ]
+
+
+@beartype
 def _build_constructor_prefix_variants() -> Iterable[_Variant]:
     """Build constructor-prefix variants for languages with custom ADTs.
 
@@ -1205,6 +1236,15 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
         (_build_constructor_prefix_variants(), "float_list", "_float"),
+        (_build_constructor_prefix_variants(), "binary", "_binary"),
+        (_build_constructor_prefix_variants(), "scalar_date", "_date"),
+        (
+            _build_constructor_prefix_variants(),
+            "scalar_datetime",
+            "_datetime",
+        ),
+        (_build_haskell_iso_double_variants(), "scalar_date", ""),
+        (_build_haskell_iso_double_variants(), "scalar_datetime", "_dt"),
         (numeric_style, "int_list", ""),
         (numeric_style, "int_list_with_zero", "_zero"),
         (numeric_style, "float_list", ""),
