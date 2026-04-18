@@ -54,6 +54,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 
+_INT32_MIN = -(2**31)
+_INT32_MAX = 2**31 - 1
+
+
 @beartype
 def _format_integer_hex_sv(value: int) -> str:
     """Format an integer as a SystemVerilog hexadecimal literal."""
@@ -61,6 +65,21 @@ def _format_integer_hex_sv(value: int) -> str:
     if value < 0:
         return f"-{bits}'h{abs(value):x}"
     return f"{bits}'h{value:x}"
+
+
+@beartype
+def _format_integer_decimal_sv(value: int) -> str:
+    """Format an integer as a SystemVerilog decimal literal.
+
+    Values outside 32-bit signed range get an explicit 64-bit signed
+    width prefix; smaller values are emitted as bare decimals.
+    """
+    if _INT32_MIN <= value <= _INT32_MAX:
+        return str(object=value)
+    bits = 64
+    if value < 0:
+        return f"-{bits}'sd{abs(value)}"
+    return f"{bits}'sd{value}"
 
 
 @beartype
@@ -235,7 +254,7 @@ class SystemVerilog(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
+        DECIMAL = enum.member(value=_format_integer_decimal_sv)
         HEX = enum.member(value=_format_integer_hex_sv)
 
         def __call__(self, value: int, /) -> str:

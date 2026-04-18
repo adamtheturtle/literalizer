@@ -11,7 +11,7 @@ typedef struct {
 } _VKV;
 module check;
 initial begin
-static _VVal my_data = _VVal'{tag: _VVAL_INT, i: 2147483648, r: 0.0, s: ""};
-my_data = _VVal'{tag: _VVAL_INT, i: 2147483648, r: 0.0, s: ""};
+static _VVal my_data = _VVal'{tag: _VVAL_INT, i: 64'sd2147483648, r: 0.0, s: ""};
+my_data = _VVal'{tag: _VVAL_INT, i: 64'sd2147483648, r: 0.0, s: ""};
 end
 endmodule
