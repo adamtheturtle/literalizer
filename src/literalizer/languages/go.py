@@ -171,7 +171,7 @@ def _nil_safe_declaration(
         ``nil``.
         """
         if data is None:
-            return f"var {name} any = nil"
+            return f"var {name} any = {value}"
         return base_formatter(name, value, data)
 
     return _format
