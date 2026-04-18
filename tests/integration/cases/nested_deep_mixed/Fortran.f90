@@ -1,4 +1,5 @@
 module fval_m
+  use, intrinsic :: iso_fortran_env, only: int64
   implicit none
   type :: fval_t
     integer :: t = 0
@@ -6,7 +7,7 @@ module fval_m
 contains
   function fnull() result(v); type(fval_t) :: v; end function
   function fbool(b) result(v); logical, intent(in) :: b; type(fval_t) :: v; end function
-  function fint(n) result(v); integer, intent(in) :: n; type(fval_t) :: v; end function
+  function fint(n) result(v); integer(kind=int64), intent(in) :: n; type(fval_t) :: v; end function
   function freal(x) result(v); real, intent(in) :: x; type(fval_t) :: v; end function
   function fstr(s) result(v); character(len=*), intent(in) :: s; type(fval_t) :: v; end function
   function flist(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
@@ -19,6 +20,6 @@ program check
   implicit none
   type(fval_t) :: my_data
   my_data = flist([fval_t :: &
-      flist([fval_t :: flist([fval_t :: fint(1), fint(2)]), flist([fval_t :: fstr('a'), fstr('b')])]) &
+      flist([fval_t :: flist([fval_t :: fint(1_int64), fint(2_int64)]), flist([fval_t :: fstr('a'), fstr('b')])]) &
   ])
 end program check

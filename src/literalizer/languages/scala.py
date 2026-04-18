@@ -41,6 +41,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -699,8 +700,13 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return make_overflow_suffix_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            min_value=-(2**31),
+            max_value=2**31 - 1,
+            suffix="L",
         )
 
     @cached_property

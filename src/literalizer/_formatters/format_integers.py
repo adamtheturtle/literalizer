@@ -144,6 +144,36 @@ def make_long_suffix_formatter(
 
 
 @beartype
+def make_overflow_suffix_formatter(
+    base: Callable[[int], str],
+    *,
+    min_value: int,
+    max_value: int,
+    suffix: str,
+) -> Callable[[int], str]:
+    """Wrap a formatter to append *suffix* when the value is outside
+    ``[min_value, max_value]``.
+
+    This is used by languages where the default integer literal type
+    is 32-bit and a wider-type suffix (``L``, ``i64``) is required for
+    values that overflow 32-bit signed range.
+
+    Example with ``suffix="L"`` and i32 bounds: ``42`` → ``"42"``,
+    ``2147483648`` → ``"2147483648L"``.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format, appending *suffix* when out of range."""
+        formatted = base(value)
+        if min_value <= value <= max_value:
+            return formatted
+        return f"{formatted}{suffix}"
+
+    return _format
+
+
+@beartype
 def make_int64_cast_formatter(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:

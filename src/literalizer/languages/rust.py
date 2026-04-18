@@ -90,6 +90,31 @@ def _rust_integer_type(value: int) -> str:
 
 
 @beartype
+def _make_rust_integer_suffix_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap a formatter to append a Rust type suffix when the value
+    overflows i32.
+
+    A Rust integer literal with no suffix defaults to ``i32``.
+    Values that don't fit in ``i32`` must carry a type suffix or a
+    type-annotated context, otherwise ``rustc`` rejects them with
+    ``literal out of range for i32``.  The suffix chosen matches the
+    narrowest type that holds *value*.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format with a Rust type suffix when *value* overflows i32."""
+        formatted = base(value)
+        if _I32_MIN <= value <= _I32_MAX:
+            return formatted
+        return f"{formatted}{_rust_integer_type(value=value)}"
+
+    return _format
+
+
+@beartype
 def _unify_rust_types(types: Sequence[str]) -> str:
     """Return a single Rust type that covers *types*.
 
@@ -163,8 +188,8 @@ def _rust_type_annotation(
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
-    set_type_name: str,
-    dict_type_name: str,
+    set_format_type_annotation: Callable[[str], str],
+    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
@@ -177,8 +202,8 @@ def _rust_type_annotation(
         datetime_type=datetime_type,
         sequence_format_type_annotation=sequence_format_type_annotation,
         sequence_supports_heterogeneity=sequence_supports_heterogeneity,
-        set_type_name=set_type_name,
-        dict_type_name=dict_type_name,
+        set_format_type_annotation=set_format_type_annotation,
+        dict_format_type_annotation=dict_format_type_annotation,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
         default_dict_key_type=default_dict_key_type,
@@ -193,14 +218,14 @@ def _rust_type_annotation(
             else:
                 value_type = default_dict_value_type
                 key_type = default_dict_key_type
-            return f"{dict_type_name}<{key_type}, {value_type}>"
+            return dict_format_type_annotation(key_type, value_type)
         case set():
             element_type = _rust_homogeneous_element_type(
                 elements=list(data),
                 infer=recurse,
                 default_type=default_set_element_type,
             )
-            return f"{set_type_name}<{element_type}>"
+            return set_format_type_annotation(element_type)
         case list():
             if sequence_supports_heterogeneity:
                 element_types = [recurse(e) for e in data]
@@ -233,8 +258,8 @@ def _format_typed_declaration(
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
-    set_type_name: str,
-    dict_type_name: str,
+    set_format_type_annotation: Callable[[str], str],
+    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
@@ -249,8 +274,8 @@ def _format_typed_declaration(
         datetime_type=datetime_type,
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
-        set_type_name=set_type_name,
-        dict_type_name=dict_type_name,
+        set_format_type_annotation=set_format_type_annotation,
+        dict_format_type_annotation=dict_format_type_annotation,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
         default_dict_key_type=default_dict_key_type,
@@ -534,6 +559,13 @@ class Rust(metaclass=LanguageCls):
             """Create a set format config for the given type."""
             return self.value(default_type)
 
+        def format_type_annotation(self, element_type: str) -> str:
+            """Return the Rust type annotation for this set format."""
+            cls = type(self)
+            if self is cls.HASH_SET:
+                return f"HashSet<{element_type}>"
+            return f"BTreeSet<{element_type}>"
+
     class CommentFormats(enum.Enum):
         """Comment style options."""
 
@@ -573,8 +605,8 @@ class Rust(metaclass=LanguageCls):
             datetime_type: str,
             sequence_format_type_annotation: Callable[[str, int], str],
             sequence_supports_heterogeneity: bool,
-            set_type_name: str,
-            dict_type_name: str,
+            set_format_type_annotation: Callable[[str], str],
+            dict_format_type_annotation: Callable[[str, str], str],
             default_sequence_element_type: str,
             default_set_element_type: str,
             default_dict_key_type: str,
@@ -601,8 +633,8 @@ class Rust(metaclass=LanguageCls):
                 sequence_supports_heterogeneity=(
                     sequence_supports_heterogeneity
                 ),
-                set_type_name=set_type_name,
-                dict_type_name=dict_type_name,
+                set_format_type_annotation=set_format_type_annotation,
+                dict_format_type_annotation=dict_format_type_annotation,
                 default_sequence_element_type=(default_sequence_element_type),
                 default_set_element_type=default_set_element_type,
                 default_dict_key_type=default_dict_key_type,
@@ -653,6 +685,17 @@ class Rust(metaclass=LanguageCls):
                 default_type,
                 default_key_type=default_key_type,
             )
+
+        def format_type_annotation(
+            self,
+            key_type: str,
+            value_type: str,
+        ) -> str:
+            """Return the Rust type annotation for this dict format."""
+            cls = type(self)
+            if self is cls.HASH_MAP:
+                return f"HashMap<{key_type}, {value_type}>"
+            return f"BTreeMap<{key_type}, {value_type}>"
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -974,8 +1017,10 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return _make_rust_integer_suffix_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
         )
 
     @cached_property
@@ -1002,16 +1047,6 @@ class Rust(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats a new variable declaration."""
-        _set_cls = type(self.set_format)
-        _set_type_names = {
-            _set_cls.HASH_SET: "HashSet",
-            _set_cls.BTREE_SET: "BTreeSet",
-        }
-        _dict_cls = type(self.dict_format)
-        _dict_type_names = {
-            _dict_cls.HASH_MAP: "HashMap",
-            _dict_cls.BTREE_MAP: "BTreeMap",
-        }
         return self.declaration_style.build_formatter(
             date_type=(
                 "&str"
@@ -1029,8 +1064,12 @@ class Rust(metaclass=LanguageCls):
             sequence_supports_heterogeneity=(
                 self.sequence_format.supports_heterogeneity
             ),
-            set_type_name=_set_type_names[self.set_format],
-            dict_type_name=_dict_type_names[self.dict_format],
+            set_format_type_annotation=(
+                self.set_format.format_type_annotation
+            ),
+            dict_format_type_annotation=(
+                self.dict_format.format_type_annotation
+            ),
             default_sequence_element_type=self.default_sequence_element_type,
             default_set_element_type=self.default_set_element_type,
             default_dict_key_type=self.default_dict_key_type,

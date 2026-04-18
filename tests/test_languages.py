@@ -29,7 +29,9 @@ from literalizer.languages import (
     Go,
     Java,
     Matlab,
+    PureScript,
     Python,
+    SystemVerilog,
     Yaml,
 )
 
@@ -258,7 +260,7 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         type(fval_t) :: cfg
         cfg = fmap([fval_t :: &
             fentry('host', fstr('it''s here')), &  ! a comment
-            fentry('port', fint(80)) &  ! another
+            fentry('port', fint(80_int64)) &  ! another
         ])""",
     )
     assert result.code == expected
@@ -492,3 +494,35 @@ def test_literalize_call_unsupported_language_per_element_false() -> None:
             parameter_names=["data"],
             per_element=False,
         )
+
+
+def test_purescript_negative_large_int_uses_plong() -> None:
+    """Negative integers that overflow PureScript's 32-bit ``Int`` are
+    emitted with the ``PLong`` constructor and a negative ``Number``.
+    """
+    result = literalize(
+        source="-2147483649",
+        input_format=InputFormat.JSON,
+        language=PureScript(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_data"),
+        error_on_coercion=False,
+    )
+    assert "PLong (-2147483649.0)" in result.code
+
+
+def test_systemverilog_negative_large_int_uses_64_bit_width() -> None:
+    """Negative integers that overflow 32-bit signed range are emitted
+    as ``-64'sd{value}`` with an explicit 64-bit width prefix.
+    """
+    result = literalize(
+        source="-2147483649",
+        input_format=InputFormat.JSON,
+        language=SystemVerilog(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_data"),
+        error_on_coercion=False,
+    )
+    assert "-64'sd2147483649" in result.code

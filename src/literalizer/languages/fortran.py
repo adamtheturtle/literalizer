@@ -469,8 +469,8 @@ class Fortran(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Format an int value as a literal."""
-        return str
+        """Format an int value as an int64 Fortran literal."""
+        return lambda value: f"{value}_int64"
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -685,6 +685,7 @@ class Fortran(metaclass=LanguageCls):
     def static_body_preamble(self) -> Sequence[str]:
         """Static body-preamble lines emitted once per file."""
         return (
+            "  use, intrinsic :: iso_fortran_env, only: int64",
             "  implicit none",
             "  type :: fval_t",
             "    integer :: t = 0",
@@ -696,7 +697,7 @@ class Fortran(metaclass=LanguageCls):
             "; logical, intent(in) :: b"
             "; type(fval_t) :: v; end function",
             f"  function {self.int_name}(n) result(v)"
-            "; integer, intent(in) :: n"
+            "; integer(kind=int64), intent(in) :: n"
             "; type(fval_t) :: v; end function",
             f"  function {self.real_name}(x) result(v)"
             "; real, intent(in) :: x"

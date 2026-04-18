@@ -118,21 +118,57 @@ def _build_purescript_bytes_base64(
     return _format
 
 
+_PURESCRIPT_INT32_MIN = -(2**31)
+_PURESCRIPT_INT32_MAX = 2**31 - 1
+
+
+@beartype
+def _purescript_int_fits_in_int32(value: int) -> bool:
+    """Return whether *value* fits in the 32-bit ``Int`` type."""
+    return _PURESCRIPT_INT32_MIN <= value <= _PURESCRIPT_INT32_MAX
+
+
+def _purescript_has_large_int(val: Value) -> bool:
+    """Return True if *val* contains an integer that overflows
+    PureScript's 32-bit ``Int``.
+    """
+    if isinstance(val, bool):
+        return False
+    if isinstance(val, int):
+        return not _purescript_int_fits_in_int32(value=val)
+    if isinstance(val, list):
+        return any(_purescript_has_large_int(val=v) for v in val)
+    if isinstance(val, dict):
+        return any(_purescript_has_large_int(val=v) for v in val.values())
+    if isinstance(val, set):
+        return any(
+            _purescript_has_large_int(val=v)
+            for v in val
+            if isinstance(v, int) and not isinstance(v, bool)
+        )
+    return False
+
+
 def _build_purescript_integer_formatter(
     prefix: str,
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
     """Build an integer formatter that produces ``{prefix}Int``
-    constructors.
+    constructors, or ``{prefix}Long`` (with a ``Number`` argument) when
+    *value* overflows PureScript's 32-bit ``Int``.
     """
 
     @beartype
     def _format(value: int) -> str:
         """Format an integer with a constructor prefix."""
-        formatted = base(value)
+        if _purescript_int_fits_in_int32(value=value):
+            formatted = base(value)
+            if value < 0:
+                return f"{prefix}Int ({formatted})"
+            return f"{prefix}Int {formatted}"
         if value < 0:
-            return f"{prefix}Int ({formatted})"
-        return f"{prefix}Int {formatted}"
+            return f"{prefix}Long (-{abs(value)}.0)"
+        return f"{prefix}Long {value}.0"
 
     return _format
 
@@ -268,6 +304,7 @@ def _build_purescript_body_preamble(
         """Return body-preamble lines for the given *types*."""
         p = constructor_prefix
         needs_tuple = bool(types & {dict, ordereddict})
+        has_large_int = int in types and _purescript_has_large_int(val=data)
         constructors = [
             constructor
             for type_set, constructor in (
@@ -290,6 +327,13 @@ def _build_purescript_body_preamble(
             )
             if types & type_set
         ]
+        if has_large_int:
+            int_idx = next(
+                i
+                for i, c in enumerate(iterable=constructors)
+                if c == f"{p}Int Int"
+            )
+            constructors.insert(int_idx + 1, f"{p}Long Number")
         needs_prelude = bool(types & {int, float}) and _needs_prelude(val=data)
         lines: list[str] = ["import Prelude"] if needs_prelude else []
         if needs_tuple:
