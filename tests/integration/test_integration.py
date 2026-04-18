@@ -113,7 +113,7 @@ def _default_spec(
     *,
     lang_cls: literalizer.LanguageCls,
 ) -> literalizer.Language:
-    """Return a memoized default-constructed instance of *lang_cls*.
+    """Return a cached default-constructed instance of *lang_cls*.
 
     Each ``lang_cls()`` call rebuilds ``@beartype``-wrapped closures
     inside the formatter factories; sharing one default-constructed
