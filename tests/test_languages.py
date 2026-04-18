@@ -63,7 +63,6 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -93,7 +92,6 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -123,7 +121,6 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -147,7 +144,6 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = "Map.ofEntries()\n    // trailing"
     assert result.code == expected
@@ -172,7 +168,6 @@ def test_matlab_dict_key_with_quote() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == "'hello \"world\"', 1"
 
@@ -202,7 +197,6 @@ def test_cobol_level_number_cap() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = (
         "\n"
@@ -232,7 +226,6 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     for line in result.code.splitlines():
         stripped = line.strip()
@@ -251,7 +244,6 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         pre_indent_level=0,
         variable_form=NewVariable(name="cfg"),
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -285,7 +277,6 @@ def test_java_list_rejects_null_elements() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -355,7 +346,6 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     assert result.code == "my_data: dict[str, str] = {}"
     assert not result.preamble

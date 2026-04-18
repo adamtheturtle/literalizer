@@ -67,7 +67,6 @@ def test_none_fallback_value_type_uses_dict_open_fallback() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=literalizer.NewVariable(name="my_data"),
-        error_on_coercion=False,
         wrap_in_file=True,
     )
     expected = textwrap.dedent(

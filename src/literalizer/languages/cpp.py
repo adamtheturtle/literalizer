@@ -47,6 +47,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._language import (
     CallStyleConfig,
     CallStyleKind,
+    CoercionOptions,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -1080,8 +1081,20 @@ class Cpp(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
+        coerce_heterogeneous_scalars: bool = False,
+        coerce_heterogeneous_sibling_lists: bool = False,
+        coerce_mixed_dict_values: bool = False,
+        coerce_mixed_list_values: bool = False,
     ) -> None:
         """Initialize Cpp language specification."""
+        self.coercion_options: CoercionOptions = CoercionOptions(
+            coerce_heterogeneous_scalars=coerce_heterogeneous_scalars,
+            coerce_heterogeneous_sibling_lists=(
+                coerce_heterogeneous_sibling_lists
+            ),
+            coerce_mixed_dict_values=coerce_mixed_dict_values,
+            coerce_mixed_list_values=coerce_mixed_list_values,
+        )
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = "nullptr"

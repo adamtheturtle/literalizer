@@ -33,6 +33,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyleConfig,
+    CoercionOptions,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -419,8 +420,22 @@ class Dhall(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.YES,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         indent: str = "  ",
+        coerce_heterogeneous_scalars: bool = False,
+        coerce_heterogeneous_sibling_lists: bool = False,
+        coerce_mixed_dict_values: bool = False,
+        coerce_mixed_list_values: bool = False,
+        coerce_nonuniform_record_shapes: bool = False,
     ) -> None:
         """Initialize Dhall language specification."""
+        self.coercion_options: CoercionOptions = CoercionOptions(
+            coerce_heterogeneous_scalars=coerce_heterogeneous_scalars,
+            coerce_heterogeneous_sibling_lists=(
+                coerce_heterogeneous_sibling_lists
+            ),
+            coerce_mixed_dict_values=coerce_mixed_dict_values,
+            coerce_mixed_list_values=coerce_mixed_list_values,
+            coerce_nonuniform_record_shapes=coerce_nonuniform_record_shapes,
+        )
         self.variable_type_hints = variable_type_hints
         self.sequence_format = sequence_format
         self.null_literal = '""'

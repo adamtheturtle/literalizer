@@ -1,9 +1,11 @@
-"""Parametrized error_on_coercion tests across all input formats.
+"""Parametrized coercion-option tests across all input formats.
 
-These tests verify that ``error_on_coercion=True`` raises (or does not raise)
-``HeterogeneousCoercionError`` consistently regardless of input format.
-Format-specific coercion tests (e.g. YAML ordered-maps and sets) remain in
-their respective test modules.
+These tests verify that the per-language ``coerce_*`` flags raise (or
+do not raise) :exc:`HeterogeneousCoercionError` consistently regardless
+of input format.  Languages here are constructed with the strict
+defaults (every ``coerce_*`` flag ``False``) unless the test explicitly
+opts in.  Format-specific coercion tests (e.g. YAML ordered-maps and
+sets) remain in their respective test modules.
 """
 
 import json
@@ -95,7 +97,6 @@ def test_raises_heterogeneous_array(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -112,7 +113,6 @@ def test_raises_heterogeneous_dict(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -129,7 +129,6 @@ def test_raises_nested_heterogeneous(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -153,7 +152,6 @@ def test_raises_sibling_lists(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -177,7 +175,6 @@ def test_raises_nested_sibling_lists(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -201,7 +198,6 @@ def test_raises_mixed_dict_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -232,7 +228,6 @@ def test_raises_nested_mixed_dict_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -260,7 +255,6 @@ def test_raises_nested_mixed_list_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -284,7 +278,6 @@ def test_raises_mixed_list_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -312,7 +305,6 @@ def test_raises_mixed_dict_inside_mixed_list(
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -339,7 +331,6 @@ def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -363,7 +354,6 @@ def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -379,7 +369,6 @@ def test_no_raise_homogeneous_array(input_format: InputFormat) -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
     )
 
 
@@ -395,20 +384,22 @@ def test_no_raise_homogeneous_dict(input_format: InputFormat) -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
     )
 
 
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
-def test_no_effect_without_coerce_flag(input_format: InputFormat) -> None:
-    """Error_on_coercion has no effect when language does not coerce."""
+def test_heterogeneous_language_never_raises(
+    input_format: InputFormat,
+) -> None:
+    """A language whose sequence format supports heterogeneity never
+    raises a coercion error, since no coercion is required.
+    """
     literalize(
         source=_to_source(data=[1, 2.5, 3], input_format=input_format),
         input_format=input_format,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
     )
 
 
@@ -425,5 +416,59 @@ def test_no_raise_uniform_dict_shapes(input_format: InputFormat) -> None:
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
+    )
+
+
+# --- Tests that opting in to a specific coercion silences only that
+# coercion's error ---
+
+
+def test_opt_in_heterogeneous_scalars() -> None:
+    """``coerce_heterogeneous_scalars=True`` silences that error and
+    coerces, while leaving other coercions strict.
+    """
+    mojo = Mojo(
+        sequence_format=Mojo.sequence_formats.LIST,
+        coerce_heterogeneous_scalars=True,
+    )
+    # Heterogeneous scalars are coerced silently.
+    literalize(
+        source=json.dumps(obj=[1, "a"]),
+        input_format=InputFormat.JSON,
+        language=mojo,
+        pre_indent_level=0,
+        include_delimiters=True,
+    )
+    # Mixed dict values still raise — their flag is still False.
+    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+        literalize(
+            source=json.dumps(obj={"name": "Bob", "tags": ["admin"]}),
+            input_format=InputFormat.JSON,
+            language=mojo,
+            pre_indent_level=0,
+            include_delimiters=True,
+        )
+
+
+def test_dhall_lax_allows_all_coercions() -> None:
+    """Enabling every Dhall ``coerce_*`` flag silences every check."""
+    dhall = Dhall(
+        coerce_heterogeneous_scalars=True,
+        coerce_heterogeneous_sibling_lists=True,
+        coerce_mixed_dict_values=True,
+        coerce_mixed_list_values=True,
+        coerce_nonuniform_record_shapes=True,
+    )
+    data = {
+        "items": [
+            {"type": "create", "draft": True},
+            {"type": "update"},
+        ],
+    }
+    literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
+        language=dhall,
+        pre_indent_level=0,
+        include_delimiters=True,
     )

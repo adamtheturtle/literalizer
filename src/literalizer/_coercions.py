@@ -9,7 +9,7 @@ from typing import Protocol
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
-from literalizer._language import Language
+from literalizer._language import CoercionOptions, Language
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import HeterogeneousCoercionError
 
@@ -630,12 +630,13 @@ class _CoerceFn(Protocol):
 
 @dataclasses.dataclass(frozen=True)
 class _CoercionStep:
-    """A single coercion: a check that raises on error, and a
-    transform that applies the coercion.
+    """A single coercion: a check that raises on error, a transform
+    that applies the coercion, and the option-flag name that gates it.
     """
 
     check: _CheckFn
     coerce: _CoerceFn
+    option_name: str
 
 
 def _build_coercion_steps(
@@ -650,6 +651,7 @@ def _build_coercion_steps(
             _CoercionStep(
                 check=_check_mixed_dict_shapes,
                 coerce=_coerce_mixed_dict_shapes,
+                option_name="coerce_nonuniform_record_shapes",
             )
         )
 
@@ -658,18 +660,22 @@ def _build_coercion_steps(
             _CoercionStep(
                 check=_check_heterogeneous,
                 coerce=_coerce_heterogeneous_scalars,
+                option_name="coerce_heterogeneous_scalars",
             ),
             _CoercionStep(
                 check=_check_heterogeneous_sibling_lists,
                 coerce=_coerce_heterogeneous_sibling_lists,
+                option_name="coerce_heterogeneous_sibling_lists",
             ),
             _CoercionStep(
                 check=_check_mixed_dict_values,
                 coerce=_coerce_mixed_dict_values,
+                option_name="coerce_mixed_dict_values",
             ),
             _CoercionStep(
                 check=_check_mixed_list_values,
                 coerce=_coerce_mixed_list_values,
+                option_name="coerce_mixed_list_values",
             ),
         ]
     )
@@ -681,17 +687,18 @@ def apply_coercions(
     *,
     data: Value,
     spec: Language,
-    error_on_coercion: bool,
 ) -> Value:
     """Apply heterogeneous-type coercions controlled by the sequence
-    format.
+    format and the language's per-coercion opt-in flags.
     """
     if not spec.sequence_format_config.supports_heterogeneity:
-        steps = _build_coercion_steps(spec=spec)
-        if error_on_coercion:
-            for step in steps:
-                step.check(data=data)
-        else:
-            for step in steps:
+        # Heterogeneous-only languages don't need to set coercion_options
+        # — they never enter this branch.  Languages that *can* select a
+        # non-heterogeneous format must set it on the instance.
+        options = getattr(spec, "coercion_options", CoercionOptions())
+        for step in _build_coercion_steps(spec=spec):
+            if getattr(options, step.option_name):
                 data = step.coerce(data=data)
+            else:
+                step.check(data=data)
     return data

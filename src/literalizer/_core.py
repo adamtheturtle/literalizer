@@ -794,7 +794,6 @@ def _literalize(
     language: Language,
     line_prefix: str,
     include_delimiters: bool,
-    error_on_coercion: bool,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -820,16 +819,8 @@ def _literalize(
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
-        error_on_coercion: If ``True``, raise
-            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
-            instead of silently coercing heterogeneous scalar
-            collections to strings.
     """
-    data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=error_on_coercion,
-    )
+    data = apply_coercions(data=data, spec=language)
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
@@ -1009,7 +1000,6 @@ def _literalize_both_forms(
     pre_indent_level: int,
     include_delimiters: bool,
     variable_form: BothVariableForms,
-    error_on_coercion: bool,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
     declaration = literalize(
@@ -1019,7 +1009,6 @@ def _literalize_both_forms(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         variable_form=NewVariable(name=variable_form.name),
-        error_on_coercion=error_on_coercion,
     )
     assignment = literalize(
         source=source,
@@ -1028,7 +1017,6 @@ def _literalize_both_forms(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         variable_form=ExistingVariable(name=variable_form.name),
-        error_on_coercion=error_on_coercion,
     )
     decl_preamble = (
         *declaration.body_preamble,
@@ -1058,7 +1046,6 @@ def literalize(
     pre_indent_level: int = 0,
     include_delimiters: bool = True,
     variable_form: VariableForm | None = None,
-    error_on_coercion: bool = False,
     wrap_in_file: bool = False,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
@@ -1073,6 +1060,12 @@ def literalize(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
+            For non-heterogeneous languages (e.g. Rust, Mojo, Dhall),
+            heterogeneous-data coercion is gated by per-language
+            ``coerce_*`` constructor flags; with the strict defaults
+            (all flags ``False``) the language raises
+            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
+            when a coercion would be required.
         pre_indent_level: Number of ``indent`` steps to prepend to
             every output line.  For example, ``2`` with a 4-space
             indent produces an 8-space margin.  Defaults to ``0``.
@@ -1087,12 +1080,6 @@ def literalize(
             and an assignment combined in one output (requires
             *wrap_in_file*).  ``None`` (default) means no variable
             wrapping.
-        error_on_coercion: If ``True``, raise
-            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
-            instead of silently coercing heterogeneous scalar
-            collections to strings.  Only has an effect when the
-            the language's sequence format does not support
-            heterogeneity.
         wrap_in_file: If ``True``, assemble :attr:`code` as a
             complete, valid source file using the language's
             ``wrap_in_file`` method and prepend :attr:`preamble`.
@@ -1109,9 +1096,9 @@ def literalize(
             not valid YAML.
         TOMLParseError: If *input_format* is ``TOML`` and *source* is
             not valid TOML.
-        HeterogeneousCoercionError: If *error_on_coercion* is ``True``
-            and the data contains heterogeneous scalar collections
-            that would be coerced.
+        HeterogeneousCoercionError: If *language* does not support a
+            coercion required by the data (i.e. the relevant
+            ``coerce_*`` flag on the language is ``False``).
         ValueError: If *variable_form* is :class:`BothVariableForms`
             and *wrap_in_file* is ``False``.
     """
@@ -1127,7 +1114,6 @@ def literalize(
             pre_indent_level=pre_indent_level,
             include_delimiters=include_delimiters,
             variable_form=variable_form,
-            error_on_coercion=error_on_coercion,
         )
 
     line_prefix = language.indent * pre_indent_level
@@ -1140,7 +1126,6 @@ def literalize(
         language=language,
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
-        error_on_coercion=error_on_coercion,
     )
 
     # --- Comment resolution ---
@@ -1206,11 +1191,7 @@ def literalize(
     # --- Preamble ---
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
-    coerced_data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=False,
-    )
+    coerced_data = apply_coercions(data=data, spec=language)
     computed = _compute_preamble(
         data=coerced_data,
         language=language,
@@ -1362,11 +1343,7 @@ def literalize_call(
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
     formatted_target = language.format_call_target(target_function)
-    coerced_data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=False,
-    )
+    coerced_data = apply_coercions(data=data, spec=language)
 
     if per_element:
         if not isinstance(coerced_data, list):
@@ -1403,7 +1380,6 @@ def literalize_call(
             language=language,
             line_prefix="",
             include_delimiters=True,
-            error_on_coercion=False,
         )
         args_str = f"({lit})"
         result = _assemble_call(

@@ -46,6 +46,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     CallStyleConfig,
     CallStyleKind,
+    CoercionOptions,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -854,8 +855,20 @@ class Rust(metaclass=LanguageCls):
         line_ending: LineEndings = LineEndings.SEMICOLON,
         call_style: CallStyles = CallStyles.POSITIONAL,
         indent: str = "    ",
+        coerce_heterogeneous_scalars: bool = False,
+        coerce_heterogeneous_sibling_lists: bool = False,
+        coerce_mixed_dict_values: bool = False,
+        coerce_mixed_list_values: bool = False,
     ) -> None:
         """Initialize Rust language specification."""
+        self.coercion_options: CoercionOptions = CoercionOptions(
+            coerce_heterogeneous_scalars=coerce_heterogeneous_scalars,
+            coerce_heterogeneous_sibling_lists=(
+                coerce_heterogeneous_sibling_lists
+            ),
+            coerce_mixed_dict_values=coerce_mixed_dict_values,
+            coerce_mixed_list_values=coerce_mixed_list_values,
+        )
         _decl_cls = type(declaration_style)
         _seq_cls = type(sequence_format)
         if (

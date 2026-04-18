@@ -35,6 +35,10 @@ CPP = Cpp(
     datetime_format=Cpp.datetime_formats.CPP,
     bytes_format=Cpp.bytes_formats.HEX,
     sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
+    coerce_heterogeneous_scalars=True,
+    coerce_heterogeneous_sibling_lists=True,
+    coerce_mixed_dict_values=True,
+    coerce_mixed_list_values=True,
 )
 CSHARP = CSharp(
     date_format=CSharp.date_formats.CSHARP,
@@ -79,7 +83,6 @@ def test_dict_python() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
     assert result.code == expected
@@ -93,7 +96,6 @@ def test_dict_include_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -119,7 +121,6 @@ def test_dict_empty(*, include_delimiters: bool) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=include_delimiters,
-        error_on_coercion=False,
     )
     expected = "{}" if include_delimiters else ""
     assert result.code == expected
@@ -133,7 +134,6 @@ def test_integers() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -152,7 +152,6 @@ def test_floats() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -170,7 +169,6 @@ def test_string_escaping() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     lines = result.code.split(sep="\n")
     assert lines[0] == '"say \\"hi\\"",'
@@ -186,7 +184,6 @@ def test_nested_arrays() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "((1, 2), (3, 4)),"
 
@@ -199,7 +196,6 @@ def test_dicts() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == '{"name": "alice", "age": 30},'
 
@@ -212,7 +208,6 @@ def test_nested_dict_in_sequence() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == '("a", {"x": 1}),'
 
@@ -225,7 +220,6 @@ def test_nested_sequence_in_dict() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == '{"items": (1, 2)},'
 
@@ -238,7 +232,6 @@ def test_indent_spaces() -> None:
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "        True,\n        False,"
 
@@ -251,7 +244,6 @@ def test_indent_tabs() -> None:
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "\t\ttrue,\n\t\tfalse,"
 
@@ -264,7 +256,6 @@ def test_include_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -284,7 +275,6 @@ def test_include_delimiters_with_pre_indent_level() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = '    (\n        ("a", 1.0),\n    )'
     assert result.code == expected
@@ -306,7 +296,6 @@ def test_indent_override() -> None:
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = "(\n\tTrue,\n\tFalse,\n)"
     assert result.code == expected
@@ -326,7 +315,6 @@ def test_empty_data(*, include_delimiters: bool) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=include_delimiters,
-        error_on_coercion=False,
     )
     expected = "()" if include_delimiters else ""
     assert result.code == expected
@@ -358,7 +346,6 @@ def test_scalar(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == expected
 
@@ -371,7 +358,6 @@ def test_scalar_with_indent() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "    42"
 
@@ -384,7 +370,6 @@ def test_scalar_include_delimiters_ignored() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     assert result.code == "42"
 
@@ -398,7 +383,6 @@ def test_literalize_json_array() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result.code == expected
@@ -413,7 +397,6 @@ def test_literalize_json_object() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -434,7 +417,6 @@ def test_literalize_json_invalid() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            error_on_coercion=False,
         )
 
 
@@ -452,7 +434,6 @@ def test_part1_sample_python() -> None:
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected_lines = [
         '        ("user_1", 1000.0),',
@@ -472,7 +453,6 @@ def test_part2_sample_go() -> None:
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     lines = result.code.split(sep="\n")
     assert lines[0] == '\t\t[]any{"user_1", 49, 1000.0},'
@@ -488,7 +468,6 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            error_on_coercion=False,
         )
 
 
@@ -497,6 +476,10 @@ MOJO = Mojo(
     datetime_format=Mojo.datetime_formats.ISO,
     bytes_format=Mojo.bytes_formats.HEX,
     sequence_format=Mojo.sequence_formats.LIST,
+    coerce_heterogeneous_scalars=True,
+    coerce_heterogeneous_sibling_lists=True,
+    coerce_mixed_dict_values=True,
+    coerce_mixed_list_values=True,
 )
 
 
@@ -511,7 +494,6 @@ def test_cpp_array_null_list_fallback_json() -> None:
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -531,7 +513,6 @@ def test_coerce_mixed_dict_values_none_with_list_json() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -553,7 +534,6 @@ def test_coerce_mixed_dict_values_with_list_json() -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -580,7 +560,6 @@ def test_r_empty_dict_key_positional_json() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -615,7 +594,6 @@ def test_r_empty_dict_key_error_json() -> None:
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -634,7 +612,6 @@ def test_r_empty_dict_key_error_non_empty_key_ok_json() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -662,7 +639,6 @@ def test_dhall_empty_dict_key_error_json() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -675,7 +651,6 @@ def test_dhall_control_char_in_string_json() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     expected = 'let my_data = "\\u{0001}" in my_data'
     assert result.code == expected
@@ -698,7 +673,6 @@ def test_dhall_control_char_key_error_json() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -719,7 +693,6 @@ def test_nix_control_char_key_error_json() -> None:
             language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -732,7 +705,6 @@ def test_dhall_backtick_label_unescaping_json() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\

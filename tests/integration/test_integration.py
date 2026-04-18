@@ -107,19 +107,71 @@ _SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
 )
 
 
+_LAX_COERCE_KWARGS_BY_LANG: dict[str, dict[str, bool]] = {
+    "Rust": {
+        "coerce_heterogeneous_scalars": True,
+        "coerce_heterogeneous_sibling_lists": True,
+        "coerce_mixed_dict_values": True,
+        "coerce_mixed_list_values": True,
+    },
+    "Cpp": {
+        "coerce_heterogeneous_scalars": True,
+        "coerce_heterogeneous_sibling_lists": True,
+        "coerce_mixed_dict_values": True,
+        "coerce_mixed_list_values": True,
+    },
+    "Nim": {
+        "coerce_heterogeneous_scalars": True,
+        "coerce_heterogeneous_sibling_lists": True,
+        "coerce_mixed_dict_values": True,
+        "coerce_mixed_list_values": True,
+    },
+    "Mojo": {
+        "coerce_heterogeneous_scalars": True,
+        "coerce_heterogeneous_sibling_lists": True,
+        "coerce_mixed_dict_values": True,
+        "coerce_mixed_list_values": True,
+    },
+    "Dhall": {
+        "coerce_heterogeneous_scalars": True,
+        "coerce_heterogeneous_sibling_lists": True,
+        "coerce_mixed_dict_values": True,
+        "coerce_mixed_list_values": True,
+        "coerce_nonuniform_record_shapes": True,
+    },
+}
+"""Per-language opt-in coerce flags used to recover the pre-strict
+silent-coercion behavior in golden-file tests, which exercise
+formatting (not coercion semantics).
+"""
+
+
+def _lax_kwargs(*, lang_cls: literalizer.LanguageCls) -> dict[str, bool]:
+    """Return ``coerce_*`` kwargs that allow every coercion for
+    *lang_cls*, or an empty dict for languages whose formats always
+    support heterogeneity.
+    """
+    return _LAX_COERCE_KWARGS_BY_LANG.get(lang_cls.__name__, {})
+
+
 @functools.cache
 def _default_spec(
     *,
     lang_cls: literalizer.LanguageCls,
 ) -> literalizer.Language:
-    """Return a cached default-constructed instance of *lang_cls*.
+    """Return a cached lax-constructed instance of *lang_cls*.
 
     Each ``lang_cls()`` call rebuilds ``@beartype``-wrapped closures
-    inside the formatter factories; sharing one default-constructed
+    inside the formatter factories; sharing one lax-constructed
     instance per class cuts thousands of redundant builds during test
     collection.
+
+    Languages that gate coercions per-flag are constructed with every
+    ``coerce_*`` flag enabled so that golden-file tests, which test
+    formatting rather than coercion semantics, can pass heterogeneous
+    data through silently.
     """
-    return lang_cls()
+    return lang_cls(**_lax_kwargs(lang_cls=lang_cls))
 
 
 @dataclasses.dataclass
@@ -139,7 +191,7 @@ def _build_non_default_variants(
     get_default: Callable[[literalizer.Language], object],
     get_formats: Callable[[literalizer.Language], type[enum.Enum]],
     make_spec: Callable[
-        [literalizer.LanguageCls, enum.Enum],
+        [literalizer.LanguageCls, enum.Enum, dict[str, bool]],
         literalizer.Language,
     ],
 ) -> list[_Variant]:
@@ -149,19 +201,24 @@ def _build_non_default_variants(
     that all follow the same pattern: iterate all languages, find the
     non-default members of a format enum, and create a ``_Variant`` for
     each one.
+
+    *make_spec* is called with the per-language ``coerce_*`` opt-in
+    kwargs that recover pre-strict silent-coercion behavior, since these
+    variant tests exercise formatting rather than coercion semantics.
     """
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
         lang_name = lang_cls.__name__
         spec = _default_spec(lang_cls=lang_cls)
         default_format = get_default(spec)
+        lax = _lax_kwargs(lang_cls=lang_cls)
         for fmt in get_formats(spec):
             if fmt is default_format:
                 continue
             variants.append(
                 _Variant(
                     name=f"{lang_name}_{category}_{fmt.name.lower()}",
-                    spec=make_spec(lang_cls, fmt),
+                    spec=make_spec(lang_cls, fmt, lax),
                     lang_cls=lang_cls,
                 )
             )
@@ -202,6 +259,7 @@ def _build_default_set_element_type_variants(
         string_type = type_overrides.get(lang_name, "String")
         spec = lang_cls(
             default_set_element_type=string_type,
+            **_lax_kwargs(lang_cls=lang_cls),
         )
         if (
             should_coerce_mixed
@@ -243,6 +301,7 @@ def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
                 name=f"{lang_name}_default_sequence_element_type_string",
                 spec=lang_cls(
                     default_sequence_element_type=string_type,
+                    **_lax_kwargs(lang_cls=lang_cls),
                 ),
                 lang_cls=lang_cls,
             )
@@ -276,7 +335,10 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_dict_value_type_string",
-                spec=lang_cls(default_dict_value_type=string_type),
+                spec=lang_cls(
+                    default_dict_value_type=string_type,
+                    **_lax_kwargs(lang_cls=lang_cls),
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -310,7 +372,10 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_dict_key_type",
-                spec=lang_cls(default_dict_key_type=key_type),
+                spec=lang_cls(
+                    default_dict_key_type=key_type,
+                    **_lax_kwargs(lang_cls=lang_cls),
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -340,6 +405,7 @@ def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
                 name=f"{lang_name}_default_ordered_map_value_type",
                 spec=lang_cls(
                     default_ordered_map_value_type=value_type,
+                    **_lax_kwargs(lang_cls=lang_cls),
                 ),
                 lang_cls=lang_cls,
             )
@@ -380,6 +446,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
                 spec=lang_cls(
                     line_ending=line_ending,
                     declaration_style=declaration_style,
+                    **_lax_kwargs(lang_cls=lang_cls),
                 ),
                 lang_cls=lang_cls,
             )
@@ -422,6 +489,7 @@ def _build_sequence_decl_variants() -> Iterable[_Variant]:
                 spec=lang_cls(
                     sequence_format=sequence_format,
                     declaration_style=declaration_style,
+                    **_lax_kwargs(lang_cls=lang_cls),
                 ),
                 lang_cls=lang_cls,
             )
@@ -627,11 +695,10 @@ def test_golden_file(
     result = literalizer.literalize(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
-        language=lang_cls(),
+        language=lang_cls(**_lax_kwargs(lang_cls=lang_cls)),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=_wrap_variable_form(lang_cls=lang_cls),
-        error_on_coercion=False,
         wrap_in_file=True,
     )
     # newline="" prevents Python text-mode from converting \r\n to \n
@@ -718,6 +785,7 @@ def test_golden_file_combined_variable_forms(
     lang_cls = combined_case.lang_cls
     spec = lang_cls(
         declaration_style=combined_case.declaration_style,
+        **_lax_kwargs(lang_cls=lang_cls),
     )
     yaml_string = input_path.read_text()
     result = literalizer.literalize(
@@ -727,7 +795,6 @@ def test_golden_file_combined_variable_forms(
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
         wrap_in_file=True,
     )
     file_regression.check(
@@ -931,6 +998,7 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
                             spec=lang_cls(
                                 variable_type_hints=th_fmt,
                                 **{kwarg: fmt},
+                                **_lax_kwargs(lang_cls=lang_cls),
                             ),
                             lang_cls=lang_cls,
                         ),
@@ -945,42 +1013,43 @@ def _build_variant_cases() -> list[_VariantCase]:
         category="date",
         get_default=lambda s: s.format_date,
         get_formats=lambda s: s.date_formats,
-        make_spec=lambda cls, fmt: cls(date_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(date_format=fmt, **lax),
     )
     datetime_ = nv(
         category="datetime",
         get_default=lambda s: s.format_datetime,
         get_formats=lambda s: s.datetime_formats,
-        make_spec=lambda cls, fmt: cls(datetime_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(datetime_format=fmt, **lax),
     )
     sequence = nv(
         category="sequence",
         get_default=lambda s: s.sequence_format,
         get_formats=lambda s: s.sequence_formats,
-        make_spec=lambda cls, fmt: cls(sequence_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(sequence_format=fmt, **lax),
     )
     set_ = nv(
         category="set",
         get_default=lambda s: s.set_format,
         get_formats=lambda s: s.set_formats,
-        make_spec=lambda cls, fmt: cls(set_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(set_format=fmt, **lax),
     )
     comment = nv(
         category="comment",
         get_default=lambda s: s.comment_format,
         get_formats=lambda s: s.comment_formats,
-        make_spec=lambda cls, fmt: cls(comment_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(comment_format=fmt, **lax),
     )
     type_hints = nv(
         category="type_hints",
         get_default=lambda s: s.variable_type_hints,
         get_formats=lambda s: s.variable_type_hints_formats,
-        make_spec=lambda cls, fmt: cls(variable_type_hints=fmt),
+        make_spec=lambda cls, fmt, lax: cls(variable_type_hints=fmt, **lax),
     )
 
     def _declaration_style_make_spec(
         cls: literalizer.LanguageCls,
         fmt: enum.Enum,
+        lax: dict[str, bool],
     ) -> literalizer.Language:
         """Build spec, using ARRAY for Rust const/static styles.
 
@@ -993,16 +1062,17 @@ def _build_variant_cases() -> list[_VariantCase]:
             "CONST",
             "STATIC",
         }:
-            spec = cls()
+            spec = cls(**lax)
             array_fmt = next(
                 f for f in spec.sequence_formats if f.name == "ARRAY"
             )
             result = cls(
                 declaration_style=fmt,
                 sequence_format=array_fmt,
+                **lax,
             )
         else:
-            result = cls(declaration_style=fmt)
+            result = cls(declaration_style=fmt, **lax)
         return result
 
     declaration_style = nv(
@@ -1015,67 +1085,67 @@ def _build_variant_cases() -> list[_VariantCase]:
         category="dict_format",
         get_default=lambda s: s.dict_format,
         get_formats=lambda s: s.dict_formats,
-        make_spec=lambda cls, fmt: cls(dict_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(dict_format=fmt, **lax),
     )
     dict_entry_style = nv(
         category="dict_entry_style",
         get_default=lambda s: s.dict_entry_style,
         get_formats=lambda s: s.dict_entry_styles,
-        make_spec=lambda cls, fmt: cls(dict_entry_style=fmt),
+        make_spec=lambda cls, fmt, lax: cls(dict_entry_style=fmt, **lax),
     )
     integer_format = nv(
         category="integer_format",
         get_default=lambda s: s.integer_format,
         get_formats=lambda s: s.integer_formats,
-        make_spec=lambda cls, fmt: cls(integer_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(integer_format=fmt, **lax),
     )
     numeric_literal_suffix = nv(
         category="numeric_literal_suffix",
         get_default=lambda s: s.numeric_literal_suffix,
         get_formats=lambda s: s.numeric_literal_suffixes,
-        make_spec=lambda cls, fmt: cls(numeric_literal_suffix=fmt),
+        make_spec=lambda cls, fmt, lax: cls(numeric_literal_suffix=fmt, **lax),
     )
     numeric_separator = nv(
         category="numeric_separator",
         get_default=lambda s: s.numeric_separator,
         get_formats=lambda s: s.numeric_separators,
-        make_spec=lambda cls, fmt: cls(numeric_separator=fmt),
+        make_spec=lambda cls, fmt, lax: cls(numeric_separator=fmt, **lax),
     )
     float_format = nv(
         category="float_format",
         get_default=lambda s: s.float_format,
         get_formats=lambda s: s.float_formats,
-        make_spec=lambda cls, fmt: cls(float_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(float_format=fmt, **lax),
     )
     numeric_style = nv(
         category="numeric_style",
         get_default=lambda s: s.numeric_style,
         get_formats=lambda s: s.numeric_styles,
-        make_spec=lambda cls, fmt: cls(numeric_style=fmt),
+        make_spec=lambda cls, fmt, lax: cls(numeric_style=fmt, **lax),
     )
     string_format = nv(
         category="string_format",
         get_default=lambda s: s.string_format,
         get_formats=lambda s: s.string_formats,
-        make_spec=lambda cls, fmt: cls(string_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(string_format=fmt, **lax),
     )
     bytes_format = nv(
         category="bytes_format",
         get_default=lambda s: s.format_bytes,
         get_formats=lambda s: s.bytes_formats,
-        make_spec=lambda cls, fmt: cls(bytes_format=fmt),
+        make_spec=lambda cls, fmt, lax: cls(bytes_format=fmt, **lax),
     )
     trailing_comma = nv(
         category="trailing_comma",
         get_default=lambda s: s.trailing_comma,
         get_formats=lambda s: s.trailing_commas,
-        make_spec=lambda cls, fmt: cls(trailing_comma=fmt),
+        make_spec=lambda cls, fmt, lax: cls(trailing_comma=fmt, **lax),
     )
     line_ending = nv(
         category="line_ending",
         get_default=lambda s: s.line_ending,
         get_formats=lambda s: s.line_endings,
-        make_spec=lambda cls, fmt: cls(line_ending=fmt),
+        make_spec=lambda cls, fmt, lax: cls(line_ending=fmt, **lax),
     )
 
     type_hints_cross = _build_type_hints_cross_variants()
@@ -1259,7 +1329,6 @@ def test_format_variant_golden_file(
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=variant_case.variable_form,
-            error_on_coercion=False,
             wrap_in_file=True,
         )
     except NullInCollectionError:
@@ -1333,12 +1402,14 @@ def test_line_ending_combined_variable_forms(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    base_spec = case.lang_cls()
+    lax_kwargs = _lax_kwargs(lang_cls=case.lang_cls)
+    base_spec = case.lang_cls(**lax_kwargs)
     redef_styles = _find_redefinition_styles(spec=base_spec)
     assert redef_styles
     spec = case.lang_cls(
         line_ending=case.line_ending,
         declaration_style=redef_styles[0],
+        **lax_kwargs,
     )
     result = literalizer.literalize(
         source=yaml_string,
@@ -1347,7 +1418,6 @@ def test_line_ending_combined_variable_forms(
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
         wrap_in_file=True,
     )
     file_regression.check(
@@ -1523,6 +1593,7 @@ def test_call_golden_file(
             if s.value.kind == config.call_style_kind
         )
         kwargs["call_style"] = style
+    kwargs.update(_lax_kwargs(lang_cls=lang_cls))
     spec = lang_cls(**kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()

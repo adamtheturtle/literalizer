@@ -15,6 +15,29 @@ from literalizer._types import Value
 
 
 @dataclasses.dataclass(frozen=True)
+class CoercionOptions:
+    """Per-coercion opt-in flags for non-heterogeneous languages.
+
+    Each flag controls one heterogeneous-data coercion.  Default is
+    ``False``: the coercion is *not* applied; the data is rejected with
+    :exc:`~literalizer.exceptions.HeterogeneousCoercionError` instead.
+    Set a flag to ``True`` to allow that specific coercion to run
+    silently.
+
+    Only consulted when the chosen sequence format has
+    ``supports_heterogeneity=False``.  ``coerce_nonuniform_record_shapes``
+    is additionally only consulted when the chosen sequence format has
+    ``requires_uniform_record_shapes=True``.
+    """
+
+    coerce_heterogeneous_scalars: bool = False
+    coerce_heterogeneous_sibling_lists: bool = False
+    coerce_mixed_dict_values: bool = False
+    coerce_mixed_list_values: bool = False
+    coerce_nonuniform_record_shapes: bool = False
+
+
+@dataclasses.dataclass(frozen=True)
 class SequenceFormatConfig:
     """Configuration for a single sequence format."""
 

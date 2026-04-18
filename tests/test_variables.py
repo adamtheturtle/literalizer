@@ -48,6 +48,10 @@ CPP = Cpp(
     datetime_format=Cpp.datetime_formats.CPP,
     bytes_format=Cpp.bytes_formats.HEX,
     sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
+    coerce_heterogeneous_scalars=True,
+    coerce_heterogeneous_sibling_lists=True,
+    coerce_mixed_dict_values=True,
+    coerce_mixed_list_values=True,
 )
 CSHARP = CSharp(
     date_format=CSharp.date_formats.CSHARP,
@@ -136,6 +140,10 @@ RUST = Rust(
     datetime_format=Rust.datetime_formats.RUST,
     bytes_format=Rust.bytes_formats.HEX,
     sequence_format=Rust.sequence_formats.VEC,
+    coerce_heterogeneous_scalars=True,
+    coerce_heterogeneous_sibling_lists=True,
+    coerce_mixed_dict_values=True,
+    coerce_mixed_list_values=True,
 )
 SCALA = Scala(
     date_format=Scala.date_formats.ISO,
@@ -288,7 +296,6 @@ def test_variable_declaration_json(
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == expected
 
@@ -309,7 +316,6 @@ def test_existing_variable_assignment_json(
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=ExistingVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == expected
 
@@ -338,7 +344,6 @@ def test_python_always_type_hints_scalars(
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == expected
 
@@ -352,7 +357,6 @@ def test_python_always_type_hints_assignment_no_hint() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=ExistingVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == "my_var = 42"
 
@@ -367,7 +371,6 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -387,7 +390,6 @@ def test_python_always_type_hints_nested_list_in_list() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -410,7 +412,6 @@ def test_python_always_type_hints_dict_with_list_values() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -439,7 +440,6 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -457,6 +457,10 @@ RUST_CONST = Rust(
     bytes_format=Rust.bytes_formats.HEX,
     sequence_format=Rust.sequence_formats.ARRAY,
     declaration_style=Rust.declaration_styles.CONST,
+    coerce_heterogeneous_scalars=True,
+    coerce_heterogeneous_sibling_lists=True,
+    coerce_mixed_dict_values=True,
+    coerce_mixed_list_values=True,
 )
 
 
@@ -470,7 +474,6 @@ def test_rust_const_bytes() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == 'const my_var: &str = "48656c6c6f";'
 
@@ -484,7 +487,6 @@ def test_rust_const_date() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == 'const my_var: &str = "2024-01-15";'
 
@@ -498,7 +500,6 @@ def test_rust_const_datetime() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
 
@@ -519,7 +520,6 @@ def test_rust_const_single_element_tuple() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -540,7 +540,6 @@ def test_rust_const_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -562,7 +561,6 @@ def test_rust_const_empty_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == (
         "const my_var: HashSet<String> = HashSet::<String>::new();"
@@ -578,7 +576,6 @@ def test_rust_const_dict() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -598,7 +595,6 @@ def test_rust_const_empty_dict() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == (
         "const my_var: HashMap<String, String>"
@@ -615,7 +611,6 @@ def test_rust_const_dict_mixed_values() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -644,7 +639,6 @@ def test_rust_const_btree_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -673,7 +667,6 @@ def test_rust_const_btree_map() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -693,7 +686,6 @@ def test_rust_const_widened_int_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -714,7 +706,6 @@ def test_rust_const_i128_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -734,7 +725,6 @@ def test_rust_const_nested_list() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\

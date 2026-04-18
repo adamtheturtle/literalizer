@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- Removed the ``error_on_coercion`` parameter from ``literalize()``.
+  Heterogeneous-data coercions are now controlled per-language through
+  ``coerce_*`` constructor flags on the languages whose sequence
+  formats can require coercion (currently ``Cpp``, ``Dhall``, ``Mojo``,
+  ``Nim``, ``Rust``).  Each flag corresponds to a single coercion
+  (e.g. ``coerce_heterogeneous_scalars``,
+  ``coerce_mixed_dict_values``, ``coerce_nonuniform_record_shapes``)
+  and defaults to ``False``: the language raises
+  ``HeterogeneousCoercionError`` instead of silently coercing.  To
+  recover the previous silent-coercion behavior, pass every relevant
+  ``coerce_*`` flag as ``True`` when constructing the language.
+
 2026.04.15
 ----------
 
