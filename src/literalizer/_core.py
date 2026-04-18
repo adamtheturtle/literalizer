@@ -1280,13 +1280,10 @@ def _format_call_args(
         case CallStyleKind.POSITIONAL:
             inner = sep.join(formatted)
         case CallStyleKind.KEYWORD | CallStyleKind.OBJECT:
+            # ``CallStyleConfig.__post_init__`` guarantees a non-None
+            # keyword_separator for KEYWORD/OBJECT styles.
             kw_sep = style.keyword_separator
-            if kw_sep is None:
-                msg = (
-                    f"keyword_separator must be set for "
-                    f"{style.kind.value!r} call style"
-                )
-                raise ValueError(msg)
+            assert kw_sep is not None  # noqa: S101
             named = sep.join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)

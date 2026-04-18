@@ -189,11 +189,24 @@ class CallStyleConfig:
     string placed between the parameter name and its value for
     :attr:`CallStyleKind.KEYWORD` and :attr:`CallStyleKind.OBJECT`
     styles (e.g. ``"="`` for Python, ``": "`` for Ruby).  It is
-    ``None`` for :attr:`CallStyleKind.POSITIONAL` languages.
+    ``None`` for :attr:`CallStyleKind.POSITIONAL` languages, and must
+    be set for the other two kinds.
     """
 
     kind: CallStyleKind
     keyword_separator: str | None = None
+
+    def __post_init__(self) -> None:
+        """Reject keyword/object styles without a separator."""
+        if (
+            self.kind in {CallStyleKind.KEYWORD, CallStyleKind.OBJECT}
+            and self.keyword_separator is None
+        ):
+            msg = (
+                f"keyword_separator must be set for "
+                f"{self.kind.value!r} call style"
+            )
+            raise ValueError(msg)
 
 
 class FloatSpecialsMixin:

@@ -481,31 +481,26 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
         )
 
 
-def test_literalize_call_missing_keyword_separator_raises() -> None:
-    """Literalize_call raises ValueError for keyword style without
-    separator.
+def test_call_style_config_keyword_without_separator_raises() -> None:
+    """Constructing a KEYWORD call style without a keyword_separator
+    raises ``ValueError`` at construction time.
     """
-
-    class BadLang(Python):
-        """Python variant with missing keyword_separator."""
-
-    lang = BadLang()
-    object.__setattr__(
-        lang,
-        "call_style_config",
-        CallStyleConfig(kind=CallStyleKind.KEYWORD),
-    )
     with pytest.raises(
         expected_exception=ValueError,
         match=r"^keyword_separator must be set for 'keyword' call style$",
     ):
-        literalize_call(
-            source="- [1]",
-            input_format=InputFormat.YAML,
-            language=lang,
-            target_function="f",
-            parameter_names=["x"],
-        )
+        CallStyleConfig(kind=CallStyleKind.KEYWORD)
+
+
+def test_call_style_config_object_without_separator_raises() -> None:
+    """Constructing an OBJECT call style without a keyword_separator
+    raises ``ValueError`` at construction time.
+    """
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=r"^keyword_separator must be set for 'object' call style$",
+    ):
+        CallStyleConfig(kind=CallStyleKind.OBJECT)
 
 
 def test_literalize_call_per_element_non_list_raises() -> None:
