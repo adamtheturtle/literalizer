@@ -31,7 +31,11 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
@@ -663,7 +667,14 @@ class PureScript(metaclass=LanguageCls):
             self.format_string: Callable[[str], str] = (
                 _format_purescript_string
             )
-            self.format_integer: Callable[[int], str] = integer_format
+            self.format_integer: Callable[[int], str] = (
+                make_overflow_fallback_formatter(
+                    base=integer_format,
+                    fallback=raise_for_unrepresentable_int(
+                        language_name="PureScript",
+                    ),
+                )
+            )
             self.format_float: Callable[[float], str] = float_format
         else:
             self.format_bytes = _BYTES_FORMATTERS[bytes_format.name](
@@ -678,9 +689,14 @@ class PureScript(metaclass=LanguageCls):
             self.format_string = _build_purescript_str_formatter(
                 prefix=constructor_prefix,
             )
-            self.format_integer = _build_purescript_integer_formatter(
-                prefix=constructor_prefix,
-                base=_INT_BASE[integer_format.name],
+            self.format_integer = make_overflow_fallback_formatter(
+                base=_build_purescript_integer_formatter(
+                    prefix=constructor_prefix,
+                    base=_INT_BASE[integer_format.name],
+                ),
+                fallback=raise_for_unrepresentable_int(
+                    language_name="PureScript",
+                ),
             )
 
             _pos_inf = f"{constructor_prefix}Float (1.0 / 0.0)"

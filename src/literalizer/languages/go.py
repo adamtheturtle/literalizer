@@ -39,6 +39,7 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
     make_int64_cast_formatter,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -65,6 +66,18 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_go_uint64_literal(value: int) -> str:
+    """Format a value that exceeds ``int64`` range as a Go ``uint64``
+    typed expression.
+
+    Go's untyped integer constant can be any size, but the default
+    promotion to ``int`` overflows.  Wrapping in ``uint64(...)`` forces
+    a typed conversion and accepts values up to ``math.MaxUint64``.
+    """
+    return f"uint64({value})"
 
 
 @beartype
@@ -561,10 +574,16 @@ class Go(metaclass=LanguageCls):
         base_int_formatter = integer_format.get_formatter(
             numeric_separator=numeric_separator,
         )
-        self.format_integer: Callable[[int], str] = (
+        _suffixed_int_formatter: Callable[[int], str] = (
             make_int64_cast_formatter(base=base_int_formatter)
             if suffix_is_auto
             else base_int_formatter
+        )
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=_suffixed_int_formatter,
+                fallback=_format_go_uint64_literal,
+            )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry

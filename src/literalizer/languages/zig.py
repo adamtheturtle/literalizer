@@ -86,6 +86,10 @@ def _format_datetime_zig(value: datetime.datetime) -> str:
     return str(object=int(value.timestamp()))
 
 
+_I64_MAX = 2**63 - 1
+_I64_MIN = -(2**63)
+
+
 @beartype
 def _format_zig_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
@@ -95,7 +99,8 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
         case bool():
             return formatted
         case int():
-            return f".{{ .int = {formatted} }}"
+            tag = "int" if _I64_MIN <= original <= _I64_MAX else "uint"
+            return f".{{ .{tag} = {formatted} }}"
         case float():
             return f".{{ .float = {formatted} }}"
         case str() | bytes():
@@ -499,6 +504,7 @@ class Zig(metaclass=LanguageCls):
             "    nil,",
             "    bool: bool,",
             "    int: i64,",
+            "    uint: u64,",
             "    float: f64,",
             "    str: []const u8,",
             "    arr: []const ZVal,",

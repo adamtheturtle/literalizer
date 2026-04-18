@@ -39,6 +39,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -65,6 +66,17 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_scala_bigint_literal(value: int) -> str:
+    """Format a value that exceeds Scala ``Long`` range as a
+    ``BigInt(...)`` construction.
+
+    Scala's ``Long`` is signed 64-bit; ``scala.math.BigInt`` is
+    available without import via ``scala.Predef``.
+    """
+    return f'BigInt("{value}")'
 
 
 @beartype
@@ -593,8 +605,11 @@ class Scala(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            make_overflow_fallback_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
+                fallback=_format_scala_bigint_literal,
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (

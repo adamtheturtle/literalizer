@@ -58,3 +58,14 @@ class UnsupportedCallStyleError(Exception):
             f"{language_name} does not support function call rendering"
         )
         self.language_name = language_name
+
+
+class UnrepresentableIntegerError(Exception):
+    """Raised when an integer value exceeds the range the target
+    language can represent natively.
+
+    Used by backends whose fixed-width integer types cannot hold values
+    outside the signed 64-bit range (e.g. Fortran default ``integer``,
+    Cobol ``PIC S9(18)``, PureScript ``Int``) when no external
+    bignum library is assumed to be available.
+    """

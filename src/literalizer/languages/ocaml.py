@@ -38,6 +38,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -65,6 +66,20 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+@beartype
+def _format_ocaml_bigint_literal(value: int) -> str:
+    """Format a value that exceeds OCaml ``int`` range via
+    ``int_of_string``.
+
+    OCaml's native ``int`` is 63-bit signed on 64-bit platforms; larger
+    values trigger a ``integer literal exceeds the range of
+    representable integers of type int`` compile error.  Wrapping in
+    ``(int_of_string "…")`` pushes the parse to runtime so the file
+    still typechecks and compiles.
+    """
+    return f'(int_of_string "{value}")'
 
 
 def _build_ocaml_entry_formatter(
@@ -522,8 +537,11 @@ class OCaml(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            make_overflow_fallback_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
+                fallback=_format_ocaml_bigint_literal,
             )
         )
         self.format_set_entry: Callable[[Value, str], str] = _entry_formatter

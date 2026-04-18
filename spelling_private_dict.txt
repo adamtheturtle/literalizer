@@ -67,6 +67,7 @@ Norg
 Num
 OBool
 OCaml
+OCaml's
 OFloat
 OInt
 OList
@@ -106,9 +107,12 @@ YAMLError
 ZKV
 ZVal
 Zig
+backends
 backtick
 backticks
 beartype
+bigint
+bignum
 bool
 booleans
 chrono
@@ -185,6 +189,7 @@ pyrefly
 pyright
 pytest
 rakudo
+recurses
 regen
 reportAttributeAccessIssue
 reportMissingTypeStubs
@@ -193,6 +198,7 @@ reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
 repr
+representable
 roundtrip
 ruamel
 scala
@@ -208,12 +214,15 @@ superset
 swiftc
 templating
 tomlkit
+toolchain
 ty
+typechecks
 typeclass
 unescape
 unhandled
 unicode
 unterminated
+untyped
 uv
 val_t
 whitespace

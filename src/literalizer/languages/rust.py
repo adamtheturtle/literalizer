@@ -37,6 +37,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
@@ -68,6 +69,22 @@ from literalizer._language import (
 
 if TYPE_CHECKING:
     from literalizer._types import Value
+
+
+_U64_MAX = 2**64 - 1
+
+
+@beartype
+def _format_rust_wide_int_literal(value: int) -> str:
+    """Format a value that exceeds i64 range as a Rust typed literal.
+
+    Uses ``u64`` for non-negative values that fit in ``u64``; ``i128``
+    for everything else (larger positives and negatives below
+    ``i64::MIN``).
+    """
+    if 0 <= value <= _U64_MAX:
+        return f"{value}u64"
+    return f"{value}i128"
 
 
 @beartype
@@ -606,8 +623,11 @@ class Rust(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            make_overflow_fallback_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
+                fallback=_format_rust_wide_int_literal,
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (

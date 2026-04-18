@@ -33,6 +33,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -62,6 +63,21 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+_I64_MAX = 2**63 - 1
+_I64_MIN = -(2**63)
+
+
+@beartype
+def _fsharp_int_literal_suffix(value: int) -> str:
+    """Return the F# numeric literal suffix for a raw ``int`` value.
+
+    Values outside the signed 64-bit range use the ``I`` ``bigint``
+    suffix; in-range values use the ``L`` ``int64`` suffix.
+    """
+    if _I64_MIN <= value <= _I64_MAX:
+        return "L"
+    return "I"
+
 
 def _build_fsharp_entry_formatter(
     prefix: str,
@@ -78,10 +94,11 @@ def _build_fsharp_entry_formatter(
                 return formatted
             case int():
                 negative = formatted.startswith("-")
+                suffix = _fsharp_int_literal_suffix(value=original)
                 return (
-                    f"{prefix}Int({formatted}L)"
+                    f"{prefix}Int({formatted}{suffix})"
                     if negative
-                    else f"{prefix}Int {formatted}L"
+                    else f"{prefix}Int {formatted}{suffix}"
                 )
             case float():
                 negative = formatted.startswith("-")
@@ -614,13 +631,15 @@ class FSharp(metaclass=LanguageCls):
         p = constructor_prefix
         _header = f"type {type_name} ="
         _f_str = f"    | {p}Str of string"
+        _int_variant_int64 = f"    | {p}Int of int64"
+        _int_variant_bigint = f"    | {p}Int of bigint"
         self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
         ] = {
             type(None): (_header, f"    | {p}Null"),
             bool: (_header, f"    | {p}Bool of bool"),
-            int: (_header, f"    | {p}Int of int64"),
+            int: (_header, _int_variant_int64),
             float: (_header, f"    | {p}Float of float"),
             str: (_header, _f_str),
             bytes: (_header, _f_str),
@@ -642,12 +661,31 @@ class FSharp(metaclass=LanguageCls):
                 f"    | {p}Datetime of System.DateTime",
             ),
         }
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+        _base_compute = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+
+        @beartype
+        def _fsharp_compute_body_preamble(
+            types: frozenset[type],
+            data: Value,
+            /,
+        ) -> tuple[str, ...]:
+            """Swap the ``FInt`` variant to ``bigint`` when *data* has
+            an integer outside the signed 64-bit range.
+            """
+            lines = _base_compute(types, data)
+            if data_has_out_of_range_int(data=data):
+                return tuple(
+                    _int_variant_bigint if line == _int_variant_int64 else line
+                    for line in lines
+                )
+            return lines
+
+        self.compute_body_preamble: Callable[
+            [frozenset[type], Value], tuple[str, ...]
+        ] = _fsharp_compute_body_preamble
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style = call_style

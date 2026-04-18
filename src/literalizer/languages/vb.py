@@ -34,6 +34,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+)
 from literalizer._language import (
     CallStyleConfig,
     CommentConfig,
@@ -59,6 +62,20 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+
+@beartype
+def _format_vb_ulong_literal(value: int) -> str:
+    """Format a value that exceeds ``Long`` range as a ``ULong``
+    literal.
+
+    In VB.NET, ``Long`` is signed 64-bit; the ``UL`` suffix selects
+    the ``ULong`` type, which can hold values up to
+    ``ULong.MaxValue``.
+    """
+    if value < 0:
+        return f"-{abs(value)}UL"
+    return f"{value}UL"
 
 
 @beartype
@@ -477,7 +494,12 @@ class VisualBasic(metaclass=LanguageCls):
         )
         self.format_string: Callable[[str], str] = _format_string_vb
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=str,
+                fallback=_format_vb_ulong_literal,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

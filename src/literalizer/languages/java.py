@@ -38,11 +38,13 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_underscore,
     make_long_suffix_formatter,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -64,12 +66,32 @@ from literalizer._language import (
     date_scalar_preamble,
     identity_call_target,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
+
+
+@beartype
+def _format_java_biginteger_literal(value: int) -> str:
+    """Format a value that exceeds Java ``long`` range as a
+    ``new BigInteger(...)`` construction.
+
+    Java's ``long`` is signed 64-bit; ``java.math.BigInteger`` is the
+    arbitrary-precision escape hatch.
+    """
+    return f'new BigInteger("{value}")'
+
+
+@beartype
+def _java_biginteger_import(data: Value, /) -> tuple[str, ...]:
+    """Return the ``BigInteger`` import when *data* contains an integer
+    that exceeds Java ``long`` range.
+    """
+    if data_has_out_of_range_int(data=data):
+        return ("import java.math.BigInteger;",)
+    return ()
 
 
 def _java_call_stub(
@@ -818,10 +840,16 @@ class Java(metaclass=LanguageCls):
         base_int_formatter = integer_format.get_formatter(
             numeric_separator=numeric_separator,
         )
-        self.format_integer: Callable[[int], str] = (
+        _suffixed_int_formatter: Callable[[int], str] = (
             make_long_suffix_formatter(base=base_int_formatter)
             if suffix_is_auto
             else base_int_formatter
+        )
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=_suffixed_int_formatter,
+                fallback=_format_java_biginteger_literal,
+            )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
@@ -894,7 +922,7 @@ class Java(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
+        self.data_dependent_preamble = _java_biginteger_import
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,
