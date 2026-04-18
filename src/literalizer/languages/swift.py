@@ -246,6 +246,29 @@ def _format_swift_typed_declaration(
 
 
 @beartype
+def _optional_nil_declaration(
+    base_formatter: Callable[[str, str, Value], str],
+    *,
+    keyword: str,
+) -> Callable[[str, str, Value], str]:
+    """Wrap *base_formatter* so top-level ``nil`` gets an optional type.
+
+    ``Any`` is non-optional in Swift, so ``let my_data: Any = nil`` fails
+    to compile.  Emit ``{keyword} {name}: Any? = nil`` when the value is
+    ``None``.
+    """
+
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format a Swift variable declaration, guarding top-level ``nil``."""
+        if data is None:
+            return f"{keyword} {name}: Any? = {value}"
+        return base_formatter(name, value, data)
+
+    return _format
+
+
+@beartype
 class Swift(metaclass=LanguageCls):
     """Swift language specification."""
 
@@ -519,7 +542,10 @@ class Swift(metaclass=LanguageCls):
         ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
-                return auto_formatter
+                return _optional_nil_declaration(
+                    base_formatter=auto_formatter,
+                    keyword=keyword,
+                )
             return functools.partial(
                 _format_swift_typed_declaration,
                 keyword=keyword,
