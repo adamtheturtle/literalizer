@@ -88,6 +88,31 @@ def _rust_integer_type(value: int) -> str:
 
 
 @beartype
+def _make_rust_integer_suffix_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap a formatter to append a Rust type suffix when the value
+    overflows i32.
+
+    A Rust integer literal with no suffix defaults to ``i32``.
+    Values that don't fit in ``i32`` must carry a type suffix or a
+    type-annotated context, otherwise ``rustc`` rejects them with
+    ``literal out of range for i32``.  The suffix chosen matches the
+    narrowest type that holds *value*.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format with a Rust type suffix when *value* overflows i32."""
+        formatted = base(value)
+        if _I32_MIN <= value <= _I32_MAX:
+            return formatted
+        return f"{formatted}{_rust_integer_type(value=value)}"
+
+    return _format
+
+
+@beartype
 def _unify_rust_types(types: Sequence[str]) -> str:
     """Return a single Rust type that covers *types*.
 
@@ -897,8 +922,10 @@ class Rust(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            _make_rust_integer_suffix_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
