@@ -14,6 +14,7 @@ To regenerate all golden files after changing output::
 
 import dataclasses
 import enum
+import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -107,6 +108,18 @@ _SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
 )
 
 
+@functools.cache
+def _default_spec(lang_cls: literalizer.LanguageCls) -> literalizer.Language:
+    """Return a memoized default-constructed instance of *lang_cls*.
+
+    Each ``lang_cls()`` call rebuilds ``@beartype``-wrapped closures
+    inside the formatter factories; sharing one default-constructed
+    instance per class cuts thousands of redundant builds during test
+    collection.
+    """
+    return lang_cls()
+
+
 @dataclasses.dataclass
 class _VariantCase:
     """A format-variant golden-file test case."""
@@ -138,7 +151,7 @@ def _build_non_default_variants(
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
         lang_name = lang_cls.__name__
-        spec = lang_cls()
+        spec = _default_spec(lang_cls)
         default_format = get_default(spec)
         for fmt in get_formats(spec):
             if fmt is default_format:
@@ -343,7 +356,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
         lang_name = lang_cls.__name__
-        spec = lang_cls()
+        spec = _default_spec(lang_cls)
         default_line_ending = spec.line_ending
         default_declaration_style = spec.declaration_style
         non_default_line_endings = [
@@ -385,13 +398,16 @@ def _build_sequence_decl_variants() -> Iterable[_Variant]:
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
         lang_name = lang_cls.__name__
-        spec = lang_cls()
+        spec = _default_spec(lang_cls)
         default_sequence_format = spec.sequence_format
         default_declaration_style = spec.declaration_style
         non_default_sequence_formats = [
             sequence_format
             for sequence_format in spec.sequence_formats
-            if sequence_format is not default_sequence_format
+            # default is typed as the SequenceFormat protocol; iterating
+            # sequence_formats yields plain Enum, so pyright misses the
+            # overlap.
+            if sequence_format is not default_sequence_format  # pyright: ignore[reportUnnecessaryComparison]
         ]
         non_default_declaration_styles = [
             declaration_style
@@ -660,7 +676,7 @@ def _discover_combined_cases() -> list[_CombinedCase]:
                 and not lang_cls.supports_non_printable_ascii_dict_keys
             ):
                 continue
-            spec = lang_cls()
+            spec = _default_spec(lang_cls)
             redef_styles = _find_redefinition_styles(spec=spec)
             for style in redef_styles:
                 if style is redef_styles[0]:
@@ -946,7 +962,7 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
     ]
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
-        spec = lang_cls()
+        spec = _default_spec(lang_cls)
         default_th = spec.variable_type_hints
         lang_name = lang_cls.__name__
         for th_fmt in spec.variable_type_hints_formats:
@@ -1289,7 +1305,7 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
     cases: list[_LineEndingCombinedCase] = []
     for lang_cls in _SORTED_LANGUAGES:
         lang_name = lang_cls.__name__
-        spec = lang_cls()
+        spec = _default_spec(lang_cls)
         if not _find_redefinition_styles(spec=spec):
             continue
         default_line_ending = spec.line_ending
