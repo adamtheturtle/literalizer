@@ -33,6 +33,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I32_MAX,
+    I32_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -72,6 +74,14 @@ if TYPE_CHECKING:
 
 
 _U64_MAX = 2**64 - 1
+
+
+@beartype
+def _format_rust_i64_literal(value: int) -> str:
+    """Format a value that exceeds ``i32`` but fits ``i64`` as an
+    ``i64``-suffixed Rust literal.
+    """
+    return f"{value}i64"
 
 
 @beartype
@@ -622,11 +632,18 @@ class Rust(metaclass=LanguageCls):
 
         self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
+        _base_int_formatter = integer_format.get_formatter(
+            numeric_separator=numeric_separator,
+        )
+        _i64_suffixed_int_formatter = make_overflow_fallback_formatter(
+            base=_base_int_formatter,
+            fallback=_format_rust_i64_literal,
+            min_value=I32_MIN,
+            max_value=I32_MAX,
+        )
         self.format_integer: Callable[[int], str] = (
             make_overflow_fallback_formatter(
-                base=integer_format.get_formatter(
-                    numeric_separator=numeric_separator,
-                ),
+                base=_i64_suffixed_int_formatter,
                 fallback=_format_rust_wide_int_literal,
             )
         )

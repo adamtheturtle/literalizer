@@ -29,6 +29,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I32_MAX,
+    I32_MIN,
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
 )
@@ -547,6 +549,8 @@ class Fortran(metaclass=LanguageCls):
                 fallback=raise_for_unrepresentable_int(
                     language_name="Fortran",
                 ),
+                min_value=I32_MIN,
+                max_value=I32_MAX,
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = format_entry

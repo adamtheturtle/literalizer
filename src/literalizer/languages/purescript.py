@@ -32,6 +32,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I32_MAX,
+    I32_MIN,
     format_integer_hex,
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
@@ -673,6 +675,8 @@ class PureScript(metaclass=LanguageCls):
                     fallback=raise_for_unrepresentable_int(
                         language_name="PureScript",
                     ),
+                    min_value=I32_MIN,
+                    max_value=I32_MAX,
                 )
             )
             self.format_float: Callable[[float], str] = float_format
@@ -697,6 +701,8 @@ class PureScript(metaclass=LanguageCls):
                 fallback=raise_for_unrepresentable_int(
                     language_name="PureScript",
                 ),
+                min_value=I32_MIN,
+                max_value=I32_MAX,
             )
 
             _pos_inf = f"{constructor_prefix}Float (1.0 / 0.0)"
