@@ -117,7 +117,8 @@ def _default_spec(lang_cls: literalizer.LanguageCls) -> literalizer.Language:
     instance per class cuts thousands of redundant builds during test
     collection.
     """
-    return lang_cls()
+    instance: literalizer.Language = lang_cls()
+    return instance
 
 
 @dataclasses.dataclass
@@ -405,9 +406,9 @@ def _build_sequence_decl_variants() -> Iterable[_Variant]:
             sequence_format
             for sequence_format in spec.sequence_formats
             # default is typed as the SequenceFormat protocol; iterating
-            # sequence_formats yields plain Enum, so pyright misses the
-            # overlap.
-            if sequence_format is not default_sequence_format  # pyright: ignore[reportUnnecessaryComparison]
+            # sequence_formats yields plain Enum, so type checkers miss
+            # the overlap.
+            if sequence_format is not default_sequence_format  # type: ignore[comparison-overlap]  # pyright: ignore[reportUnnecessaryComparison]
         ]
         non_default_declaration_styles = [
             declaration_style
