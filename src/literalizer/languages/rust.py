@@ -161,8 +161,8 @@ def _rust_type_annotation(
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
-    set_type_name: str,
-    dict_type_name: str,
+    set_format_type_annotation: Callable[[str], str],
+    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
@@ -175,8 +175,8 @@ def _rust_type_annotation(
         datetime_type=datetime_type,
         sequence_format_type_annotation=sequence_format_type_annotation,
         sequence_supports_heterogeneity=sequence_supports_heterogeneity,
-        set_type_name=set_type_name,
-        dict_type_name=dict_type_name,
+        set_format_type_annotation=set_format_type_annotation,
+        dict_format_type_annotation=dict_format_type_annotation,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
         default_dict_key_type=default_dict_key_type,
@@ -191,14 +191,14 @@ def _rust_type_annotation(
             else:
                 value_type = default_dict_value_type
                 key_type = default_dict_key_type
-            return f"{dict_type_name}<{key_type}, {value_type}>"
+            return dict_format_type_annotation(key_type, value_type)
         case set():
             element_type = _rust_homogeneous_element_type(
                 elements=list(data),
                 infer=recurse,
                 default_type=default_set_element_type,
             )
-            return f"{set_type_name}<{element_type}>"
+            return set_format_type_annotation(element_type)
         case list():
             if sequence_supports_heterogeneity:
                 element_types = [recurse(e) for e in data]
@@ -231,8 +231,8 @@ def _format_typed_declaration(
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
-    set_type_name: str,
-    dict_type_name: str,
+    set_format_type_annotation: Callable[[str], str],
+    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
@@ -247,8 +247,8 @@ def _format_typed_declaration(
         datetime_type=datetime_type,
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
-        set_type_name=set_type_name,
-        dict_type_name=dict_type_name,
+        set_format_type_annotation=set_format_type_annotation,
+        dict_format_type_annotation=dict_format_type_annotation,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
         default_dict_key_type=default_dict_key_type,
@@ -531,6 +531,13 @@ class Rust(metaclass=LanguageCls):
             """Create a set format config for the given type."""
             return self.value(default_type)
 
+        def format_type_annotation(self, element_type: str) -> str:
+            """Return the Rust type annotation for this set format."""
+            cls = type(self)
+            if self is cls.HASH_SET:
+                return f"HashSet<{element_type}>"
+            return f"BTreeSet<{element_type}>"
+
     class CommentFormats(enum.Enum):
         """Comment style options."""
 
@@ -570,8 +577,8 @@ class Rust(metaclass=LanguageCls):
             datetime_type: str,
             sequence_format_type_annotation: Callable[[str, int], str],
             sequence_supports_heterogeneity: bool,
-            set_type_name: str,
-            dict_type_name: str,
+            set_format_type_annotation: Callable[[str], str],
+            dict_format_type_annotation: Callable[[str, str], str],
             default_sequence_element_type: str,
             default_set_element_type: str,
             default_dict_key_type: str,
@@ -598,8 +605,8 @@ class Rust(metaclass=LanguageCls):
                 sequence_supports_heterogeneity=(
                     sequence_supports_heterogeneity
                 ),
-                set_type_name=set_type_name,
-                dict_type_name=dict_type_name,
+                set_format_type_annotation=set_format_type_annotation,
+                dict_format_type_annotation=dict_format_type_annotation,
                 default_sequence_element_type=(default_sequence_element_type),
                 default_set_element_type=default_set_element_type,
                 default_dict_key_type=default_dict_key_type,
@@ -650,6 +657,17 @@ class Rust(metaclass=LanguageCls):
                 default_type,
                 default_key_type=default_key_type,
             )
+
+        def format_type_annotation(
+            self,
+            key_type: str,
+            value_type: str,
+        ) -> str:
+            """Return the Rust type annotation for this dict format."""
+            cls = type(self)
+            if self is cls.HASH_MAP:
+                return f"HashMap<{key_type}, {value_type}>"
+            return f"BTreeMap<{key_type}, {value_type}>"
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -919,16 +937,6 @@ class Rust(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        _set_cls = type(set_format)
-        _set_type_names = {
-            _set_cls.HASH_SET: "HashSet",
-            _set_cls.BTREE_SET: "BTreeSet",
-        }
-        _dict_cls = type(dict_format)
-        _dict_type_names = {
-            _dict_cls.HASH_MAP: "HashMap",
-            _dict_cls.BTREE_MAP: "BTreeMap",
-        }
         self.format_variable_declaration: Callable[[str, str, Value], str] = (
             declaration_style.build_formatter(
                 date_type=(
@@ -947,8 +955,10 @@ class Rust(metaclass=LanguageCls):
                 sequence_supports_heterogeneity=(
                     sequence_format.supports_heterogeneity
                 ),
-                set_type_name=_set_type_names[set_format],
-                dict_type_name=_dict_type_names[dict_format],
+                set_format_type_annotation=(set_format.format_type_annotation),
+                dict_format_type_annotation=(
+                    dict_format.format_type_annotation
+                ),
                 default_sequence_element_type=(default_sequence_element_type),
                 default_set_element_type=default_set_element_type,
                 default_dict_key_type=default_dict_key_type,

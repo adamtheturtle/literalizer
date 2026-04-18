@@ -34,3 +34,6 @@ uv.lock
 # Editor
 .mypy_cache/
 .clj-kondo/.cache
+
+# macOS
+.DS_Store

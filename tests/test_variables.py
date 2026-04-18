@@ -627,6 +627,63 @@ def test_rust_const_dict_mixed_values() -> None:
     assert result.code == expected
 
 
+def test_rust_const_btree_set() -> None:
+    """Rust CONST with ``BTREE_SET`` uses ``BTreeSet`` type annotation."""
+    rust_btree_set = Rust(
+        date_format=Rust.date_formats.ISO,
+        datetime_format=Rust.datetime_formats.ISO,
+        bytes_format=Rust.bytes_formats.HEX,
+        sequence_format=Rust.sequence_formats.ARRAY,
+        set_format=Rust.set_formats.BTREE_SET,
+        declaration_style=Rust.declaration_styles.CONST,
+    )
+    result = literalize(
+        source="!!set\n? a\n? b\n",
+        input_format=InputFormat.YAML,
+        language=rust_btree_set,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: BTreeSet<&str> = BTreeSet::from([
+            "a",
+            "b",
+        ]);"""
+    )
+    assert result.code == expected
+
+
+def test_rust_const_btree_map() -> None:
+    """Rust CONST with ``BTREE_MAP`` uses ``BTreeMap`` type annotation."""
+    rust_btree_map = Rust(
+        date_format=Rust.date_formats.ISO,
+        datetime_format=Rust.datetime_formats.ISO,
+        bytes_format=Rust.bytes_formats.HEX,
+        sequence_format=Rust.sequence_formats.ARRAY,
+        dict_format=Rust.dict_formats.BTREE_MAP,
+        declaration_style=Rust.declaration_styles.CONST,
+    )
+    result = literalize(
+        source='{"a": "b"}',
+        input_format=InputFormat.JSON,
+        language=rust_btree_map,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        const my_var: BTreeMap<&str, &str> = BTreeMap::from([
+            ("a", "b"),
+        ]);"""
+    )
+    assert result.code == expected
+
+
 def test_rust_const_widened_int_array() -> None:
     """Rust CONST with mixed-size integers widens to the largest type."""
     result = literalize(
