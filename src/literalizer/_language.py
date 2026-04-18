@@ -196,15 +196,6 @@ class CallStyleConfig:
     keyword_separator: str | None = None
 
 
-class SequenceFormat(Protocol):
-    """Protocol for sequence format Enum members."""
-
-    @property
-    def supports_heterogeneity(self) -> bool:
-        """Whether this sequence format supports mixed-type elements."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-
 class FloatSpecialsMixin:
     """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 
@@ -309,6 +300,11 @@ class LanguageCls(type):
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
         raise NotImplementedError  # pragma: no cover
+
+    def __call__(cls, *args: object, **kwargs: object) -> "Language":
+        """Construct a language instance, typed as :class:`Language`."""
+        instance: Language = super().__call__(*args, **kwargs)
+        return instance
 
 
 @runtime_checkable
@@ -650,8 +646,12 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def sequence_format(self) -> SequenceFormat:
-        """The sequence format chosen for this language instance."""
+    def sequence_format(self) -> enum.Enum:
+        """The sequence format chosen for this language instance.
+
+        ``sequence_format_config`` exposes the format-specific
+        configuration (e.g. ``supports_heterogeneity``).
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property

@@ -150,13 +150,6 @@ class Mojo(metaclass=LanguageCls):
             """Create a sequence format config for the given type."""
             return self.value(default_type)
 
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self(default_type="String").supports_heterogeneity
-
     class SetFormats(enum.Enum):
         """Set type options for Mojo."""
 

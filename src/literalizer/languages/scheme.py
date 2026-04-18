@@ -122,13 +122,6 @@ class Scheme(metaclass=LanguageCls):
             declared_type=None,
         )
 
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
-
     class SetFormats(enum.Enum):
         """Set type options for Scheme."""
 
