@@ -43,7 +43,6 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
-    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     identity_call_target,
@@ -466,22 +465,12 @@ class Fortran(metaclass=LanguageCls):
         "  use, intrinsic :: ieee_arithmetic",
     )
     call_style_config: ClassVar[CallStyleConfig | None] = None
-    format_integer: ClassVar[Callable[[int], str]] = staticmethod(str)
-    data_dependent_preamble: ClassVar[Callable[[Value], tuple[str, ...]]] = (
-        staticmethod(no_data_preamble)
-    )
-    type_hint_collection_preamble_lines: ClassVar[
-        Callable[[frozenset[type]], tuple[str, ...]]
-    ] = staticmethod(no_type_hint_preamble)
-    format_call_stub: ClassVar[
-        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
-    ] = staticmethod(no_call_stub)
-    format_call_preamble_stub: ClassVar[
-        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
-    ] = staticmethod(no_call_stub)
-    format_call_target: ClassVar[Callable[[str], str]] = staticmethod(
-        identity_call_target
-    )
+    format_integer = staticmethod(str)
+    data_dependent_preamble = staticmethod(no_data_preamble)
+    type_hint_collection_preamble_lines = staticmethod(no_type_hint_preamble)
+    format_call_stub = staticmethod(no_call_stub)
+    format_call_preamble_stub = staticmethod(no_call_stub)
+    format_call_target = staticmethod(identity_call_target)
 
     @cached_property
     def _format_entry(self) -> Callable[[Value, str], str]:

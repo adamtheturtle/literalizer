@@ -49,7 +49,6 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
-    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     identity_call_target,
@@ -328,31 +327,17 @@ class Yaml(metaclass=LanguageCls):
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
     call_style_config: ClassVar[CallStyleConfig | None] = None
-    format_integer: ClassVar[Callable[[int], str]] = staticmethod(str)
-    format_sequence_entry: ClassVar[Callable[[Value, str], str]] = (
-        staticmethod(passthrough_sequence_entry)
+    format_integer = staticmethod(str)
+    format_sequence_entry = staticmethod(passthrough_sequence_entry)
+    format_set_entry = staticmethod(passthrough_set_entry)
+    format_variable_assignment = staticmethod(
+        variable_formatter(template="{name}: {value}")
     )
-    format_set_entry: ClassVar[Callable[[Value, str], str]] = staticmethod(
-        passthrough_set_entry
-    )
-    format_variable_assignment: ClassVar[Callable[[str, str, Value], str]] = (
-        staticmethod(variable_formatter(template="{name}: {value}"))
-    )
-    data_dependent_preamble: ClassVar[Callable[[Value], tuple[str, ...]]] = (
-        staticmethod(no_data_preamble)
-    )
-    type_hint_collection_preamble_lines: ClassVar[
-        Callable[[frozenset[type]], tuple[str, ...]]
-    ] = staticmethod(no_type_hint_preamble)
-    format_call_stub: ClassVar[
-        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
-    ] = staticmethod(no_call_stub)
-    format_call_preamble_stub: ClassVar[
-        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
-    ] = staticmethod(no_call_stub)
-    format_call_target: ClassVar[Callable[[str], str]] = staticmethod(
-        identity_call_target
-    )
+    data_dependent_preamble = staticmethod(no_data_preamble)
+    type_hint_collection_preamble_lines = staticmethod(no_type_hint_preamble)
+    format_call_stub = staticmethod(no_call_stub)
+    format_call_preamble_stub = staticmethod(no_call_stub)
+    format_call_target = staticmethod(identity_call_target)
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

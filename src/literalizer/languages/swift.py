@@ -658,33 +658,21 @@ class Swift(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    format_string: ClassVar[Callable[[str], str]] = staticmethod(
+    format_string = staticmethod(
         functools.partial(
             format_string_backslash_control,
             control_char_fmt="\\u{{{:x}}}",
         )
     )
-    format_set_entry: ClassVar[Callable[[Value, str], str]] = staticmethod(
-        passthrough_set_entry
+    format_set_entry = staticmethod(passthrough_set_entry)
+    format_variable_assignment = staticmethod(
+        variable_formatter(template="{name} = {value}")
     )
-    format_variable_assignment: ClassVar[Callable[[str, str, Value], str]] = (
-        staticmethod(variable_formatter(template="{name} = {value}"))
-    )
-    data_dependent_preamble: ClassVar[Callable[[Value], tuple[str, ...]]] = (
-        staticmethod(no_data_preamble)
-    )
-    type_hint_collection_preamble_lines: ClassVar[
-        Callable[[frozenset[type]], tuple[str, ...]]
-    ] = staticmethod(no_type_hint_preamble)
-    format_call_stub: ClassVar[
-        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
-    ] = staticmethod(_swift_call_stub)
-    format_call_preamble_stub: ClassVar[
-        Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
-    ] = staticmethod(no_call_stub)
-    format_call_target: ClassVar[Callable[[str], str]] = staticmethod(
-        identity_call_target
-    )
+    data_dependent_preamble = staticmethod(no_data_preamble)
+    type_hint_collection_preamble_lines = staticmethod(no_type_hint_preamble)
+    format_call_stub = staticmethod(_swift_call_stub)
+    format_call_preamble_stub = staticmethod(no_call_stub)
+    format_call_target = staticmethod(identity_call_target)
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     @cached_property

@@ -1069,18 +1069,10 @@ class Haskell(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    format_sequence_entry: ClassVar[Callable[[Value, str], str]] = (
-        staticmethod(passthrough_sequence_entry)
-    )
-    format_set_entry: ClassVar[Callable[[Value, str], str]] = staticmethod(
-        passthrough_set_entry
-    )
-    data_dependent_preamble: ClassVar[Callable[[Value], tuple[str, ...]]] = (
-        staticmethod(no_data_preamble)
-    )
-    type_hint_collection_preamble_lines: ClassVar[
-        Callable[[frozenset[type]], tuple[str, ...]]
-    ] = staticmethod(no_type_hint_preamble)
+    format_sequence_entry = staticmethod(passthrough_sequence_entry)
+    format_set_entry = staticmethod(passthrough_set_entry)
+    data_dependent_preamble = staticmethod(no_data_preamble)
+    type_hint_collection_preamble_lines = staticmethod(no_type_hint_preamble)
 
     @cached_property
     def null_literal(self) -> str:
