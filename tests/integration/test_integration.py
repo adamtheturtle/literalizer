@@ -33,7 +33,6 @@ from literalizer.languages import (
     FSharp,
     Gleam,
     Haskell,
-    Java,
     OCaml,
     PureScript,
 )
@@ -839,65 +838,6 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
-def _build_java_box_boolean_variant() -> Iterable[_Variant]:
-    """Build the Java variant that exercises ``_java_box('boolean')``.
-
-    Combining ``variable_type_hints=ALWAYS`` with ``sequence_format=LIST``
-    routes a homogeneous bool list through the boxed common-element-type
-    path so the inferred type is ``Boolean``.
-    """
-    return [
-        _Variant(
-            name="Java_box_boolean",
-            spec=Java(
-                variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
-                sequence_format=Java.sequence_formats.LIST,
-            ),
-            lang_cls=Java,
-        ),
-    ]
-
-
-@beartype
-def _build_java_box_double_variant() -> Iterable[_Variant]:
-    """Build the Java variant that exercises ``_java_box('double')``.
-
-    Same configuration as the ``Boolean`` variant but applied to a
-    homogeneous float list.
-    """
-    return [
-        _Variant(
-            name="Java_box_double",
-            spec=Java(
-                variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
-                sequence_format=Java.sequence_formats.LIST,
-            ),
-            lang_cls=Java,
-        ),
-    ]
-
-
-@beartype
-def _build_java_box_long_variant() -> Iterable[_Variant]:
-    """Build the Java variant that exercises ``_java_box('long')``.
-
-    ``numeric_literal_suffix=AUTO`` sets ``int_type`` to ``long`` so that
-    a homogeneous int list resolves to ``Long`` under the boxed path.
-    """
-    return [
-        _Variant(
-            name="Java_box_long",
-            spec=Java(
-                variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
-                sequence_format=Java.sequence_formats.LIST,
-                numeric_literal_suffix=Java.numeric_literal_suffixes.AUTO,
-            ),
-            lang_cls=Java,
-        ),
-    ]
-
-
-@beartype
 def _build_type_hints_cross_variants() -> list[_Variant]:
     """Build cross-product variants: each non-default type-hint format
     combined with each non-default value of another format axis.
@@ -942,6 +882,12 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
             lambda s: s.set_format,
             lambda s: s.set_formats,
             "set_format",
+        ),
+        (
+            "nls",
+            lambda s: s.numeric_literal_suffix,
+            lambda s: s.numeric_literal_suffixes,
+            "numeric_literal_suffix",
         ),
     ]
     variants: list[_Variant] = []
@@ -1212,9 +1158,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "scalar_datetime", ""),
         (type_hints_cross, "simple_dict", ""),
         (type_hints_cross, "int_set", ""),
-        (_build_java_box_boolean_variant(), "bool_list", ""),
-        (_build_java_box_double_variant(), "float_list", ""),
-        (_build_java_box_long_variant(), "int_list", ""),
+        (type_hints_cross, "bool_list", ""),
+        (type_hints_cross, "float_list", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
