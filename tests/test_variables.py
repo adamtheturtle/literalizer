@@ -7,7 +7,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    ExistingVariable,
     InputFormat,
     NewVariable,
     literalize,
@@ -26,19 +25,6 @@ PYTHON_ALWAYS_HINTS = Python(
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
 )
-
-
-def test_python_always_type_hints_assignment_no_hint() -> None:
-    """Python ALWAYS hints do not add type hints for assignments."""
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=ExistingVariable(name="my_var"),
-    )
-    assert result.code == "my_var = 42"
 
 
 def test_python_always_type_hints_set_with_colon_in_string() -> None:
@@ -61,30 +47,11 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
     assert result.code == expected
 
 
-def test_python_always_type_hints_nested_list_in_list() -> None:
-    """Nested collections get recursive type hints, not Any."""
-    result = literalize(
-        source='[true, "hi", [1, 2], null]',
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: tuple[bool | str | tuple[int, ...] | None, ...] = (
-            True,
-            "hi",
-            (1, 2),
-            None,
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_dict_with_list_values() -> None:
-    """Dict with list values infers recursive type hints."""
+def test_python_always_type_hints_dict_with_uniform_list_values() -> None:
+    """Dict whose values are all lists collapses to a single value type
+    (no union), distinct from the mixed-value path covered by the
+    ``dict_with_list_value`` golden.
+    """
     result = literalize(
         source='{"key": [1, 2, 3]}',
         input_format=InputFormat.JSON,
@@ -103,7 +70,11 @@ def test_python_always_type_hints_dict_with_list_values() -> None:
 
 
 def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
-    """Ordered dicts in a sequence merge value types into one hint."""
+    """Multiple OrderedDicts in a sequence merge value types into one
+    hint.  OrderedDict value-merging uses a separate code path from
+    plain dict value-merging, so the ``mixed_type_dicts_in_sequence``
+    golden does not cover it.
+    """
     yaml_input = textwrap.dedent(
         text="""\
         ---
@@ -141,7 +112,12 @@ RUST_CONST = Rust(
 
 
 def test_rust_const_bytes() -> None:
-    """Rust CONST with bytes uses ``&str`` type."""
+    """Rust CONST with bytes uses ``&str`` type.
+
+    The ``bytes()`` arm of ``_rust_scalar_type`` is only reachable via
+    a Rust CONST/STATIC declaration with bytes data; the ``binary``
+    integration case has only LET golden files.
+    """
     yaml_input = "!!binary |\n  SGVsbG8="
     result = literalize(
         source=yaml_input,
@@ -155,7 +131,12 @@ def test_rust_const_bytes() -> None:
 
 
 def test_rust_const_date() -> None:
-    """Rust CONST with ISO dates uses ``&str`` type."""
+    """Rust CONST with ISO dates uses ``&str`` type.
+
+    The ``datetime.date()`` arm of ``_rust_scalar_type`` is only
+    reachable via Rust CONST/STATIC + date data; the ``scalar_date``
+    integration case has only LET golden files.
+    """
     result = literalize(
         source="2024-01-15",
         input_format=InputFormat.YAML,
@@ -168,7 +149,12 @@ def test_rust_const_date() -> None:
 
 
 def test_rust_const_datetime() -> None:
-    """Rust CONST with ISO datetimes uses ``&str`` type."""
+    """Rust CONST with ISO datetimes uses ``&str`` type.
+
+    The ``datetime.datetime()`` arm of ``_rust_scalar_type`` is only
+    reachable via Rust CONST/STATIC + datetime data; the
+    ``scalar_datetime`` integration case has only LET golden files.
+    """
     result = literalize(
         source="2024-01-15T12:30:00",
         input_format=InputFormat.YAML,
