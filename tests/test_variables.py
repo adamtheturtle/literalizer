@@ -2,6 +2,7 @@
 converter.
 """
 
+import re
 import textwrap
 
 import pytest
@@ -432,8 +433,14 @@ def test_rust_vec_format_type_annotation() -> None:
 
 def test_rust_const_vec_raises() -> None:
     """Rust CONST with vector format raises."""
+    expected_msg = (
+        "Rust CONST requires a constant-expression initializer, "
+        "but the VEC sequence format produces vec![…] which is "
+        "not a constant expression. Use ARRAY or TUPLE instead."
+    )
     with pytest.raises(
-        expected_exception=IncompatibleFormatsError, match="VEC"
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
     ):
         Rust(
             declaration_style=Rust.declaration_styles.CONST,
@@ -443,8 +450,14 @@ def test_rust_const_vec_raises() -> None:
 
 def test_rust_static_vec_raises() -> None:
     """Rust STATIC with vector format raises."""
+    expected_msg = (
+        "Rust STATIC requires a constant-expression initializer, "
+        "but the VEC sequence format produces vec![…] which is "
+        "not a constant expression. Use ARRAY or TUPLE instead."
+    )
     with pytest.raises(
-        expected_exception=IncompatibleFormatsError, match="VEC"
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
     ):
         Rust(
             declaration_style=Rust.declaration_styles.STATIC,
