@@ -111,6 +111,64 @@ RUST_CONST = Rust(
 )
 
 
+def test_rust_const_bytes() -> None:
+    """Rust CONST with bytes uses ``&str`` type.
+
+    The ``bytes()`` arm of ``_rust_scalar_type`` is only reachable via
+    a Rust CONST/STATIC declaration with bytes data; the ``binary``
+    integration case has only LET goldens.
+    """
+    yaml_input = "!!binary |\n  SGVsbG8="
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "48656c6c6f";'
+
+
+def test_rust_const_date() -> None:
+    """Rust CONST with ISO dates uses ``&str`` type.
+
+    The ``datetime.date()`` arm of ``_rust_scalar_type`` is only
+    reachable via Rust CONST/STATIC + date data; the ``scalar_date``
+    integration case has only LET goldens.
+    """
+    result = literalize(
+        source="2024-01-15",
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "2024-01-15";'
+
+
+def test_rust_const_datetime() -> None:
+    """Rust CONST with ISO datetimes uses ``&str`` type.
+
+    The ``datetime.datetime()`` arm of ``_rust_scalar_type`` is only
+    reachable via Rust CONST/STATIC + datetime data; the
+    ``scalar_datetime`` integration case has only LET goldens.
+    """
+    result = literalize(
+        source="2024-01-15T12:30:00",
+        input_format=InputFormat.YAML,
+        language=RUST_CONST,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
+
+
 def test_rust_const_single_element_tuple() -> None:
     """Rust CONST single-element tuple has trailing comma in type."""
     rust_tuple = Rust(
