@@ -1005,6 +1005,174 @@ def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
     assert_never(input_format)  # pragma: no cover
 
 
+@dataclasses.dataclass(frozen=True)
+class _PreFormState:
+    """Variable-form-independent results of
+    :func:`_literalize_pre_form`.
+    """
+
+    data: Value
+    coerced_data: Value
+    result: str
+    resolved: "_ResolvedComments | None"
+    line_prefix: str
+
+
+@beartype
+def _literalize_pre_form(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    pre_indent_level: int,
+    include_delimiters: bool,
+    error_on_coercion: bool,
+) -> _PreFormState:
+    """Run the variable-form-independent phase of :func:`literalize`.
+
+    Parses the source, formats the literal, resolves YAML/TOML
+    comments, and computes the coerced data used for preamble
+    calculation.
+    """
+    line_prefix = language.indent * pre_indent_level
+    parsed = _parse_input(source=source, input_format=input_format)
+    data = parsed.data
+
+    result = _literalize(
+        data=data,
+        language=language,
+        line_prefix=line_prefix,
+        include_delimiters=include_delimiters,
+        error_on_coercion=error_on_coercion,
+    )
+
+    resolved: _ResolvedComments | None = None
+    if input_format is InputFormat.YAML:
+        comment_cfg = language.comment_config
+        cp = comment_cfg.prefix
+        cs = comment_cfg.suffix
+        comment_line_prefix = (
+            line_prefix + language.indent
+            if include_delimiters
+            else line_prefix
+        )
+        resolved = _resolve_yaml_comments(
+            yaml_string=source,
+            data=parsed.raw_data,
+            base=result,
+            language=language,
+            comment_prefix=cp,
+            comment_suffix=cs,
+            comment_line_prefix=comment_line_prefix,
+            line_prefix=line_prefix,
+            include_delimiters=include_delimiters,
+        )
+        result = resolved.result
+    elif input_format is InputFormat.TOML:
+        comment_cfg = language.comment_config
+        comment_line_prefix = (
+            line_prefix + language.indent
+            if include_delimiters
+            else line_prefix
+        )
+        resolved = _resolve_toml_comments(
+            toml_doc=parsed.raw_data,
+            base=result,
+            language=language,
+            comment_prefix=comment_cfg.prefix,
+            comment_suffix=comment_cfg.suffix,
+            comment_line_prefix=comment_line_prefix,
+            include_delimiters=include_delimiters,
+        )
+        result = resolved.result
+
+    coerced_data = apply_coercions(
+        data=data,
+        spec=language,
+        error_on_coercion=False,
+    )
+
+    return _PreFormState(
+        data=data,
+        coerced_data=coerced_data,
+        result=result,
+        resolved=resolved,
+        line_prefix=line_prefix,
+    )
+
+
+@beartype
+def _literalize_apply_form(
+    *,
+    pre_form: _PreFormState,
+    language: Language,
+    variable_form: NewVariable | ExistingVariable | None,
+    wrap_in_file: bool,
+) -> LiteralizeResult:
+    """Apply variable-form-specific wrapping on top of a pre-form pass.
+
+    Performs variable wrapping, handles any pending collection
+    comments, computes the preamble, and optionally wraps the output
+    in a complete file.
+    """
+    result = _apply_variable_wrapper(
+        result=pre_form.result,
+        language=language,
+        data=pre_form.data,
+        variable_form=variable_form,
+    )
+
+    resolved = pre_form.resolved
+    if resolved is not None and resolved.pending is not None:
+        comment_cfg = language.comment_config
+        result = prepend_collection_comments(
+            collection_comments=resolved.pending,
+            base=result,
+            comment_prefix=comment_cfg.prefix,
+            comment_suffix=comment_cfg.suffix,
+            line_prefix=pre_form.line_prefix,
+        )
+
+    variable_name = variable_form.name if variable_form is not None else None
+    is_declaration = isinstance(variable_form, NewVariable)
+    computed = _compute_preamble(
+        data=pre_form.coerced_data,
+        language=language,
+        has_variable_declaration=variable_name is not None and is_declaration,
+    )
+    preamble = (
+        tuple(language.static_preamble)
+        + computed.header
+        + language.data_dependent_preamble(pre_form.coerced_data)
+    )
+
+    pre_decl = resolved.pending_scalar_before if resolved is not None else ()
+
+    if wrap_in_file:
+        content = result
+        if pre_decl:
+            content = "\n".join(pre_decl) + "\n" + content
+        wrapped = language.wrap_in_file(
+            content=content,
+            variable_name=variable_name or "",
+            body_preamble=computed.body,
+        )
+        if preamble:
+            wrapped = "\n".join(preamble) + "\n" + wrapped
+        return LiteralizeResult(
+            declaration_code=wrapped,
+            preamble=(),
+            body_preamble=(),
+        )
+
+    return LiteralizeResult(
+        declaration_code=result,
+        preamble=preamble,
+        body_preamble=computed.body,
+        pre_declaration_comments=pre_decl,
+    )
+
+
 @beartype
 def _literalize_both_forms(
     *,
@@ -1017,23 +1185,25 @@ def _literalize_both_forms(
     error_on_coercion: bool,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
-    declaration = literalize(
+    pre_form = _literalize_pre_form(
         source=source,
         input_format=input_format,
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
-        variable_form=NewVariable(name=variable_form.name),
         error_on_coercion=error_on_coercion,
     )
-    assignment = literalize(
-        source=source,
-        input_format=input_format,
+    declaration = _literalize_apply_form(
+        pre_form=pre_form,
         language=language,
-        pre_indent_level=pre_indent_level,
-        include_delimiters=include_delimiters,
+        variable_form=NewVariable(name=variable_form.name),
+        wrap_in_file=False,
+    )
+    assignment = _literalize_apply_form(
+        pre_form=pre_form,
+        language=language,
         variable_form=ExistingVariable(name=variable_form.name),
-        error_on_coercion=error_on_coercion,
+        wrap_in_file=False,
     )
     decl_preamble = (
         *declaration.body_preamble,
@@ -1120,7 +1290,6 @@ def literalize(
         ValueError: If *variable_form* is :class:`BothVariableForms`
             and *wrap_in_file* is ``False``.
     """
-    # --- BothVariableForms: two full literalize() calls ---
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:
             msg = "BothVariableForms requires wrap_in_file=True"
@@ -1135,122 +1304,19 @@ def literalize(
             error_on_coercion=error_on_coercion,
         )
 
-    line_prefix = language.indent * pre_indent_level
-    parsed = _parse_input(source=source, input_format=input_format)
-    data = parsed.data
-
-    # --- Format ---
-    result = _literalize(
-        data=data,
+    pre_form = _literalize_pre_form(
+        source=source,
+        input_format=input_format,
         language=language,
-        line_prefix=line_prefix,
+        pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         error_on_coercion=error_on_coercion,
     )
-
-    # --- Comment resolution ---
-    resolved: _ResolvedComments | None = None
-    if input_format is InputFormat.YAML:
-        comment_cfg = language.comment_config
-        cp = comment_cfg.prefix
-        cs = comment_cfg.suffix
-        comment_line_prefix = (
-            line_prefix + language.indent
-            if include_delimiters
-            else line_prefix
-        )
-        resolved = _resolve_yaml_comments(
-            yaml_string=source,
-            data=parsed.raw_data,
-            base=result,
-            language=language,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            line_prefix=line_prefix,
-            include_delimiters=include_delimiters,
-        )
-        result = resolved.result
-    elif input_format is InputFormat.TOML:
-        comment_cfg = language.comment_config
-        comment_line_prefix = (
-            line_prefix + language.indent
-            if include_delimiters
-            else line_prefix
-        )
-        resolved = _resolve_toml_comments(
-            toml_doc=parsed.raw_data,
-            base=result,
-            language=language,
-            comment_prefix=comment_cfg.prefix,
-            comment_suffix=comment_cfg.suffix,
-            comment_line_prefix=comment_line_prefix,
-            include_delimiters=include_delimiters,
-        )
-        result = resolved.result
-
-    # --- Variable wrapping ---
-    result = _apply_variable_wrapper(
-        result=result,
+    return _literalize_apply_form(
+        pre_form=pre_form,
         language=language,
-        data=data,
         variable_form=variable_form,
-    )
-
-    # --- Pending comments ---
-    if resolved is not None and resolved.pending is not None:
-        comment_cfg = language.comment_config
-        result = prepend_collection_comments(
-            collection_comments=resolved.pending,
-            base=result,
-            comment_prefix=comment_cfg.prefix,
-            comment_suffix=comment_cfg.suffix,
-            line_prefix=line_prefix,
-        )
-
-    # --- Preamble ---
-    variable_name = variable_form.name if variable_form is not None else None
-    is_declaration = isinstance(variable_form, NewVariable)
-    coerced_data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=False,
-    )
-    computed = _compute_preamble(
-        data=coerced_data,
-        language=language,
-        has_variable_declaration=variable_name is not None and is_declaration,
-    )
-    preamble = (
-        tuple(language.static_preamble)
-        + computed.header
-        + language.data_dependent_preamble(coerced_data)
-    )
-
-    pre_decl = resolved.pending_scalar_before if resolved is not None else ()
-
-    if wrap_in_file:
-        content = result
-        if pre_decl:
-            content = "\n".join(pre_decl) + "\n" + content
-        wrapped = language.wrap_in_file(
-            content=content,
-            variable_name=variable_name or "",
-            body_preamble=computed.body,
-        )
-        if preamble:
-            wrapped = "\n".join(preamble) + "\n" + wrapped
-        return LiteralizeResult(
-            declaration_code=wrapped,
-            preamble=(),
-            body_preamble=(),
-        )
-
-    return LiteralizeResult(
-        declaration_code=result,
-        preamble=preamble,
-        body_preamble=computed.body,
-        pre_declaration_comments=pre_decl,
+        wrap_in_file=wrap_in_file,
     )
 
 
