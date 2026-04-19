@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- Added ``DeclarationModifier`` enum with ``PUBLIC``, ``PRIVATE``,
+  ``PROTECTED``, ``STATIC``, ``FINAL``, ``READONLY``, and ``CONST`` members.
+- ``NewVariable`` and ``BothVariableForms`` now accept a ``modifiers``
+  keyword argument to control visibility and storage on generated
+  declarations.
+- Implemented modifier rendering for Java (``public``/``private``/
+  ``protected``/``static``/``final``), C# (same plus ``readonly`` and
+  ``const``), and C++ (``static``/``const``).  Other languages silently
+  ignore modifiers they cannot express.
+
 2026.04.18
 ----------
 

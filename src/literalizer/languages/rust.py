@@ -21,6 +21,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     tuple_dict_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import (
@@ -66,6 +67,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
 
@@ -225,6 +227,7 @@ def _format_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_type: str,
@@ -554,19 +557,27 @@ class Rust(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(template="let {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value};",
+            ),
             supports_redefinition=False,
         )
         LET_MUT = DeclarationStyleConfig(
-            formatter=variable_formatter(template="let mut {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let mut {name} = {value};",
+            ),
             supports_redefinition=True,
         )
         CONST = DeclarationStyleConfig(
-            formatter=variable_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};",
+            ),
             supports_redefinition=False,
         )
         STATIC = DeclarationStyleConfig(
-            formatter=variable_formatter(template="static {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="static {name} = {value};",
+            ),
             supports_redefinition=False,
         )
 
@@ -583,7 +594,7 @@ class Rust(metaclass=LanguageCls):
             default_set_element_type: str,
             default_dict_key_type: str,
             default_dict_value_type: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return a formatter for this declaration style.
 
             For ``LET`` and ``LET_MUT`` the formatter is used
@@ -937,33 +948,31 @@ class Rust(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.build_formatter(
-                date_type=(
-                    "&str"
-                    if date_format.value.type_produced is str
-                    else "NaiveDate"
-                ),
-                datetime_type=(
-                    "&str"
-                    if datetime_format.value.type_produced is str
-                    else "NaiveDateTime"
-                ),
-                sequence_format_type_annotation=(
-                    sequence_format.format_type_annotation
-                ),
-                sequence_supports_heterogeneity=(
-                    sequence_format.supports_heterogeneity
-                ),
-                set_format_type_annotation=(set_format.format_type_annotation),
-                dict_format_type_annotation=(
-                    dict_format.format_type_annotation
-                ),
-                default_sequence_element_type=(default_sequence_element_type),
-                default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-            )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.build_formatter(
+            date_type=(
+                "&str"
+                if date_format.value.type_produced is str
+                else "NaiveDate"
+            ),
+            datetime_type=(
+                "&str"
+                if datetime_format.value.type_produced is str
+                else "NaiveDateTime"
+            ),
+            sequence_format_type_annotation=(
+                sequence_format.format_type_annotation
+            ),
+            sequence_supports_heterogeneity=(
+                sequence_format.supports_heterogeneity
+            ),
+            set_format_type_annotation=(set_format.format_type_annotation),
+            dict_format_type_annotation=(dict_format.format_type_annotation),
+            default_sequence_element_type=(default_sequence_element_type),
+            default_set_element_type=default_set_element_type,
+            default_dict_key_type=default_dict_key_type,
+            default_dict_value_type=default_dict_value_type,
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")

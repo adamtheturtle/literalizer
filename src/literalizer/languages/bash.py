@@ -53,6 +53,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 if TYPE_CHECKING:
@@ -103,7 +104,12 @@ def _format_bash_dict_entry(
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a Bash ``declare`` variable declaration."""
     flag = (
         " -A"
@@ -422,9 +428,9 @@ class Bash(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.value.formatter
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name}={value}")
         )

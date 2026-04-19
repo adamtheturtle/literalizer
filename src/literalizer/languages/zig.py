@@ -60,6 +60,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 if TYPE_CHECKING:
@@ -108,14 +109,24 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_const_declaration(name: str, value: str, data: Value) -> str:
+def _format_const_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"const {name}: ZVal = {wrapped};"
 
 
 @beartype
-def _format_var_declaration(name: str, value: str, data: Value) -> str:
+def _format_var_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a Zig ``var`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"var {name}: ZVal = {wrapped};"
@@ -488,9 +499,9 @@ class Zig(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.value.formatter
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _format_variable_assignment
         )

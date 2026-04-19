@@ -38,6 +38,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
 )
 from literalizer._language import CallStyleKind, Language
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     JSON5ParseError,
@@ -131,6 +132,12 @@ class NewVariable:
     """Wrap output in a new variable declaration."""
 
     name: str
+    modifiers: frozenset[DeclarationModifier] = frozenset()
+    """Declaration modifiers to apply.  Each target language maps these
+    to its own syntax (e.g. :attr:`DeclarationModifier.FINAL` becomes
+    ``final`` in Java, ``readonly`` in C#, and is a no-op in Python).
+    Modifiers the target language cannot express are silently ignored.
+    """
 
 
 @dataclasses.dataclass(frozen=True)
@@ -148,6 +155,10 @@ class BothVariableForms:
     """
 
     name: str
+    modifiers: frozenset[DeclarationModifier] = frozenset()
+    """Declaration modifiers applied to the declaration half.  See
+    :attr:`NewVariable.modifiers`.
+    """
 
 
 VariableForm = NewVariable | ExistingVariable | BothVariableForms
@@ -924,12 +935,18 @@ def _apply_variable_wrapper(
     """
     if variable_form is None:
         return result
-    formatter = (
-        language.format_variable_declaration
-        if isinstance(variable_form, NewVariable)
-        else language.format_variable_assignment
+    if isinstance(variable_form, NewVariable):
+        return language.format_variable_declaration(
+            variable_form.name,
+            result,
+            data,
+            variable_form.modifiers,
+        )
+    return language.format_variable_assignment(
+        variable_form.name,
+        result,
+        data,
     )
-    return formatter(variable_form.name, result, data)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1018,7 +1035,10 @@ def _literalize_both_forms(
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
-        variable_form=NewVariable(name=variable_form.name),
+        variable_form=NewVariable(
+            name=variable_form.name,
+            modifiers=variable_form.modifiers,
+        ),
         error_on_coercion=error_on_coercion,
     )
     assignment = literalize(

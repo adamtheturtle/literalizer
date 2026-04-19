@@ -24,6 +24,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -60,6 +61,7 @@ from literalizer._language import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from literalizer._modifiers import DeclarationModifier
     from literalizer._types import Value
 
 
@@ -165,7 +167,9 @@ class Yaml(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{name}: {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name}: {value}",
+            ),
             supports_redefinition=False,
         )
 
@@ -390,9 +394,9 @@ class Yaml(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.value.formatter
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name}: {value}")
         )

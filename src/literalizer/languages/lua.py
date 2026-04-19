@@ -3,8 +3,12 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
+
+if TYPE_CHECKING:
+    from literalizer._modifiers import DeclarationModifier
 
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
@@ -20,6 +24,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -209,7 +214,9 @@ class Lua(metaclass=LanguageCls):
         """Declaration style options."""
 
         LOCAL = DeclarationStyleConfig(
-            formatter=variable_formatter(template="local {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="local {name} = {value}",
+            ),
             supports_redefinition=True,
         )
 
@@ -444,9 +451,9 @@ class Lua(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.value.formatter
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
         )

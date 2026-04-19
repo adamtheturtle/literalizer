@@ -27,6 +27,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import set_format_factory
@@ -62,6 +63,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -139,6 +141,7 @@ def _format_dart_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_hint: str,
@@ -316,15 +319,21 @@ class Dart(metaclass=LanguageCls):
         """Declaration style options."""
 
         FINAL = DeclarationStyleConfig(
-            formatter=variable_formatter(template="final {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="final {name} = {value};",
+            ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=False,
         )
         CONST = DeclarationStyleConfig(
-            formatter=variable_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};",
+            ),
             supports_redefinition=False,
         )
 
@@ -414,7 +423,9 @@ class Dart(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
@@ -422,7 +433,7 @@ class Dart(metaclass=LanguageCls):
             default_dict_key_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -618,25 +629,25 @@ class Dart(metaclass=LanguageCls):
         # precede the type with a space.
         _dart_kw = declaration_style.name.lower()
         _dart_keyword = "" if _dart_kw == "var" else f"{_dart_kw} "
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_type_hints.formatter(
-                auto_formatter=declaration_style.value.formatter,
-                keyword=_dart_keyword,
-                date_hint=(
-                    "String"
-                    if date_format.value.type_produced is str
-                    else "DateTime"
-                ),
-                datetime_hint=(
-                    "String"
-                    if datetime_format.value.type_produced is str
-                    else "DateTime"
-                ),
-                default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-                sequence_is_tuple=(sequence_format.name == "TUPLE"),
-            )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = variable_type_hints.formatter(
+            auto_formatter=declaration_style.value.formatter,
+            keyword=_dart_keyword,
+            date_hint=(
+                "String"
+                if date_format.value.type_produced is str
+                else "DateTime"
+            ),
+            datetime_hint=(
+                "String"
+                if datetime_format.value.type_produced is str
+                else "DateTime"
+            ),
+            default_set_element_type=default_set_element_type,
+            default_dict_key_type=default_dict_key_type,
+            default_dict_value_type=default_dict_value_type,
+            sequence_is_tuple=(sequence_format.name == "TUPLE"),
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")

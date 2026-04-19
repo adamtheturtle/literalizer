@@ -5,6 +5,7 @@ from collections.abc import Callable
 
 from beartype import beartype
 
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -28,8 +29,8 @@ def strip_key_quotes(key: str) -> str:
 
 @beartype
 def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
-    """Return a ``format_variable_declaration`` or
-    ``format_variable_assignment`` callable from a template string.
+    """Return a ``format_variable_assignment`` callable from a template
+    string.
 
     The *template* must contain ``{name}`` and ``{value}`` placeholders.
 
@@ -41,7 +42,68 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
 
     @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format a variable declaration or assignment."""
+        """Format a variable assignment."""
+        return template.format(name=name, value=value)
+
+    return _format
+
+
+@beartype
+def assignment_formatter_from_declaration(
+    formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+) -> Callable[[str, str, Value], str]:
+    """Return a 3-arg assignment formatter wrapping a declaration
+    formatter.
+
+    Modifiers are passed as an empty :class:`frozenset` — assignments
+    never carry modifiers.  Use this when a language's declaration and
+    assignment syntax are identical and can share a single
+    implementation.
+    """
+
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format a variable assignment by delegating to the declaration
+        formatter.
+        """
+        return formatter(name, value, data, frozenset())
+
+    return _format
+
+
+@beartype
+def variable_declaration_formatter(
+    *,
+    template: str,
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    """Return a ``format_variable_declaration`` callable from a template
+    string.
+
+    The *template* must contain ``{name}`` and ``{value}`` placeholders.
+    The resulting callable accepts (but silently ignores) the
+    :class:`~literalizer.DeclarationModifier` set — use this for
+    languages that cannot express the standard visibility/storage
+    modifiers.  Languages with concrete modifier syntax should provide
+    their own formatter rather than calling this helper.
+
+    Example::
+
+        decl = variable_declaration_formatter(
+            template="const {name} = {value};",
+        )
+        decl("x", "42", None, frozenset())  # => "const x = 42;"
+    """
+
+    @beartype
+    def _format(
+        name: str,
+        value: str,
+        _data: Value,
+        _modifiers: frozenset[DeclarationModifier],
+    ) -> str:
+        """Format a variable declaration, ignoring modifiers."""
         return template.format(name=name, value=value)
 
     return _format

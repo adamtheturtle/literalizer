@@ -25,6 +25,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -65,6 +66,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -203,11 +205,38 @@ class JavaScript(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
         NONE = "none"
 
-        def wrap_formatter(
+        def wrap_declaration_formatter(
+            self,
+            formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+            """Wrap a declaration formatter to match this line ending
+            style.
+            """
+            if self.value != "none":
+                return formatter
+
+            def without_semicolon(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[DeclarationModifier],
+            ) -> str:
+                """Format without a trailing semicolon."""
+                return formatter(name, value, data, modifiers).removesuffix(
+                    ";"
+                )
+
+            return without_semicolon
+
+        def wrap_assignment_formatter(
             self,
             formatter: Callable[[str, str, Value], str],
         ) -> Callable[[str, str, Value], str]:
-            """Wrap a formatter to match this line ending style."""
+            """Wrap an assignment formatter to match this line ending
+            style.
+            """
             if self.value != "none":
                 return formatter
 
@@ -221,11 +250,15 @@ class JavaScript(metaclass=LanguageCls):
         """Declaration style options."""
 
         CONST = DeclarationStyleConfig(
-            formatter=variable_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};",
+            ),
             supports_redefinition=False,
         )
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(template="let {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -504,14 +537,14 @@ class JavaScript(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        _base_decl: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(formatter=_base_decl)
-        )
+        _base_decl: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.value.formatter
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = line_ending.wrap_declaration_formatter(formatter=_base_decl)
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(
+            line_ending.wrap_assignment_formatter(
                 formatter=variable_formatter(template="{name} = {value};"),
             )
         )

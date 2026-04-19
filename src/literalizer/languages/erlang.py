@@ -17,6 +17,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     braced_dict_entry,
     dict_entry_with_separator,
     format_bytes_base64,
@@ -54,6 +55,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 if TYPE_CHECKING:
@@ -68,7 +70,12 @@ def _format_bytes(value: bytes) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format an Erlang variable declaration."""
     erlang_name = name[0].upper() + name[1:]
     return f"{erlang_name} = {value}"
@@ -451,11 +458,13 @@ class Erlang(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.value.formatter
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _format_variable_declaration
+            assignment_formatter_from_declaration(
+                formatter=_format_variable_declaration,
+            )
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()

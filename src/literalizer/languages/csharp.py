@@ -3,9 +3,9 @@
 import dataclasses
 import datetime
 import enum
+import functools
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -27,6 +27,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import (
@@ -72,9 +73,158 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+_CSHARP_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
+    DeclarationModifier.PUBLIC,
+    DeclarationModifier.PRIVATE,
+    DeclarationModifier.PROTECTED,
+    DeclarationModifier.STATIC,
+    DeclarationModifier.CONST,
+    DeclarationModifier.READONLY,
+)
+
+_CSHARP_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
+    DeclarationModifier.PUBLIC: "public",
+    DeclarationModifier.PRIVATE: "private",
+    DeclarationModifier.PROTECTED: "protected",
+    DeclarationModifier.STATIC: "static",
+    DeclarationModifier.CONST: "const",
+    DeclarationModifier.READONLY: "readonly",
+}
+
+
+@beartype
+def _csharp_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+    """Return the ``public static readonly `` prefix for a C#
+    declaration, including a trailing space when non-empty.
+    """
+    keywords = [
+        _CSHARP_MODIFIER_KEYWORDS[m]
+        for m in _CSHARP_MODIFIER_ORDER
+        if m in modifiers
+    ]
+    if not keywords:
+        return ""
+    return " ".join(keywords) + " "
+
+
+_CSHARP_SCALAR_TYPES: dict[type, str] = {
+    bool: "bool",
+    int: "int",
+    float: "double",
+    str: "string",
+    bytes: "string",
+}
+
+
+@beartype
+def _csharp_scalar_type(
+    value: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Return the C# type name for a scalar value."""
+    if isinstance(value, datetime.datetime):
+        return datetime_hint
+    if isinstance(value, datetime.date):
+        return date_hint
+    return _CSHARP_SCALAR_TYPES.get(type(value), "object")
+
+
+@beartype
+def _csharp_common_element_type(
+    items: list[Value],
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Return the common C# type for a list of elements."""
+    if not items:
+        return "object"
+    types = {
+        _csharp_type_hint(
+            data=item,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            dict_value_type=dict_value_type,
+        )
+        for item in items
+    }
+    if len(types) == 1:
+        return next(iter(types))
+    if types == {"int", "double"}:
+        return "double"
+    return "object"
+
+
+@beartype
+def _csharp_type_hint(
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Return the C# declared type for *data*."""
+    match data:
+        case dict():
+            val_type = _csharp_common_element_type(
+                items=list(data.values()),
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"Dictionary<string, {val_type}>"
+        case set():
+            elem = _csharp_common_element_type(
+                items=list(data),
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"HashSet<{elem}>"
+        case list():
+            elem = _csharp_common_element_type(
+                items=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"{elem}[]"
+        case _:
+            return _csharp_scalar_type(
+                value=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+
+
+@beartype
+def _format_csharp_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    modifiers: frozenset[DeclarationModifier],
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Format a C# variable declaration, applying modifiers when set."""
+    if not modifiers:
+        return f"var {name} = {value};"
+    prefix = _csharp_modifier_prefix(modifiers=modifiers)
+    hint = _csharp_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        dict_value_type=dict_value_type,
+    )
+    return f"{prefix}{hint} {name} = {value};"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -268,7 +418,9 @@ class CSharp(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -591,8 +743,21 @@ class CSharp(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+        _date_hint = (
+            "string" if date_format.value.type_produced is str else "DateOnly"
+        )
+        _datetime_hint = (
+            "string"
+            if datetime_format.value.type_produced is str
+            else "DateTime"
+        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = functools.partial(
+            _format_csharp_declaration,
+            date_hint=_date_hint,
+            datetime_hint=_datetime_hint,
+            dict_value_type=default_dict_value_type,
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")

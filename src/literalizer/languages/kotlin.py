@@ -32,6 +32,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import set_format_factory
@@ -76,6 +77,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -264,6 +266,7 @@ def _format_kotlin_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_hint: str,
@@ -528,11 +531,15 @@ class Kotlin(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAL = DeclarationStyleConfig(
-            formatter=variable_formatter(template="val {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="val {name} = {value}",
+            ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value}",
+            ),
             supports_redefinition=True,
         )
 
@@ -644,7 +651,9 @@ class Kotlin(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
@@ -654,7 +663,7 @@ class Kotlin(metaclass=LanguageCls):
             dict_outer: str,
             set_outer: str,
             sequence_format_name: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -892,31 +901,31 @@ class Kotlin(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_type_hints.formatter(
-                auto_formatter=declaration_style.value.formatter,
-                keyword=declaration_style.name.lower(),
-                date_hint=(
-                    "String"
-                    if date_format.value.type_produced is str
-                    else "LocalDate"
-                ),
-                datetime_hint=(
-                    "String"
-                    if datetime_format.value.type_produced is str
-                    else "LocalDateTime"
-                ),
-                default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-                dict_outer=(
-                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
-                ),
-                set_outer=(
-                    "MutableSet" if set_format.name == "SORTED_SET" else "Set"
-                ),
-                sequence_format_name=sequence_format.name,
-            )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = variable_type_hints.formatter(
+            auto_formatter=declaration_style.value.formatter,
+            keyword=declaration_style.name.lower(),
+            date_hint=(
+                "String"
+                if date_format.value.type_produced is str
+                else "LocalDate"
+            ),
+            datetime_hint=(
+                "String"
+                if datetime_format.value.type_produced is str
+                else "LocalDateTime"
+            ),
+            default_set_element_type=default_set_element_type,
+            default_dict_key_type=default_dict_key_type,
+            default_dict_value_type=default_dict_value_type,
+            dict_outer=(
+                "HashMap" if dict_format.name == "HASH_MAP" else "Map"
+            ),
+            set_outer=(
+                "MutableSet" if set_format.name == "SORTED_SET" else "Set"
+            ),
+            sequence_format_name=sequence_format.name,
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")

@@ -23,11 +23,12 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
-    variable_formatter,
+    variable_declaration_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -61,6 +62,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 if TYPE_CHECKING:
@@ -157,11 +159,16 @@ def _build_sml_declaration(
     sequence_declared_type: str,
     scalar_declared_type: str,
     entry_formatter: Callable[[Value, str], str],
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Build an SML variable declaration formatter."""
 
     @beartype
-    def _format(name: str, value: str, data: Value) -> str:
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[DeclarationModifier],
+    ) -> str:
         """Format a variable declaration."""
         decl_type = (
             sequence_declared_type
@@ -309,7 +316,7 @@ class Sml(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAL = DeclarationStyleConfig(
-            formatter=variable_formatter(
+            formatter=variable_declaration_formatter(
                 template="val {name} = {value}",
             ),
             supports_redefinition=False,
@@ -598,11 +605,11 @@ class Sml(metaclass=LanguageCls):
             scalar_declared_type=type_name,
             entry_formatter=_entry_formatter,
         )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _sml_decl
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = _sml_decl
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _sml_decl
+            assignment_formatter_from_declaration(formatter=_sml_decl)
         )
         self.element_separator = ", "
         self.format_sequence_entry: Callable[[Value, str], str] = (

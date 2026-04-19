@@ -29,13 +29,17 @@ from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
+    Cpp,
+    CSharp,
     Elm,
     Fortran,
     FSharp,
     Gleam,
     Haskell,
+    Java,
     OCaml,
     PureScript,
+    Python,
 )
 
 
@@ -952,6 +956,71 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
     return variants
 
 
+@beartype
+def _build_modifier_variant_cases() -> list[_VariantCase]:
+    """Build variants exercising :class:`DeclarationModifier` rendering.
+
+    Covers each language whose declaration syntax maps the issue-1249
+    modifier vocabulary (Java, C#, C++), plus Python which must silently
+    ignore every modifier.  Each modifier combination is run against a
+    scalar input and a dict input so that typed-declaration inference is
+    also exercised.
+    """
+    m = literalizer.DeclarationModifier
+    combos: list[
+        tuple[
+            literalizer.LanguageCls,
+            str,
+            frozenset[literalizer.DeclarationModifier],
+        ]
+    ] = [
+        (Java, "final", frozenset({m.FINAL})),
+        (
+            Java,
+            "public_static_final",
+            frozenset({m.PUBLIC, m.STATIC, m.FINAL}),
+        ),
+        (Java, "private", frozenset({m.PRIVATE})),
+        (Java, "protected", frozenset({m.PROTECTED})),
+        (Java, "static", frozenset({m.STATIC})),
+        (CSharp, "readonly", frozenset({m.READONLY})),
+        (
+            CSharp,
+            "public_static_readonly",
+            frozenset({m.PUBLIC, m.STATIC, m.READONLY}),
+        ),
+        (CSharp, "const", frozenset({m.CONST})),
+        (Cpp, "const", frozenset({m.CONST})),
+        (Cpp, "static_const", frozenset({m.STATIC, m.CONST})),
+        (Cpp, "static", frozenset({m.STATIC})),
+        # Python must treat every modifier as a silent no-op.
+        (Python, "const_noop", frozenset({m.CONST})),
+        (Python, "public_final_noop", frozenset({m.PUBLIC, m.FINAL})),
+    ]
+
+    cases: list[_VariantCase] = []
+    case_dirs = ("scalar_int", "simple_dict")
+    for lang_cls, mod_name, modifiers in combos:
+        variant = _Variant(
+            name=f"{lang_cls.__name__}_modifiers_{mod_name}",
+            spec=_spec(lang_cls=lang_cls),
+            lang_cls=lang_cls,
+        )
+        cases.extend(
+            _VariantCase(
+                variant_name=variant.name,
+                variant=variant,
+                case_dir_name=case_dir_name,
+                variable_form=literalizer.NewVariable(
+                    name="my_data",
+                    modifiers=modifiers,
+                ),
+            )
+            for case_dir_name in case_dirs
+        )
+    return cases
+
+
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     nv = _build_non_default_variants
@@ -1243,6 +1312,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 and "dict" in case_dir_name
             )
         )
+    cases.extend(_build_modifier_variant_cases())
     return cases
 
 

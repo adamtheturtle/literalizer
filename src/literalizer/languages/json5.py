@@ -23,6 +23,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     strip_key_quotes,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -59,6 +60,8 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from literalizer._modifiers import DeclarationModifier
 
 
 @beartype
@@ -182,7 +185,9 @@ class Json5(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{value}"),
+            formatter=variable_declaration_formatter(
+                template="{value}",
+            ),
             supports_redefinition=False,
         )
 
@@ -401,9 +406,9 @@ class Json5(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = True
         self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = declaration_style.value.formatter
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{value}")
         )

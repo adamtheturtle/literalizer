@@ -25,7 +25,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
-    variable_formatter,
+    variable_declaration_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -60,6 +60,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -104,18 +105,18 @@ _format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
 
 
 @beartype
-def _build_fsharp_declaration(
+def _build_fsharp_assignment(
     *,
     template: str,
     sequence_declared_type: str,
     scalar_declared_type: str,
     entry_formatter: Callable[[Value, str], str],
 ) -> Callable[[str, str, Value], str]:
-    """Build an F# variable declaration/assignment formatter."""
+    """Build an F# variable assignment formatter."""
 
     @beartype
     def _format(name: str, value: str, data: Value) -> str:
-        """Format a variable declaration or assignment."""
+        """Format a variable assignment."""
         decl_type = (
             sequence_declared_type
             if isinstance(data, list)
@@ -127,6 +128,35 @@ def _build_fsharp_declaration(
             declared_type=decl_type,
             wrapped=wrapped,
         )
+
+    return _format
+
+
+@beartype
+def _build_fsharp_declaration(
+    *,
+    template: str,
+    sequence_declared_type: str,
+    scalar_declared_type: str,
+    entry_formatter: Callable[[Value, str], str],
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    """Build an F# variable declaration formatter."""
+    assign = _build_fsharp_assignment(
+        template=template,
+        sequence_declared_type=sequence_declared_type,
+        scalar_declared_type=scalar_declared_type,
+        entry_formatter=entry_formatter,
+    )
+
+    @beartype
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[DeclarationModifier],
+    ) -> str:
+        """Format a variable declaration."""
+        return assign(name, value, data)
 
     return _format
 
@@ -306,13 +336,13 @@ class FSharp(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(
+            formatter=variable_declaration_formatter(
                 template="let {name} = {value}",
             ),
             supports_redefinition=False,
         )
         LET_MUTABLE = DeclarationStyleConfig(
-            formatter=variable_formatter(
+            formatter=variable_declaration_formatter(
                 template="let mutable {name} = {value}",
             ),
             supports_redefinition=True,
@@ -585,18 +615,16 @@ class FSharp(metaclass=LanguageCls):
             if declaration_style.value.supports_redefinition
             else "let"
         )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _build_fsharp_declaration(
-                template=(
-                    f"{_keyword} {{name}}: {{declared_type}} = {{wrapped}}"
-                ),
-                sequence_declared_type=_sequence_declared_type,
-                scalar_declared_type=type_name,
-                entry_formatter=_entry_formatter,
-            )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = _build_fsharp_declaration(
+            template=(f"{_keyword} {{name}}: {{declared_type}} = {{wrapped}}"),
+            sequence_declared_type=_sequence_declared_type,
+            scalar_declared_type=type_name,
+            entry_formatter=_entry_formatter,
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _build_fsharp_declaration(
+            _build_fsharp_assignment(
                 template="let {name}: {declared_type} = {wrapped}",
                 sequence_declared_type=_sequence_declared_type,
                 scalar_declared_type=type_name,

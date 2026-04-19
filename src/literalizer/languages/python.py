@@ -27,6 +27,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     tuple_dict_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -68,6 +69,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -129,6 +131,7 @@ def _format_variable_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     bytes_hint: str,
     date_hint: str,
@@ -150,6 +153,7 @@ def _format_variable_declaration(
             name=name,
             value=value,
             data=data,
+            _modifiers=_modifiers,
             bytes_hint=bytes_hint,
             date_hint=date_hint,
             datetime_hint=datetime_hint,
@@ -168,6 +172,7 @@ def _format_inline_type_hint_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     bytes_hint: str,
     date_hint: str,
@@ -648,7 +653,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             default_dict_key_type: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter for this hint
             style.
             """
@@ -690,7 +695,9 @@ class Python(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} = {value}",
+            ),
             supports_redefinition=True,
         )
 
@@ -966,22 +973,22 @@ class Python(metaclass=LanguageCls):
         datetime_hint = datetime_format.type_hint
         sequence_hint = sequence_format.type_hint
         set_hint = set_format.type_hint
-        decl_fmt: Callable[[str, str, Value], str] = (
-            variable_type_hints.formatter(
-                bytes_hint=bytes_hint,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                sequence_hint=sequence_hint,
-                set_hint=set_hint,
-                default_set_element_type=default_set_element_type,
-                default_sequence_element_type=default_sequence_element_type,
-                default_dict_value_type=default_dict_value_type,
-                default_dict_key_type=default_dict_key_type,
-            )
+        decl_fmt: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = variable_type_hints.formatter(
+            bytes_hint=bytes_hint,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            sequence_hint=sequence_hint,
+            set_hint=set_hint,
+            default_set_element_type=default_set_element_type,
+            default_sequence_element_type=default_sequence_element_type,
+            default_dict_value_type=default_dict_value_type,
+            default_dict_key_type=default_dict_key_type,
         )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            decl_fmt
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = decl_fmt
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value}")
         )

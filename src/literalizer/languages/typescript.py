@@ -29,6 +29,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -68,6 +69,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -164,6 +166,7 @@ def _format_ts_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_hint: str,
@@ -322,11 +325,38 @@ class TypeScript(metaclass=LanguageCls):
         SEMICOLON = "semicolon"
         NONE = "none"
 
-        def wrap_formatter(
+        def wrap_declaration_formatter(
+            self,
+            formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+            """Wrap a declaration formatter to match this line ending
+            style.
+            """
+            if self.value != "none":
+                return formatter
+
+            def without_semicolon(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[DeclarationModifier],
+            ) -> str:
+                """Format without a trailing semicolon."""
+                return formatter(name, value, data, modifiers).removesuffix(
+                    ";"
+                )
+
+            return without_semicolon
+
+        def wrap_assignment_formatter(
             self,
             formatter: Callable[[str, str, Value], str],
         ) -> Callable[[str, str, Value], str]:
-            """Wrap a formatter to match this line ending style."""
+            """Wrap an assignment formatter to match this line ending
+            style.
+            """
             if self.value != "none":
                 return formatter
 
@@ -340,15 +370,21 @@ class TypeScript(metaclass=LanguageCls):
         """Declaration style options."""
 
         CONST = DeclarationStyleConfig(
-            formatter=variable_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};",
+            ),
             supports_redefinition=False,
         )
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(template="let {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value};",
+            ),
             supports_redefinition=True,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -487,13 +523,15 @@ class TypeScript(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
             dict_hint_template: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -668,11 +706,11 @@ class TypeScript(metaclass=LanguageCls):
             ),
             sequence_is_tuple=(sequence_format.name == "TUPLE"),
         )
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(formatter=_base_decl)
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = line_ending.wrap_declaration_formatter(formatter=_base_decl)
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            line_ending.wrap_formatter(
+            line_ending.wrap_assignment_formatter(
                 formatter=variable_formatter(template="{name} = {value};"),
             )
         )

@@ -50,6 +50,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 if TYPE_CHECKING:
@@ -142,12 +143,15 @@ def _add_continuation(value: str) -> str:
 def _build_format_variable_declaration(
     *,
     format_entry: Callable[[Value, str], str],
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Build a variable declaration formatter."""
 
     @beartype
     def _format_variable_declaration(
-        name: str, value: str, data: Value
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[DeclarationModifier],
     ) -> str:
         """Format a variable declaration and initialisation."""
         fval = format_entry(data, value)
@@ -575,9 +579,9 @@ class Fortran(metaclass=LanguageCls):
         self.supports_collection_comments = True
         self.supports_scalar_before_comments = False
         self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _build_format_variable_declaration(format_entry=format_entry)
-        )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = _build_format_variable_declaration(format_entry=format_entry)
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             _build_format_variable_assignment(format_entry=format_entry)
         )

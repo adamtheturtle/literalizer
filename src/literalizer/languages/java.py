@@ -30,6 +30,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -68,6 +69,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
@@ -292,11 +294,44 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
             assert_never(unreachable)
 
 
+_JAVA_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
+    DeclarationModifier.PUBLIC,
+    DeclarationModifier.PRIVATE,
+    DeclarationModifier.PROTECTED,
+    DeclarationModifier.STATIC,
+    DeclarationModifier.FINAL,
+)
+
+_JAVA_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
+    DeclarationModifier.PUBLIC: "public",
+    DeclarationModifier.PRIVATE: "private",
+    DeclarationModifier.PROTECTED: "protected",
+    DeclarationModifier.STATIC: "static",
+    DeclarationModifier.FINAL: "final",
+}
+
+
+@beartype
+def _java_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+    """Return the ``public static final `` prefix for a Java
+    declaration, including a trailing space when non-empty.
+    """
+    keywords = [
+        _JAVA_MODIFIER_KEYWORDS[m]
+        for m in _JAVA_MODIFIER_ORDER
+        if m in modifiers
+    ]
+    if not keywords:
+        return ""
+    return " ".join(keywords) + " "
+
+
 @beartype
 def _format_java_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     int_type: str,
     date_hint: str,
@@ -315,26 +350,42 @@ def _format_java_typed_declaration(
         dict_outer=dict_outer,
         set_outer=set_outer,
     )
-    return f"{hint} {name} = {value};"
+    prefix = _java_modifier_prefix(modifiers=_modifiers)
+    return f"{prefix}{hint} {name} = {value};"
 
 
 @beartype
 def _object_nil_declaration(
-    base_formatter: Callable[[str, str, Value], str],
-) -> Callable[[str, str, Value], str]:
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+    *,
+    typed_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Wrap *base_formatter* so top-level ``null`` gets a typed form.
 
     Java cannot infer a type from ``null``, so ``var {name} = null;``
     fails to compile.  Emit ``Object {name} = null;`` when the value is
-    ``None``.
+    ``None``.  Modifiers force the typed form because Java class-field
+    syntax (e.g. ``public static final``) cannot be combined with
+    ``var``.
     """
 
     @beartype
-    def _format(name: str, value: str, data: Value) -> str:
-        """Format a Java variable declaration, guarding top-level ``null``."""
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[DeclarationModifier],
+    ) -> str:
+        """Format a Java variable declaration."""
+        if modifiers:
+            return typed_formatter(name, value, data, modifiers)
         if data is None:
             return f"Object {name} = {value};"
-        return base_formatter(name, value, data)
+        return base_formatter(name, value, data, modifiers)
 
     return _format
 
@@ -535,7 +586,9 @@ class Java(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -673,18 +726,18 @@ class Java(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             int_type: str,
             date_hint: str,
             datetime_hint: str,
             seq_is_array: bool,
             dict_outer: str,
             set_outer: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
-            if self is type(self).AUTO:
-                return _object_nil_declaration(base_formatter=auto_formatter)
-            return functools.partial(
+            typed = functools.partial(
                 _format_java_typed_declaration,
                 int_type=int_type,
                 date_hint=date_hint,
@@ -693,6 +746,12 @@ class Java(metaclass=LanguageCls):
                 dict_outer=dict_outer,
                 set_outer=set_outer,
             )
+            if self is type(self).AUTO:
+                return _object_nil_declaration(
+                    base_formatter=auto_formatter,
+                    typed_formatter=typed,
+                )
+            return typed
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -891,24 +950,22 @@ class Java(metaclass=LanguageCls):
             _java_dt_hint = "ZonedDateTime"
         else:
             _java_dt_hint = "Instant"
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_type_hints.formatter(
-                auto_formatter=declaration_style.value.formatter,
-                int_type="long" if suffix_is_auto else "int",
-                date_hint=(
-                    "String"
-                    if date_format.value.type_produced is str
-                    else "LocalDate"
-                ),
-                datetime_hint=_java_dt_hint,
-                seq_is_array=(sequence_format.name == "ARRAY"),
-                dict_outer=(
-                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
-                ),
-                set_outer=(
-                    "TreeSet" if set_format.name == "TREE_SET" else "Set"
-                ),
-            )
+        self.format_variable_declaration: Callable[
+            [str, str, Value, frozenset[DeclarationModifier]], str
+        ] = variable_type_hints.formatter(
+            auto_formatter=declaration_style.value.formatter,
+            int_type="long" if suffix_is_auto else "int",
+            date_hint=(
+                "String"
+                if date_format.value.type_produced is str
+                else "LocalDate"
+            ),
+            datetime_hint=_java_dt_hint,
+            seq_is_array=(sequence_format.name == "ARRAY"),
+            dict_outer=(
+                "HashMap" if dict_format.name == "HASH_MAP" else "Map"
+            ),
+            set_outer=("TreeSet" if set_format.name == "TREE_SET" else "Set"),
         )
         self.format_variable_assignment: Callable[[str, str, Value], str] = (
             variable_formatter(template="{name} = {value};")
