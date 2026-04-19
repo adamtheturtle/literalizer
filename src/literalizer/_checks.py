@@ -391,7 +391,8 @@ def _check_heterogeneous_set(*, data: Value) -> None:
 
 @beartype
 def check_data(*, data: Value, spec: Language) -> None:
-    """Run all representability checks for the given language spec.
+    """Check that *data* fits the language's collection-shape
+    constraints.
 
     Raises a subclass of
     :exc:`~literalizer.exceptions.HeterogeneousCollectionError` when the

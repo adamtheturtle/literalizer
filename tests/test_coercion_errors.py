@@ -1,4 +1,4 @@
-"""Parametrized representability-check tests across all input formats.
+"""Parametrized checks across all input formats.
 
 These tests verify that ``literalize`` raises precise exceptions when
 input data cannot be represented in the target language's collection
@@ -57,9 +57,8 @@ def _to_source(
     """Serialize *data* into a source string for *input_format*.
 
     For TOML, non-dict data is wrapped in ``{"_": data}`` because TOML
-    requires a top-level table.  The representability checks work
-    recursively, so the wrapping does not affect whether an error is
-    raised.
+    requires a top-level table.  The checks recurse through the data,
+    so the wrapping does not affect whether an error is raised.
     """
     match input_format:
         case InputFormat.JSON:
