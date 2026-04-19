@@ -48,7 +48,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -62,6 +61,29 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _apply_format_c_entry(
+    original: Value,
+    formatted: str,
+    *,
+    int_field: str,
+    float_field: str,
+    string_field: str,
+) -> str:
+    """Wrap a formatted entry in the appropriate union literal."""
+    match original:
+        case str() | bytes() | datetime.date():
+            return f"((CVal){{.{string_field} = {formatted}}})"
+        case bool():
+            return formatted
+        case int():
+            return f"((CVal){{.{int_field} = {formatted}}})"
+        case float():
+            return f"((CVal){{.{float_field} = {formatted}}})"
+        case _:
+            return formatted
+
+
+@beartype
 def _make_format_c_entry(
     *,
     int_field: str,
@@ -72,20 +94,15 @@ def _make_format_c_entry(
     ``CVal`` union literal using the given field names.
     """
 
-    @beartype
     def _format_c_entry(original: Value, formatted: str) -> str:
-        """Wrap a formatted entry in the appropriate union literal."""
-        match original:
-            case str() | bytes() | datetime.date():
-                return f"((CVal){{.{string_field} = {formatted}}})"
-            case bool():
-                return formatted
-            case int():
-                return f"((CVal){{.{int_field} = {formatted}}})"
-            case float():
-                return f"((CVal){{.{float_field} = {formatted}}})"
-            case _:
-                return formatted
+        """Delegate to module-level implementation."""
+        return _apply_format_c_entry(
+            original=original,
+            formatted=formatted,
+            int_field=int_field,
+            float_field=float_field,
+            string_field=string_field,
+        )
 
     return _format_c_entry
 
@@ -415,9 +432,11 @@ class C(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         suffix_is_auto = numeric_literal_suffix.name == "AUTO"
@@ -520,4 +539,3 @@ class C(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

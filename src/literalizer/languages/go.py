@@ -59,7 +59,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -157,6 +156,24 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
 
 
 @beartype
+def _apply_go_nil_safe_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    modifiers: frozenset[DeclarationModifier],
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+) -> str:
+    """Format a Go variable declaration, guarding top-level
+    ``nil``.
+    """
+    if data is None:
+        return f"var {name} any = {value}"
+    return base_formatter(name, value, data, modifiers)
+
+
+@beartype
 def _nil_safe_declaration(
     base_formatter: Callable[
         [str, str, Value, frozenset[DeclarationModifier]], str
@@ -169,19 +186,20 @@ def _nil_safe_declaration(
     Emit ``var {name} any = nil`` when the value is ``None``.
     """
 
-    @beartype
     def _format(
         name: str,
         value: str,
         data: Value,
         _modifiers: frozenset[DeclarationModifier],
     ) -> str:
-        """Format a Go variable declaration, guarding top-level
-        ``nil``.
-        """
-        if data is None:
-            return f"var {name} any = {value}"
-        return base_formatter(name, value, data, _modifiers)
+        """Delegate to module-level implementation."""
+        return _apply_go_nil_safe_declaration(
+            name=name,
+            value=value,
+            data=data,
+            modifiers=_modifiers,
+            base_formatter=base_formatter,
+        )
 
     return _format
 
@@ -588,9 +606,11 @@ class Go(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
 
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
@@ -676,4 +696,3 @@ class Go(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = _go_call_preamble_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

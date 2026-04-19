@@ -59,7 +59,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -429,9 +428,11 @@ class Perl(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
@@ -512,4 +513,3 @@ class Perl(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

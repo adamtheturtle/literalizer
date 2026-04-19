@@ -50,7 +50,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -62,6 +61,12 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
+@beartype
+def _apply_purescript_date_iso(value: datetime.date, prefix: str) -> str:
+    """Format a date as a PureScript string via ISO 8601."""
+    return f"{prefix}Str {format_date_iso(value=value)}"
+
+
 def _build_purescript_date_iso(
     prefix: str,
 ) -> Callable[[datetime.date], str]:
@@ -69,12 +74,19 @@ def _build_purescript_date_iso(
     constructors.
     """
 
-    @beartype
     def _format(value: datetime.date) -> str:
-        """Format a date as a PureScript string via ISO 8601."""
-        return f"{prefix}Str {format_date_iso(value=value)}"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_date_iso(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_purescript_datetime_iso(
+    value: datetime.datetime, prefix: str
+) -> str:
+    """Format a datetime as a PureScript string via ISO 8601."""
+    return f"{prefix}Str {format_datetime_iso(value=value)}"
 
 
 def _build_purescript_datetime_iso(
@@ -84,12 +96,17 @@ def _build_purescript_datetime_iso(
     constructors.
     """
 
-    @beartype
     def _format(value: datetime.datetime) -> str:
-        """Format a datetime as a PureScript string via ISO 8601."""
-        return f"{prefix}Str {format_datetime_iso(value=value)}"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_datetime_iso(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_purescript_bytes_hex(value: bytes, prefix: str) -> str:
+    """Format bytes as a PureScript hex string."""
+    return f"{prefix}Str {format_bytes_hex(value=value)}"
 
 
 def _build_purescript_bytes_hex(
@@ -99,12 +116,17 @@ def _build_purescript_bytes_hex(
     constructors.
     """
 
-    @beartype
     def _format(value: bytes) -> str:
-        """Format bytes as a PureScript hex string."""
-        return f"{prefix}Str {format_bytes_hex(value=value)}"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_bytes_hex(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_purescript_bytes_base64(value: bytes, prefix: str) -> str:
+    """Format bytes as a PureScript base64 string."""
+    return f"{prefix}Str {format_bytes_base64(value=value)}"
 
 
 def _build_purescript_bytes_base64(
@@ -114,10 +136,9 @@ def _build_purescript_bytes_base64(
     constructors.
     """
 
-    @beartype
     def _format(value: bytes) -> str:
-        """Format bytes as a PureScript base64 string."""
-        return f"{prefix}Str {format_bytes_base64(value=value)}"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_bytes_base64(value=value, prefix=prefix)
 
     return _format
 
@@ -153,6 +174,21 @@ def _purescript_has_large_int(val: Value) -> bool:
     return False
 
 
+@beartype
+def _apply_purescript_integer_formatter(
+    value: int, prefix: str, base: Callable[[int], str]
+) -> str:
+    """Format an integer with a constructor prefix."""
+    if _purescript_int_fits_in_int32(value=value):
+        formatted = base(value)
+        if value < 0:
+            return f"{prefix}Int ({formatted})"
+        return f"{prefix}Int {formatted}"
+    if value < 0:
+        return f"{prefix}Long (-{abs(value)}.0)"
+    return f"{prefix}Long {value}.0"
+
+
 def _build_purescript_integer_formatter(
     prefix: str,
     base: Callable[[int], str],
@@ -162,19 +198,24 @@ def _build_purescript_integer_formatter(
     *value* overflows PureScript's 32-bit ``Int``.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format an integer with a constructor prefix."""
-        if _purescript_int_fits_in_int32(value=value):
-            formatted = base(value)
-            if value < 0:
-                return f"{prefix}Int ({formatted})"
-            return f"{prefix}Int {formatted}"
-        if value < 0:
-            return f"{prefix}Long (-{abs(value)}.0)"
-        return f"{prefix}Long {value}.0"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_integer_formatter(
+            value=value, prefix=prefix, base=base
+        )
 
     return _format
+
+
+@beartype
+def _apply_purescript_float_wrapper(
+    value: float, prefix: str, inner: Callable[[float], str]
+) -> str:
+    """Format a float with a constructor prefix."""
+    formatted = inner(value)
+    if formatted.startswith("-"):
+        return f"{prefix}Float ({formatted})"
+    return f"{prefix}Float {formatted}"
 
 
 def _build_purescript_float_wrapper(
@@ -185,15 +226,23 @@ def _build_purescript_float_wrapper(
     constructors.
     """
 
-    @beartype
     def _format(value: float) -> str:
-        """Format a float with a constructor prefix."""
-        formatted = inner(value)
-        if formatted.startswith("-"):
-            return f"{prefix}Float ({formatted})"
-        return f"{prefix}Float {formatted}"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_float_wrapper(
+            value=value, prefix=prefix, inner=inner
+        )
 
     return _format
+
+
+@beartype
+def _apply_purescript_string(value: str, prefix: str) -> str:
+    """Format a string with a constructor prefix."""
+    escaped = format_string_backslash_control(
+        value=value,
+        control_char_fmt="\\x{:02x}",
+    )
+    return f"{prefix}Str {escaped}"
 
 
 def _build_purescript_str_formatter(
@@ -203,16 +252,27 @@ def _build_purescript_str_formatter(
     constructors.
     """
 
-    @beartype
     def _format(value: str) -> str:
-        """Format a string with a constructor prefix."""
-        escaped = format_string_backslash_control(
-            value=value,
-            control_char_fmt="\\x{:02x}",
-        )
-        return f"{prefix}Str {escaped}"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_string(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_purescript_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+    str_prefix: str,
+) -> str:
+    """Format a dict entry as a ``Tuple`` with a plain-string key.
+
+    Dict keys are ``String``, not ``Val``, so the ``{prefix}Str``
+    constructor must be stripped from the formatted key.
+    """
+    key = key.removeprefix(str_prefix)
+    return f"(Tuple {key} ({formatted_value}))"
 
 
 def _build_purescript_dict_entry(
@@ -223,15 +283,14 @@ def _build_purescript_dict_entry(
     """
     _str_prefix = f"{prefix}Str "
 
-    @beartype
     def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry as a ``Tuple`` with a plain-string key.
-
-        Dict keys are ``String``, not ``Val``, so the ``{prefix}Str``
-        constructor must be stripped from the formatted key.
-        """
-        key = key.removeprefix(_str_prefix)
-        return f"(Tuple {key} ({formatted_value}))"
+        """Delegate to module-level implementation."""
+        return _apply_purescript_dict_entry(
+            key=key,
+            _raw_value=_raw_value,
+            formatted_value=formatted_value,
+            str_prefix=_str_prefix,
+        )
 
     return _format
 
@@ -702,6 +761,8 @@ class PureScript(metaclass=LanguageCls):
             narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
+        self.date_format: enum.Enum = date_format
+        self.datetime_format: enum.Enum = datetime_format
         if constructor_prefix == "P":
             self.format_bytes: Callable[[bytes], str] = bytes_format
             self.format_date: Callable[[datetime.date], str] = date_format
@@ -838,4 +899,3 @@ class PureScript(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

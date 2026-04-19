@@ -44,7 +44,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -341,9 +340,11 @@ class CommonLisp(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = format_string_double_minimal
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = str
@@ -411,4 +412,3 @@ class CommonLisp(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

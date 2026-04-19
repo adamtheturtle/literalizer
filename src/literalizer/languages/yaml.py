@@ -50,7 +50,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -346,9 +345,11 @@ class Yaml(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = functools.partial(
             format_string_backslash_control,
             control_char_fmt="\\x{:02x}",
@@ -422,4 +423,3 @@ class Yaml(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

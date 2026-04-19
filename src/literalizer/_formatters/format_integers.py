@@ -127,6 +127,12 @@ def format_integer_tick(value: int) -> str:
 
 
 @beartype
+def _format_long_suffix(value: int, base: Callable[[int], str]) -> str:
+    """Format with ``L`` suffix."""
+    return f"{base(value)}L"
+
+
+@beartype
 def make_long_suffix_formatter(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -135,12 +141,26 @@ def make_long_suffix_formatter(
     Example: ``100`` → ``"100L"``, ``-10`` → ``"-10L"``.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format with ``L`` suffix."""
-        return f"{base(value)}L"
+        """Delegate to module-level implementation."""
+        return _format_long_suffix(value=value, base=base)
 
     return _format
+
+
+@beartype
+def _format_overflow_suffix(
+    value: int,
+    base: Callable[[int], str],
+    min_value: int,
+    max_value: int,
+    suffix: str,
+) -> str:
+    """Format, appending *suffix* when out of range."""
+    formatted = base(value)
+    if min_value <= value <= max_value:
+        return formatted
+    return f"{formatted}{suffix}"
 
 
 @beartype
@@ -162,15 +182,23 @@ def make_overflow_suffix_formatter(
     ``2147483648`` → ``"2147483648L"``.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format, appending *suffix* when out of range."""
-        formatted = base(value)
-        if min_value <= value <= max_value:
-            return formatted
-        return f"{formatted}{suffix}"
+        """Delegate to module-level implementation."""
+        return _format_overflow_suffix(
+            value=value,
+            base=base,
+            min_value=min_value,
+            max_value=max_value,
+            suffix=suffix,
+        )
 
     return _format
+
+
+@beartype
+def _format_int64_cast(value: int, base: Callable[[int], str]) -> str:
+    """Format with ``int64()`` cast."""
+    return f"int64({base(value)})"
 
 
 @beartype
@@ -182,9 +210,8 @@ def make_int64_cast_formatter(
     Example: ``100`` → ``"int64(100)"``.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format with ``int64()`` cast."""
-        return f"int64({base(value)})"
+        """Delegate to module-level implementation."""
+        return _format_int64_cast(value=value, base=base)
 
     return _format

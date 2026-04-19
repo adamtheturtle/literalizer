@@ -53,7 +53,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -65,6 +64,40 @@ from literalizer._types import Value
 
 
 @beartype
+def _apply_nim_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    *,
+    uses_typed_literal_for_scalars: bool,
+    keyword: str,
+    force_sequence: bool,
+) -> str:
+    """Format a declaration, using ``@`` for flat sequences of
+    simple scalars.
+    """
+    use_sequence = (
+        isinstance(_data, list)
+        and _data
+        and (
+            force_sequence
+            or (
+                uses_typed_literal_for_scalars
+                and all(
+                    isinstance(item, (str, int, float, bool, bytes))
+                    for item in _data
+                )
+            )
+        )
+    )
+    if use_sequence:
+        return f"{keyword} {name} = @{value}"
+    if force_sequence:
+        return f"{keyword} {name} = {value}"
+    return f"{keyword} {name} = %* {value}"
+
+
+@beartype
 def _make_variable_declaration(
     *,
     uses_typed_literal_for_scalars: bool,
@@ -73,37 +106,46 @@ def _make_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Create a Nim variable declaration formatter."""
 
-    @beartype
     def _format(
         name: str,
         value: str,
         _data: Value,
         _modifiers: frozenset[DeclarationModifier],
     ) -> str:
-        """Format a declaration, using ``@`` for flat sequences of
-        simple scalars.
-        """
-        use_sequence = (
-            isinstance(_data, list)
-            and _data
-            and (
-                force_sequence
-                or (
-                    uses_typed_literal_for_scalars
-                    and all(
-                        isinstance(item, (str, int, float, bool, bytes))
-                        for item in _data
-                    )
-                )
-            )
+        """Delegate to module-level implementation."""
+        return _apply_nim_variable_declaration(
+            name=name,
+            value=value,
+            _data=_data,
+            uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
+            keyword=keyword,
+            force_sequence=force_sequence,
         )
-        if use_sequence:
-            return f"{keyword} {name} = @{value}"
-        if force_sequence:
-            return f"{keyword} {name} = {value}"
-        return f"{keyword} {name} = %* {value}"
 
     return _format
+
+
+@beartype
+def _apply_nim_variable_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+    *,
+    uses_typed_literal_for_scalars: bool,
+) -> str:
+    """Format an assignment, using ``@`` for flat sequences of
+    simple scalars.
+    """
+    if (
+        uses_typed_literal_for_scalars
+        and isinstance(_data, list)
+        and _data
+        and all(
+            isinstance(item, (str, int, float, bool, bytes)) for item in _data
+        )
+    ):
+        return f"{name} = @{value}"
+    return f"{name} = %* {value}"
 
 
 @beartype
@@ -113,22 +155,14 @@ def _make_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable assignment formatter."""
 
-    @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format an assignment, using ``@`` for flat sequences of
-        simple scalars.
-        """
-        if (
-            uses_typed_literal_for_scalars
-            and isinstance(_data, list)
-            and _data
-            and all(
-                isinstance(item, (str, int, float, bool, bytes))
-                for item in _data
-            )
-        ):
-            return f"{name} = @{value}"
-        return f"{name} = %* {value}"
+        """Delegate to module-level implementation."""
+        return _apply_nim_variable_assignment(
+            name=name,
+            value=value,
+            _data=_data,
+            uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
+        )
 
     return _format
 
@@ -501,9 +535,11 @@ class Nim(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
@@ -595,4 +631,3 @@ class Nim(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

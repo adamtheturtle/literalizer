@@ -54,7 +54,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -64,44 +63,76 @@ from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
+@beartype
+def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
+    """Wrap a formatted entry in the appropriate F# ``Val``
+    constructor.
+    """
+    match original:
+        case bool():
+            return formatted
+        case int():
+            negative = formatted.startswith("-")
+            return (
+                f"{prefix}Int({formatted}L)"
+                if negative
+                else f"{prefix}Int {formatted}L"
+            )
+        case float():
+            negative = formatted.startswith("-")
+            return (
+                f"{prefix}Float({formatted})"
+                if negative
+                else f"{prefix}Float {formatted}"
+            )
+        case str() | bytes() | datetime.date():
+            if formatted.startswith("System."):
+                return f"{prefix}Str (string ({formatted}))"
+            return f"{prefix}Str {formatted}"
+        case _:
+            return formatted
+
+
 def _build_fsharp_entry_formatter(
     prefix: str,
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in F# constructors."""
 
-    @beartype
     def _format(original: Value, formatted: str) -> str:
-        """Wrap a formatted entry in the appropriate F# ``Val``
-        constructor.
-        """
-        match original:
-            case bool():
-                return formatted
-            case int():
-                negative = formatted.startswith("-")
-                return (
-                    f"{prefix}Int({formatted}L)"
-                    if negative
-                    else f"{prefix}Int {formatted}L"
-                )
-            case float():
-                negative = formatted.startswith("-")
-                return (
-                    f"{prefix}Float({formatted})"
-                    if negative
-                    else f"{prefix}Float {formatted}"
-                )
-            case str() | bytes() | datetime.date():
-                if formatted.startswith("System."):
-                    return f"{prefix}Str (string ({formatted}))"
-                return f"{prefix}Str {formatted}"
-            case _:
-                return formatted
+        """Delegate to module-level implementation."""
+        return _apply_fsharp_entry(
+            original=original, formatted=formatted, prefix=prefix
+        )
 
     return _format
 
 
 _format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
+
+
+@beartype
+def _apply_fsharp_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    template: str,
+    sequence_declared_type: str,
+    scalar_declared_type: str,
+    entry_formatter: Callable[[Value, str], str],
+) -> str:
+    """Format a variable declaration or assignment."""
+    decl_type = (
+        sequence_declared_type
+        if isinstance(data, list)
+        else scalar_declared_type
+    )
+    wrapped = entry_formatter(data, value)
+    return template.format(
+        name=name,
+        declared_type=decl_type,
+        wrapped=wrapped,
+    )
 
 
 @beartype
@@ -114,19 +145,16 @@ def _build_fsharp_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Build an F# variable assignment formatter."""
 
-    @beartype
     def _format(name: str, value: str, data: Value) -> str:
-        """Format a variable assignment."""
-        decl_type = (
-            sequence_declared_type
-            if isinstance(data, list)
-            else scalar_declared_type
-        )
-        wrapped = entry_formatter(data, value)
-        return template.format(
+        """Delegate to module-level implementation."""
+        return _apply_fsharp_declaration(
             name=name,
-            declared_type=decl_type,
-            wrapped=wrapped,
+            value=value,
+            data=data,
+            template=template,
+            sequence_declared_type=sequence_declared_type,
+            scalar_declared_type=scalar_declared_type,
+            entry_formatter=entry_formatter,
         )
 
     return _format
@@ -566,9 +594,11 @@ class FSharp(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = integer_format
@@ -687,4 +717,3 @@ class FSharp(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

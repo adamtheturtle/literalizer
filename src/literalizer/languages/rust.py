@@ -61,7 +61,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -90,6 +89,15 @@ def _rust_integer_type(value: int) -> str:
 
 
 @beartype
+def _apply_rust_integer_suffix(value: int, base: Callable[[int], str]) -> str:
+    """Format with a Rust type suffix when *value* overflows i32."""
+    formatted = base(value)
+    if _I32_MIN <= value <= _I32_MAX:
+        return formatted
+    return f"{formatted}{_rust_integer_type(value=value)}"
+
+
+@beartype
 def _make_rust_integer_suffix_formatter(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -103,13 +111,9 @@ def _make_rust_integer_suffix_formatter(
     narrowest type that holds *value*.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format with a Rust type suffix when *value* overflows i32."""
-        formatted = base(value)
-        if _I32_MIN <= value <= _I32_MAX:
-            return formatted
-        return f"{formatted}{_rust_integer_type(value=value)}"
+        """Delegate to module-level implementation."""
+        return _apply_rust_integer_suffix(value=value, base=base)
 
     return _format
 
@@ -926,9 +930,11 @@ class Rust(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
 
         self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
@@ -1032,4 +1038,3 @@ class Rust(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

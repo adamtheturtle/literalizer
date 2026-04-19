@@ -64,7 +64,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -356,6 +355,30 @@ def _format_java_typed_declaration(
 
 
 @beartype
+def _apply_java_object_nil_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    modifiers: frozenset[DeclarationModifier],
+    *,
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+    typed_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+) -> str:
+    """Format a Java variable declaration, guarding top-level ``null``
+    and switching to the typed form whenever modifiers are present.
+    """
+    if modifiers:
+        return typed_formatter(name, value, data, modifiers)
+    if data is None:
+        return f"Object {name} = {value};"
+    return base_formatter(name, value, data, modifiers)
+
+
+@beartype
 def _object_nil_declaration(
     base_formatter: Callable[
         [str, str, Value, frozenset[DeclarationModifier]], str
@@ -374,19 +397,21 @@ def _object_nil_declaration(
     ``var``.
     """
 
-    @beartype
     def _format(
         name: str,
         value: str,
         data: Value,
         modifiers: frozenset[DeclarationModifier],
     ) -> str:
-        """Format a Java variable declaration."""
-        if modifiers:
-            return typed_formatter(name, value, data, modifiers)
-        if data is None:
-            return f"Object {name} = {value};"
-        return base_formatter(name, value, data, modifiers)
+        """Delegate to module-level implementation."""
+        return _apply_java_object_nil_declaration(
+            name=name,
+            value=value,
+            data=data,
+            modifiers=modifiers,
+            base_formatter=base_formatter,
+            typed_formatter=typed_formatter,
+        )
 
     return _format
 
@@ -917,9 +942,11 @@ class Java(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         base_int_formatter = integer_format.get_formatter(
@@ -1030,4 +1057,3 @@ class Java(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

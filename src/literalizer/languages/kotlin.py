@@ -71,7 +71,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -115,19 +114,29 @@ def _kotlin_list_sequence_open(
         dict_key_type=dict_key_type,
     )
 
-    @beartype
     def _combined_opener(
         element_type: type | ListType | DictType,
     ) -> str | None:
-        """Resolve element type, preferring specialized Kotlin openers."""
-        if isinstance(element_type, DictType):
-            return f"listOf<{dict_resolver(element_type)}>("
-        return _kotlin_type_to_opener(element_type=element_type)
+        """Delegate to module-level implementation."""
+        return _apply_kotlin_combined_opener(
+            element_type=element_type, dict_resolver=dict_resolver
+        )
 
     return typed_collection_open(
         type_to_opener=_combined_opener,
         fallback="listOf<Any?>(",
     )
+
+
+@beartype
+def _apply_kotlin_combined_opener(
+    element_type: type | ListType | DictType,
+    dict_resolver: Callable[[type | ListType | DictType], str | None],
+) -> str | None:
+    """Resolve element type, preferring specialized Kotlin openers."""
+    if isinstance(element_type, DictType):
+        return f"listOf<{dict_resolver(element_type)}>("
+    return _kotlin_type_to_opener(element_type=element_type)
 
 
 @beartype
@@ -842,9 +851,11 @@ class Kotlin(metaclass=LanguageCls):
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
         self.format_bytes: Callable[[bytes], str] = bytes_format
         self.format_date: Callable[[datetime.date], str] = date_format
+        self.date_format: enum.Enum = date_format
         self.format_datetime: Callable[[datetime.datetime], str] = (
             datetime_format
         )
+        self.datetime_format: enum.Enum = datetime_format
 
         self.format_string: Callable[[str], str] = (
             format_string_backslash_dollar
@@ -956,4 +967,3 @@ class Kotlin(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target

@@ -16,6 +16,18 @@ from literalizer._types import Value
 
 
 @beartype
+def _fixed_list_open_impl(_items: list[Value], open_str: str) -> str:
+    """Return the fixed opening delimiter for sequence/set items."""
+    return open_str
+
+
+@beartype
+def _fixed_dict_open_impl(_items: dict[str, Value], open_str: str) -> str:
+    """Return the fixed opening delimiter for dict items."""
+    return open_str
+
+
+@beartype
 def fixed_set_open(*, open_str: str) -> Callable[[list[Value]], str]:
     """Return a ``set_open`` callable that always returns *open_str*.
 
@@ -25,10 +37,9 @@ def fixed_set_open(*, open_str: str) -> Callable[[list[Value]], str]:
     Example: ``fixed_set_open(open_str="{")([1, 2, 3])`` -> ``"{"``.
     """
 
-    @beartype
     def _open(_items: list[Value]) -> str:
-        """Return the fixed opening delimiter."""
-        return open_str
+        """Delegate to module-level implementation."""
+        return _fixed_list_open_impl(_items=_items, open_str=open_str)
 
     return _open
 
@@ -43,10 +54,9 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
     Example: ``fixed_sequence_open(open_str="[")([1, 2, 3])`` -> ``"["``.
     """
 
-    @beartype
     def _open(_items: list[Value]) -> str:
-        """Return the fixed opening delimiter."""
-        return open_str
+        """Delegate to module-level implementation."""
+        return _fixed_list_open_impl(_items=_items, open_str=open_str)
 
     return _open
 
@@ -61,10 +71,9 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
     Example: ``fixed_dict_open(open_str="{")({"a": 1})`` -> ``"{"``.
     """
 
-    @beartype
     def _open(_items: dict[str, Value]) -> str:
-        """Return the fixed opening delimiter."""
-        return open_str
+        """Delegate to module-level implementation."""
+        return _fixed_dict_open_impl(_items=_items, open_str=open_str)
 
     return _open
 
@@ -119,31 +128,72 @@ def make_element_to_type(
         if name is not None
     }
 
-    @beartype
     def element_to_type(
         element_type: type | ListType | DictType,
     ) -> str | None:
-        """Resolve a Python element type to a language type name."""
-        if isinstance(element_type, DictType):
-            if dict_type_template is None:
-                return None
-            resolved: str | None = None
-            if element_type.value_type is not None:
-                resolved = element_to_type(
-                    element_type=element_type.value_type,
-                )
-            inner = resolved if resolved is not None else fallback_value_type
-            if inner is None:
-                return None
-            return dict_type_template.format(inner=inner)
-        if isinstance(element_type, ListType):
-            inner = element_to_type(element_type=element_type.inner)
-            if inner is None:
-                return None
-            return list_template.format(inner=inner)
-        return scalar_types.get(element_type)
+        """Delegate to module-level implementation."""
+        return _resolve_element_to_type(
+            element_type=element_type,
+            scalar_types=scalar_types,
+            list_template=list_template,
+            dict_type_template=dict_type_template,
+            fallback_value_type=fallback_value_type,
+        )
 
     return element_to_type
+
+
+@beartype
+def _resolve_element_to_type(
+    *,
+    element_type: type | ListType | DictType,
+    scalar_types: dict[type, str],
+    list_template: str,
+    dict_type_template: str | None,
+    fallback_value_type: str | None,
+) -> str | None:
+    """Resolve a Python element type to a language type name."""
+    if isinstance(element_type, DictType):
+        if dict_type_template is None:
+            return None
+        resolved: str | None = None
+        if element_type.value_type is not None:
+            resolved = _resolve_element_to_type(
+                element_type=element_type.value_type,
+                scalar_types=scalar_types,
+                list_template=list_template,
+                dict_type_template=dict_type_template,
+                fallback_value_type=fallback_value_type,
+            )
+        inner = resolved if resolved is not None else fallback_value_type
+        if inner is None:
+            return None
+        return dict_type_template.format(inner=inner)
+    if isinstance(element_type, ListType):
+        inner = _resolve_element_to_type(
+            element_type=element_type.inner,
+            scalar_types=scalar_types,
+            list_template=list_template,
+            dict_type_template=dict_type_template,
+            fallback_value_type=fallback_value_type,
+        )
+        if inner is None:
+            return None
+        return list_template.format(inner=inner)
+    return scalar_types.get(element_type)
+
+
+@beartype
+def _apply_type_to_opener(
+    element_type: type | ListType | DictType,
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+    opener_template: str,
+) -> str | None:
+    """Resolve a Python element type to a collection opener."""
+    type_name = element_to_type(element_type)
+    if type_name is None:
+        return None
+    return opener_template.format(type_name=type_name)
 
 
 @beartype
@@ -165,15 +215,28 @@ def make_type_to_opener(
         )
     """
 
-    @beartype
     def type_to_opener(element_type: type | ListType | DictType) -> str | None:
-        """Resolve a Python element type to a collection opener."""
-        type_name = element_to_type(element_type)
-        if type_name is None:
-            return None
-        return opener_template.format(type_name=type_name)
+        """Delegate to module-level implementation."""
+        return _apply_type_to_opener(
+            element_type=element_type,
+            element_to_type=element_to_type,
+            opener_template=opener_template,
+        )
 
     return type_to_opener
+
+
+@beartype
+def _typed_collection_open_impl(
+    items: list[Value],
+    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    fallback: str,
+) -> str:
+    """Infer element type and return the opener or fallback."""
+    element_type = infer_element_type(items=items)
+    if element_type is None:
+        return fallback
+    return type_to_opener(element_type) or fallback
 
 
 @beartype
@@ -204,15 +267,26 @@ def typed_collection_open(
         )
     """
 
-    @beartype
     def _open(items: list[Value]) -> str:
-        """Infer element type and return the opener or fallback."""
-        element_type = infer_element_type(items=items)
-        if element_type is None:
-            return fallback
-        return type_to_opener(element_type) or fallback
+        """Delegate to module-level implementation."""
+        return _typed_collection_open_impl(
+            items=items, type_to_opener=type_to_opener, fallback=fallback
+        )
 
     return _open
+
+
+@beartype
+def _typed_dict_open_impl(
+    items: dict[str, Value],
+    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    fallback: str,
+) -> str:
+    """Infer value type and return the opener or fallback."""
+    element_type = infer_element_type(items=list(items.values()))
+    if element_type is None:
+        return fallback
+    return type_to_opener(element_type) or fallback
 
 
 @beartype
@@ -240,13 +314,11 @@ def typed_dict_open(
         )
     """
 
-    @beartype
     def _open(items: dict[str, Value]) -> str:
-        """Infer value type and return the opener or fallback."""
-        element_type = infer_element_type(items=list(items.values()))
-        if element_type is None:
-            return fallback
-        return type_to_opener(element_type) or fallback
+        """Delegate to module-level implementation."""
+        return _typed_dict_open_impl(
+            items=items, type_to_opener=type_to_opener, fallback=fallback
+        )
 
     return _open
 

@@ -50,6 +50,49 @@ class _OrderedMapFormatBuilder(Protocol):
 
 
 @beartype
+def _build_sequence_format_config(
+    *,
+    default_type: str,
+    open_template: str,
+    close: str,
+    supports_heterogeneity: bool,
+    single_element_trailing_comma: bool,
+    supports_trailing_comma: bool,
+    empty_template: str | None,
+    preamble_lines: tuple[str, ...],
+    format_entry: Callable[[Value, str], str],
+    typed_opener_fallback_template: str | None,
+) -> SequenceFormatConfig:
+    """Build a ``SequenceFormatConfig`` with the given default type."""
+    return SequenceFormatConfig(
+        sequence_open=fixed_sequence_open(
+            open_str=open_template.format(type=default_type),
+        ),
+        close=close,
+        supports_heterogeneity=supports_heterogeneity,
+        single_element_trailing_comma=single_element_trailing_comma,
+        supports_trailing_comma=supports_trailing_comma,
+        empty_sequence=(
+            empty_template.format(type=default_type)
+            if empty_template is not None
+            else None
+        ),
+        preamble_lines=preamble_lines,
+        format_entry=format_entry,
+        typed_opener_fallback=(
+            typed_opener_fallback_template.format(
+                type=default_type,
+            )
+            if typed_opener_fallback_template is not None
+            else None
+        ),
+        uses_typed_literal_for_scalars=False,
+        requires_uniform_record_shapes=False,
+        declared_type=None,
+    )
+
+
+@beartype
 def sequence_format_factory(
     *,
     open_template: str,
@@ -69,39 +112,49 @@ def sequence_format_factory(
     name.  The ``open_template`` is wrapped in ``fixed_sequence_open``.
     """
 
-    @beartype
     def _build(default_type: str) -> SequenceFormatConfig:
-        """Build a ``SequenceFormatConfig`` with the given default
-        type.
-        """
-        return SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(
-                open_str=open_template.format(type=default_type),
-            ),
+        """Delegate to module-level implementation."""
+        return _build_sequence_format_config(
+            default_type=default_type,
+            open_template=open_template,
             close=close,
             supports_heterogeneity=supports_heterogeneity,
             single_element_trailing_comma=single_element_trailing_comma,
             supports_trailing_comma=supports_trailing_comma,
-            empty_sequence=(
-                empty_template.format(type=default_type)
-                if empty_template is not None
-                else None
-            ),
+            empty_template=empty_template,
             preamble_lines=preamble_lines,
             format_entry=format_entry,
-            typed_opener_fallback=(
-                typed_opener_fallback_template.format(
-                    type=default_type,
-                )
-                if typed_opener_fallback_template is not None
-                else None
-            ),
-            uses_typed_literal_for_scalars=False,
-            requires_uniform_record_shapes=False,
-            declared_type=None,
+            typed_opener_fallback_template=typed_opener_fallback_template,
         )
 
     return _build
+
+
+@beartype
+def _build_set_format_config(
+    *,
+    default_type: str,
+    open_template: str,
+    close: str,
+    empty_template: str | None,
+    preamble_lines: tuple[str, ...],
+    set_opener_template: str,
+    coerce_mixed_to_str: bool,
+) -> SetFormatConfig:
+    """Build a ``SetFormatConfig`` with the given default type."""
+    open_str = open_template.format(type=default_type)
+    return SetFormatConfig(
+        set_open=fixed_set_open(open_str=open_str),
+        close=close.format(type=default_type),
+        empty_set=(
+            empty_template.format(type=default_type)
+            if empty_template is not None
+            else None
+        ),
+        preamble_lines=preamble_lines,
+        set_opener_template=set_opener_template,
+        coerce_mixed_to_str=coerce_mixed_to_str,
+    )
 
 
 @beartype
@@ -131,24 +184,49 @@ def set_format_factory(
         config = factory("Any")
     """
 
-    @beartype
     def _build(default_type: str) -> SetFormatConfig:
-        """Build a ``SetFormatConfig`` with the given default type."""
-        open_str = open_template.format(type=default_type)
-        return SetFormatConfig(
-            set_open=fixed_set_open(open_str=open_str),
-            close=close.format(type=default_type),
-            empty_set=(
-                empty_template.format(type=default_type)
-                if empty_template is not None
-                else None
-            ),
+        """Delegate to module-level implementation."""
+        return _build_set_format_config(
+            default_type=default_type,
+            open_template=open_template,
+            close=close,
+            empty_template=empty_template,
             preamble_lines=preamble_lines,
             set_opener_template=set_opener_template,
             coerce_mixed_to_str=coerce_mixed_to_str,
         )
 
     return _build
+
+
+@beartype
+def _build_dict_format_config(
+    *,
+    default_type: str,
+    default_key_type: str,
+    open_template: str,
+    close: str,
+    format_entry: Callable[[str, Value, str], str],
+    empty_template: str | None,
+    preamble_lines: tuple[str, ...],
+    narrowed_open: str | None,
+) -> DictFormatConfig:
+    """Build a ``DictFormatConfig`` with the given default type."""
+    fmt_kwargs = {"type": default_type, "key_type": default_key_type}
+    return DictFormatConfig(
+        dict_open=fixed_dict_open(
+            open_str=open_template.format(**fmt_kwargs),
+        ),
+        close=close,
+        format_entry=format_entry,
+        empty_dict=(
+            empty_template.format(**fmt_kwargs)
+            if empty_template is not None
+            else None
+        ),
+        preamble_lines=preamble_lines,
+        narrowed_open=narrowed_open,
+    )
 
 
 @beartype
@@ -169,30 +247,44 @@ def dict_format_factory(
     The ``open_template`` is wrapped in ``fixed_dict_open``.
     """
 
-    @beartype
     def _build(
         default_type: str,
         *,
         default_key_type: str = "",
     ) -> DictFormatConfig:
-        """Build a ``DictFormatConfig`` with the given default type."""
-        fmt_kwargs = {"type": default_type, "key_type": default_key_type}
-        return DictFormatConfig(
-            dict_open=fixed_dict_open(
-                open_str=open_template.format(**fmt_kwargs),
-            ),
+        """Delegate to module-level implementation."""
+        return _build_dict_format_config(
+            default_type=default_type,
+            default_key_type=default_key_type,
+            open_template=open_template,
             close=close,
             format_entry=format_entry,
-            empty_dict=(
-                empty_template.format(**fmt_kwargs)
-                if empty_template is not None
-                else None
-            ),
+            empty_template=empty_template,
             preamble_lines=preamble_lines,
             narrowed_open=narrowed_open,
         )
 
     return _build
+
+
+@beartype
+def _build_ordered_map_format_config(
+    *,
+    default_type: str,
+    default_key_type: str,
+    open_template: str,
+    close: str,
+    preamble_lines: tuple[str, ...],
+) -> OrderedMapFormatConfig:
+    """Build an ``OrderedMapFormatConfig`` with the given default type."""
+    fmt_kwargs = {"type": default_type, "key_type": default_key_type}
+    return OrderedMapFormatConfig(
+        ordered_map_open=fixed_dict_open(
+            open_str=open_template.format(**fmt_kwargs),
+        ),
+        close=close,
+        preamble_lines=preamble_lines,
+    )
 
 
 @beartype
@@ -208,18 +300,16 @@ def ordered_map_format_factory(
     placeholders for the default value type and key type names.
     """
 
-    @beartype
     def _build(
         default_type: str,
         *,
         default_key_type: str = "",
     ) -> OrderedMapFormatConfig:
-        """Build an ``OrderedMapFormatConfig`` with the given default type."""
-        fmt_kwargs = {"type": default_type, "key_type": default_key_type}
-        return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
-                open_str=open_template.format(**fmt_kwargs),
-            ),
+        """Delegate to module-level implementation."""
+        return _build_ordered_map_format_config(
+            default_type=default_type,
+            default_key_type=default_key_type,
+            open_template=open_template,
             close=close,
             preamble_lines=preamble_lines,
         )
