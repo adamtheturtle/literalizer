@@ -1,9 +1,12 @@
 """Go language specification."""
 
+import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
+from functools import cached_property
 from types import MappingProxyType
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -41,6 +44,7 @@ from literalizer._formatters.format_integers import (
     make_int64_cast_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     CallStyle,
     CommentConfig,
@@ -189,6 +193,7 @@ def _nil_safe_declaration(
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Go(metaclass=LanguageCls):
     """Go language specification.
 
@@ -480,59 +485,106 @@ class Go(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
-        self,
-        *,
-        date_format: DateFormats = DateFormats.GO,
-        datetime_format: DatetimeFormats = DatetimeFormats.GO,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.SLICE,
-        set_format: SetFormats = SetFormats.SET,
-        default_set_element_type: str = "any",
-        default_sequence_element_type: str = "any",
-        default_dict_key_type: str = "string",
-        default_dict_value_type: str = "any",
-        default_ordered_map_value_type: str = "any",
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.SHORT,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.DEFAULT,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.YES,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.POSITIONAL,
-        indent: str = "\t",
-    ) -> None:
-        """Initialize Go language specification."""
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal = "nil"
-        self.true_literal = "true"
-        self.false_literal = "false"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
-        self.set_format = set_format
+    date_format: DateFormats = DateFormats.GO
+    datetime_format: DatetimeFormats = DatetimeFormats.GO
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.SLICE
+    set_format: SetFormats = SetFormats.SET
+    default_set_element_type: str = "any"
+    default_sequence_element_type: str = "any"
+    default_dict_key_type: str = "string"
+    default_dict_value_type: str = "any"
+    default_ordered_map_value_type: str = "any"
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.SHORT
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DEFAULT
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.YES
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
+    indent: str = "\t"
 
+    null_literal: ClassVar[str] = "nil"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = False
+    supports_scalar_inline_comments: ClassVar[bool] = True
+    statement_terminator: ClassVar[str] = ";"
+    static_preamble: ClassVar[Sequence[str]] = ("package main",)
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ('import "math"',)
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Format a string value as a quoted literal."""
+        return format_string_backslash
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return _format_go_set_entry
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
+        self,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return _go_call_preamble_stub
+
+    @cached_property
+    def _init_element_to_type(
+        self,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Element-to-type resolver for the configured Go types."""
         _type_names: dict[type, str] = {
             datetime.date: "time.Time",
             datetime.datetime: "time.Time",
             str: "string",
         }
-        date_type = _type_names.get(date_format.value.type_produced)
+        date_type = _type_names.get(self.date_format.value.type_produced)
         datetime_type = _type_names.get(
-            datetime_format.value.type_produced,
+            self.datetime_format.value.type_produced,
         )
-        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
+        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
         go_int_type = "int64" if suffix_is_auto else "int"
-        init_element_to_type = make_element_to_type(
+        return make_element_to_type(
             str_type="string",
             bool_type="bool",
             int_type=go_int_type,
@@ -542,37 +594,50 @@ class Go(metaclass=LanguageCls):
             date_type=date_type,
             datetime_type=datetime_type,
             list_template="[]{inner}",
-            dict_type_template=f"map[{default_dict_key_type}]{{inner}}",
+            dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
         )
-        base_set_config: SetFormatConfig = set_format(
-            default_type=default_set_element_type,
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format.value
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        base_set_config: SetFormatConfig = self.set_format(
+            default_type=self.default_set_element_type,
         )
-        self.set_format_config: SetFormatConfig = (
-            base_set_config.with_typed_opener(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=init_element_to_type,
-                    opener_template="map[{type_name}]struct{{}}{{",
-                ),
-                fallback=base_set_config.set_open([]),
-            )
+        return base_set_config.with_typed_opener(
+            type_to_opener=make_type_to_opener(
+                element_to_type=self._init_element_to_type,
+                opener_template="map[{type_name}]struct{{}}{{",
+            ),
+            fallback=base_set_config.set_open([]),
         )
-        self.sequence_open: Callable[[list[Value]], str] = (
-            typed_collection_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=init_element_to_type,
-                    opener_template="[]{type_name}{{",
-                ),
-                fallback=f"[]{default_sequence_element_type}{{",
-            )
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        return typed_collection_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=self._init_element_to_type,
+                opener_template="[]{type_name}{{",
+            ),
+            fallback=f"[]{self.default_sequence_element_type}{{",
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return DictFormatConfig(
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=init_element_to_type,
-                    opener_template=f"map[{default_dict_key_type}]{{type_name}}{{{{",
+                    element_to_type=self._init_element_to_type,
+                    opener_template=f"map[{self.default_dict_key_type}]{{type_name}}{{{{",
                 ),
-                fallback=f"map[{default_dict_key_type}]{default_dict_value_type}{{",
+                fallback=f"map[{self.default_dict_key_type}]{self.default_dict_value_type}{{",
             ),
             close="}",
             format_entry=dict_entry_with_separator(
@@ -583,96 +648,104 @@ class Go(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open="{",
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.date_format: enum.Enum = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
-        )
-        self.datetime_format: enum.Enum = datetime_format
 
-        self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_float: Callable[[float], str] = float_format
-        base_int_formatter = integer_format.get_formatter(
-            numeric_separator=numeric_separator,
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        base_int_formatter = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
         )
-        self.format_integer: Callable[[int], str] = (
-            make_int64_cast_formatter(base=base_int_formatter)
-            if suffix_is_auto
-            else base_int_formatter
+        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
+        if suffix_is_auto:
+            return make_int64_cast_formatter(base=base_int_formatter)
+        return base_int_formatter
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(
+                open_str=f"[][2]{self.default_ordered_map_value_type}{{"
+            ),
+            close="}",
+            preamble_lines=(),
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return braced_dict_entry(format_value=passthrough_sequence_entry)
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats a new variable declaration."""
+        return _nil_safe_declaration(
+            base_formatter=self.declaration_style.value.formatter,
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            _format_go_set_entry
+
+    @cached_property
+    def format_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment to an existing variable."""
+        return variable_formatter(template="{name} = {value}")
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble computed from date/datetime format."""
+        return date_scalar_preamble(
+            date_format=self.date_format,
+            datetime_format=self.datetime_format,
         )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(
-                    open_str=f"[][2]{default_ordered_map_value_type}{{"
-                ),
-                close="}",
-                preamble_lines=(),
-            )
-        )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            braced_dict_entry(format_value=passthrough_sequence_entry)
-        )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = False
-        self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            _nil_safe_declaration(
-                base_formatter=declaration_style.value.formatter,
-            )
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value}")
-        )
-        self.static_preamble: Sequence[str] = ("package main",)
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            date_scalar_preamble(
-                date_format=date_format,
-                datetime_format=datetime_format,
-            )
-        )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Go needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
 
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ('import "math"',)
-        self.call_style = call_style
-        self.call_style_config: CallStyle | None = call_style.value
-        self.statement_terminator = ";"
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = _go_call_preamble_stub
+    @cached_property
+    def call_style_config(self) -> CallStyle | None:
+        """Configuration for the chosen call style."""
+        return self.call_style.value

@@ -336,6 +336,31 @@ def test_wrap_in_file_methods_callable(
     assert isinstance(combined, str)
 
 
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_protocol_properties_accessible(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every Language exposes its Protocol attributes for any language.
+
+    Many ``@cached_property`` members are only exercised by tests for
+    the subset of languages that opt in to a feature (variable
+    reassignment, type-hint preambles, call stubs).  Accessing every
+    documented member here keeps coverage at 100% across the matrix.
+    """
+    spec = language_cls()
+    assert callable(spec.format_call_stub)
+    assert callable(spec.format_call_preamble_stub)
+    assert callable(spec.format_variable_declaration)
+    assert callable(spec.format_variable_assignment)
+    assert callable(spec.type_hint_collection_preamble_lines)
+    assert isinstance(spec.scalar_body_preamble, dict)
+
+
 def test_python_no_any_import_when_all_defaults_overridden() -> None:
     """When all Python default collection types are non-Any, the
     ``from typing import Any`` import is not emitted.
