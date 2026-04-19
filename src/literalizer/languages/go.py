@@ -76,9 +76,9 @@ def _format_go_uint64_literal(value: int) -> str:
     """Format a value outside signed 64-bit range as a Go ``uint64``
     typed conversion.
 
-    Go's untyped integer constant can hold arbitrary size, but its
-    default promotion to ``int`` overflows.  Wrapping in ``uint64(...)``
-    forces a typed conversion and accepts values up to
+    A Go integer constant without an explicit type can hold arbitrary
+    size, but its default promotion to ``int`` overflows.  Wrapping in
+    ``uint64(...)`` forces a typed conversion and accepts values up to
     ``math.MaxUint64``.
     """
     return f"uint64({value})"

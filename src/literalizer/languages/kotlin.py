@@ -84,10 +84,11 @@ from literalizer._types import Value
 @beartype
 def _format_kotlin_biginteger_literal(value: int) -> str:
     """Format a value outside signed 64-bit range as a Kotlin
-    ``BigInteger`` constructor call.
+    ``java.math.BigInteger`` constructor call.
 
-    Kotlin's ``Long`` is signed 64-bit; values outside that range
-    must use ``BigInteger`` (``import java.math.BigInteger``).
+    The Kotlin ``Long`` type is signed 64-bit; values outside that
+    range must use ``java.math.BigInteger`` (with a matching ``import``
+    statement emitted via the data-dependent preamble).
     """
     return f'BigInteger("{value}")'
 

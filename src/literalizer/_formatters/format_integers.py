@@ -259,7 +259,8 @@ def raise_for_unrepresentable_int(
 
     Used by languages whose fixed-width integer types cannot hold
     values outside the signed 64-bit range and which have no built-in
-    arbitrary-precision integer type available to the lint toolchain.
+    arbitrary-precision integer type available to the per-language
+    lint pipeline.
     """
 
     @beartype
@@ -278,7 +279,7 @@ def raise_for_unrepresentable_int(
 def data_has_out_of_range_int(*, data: Value) -> bool:
     """Return ``True`` if *data* contains an integer outside i64 range.
 
-    Recurses into lists, sets, and dict values.  Used by languages that
+    Descends into lists, sets, and dict values.  Used by languages that
     need to add a preamble (e.g. an ``import`` statement) conditionally
     on the presence of a very large integer scalar.
     """

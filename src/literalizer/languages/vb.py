@@ -66,12 +66,12 @@ from literalizer._types import Value
 
 @beartype
 def _format_vb_ulong_literal(value: int) -> str:
-    """Format a value outside signed 64-bit range as a VB.NET ``UL``
-    (``ULong``) literal.
+    """Format a value above signed 64-bit range as a VB.NET ``UL``
+    unsigned 64-bit literal.
 
-    VB.NET's default ``Long`` is signed 64-bit; values outside that
-    range need the ``UL`` suffix to select ``ULong``, which covers
-    up to ``ULong.MaxValue``.
+    The default VB.NET integer type is signed 64-bit; values above
+    that range need the ``UL`` suffix to select the unsigned 64-bit
+    type, which covers up to 2^64 - 1.
     """
     return f"{value}UL"
 

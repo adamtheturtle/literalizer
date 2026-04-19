@@ -70,9 +70,9 @@ def _format_ocaml_int_of_string_literal(value: int) -> str:
     """Format a value outside signed 64-bit range as an OCaml
     ``int_of_string`` expression.
 
-    OCaml's native ``int`` type is 63-bit on 64-bit platforms; values
+    The OCaml native ``int`` type is 63-bit on 64-bit platforms; values
     outside that range fail to parse as literals.  ``int_of_string``
-    accepts the value as a string, typechecks as ``int``, and is only
+    accepts the value as a string, type-checks as ``int``, and is only
     evaluated at runtime — so ``ocamlopt -c`` accepts the expression.
     """
     return f'int_of_string "{value}"'
