@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 import json
 import math
 from collections.abc import Callable, Sequence
@@ -967,9 +968,21 @@ def _parse_json5(*, source: str) -> _ParsedInput:
     return _ParsedInput(data=data, raw_data=data)
 
 
+@functools.cache
+def _get_yaml(*, safe: bool) -> YAML:
+    """Return a cached ``YAML`` instance.
+
+    Constructing ``YAML()`` globs the package directory for plug-ins
+    (~50 µs); caching avoids that cost on every parse.  ``ruamel``
+    parsers are not safe for concurrent use within a single instance,
+    so ``literalize`` is not safe to call from multiple threads.
+    """
+    return YAML(typ="safe") if safe else YAML()
+
+
 def _parse_yaml(*, source: str) -> _ParsedInput:
     """Parse a YAML string into a ``_ParsedInput``."""
-    ruamel_yaml = YAML(typ="safe")
+    ruamel_yaml = _get_yaml(safe=True)
     try:
         # https://sourceforge.net/p/ruamel-yaml/tickets/564/
         raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
@@ -1646,7 +1659,7 @@ def _resolve_yaml_comments(
     """Parse YAML for comment metadata and resolve comments."""
     if isinstance(data, set):
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-        ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+        ruamel_set: CommentedSet = _get_yaml(safe=False).load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
         )
         return _resolve_collection_comments(
@@ -1664,7 +1677,7 @@ def _resolve_yaml_comments(
     if not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-        tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
+        tokens = _get_yaml(safe=False).scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
         scalar_result = literalize_yaml_scalar(
             tokens=tokens,
             base=base,
@@ -1681,7 +1694,7 @@ def _resolve_yaml_comments(
         )
 
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+    ruamel_data: CommentedSeq | CommentedMap = _get_yaml(safe=False).load(  # pyright: ignore[reportUnknownMemberType]
         stream=StringIO(initial_value=yaml_string),
     )
     return _resolve_yaml_collection_comments(
