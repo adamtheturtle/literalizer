@@ -7,9 +7,22 @@ from beartype import beartype
 
 
 def pytest_collection_modifyitems(items: list[pytest.Function]) -> None:
-    """Apply the beartype decorator to all collected test functions."""
+    """Apply the beartype decorator to all collected test functions.
+
+    Parametrized tests produce one item per parameter combination, but
+    they share an underlying test function.  Cache the wrapped result
+    per ``(module, originalname)`` so the (non-trivial) beartype
+    compilation runs once per distinct test function rather than once
+    per item.
+    """
+    cache: dict[object, object] = {}
     for item in items:
-        item.obj = beartype(obj=item.obj)
+        key = (item.module, item.originalname)
+        wrapped = cache.get(key)
+        if wrapped is None:
+            wrapped = beartype(obj=item.obj)
+            cache[key] = wrapped
+        item.obj = wrapped
 
 
 @pytest.fixture(scope="session", name="lazy_datadir")

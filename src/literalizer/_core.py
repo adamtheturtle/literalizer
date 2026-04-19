@@ -5,6 +5,7 @@ import datetime
 import enum
 import json
 import math
+import threading
 from collections.abc import Callable, Sequence
 from io import StringIO
 from typing import Any, assert_never, cast
@@ -945,6 +946,26 @@ class _ParsedInput:
     raw_data: object
 
 
+_yaml_local = threading.local()
+
+
+def _get_yaml(*, safe: bool) -> YAML:
+    """Return a thread-local cached :class:`YAML` instance.
+
+    ``YAML()`` construction triggers a directory glob to discover plug-ins
+    (~50us each).  Caching one instance per thread eliminates that cost
+    across thousands of parse calls without breaking thread-safety —
+    ``ruamel.yaml`` parsers are not safe for concurrent use within one
+    instance.
+    """
+    attr = "safe" if safe else "round_trip"
+    cached = getattr(_yaml_local, attr, None)
+    if cached is None:
+        cached = YAML(typ="safe") if safe else YAML()
+        setattr(_yaml_local, attr, cached)
+    return cached
+
+
 def _parse_json(*, source: str) -> _ParsedInput:
     """Parse a JSON string into a ``_ParsedInput``."""
     try:
@@ -969,7 +990,7 @@ def _parse_json5(*, source: str) -> _ParsedInput:
 
 def _parse_yaml(*, source: str) -> _ParsedInput:
     """Parse a YAML string into a ``_ParsedInput``."""
-    ruamel_yaml = YAML(typ="safe")
+    ruamel_yaml = _get_yaml(safe=True)
     try:
         # https://sourceforge.net/p/ruamel-yaml/tickets/564/
         raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
@@ -1580,7 +1601,7 @@ def _resolve_yaml_comments(
     """Parse YAML for comment metadata and resolve comments."""
     if isinstance(data, set):
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-        ruamel_set: CommentedSet = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+        ruamel_set: CommentedSet = _get_yaml(safe=False).load(  # pyright: ignore[reportUnknownMemberType]
             stream=StringIO(initial_value=yaml_string),
         )
         return _resolve_collection_comments(
@@ -1598,7 +1619,7 @@ def _resolve_yaml_comments(
     if not isinstance(data, (list, dict)):
         stream = StringIO(initial_value=yaml_string)
         # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-        tokens = YAML().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
+        tokens = _get_yaml(safe=False).scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
         scalar_result = literalize_yaml_scalar(
             tokens=tokens,
             base=base,
@@ -1615,7 +1636,7 @@ def _resolve_yaml_comments(
         )
 
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ruamel_data: CommentedSeq | CommentedMap = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+    ruamel_data: CommentedSeq | CommentedMap = _get_yaml(safe=False).load(  # pyright: ignore[reportUnknownMemberType]
         stream=StringIO(initial_value=yaml_string),
     )
     return _resolve_yaml_collection_comments(
