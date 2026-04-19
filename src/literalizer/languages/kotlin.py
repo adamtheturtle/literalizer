@@ -42,9 +42,11 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
@@ -72,12 +74,33 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_kotlin_biginteger_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Kotlin
+    ``java.math.BigInteger`` constructor call.
+
+    The Kotlin ``Long`` type is signed 64-bit; values outside that
+    range must use ``java.math.BigInteger`` (with a matching ``import``
+    statement emitted via the data-dependent preamble).
+    """
+    return f'BigInteger("{value}")'
+
+
+@beartype
+def _kotlin_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``import java.math.BigInteger`` if *data* contains a
+    very-large integer.
+    """
+    if data_has_out_of_range_int(data=data):
+        return ("import java.math.BigInteger",)
+    return ()
 
 
 @beartype
@@ -802,7 +825,7 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
-        return no_data_preamble
+        return _kotlin_biginteger_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -934,8 +957,11 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            fallback=_format_kotlin_biginteger_literal,
         )
 
     @cached_property

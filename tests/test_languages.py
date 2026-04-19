@@ -24,6 +24,7 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Cobol,
     Fortran,
+    FSharp,
     Go,
     Java,
     Matlab,
@@ -43,6 +44,7 @@ FORTRAN = Fortran(
     bytes_format=Fortran.bytes_formats.HEX,
     sequence_format=Fortran.sequence_formats.LIST,
 )
+FSHARP = FSharp()
 JAVA = Java(
     date_format=Java.date_formats.JAVA,
     datetime_format=Java.datetime_formats.INSTANT,
@@ -258,6 +260,28 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
             fentry('host', fstr('it''s here')), &  ! a comment
             fentry('port', fint(80_int64)) &  ! another
         ])""",
+    )
+    assert result.code == expected
+
+
+def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
+    """Bare F# scalar integer values above i64 range use the ``I``
+    suffix.
+    """
+    result = literalize(
+        source="9223372036854775808",
+        input_format=InputFormat.JSON,
+        language=FSHARP,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=None,
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        type Val =
+            | FInt of bigint
+        9223372036854775808I"""
     )
     assert result.code == expected
 

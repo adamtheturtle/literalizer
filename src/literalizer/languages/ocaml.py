@@ -39,6 +39,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -65,6 +66,19 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_ocaml_int_of_string_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as an OCaml
+    ``int_of_string`` expression.
+
+    The OCaml native ``int`` type is 63-bit on 64-bit platforms; values
+    outside that range fail to parse as literals.  ``int_of_string``
+    accepts the value as a string, type-checks as ``int``, and is only
+    evaluated at runtime — so ``ocamlopt -c`` accepts the expression.
+    """
+    return f'int_of_string "{value}"'
+
+
+@beartype
 def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
@@ -73,10 +87,14 @@ def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
         case bool():
             return formatted
         case int():
-            negative = formatted.startswith("-")
+            # Parenthesize negatives and the ``int_of_string "…"``
+            # fallback used for values outside signed 64-bit range.
+            needs_parens = (
+                formatted.startswith("-") or "int_of_string" in formatted
+            )
             return (
                 f"{prefix}Int ({formatted})"
-                if negative
+                if needs_parens
                 else f"{prefix}Int {formatted}"
             )
         case float():
@@ -633,8 +651,11 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            fallback=_format_ocaml_int_of_string_literal,
         )
 
     @cached_property

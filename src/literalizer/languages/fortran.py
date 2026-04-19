@@ -30,6 +30,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     CallStyle,
@@ -511,7 +515,10 @@ class Fortran(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as an int64 Fortran literal."""
-        return lambda value: f"{value}_int64"
+        return make_overflow_fallback_formatter(
+            base=lambda value: f"{value}_int64",
+            fallback=raise_for_unrepresentable_int(language_name="Fortran"),
+        )
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

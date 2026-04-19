@@ -33,6 +33,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -85,7 +87,7 @@ def _format_datetime_zig(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_zig_entry(original: Value, formatted: str) -> str:
+def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
     """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
     tag.
     """
@@ -93,6 +95,8 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
         case bool():
             return formatted
         case int():
+            if not I64_MIN <= original <= I64_MAX:
+                return f".{{ .uint = {formatted} }}"
             return f".{{ .int = {formatted} }}"
         case float():
             return f".{{ .float = {formatted} }}"
@@ -424,6 +428,7 @@ class Zig(metaclass=LanguageCls):
         "    nil,",
         "    bool: bool,",
         "    int: i64,",
+        "    uint: u64,",
         "    float: f64,",
         "    str: []const u8,",
         "    arr: []const ZVal,",

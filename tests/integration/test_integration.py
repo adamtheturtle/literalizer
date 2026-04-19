@@ -25,7 +25,10 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    NullInCollectionError,
+    UnrepresentableIntegerError,
+)
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
@@ -604,16 +607,21 @@ def test_golden_file(
     input_path = cases_dir / _case_name / "input.yaml"
     lang_name = lang_cls.__name__
     yaml_string = input_path.read_text()
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=_spec(lang_cls=lang_cls),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=_wrap_variable_form(lang_cls=lang_cls),
-        error_on_coercion=False,
-        wrap_in_file=True,
-    )
+    golden_path = input_path.parent / (lang_name + lang_cls.extension)
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=_spec(lang_cls=lang_cls),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=_wrap_variable_form(lang_cls=lang_cls),
+            error_on_coercion=False,
+            wrap_in_file=True,
+        )
+    except UnrepresentableIntegerError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} cannot represent integer in this input")
     # newline="" prevents Python text-mode from converting \r\n to \n
     # on Windows, which would corrupt golden files containing literal
     # CR bytes (e.g. CommonLisp string_control_chars).
@@ -621,7 +629,7 @@ def test_golden_file(
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent / (lang_name + lang_cls.extension),
+        fullpath=golden_path,
     )
 
 
@@ -701,22 +709,30 @@ def test_golden_file_combined_variable_forms(
         declaration_style=combined_case.declaration_style,
     )
     yaml_string = input_path.read_text()
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
-        wrap_in_file=True,
+    golden_path = input_path.parent / (
+        combined_case.golden_file_name + lang_cls.extension
     )
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=literalizer.BothVariableForms(name="my_data"),
+            error_on_coercion=False,
+            wrap_in_file=True,
+        )
+    except UnrepresentableIntegerError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent integer in this input"
+        )
     file_regression.check(
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent
-        / (combined_case.golden_file_name + lang_cls.extension),
+        fullpath=golden_path,
     )
 
 
