@@ -1270,8 +1270,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "float_list", ""),
     ]
     # Rust CONST/STATIC with dict cases produce HashMap::from([…])
-    # which is not a constant expression, so skip those.
+    # which is not a constant expression, so skip those.  Dart CONST with
+    # dates / datetimes uses DateTime.parse(…), which is also not a const
+    # expression.
     _const_static_suffixes = ("_const", "_static")
+    _dart_non_const_cases = {"scalar_date", "scalar_datetime"}
 
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
@@ -1286,6 +1289,11 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant.lang_cls.__name__ == "Rust"
                 and variant.name.endswith(_const_static_suffixes)
                 and "dict" in case_dir_name
+            )
+            and not (
+                variant.lang_cls.__name__ == "Dart"
+                and variant.name.endswith("_const")
+                and case_dir_name in _dart_non_const_cases
             )
         )
     return cases
