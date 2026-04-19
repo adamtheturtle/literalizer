@@ -45,6 +45,63 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
     assert result.code == expected
 
 
+def test_python_always_type_hints_dict_with_uniform_list_values() -> None:
+    """Dict whose values are all lists collapses to a single value type
+    (no union), distinct from the mixed-value path covered by the
+    ``dict_with_list_value`` golden.
+    """
+    result = literalize(
+        source='{"key": [1, 2, 3]}',
+        input_format=InputFormat.JSON,
+        language=PYTHON_ALWAYS_HINTS,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        my_var: dict[str, tuple[int, ...]] = {
+            "key": (1, 2, 3),
+        }"""
+    )
+    assert result.code == expected
+
+
+def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
+    """Multiple OrderedDicts in a sequence merge value types into one
+    hint.  OrderedDict value-merging uses a separate code path from
+    plain dict value-merging, so the ``mixed_type_dicts_in_sequence``
+    golden does not cover it.
+    """
+    yaml_input = textwrap.dedent(
+        text="""\
+        ---
+        - !!omap
+          - name: Alice
+          - draft: true
+        - !!omap
+          - name: Bob"""
+    )
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=PYTHON_ALWAYS_HINTS,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_var"),
+        error_on_coercion=False,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        my_var: tuple[OrderedDict[str, str | bool], ...] = (
+            OrderedDict([("name", "Alice"), ("draft", True)]),
+            OrderedDict([("name", "Bob")]),
+        )""",
+    )
+    assert result.code == expected
+
+
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
     datetime_format=Rust.datetime_formats.ISO,
