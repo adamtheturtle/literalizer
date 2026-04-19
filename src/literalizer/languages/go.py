@@ -46,8 +46,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -56,6 +55,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -442,7 +442,7 @@ class Go(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Go call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -740,6 +740,6 @@ class Go(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyleConfig | None:
+    def call_style_config(self) -> CallStyle | None:
         """Configuration for the chosen call style."""
         return self.call_style.value

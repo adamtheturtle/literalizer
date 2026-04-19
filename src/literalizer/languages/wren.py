@@ -35,7 +35,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_percent,
 )
 from literalizer._language import (
-    CallStyleConfig,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -334,7 +334,7 @@ class Wren(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyleConfig | None] = None
+    call_style_config: ClassVar[CallStyle | None] = None
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

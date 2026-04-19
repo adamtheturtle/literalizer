@@ -36,8 +36,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -46,6 +45,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -322,7 +322,7 @@ class Lua(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Lua call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -556,6 +556,6 @@ class Lua(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyleConfig | None:
+    def call_style_config(self) -> CallStyle | None:
         """Configuration for the chosen call style."""
         return self.call_style.value

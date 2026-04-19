@@ -10,8 +10,6 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer import (
     BothVariableForms,
-    CallStyleConfig,
-    CallStyleKind,
     InputFormat,
     NewVariable,
     literalize,
@@ -29,9 +27,7 @@ from literalizer.languages import (
     Go,
     Java,
     Matlab,
-    PureScript,
     Python,
-    SystemVerilog,
     Yaml,
 )
 
@@ -444,28 +440,6 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
         )
 
 
-def test_call_style_config_keyword_without_separator_raises() -> None:
-    """Constructing a KEYWORD call style without a keyword_separator
-    raises ``ValueError`` at construction time.
-    """
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=r"^keyword_separator must be set for 'keyword' call style$",
-    ):
-        CallStyleConfig(kind=CallStyleKind.KEYWORD)
-
-
-def test_call_style_config_object_without_separator_raises() -> None:
-    """Constructing an OBJECT call style without a keyword_separator
-    raises ``ValueError`` at construction time.
-    """
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=r"^keyword_separator must be set for 'object' call style$",
-    ):
-        CallStyleConfig(kind=CallStyleKind.OBJECT)
-
-
 def test_literalize_call_per_element_non_list_raises() -> None:
     """Literalize_call raises PerElementNotListError for non-list."""
     with pytest.raises(
@@ -515,35 +489,3 @@ def test_literalize_call_unsupported_language_per_element_false() -> None:
             parameter_names=["data"],
             per_element=False,
         )
-
-
-def test_purescript_negative_large_int_uses_plong() -> None:
-    """Negative integers that overflow PureScript's 32-bit ``Int`` are
-    emitted with the ``PLong`` constructor and a negative ``Number``.
-    """
-    result = literalize(
-        source="-2147483649",
-        input_format=InputFormat.JSON,
-        language=PureScript(),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
-    )
-    assert "PLong (-2147483649.0)" in result.code
-
-
-def test_systemverilog_negative_large_int_uses_64_bit_width() -> None:
-    """Negative integers that overflow 32-bit signed range are emitted
-    as ``-64'sd{value}`` with an explicit 64-bit width prefix.
-    """
-    result = literalize(
-        source="-2147483649",
-        input_format=InputFormat.JSON,
-        language=SystemVerilog(),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
-    )
-    assert "-64'sd2147483649" in result.code

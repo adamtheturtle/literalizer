@@ -46,8 +46,7 @@ from literalizer._formatters.format_strings import (
     format_string_raw_rust,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -56,6 +55,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -820,7 +820,7 @@ class Rust(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Rust call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -1095,6 +1095,6 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyleConfig | None:
+    def call_style_config(self) -> CallStyle | None:
         """Configuration for the chosen call style."""
         return self.call_style.value

@@ -36,14 +36,14 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -303,10 +303,7 @@ class Jsonnet(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Jsonnet call style options."""
 
-        KEYWORD = CallStyleConfig(
-            kind=CallStyleKind.KEYWORD,
-            keyword_separator="=",
-        )
+        KEYWORD = KeywordCallStyle(separator="=")
 
     call_styles = CallStyles
 
@@ -544,6 +541,6 @@ class Jsonnet(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyleConfig | None:
+    def call_style_config(self) -> CallStyle | None:
         """Configuration for the chosen call style."""
         return self.call_style.value

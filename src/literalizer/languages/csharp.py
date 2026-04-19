@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, cast
 
 from beartype import beartype
 
@@ -51,16 +51,17 @@ from literalizer._formatters.format_strings import (
     format_string_verbatim_csharp,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -405,11 +406,8 @@ class CSharp(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """CSharp call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
-        NAMED = CallStyleConfig(
-            kind=CallStyleKind.KEYWORD,
-            keyword_separator=": ",
-        )
+        POSITIONAL = PositionalCallStyle()
+        NAMED = KeywordCallStyle(separator=": ")
 
     call_styles = CallStyles
 
@@ -718,6 +716,6 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyleConfig | None:
+    def call_style_config(self) -> CallStyle | None:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        return cast("CallStyle", self.call_style.value)

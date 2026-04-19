@@ -37,7 +37,12 @@ from literalizer._formatters.type_inference import (
     DictType,
     infer_element_type,
 )
-from literalizer._language import CallStyleKind, Language
+from literalizer._language import (
+    KeywordCallStyle,
+    Language,
+    ObjectCallStyle,
+    PositionalCallStyle,
+)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     JSON5ParseError,
@@ -1276,23 +1281,20 @@ def _format_call_args(
     ]
     sep = ", "
 
-    match style.kind:
-        case CallStyleKind.POSITIONAL:
+    match style:
+        case PositionalCallStyle():
             inner = sep.join(formatted)
-        case CallStyleKind.KEYWORD | CallStyleKind.OBJECT:
-            # ``CallStyleConfig.__post_init__`` guarantees a non-None
-            # keyword_separator for KEYWORD/OBJECT styles.
-            kw_sep = style.keyword_separator
-            assert kw_sep is not None  # noqa: S101
+        case KeywordCallStyle(separator=kw_sep):
+            inner = sep.join(
+                f"{name}{kw_sep}{val}"
+                for name, val in zip(params, formatted, strict=True)
+            )
+        case ObjectCallStyle(separator=kw_sep):
             named = sep.join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
-            inner = (
-                f"{{ {named} }}"
-                if style.kind is CallStyleKind.OBJECT
-                else named
-            )
+            inner = f"{{ {named} }}"
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -1340,7 +1342,7 @@ def literalize_call(
         target_function: The function expression to call
             (e.g. ``"throttler.should_send_notification"``).
         parameter_names: Parameter names, positionally mapped to each
-            element in each row.  For :attr:`CallStyleKind.POSITIONAL`
+            element in each row.  For :class:`PositionalCallStyle`
             languages these are unused in the output but still
             determine how many values to expect per row.
         call_transform: Optional callable transforming each call expression.

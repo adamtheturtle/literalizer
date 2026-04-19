@@ -39,7 +39,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
-    CallStyleConfig,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -423,7 +423,7 @@ class VisualBasic(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyleConfig | None] = None
+    call_style_config: ClassVar[CallStyle | None] = None
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

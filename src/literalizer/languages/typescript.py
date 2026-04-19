@@ -8,7 +8,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -49,8 +49,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -58,7 +57,9 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     LanguageCls,
+    ObjectCallStyle,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -526,11 +527,8 @@ class TypeScript(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """TypeScript call style options."""
 
-        OBJECT = CallStyleConfig(
-            kind=CallStyleKind.OBJECT,
-            keyword_separator=": ",
-        )
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        OBJECT = ObjectCallStyle(separator=": ")
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -776,6 +774,6 @@ class TypeScript(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyleConfig | None:
+    def call_style_config(self) -> CallStyle | None:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        return cast("CallStyle", self.call_style.value)

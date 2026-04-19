@@ -8,7 +8,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -54,16 +54,17 @@ from literalizer._formatters.type_inference import (
     ListType,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -696,11 +697,8 @@ class Kotlin(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Kotlin call style options."""
 
-        KEYWORD = CallStyleConfig(
-            kind=CallStyleKind.KEYWORD,
-            keyword_separator=" = ",
-        )
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        KEYWORD = KeywordCallStyle(separator=" = ")
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -1017,6 +1015,6 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyleConfig | None:
+    def call_style_config(self) -> CallStyle | None:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        return cast("CallStyle", self.call_style.value)
