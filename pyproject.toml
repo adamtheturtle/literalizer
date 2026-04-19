@@ -424,6 +424,7 @@ ignore_names = [
     "EPOCH",
     "FIXED",
     "FROZENSET",
+    "ELIXIR",
     "ERLANG",
     "EXPLICIT",
     "NO",
