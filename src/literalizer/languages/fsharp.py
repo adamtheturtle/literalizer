@@ -41,6 +41,7 @@ from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
+    make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -79,10 +80,15 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
             negative = formatted.startswith("-")
             # ``I`` yields a ``bigint``; ``L`` yields ``int64``.
             suffix = "I" if not I64_MIN <= original <= I64_MAX else "L"
+            literal = (
+                formatted
+                if formatted.endswith(suffix)
+                else f"{formatted}{suffix}"
+            )
             return (
-                f"{prefix}Int({formatted}{suffix})"
+                f"{prefix}Int({literal})"
                 if negative
-                else f"{prefix}Int {formatted}{suffix}"
+                else f"{prefix}Int {literal}"
             )
         case float():
             negative = formatted.startswith("-")
@@ -659,7 +665,12 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format
+        return make_overflow_suffix_formatter(
+            base=self.integer_format,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
+            suffix="I",
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
