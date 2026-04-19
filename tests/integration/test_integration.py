@@ -1037,6 +1037,100 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
                 and (lang_cls, mod_name) in skip_dict
             )
         )
+
+    # Extra coverage for C# modifier rendering: the typed-declaration
+    # path infers different branches for set and date values.  List
+    # values use ARRAY sequence format so the inferred ``object[]`` type
+    # matches the generated initializer.
+    csharp_readonly = _Variant(
+        name="CSharp_modifiers_readonly",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.extend(
+        _VariantCase(
+            variant_name=csharp_readonly.name,
+            variant=csharp_readonly,
+            case_dir_name=case_dir_name,
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+        for case_dir_name in ("set", "scalar_date", "scalar_datetime")
+    )
+    csharp_readonly_empty_set = _Variant(
+        name="CSharp_modifiers_readonly_empty_set",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_empty_set.name,
+            variant=csharp_readonly_empty_set,
+            case_dir_name="empty_set",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_mixed = _Variant(
+        name="CSharp_modifiers_readonly_mixed_numbers",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_mixed.name,
+            variant=csharp_readonly_mixed,
+            case_dir_name="mixed_number_list",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_array = _Variant(
+        name="CSharp_modifiers_readonly_array",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_array.name,
+            variant=csharp_readonly_array,
+            case_dir_name="simple_sequence",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    # Cover the "modifiers contains only values C# cannot express"
+    # fall-back path (e.g. ``FINAL`` alone on C#).
+    csharp_final_ignored = _Variant(
+        name="CSharp_modifiers_final_ignored",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_final_ignored.name,
+            variant=csharp_final_ignored,
+            case_dir_name="scalar_int",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.FINAL}),
+            ),
+        )
+    )
     return cases
 
 

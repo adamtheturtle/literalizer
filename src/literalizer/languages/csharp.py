@@ -214,10 +214,16 @@ def _format_csharp_declaration(
     datetime_hint: str,
     dict_value_type: str,
 ) -> str:
-    """Format a C# variable declaration, applying modifiers when set."""
-    if not modifiers:
-        return f"var {name} = {value};"
+    """Format a C# variable declaration, applying modifiers when set.
+
+    Falls back to ``var {name} = {value};`` whenever *modifiers* is
+    empty or contains only values C# cannot express (e.g.
+    :attr:`DeclarationModifier.FINAL`), which matches the "silently
+    ignore modifiers a language cannot express" guarantee.
+    """
     prefix = _csharp_modifier_prefix(modifiers=modifiers)
+    if not prefix:
+        return f"var {name} = {value};"
     hint = _csharp_type_hint(
         data=data,
         date_hint=date_hint,
