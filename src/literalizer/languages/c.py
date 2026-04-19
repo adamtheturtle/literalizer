@@ -96,8 +96,8 @@ def _make_format_c_entry(
     def _format_c_entry(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_format_c_entry(
-            original,
-            formatted,
+            original=original,
+            formatted=formatted,
             int_field=int_field,
             float_field=float_field,
             string_field=string_field,

@@ -92,8 +92,8 @@ def _build_format_fortran_entry(
     def _format_fortran_entry(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_fortran_entry(
-            original,
-            formatted,
+            original=original,
+            formatted=formatted,
             int_name=int_name,
             real_name=real_name,
             str_name=str_name,
@@ -180,7 +180,7 @@ def _build_format_variable_declaration(
     ) -> str:
         """Delegate to module-level implementation."""
         return _apply_fortran_variable_declaration(
-            name, value, data, format_entry
+            name=name, value=value, data=data, format_entry=format_entry
         )
 
     return _format_variable_declaration
@@ -209,7 +209,7 @@ def _build_format_variable_assignment(
     def _format_variable_assignment(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_fortran_variable_assignment(
-            name, value, data, format_entry
+            name=name, value=value, data=data, format_entry=format_entry
         )
 
     return _format_variable_assignment

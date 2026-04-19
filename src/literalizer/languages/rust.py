@@ -111,7 +111,7 @@ def _make_rust_integer_suffix_formatter(
 
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
-        return _apply_rust_integer_suffix(value, base)
+        return _apply_rust_integer_suffix(value=value, base=base)
 
     return _format
 

@@ -108,9 +108,9 @@ def _make_variable_declaration(
     def _format(name: str, value: str, _data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_nim_variable_declaration(
-            name,
-            value,
-            _data,
+            name=name,
+            value=value,
+            _data=_data,
             uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
             keyword=keyword,
             force_sequence=force_sequence,
@@ -152,9 +152,9 @@ def _make_variable_assignment(
     def _format(name: str, value: str, _data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_nim_variable_assignment(
-            name,
-            value,
-            _data,
+            name=name,
+            value=value,
+            _data=_data,
             uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
         )
 

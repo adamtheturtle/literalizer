@@ -56,7 +56,7 @@ def date_ymd_formatter(
 
     def _format(value: datetime.date) -> str:
         """Delegate to module-level implementation."""
-        return _format_date_ymd(value, template)
+        return _format_date_ymd(value=value, template=template)
 
     return _format
 
@@ -95,7 +95,7 @@ def datetime_ymdhms_formatter(
 
     def _format(value: datetime.datetime) -> str:
         """Delegate to module-level implementation."""
-        return _format_datetime_ymdhms(value, template)
+        return _format_datetime_ymdhms(value=value, template=template)
 
     return _format
 
@@ -126,7 +126,7 @@ def date_iso_formatter(
 
     def _format(value: datetime.date) -> str:
         """Delegate to module-level implementation."""
-        return _format_date_iso_template(value, template)
+        return _format_date_iso_template(value=value, template=template)
 
     return _format
 
@@ -158,6 +158,6 @@ def datetime_iso_formatter(
 
     def _format(value: datetime.datetime) -> str:
         """Delegate to module-level implementation."""
-        return _format_datetime_iso_template(value, template)
+        return _format_datetime_iso_template(value=value, template=template)
 
     return _format

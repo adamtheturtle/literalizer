@@ -143,7 +143,7 @@ def make_long_suffix_formatter(
 
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
-        return _format_long_suffix(value, base)
+        return _format_long_suffix(value=value, base=base)
 
     return _format
 
@@ -185,7 +185,11 @@ def make_overflow_suffix_formatter(
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _format_overflow_suffix(
-            value, base, min_value, max_value, suffix
+            value=value,
+            base=base,
+            min_value=min_value,
+            max_value=max_value,
+            suffix=suffix,
         )
 
     return _format
@@ -208,6 +212,6 @@ def make_int64_cast_formatter(
 
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
-        return _format_int64_cast(value, base)
+        return _format_int64_cast(value=value, base=base)
 
     return _format

@@ -182,7 +182,7 @@ def _nil_safe_declaration(
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_go_nil_safe_declaration(
-            name, value, data, base_formatter
+            name=name, value=value, data=data, base_formatter=base_formatter
         )
 
     return _format

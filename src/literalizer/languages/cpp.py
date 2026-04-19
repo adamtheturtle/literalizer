@@ -530,7 +530,9 @@ def _build_variant_sequence_open(
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_sequence_open(
-            items, type_to_opener, element_to_type
+            items=items,
+            type_to_opener=type_to_opener,
+            element_to_type=element_to_type,
         )
 
     return _open
@@ -560,7 +562,10 @@ def _build_variant_dict_open(
     def _open(items: dict[str, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_dict_open(
-            items, type_to_opener, element_to_type, opener_template
+            items=items,
+            type_to_opener=type_to_opener,
+            element_to_type=element_to_type,
+            opener_template=opener_template,
         )
 
     return _open
@@ -582,7 +587,9 @@ def _build_variant_set_open(
 
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
-        return _apply_cpp_variant_set_open(items, element_to_type)
+        return _apply_cpp_variant_set_open(
+            items=items, element_to_type=element_to_type
+        )
 
     return _open
 
@@ -605,7 +612,9 @@ def _build_variant_ordered_map_open(
 
     def _open(data: dict[str, Value]) -> str:
         """Delegate to module-level implementation."""
-        return _apply_cpp_variant_ordered_map_open(data, element_to_type)
+        return _apply_cpp_variant_ordered_map_open(
+            data=data, element_to_type=element_to_type
+        )
 
     return _open
 

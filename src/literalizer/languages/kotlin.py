@@ -116,7 +116,9 @@ def _kotlin_list_sequence_open(
         element_type: type | ListType | DictType,
     ) -> str | None:
         """Delegate to module-level implementation."""
-        return _apply_kotlin_combined_opener(element_type, dict_resolver)
+        return _apply_kotlin_combined_opener(
+            element_type=element_type, dict_resolver=dict_resolver
+        )
 
     return typed_collection_open(
         type_to_opener=_combined_opener,

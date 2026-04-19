@@ -39,7 +39,7 @@ def fixed_set_open(*, open_str: str) -> Callable[[list[Value]], str]:
 
     def _open(_items: list[Value]) -> str:
         """Delegate to module-level implementation."""
-        return _fixed_list_open_impl(_items, open_str)
+        return _fixed_list_open_impl(_items=_items, open_str=open_str)
 
     return _open
 
@@ -56,7 +56,7 @@ def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
 
     def _open(_items: list[Value]) -> str:
         """Delegate to module-level implementation."""
-        return _fixed_list_open_impl(_items, open_str)
+        return _fixed_list_open_impl(_items=_items, open_str=open_str)
 
     return _open
 
@@ -73,7 +73,7 @@ def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
 
     def _open(_items: dict[str, Value]) -> str:
         """Delegate to module-level implementation."""
-        return _fixed_dict_open_impl(_items, open_str)
+        return _fixed_dict_open_impl(_items=_items, open_str=open_str)
 
     return _open
 
@@ -218,7 +218,9 @@ def make_type_to_opener(
     def type_to_opener(element_type: type | ListType | DictType) -> str | None:
         """Delegate to module-level implementation."""
         return _apply_type_to_opener(
-            element_type, element_to_type, opener_template
+            element_type=element_type,
+            element_to_type=element_to_type,
+            opener_template=opener_template,
         )
 
     return type_to_opener
@@ -267,7 +269,9 @@ def typed_collection_open(
 
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
-        return _typed_collection_open_impl(items, type_to_opener, fallback)
+        return _typed_collection_open_impl(
+            items=items, type_to_opener=type_to_opener, fallback=fallback
+        )
 
     return _open
 
@@ -312,7 +316,9 @@ def typed_dict_open(
 
     def _open(items: dict[str, Value]) -> str:
         """Delegate to module-level implementation."""
-        return _typed_dict_open_impl(items, type_to_opener, fallback)
+        return _typed_dict_open_impl(
+            items=items, type_to_opener=type_to_opener, fallback=fallback
+        )
 
     return _open
 

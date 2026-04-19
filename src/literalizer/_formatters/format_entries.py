@@ -49,7 +49,9 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
 
     def _format(name: str, value: str, _data: Value) -> str:
         """Delegate to module-level implementation."""
-        return _format_variable(name, value, _data, template)
+        return _format_variable(
+            name=name, value=value, _data=_data, template=template
+        )
 
     return _format
 
@@ -83,7 +85,10 @@ def tuple_dict_entry(
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_tuple_dict_entry(
-            key, raw_value, formatted_value, format_value
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_value=format_value,
         )
 
     return _format
@@ -118,7 +123,10 @@ def braced_dict_entry(
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_braced_dict_entry(
-            key, raw_value, formatted_value, format_value
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_value=format_value,
         )
 
     return _format
@@ -194,7 +202,11 @@ def dict_entry_with_separator(
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_dict_entry_with_separator(
-            key, raw_value, formatted_value, separator, format_value
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            separator=separator,
+            format_value=format_value,
         )
 
     return _format
@@ -233,7 +245,10 @@ def dict_entry_symbol_style(
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_dict_entry_symbol_style(
-            key, raw_value, formatted_value, format_value
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_value=format_value,
         )
 
     return _format
@@ -271,7 +286,11 @@ def dict_entry_with_template(
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_dict_entry_with_template(
-            key, raw_value, formatted_value, template, format_value
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            template=template,
+            format_value=format_value,
         )
 
     return _format

@@ -82,7 +82,7 @@ def _sml_negate_int(
 
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
-        return _apply_sml_negate_int(value, formatter)
+        return _apply_sml_negate_int(value=value, formatter=formatter)
 
     return _format
 
@@ -105,7 +105,7 @@ def _sml_negate_float(
 
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
-        return _apply_sml_negate_float(value, formatter)
+        return _apply_sml_negate_float(value=value, formatter=formatter)
 
     return _format
 
@@ -164,7 +164,9 @@ def _build_sml_entry_formatter(
 
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
-        return _apply_sml_entry_formatter(original, formatted, prefix)
+        return _apply_sml_entry_formatter(
+            original=original, formatted=formatted, prefix=prefix
+        )
 
     return _format
 
@@ -201,9 +203,9 @@ def _build_sml_declaration(
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_declaration(
-            name,
-            value,
-            data,
+            name=name,
+            value=value,
+            data=data,
             sequence_declared_type=sequence_declared_type,
             scalar_declared_type=scalar_declared_type,
             entry_formatter=entry_formatter,

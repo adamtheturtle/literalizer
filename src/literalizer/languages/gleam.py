@@ -84,7 +84,7 @@ def _gleam_nonneg_only(
 
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
-        return _gleam_nonneg_only_impl(value, base)
+        return _gleam_nonneg_only_impl(value=value, base=base)
 
     return _format
 
@@ -104,7 +104,7 @@ def _build_gleam_date_iso(
 
     def _format(value: datetime.date) -> str:
         """Delegate to module-level implementation."""
-        return _apply_gleam_str_wrapped_date(value, prefix)
+        return _apply_gleam_str_wrapped_date(value=value, prefix=prefix)
 
     return _format
 
@@ -126,7 +126,7 @@ def _build_gleam_datetime_iso(
 
     def _format(value: datetime.datetime) -> str:
         """Delegate to module-level implementation."""
-        return _apply_gleam_str_wrapped_datetime(value, prefix)
+        return _apply_gleam_str_wrapped_datetime(value=value, prefix=prefix)
 
     return _format
 
@@ -146,7 +146,7 @@ def _build_gleam_bytes_hex(
 
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
-        return _apply_gleam_bytes_hex(value, prefix)
+        return _apply_gleam_bytes_hex(value=value, prefix=prefix)
 
     return _format
 
@@ -166,7 +166,7 @@ def _build_gleam_bytes_base64(
 
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
-        return _apply_gleam_bytes_base64(value, prefix)
+        return _apply_gleam_bytes_base64(value=value, prefix=prefix)
 
     return _format
 
@@ -187,7 +187,7 @@ def _build_gleam_str_formatter(
 
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
-        return _apply_gleam_string(value, prefix)
+        return _apply_gleam_string(value=value, prefix=prefix)
 
     return _format
 
@@ -210,7 +210,9 @@ def _build_gleam_integer_wrapper(
 
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
-        return _apply_gleam_integer_wrapped(value, prefix, base)
+        return _apply_gleam_integer_wrapped(
+            value=value, prefix=prefix, base=base
+        )
 
     return _format
 
@@ -233,7 +235,9 @@ def _build_gleam_float_wrapper(
 
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
-        return _apply_gleam_float_wrapped(value, prefix, inner)
+        return _apply_gleam_float_wrapped(
+            value=value, prefix=prefix, inner=inner
+        )
 
     return _format
 
@@ -265,7 +269,10 @@ def _build_gleam_dict_entry(
     def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_dict_entry(
-            key, _raw_value, formatted_value, _str_prefix
+            key=key,
+            _raw_value=_raw_value,
+            formatted_value=formatted_value,
+            str_prefix=_str_prefix,
         )
 
     return _format

@@ -64,7 +64,9 @@ def _build_backslash_formatter(
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_backslash_formatter(
-            value, quote_char, extra_replacements
+            value=value,
+            quote_char=quote_char,
+            extra_replacements=extra_replacements,
         )
 
     return _format
@@ -230,7 +232,7 @@ def format_string_concat_control(
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_concat_control(
-            value,
+            value=value,
             quote_char=quote_char,
             quote_escape=quote_escape,
             control_char_template=control_char_template,

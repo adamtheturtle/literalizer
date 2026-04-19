@@ -99,7 +99,9 @@ def _build_fsharp_entry_formatter(
 
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
-        return _apply_fsharp_entry(original, formatted, prefix)
+        return _apply_fsharp_entry(
+            original=original, formatted=formatted, prefix=prefix
+        )
 
     return _format
 
@@ -145,9 +147,9 @@ def _build_fsharp_declaration(
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_fsharp_declaration(
-            name,
-            value,
-            data,
+            name=name,
+            value=value,
+            data=data,
             template=template,
             sequence_declared_type=sequence_declared_type,
             scalar_declared_type=scalar_declared_type,

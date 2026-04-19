@@ -143,7 +143,10 @@ def _build_haskell_call_stub(
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
         return _build_haskell_call_stub_lines(
-            name, params, _stub_return, type_name
+            name=name,
+            params=params,
+            _stub_return=_stub_return,
+            type_name=type_name,
         )
 
     return _haskell_call_stub
@@ -180,7 +183,7 @@ def _build_haskell_datetime_formatter(
 
     def _format(value: datetime.datetime) -> str:
         """Delegate to module-level implementation."""
-        return _format_haskell_datetime(value, prefix)
+        return _format_haskell_datetime(value=value, prefix=prefix)
 
     return _format
 
@@ -240,7 +243,7 @@ def _build_date_formatters(
         def _explicit_date(value: datetime.date) -> str:
             """Delegate to module-level implementation."""
             return _wrap_with_str_constructor_date(
-                value, _str_pfx, date_formatter
+                value=value, str_prefix=_str_pfx, formatter=date_formatter
             )
 
         fmt_date = _explicit_date
@@ -257,7 +260,9 @@ def _build_date_formatters(
         def _explicit_datetime(value: datetime.datetime) -> str:
             """Delegate to module-level implementation."""
             return _wrap_with_str_constructor_datetime(
-                value, _str_pfx_dt, datetime_formatter
+                value=value,
+                str_prefix=_str_pfx_dt,
+                formatter=datetime_formatter,
             )
 
         fmt_datetime = _explicit_datetime
@@ -348,13 +353,17 @@ def _build_string_formatters(
     def _format_string(value: str) -> str:
         """Delegate to module-level implementation."""
         return _wrap_str_with_constructor(
-            value, string_constructor, base_format_string
+            value=value,
+            string_constructor=string_constructor,
+            base_format_string=base_format_string,
         )
 
     def _format_bytes(data: bytes) -> str:
         """Delegate to module-level implementation."""
         return _wrap_bytes_with_constructor(
-            data, string_constructor, base_format_bytes
+            data=data,
+            string_constructor=string_constructor,
+            base_format_bytes=base_format_bytes,
         )
 
     def _format_dict_entry(
@@ -364,7 +373,10 @@ def _build_string_formatters(
     ) -> str:
         """Delegate to module-level implementation."""
         return _format_explicit_dict_entry(
-            key, _raw_value, formatted_value, string_constructor
+            key=key,
+            _raw_value=_raw_value,
+            formatted_value=formatted_value,
+            string_constructor=string_constructor,
         )
 
     return _StringFormatters(
@@ -654,9 +666,9 @@ def _build_declaration_formatters(
     def _haskell_declaration(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _format_haskell_declaration(
-            name,
-            value,
-            data,
+            name=name,
+            value=value,
+            data=data,
             base_declaration=base_declaration,
             sequence_declared_type=sequence_declared_type,
             type_name=type_name,
@@ -1232,13 +1244,17 @@ class Haskell(metaclass=LanguageCls):
             def _wrap_integer(value: int) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_integer_with_constructor(
-                    value, _int_prefix, _base_format_integer
+                    value=value,
+                    int_prefix=_int_prefix,
+                    base_format_integer=_base_format_integer,
                 )
 
             def _wrap_float(value: float) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_float_with_constructor(
-                    value, _float_prefix, _base_format_float
+                    value=value,
+                    float_prefix=_float_prefix,
+                    base_format_float=_base_format_float,
                 )
 
             self.format_float: Callable[[float], str] = _wrap_float
