@@ -265,7 +265,9 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
 
 
 def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
-    """Bare F# scalar ints above i64 range use the ``I`` bigint suffix."""
+    """Bare F# scalar integer values above i64 range use the ``I``
+    suffix.
+    """
     result = literalize(
         source="9223372036854775808",
         input_format=InputFormat.JSON,
