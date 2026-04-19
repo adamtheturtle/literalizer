@@ -66,6 +66,14 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _gleam_nonneg_only_impl(value: int, base: Callable[[int], str]) -> str:
+    """Format an integer, falling back to decimal for negatives."""
+    if value < 0:
+        return str(object=value)
+    return base(value)
+
+
+@beartype
 def _gleam_nonneg_only(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -74,14 +82,17 @@ def _gleam_nonneg_only(
     Gleam does not support negative hex/octal/binary literals.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format an integer, falling back to decimal for negatives."""
-        if value < 0:
-            return str(object=value)
-        return base(value)
+        """Delegate to module-level implementation."""
+        return _gleam_nonneg_only_impl(value=value, base=base)
 
     return _format
+
+
+@beartype
+def _apply_gleam_str_wrapped_date(value: datetime.date, prefix: str) -> str:
+    """Format a date as a Gleam string via ISO 8601."""
+    return f"{prefix}Str({format_date_iso(value=value)})"
 
 
 def _build_gleam_date_iso(
@@ -91,12 +102,19 @@ def _build_gleam_date_iso(
     constructors.
     """
 
-    @beartype
     def _format(value: datetime.date) -> str:
-        """Format a date as a Gleam string via ISO 8601."""
-        return f"{prefix}Str({format_date_iso(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_str_wrapped_date(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_str_wrapped_datetime(
+    value: datetime.datetime, prefix: str
+) -> str:
+    """Format a datetime as a Gleam string via ISO 8601."""
+    return f"{prefix}Str({format_datetime_iso(value=value)})"
 
 
 def _build_gleam_datetime_iso(
@@ -106,12 +124,17 @@ def _build_gleam_datetime_iso(
     constructors.
     """
 
-    @beartype
     def _format(value: datetime.datetime) -> str:
-        """Format a datetime as a Gleam string via ISO 8601."""
-        return f"{prefix}Str({format_datetime_iso(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_str_wrapped_datetime(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_bytes_hex(value: bytes, prefix: str) -> str:
+    """Format bytes as a Gleam hex string."""
+    return f"{prefix}Str({format_bytes_hex(value=value)})"
 
 
 def _build_gleam_bytes_hex(
@@ -121,12 +144,17 @@ def _build_gleam_bytes_hex(
     constructors.
     """
 
-    @beartype
     def _format(value: bytes) -> str:
-        """Format bytes as a Gleam hex string."""
-        return f"{prefix}Str({format_bytes_hex(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_bytes_hex(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_bytes_base64(value: bytes, prefix: str) -> str:
+    """Format bytes as a Gleam base64 string."""
+    return f"{prefix}Str({format_bytes_base64(value=value)})"
 
 
 def _build_gleam_bytes_base64(
@@ -136,12 +164,18 @@ def _build_gleam_bytes_base64(
     constructors.
     """
 
-    @beartype
     def _format(value: bytes) -> str:
-        """Format bytes as a Gleam base64 string."""
-        return f"{prefix}Str({format_bytes_base64(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_bytes_base64(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_string(value: str, prefix: str) -> str:
+    """Format a string with a constructor prefix."""
+    escaped = format_string_backslash(value)
+    return f"{prefix}Str({escaped})"
 
 
 def _build_gleam_str_formatter(
@@ -151,13 +185,19 @@ def _build_gleam_str_formatter(
     constructors.
     """
 
-    @beartype
     def _format(value: str) -> str:
-        """Format a string with a constructor prefix."""
-        escaped = format_string_backslash(value)
-        return f"{prefix}Str({escaped})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_string(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_integer_wrapped(
+    value: int, prefix: str, base: Callable[[int], str]
+) -> str:
+    """Format an integer with a ``{prefix}Int`` constructor."""
+    return f"{prefix}Int({base(value)})"
 
 
 def _build_gleam_integer_wrapper(
@@ -168,12 +208,21 @@ def _build_gleam_integer_wrapper(
     constructors.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format an integer with a ``{prefix}Int`` constructor."""
-        return f"{prefix}Int({base(value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_integer_wrapped(
+            value=value, prefix=prefix, base=base
+        )
 
     return _format
+
+
+@beartype
+def _apply_gleam_float_wrapped(
+    value: float, prefix: str, inner: Callable[[float], str]
+) -> str:
+    """Format a float with a ``{prefix}Float`` constructor."""
+    return f"{prefix}Float({inner(value)})"
 
 
 def _build_gleam_float_wrapper(
@@ -184,12 +233,29 @@ def _build_gleam_float_wrapper(
     constructors.
     """
 
-    @beartype
     def _format(value: float) -> str:
-        """Format a float with a ``{prefix}Float`` constructor."""
-        return f"{prefix}Float({inner(value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_float_wrapped(
+            value=value, prefix=prefix, inner=inner
+        )
 
     return _format
+
+
+@beartype
+def _apply_gleam_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+    str_prefix: str,
+) -> str:
+    """Format a dict entry as a hash tuple with a plain-string key.
+
+    Dict keys are ``String``, not ``GVal``, so the ``{prefix}Str(...)``
+    constructor must be stripped from the formatted key.
+    """
+    key = key.removeprefix(str_prefix).removesuffix(")")
+    return f"#({key}, {formatted_value})"
 
 
 def _build_gleam_dict_entry(
@@ -200,15 +266,14 @@ def _build_gleam_dict_entry(
     """
     _str_prefix = f"{prefix}Str("
 
-    @beartype
     def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry as a hash tuple with a plain-string key.
-
-        Dict keys are ``String``, not ``GVal``, so the ``{prefix}Str(...)``
-        constructor must be stripped from the formatted key.
-        """
-        key = key.removeprefix(_str_prefix).removesuffix(")")
-        return f"#({key}, {formatted_value})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_dict_entry(
+            key=key,
+            _raw_value=_raw_value,
+            formatted_value=formatted_value,
+            str_prefix=_str_prefix,
+        )
 
     return _format
 

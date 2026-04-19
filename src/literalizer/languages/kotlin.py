@@ -112,19 +112,29 @@ def _kotlin_list_sequence_open(
         dict_key_type=dict_key_type,
     )
 
-    @beartype
     def _combined_opener(
         element_type: type | ListType | DictType,
     ) -> str | None:
-        """Resolve element type, preferring specialized Kotlin openers."""
-        if isinstance(element_type, DictType):
-            return f"listOf<{dict_resolver(element_type)}>("
-        return _kotlin_type_to_opener(element_type=element_type)
+        """Delegate to module-level implementation."""
+        return _apply_kotlin_combined_opener(
+            element_type=element_type, dict_resolver=dict_resolver
+        )
 
     return typed_collection_open(
         type_to_opener=_combined_opener,
         fallback="listOf<Any?>(",
     )
+
+
+@beartype
+def _apply_kotlin_combined_opener(
+    element_type: type | ListType | DictType,
+    dict_resolver: Callable[[type | ListType | DictType], str | None],
+) -> str | None:
+    """Resolve element type, preferring specialized Kotlin openers."""
+    if isinstance(element_type, DictType):
+        return f"listOf<{dict_resolver(element_type)}>("
+    return _kotlin_type_to_opener(element_type=element_type)
 
 
 @beartype

@@ -56,6 +56,29 @@ if TYPE_CHECKING:
 
 
 @beartype
+def _apply_fortran_entry(
+    original: Value,
+    formatted: str,
+    *,
+    int_name: str,
+    real_name: str,
+    str_name: str,
+) -> str:
+    """Wrap a formatted entry in its constructor call."""
+    match original:
+        case bool():
+            return formatted
+        case int():
+            return f"{int_name}({formatted})"
+        case float():
+            return f"{real_name}({formatted})"
+        case str() | bytes() | datetime.date():
+            return f"{str_name}({formatted})"
+        case _:
+            return formatted
+
+
+@beartype
 def _build_format_fortran_entry(
     *,
     int_name: str,
@@ -66,20 +89,15 @@ def _build_format_fortran_entry(
     constructor.
     """
 
-    @beartype
     def _format_fortran_entry(original: Value, formatted: str) -> str:
-        """Wrap a formatted entry in its constructor call."""
-        match original:
-            case bool():
-                return formatted
-            case int():
-                return f"{int_name}({formatted})"
-            case float():
-                return f"{real_name}({formatted})"
-            case str() | bytes() | datetime.date():
-                return f"{str_name}({formatted})"
-            case _:
-                return formatted
+        """Delegate to module-level implementation."""
+        return _apply_fortran_entry(
+            original=original,
+            formatted=formatted,
+            int_name=int_name,
+            real_name=real_name,
+            str_name=str_name,
+        )
 
     return _format_fortran_entry
 
@@ -138,22 +156,47 @@ def _add_continuation(value: str) -> str:
 
 
 @beartype
+def _apply_fortran_variable_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    format_entry: Callable[[Value, str], str],
+) -> str:
+    """Format a variable declaration and initialisation."""
+    fval = format_entry(data, value)
+    continued = _add_continuation(value=fval)
+    return f"type(fval_t) :: {name}\n{name} = {continued}"
+
+
+@beartype
 def _build_format_variable_declaration(
     *,
     format_entry: Callable[[Value, str], str],
 ) -> Callable[[str, str, Value], str]:
     """Build a variable declaration formatter."""
 
-    @beartype
     def _format_variable_declaration(
         name: str, value: str, data: Value
     ) -> str:
-        """Format a variable declaration and initialisation."""
-        fval = format_entry(data, value)
-        continued = _add_continuation(value=fval)
-        return f"type(fval_t) :: {name}\n{name} = {continued}"
+        """Delegate to module-level implementation."""
+        return _apply_fortran_variable_declaration(
+            name=name, value=value, data=data, format_entry=format_entry
+        )
 
     return _format_variable_declaration
+
+
+@beartype
+def _apply_fortran_variable_assignment(
+    name: str,
+    value: str,
+    data: Value,
+    format_entry: Callable[[Value, str], str],
+) -> str:
+    """Format an assignment to an existing variable."""
+    fval = format_entry(data, value)
+    continued = _add_continuation(value=fval)
+    return f"{name} = {continued}"
 
 
 @beartype
@@ -163,12 +206,11 @@ def _build_format_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Build a variable assignment formatter."""
 
-    @beartype
     def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-        """Format an assignment to an existing variable."""
-        fval = format_entry(data, value)
-        continued = _add_continuation(value=fval)
-        return f"{name} = {continued}"
+        """Delegate to module-level implementation."""
+        return _apply_fortran_variable_assignment(
+            name=name, value=value, data=data, format_entry=format_entry
+        )
 
     return _format_variable_assignment
 

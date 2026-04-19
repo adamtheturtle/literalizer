@@ -66,6 +66,36 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
+@beartype
+def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
+    """Wrap a formatted entry in the appropriate OCaml ``val_t``
+    constructor.
+    """
+    match original:
+        case bool():
+            return formatted
+        case int():
+            negative = formatted.startswith("-")
+            return (
+                f"{prefix}Int ({formatted})"
+                if negative
+                else f"{prefix}Int {formatted}"
+            )
+        case float():
+            negative = formatted.startswith("-")
+            return (
+                f"{prefix}Float ({formatted})"
+                if negative
+                else f"{prefix}Float {formatted}"
+            )
+        case str() | bytes():
+            return f"{prefix}Str {formatted}"
+        case datetime.date() if formatted.startswith('"'):
+            return f"{prefix}Str {formatted}"
+        case _:
+            return formatted
+
+
 def _build_ocaml_entry_formatter(
     prefix: str,
 ) -> Callable[[Value, str], str]:
@@ -73,39 +103,36 @@ def _build_ocaml_entry_formatter(
     constructors using the given *prefix*.
     """
 
-    @beartype
     def _format(original: Value, formatted: str) -> str:
-        """Wrap a formatted entry in the appropriate OCaml ``val_t``
-        constructor.
-        """
-        match original:
-            case bool():
-                return formatted
-            case int():
-                negative = formatted.startswith("-")
-                return (
-                    f"{prefix}Int ({formatted})"
-                    if negative
-                    else f"{prefix}Int {formatted}"
-                )
-            case float():
-                negative = formatted.startswith("-")
-                return (
-                    f"{prefix}Float ({formatted})"
-                    if negative
-                    else f"{prefix}Float {formatted}"
-                )
-            case str() | bytes():
-                return f"{prefix}Str {formatted}"
-            case datetime.date() if formatted.startswith('"'):
-                return f"{prefix}Str {formatted}"
-            case _:
-                return formatted
+        """Delegate to module-level implementation."""
+        return _apply_ocaml_entry(
+            original=original, formatted=formatted, prefix=prefix
+        )
 
     return _format
 
 
 _format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
+
+
+@beartype
+def _apply_ocaml_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    sequence_declared_type: str,
+    scalar_declared_type: str,
+    entry_formatter: Callable[[Value, str], str],
+) -> str:
+    """Format a variable declaration."""
+    decl_type = (
+        sequence_declared_type
+        if isinstance(data, list)
+        else scalar_declared_type
+    )
+    wrapped = entry_formatter(data, value)
+    return f"let {name} : {decl_type} = {wrapped}"
 
 
 @beartype
@@ -117,16 +144,16 @@ def _build_ocaml_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Build an OCaml variable declaration formatter."""
 
-    @beartype
     def _format(name: str, value: str, data: Value) -> str:
-        """Format a variable declaration."""
-        decl_type = (
-            sequence_declared_type
-            if isinstance(data, list)
-            else scalar_declared_type
+        """Delegate to module-level implementation."""
+        return _apply_ocaml_declaration(
+            name=name,
+            value=value,
+            data=data,
+            sequence_declared_type=sequence_declared_type,
+            scalar_declared_type=scalar_declared_type,
+            entry_formatter=entry_formatter,
         )
-        wrapped = entry_formatter(data, value)
-        return f"let {name} : {decl_type} = {wrapped}"
 
     return _format
 

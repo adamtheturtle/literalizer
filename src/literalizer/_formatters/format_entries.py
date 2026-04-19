@@ -27,6 +27,14 @@ def strip_key_quotes(key: str) -> str:
 
 
 @beartype
+def _format_variable(
+    name: str, value: str, _data: Value, template: str
+) -> str:
+    """Format a variable declaration or assignment."""
+    return template.format(name=name, value=value)
+
+
+@beartype
 def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
     """Return a ``format_variable_declaration`` or
     ``format_variable_assignment`` callable from a template string.
@@ -39,12 +47,24 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
         assign("x", "42", None)  # => "x = 42;"
     """
 
-    @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format a variable declaration or assignment."""
-        return template.format(name=name, value=value)
+        """Delegate to module-level implementation."""
+        return _format_variable(
+            name=name, value=value, _data=_data, template=template
+        )
 
     return _format
+
+
+@beartype
+def _format_tuple_dict_entry(
+    key: str,
+    raw_value: Value,
+    formatted_value: str,
+    format_value: Callable[[Value, str], str],
+) -> str:
+    """Format a dict entry as a tuple."""
+    return f"({key}, {format_value(raw_value, formatted_value)})"
 
 
 @beartype
@@ -62,12 +82,27 @@ def tuple_dict_entry(
     -> ``"(k, v)"``.
     """
 
-    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry as a tuple."""
-        return f"({key}, {format_value(raw_value, formatted_value)})"
+        """Delegate to module-level implementation."""
+        return _format_tuple_dict_entry(
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_value=format_value,
+        )
 
     return _format
+
+
+@beartype
+def _format_braced_dict_entry(
+    key: str,
+    raw_value: Value,
+    formatted_value: str,
+    format_value: Callable[[Value, str], str],
+) -> str:
+    """Format a dict entry with braces."""
+    return f"{{{key}, {format_value(raw_value, formatted_value)}}}"
 
 
 @beartype
@@ -85,10 +120,14 @@ def braced_dict_entry(
     -> ``"{k, v}"``.
     """
 
-    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry with braces."""
-        return f"{{{key}, {format_value(raw_value, formatted_value)}}}"
+        """Delegate to module-level implementation."""
+        return _format_braced_dict_entry(
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_value=format_value,
+        )
 
     return _format
 
@@ -133,6 +172,18 @@ def passthrough_set_entry(_value: Value, item: str) -> str:
 
 
 @beartype
+def _format_dict_entry_with_separator(
+    key: str,
+    raw_value: Value,
+    formatted_value: str,
+    separator: str,
+    format_value: Callable[[Value, str], str],
+) -> str:
+    """Format a dict entry by joining key and value with separator."""
+    return f"{key}{separator}{format_value(raw_value, formatted_value)}"
+
+
+@beartype
 def dict_entry_with_separator(
     separator: str,
     *,
@@ -148,12 +199,29 @@ def dict_entry_with_separator(
     -> ``"k: v"``.
     """
 
-    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry by joining key and value with separator."""
-        return f"{key}{separator}{format_value(raw_value, formatted_value)}"
+        """Delegate to module-level implementation."""
+        return _format_dict_entry_with_separator(
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            separator=separator,
+            format_value=format_value,
+        )
 
     return _format
+
+
+@beartype
+def _format_dict_entry_symbol_style(
+    key: str,
+    raw_value: Value,
+    formatted_value: str,
+    format_value: Callable[[Value, str], str],
+) -> str:
+    """Format a dict entry in symbol style."""
+    formatted = format_value(raw_value, formatted_value)
+    return f"{strip_key_quotes(key=key)}: {formatted}"
 
 
 @beartype
@@ -174,13 +242,29 @@ def dict_entry_symbol_style(
     -> ``'name: "Alice"'``.
     """
 
-    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry in symbol style."""
-        formatted = format_value(raw_value, formatted_value)
-        return f"{strip_key_quotes(key=key)}: {formatted}"
+        """Delegate to module-level implementation."""
+        return _format_dict_entry_symbol_style(
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_value=format_value,
+        )
 
     return _format
+
+
+@beartype
+def _format_dict_entry_with_template(
+    key: str,
+    raw_value: Value,
+    formatted_value: str,
+    template: str,
+    format_value: Callable[[Value, str], str],
+) -> str:
+    """Format a dict entry using the template."""
+    formatted = format_value(raw_value, formatted_value)
+    return template.format(key=key, value=formatted)
 
 
 @beartype
@@ -199,10 +283,14 @@ def dict_entry_with_template(
     returns a callable producing ``"Map.entry(k, v)"``.
     """
 
-    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry using the template."""
-        formatted = format_value(raw_value, formatted_value)
-        return template.format(key=key, value=formatted)
+        """Delegate to module-level implementation."""
+        return _format_dict_entry_with_template(
+            key=key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            template=template,
+            format_value=format_value,
+        )
 
     return _format
