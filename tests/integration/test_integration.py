@@ -53,6 +53,67 @@ def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
 
 
 @beartype
+def _check_golden(
+    *,
+    file_regression: FileRegressionFixture,
+    contents: str,
+    golden_path: Path,
+    extension: str,
+    newline: str | None,
+) -> None:
+    """Compare ``contents`` against ``golden_path`` in memory.
+
+    ``file_regression.check`` writes an ``.obtained`` file, reads both
+    files back from disk, and runs ``difflib`` even on the pass path,
+    which dominates this module's runtime (~13k calls per run).  For
+    the pass path we can compare the already-in-memory ``contents``
+    against the golden file directly; only on miss or regen do we
+    delegate to the fixture for its ``.obtained`` + HTML-diff output.
+    """
+    config = file_regression.request.config
+    regen = file_regression.force_regen or bool(
+        config.getoption(name="regen_all")
+        or config.getoption(name="force_regen"),
+    )
+    if (
+        not regen
+        and golden_path.is_file()
+        and contents.splitlines() == golden_path.read_text().splitlines()
+    ):
+        return
+    file_regression.check(
+        contents=contents,
+        extension=extension,
+        newline=newline,
+        fullpath=golden_path,
+    )
+
+
+def test_check_golden_mismatch_delegates(
+    tmp_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """``_check_golden`` delegates to ``file_regression.check`` on miss.
+
+    Every golden file matches in CI, so nothing else reaches the
+    fallback branch.
+    """
+    golden = tmp_path / "golden.txt"
+    golden.write_text(data="expected\n")
+    with pytest.raises(
+        expected_exception=AssertionError,
+        match="FILES DIFFER",
+    ):
+        _check_golden(
+            file_regression=file_regression,
+            contents="different\n",
+            golden_path=golden,
+            extension=".txt",
+            newline="",
+        )
+
+
+@beartype
 def _find_redefinition_styles(
     spec: literalizer.Language,
 ) -> list[enum.Enum]:
@@ -616,11 +677,12 @@ def test_golden_file(
     # newline="" prevents Python text-mode from converting \r\n to \n
     # on Windows, which would corrupt golden files containing literal
     # CR bytes (e.g. CommonLisp string_control_chars).
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=golden_path,
+        golden_path=golden_path,
     )
 
 
@@ -723,11 +785,12 @@ def test_golden_file_combined_variable_forms(
         pytest.skip(
             f"{lang_cls.__name__} cannot represent this heterogeneous input"
         )
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=golden_path,
+        golden_path=golden_path,
     )
 
 
@@ -1323,10 +1386,12 @@ def test_format_variant_golden_file(
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
         pytest.skip("Format cannot represent this heterogeneous input")
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=variant.spec.extension,
-        fullpath=golden_path,
+        newline=None,
+        golden_path=golden_path,
     )
 
 
@@ -1408,10 +1473,12 @@ def test_line_ending_combined_variable_forms(
         variable_form=literalizer.BothVariableForms(name="my_data"),
         wrap_in_file=True,
     )
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=spec.extension,
-        fullpath=input_path.parent / (case.name + spec.extension),
+        newline=None,
+        golden_path=input_path.parent / (case.name + spec.extension),
     )
 
 
@@ -1642,9 +1709,10 @@ def test_call_golden_file(
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     lang_name = lang_cls.__name__
     golden_name = f"{lang_name}_call"
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=wrapped + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent / (golden_name + lang_cls.extension),
+        golden_path=input_path.parent / (golden_name + lang_cls.extension),
     )
